@@ -34,6 +34,7 @@ from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconcilia
     do_run,
 )
 from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
+    multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
     two_assets_in_sequence_fan_in_partitions,
@@ -120,6 +121,9 @@ scenarios = {
         target_root_partition_keys=[
             "2013-01-07-05:00",
         ],
+    ),
+    "multipartitioned_self_dependency": scenario(
+        multipartitioned_self_dependency, create_pendulum_time(year=2020, month=1, day=7, hour=4)
     ),
 }
 

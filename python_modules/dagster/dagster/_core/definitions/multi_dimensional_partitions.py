@@ -414,6 +414,15 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         )
         return next(iter(time_window_dims))
 
+    @property
+    def has_one_time_window_dimension(self) -> bool:
+        time_window_dims = [
+            dim
+            for dim in self.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+        return len(time_window_dims) == 1
+
     def get_cron_schedule(
         self,
         minute_of_hour: Optional[int] = None,
@@ -426,7 +435,11 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         ).get_cron_schedule(minute_of_hour, hour_of_day, day_of_week, day_of_month)
 
     @property
-    def timezone(self) -> Optional[str]:
+    def fmt(self) -> str:
+        return cast(TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def).fmt
+
+    @property
+    def timezone(self) -> str:
         return cast(
             TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
         ).timezone

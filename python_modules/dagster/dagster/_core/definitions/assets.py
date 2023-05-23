@@ -24,7 +24,9 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_selection import get_graph_subset
+from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -236,6 +238,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._selected_asset_keys,
             partition_mappings=self._partition_mappings,
+            partitions_def=self._partitions_def,
         )
 
     @staticmethod
@@ -1375,20 +1378,39 @@ def _validate_self_deps(
     input_keys: Iterable[AssetKey],
     output_keys: Iterable[AssetKey],
     partition_mappings: Mapping[AssetKey, PartitionMapping],
+    partitions_def: Optional[PartitionsDefinition],
 ) -> None:
+    is_valid_self_dep_mapping = (
+        lambda partition_mapping: isinstance(partition_mapping, TimeWindowPartitionMapping)
+        and (partition_mapping.start_offset or 0) < 0
+        and (partition_mapping.end_offset or 0) < 0
+    )
     output_keys_set = set(output_keys)
     for input_key in input_keys:
         if input_key in output_keys_set:
             if input_key in partition_mappings:
                 partition_mapping = partition_mappings[input_key]
                 if (
-                    isinstance(partition_mapping, TimeWindowPartitionMapping)
-                    and (partition_mapping.start_offset or 0) < 0
-                    and (partition_mapping.end_offset or 0) < 0
+                    isinstance(partitions_def, TimeWindowPartitionsDefinition)
+                    and is_valid_self_dep_mapping(partition_mapping)
+                ) or (
+                    (
+                        isinstance(partitions_def, MultiPartitionsDefinition)
+                        and partitions_def.has_one_time_window_dimension
+                        and isinstance(partition_mapping, MultiPartitionMapping)
+                        and partitions_def.time_window_dimension.name
+                        in partition_mapping.downstream_mappings_by_upstream_dimension
+                        and is_valid_self_dep_mapping(
+                            partition_mapping.downstream_mappings_by_upstream_dimension[
+                                partitions_def.time_window_dimension.name
+                            ].partition_mapping
+                        )
+                    )
                 ):
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are time-partitioned and each"
-                " partition depends on earlier partitions"
+                "Assets can only depend on themselves if they are:\n(a) time-partitioned and each"
+                " partition depends on earlier partitions\n(b) multipartitioned, with one time"
+                " dimension that depends on earlier time partitions"
             )

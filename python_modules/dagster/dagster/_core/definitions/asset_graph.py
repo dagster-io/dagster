@@ -32,6 +32,7 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
+from .multi_dimensional_partitions import MultiPartitionsDefinition
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
@@ -658,18 +659,32 @@ class ToposortedPriorityQueue:
         )
 
         def _sort_key_for_time_window_partition(
-            partitions_def: TimeWindowPartitionsDefinition,
+            partitions_def: Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
         ) -> float:
+            if not asset_partition.partition_key:
+                check.failed("A partitioned asset must have a selected partition key")
+
             # A sort key such that time window partitions are sorted from oldest to newest
             return pendulum.instance(
-                datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
+                datetime.strptime(
+                    cast(
+                        str,
+                        partitions_def.get_partition_key_from_str(
+                            asset_partition.partition_key
+                        ).keys_by_dimension[partitions_def.time_window_dimension.name]
+                        if isinstance(partitions_def, MultiPartitionsDefinition)
+                        else asset_partition.partition_key,
+                    ),
+                    partitions_def.fmt,
+                ),
                 tz=partitions_def.timezone,
             ).timestamp()
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            if partitions_def is not None and isinstance(
-                partitions_def, TimeWindowPartitionsDefinition
+            if partitions_def is not None and (
+                isinstance(partitions_def, TimeWindowPartitionsDefinition)
+                or isinstance(partitions_def, MultiPartitionsDefinition)
             ):
                 # sort self dependencies from oldest to newest, as older partitions must exist before
                 # new ones can execute
