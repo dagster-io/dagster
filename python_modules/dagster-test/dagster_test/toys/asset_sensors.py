@@ -166,7 +166,7 @@ def _build_partitioned_assets():
         @asset(
             name=f"partitioned_asset_{i}",
             group_name="partitioned_assets",
-            partitions_def=StaticPartitionsDefinition([str(i) for i in range(20)]),
+            partitions_def=StaticPartitionsDefinition([str(j) for j in range(20)]),
         )
         def partitioned_asset():
             return 1
