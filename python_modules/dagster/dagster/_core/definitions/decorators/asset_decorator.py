@@ -305,6 +305,9 @@ class _Asset:
             bare_required_resource_keys = set(self.required_resource_keys)
 
             resource_defs_dict = self.resource_defs
+            resource_defs_keys = set(resource_defs_dict.keys())
+            decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
+
             io_manager_key = self.io_manager_key
             if self.io_manager_def:
                 if not io_manager_key:
@@ -322,9 +325,6 @@ class _Asset:
                 resource_defs_dict[io_manager_key] = self.io_manager_def
 
             wrapped_resource_defs = wrap_resources_for_execution(resource_defs_dict)
-
-            resource_defs_keys = set(wrapped_resource_defs.keys())
-            decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
 
             check.param_invariant(
                 len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
