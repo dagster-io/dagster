@@ -1473,19 +1473,13 @@ class SqlEventLogStorage(EventLogStorage):
 
         asset_details = self._get_assets_details([asset_key])[0]
         if not filter_tags:
-            tags_query = (
-                db_select(
-                    [
-                        AssetEventTagsTable.c.key,
-                        AssetEventTagsTable.c.value,
-                        AssetEventTagsTable.c.event_id,
-                    ]
-                    if not filter_tags
-                    else [AssetEventTagsTable.c.event_id]
-                )
-                .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
-                .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
-            )
+            tags_query = db_select(
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+            ).where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
