@@ -1,0 +1,9 @@
+[project]
+name = "tutorial_dbt_dagster_v2"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "tutorial_dbt_dagster_v2"
