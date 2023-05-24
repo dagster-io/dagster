@@ -418,7 +418,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         query = (
-            db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+            db.select(SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event)
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .order_by(
                 SqlEventLogStorageTable.c.id.asc()
@@ -487,11 +487,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         query = (
             db.select(
-                [
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    db.func.count().label("n_events_of_type"),
-                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("last_event_timestamp"),
-                ]
+                SqlEventLogStorageTable.c.dagster_event_type,
+                db.func.count().label("n_events_of_type"),
+                db.func.max(SqlEventLogStorageTable.c.timestamp).label("last_event_timestamp"),
             )
             .where(
                 db.and_(
@@ -558,7 +556,7 @@ class SqlEventLogStorage(EventLogStorage):
         # choose to revisit this in the future, especially if we are able to do JSON-column queries
         # in SQL as a way of bypassing the serdes layer in all cases.
         raw_event_query = (
-            db.select([SqlEventLogStorageTable.c.event])
+            db.select(SqlEventLogStorageTable.c.event)
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .where(SqlEventLogStorageTable.c.step_key != None)  # noqa: E711
             .where(
@@ -655,7 +653,7 @@ class SqlEventLogStorage(EventLogStorage):
             SqlEventLogStorageTable.c.run_id == run_id
         )
         removed_asset_key_query = (
-            db.select([SqlEventLogStorageTable.c.asset_key])
+            db.select(SqlEventLogStorageTable.c.asset_key)
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
             .group_by(SqlEventLogStorageTable.c.asset_key)
@@ -672,7 +670,7 @@ class SqlEventLogStorage(EventLogStorage):
             remaining_asset_keys = [
                 AssetKey.from_db_string(row[0])
                 for row in conn.execute(
-                    db.select([SqlEventLogStorageTable.c.asset_key])
+                    db.select(SqlEventLogStorageTable.c.asset_key)
                     .where(SqlEventLogStorageTable.c.asset_key.in_(keys_to_check))
                     .group_by(SqlEventLogStorageTable.c.asset_key)
                 )
@@ -722,7 +720,7 @@ class SqlEventLogStorage(EventLogStorage):
         """
         with self.run_connection(run_id=run_id) as conn:
             query = (
-                db.select([SqlEventLogStorageTable])
+                db.select(SqlEventLogStorageTable)
                 .where(SqlEventLogStorageTable.c.id == record_id)
                 .order_by(SqlEventLogStorageTable.c.id.asc())
             )
@@ -733,7 +731,7 @@ class SqlEventLogStorage(EventLogStorage):
         in a secondary index table.  Can be used to checkpoint event_log data migrations.
         """
         query = (
-            db.select([1])
+            db.select(SecondaryIndexMigrationTable.c.name)
             .where(SecondaryIndexMigrationTable.c.name == name)
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
@@ -831,7 +829,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
             if self.supports_intersect:
                 intersections = [
-                    db.select([AssetEventTagsTable.c.event_id]).where(
+                    db.select(AssetEventTagsTable.c.event_id).where(
                         db.and_(
                             AssetEventTagsTable.c.asset_key
                             == event_records_filter.asset_key.to_string(),  # type: ignore  # (bad sig?)
@@ -901,7 +899,7 @@ class SqlEventLogStorage(EventLogStorage):
             table = SqlEventLogStorageTable
 
         query = db.select(
-            [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
+            SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event
         ).select_from(table)
 
         query = self._apply_filter_to_query(
@@ -979,7 +977,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         query = (
-            db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+            db.select(SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event)
             .where(SqlEventLogStorageTable.c.id > after_cursor)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
@@ -1012,7 +1010,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_maximum_record_id(self) -> Optional[int]:
         with self.index_connection() as conn:
-            result = conn.execute(db.select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
+            result = conn.execute(db.select(db.func.max(SqlEventLogStorageTable.c.id))).fetchone()
             return result[0]  # type: ignore
 
     def _construct_asset_record_from_row(
@@ -1060,10 +1058,8 @@ class SqlEventLogStorage(EventLogStorage):
 
         latest_event_subquery = (
             db.select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
-                ]
+                SqlEventLogStorageTable.c.asset_key,
+                db.func.max(SqlEventLogStorageTable.c.id).label("id"),
             )
             .where(
                 db.and_(
@@ -1078,11 +1074,9 @@ class SqlEventLogStorage(EventLogStorage):
             .alias("latest_materializations")
         )
         backcompat_query = db.select(
-            [
-                SqlEventLogStorageTable.c.asset_key,
-                SqlEventLogStorageTable.c.id,
-                SqlEventLogStorageTable.c.event,
-            ]
+            SqlEventLogStorageTable.c.asset_key,
+            SqlEventLogStorageTable.c.id,
+            SqlEventLogStorageTable.c.event,
         ).select_from(
             latest_event_subquery.join(
                 SqlEventLogStorageTable,
@@ -1243,7 +1237,7 @@ class SqlEventLogStorage(EventLogStorage):
             columns.append(AssetKeyTable.c.last_materialization_timestamp)
             columns.append(AssetKeyTable.c.wipe_timestamp)
 
-        query = db.select(columns).order_by(AssetKeyTable.c.asset_key.asc())
+        query = db.select(*columns).order_by(AssetKeyTable.c.asset_key.asc())
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
@@ -1328,10 +1322,8 @@ class SqlEventLogStorage(EventLogStorage):
         # raw event log table.
         backcompat_query = (
             db.select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    db.func.max(SqlEventLogStorageTable.c.timestamp),
-                ]
+                SqlEventLogStorageTable.c.asset_key,
+                db.func.max(SqlEventLogStorageTable.c.timestamp),
             )
             .where(
                 SqlEventLogStorageTable.c.asset_key.in_(
@@ -1393,7 +1385,7 @@ class SqlEventLogStorage(EventLogStorage):
         rows = None
         with self.index_connection() as conn:
             rows = conn.execute(
-                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
+                db.select(AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details).where(
                     AssetKeyTable.c.asset_key.in_(
                         [asset_key.to_string() for asset_key in asset_keys]
                     ),
@@ -1473,16 +1465,17 @@ class SqlEventLogStorage(EventLogStorage):
 
         asset_details = self._get_assets_details([asset_key])[0]
         if not filter_tags:
+            tag_columns = (
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+                if not filter_tags
+                else [AssetEventTagsTable.c.event_id]
+            )
             tags_query = (
-                db.select(
-                    [
-                        AssetEventTagsTable.c.key,
-                        AssetEventTagsTable.c.value,
-                        AssetEventTagsTable.c.event_id,
-                    ]
-                    if not filter_tags
-                    else [AssetEventTagsTable.c.event_id]
-                )
+                db.select(*tag_columns)
                 .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
                 .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
             )
@@ -1494,7 +1487,7 @@ class SqlEventLogStorage(EventLogStorage):
         elif self.supports_intersect:
 
             def get_tag_filter_query(tag_key, tag_value):
-                filter_query = db.select([AssetEventTagsTable.c.event_id]).where(
+                filter_query = db.select(AssetEventTagsTable.c.event_id).where(
                     db.and_(
                         AssetEventTagsTable.c.asset_key == asset_key.to_string(),
                         AssetEventTagsTable.c.key == tag_key,
@@ -1514,11 +1507,9 @@ class SqlEventLogStorage(EventLogStorage):
             ]
 
             tags_query = db.select(
-                [
-                    AssetEventTagsTable.c.key,
-                    AssetEventTagsTable.c.value,
-                    AssetEventTagsTable.c.event_id,
-                ]
+                AssetEventTagsTable.c.key,
+                AssetEventTagsTable.c.value,
+                AssetEventTagsTable.c.event_id,
             ).where(
                 db.and_(
                     AssetEventTagsTable.c.event_id.in_(db.intersect(*intersections)),
@@ -1527,11 +1518,9 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
             tags_query = db.select(
-                [
-                    AssetEventTagsTable.c.key,
-                    AssetEventTagsTable.c.value,
-                    AssetEventTagsTable.c.event_id,
-                ]
+                AssetEventTagsTable.c.key,
+                AssetEventTagsTable.c.value,
+                AssetEventTagsTable.c.event_id,
             ).select_from(table)
 
             if asset_details and asset_details.last_wipe_timestamp:
@@ -1557,7 +1546,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
         query = (
             db.select(
-                [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
+                SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)
             )
             .where(
                 SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
@@ -1644,11 +1633,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         query = (
             db.select(
-                [
-                    SqlEventLogStorageTable.c.asset_key,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.count(SqlEventLogStorageTable.c.id),
-                ]
+                SqlEventLogStorageTable.c.asset_key,
+                SqlEventLogStorageTable.c.partition,
+                db.func.count(SqlEventLogStorageTable.c.id),
             )
             .where(
                 db.and_(
@@ -1696,11 +1683,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         latest_event_ids_subquery = (
             db.select(
-                [
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
-                ]
+                SqlEventLogStorageTable.c.dagster_event_type,
+                SqlEventLogStorageTable.c.partition,
+                db.func.max(SqlEventLogStorageTable.c.id).label("id"),
             )
             .where(
                 db.and_(
@@ -1720,12 +1705,10 @@ class SqlEventLogStorage(EventLogStorage):
 
         latest_events_subquery = (
             db.select(
-                [
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    SqlEventLogStorageTable.c.partition,
-                    SqlEventLogStorageTable.c.run_id,
-                    SqlEventLogStorageTable.c.id,
-                ]
+                SqlEventLogStorageTable.c.dagster_event_type,
+                SqlEventLogStorageTable.c.partition,
+                SqlEventLogStorageTable.c.run_id,
+                SqlEventLogStorageTable.c.id,
             )
             .select_from(
                 latest_event_ids_subquery.join(
@@ -1738,12 +1721,10 @@ class SqlEventLogStorage(EventLogStorage):
 
         materialization_planned_events = (
             db.select(
-                [
-                    latest_events_subquery.c.dagster_event_type,
-                    latest_events_subquery.c.partition,
-                    latest_events_subquery.c.run_id,
-                    latest_events_subquery.c.id,
-                ]
+                latest_events_subquery.c.dagster_event_type,
+                latest_events_subquery.c.partition,
+                latest_events_subquery.c.run_id,
+                latest_events_subquery.c.id,
             )
             .where(
                 latest_events_subquery.c.dagster_event_type
@@ -1754,11 +1735,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         materialization_events = (
             db.select(
-                [
-                    latest_events_subquery.c.dagster_event_type,
-                    latest_events_subquery.c.partition,
-                    latest_events_subquery.c.run_id,
-                ]
+                latest_events_subquery.c.dagster_event_type,
+                latest_events_subquery.c.partition,
+                latest_events_subquery.c.run_id,
             )
             .where(
                 latest_events_subquery.c.dagster_event_type
@@ -1801,7 +1780,7 @@ class SqlEventLogStorage(EventLogStorage):
             DynamicPartitionsTable.c.partition,
         ]
         query = (
-            db.select(columns)
+            db.select(*columns)
             .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
             .order_by(DynamicPartitionsTable.c.id)
         )
@@ -1825,7 +1804,7 @@ class SqlEventLogStorage(EventLogStorage):
         self._check_partitions_table()
         with self.index_connection() as conn:
             existing_rows = conn.execute(
-                db.select([DynamicPartitionsTable.c.partition]).where(
+                db.select(DynamicPartitionsTable.c.partition).where(
                     db.and_(
                         DynamicPartitionsTable.c.partition.in_(partition_keys),
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
