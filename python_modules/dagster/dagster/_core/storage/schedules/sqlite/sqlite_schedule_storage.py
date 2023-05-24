@@ -81,11 +81,9 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     @contextmanager
     def connect(self) -> Iterator[Connection]:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        conn = engine.connect()
-        try:
-            yield conn
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            with conn.begin():
+                yield conn
 
     @property
     def supports_batch_queries(self) -> bool:
