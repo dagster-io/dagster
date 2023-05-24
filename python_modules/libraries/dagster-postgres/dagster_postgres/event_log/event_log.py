@@ -24,6 +24,7 @@ from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
     create_engine,
+    db_select,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
@@ -312,7 +313,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
         with self._engine.connect() as conn:
             cursor_res = conn.execute(
-                db.select([SqlEventLogStorageTable.c.event]).where(
+                db_select([SqlEventLogStorageTable.c.event]).where(
                     SqlEventLogStorageTable.c.id == cursor
                 ),
             )
