@@ -64,10 +64,13 @@ export const useViewport = (
     let resizeObserver: any;
     if (element instanceof HTMLElement) {
       if ('ResizeObserver' in window) {
-        resizeObserver = new window['ResizeObserver']((entries: any) => {
-          if (entries[0].target === element) {
-            onApplySize({width: element.clientWidth, height: element.clientHeight});
-          }
+        resizeObserver = new window['ResizeObserver']((entries: ResizeObserverEntry[]) => {
+          window.requestAnimationFrame(() => {
+            const target = entries[0]?.target;
+            if (target === element) {
+              onApplySize({width: element.clientWidth, height: element.clientHeight});
+            }
+          });
         });
         resizeObserver.observe(element);
       } else {
