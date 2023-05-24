@@ -37,7 +37,7 @@ from dagster._core.errors import (
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select, db_subquery
 from dagster._serdes import (
     deserialize_value,
     serialize_value,
@@ -856,8 +856,12 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: Optional[AssetKey],
     ) -> db.Table:
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
+        i = 0
         for key, value in tags.items():
-            tags_table = AssetEventTagsTable.alias()
+            i += 1
+            tags_table = db_subquery(
+                db_select([AssetEventTagsTable]), f"asset_event_tags_subquery_{i}"
+            )
             table = table.join(
                 tags_table,
                 db.and_(
@@ -1058,7 +1062,7 @@ class SqlEventLogStorage(EventLogStorage):
             else:
                 to_backcompat_fetch.add(asset_key)
 
-        latest_event_subquery = (
+        latest_event_subquery = db_subquery(
             db_select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
@@ -1074,8 +1078,8 @@ class SqlEventLogStorage(EventLogStorage):
                     == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )
             )
-            .group_by(SqlEventLogStorageTable.c.asset_key)
-            .alias("latest_materializations")
+            .group_by(SqlEventLogStorageTable.c.asset_key),
+            "latest_event_subquery",
         )
         backcompat_query = db_select(
             [
@@ -1708,11 +1712,14 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         assets_details = self._get_assets_details([asset_key])
-        latest_event_ids_subquery = self._add_assets_wipe_filter_to_query(
-            latest_event_ids_subquery, assets_details, [asset_key]
-        ).alias("latest_materialization_event_ids")
+        latest_event_ids_subquery = db_subquery(
+            self._add_assets_wipe_filter_to_query(
+                latest_event_ids_subquery, assets_details, [asset_key]
+            ),
+            "latest_event_ids_subquery",
+        )
 
-        latest_events_subquery = (
+        latest_events_subquery = db_subquery(
             db_select(
                 [
                     SqlEventLogStorageTable.c.dagster_event_type,
@@ -1720,45 +1727,36 @@ class SqlEventLogStorage(EventLogStorage):
                     SqlEventLogStorageTable.c.run_id,
                     SqlEventLogStorageTable.c.id,
                 ]
-            )
-            .select_from(
+            ).select_from(
                 latest_event_ids_subquery.join(
                     SqlEventLogStorageTable,
                     SqlEventLogStorageTable.c.id == latest_event_ids_subquery.c.id,
                 ),
-            )
-            .alias("latest_materialization_events")
+            ),
+            "latest_events_subquery",
         )
 
-        materialization_planned_events = (
-            db_select(
-                [
-                    latest_events_subquery.c.dagster_event_type,
-                    latest_events_subquery.c.partition,
-                    latest_events_subquery.c.run_id,
-                    latest_events_subquery.c.id,
-                ]
-            )
-            .where(
-                latest_events_subquery.c.dagster_event_type
-                == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
-            )
-            .alias("materialization_planned_events")
+        materialization_planned_events = db_select(
+            [
+                latest_events_subquery.c.dagster_event_type,
+                latest_events_subquery.c.partition,
+                latest_events_subquery.c.run_id,
+                latest_events_subquery.c.id,
+            ]
+        ).where(
+            latest_events_subquery.c.dagster_event_type
+            == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
         )
 
-        materialization_events = (
-            db_select(
-                [
-                    latest_events_subquery.c.dagster_event_type,
-                    latest_events_subquery.c.partition,
-                    latest_events_subquery.c.run_id,
-                ]
-            )
-            .where(
-                latest_events_subquery.c.dagster_event_type
-                == DagsterEventType.ASSET_MATERIALIZATION.value
-            )
-            .alias("materialization_events")
+        materialization_events = db_select(
+            [
+                latest_events_subquery.c.dagster_event_type,
+                latest_events_subquery.c.partition,
+                latest_events_subquery.c.run_id,
+            ]
+        ).where(
+            latest_events_subquery.c.dagster_event_type
+            == DagsterEventType.ASSET_MATERIALIZATION.value
         )
 
         with self.index_connection() as conn:

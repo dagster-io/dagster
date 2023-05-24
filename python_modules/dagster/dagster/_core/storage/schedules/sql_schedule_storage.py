@@ -32,7 +32,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select, db_subquery
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
@@ -307,7 +307,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
             .label("rank")
         )
-        subquery = (
+        subquery = db_subquery(
             db_select(
                 [
                     JobTickTable.c.id,
@@ -318,7 +318,6 @@ class SqlScheduleStorage(ScheduleStorage):
             )
             .select_from(JobTickTable)
             .where(JobTickTable.c.selector_id.in_(selector_ids))
-            .alias("subquery")
         )
         if statuses:
             subquery = subquery.where(
