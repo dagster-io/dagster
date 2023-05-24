@@ -529,7 +529,7 @@ class SqlRunStorage(RunStorage):
         result = defaultdict(set)
         query = (
             db_select([RunTagsTable.c.key, RunTagsTable.c.value])
-            .distinct(RunTagsTable.c.key, RunTagsTable.c.value)
+            .distinct()
             .order_by(RunTagsTable.c.key, RunTagsTable.c.value)
         )
         if tag_keys:
@@ -544,11 +544,7 @@ class SqlRunStorage(RunStorage):
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
 
     def get_run_tag_keys(self) -> Sequence[str]:
-        query = (
-            db_select([RunTagsTable.c.key])
-            .distinct(RunTagsTable.c.key)
-            .order_by(RunTagsTable.c.key)
-        )
+        query = db_select([RunTagsTable.c.key]).distinct().order_by(RunTagsTable.c.key)
         rows = self.fetchall(query)
         return sorted([r[0] for r in rows])
 
@@ -721,6 +717,7 @@ class SqlRunStorage(RunStorage):
 
         runs_and_root_runs = (
             db_select([RunsTable.c.run_id.label("run_id")])
+            .distinct()
             .select_from(runs_augmented)
             .where(
                 db.or_(
@@ -728,7 +725,6 @@ class SqlRunStorage(RunStorage):
                     RunsTable.c.run_id == runs_augmented.c.root_run_id,
                 )
             )
-            .distinct(RunsTable.c.run_id)
         ).alias("runs_and_root_runs")
 
         # We count the descendants of all of the runs in our query that are roots so that
