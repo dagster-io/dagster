@@ -183,8 +183,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew
             conn.execute(
-                f"""NOTIFY {CHANNEL_NAME}, %s; """,
-                (res[0] + "_" + str(res[1]),),  # type: ignore
+                db.text(f"""NOTIFY {CHANNEL_NAME}, :notify_id; """),
+                {"notify_id": res[0] + "_" + str(res[1])},  # type: ignore
             )
             event_id = int(res[1])  # type: ignore
 
