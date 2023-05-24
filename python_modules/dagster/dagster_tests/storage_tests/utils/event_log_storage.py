@@ -9,6 +9,7 @@ from typing import List, Optional, Sequence, Tuple, cast
 import mock
 import pendulum
 import pytest
+import sqlalchemy as db
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -267,7 +268,7 @@ def _synthesize_events(
 
 def _fetch_all_events(configured_storage, run_id=None):
     with configured_storage.run_connection(run_id=run_id) as conn:
-        res = conn.execute("SELECT event from event_logs")
+        res = conn.execute(db.text("SELECT event from event_logs"))
         return res.fetchall()
 
 
