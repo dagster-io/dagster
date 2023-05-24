@@ -12,7 +12,7 @@ from dagster._serdes import serialize_value
 def test_defensive_job_not_a_string():
     mock_logger = mock.MagicMock()
 
-    assert defensively_unpack_execution_plan_snapshot_query(mock_logger, [234]) is None
+    assert defensively_unpack_execution_plan_snapshot_query(mock_logger, 234) is None
     assert mock_logger.warning.call_count == 1
 
     mock_logger.warning.assert_called_with(
@@ -23,7 +23,7 @@ def test_defensive_job_not_a_string():
 def test_defensive_job_not_bytes():
     mock_logger = mock.MagicMock()
 
-    assert defensively_unpack_execution_plan_snapshot_query(mock_logger, ["notbytes"]) is None
+    assert defensively_unpack_execution_plan_snapshot_query(mock_logger, "notbytes") is None
     assert mock_logger.warning.call_count == 1
 
     if sys.version_info.major == 2:
@@ -41,7 +41,7 @@ def test_defensive_job_not_bytes():
 def test_defensive_jobs_cannot_decompress():
     mock_logger = mock.MagicMock()
 
-    assert defensively_unpack_execution_plan_snapshot_query(mock_logger, [b"notbytes"]) is None
+    assert defensively_unpack_execution_plan_snapshot_query(mock_logger, b"notbytes") is None
     assert mock_logger.warning.call_count == 1
     mock_logger.warning.assert_called_with(
         "get-pipeline-snapshot: Could not decompress bytes stored in snapshot table."
@@ -54,7 +54,7 @@ def test_defensive_jobs_cannot_decode_post_decompress():
     # guarantee that we cannot decode by double compressing bytes.
     assert (
         defensively_unpack_execution_plan_snapshot_query(
-            mock_logger, [zlib.compress(zlib.compress(b"notbytes"))]
+            mock_logger, zlib.compress(zlib.compress(b"notbytes"))
         )
         is None
     )
@@ -69,7 +69,7 @@ def test_defensive_jobs_cannot_parse_json():
     mock_logger = mock.MagicMock()
 
     assert (
-        defensively_unpack_execution_plan_snapshot_query(mock_logger, [zlib.compress(b"notjson")])
+        defensively_unpack_execution_plan_snapshot_query(mock_logger, zlib.compress(b"notjson"))
         is None
     )
     assert mock_logger.warning.call_count == 1
@@ -93,7 +93,7 @@ def test_correctly_fetch_decompress_parse_snapshot():
     assert (
         defensively_unpack_execution_plan_snapshot_query(
             mock_logger,
-            [zlib.compress(serialize_value(noop_job_snapshot).encode("utf-8"))],
+            zlib.compress(serialize_value(noop_job_snapshot).encode("utf-8")),
         )
         == noop_job_snapshot
     )
