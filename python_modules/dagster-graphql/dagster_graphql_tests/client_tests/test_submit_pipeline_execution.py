@@ -1,5 +1,5 @@
 import pytest
-from dagster import DagsterInvalidDefinitionError
+from dagster import Config, DagsterInvalidDefinitionError, RunConfig
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
 from .conftest import MockClient, python_client_test_suite
@@ -14,6 +14,11 @@ launch_job_success_response = {
 }
 
 
+class AnOpConfig(Config):
+    conn_string: str
+    port: int
+
+
 @python_client_test_suite
 def test_job_success(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = launch_job_success_response
@@ -21,6 +26,19 @@ def test_job_success(mock_client: MockClient):
         "bar",
         repository_location_name="baz",
         repository_name="quux",
+        run_config={"ops": {"foo": dict(conn_string="my_conn", port=4253)}},
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_job_success_run_config(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
+    actual_run_id = mock_client.python_client.submit_job_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quux",
+        run_config=RunConfig(ops={"foo": AnOpConfig(conn_string="my_conn", port=4253)}),
     )
     assert actual_run_id == EXPECTED_RUN_ID
 
