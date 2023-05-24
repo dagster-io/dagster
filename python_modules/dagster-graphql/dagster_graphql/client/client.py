@@ -1,10 +1,11 @@
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
 from dagster._annotations import public
+from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import validate_tags
 from dagster._utils.backcompat import experimental_class_warning
 from gql import Client, gql
@@ -117,7 +118,7 @@ class DagsterGraphQLClient:
         pipeline_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Mapping[str, Any]] = None,
+        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
         mode: str = "default",
         preset: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
@@ -129,7 +130,7 @@ class DagsterGraphQLClient:
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(mode, "mode")
         check.opt_str_param(preset, "preset")
-        run_config = check.opt_mapping_param(run_config, "run_config")
+        run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
 
         # The following invariant will never fail when a job is executed
         check.invariant(
