@@ -91,7 +91,7 @@ def build_snowflake_io_manager(
 
     """
 
-    @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
+    @io_manager(config_schema=SnowflakeIOManager.to_config_schema(), _dagster_maintained=True)
     def snowflake_io_manager(init_context):
         return DbIOManager(
             type_handlers=type_handlers,

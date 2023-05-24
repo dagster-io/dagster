@@ -288,6 +288,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         return values
 
     @property
+    def _dagster_maintained(self) -> bool:
+        return True
+
+    @property
     @cached_method
     def _connection_args(self) -> Mapping[str, Any]:
         conn_args = {
@@ -645,7 +649,8 @@ class SnowflakeConnection:
 
 @resource(
     config_schema=SnowflakeResource.to_config_schema(),
-    description="This resource is for connecting to the Snowflake data warehouse",
+    description="THIS ONE This resource is for connecting to the Snowflake data warehouse",
+    _dagster_maintained=True,
 )
 def snowflake_resource(context) -> SnowflakeConnection:
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an

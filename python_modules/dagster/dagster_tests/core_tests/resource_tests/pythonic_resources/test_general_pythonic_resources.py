@@ -1531,3 +1531,33 @@ def test_context_on_resource_nested() -> None:
 
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_telemetry_custom_resource():
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+    @asset
+    def assert_telemetry(context, my_resource: MyResource):
+        assert not my_resource._dagster_maintained
+
+    assert not MyResource(my_value="foo")._dagster_maintained
+
+    materialize([assert_telemetry], resources={"my_resource": MyResource(my_value="foo")})
+
+
+def test_telemetry_dagster_resource():
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+        @property
+        def _dagster_maintained(self) -> bool:
+            return True
+
+    @asset
+    def assert_telemetry(context, my_resource: MyResource):
+        assert my_resource._dagster_maintained
+
+    assert MyResource(my_value="foo")._dagster_maintained
+
+    materialize([assert_telemetry], resources={"my_resource": MyResource(my_value="foo")})

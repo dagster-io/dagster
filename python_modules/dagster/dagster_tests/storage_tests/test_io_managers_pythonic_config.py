@@ -16,9 +16,11 @@ from dagster import (
     job,
     observable_source_asset,
     op,
+    ConfigurableIOManagerFactory,
 )
 from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
 from dagster._config.type_printer import print_config_type_to_string
+from dagster._core.storage.io_manager import IOManager
 
 
 def type_string_from_config_schema(config_schema):
@@ -488,3 +490,101 @@ def test_observable_source_asset_io_manager_def() -> None:
         result = defs.get_implicit_global_asset_job_def().execute_in_process()
         assert result.success
         assert result.output_for_node("my_downstream_asset") == "foobar"
+def test_telemetry_custom_io_manager():
+    class MyIOManager(ConfigurableIOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @op
+    def assert_telemetry(context):
+        assert not context.resources.io_manager._dagster_maintained
+
+    @job(resource_defs={"io_manager": MyIOManager()})
+    def assert_telemetry_job():
+        assert_telemetry()
+
+    assert not MyIOManager()._dagster_maintained
+
+    assert_telemetry_job.execute_in_process()
+
+
+def test_telemetry_dagster_io_manager():
+    class MyIOManager(ConfigurableIOManager):
+        @property
+        def _dagster_maintained(self) -> bool:
+            return True
+
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @op
+    def assert_telemetry(context):
+        assert context.resources.io_manager._dagster_maintained
+
+    @job(resource_defs={"io_manager": MyIOManager()})
+    def assert_telemetry_job():
+        assert_telemetry()
+
+    assert MyIOManager()._dagster_maintained
+
+    assert_telemetry_job.execute_in_process()
+
+
+def test_telemetry_custom_io_manager_factory():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    class AnIOManagerFactory(ConfigurableIOManagerFactory):
+        def create_io_manager(self, _) -> IOManager:
+            return MyIOManager()
+
+    @op
+    def assert_telemetry(context):
+        assert not context.resources.io_manager._dagster_maintained
+
+    @job(resource_defs={"io_manager": AnIOManagerFactory()})
+    def assert_telemetry_job():
+        assert_telemetry()
+
+    assert not AnIOManagerFactory().create_io_manager(None)._dagster_maintained
+
+    assert_telemetry_job.execute_in_process()
+
+
+def test_telemetry_dagster_io_manager_factory():
+    class MyIOManager(IOManager):
+        @property
+        def _dagster_maintained(self) -> bool:
+            return True
+
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    class AnIOManagerFactory(ConfigurableIOManagerFactory):
+        def create_io_manager(self, _) -> IOManager:
+            return MyIOManager()
+
+    @op
+    def assert_telemetry(context):
+        assert context.resources.io_manager._dagster_maintained
+
+    @job(resource_defs={"io_manager": AnIOManagerFactory()})
+    def assert_telemetry_job():
+        assert_telemetry()
+
+    assert AnIOManagerFactory().create_io_manager(None)._dagster_maintained
+
+    assert_telemetry_job.execute_in_process()

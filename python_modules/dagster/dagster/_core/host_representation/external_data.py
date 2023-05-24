@@ -974,6 +974,7 @@ class ExternalResourceData(
             ("is_top_level", bool),
             ("asset_keys_using", List[AssetKey]),
             ("job_ops_using", List[ResourceJobUsageEntry]),
+            ("dagster_maintained", bool),
         ],
     )
 ):
@@ -995,6 +996,7 @@ class ExternalResourceData(
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
         job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
+        dagster_maintained: bool = False,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -1040,6 +1042,7 @@ class ExternalResourceData(
                 )
             )
             or [],
+            dagster_maintained=dagster_maintained,
         )
 
 
@@ -1624,6 +1627,7 @@ def external_resource_data_from_def(
     if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
         module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
         resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
+        dagster_maintained = resource_def.dagster_maintained
     # if it's a Pythonic resource, get the underlying Pythonic class name
     elif isinstance(
         resource_type_def,
@@ -1633,8 +1637,10 @@ def external_resource_data_from_def(
         ),
     ):
         resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
+        dagster_maintained = resource_type_def._dagster_maintained
     else:
         resource_type = _get_class_name(type(resource_type_def))
+        dagster_maintained = False  # TODO - make real
 
     return ExternalResourceData(
         name=name,
@@ -1648,6 +1654,7 @@ def external_resource_data_from_def(
         asset_keys_using=resource_asset_usage_map.get(name, []),
         job_ops_using=resource_job_usage_map.get(name, []),
         resource_type=resource_type,
+        dagster_maintained=dagster_maintained,
     )
 
 

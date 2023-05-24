@@ -1086,3 +1086,57 @@ def test_instance_set_on_asset_loader():
         defs.load_asset_value("another_asset", instance=instance)
 
         assert executed["yes"]
+
+
+def test_telemetry_custom_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    @op
+    def assert_telemetry(context):
+        assert not context.resources.io_manager._dagster_maintained
+
+    @job(resource_defs={"io_manager": my_io_manager})
+    def assert_telemetry_job():
+        assert_telemetry()
+
+    assert not MyIOManager()._dagster_maintained
+
+    assert_telemetry_job.execute_in_process()
+
+
+def test_telemetry_dagster_io_manager():
+    class MyIOManager(IOManager):
+        @property
+        def _dagster_maintained(self) -> bool:
+            return True
+
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    @op
+    def assert_telemetry(context):
+        assert context.resources.io_manager._dagster_maintained
+
+    @job(resource_defs={"io_manager": my_io_manager})
+    def assert_telemetry_job():
+        assert_telemetry()
+
+    assert MyIOManager()._dagster_maintained
+
+    assert_telemetry_job.execute_in_process()

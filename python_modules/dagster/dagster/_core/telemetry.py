@@ -546,24 +546,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
 
 
 def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
-    dagster_resources = [
-        "dagster_snowflake.resources.SnowflakeResource",
-        "dagster_dbt.cli.resources.DbtCliClientResource",
-        "dagster_snowflake.resources.snowflake_resource"
-        # fill out with rest of resources
-    ]
-
-    dagster_io_managers = [
-        "dagster_snowflake_pandas.snowflake_pandas_type_handler.SnowflakePandasIOManager",
-        "dagster_snowflake_pandas.snowflake_pandas_type_handler.snowflake_pandas_io_manager",
-        "dagster_snowflake_pyspark.snowflake_pyspark_type_handler.SnowflakePySparkIOManager",
-        "dagster_snowflake_pyspark.snowflake_pyspark_type_handler.snowflake_pyspark_io_manager",
-        "dagster_snowflake.snowflake_io_manager.snowflake_io_manager"
-        # fill out with rest of io managers
-    ]
-
     used_dagster_resources = []
-    used_dagster_io_managers = []
     used_custom_resources = False
 
     for resource in external_resources:
@@ -572,16 +555,13 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
         module_name = split_resource_type[0]
         class_name = split_resource_type[-1]
 
-        if resource_type in dagster_resources:
+        if resource.is_dagster_maintained:
             used_dagster_resources.append({"module_name": module_name, "class_name": class_name})
-        elif resource_type in dagster_io_managers:
-            used_dagster_io_managers.append({"module_name": module_name, "class_name": class_name})
         else:
             used_custom_resources = True
 
     d = {
         "dagster_resources": str(used_dagster_resources),
-        "dagster_io_managers": str(used_dagster_io_managers),
         "has_custom_resources": str(used_custom_resources),
     }
 

@@ -291,6 +291,10 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
 
     """
 
+    @property
+    def _dagster_maintained(self) -> bool:
+        return True
+
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
         return [SnowflakePandasTypeHandler()]

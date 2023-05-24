@@ -123,6 +123,10 @@ class DbIOManager(IOManager):
         else:
             self._default_load_type = default_load_type
 
+    @property
+    def _dagster_maintained(self) -> bool:
+        return True  # TODO should not be true, should inherit from the implementing class
+
     def handle_output(self, context: OutputContext, obj: object) -> None:
         table_slice = self._get_table_slice(context, context)
 
