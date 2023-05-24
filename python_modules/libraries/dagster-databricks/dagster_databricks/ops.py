@@ -25,6 +25,7 @@ def create_databricks_run_now_op(
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
     name: Optional[str] = None,
+    databricks_resource_key: Optional[str] = "databricks",
 ) -> OpDefinition:
     """Creates an op that launches an existing databricks job.
 
@@ -98,7 +99,7 @@ def create_databricks_run_now_op(
 
     @op(
         ins={"start_after": In(Nothing)},
-        required_resource_keys={"databricks"},
+        required_resource_keys={databricks_resource_key},
         tags={"kind": "databricks"},
         name=name,
     )
