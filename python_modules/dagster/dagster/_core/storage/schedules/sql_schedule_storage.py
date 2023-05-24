@@ -504,7 +504,7 @@ class SqlScheduleStorage(ScheduleStorage):
             if cursor:
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
 
-            rows = conn.execute(query)
+            rows = conn.execute(query).mappings().all()
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
     def wipe(self) -> None:
