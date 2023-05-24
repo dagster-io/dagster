@@ -10,7 +10,7 @@ from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_a
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
-from dagster_mysql.utils import get_conn
+from dagster_mysql.utils import mysql_isolation_level
 from sqlalchemy.pool import NullPool
 
 
@@ -84,15 +84,16 @@ def test_connection_leak(conn_string):
             )
         )
 
-    with get_conn(conn_string) as conn:
-        curs = conn.cursor()
-        # count open connections
-        curs.execute("SELECT count(*) FROM information_schema.processlist")
-        res = curs.fetchall()
+    engine = create_engine(conn_string, isolation_level=mysql_isolation_level(), poolclass=NullPool)
+    with engine.connect() as conn:
+        with conn.begin():
+            row = conn.execute(
+                db.text("SELECT count(*) FROM information_schema.processlist")
+            ).fetchone()
 
     # This includes a number of internal connections, so just ensure it did not scale
     # with number of instances
-    assert res[0][0] < num_instances
+    assert row[0] < num_instances
 
     for copy in copies:
         copy.dispose()
