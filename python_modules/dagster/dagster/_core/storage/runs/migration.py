@@ -8,6 +8,7 @@ from tqdm import tqdm
 from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
+from dagster._core.storage.sql import db_select
 from dagster._serdes import deserialize_value
 
 from ...execution.job_backfill import PartitionBackfill
@@ -165,12 +166,12 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] =
         print_fn("Querying run storage.")
 
     subquery = (
-        db.select([RunTagsTable.c.run_id.label("tags_run_id")])
+        db_select([RunTagsTable.c.run_id.label("tags_run_id")])
         .where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
         .alias("tag_subquery")
     )
     base_query = (
-        db.select([RunsTable.c.run_body, RunsTable.c.id])
+        db_select([RunsTable.c.run_body, RunsTable.c.id])
         .select_from(
             RunsTable.join(subquery, RunsTable.c.run_id == subquery.c.tags_run_id, isouter=True)
         )
@@ -228,7 +229,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
         print_fn("Querying run storage.")
 
     base_query = (
-        db.select([BulkActionsTable.c.body, BulkActionsTable.c.id])
+        db_select([BulkActionsTable.c.body, BulkActionsTable.c.id])
         .where(BulkActionsTable.c.action_type.is_(None))
         .order_by(db.asc(BulkActionsTable.c.id))
         .limit(CHUNK_SIZE)
