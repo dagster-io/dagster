@@ -455,7 +455,7 @@
                 "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
               },
               {
-                "title": "Setting up SSO",
+                "title": "SSO and SCIM",
                 "children": [
                   {
                     "title": "Azure Active Directory",
@@ -467,7 +467,16 @@
                   },
                   {
                     "title": "Okta",
-                    "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                    "children": [
+                      {
+                        "title": "SSO",
+                        "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                      },
+                      {
+                        "title": "SCIM",
+                        "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-scim-provisioning"
+                      }
+                    ]
                   },
                   {
                     "title": "OneLogin",
