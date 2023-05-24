@@ -62,7 +62,7 @@ setup(
             # New WTForms release breaks the version of airflow used by tests
             "WTForms<3.0.0",
             # https://github.com/dagster-io/dagster/issues/3858
-            "sqlalchemy>=1.0,<1.4.0",
+            "sqlalchemy>=1.0",
             "marshmallow-sqlalchemy<0.26.0",
         ],
     },
