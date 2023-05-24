@@ -9,6 +9,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ContextManager, Iterable, Iterator, Optional, Sequence
 
+import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import NullPool
@@ -168,7 +169,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        connection.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                         stamp_alembic_rev(alembic_config, connection)
 
                 break
