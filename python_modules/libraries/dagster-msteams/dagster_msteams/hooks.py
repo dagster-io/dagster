@@ -58,7 +58,7 @@ def teams_on_failure(
     def _hook(context: HookContext):
         text = message_fn(context)
         if dagit_base_url:
-            text += "<a href='{base_url}/instance/runs/{run_id}'>View in Dagit</a>".format(
+            text += "<a href='{base_url}/runs/{run_id}'>View in Dagit</a>".format(
                 base_url=dagit_base_url,
                 run_id=context.run_id,
             )
@@ -109,7 +109,7 @@ def teams_on_success(
     def _hook(context: HookContext):
         text = message_fn(context)
         if dagit_base_url:
-            text += "<a href='{base_url}/instance/runs/{run_id}'>View in Dagit</a>".format(
+            text += "<a href='{base_url}/runs/{run_id}'>View in Dagit</a>".format(
                 base_url=dagit_base_url,
                 run_id=context.run_id,
             )
