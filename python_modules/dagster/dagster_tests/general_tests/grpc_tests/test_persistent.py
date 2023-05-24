@@ -186,10 +186,7 @@ def test_load_via_auto_env_var_prefix():
             "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT": json.dumps(container_context),
         }
     ):
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args)
 
         try:
             wait_for_grpc_server(
@@ -231,10 +228,7 @@ def test_load_via_env_var():
             "DAGSTER_CONTAINER_CONTEXT": json.dumps(container_context),
         }
     ):
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args)
 
         try:
             wait_for_grpc_server(
@@ -270,10 +264,7 @@ def test_load_code_server_via_env_var():
             "DAGSTER_CONTAINER_CONTEXT": json.dumps(container_context),
         }
     ):
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args)
 
         try:
             wait_for_grpc_server(
@@ -299,10 +290,7 @@ def test_load_with_invalid_param(capfd, entrypoint):
         "bar_value",
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args)
 
     try:
         with pytest.raises(
@@ -335,10 +323,7 @@ def test_load_with_error(capfd):
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args)
 
     try:
         with pytest.raises(Exception):
@@ -389,10 +374,7 @@ def test_load_with_empty_working_directory(capfd):
     ]
 
     with new_cwd(os.path.dirname(__file__)):
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args)
 
         try:
             wait_for_grpc_server(
@@ -417,10 +399,7 @@ def test_load_with_empty_working_directory(capfd):
             "--empty-working-directory",
         ]
 
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args)
         try:
             with pytest.raises(Exception):
                 wait_for_grpc_server(
@@ -452,10 +431,7 @@ def test_crash_during_load():
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args)
     try:
         with pytest.raises(
             Exception,
@@ -487,7 +463,7 @@ def test_load_timeout():
         python_file,
     ]
 
-    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    process = subprocess.Popen(subprocess_args)
 
     timeout_exception = None
 
@@ -528,7 +504,7 @@ def test_load_timeout_code_server_cli():
         "1",
     ]
 
-    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    process = subprocess.Popen(subprocess_args)
 
     try:
         wait_for_grpc_server(
@@ -562,7 +538,7 @@ def test_lazy_load_with_error():
         "--lazy-load-user-code",
     ]
 
-    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    process = subprocess.Popen(subprocess_args)
 
     try:
         wait_for_grpc_server(
@@ -590,10 +566,7 @@ def test_lazy_load_via_env_var(entrypoint):
             python_file,
         ]
 
-        process = subprocess.Popen(
-            subprocess_args,
-            stdout=subprocess.PIPE,
-        )
+        process = subprocess.Popen(subprocess_args)
 
         try:
             wait_for_grpc_server(
@@ -624,7 +597,7 @@ def test_load_with_missing_env_var(entrypoint):
             python_file,
         ]
 
-        process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+        process = subprocess.Popen(subprocess_args)
         try:
             wait_for_grpc_server(process, client, subprocess_args)
             list_repositories_response = deserialize_value(
@@ -753,10 +726,7 @@ def test_streaming(entrypoint):
         python_file,
     ]
 
-    process = subprocess.Popen(
-        subprocess_args,
-        stdout=subprocess.PIPE,
-    )
+    process = subprocess.Popen(subprocess_args)
 
     try:
         wait_for_grpc_server(
