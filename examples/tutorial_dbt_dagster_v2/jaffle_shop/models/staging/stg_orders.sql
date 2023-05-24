@@ -1,3 +1,5 @@
+{{ config(alias='staging_orders') }}
+
 with source as (
 
     {#-
