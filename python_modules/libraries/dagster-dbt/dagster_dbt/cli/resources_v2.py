@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
@@ -17,6 +18,7 @@ from dagster._annotations import experimental
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
 from pydantic import Field
+from typing_extensions import Literal
 
 from ..asset_utils import default_asset_key_fn, output_name_fn
 
@@ -75,7 +77,7 @@ class DbtManifest:
         return {output_name_fn(node): node for node in self.node_info_by_dbt_unique_id.values()}
 
     @property
-    def output_asset_key_replacements(self) -> Mapping[AssetKey, AssetKey]:
+    def asset_key_replacements(self) -> Mapping[AssetKey, AssetKey]:
         """A mapping of replacement asset keys for a dbt node to the node's dictionary representation in the manifest.
         """
         return {
@@ -225,6 +227,8 @@ class DbtCliEventMessage:
 class DbtCliTask:
     process: subprocess.Popen
     manifest: DbtManifest
+    project_dir: str
+    target_path: str
 
     def wait(self) -> Sequence[DbtCliEventMessage]:
         """Wait for the dbt CLI process to complete and return the events.
@@ -267,6 +271,29 @@ class DbtCliTask:
 
         return return_code
 
+    def get_artifact(
+        self,
+        artifact: Union[
+            Literal["manifest.json"],
+            Literal["catalog.json"],
+            Literal["run_results.json"],
+            Literal["sources.json"],
+        ],
+    ) -> Dict[str, Any]:
+        """Retrieve a dbt artifact from the target path.
+
+        See https://docs.getdbt.com/reference/artifacts/dbt-artifacts.
+
+        Args:
+            artifact (Union[Literal["manifest.json"], Literal["catalog.json"], Literal["run_results.json"], Literal["sources.json"]]): The name of the artifact to retrieve.
+
+        Returns:
+            Dict[str, Any]: The artifact as a dictionary.
+        """
+        artifact_path = os.path.join(self.project_dir, self.target_path, artifact)
+        with open(artifact_path) as handle:
+            return json.loads(handle.read())
+
 
 @experimental
 class DbtCli(ConfigurableResource):
@@ -287,6 +314,22 @@ class DbtCli(ConfigurableResource):
             " https://docs.getdbt.com/reference/global-configs for a full list of configuration."
         ),
     )
+
+    def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> str:
+        """Get a unique target path for the dbt CLI invocation.
+
+        Args:
+            context (Optional[OpExecutionContext]): The execution context.
+
+        Returns:
+            str: A unique target path for the dbt CLI invocation.
+        """
+        current_unix_timestamp = str(int(time.time()))
+        path = current_unix_timestamp
+        if context:
+            path = f"{context.op.name}-{context.run_id[:7]}-{current_unix_timestamp}"
+
+        return f"target/{path}"
 
     def cli(
         self,
@@ -317,13 +360,19 @@ class DbtCli(ConfigurableResource):
                 def my_dbt_assets(dbt: DbtCli):
                     yield from dbt.cli(["run"], manifest=manifest).stream()
         """
-        # Run dbt with unbuffered output.
-        env = os.environ.copy()
-        env["PYTHONUNBUFFERED"] = "1"
-
-        # The DBT_LOG_FORMAT environment variable must be set to `json`. We use this
-        # environment variable to ensure that the dbt CLI outputs structured logs.
-        env["DBT_LOG_FORMAT"] = "json"
+        target_path = self._get_unique_target_path(context=context)
+        env = {
+            **os.environ.copy(),
+            # Run dbt with unbuffered output.
+            "PYTHONUNBUFFERED": "1",
+            # The DBT_LOG_FORMAT environment variable must be set to `json`. We use this
+            # environment variable to ensure that the dbt CLI outputs structured logs.
+            "DBT_LOG_FORMAT": "json",
+            # The DBT_TARGET_PATH environment variable is set to a unique value for each dbt
+            # invocation so that artifact paths are separated.
+            # See: https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
+            "DBT_TARGET_PATH": target_path,
+        }
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
@@ -352,4 +401,9 @@ class DbtCli(ConfigurableResource):
             cwd=self.project_dir,
         )
 
-        return DbtCliTask(process=process, manifest=manifest)
+        return DbtCliTask(
+            process=process,
+            manifest=manifest,
+            project_dir=self.project_dir,
+            target_path=target_path,
+        )

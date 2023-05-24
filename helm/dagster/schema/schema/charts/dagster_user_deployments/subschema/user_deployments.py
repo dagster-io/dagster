@@ -12,7 +12,8 @@ class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
-    dagsterApiGrpcArgs: List[str]
+    dagsterApiGrpcArgs: Optional[List[str]]
+    codeServerArgs: Optional[List[str]]
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
     port: int
     env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]]

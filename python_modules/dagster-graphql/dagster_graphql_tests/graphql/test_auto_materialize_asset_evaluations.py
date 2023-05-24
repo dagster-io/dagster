@@ -4,6 +4,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import execute_dagster_graphql
 
@@ -99,6 +100,8 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {"autoMaterializeAssetEvaluations": []}
 
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+
         check.not_none(
             graphql_context.instance.schedule_storage
         ).add_auto_materialize_asset_evaluations(
@@ -109,10 +112,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     partition_subsets_by_condition=[
                         (
                             MissingAutoMaterializeCondition(),
-                            StaticPartitionsDefinition(["a", "b"])
-                            .empty_subset()
-                            .with_partition_keys("a")
-                            .serialize(),
+                            SerializedPartitionsSubset.from_subset(
+                                partitions_def.empty_subset().with_partition_keys("a"),
+                                partitions_def,
+                                None,  # type: ignore
+                            ),
                         )
                     ],
                     num_requested=1,

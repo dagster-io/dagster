@@ -1,7 +1,7 @@
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Any, Mapping, Optional
 
 import pytest
-from dagster import AssetKey, file_relative_path
+from dagster import AssetKey, DailyPartitionsDefinition, PartitionsDefinition, file_relative_path
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtManifest
 
@@ -114,3 +114,40 @@ def test_selections(
     expected_select_tag = "fqn:*" if select is None else select
     assert my_dbt_assets.op.tags.get("dagster-dbt/select") == expected_select_tag
     assert my_dbt_assets.op.tags.get("dagster-dbt/exclude") == exclude
+
+
+@pytest.mark.parametrize(
+    "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
+)
+def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
+    @dbt_assets(manifest=manifest, partitions_def=partitions_def)
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.partitions_def == partitions_def
+
+
+@pytest.mark.parametrize(
+    "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
+)
+def test_with_attributes(partitions_def: Optional[PartitionsDefinition]) -> None:
+    class CustomizedDbtManifest(DbtManifest):
+        @classmethod
+        def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
+            return AssetKey(["prefix", *super().node_info_to_asset_key(node_info).path])
+
+    manifest = CustomizedDbtManifest.read(path=manifest_path)
+
+    @dbt_assets(manifest=manifest, partitions_def=partitions_def)
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.keys_by_input_name == {}
+    assert set(my_dbt_assets.keys_by_output_name.values()) == {
+        AssetKey(["prefix", "cereals"]),
+        AssetKey(["prefix", "cold_schema", "sort_cold_cereals_by_calories"]),
+        AssetKey(["prefix", "subdir_schema", "least_caloric"]),
+        AssetKey(["prefix", "orders_snapshot"]),
+        AssetKey(["prefix", "sort_hot_cereals_by_calories"]),
+        AssetKey(["prefix", "sort_by_calories"]),
+    }

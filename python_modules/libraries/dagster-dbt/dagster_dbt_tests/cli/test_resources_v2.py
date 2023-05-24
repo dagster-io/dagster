@@ -26,6 +26,35 @@ def test_dbt_cli(global_config: List[str], command: str) -> None:
     assert dbt_cli_task.process.returncode == 0
 
 
+def test_dbt_cli_get_artifact() -> None:
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+
+    dbt_cli_task_1 = dbt.cli(["run"], manifest=manifest)
+    dbt_cli_task_1.wait()
+
+    dbt_cli_task_2 = dbt.cli(["compile"], manifest=manifest)
+    dbt_cli_task_2.wait()
+
+    # `dbt run` produces a manifest.json and run_results.json
+    manifest_json_1 = dbt_cli_task_1.get_artifact("manifest.json")
+    assert manifest_json_1
+    assert dbt_cli_task_1.get_artifact("run_results.json")
+
+    # `dbt compile` produces a manifest.json and run_results.json
+    manifest_json_2 = dbt_cli_task_2.get_artifact("manifest.json")
+    assert manifest_json_2
+    assert dbt_cli_task_2.get_artifact("run_results.json")
+
+    # `dbt compile` does not produce a sources.json
+    with pytest.raises(Exception):
+        dbt_cli_task_2.get_artifact("sources.json")
+
+    # Artifacts are stored in separate paths by manipulating DBT_TARGET_PATH.
+    # As a result, their contents should be different, and newer artifacts
+    # should not overwrite older ones.
+    assert manifest_json_1 != manifest_json_2
+
+
 def test_dbt_cli_subsetted_execution(mocker: MockerFixture) -> None:
     mock_context = mocker.MagicMock()
     mock_selected_output_names = ["least_caloric", "sort_by_calories"]

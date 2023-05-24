@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from dagster import AssetsDefinition, multi_asset
+from dagster import AssetsDefinition, PartitionsDefinition, multi_asset
 from dagster._annotations import experimental
 
 from .asset_utils import get_dbt_multi_asset_args, get_deps
@@ -14,6 +14,7 @@ def dbt_assets(
     manifest: DbtManifest,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
 
@@ -54,6 +55,7 @@ def dbt_assets(
             internal_asset_deps=internal_asset_deps,
             non_argument_deps=non_argument_deps,
             compute_kind="dbt",
+            partitions_def=partitions_def,
             can_subset=True,
             op_tags={
                 **({"dagster-dbt/select": select} if select else {}),
@@ -61,6 +63,9 @@ def dbt_assets(
             },
         )(fn)
 
-        return asset_definition
+        return asset_definition.with_attributes(
+            input_asset_key_replacements=manifest.asset_key_replacements,
+            output_asset_key_replacements=manifest.asset_key_replacements,
+        )
 
     return inner
