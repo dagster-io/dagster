@@ -1747,8 +1747,10 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         with self.index_connection() as conn:
-            materialization_planned_rows = conn.execute(materialization_planned_events).fetchall()
-            materialization_rows = conn.execute(materialization_events).fetchall()
+            materialization_planned_rows = (
+                conn.execute(materialization_planned_events).mappings().all()
+            )
+            materialization_rows = conn.execute(materialization_events).mappings().all()
 
         materialization_planned_rows_by_partition = {
             cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
