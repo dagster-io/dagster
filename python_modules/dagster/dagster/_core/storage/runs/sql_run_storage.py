@@ -43,7 +43,7 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select, db_subquery
+from dagster._core.storage.sql import SqlAlchemyQuery, db_fetch_mappings, db_select, db_subquery
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -107,19 +107,14 @@ class SqlRunStorage(RunStorage):
 
     def fetchall(self, query: SqlAlchemyQuery) -> Sequence[Any]:
         with self.connect() as conn:
-            result_proxy = conn.execute(query)
-            res = result_proxy.fetchall()
-            result_proxy.close()
-
-        return res
+            return db_fetch_mappings(conn, query)
 
     def fetchone(self, query: SqlAlchemyQuery) -> Optional[Any]:
         with self.connect() as conn:
-            result_proxy = conn.execute(query)
-            row = result_proxy.fetchone()
-            result_proxy.close()
-
-        return row
+            if db.__version__.startswith("2."):
+                return conn.execute(query).mappings().first()
+            else:
+                return conn.execute(query).fetchone()
 
     def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -206,7 +201,7 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-    def _row_to_run(self, row: SqlAlchemyRow) -> DagsterRun:
+    def _row_to_run(self, row: Dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
@@ -214,7 +209,7 @@ class SqlRunStorage(RunStorage):
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[SqlAlchemyRow]) -> Sequence[DagsterRun]:
+    def _rows_to_runs(self, rows: Iterable[Dict]) -> Sequence[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -540,13 +535,13 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         rows = self.fetchall(query)
         for r in rows:
-            result[r[0]].add(r[1])
+            result[r["key"]].add(r["value"])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
 
     def get_run_tag_keys(self) -> Sequence[str]:
         query = db_select([RunTagsTable.c.key]).distinct().order_by(RunTagsTable.c.key)
         rows = self.fetchall(query)
-        return sorted([r[0] for r in rows])
+        return sorted([r["key"] for r in rows])
 
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         check.str_param(run_id, "run_id")
@@ -634,9 +629,8 @@ class SqlRunStorage(RunStorage):
             )
         )
 
-        with self.connect() as conn:
-            res = conn.execute(run_group_query)
-            run_group = self._rows_to_runs(res)
+        res = self.fetchall(run_group_query)
+        run_group = self._rows_to_runs(res)
 
         return (root_run_id, [root_run, *run_group])
 
@@ -764,8 +758,7 @@ class SqlRunStorage(RunStorage):
             .order_by(db.desc(db.column("child_counts")))
         )
 
-        with self.connect() as conn:
-            res = conn.execute(runs_and_root_runs_with_descendant_counts).fetchall()
+        res = self.fetchall(runs_and_root_runs_with_descendant_counts)
 
         # Postprocess: descendant runs get aggregated with their roots
         root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
@@ -864,7 +857,7 @@ class SqlRunStorage(RunStorage):
                 conn.execute(InstanceInfo.insert().values(run_storage_id=run_storage_id))
             return run_storage_id
         else:
-            return row[0]
+            return row["run_storage_id"]
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
         query = db_select([SnapshotsTable.c.snapshot_id]).where(
@@ -882,7 +875,7 @@ class SqlRunStorage(RunStorage):
 
         row = self.fetchone(query)
 
-        return defensively_unpack_execution_plan_snapshot_query(logging, row) if row else None  # type: ignore
+        return defensively_unpack_execution_plan_snapshot_query(logging, row["snapshot_body"]) if row else None  # type: ignore
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
@@ -984,8 +977,7 @@ class SqlRunStorage(RunStorage):
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
-        with self.connect() as conn:
-            results = conn.execute(query).fetchall()
+        results = self.fetchall(query)
 
         return len(results) > 0
 
@@ -1044,12 +1036,11 @@ class SqlRunStorage(RunStorage):
                 )
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
-        with self.connect() as conn:
-            rows = conn.execute(db_select([DaemonHeartbeatsTable.c.body]))
-            heartbeats = []
-            for row in rows:
-                heartbeats.append(deserialize_value(row.body, DaemonHeartbeat))
-            return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
+        rows = self.fetchall(db_select([DaemonHeartbeatsTable.c.body]))
+        heartbeats = []
+        for row in rows:
+            heartbeats.append(deserialize_value(row["body"], DaemonHeartbeat))
+        return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self) -> None:
         """Clears the run storage."""
@@ -1085,13 +1076,13 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_value(row[0], PartitionBackfill) for row in rows]
+        return [deserialize_value(row["body"], PartitionBackfill) for row in rows]
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
         query = db_select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
         row = self.fetchone(query)
-        return deserialize_value(row[0], PartitionBackfill) if row else None
+        return deserialize_value(row["body"], PartitionBackfill) if row else None
 
     def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
@@ -1129,13 +1120,12 @@ class SqlRunStorage(RunStorage):
     def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 
-        with self.connect() as conn:
-            rows = conn.execute(
-                db_select([KeyValueStoreTable.c.key, KeyValueStoreTable.c.value]).where(
-                    KeyValueStoreTable.c.key.in_(keys)
-                ),
-            )
-            return {row.key: row.value for row in rows}
+        rows = self.fetchall(
+            db_select([KeyValueStoreTable.c.key, KeyValueStoreTable.c.value]).where(
+                KeyValueStoreTable.c.key.in_(keys)
+            ),
+        )
+        return {row["key"]: row["value"] for row in rows}
 
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
@@ -1174,7 +1164,7 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 
 def defensively_unpack_execution_plan_snapshot_query(
-    logger: logging.Logger, row: SqlAlchemyRow
+    logger: logging.Logger, snapshot_body: Any
 ) -> Optional[Union[ExecutionPlanSnapshot, JobSnapshot]]:
     # no checking here because sqlalchemy returns a special
     # row proxy and don't want to instance check on an internal
@@ -1183,12 +1173,12 @@ def defensively_unpack_execution_plan_snapshot_query(
     def _warn(msg: str) -> None:
         logger.warning(f"get-pipeline-snapshot: {msg}")
 
-    if not isinstance(row[0], bytes):
+    if not isinstance(snapshot_body, bytes):
         _warn("First entry in row is not a binary type.")
         return None
 
     try:
-        uncompressed_bytes = zlib.decompress(row[0])
+        uncompressed_bytes = zlib.decompress(snapshot_body)
     except zlib.error:
         _warn("Could not decompress bytes stored in snapshot table.")
         return None

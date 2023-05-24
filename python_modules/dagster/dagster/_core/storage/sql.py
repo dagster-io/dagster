@@ -1,6 +1,6 @@
 import threading
 from functools import lru_cache
-from typing import Any, Iterable, Optional, Tuple, Union
+from typing import Any, Iterable, Optional, Sequence, Tuple, Union
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -133,26 +133,25 @@ def run_migrations_online(
     """
     from sqlite3 import DatabaseError
 
-    connectable = config.attributes.get("connection", None)
+    connection = config.attributes.get("connection", None)
 
-    if connectable is None:
+    if connection is None:
         raise Exception(
             "No connection set in alembic config. If you are trying to run this script from the "
             "command line, STOP and read the README."
         )
 
-    with connectable.connect() as connection:
-        try:
-            context.configure(connection=connection, target_metadata=target_metadata)
+    try:
+        context.configure(connection=connection, target_metadata=target_metadata)
 
-            with context.begin_transaction():
-                context.run_migrations()
+        with context.begin_transaction():
+            context.run_migrations()
 
-        except DatabaseError as exc:
-            # This is to deal with concurrent execution -- if this table already exists thanks to a
-            # race with another process, we are fine and can continue.
-            if "table alembic_version already exists" not in str(exc):
-                raise
+    except DatabaseError as exc:
+        # This is to deal with concurrent execution -- if this table already exists thanks to a
+        # race with another process, we are fine and can continue.
+        if "table alembic_version already exists" not in str(exc):
+            raise
 
 
 # SQLAlchemy types, compiler directives, etc. to avoid pre-0.11.0 migrations
@@ -214,7 +213,7 @@ class MySQLCompatabilityTypes:
 
 
 def db_select(items: Iterable):
-    """Utility class that allows compatability between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
+    """Utility class that allows compatibility between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
     if db.__version__.startswith("2."):
         return db.select(*items)
 
@@ -227,3 +226,11 @@ def db_subquery(query, name: str = "subquery"):
         return query.subquery(name)
 
     return query.alias(name)
+
+
+def db_fetch_mappings(conn, query: SqlAlchemyQuery) -> Sequence[Any]:
+    """Utility class that allows compatibility between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
+    if db.__version__.startswith("2."):
+        return conn.execute(query).mappings().all()
+
+    return conn.execute(query).fetchall()

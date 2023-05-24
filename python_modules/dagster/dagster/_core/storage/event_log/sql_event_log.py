@@ -37,7 +37,13 @@ from dagster._core.errors import (
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select, db_subquery
+from dagster._core.storage.sql import (
+    SqlAlchemyQuery,
+    SqlAlchemyRow,
+    db_fetch_mappings,
+    db_select,
+    db_subquery,
+)
 from dagster._serdes import (
     deserialize_value,
     serialize_value,
@@ -1758,8 +1764,8 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         with self.index_connection() as conn:
-            materialization_planned_rows = conn.execute(materialization_planned_events).fetchall()
-            materialization_rows = conn.execute(materialization_events).fetchall()
+            materialization_planned_rows = db_fetch_mappings(conn, materialization_planned_events)
+            materialization_rows = db_fetch_mappings(conn, materialization_events)
 
         materialization_planned_rows_by_partition = {
             cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
