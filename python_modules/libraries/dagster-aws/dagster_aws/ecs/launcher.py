@@ -438,8 +438,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             else:
                 spot_retries = 0
 
-            for i in range(spot_retries + 1):  # if spot_retries = 0, first try spot [i = 0] and then use on demand [i = 1]
-                if i < (spot_retries):  # if spot_retries = 0, first evaluation is True [i=0 < 1] and second evaluation is False [i=1 !< 1]
+            for i in range(spot_retries + 2):  # if spot_retries = 0, first try spot [i = 0] and then use on demand [i = 1]
+                if i < (spot_retries + 1):  # if spot_retries = 0, first evaluation is True [i=0 < 1] and second evaluation is False [i=1 !< 1]
                     try:
                         tasks = run_task()
                         break
