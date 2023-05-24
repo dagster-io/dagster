@@ -168,7 +168,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        connection.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                         stamp_alembic_rev(alembic_config, connection)
 
                 break
