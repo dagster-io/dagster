@@ -1627,7 +1627,7 @@ def external_resource_data_from_def(
     if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
         module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
         resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
-        dagster_maintained = resource_def.dagster_maintained
+        dagster_maintained = resource_type_def._dagster_maintained
     # if it's a Pythonic resource, get the underlying Pythonic class name
     elif isinstance(
         resource_type_def,

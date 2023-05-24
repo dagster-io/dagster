@@ -97,11 +97,15 @@ RESOURCES_LOCAL = {
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
     "old_style_io": snowflake_pandas_io_manager,
-    "old_style_resource": snowflake_resource.configured({"account": "bar"}),
-    "new_style_io": SnowflakePandasIOManager(
+    "old_style_resource": snowflake_resource,
+    "old_style_resource_configured": snowflake_resource.configured({"account": "bar"}),
+    "old_style_io_configured": snowflake_pandas_io_manager.configured({"account": "bar"}),
+    "new_style_io_configured": SnowflakePandasIOManager(
         database="foo", account="foo", password="foo", user="foo"
     ),
-    "new_style_resource": SnowflakeResource(
+    "new_style_resource_configured": SnowflakeResource(
         database="foo", account="foo", password="foo", user="foo"
     ),
+    "new_style_io": SnowflakePandasIOManager.configure_at_launch(),
+    "new_style_resource": SnowflakeResource.configure_at_launch(),
 }

@@ -18,6 +18,8 @@ from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, root_validator, validator
 
+from dagster._core.definitions.resource_definition import dagster_maintained
+
 try:
     import snowflake.connector
 except ImportError:
@@ -647,10 +649,11 @@ class SnowflakeConnection:
         self.execute_queries(sql_queries)
 
 
+@dagster_maintained
 @resource(
     config_schema=SnowflakeResource.to_config_schema(),
     description="THIS ONE This resource is for connecting to the Snowflake data warehouse",
-    _dagster_maintained=True,
+    # _dagster_maintained=True,
 )
 def snowflake_resource(context) -> SnowflakeConnection:
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an

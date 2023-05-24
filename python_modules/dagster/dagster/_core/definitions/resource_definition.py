@@ -96,7 +96,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
-        dagster_maintained: bool = False,
+        # dagster_maintained: bool = False,
     ):
         self._resource_fn = check.callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
@@ -108,7 +108,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
-        self._dagster_maintained = dagster_maintained
+        self._dagster_maintained = False
 
     @staticmethod
     def dagster_internal_init(
@@ -118,7 +118,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         description: Optional[str],
         required_resource_keys: Optional[AbstractSet[str]],
         version: Optional[str],
-        dagster_maintained: bool = False,
+        # dagster_maintained: bool = False,
     ) -> "ResourceDefinition":
         return ResourceDefinition(
             resource_fn=resource_fn,
@@ -126,7 +126,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
-            dagster_maintained=dagster_maintained,
+            # dagster_maintained=dagster_maintained,
         )
 
     @property
@@ -215,14 +215,18 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "ResourceDefinition":
-        return ResourceDefinition.dagster_internal_init(
+        resource_def = ResourceDefinition.dagster_internal_init(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
             required_resource_keys=self.required_resource_keys,
             version=self.version,
-            dagster_maintained=self.dagster_maintained,
+            # dagster_maintained=self.dagster_maintained,
         )
+
+        resource_def._dagster_maintained = self.dagster_maintained
+
+        return resource_def
 
     def __call__(self, *args, **kwargs):
         from dagster._core.execution.context.init import UnboundInitResourceContext
@@ -275,6 +279,11 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
 
 
+def dagster_maintained(resource_def: ResourceDefinition) -> Callable[[ResourceDefinition], ResourceDefinition]:
+    resource_def._dagster_maintained = True
+    return resource_def
+
+
 class _ResourceDecoratorCallable:
     def __init__(
         self,
@@ -282,7 +291,7 @@ class _ResourceDecoratorCallable:
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
-        dagster_maintained: bool = False,
+        # dagster_maintained: bool = False,
     ):
         self.config_schema = config_schema  # checked by underlying definition
         self.description = check.opt_str_param(description, "description")
@@ -290,7 +299,7 @@ class _ResourceDecoratorCallable:
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
         )
-        self.dagster_maintained = dagster_maintained
+        # self.dagster_maintained = dagster_maintained
 
     def __call__(self, resource_fn: ResourceFunction) -> ResourceDefinition:
         check.callable_param(resource_fn, "resource_fn")
@@ -322,7 +331,7 @@ class _ResourceDecoratorCallable:
             description=self.description or format_docstring_for_description(resource_fn),
             version=self.version,
             required_resource_keys=self.required_resource_keys,
-            dagster_maintained=self.dagster_maintained,
+            # dagster_maintained=self.dagster_maintained,
         )
 
         # `update_wrapper` typing cannot currently handle a Union of Callables correctly
@@ -342,7 +351,7 @@ def resource(
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
-    _dagster_maintained: bool = ...,
+    # _dagster_maintained: bool = ...
 ) -> Callable[[ResourceFunction], "ResourceDefinition"]:
     ...
 
@@ -352,7 +361,7 @@ def resource(
     description: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
-    _dagster_maintained: bool = False,
+    # _dagster_maintained: bool = False
 ) -> Union[Callable[[ResourceFunction], "ResourceDefinition"], "ResourceDefinition"]:
     """Define a resource.
 
@@ -385,7 +394,7 @@ def resource(
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
-            dagster_maintained=_dagster_maintained,
+            # dagster_maintained=_dagster_maintained
         )(resource_fn)
 
     return _wrap

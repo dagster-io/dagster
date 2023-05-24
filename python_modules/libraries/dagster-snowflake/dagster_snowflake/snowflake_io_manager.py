@@ -18,6 +18,8 @@ from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeResource
+from dagster._core.definitions.resource_definition import dagster_maintained
+
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -91,7 +93,8 @@ def build_snowflake_io_manager(
 
     """
 
-    @io_manager(config_schema=SnowflakeIOManager.to_config_schema(), _dagster_maintained=True)
+    @dagster_maintained
+    @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
         return DbIOManager(
             type_handlers=type_handlers,
