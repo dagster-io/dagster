@@ -219,3 +219,11 @@ def db_select(items: Iterable):
         return db.select(*items)
 
     return db.select(items)
+
+
+def db_subquery(query, name: str = "subquery"):
+    """Utility class that allows compatibility between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
+    if db.__version__.startswith("2."):
+        return query.subquery(name)
+
+    return query.alias(name)
