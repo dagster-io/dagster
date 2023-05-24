@@ -23,6 +23,7 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.sql import db_select
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
@@ -556,25 +557,25 @@ def test_jobs_selector_id_migration(hostname, conn_string):
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorsTable)
+                db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
             migrated_job_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
             legacy_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(JobTickTable)
+                db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -584,7 +585,7 @@ def test_jobs_selector_id_migration(hostname, conn_string):
             instance.reindex()
 
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -809,7 +810,7 @@ def test_add_dynamic_partitions_table(hostname, conn_string):
 
 
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
-    query = db.select([db.func.count()]).select_from(table)
+    query = db_select([db.func.count()]).select_from(table)
     if with_non_null_id:
         query = query.where(table.c.id.isnot(None))
     with run_storage.connect() as conn:
