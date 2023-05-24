@@ -8,12 +8,6 @@ In this example, we use the new `dagster-dbt` APIs that require the usage of `db
 
 ## Getting started
 
-To download this example, run:
-
-```shell
-dagster project from-example --name my-dagster-project --example tutorial_dbt_dagster_v2
-```
-
 To install this example and its dependencies, run:
 
 ```shell
