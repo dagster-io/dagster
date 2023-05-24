@@ -1,4 +1,4 @@
-from typing import ContextManager, Optional
+from typing import ContextManager, Optional, cast
 
 import dagster._check as check
 import pendulum
@@ -131,15 +131,19 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
     def get_server_version(self) -> Optional[str]:
-        rows = self.execute("select version()")
-        if not rows:
+        with self.connect() as conn:
+            with conn.begin():
+                row = conn.execute(db.text("select version()")).fetchone()
+
+        if not row:
             return None
 
-        return rows[0][0]
+        return cast(str, row[0])
 
     def upgrade(self) -> None:
-        alembic_config = mysql_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self._engine)  # type: ignore  # (should 2nd arg be a Connection instead of an Engine?)
+        with self.connect() as conn:
+            alembic_config = mysql_alembic_config(__file__)
+            run_alembic_upgrade(alembic_config, conn)
 
     def _add_or_update_instigators_table(self, conn: Connection, state) -> None:
         selector_id = state.selector_id

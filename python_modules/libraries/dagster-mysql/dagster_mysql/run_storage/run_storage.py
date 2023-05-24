@@ -1,4 +1,4 @@
-from typing import ContextManager, Mapping, Optional
+from typing import ContextManager, Mapping, Optional, cast
 
 import dagster._check as check
 import sqlalchemy as db
@@ -109,11 +109,14 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         return mysql_config()
 
     def get_server_version(self) -> Optional[str]:
-        row = self.fetchone("select version()")
+        with self.connect() as conn:
+            with conn.begin():
+                row = conn.execute(db.text("select version()")).fetchone()
+
         if not row:
             return None
 
-        return row[0]
+        return cast(str, row[0])
 
     @classmethod
     def from_config_value(
