@@ -34,12 +34,10 @@ def add_selector_id_to_jobs_table(
     with storage.connect() as conn:  # type: ignore
         rows = conn.execute(
             db.select(
-                [
-                    JobTable.c.id,
-                    JobTable.c.job_body,
-                    JobTable.c.create_timestamp,
-                    JobTable.c.update_timestamp,
-                ]
+                JobTable.c.id,
+                JobTable.c.job_body,
+                JobTable.c.create_timestamp,
+                JobTable.c.update_timestamp,
             ).order_by(JobTable.c.id.asc())
         ).fetchall()
 
