@@ -31,11 +31,11 @@ from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
     create_engine,
-    db_select,
     get_alembic_config,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,

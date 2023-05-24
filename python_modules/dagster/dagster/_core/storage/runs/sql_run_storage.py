@@ -43,7 +43,8 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sqlalchemy_compat import db_select, db_subquery
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -393,8 +394,9 @@ class SqlRunStorage(RunStorage):
                     self._apply_tags_table_joins(RunsTable, filters.tags)
                 )
 
-            filtered_query = self._add_filters_to_query(filtered_query, filters)
-            filtered_query = filtered_query.alias("filtered_query")
+            filtered_query = db_subquery(
+                self._add_filters_to_query(filtered_query, filters), "filtered_query"
+            )
             if self.supports_intersect:
                 table = RunsTable.join(
                     RunTagsTable,
@@ -413,7 +415,7 @@ class SqlRunStorage(RunStorage):
                 table.join(filtered_query, RunsTable.c.run_id == filtered_query.c.run_id)
             )
 
-        subquery = base_query.alias("subquery")
+        subquery = db_subquery(base_query, "runs_subquery")
 
         # select all the columns, but skip the bucket_rank column, which is only used for applying
         # the limit / order
@@ -430,8 +432,14 @@ class SqlRunStorage(RunStorage):
         tags: Mapping[str, Union[str, Sequence[str]]],
     ) -> db.Table:
         multi_join = len(tags) > 1
+        i = 0
         for key, value in tags.items():
-            tags_table = RunTagsTable.alias() if multi_join else RunTagsTable
+            i += 1
+            tags_table = (
+                db_subquery(db_select([RunTagsTable]), f"run_tags_subquery_{i}")
+                if multi_join
+                else RunTagsTable
+            )
             table = table.join(
                 tags_table,
                 db.and_(
@@ -458,15 +466,10 @@ class SqlRunStorage(RunStorage):
         return self._rows_to_runs(rows)
 
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
-        subquery = self._runs_query(filters=filters).alias("subquery")
-
-        # We use an alias here because Postgres requires subqueries to be
-        # aliased.
-        subquery = subquery.alias("subquery")
-
-        query = db_select([db.func.count()]).select_from(subquery)
-        rows = self.fetchall(query)
-        count = rows[0][0]
+        subquery = db_subquery(self._runs_query(filters=filters))
+        query = db_select([db.func.count().label("count")]).select_from(subquery)
+        row = self.fetchone(query)
+        count = row["count"] if row else 0
         return count
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
@@ -617,26 +620,21 @@ class SqlRunStorage(RunStorage):
         # root_run_id to run_id 1:1 mapping
         # https://github.com/dagster-io/dagster/issues/2495
         # Note: we currently use tags to persist the run group info
-        root_to_run = (
+        root_to_run = db_subquery(
             db_select(
                 [RunTagsTable.c.value.label("root_run_id"), RunTagsTable.c.run_id.label("run_id")]
-            )
-            .where(
+            ).where(
                 db.and_(RunTagsTable.c.key == ROOT_RUN_ID_TAG, RunTagsTable.c.value == root_run_id)
-            )
-            .alias("root_to_run")
+            ),
+            "root_to_run",
         )
         # get run group
-        run_group_query = (
-            db_select([RunsTable.c.run_body, RunsTable.c.status])
-            .select_from(
-                root_to_run.join(
-                    RunsTable,
-                    root_to_run.c.run_id == RunsTable.c.run_id,
-                    isouter=True,
-                )
+        run_group_query = db_select([RunsTable.c.run_body, RunsTable.c.status]).select_from(
+            root_to_run.join(
+                RunsTable,
+                root_to_run.c.run_id == RunsTable.c.run_id,
+                isouter=True,
             )
-            .alias("run_group")
         )
 
         with self.connect() as conn:
@@ -652,9 +650,15 @@ class SqlRunStorage(RunStorage):
         limit: Optional[int] = None,
     ) -> Mapping[str, RunGroupInfo]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
-        runs = self._runs_query(
-            filters=filters, cursor=cursor, limit=limit, columns=["run_body", "status", "run_id"]
-        ).alias("runs")
+        runs = db_subquery(
+            self._runs_query(
+                filters=filters,
+                cursor=cursor,
+                limit=limit,
+                columns=["run_body", "status", "run_id"],
+            ),
+            "runs",
+        )
 
         # Gets us the run_id and associated root_run_id for every run in storage that is a
         # descendant run of some root
@@ -666,10 +670,9 @@ class SqlRunStorage(RunStorage):
         #     where key = @ROOT_RUN_ID_TAG
         #   )
 
-        all_descendant_runs = (
-            db_select([RunTagsTable])
-            .where(RunTagsTable.c.key == ROOT_RUN_ID_TAG)
-            .alias("all_descendant_runs")
+        all_descendant_runs = db_subquery(
+            db_select([RunTagsTable]).where(RunTagsTable.c.key == ROOT_RUN_ID_TAG),
+            "all_descendant_runs",
         )
 
         # Augment the runs in our query, for those runs that are the descendant of some root run,
@@ -686,21 +689,20 @@ class SqlRunStorage(RunStorage):
         #       on all_descendant_runs.run_id = runs.run_id
         #   )
 
-        runs_augmented = (
+        runs_augmented = db_subquery(
             db_select(
                 [
                     runs.c.run_id.label("run_id"),
                     all_descendant_runs.c.value.label("root_run_id"),
                 ]
-            )
-            .select_from(
+            ).select_from(
                 runs.join(
                     all_descendant_runs,
                     all_descendant_runs.c.run_id == RunsTable.c.run_id,
                     isouter=True,
                 )
-            )
-            .alias("runs_augmented")
+            ),
+            "runs_augmented",
         )
 
         # Get all the runs our query will return. This includes runs as well as their root runs.
@@ -715,7 +717,7 @@ class SqlRunStorage(RunStorage):
         #        runs.run_id = runs_augmented.root_run_id
         #    )
 
-        runs_and_root_runs = (
+        runs_and_root_runs = db_subquery(
             db_select([RunsTable.c.run_id.label("run_id")])
             .distinct()
             .select_from(runs_augmented)
@@ -724,8 +726,9 @@ class SqlRunStorage(RunStorage):
                     RunsTable.c.run_id == runs_augmented.c.run_id,
                     RunsTable.c.run_id == runs_augmented.c.root_run_id,
                 )
-            )
-        ).alias("runs_and_root_runs")
+            ),
+            "runs_and_root_runs",
+        )
 
         # We count the descendants of all of the runs in our query that are roots so that
         # we can accurately display when a root run has more descendants than are returned by this

@@ -24,10 +24,10 @@ from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
     create_engine,
-    db_select,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
 from sqlalchemy.engine import Connection
 
