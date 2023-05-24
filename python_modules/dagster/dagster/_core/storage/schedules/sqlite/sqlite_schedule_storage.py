@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
+import sqlalchemy as db
 from packaging.version import parse
 from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
@@ -67,7 +68,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 ScheduleStorageSqlMetadata.create_all(engine)
-                connection.execute("PRAGMA journal_mode=WAL;")
+                connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_migrate_data = True
 
