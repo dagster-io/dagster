@@ -109,11 +109,11 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         return mysql_config()
 
     def get_server_version(self) -> Optional[str]:
-        row = self.fetchone("select version()")
+        row = self.fetchone(db.text("select version() as version"))
         if not row:
             return None
 
-        return row[0]
+        return row["version"]
 
     @classmethod
     def from_config_value(
