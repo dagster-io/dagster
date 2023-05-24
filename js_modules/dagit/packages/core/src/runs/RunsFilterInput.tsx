@@ -203,14 +203,20 @@ export interface RunsFilterInputProps {
 
 export const RunsFilterInput = (props: RunsFilterInputProps) => {
   const {flagRunsTableFiltering} = useFeatureFlags();
-  const {button, activeFiltersJsx} = useRunsFilterInputNew(props);
   return flagRunsTableFiltering ? (
+    <RunsFilterInputNew {...props} />
+  ) : (
+    <RunsFilterInputImpl {...props} />
+  );
+};
+
+const RunsFilterInputNew = (props: RunsFilterInputProps) => {
+  const {button, activeFiltersJsx} = useRunsFilterInputNew(props);
+  return (
     <div>
       {button}
       {activeFiltersJsx}
     </div>
-  ) : (
-    <RunsFilterInputImpl {...props} />
   );
 };
 
