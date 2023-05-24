@@ -320,9 +320,8 @@ class SqlRunStorage(RunStorage):
         else:
             table = RunsTable
 
-        base_query = db.select(getattr(RunsTable.c, column) for column in columns).select_from(
-            table
-        )
+        base_columns = [getattr(RunsTable.c, column) for column in columns]
+        base_query = db.select(*base_columns).select_from(table)
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
@@ -381,7 +380,7 @@ class SqlRunStorage(RunStorage):
                     {bucket_by.tag_key: bucket_by.tag_values},
                 )
 
-            base_query = db.select(query_columns).select_from(table)
+            base_query = db.select(*query_columns).select_from(table)
             base_query = self._add_filters_to_query(base_query, filters)
         else:
             # there are tag filters as well as tag buckets, so we have to apply the tag filters in
