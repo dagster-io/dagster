@@ -137,14 +137,13 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def get_server_version(self) -> Optional[str]:
         with self.index_connection() as conn:
-            result_proxy = conn.execute("select version()")
-            row = result_proxy.fetchone()
-            result_proxy.close()
+            with conn.begin():
+                row = conn.execute(db.text("select version() as version")).mappings().first()
 
         if not row:
             return None
 
-        return row[0]  # type: ignore
+        return row["version"]
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
