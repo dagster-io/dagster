@@ -48,7 +48,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
         return
 
     query = (
-        db.select([SqlEventLogStorageTable.c.asset_key])
+        db.select(SqlEventLogStorageTable.c.asset_key)
         .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
         .group_by(SqlEventLogStorageTable.c.asset_key)
     )
@@ -87,11 +87,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
             print_fn("Querying asset keys.")
         results = conn.execute(
             db.select(
-                [
-                    AssetKeyTable.c.asset_key,
-                    AssetKeyTable.c.asset_details,
-                    AssetKeyTable.c.last_materialization,
-                ]
+                AssetKeyTable.c.asset_key,
+                AssetKeyTable.c.asset_details,
+                AssetKeyTable.c.last_materialization,
             )
         ).fetchall()
 
@@ -118,7 +116,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
 
             if not event:
                 materialization_query = (
-                    db.select([SqlEventLogStorageTable.c.event])
+                    db.select(SqlEventLogStorageTable.c.event)
                     .where(
                         SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     )
@@ -164,7 +162,7 @@ def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
     from .schema import SqlEventLogStorageTable
 
     while True:
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
+        query = db.select(SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event).where(
             SqlEventLogStorageTable.c.asset_key != None  # noqa: E711
         )
         if cursor:

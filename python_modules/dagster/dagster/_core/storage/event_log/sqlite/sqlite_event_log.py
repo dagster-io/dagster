@@ -284,7 +284,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        query = db.select(SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event)
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
