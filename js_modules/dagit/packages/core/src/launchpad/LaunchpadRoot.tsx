@@ -111,7 +111,6 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
       variables: {repositoryName, repositoryLocationName, pipelineName},
-      partialRefetch: true,
     },
   );
 
