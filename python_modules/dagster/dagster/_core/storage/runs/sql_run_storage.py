@@ -623,19 +623,15 @@ class SqlRunStorage(RunStorage):
             .where(
                 db.and_(RunTagsTable.c.key == ROOT_RUN_ID_TAG, RunTagsTable.c.value == root_run_id)
             )
-            .alias("root_to_run")
+            .subquery()
         )
         # get run group
-        run_group_query = (
-            db.select(RunsTable.c.run_body, RunsTable.c.status)
-            .select_from(
-                root_to_run.join(
-                    RunsTable,
-                    root_to_run.c.run_id == RunsTable.c.run_id,
-                    isouter=True,
-                )
+        run_group_query = db.select(RunsTable.c.run_body, RunsTable.c.status).select_from(
+            root_to_run.join(
+                RunsTable,
+                root_to_run.c.run_id == RunsTable.c.run_id,
+                isouter=True,
             )
-            .alias("run_group")
         )
 
         with self.connect() as conn:
