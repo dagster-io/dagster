@@ -4,6 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Mapping, Optional
 
+import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 from typing_extensions import Self
 from watchdog.events import PatternMatchingEventHandler
@@ -88,7 +89,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 SqlEventLogStorageMetadata.create_all(engine)
-                engine.execute("PRAGMA journal_mode=WAL;")
+                connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
