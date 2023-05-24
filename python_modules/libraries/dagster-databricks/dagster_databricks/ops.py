@@ -45,6 +45,8 @@ def create_databricks_run_now_op(
             before raising an error.
         name (Optional[str]): The name of the op. If not provided, the name will be
             _databricks_run_now_op.
+        databricks_resource_key (Optional[str]): The name of the resource key used by this op. If not
+        provided, the resource key will be "databricks".
 
     Returns:
         OpDefinition: An op definition to run the Databricks Job.
