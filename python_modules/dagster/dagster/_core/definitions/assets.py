@@ -1380,32 +1380,18 @@ def _validate_self_deps(
     partition_mappings: Mapping[AssetKey, PartitionMapping],
     partitions_def: Optional[PartitionsDefinition],
 ) -> None:
-    is_valid_self_dep_mapping = (
-        lambda partition_mapping: isinstance(partition_mapping, TimeWindowPartitionMapping)
-        and (partition_mapping.start_offset or 0) < 0
-        and (partition_mapping.end_offset or 0) < 0
-    )
     output_keys_set = set(output_keys)
     for input_key in input_keys:
         if input_key in output_keys_set:
             if input_key in partition_mappings:
                 partition_mapping = partition_mappings[input_key]
+                time_window_partition_mapping = get_self_dep_time_window_partition_mapping(
+                    partition_mapping, partitions_def
+                )
                 if (
-                    isinstance(partitions_def, TimeWindowPartitionsDefinition)
-                    and is_valid_self_dep_mapping(partition_mapping)
-                ) or (
-                    (
-                        isinstance(partitions_def, MultiPartitionsDefinition)
-                        and partitions_def.has_one_time_window_dimension
-                        and isinstance(partition_mapping, MultiPartitionMapping)
-                        and partitions_def.time_window_dimension.name
-                        in partition_mapping.downstream_mappings_by_upstream_dimension
-                        and is_valid_self_dep_mapping(
-                            partition_mapping.downstream_mappings_by_upstream_dimension[
-                                partitions_def.time_window_dimension.name
-                            ].partition_mapping
-                        )
-                    )
+                    time_window_partition_mapping is not None
+                    and (time_window_partition_mapping.start_offset or 0) < 0
+                    and (time_window_partition_mapping.end_offset or 0) < 0
                 ):
                     continue
 
@@ -1414,3 +1400,28 @@ def _validate_self_deps(
                 " partition depends on earlier partitions\n(b) multipartitioned, with one time"
                 " dimension that depends on earlier time partitions"
             )
+
+
+def get_self_dep_time_window_partition_mapping(
+    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+) -> Optional[TimeWindowPartitionMapping]:
+    """Returns a time window partition mapping dimension of the provided partition mapping,
+    if exists.
+    """
+    if isinstance(partition_mapping, TimeWindowPartitionMapping):
+        return partition_mapping
+    elif isinstance(partition_mapping, MultiPartitionMapping):
+        if not isinstance(partitions_def, MultiPartitionsDefinition):
+            return None
+
+        time_partition_mapping = partition_mapping.downstream_mappings_by_upstream_dimension.get(
+            partitions_def.time_window_dimension.name
+        )
+
+        if time_partition_mapping is None or not isinstance(
+            time_partition_mapping.partition_mapping, TimeWindowPartitionMapping
+        ):
+            return None
+
+        return time_partition_mapping.partition_mapping
+    return None

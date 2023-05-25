@@ -30,6 +30,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._check import CheckError
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -797,26 +798,36 @@ def test_multi_asset_retry_policy():
                 }
             ),
         ),
-        (
-            MultiPartitionsDefinition(
-                {
-                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                }
-            ),
-            MultiPartitionMapping(
-                {
-                    "123": DimensionPartitionMapping("123", IdentityPartitionMapping()),
-                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
-                }
-            ),
-        ),
     ],
 )
 def test_invalid_self_dep(partitions_def, partition_mapping):
     with pytest.raises(
         DagsterInvalidDefinitionError, match="Assets can only depend on themselves if"
     ):
+
+        @asset(
+            partitions_def=partitions_def,
+            ins={"b": AssetIn(partition_mapping=partition_mapping)},
+        )
+        def b(b):
+            del b
+
+
+@ignore_warning('"MultiPartitionMapping" is an experimental class')
+def test_invalid_self_dep_no_time_dimension():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+    partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping("123", IdentityPartitionMapping()),
+            "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+        }
+    )
+    with pytest.raises(CheckError, match="Expected exactly one time window partitioned dimension"):
 
         @asset(
             partitions_def=partitions_def,

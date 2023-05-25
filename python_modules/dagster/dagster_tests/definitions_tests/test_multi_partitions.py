@@ -20,7 +20,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
@@ -472,9 +472,13 @@ def test_context_partition_time_window():
     def my_asset(context):
         time_window = TimeWindow(
             start=pendulum.instance(
-                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+                datetime(year=2020, month=1, day=1),
+                tz=get_time_partitions_def(partitions_def).timezone,
             ),
-            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+            end=pendulum.instance(
+                datetime(year=2020, month=1, day=2),
+                tz=get_time_partitions_def(partitions_def).timezone,
+            ),
         )
         assert context.partition_time_window == time_window
         assert context.asset_partitions_time_window_for_output() == time_window

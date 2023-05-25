@@ -32,11 +32,15 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
-from .multi_dimensional_partitions import MultiPartitionsDefinition
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
-from .time_window_partitions import TimeWindowPartitionsDefinition
+from .time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    get_time_partition_key,
+    get_time_partitions_def,
+    has_one_dimension_time_window_partitioning,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -659,45 +663,37 @@ class ToposortedPriorityQueue:
         )
 
         def _sort_key_for_time_window_partition(
-            partitions_def: Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
+            partitions_def: TimeWindowPartitionsDefinition,
+            time_partition_key: str,
         ) -> float:
-            if not asset_partition.partition_key:
-                check.failed("A partitioned asset must have a selected partition key")
-
             # A sort key such that time window partitions are sorted from oldest to newest
             return pendulum.instance(
-                datetime.strptime(
-                    cast(
-                        str,
-                        partitions_def.get_partition_key_from_str(
-                            asset_partition.partition_key
-                        ).keys_by_dimension[partitions_def.time_window_dimension.name]
-                        if isinstance(partitions_def, MultiPartitionsDefinition)
-                        else asset_partition.partition_key,
-                    ),
-                    partitions_def.fmt,
-                ),
+                datetime.strptime(time_partition_key, partitions_def.fmt),
                 tz=partitions_def.timezone,
             ).timestamp()
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            if partitions_def is not None and (
-                isinstance(partitions_def, TimeWindowPartitionsDefinition)
-                or isinstance(partitions_def, MultiPartitionsDefinition)
+            if partitions_def is None or not has_one_dimension_time_window_partitioning(
+                partitions_def
             ):
-                # sort self dependencies from oldest to newest, as older partitions must exist before
-                # new ones can execute
-                partition_sort_key = _sort_key_for_time_window_partition(partitions_def)
-            else:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
                 )
+
+            # sort self dependencies from oldest to newest, as older partitions must exist before
+            # new ones can execute
+            partition_sort_key = _sort_key_for_time_window_partition(
+                get_time_partitions_def(partitions_def),
+                get_time_partition_key(partitions_def, asset_partition.partition_key),
+            )
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
             # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
             # than older ones
-            partition_sort_key = -1 * _sort_key_for_time_window_partition(partitions_def)
+            partition_sort_key = -1 * _sort_key_for_time_window_partition(
+                partitions_def, cast(str, asset_partition.partition_key)
+            )
         else:
             partition_sort_key = None
 
