@@ -1,0 +1,86 @@
+---
+title: "Utilizing SCIM provisioning in Dagster Cloud | Dagster Docs"
+
+display_name: "SCIM"
+feature_name: "scim"
+pricing_plan: "enterprise"
+---
+
+# Utilizing SCIM provisioning in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. With SCIM, you can:
+
+- Centralize user management in your Identity Provider (IdP)
+- Sync users and groups to Dagster Cloud from your IdP
+- TODO?
+
+---
+
+## Understanding SCIM provisioning
+
+SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled, you can automatically sync user information from your IdP to Dagster Cloud and back again, ensuring user data is always up-to-date.
+
+For a detailed look at SCIM provisioning, [check out this blog post](https://www.strongdm.com/blog/scim-provisioning).
+
+### Managing users
+
+When SCIM is enabled in Dagster Cloud, a few things about user management will change:
+
+- **New users must be added in the IdP.** The ability to add new users will be disabled in Dagster Cloud while SCIM is enabled.
+- **Updates to users' emails and names must be completed in the IdP.** When these attributes are changed in the IdP, they'll automatically be synced to Dagster Cloud.
+- **Only 'unsynced' users can be removed in Dagster Cloud.** 'Synced' users will have an icon indicating they're externally managed, while unsynced users will not. For example, the first two users in the following image are synced, while the last isn't:
+
+  <Image
+  alt="Highlighted unsynced user in the Dagster Cloud UI"
+  src="/images/dagster-cloud/sso/scim-unsynced-user.png"
+  width={732}
+  height={376}
+  />
+
+### Managing teams
+
+In addition to the above user management changes, there are a few thigs to keep in mind when managing user groups, otherwise known as Dagster Cloud [teams](/dagster-cloud/account/managing-users/managing-teams).
+
+When SCIM is enabled, we recommend managing groups only in your IdP. You can create and modify groups, including memberships, in the IdP and then push them to Dagster Cloud as teams. If you make changes in Dagster Cloud, they may be overwritten when a sync is triggered from the IdP.
+
+---
+
+## Enabling SCIM provisioning
+
+### Prerequisites
+
+To use SCIM provisioning, you'll need:
+
+- A Dagster Cloud Enterprise plan
+- [An IdP for which Dagster Cloud supports SSO and SCIM](#supported-identity-providers)
+- Permissions in your IdP that allow you to configure SSO and SCIM
+
+### Supported Identity Providers
+
+Dagster Cloud currently supports SCIM provisioning for the following Identity Providers (IdP):
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-cloud/account/authentication/setting-up-okta-scim-provisioning"
+    title="Okta"
+  ></ArticleListItem>
+</ArticleList>
+
+Use the setup guide for your IdP to get started.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-user-roles-permissions"
+    title="Managing user roles and permissions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-cloud/account/managing-users/managing-teams"
+    title="Managing teams"
+  ></ArticleListItem>
+</ArticleList>
