@@ -1,11 +1,10 @@
 from dagster import OpExecutionContext
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtCli
+from dagster_dbt.cli import DbtCli, DbtManifest
 
-from tutorial_dbt_dagster_v2.assets import manifest
+from . import MANIFEST_PATH
 
-STAGING_SELECT = "fqn:staging.*"
-MATERIALIZE_SELECT = "fqn:customers fqn:orders"
+manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 
 @dbt_assets(manifest=manifest, select="resource_type:seed")
@@ -13,7 +12,7 @@ def dbt_seed_assets(context: OpExecutionContext, dbt: DbtCli):
     yield from dbt.cli(["seed"], manifest=manifest, context=context).stream()
 
 
-@dbt_assets(manifest=manifest, select=STAGING_SELECT)
+@dbt_assets(manifest=manifest, select="fqn:staging.*")
 def dbt_staging_assets(context: OpExecutionContext, dbt: DbtCli):
     dbt_commands = [
         ["run"],
@@ -24,7 +23,7 @@ def dbt_staging_assets(context: OpExecutionContext, dbt: DbtCli):
         yield from dbt.cli(dbt_command, manifest=manifest, context=context).stream()
 
 
-@dbt_assets(manifest=manifest, select=MATERIALIZE_SELECT)
+@dbt_assets(manifest=manifest, select="fqn:customers fqn:orders")
 def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
     dbt_commands = [
         ["run"],

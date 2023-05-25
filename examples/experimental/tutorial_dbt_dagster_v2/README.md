@@ -15,8 +15,16 @@ cd my-dagster-project
 pip install -e ".[dev]"
 ```
 
+Compile the dbt project:
+
+```shell
+cd jaffle_shop
+dbt compile
+```
+
 At this point, you can view the **completed** project in the Dagster UI by running:
 
 ```shell
+cd ..
 dagster dev
 ```
