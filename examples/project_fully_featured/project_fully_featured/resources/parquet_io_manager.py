@@ -26,11 +26,6 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
 
     pyspark: ResourceDependency[PySparkResource]
 
-    @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        return True
-
     @property
     def _base_path(self):
         raise NotImplementedError()

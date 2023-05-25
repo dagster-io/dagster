@@ -474,11 +474,6 @@ class DbtCliResource(DbtCliClient):
 class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObjectToOpContext):
     """Resource which issues dbt CLI commands against a configured dbt project."""
 
-    @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        return True
-
     class Config:
         extra = "allow"
 
