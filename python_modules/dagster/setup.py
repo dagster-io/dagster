@@ -91,7 +91,7 @@ setup(
         "tabulate",
         "tomli",
         "tqdm",
-        "typing_extensions>=4.4.0,<4.6.0",
+        "typing_extensions>=4.4.0",
         "sqlalchemy>=1.0,<2.0.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
@@ -100,7 +100,8 @@ setup(
         'pywin32 != 226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib",
-        "pydantic",
+        # https://github.com/pydantic/pydantic/issues/5821
+        "pydantic != 1.10.7",
     ],
     extras_require={
         "docker": ["docker"],
