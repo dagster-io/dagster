@@ -78,7 +78,7 @@ basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 
 ## conditional_monitoring_start
 
-from dagster import RunRequest, asset
+from dagster import RunRequest, asset, Output 
 from sklearn import linear_model
 
 
