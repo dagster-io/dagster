@@ -713,6 +713,7 @@ type FreshnessPolicy {
 
 type AutoMaterializePolicy {
   policyType: AutoMaterializePolicyType!
+  maxMaterializationsPerMinute: Int
 }
 
 enum AutoMaterializePolicyType {
