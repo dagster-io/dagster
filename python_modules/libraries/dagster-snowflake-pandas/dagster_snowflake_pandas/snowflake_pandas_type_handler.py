@@ -291,8 +291,9 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
 
     """
 
+    @classmethod
     @property
-    def _dagster_maintained(self) -> bool:
+    def _dagster_maintained(cls) -> bool:
         return True
 
     @staticmethod

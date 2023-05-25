@@ -21,8 +21,9 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
     def _base_path(self):
         return self.base_path
 
+    @classmethod
     @property
-    def _dagster_maintained(self) -> bool:
+    def _dagster_maintained(cls) -> bool:
         return True
 
     def handle_output(self, context, obj):

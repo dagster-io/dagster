@@ -28,8 +28,9 @@ class HNClient(ConfigurableResource, ABC):
 
 
 class HNAPIClient(HNClient):
+    @classmethod
     @property
-    def _dagster_maintained(self) -> bool:
+    def _dagster_maintained(cls) -> bool:
         return True
 
     def fetch_item_by_id(self, item_id: int) -> Optional[HNItemRecord]:

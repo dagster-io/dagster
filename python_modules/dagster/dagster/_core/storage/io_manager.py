@@ -59,7 +59,6 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         version: Optional[str] = None,
         input_config_schema: CoercableToConfigSchema = None,
         output_config_schema: CoercableToConfigSchema = None,
-        # dagster_maintained: bool = False,
     ):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
@@ -78,7 +77,6 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
-            # dagster_maintained=dagster_maintained,
         )
 
     @property
@@ -134,10 +132,6 @@ class IOManager(InputManager, OutputManager):
     ``handle_output`` to store an object and ``load_input`` to retrieve an object.
     """
 
-    # @property
-    # def _dagster_maintained(self) -> bool:
-    #     return False
-
     @public
     @abstractmethod
     def load_input(self, context: "InputContext") -> Any:
@@ -175,7 +169,6 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-    # _dagster_maintained: bool = False,
 ) -> Callable[[IOManagerFunction], IOManagerDefinition]:
     ...
 
@@ -187,7 +180,6 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-    # _dagster_maintained: bool = False,
 ) -> Union[IOManagerDefinition, Callable[[IOManagerFunction], IOManagerDefinition],]:
     """Define an IO manager.
 
@@ -247,10 +239,14 @@ def io_manager(
             version=version,
             output_config_schema=output_config_schema,
             input_config_schema=input_config_schema,
-            # dagster_maintained=_dagster_maintained,
         )(resource_fn)
 
     return _wrap
+
+
+def dagster_maintained_io_manager(io_manager_def: IOManagerDefinition) -> IOManagerDefinition:
+    io_manager_def._dagster_maintained = True
+    return io_manager_def
 
 
 class _IOManagerDecoratorCallable:
@@ -262,7 +258,6 @@ class _IOManagerDecoratorCallable:
         input_config_schema: CoercableToConfigSchema = None,
         required_resource_keys: Optional[Set[str]] = None,
         version: Optional[str] = None,
-        # dagster_maintained: bool = False,
     ):
         # type validation happens in IOManagerDefinition
         self.config_schema = config_schema
@@ -271,7 +266,6 @@ class _IOManagerDecoratorCallable:
         self.version = version
         self.output_config_schema = output_config_schema
         self.input_config_schema = input_config_schema
-        # self.dagster_maintained = dagster_maintained
 
     def __call__(self, fn: IOManagerFunction) -> IOManagerDefinition:
         check.callable_param(fn, "fn")
@@ -284,7 +278,6 @@ class _IOManagerDecoratorCallable:
             version=self.version,
             output_config_schema=self.output_config_schema,
             input_config_schema=self.input_config_schema,
-            # dagster_maintained=self.dagster_maintained,
         )
 
         # `update_wrapper` typing cannot currently handle a Union of Callables correctly

@@ -18,7 +18,6 @@ from typing import (
     Union,
     cast,
 )
-import dagster
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias, TypeGuard, get_args

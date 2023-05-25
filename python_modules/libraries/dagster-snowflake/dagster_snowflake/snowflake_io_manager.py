@@ -14,12 +14,11 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeResource
-from dagster._core.definitions.resource_definition import dagster_maintained
-
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -93,7 +92,7 @@ def build_snowflake_io_manager(
 
     """
 
-    @dagster_maintained
+    @dagster_maintained_io_manager
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
         return DbIOManager(
@@ -210,6 +209,11 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     @staticmethod
     @abstractmethod

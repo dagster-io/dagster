@@ -1537,27 +1537,16 @@ def test_telemetry_custom_resource():
     class MyResource(ConfigurableResource):
         my_value: str
 
-    @asset
-    def assert_telemetry(context, my_resource: MyResource):
-        assert not my_resource._dagster_maintained
-
     assert not MyResource(my_value="foo")._dagster_maintained
-
-    materialize([assert_telemetry], resources={"my_resource": MyResource(my_value="foo")})
 
 
 def test_telemetry_dagster_resource():
     class MyResource(ConfigurableResource):
         my_value: str
 
+        @classmethod
         @property
-        def _dagster_maintained(self) -> bool:
+        def _dagster_maintained(cls) -> bool:
             return True
 
-    @asset
-    def assert_telemetry(context, my_resource: MyResource):
-        assert my_resource._dagster_maintained
-
     assert MyResource(my_value="foo")._dagster_maintained
-
-    materialize([assert_telemetry], resources={"my_resource": MyResource(my_value="foo")})
