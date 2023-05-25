@@ -38,7 +38,7 @@ The downside is that this approach only works with PySpark, and setting up a ste
 Passing PySpark DataFrames between ops requires a little bit of extra care, compared to other data types, for a couple reasons:
 
 - Spark has a lazy execution model, which means that PySpark won't process any data until an action like `write` or `collect` is called on a DataFrame.
-- PySpark DataFrames cannot be pickled, which means that [IO Managers](/concepts/io-management/io-managers) like the `fs_io_manager` won't work for them.
+- PySpark DataFrames cannot be pickled, which means that [IO Managers](/concepts/io-management/io-managers) like the `FilesystemIOManager` won't work for them.
 
 In this example, we've defined an <PyObject module='dagster' object='IOManager' /> that knows how to store and retrieve PySpark DataFrames that are produced and consumed by ops.
 
