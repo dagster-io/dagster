@@ -470,11 +470,11 @@
                     "children": [
                       {
                         "title": "SSO",
-                        "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                        "path": "/dagster-cloud/account/authentication/okta/saml-sso"
                       },
                       {
                         "title": "SCIM",
-                        "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-scim-provisioning"
+                        "path": "/dagster-cloud/account/authentication/okta/scim-provisioning"
                       }
                     ]
                   },
