@@ -1,12 +1,11 @@
 from typing import Any, Dict
 
 import dagster._check as check
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._config.validate import validate_config
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._utils.cached_method import cached_method
+from dagster import ConfigurableResource, resource
+from dagster._core.execution.context.init import InitResourceContext
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
+from pydantic import PrivateAttr
 from pyspark.sql import SparkSession
 
 
@@ -20,20 +19,7 @@ def spark_session_from_config(spark_conf=None):
     return builder.getOrCreate()
 
 
-class PySparkClient:
-    def __init__(self, spark_conf):
-        self._spark_session = spark_session_from_config(spark_conf)
-
-    @property
-    def spark_session(self):
-        return self._spark_session
-
-    @property
-    def spark_context(self):
-        return self.spark_session.sparkContext
-
-
-class PySparkResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+class PySparkResource(ConfigurableResource):
     """This resource provides access to a PySpark Session for executing PySpark code within Dagster.
 
     Example:
@@ -59,24 +45,22 @@ class PySparkResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """
 
     spark_config: Dict[str, Any]
+    _spark_session = PrivateAttr()
 
-    @cached_method
-    def get_client(self) -> PySparkClient:
-        result = validate_config(spark_config(), self.spark_config)
-        if not result.success:
-            raise DagsterInvalidConfigError(
-                "Error when processing PySpark resource config ",
-                result.errors,
-                self.spark_config,
-            )
-        return PySparkClient(self.spark_config)
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._spark_session = spark_session_from_config(self.spark_config)
 
-    def get_object_to_set_on_execution_context(self) -> Any:
-        return self.get_client()
+    @property
+    def spark_session(self) -> Any:
+        return self._spark_session
+
+    @property
+    def spark_context(self) -> Any:
+        return self.spark_session.sparkContext
 
 
 @resource({"spark_conf": spark_config()})
-def pyspark_resource(init_context):
+def pyspark_resource(init_context) -> PySparkResource:
     """This resource provides access to a PySpark SparkSession for executing PySpark code within Dagster.
 
     Example:
@@ -95,30 +79,10 @@ def pyspark_resource(init_context):
             def my_spark_job():
                 my_op()
     """
-    return PySparkClient(init_context.resource_config["spark_conf"])
+    return PySparkResource.from_resource_context(init_context)
 
 
-class LazyPySparkClient:
-    def __init__(self, spark_conf):
-        self._spark_session = None
-        self._spark_conf = spark_conf
-
-    def _init_session(self):
-        if self._spark_session is None:
-            self._spark_session = spark_session_from_config(self._spark_conf)
-
-    @property
-    def spark_session(self):
-        self._init_session()
-        return self._spark_session
-
-    @property
-    def spark_context(self):
-        self._init_session()
-        return self._spark_session.sparkContext
-
-
-class LazyPySparkResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+class LazyPySparkResource(ConfigurableResource):
     """This resource provides access to a lazily-created  PySpark SparkSession for executing PySpark
     code within Dagster, avoiding the creation of a SparkSession object until the .spark_session attribute
     of the resource is accessed. This is helpful for avoiding the creation (and startup penalty) of a SparkSession
@@ -146,24 +110,25 @@ class LazyPySparkResource(ConfigurableResource, IAttachDifferentObjectToOpContex
     """
 
     spark_config: Dict[str, Any]
+    _spark_session = PrivateAttr()
 
-    @cached_method
-    def get_client(self) -> LazyPySparkClient:
-        result = validate_config(spark_config(), self.spark_config)
-        if not result.success:
-            raise DagsterInvalidConfigError(
-                "Error when processing PySpark resource config ",
-                result.errors,
-                self.spark_config,
-            )
-        return LazyPySparkClient(self.spark_config)
+    def _init_session(self) -> None:
+        if self._spark_session is None:
+            self._spark_session = spark_session_from_config(self.spark_config)
 
-    def get_object_to_set_on_execution_context(self) -> Any:
-        return self.get_client()
+    @property
+    def spark_session(self) -> Any:
+        self._init_session()
+        return self._spark_session
+
+    @property
+    def spark_context(self) -> Any:
+        self._init_session()
+        return self._spark_session.sparkContext
 
 
 @resource({"spark_conf": spark_config()})
-def lazy_pyspark_resource(init_context):
+def lazy_pyspark_resource(init_context) -> LazyPySparkResource:
     """This resource provides access to a lazily-created  PySpark SparkSession for executing PySpark
     code within Dagster, avoiding the creation of a SparkSession object until the .spark_session attribute
     of the resource is accessed. This is helpful for avoiding the creation (and startup penalty) of a SparkSession
@@ -185,4 +150,4 @@ def lazy_pyspark_resource(init_context):
             def my_spark_job():
                 my_op()
     """
-    return LazyPySparkClient(init_context.resource_config["spark_conf"])
+    return LazyPySparkResource.from_resource_context(init_context)
