@@ -272,6 +272,7 @@ GET_AUTO_MATERIALIZE_POLICY = """
             id
             autoMaterializePolicy {
                 policyType
+                maxMaterializationsPerMinute
             }
         }
     }
@@ -2125,6 +2126,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
+        assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["maxMaterializationsPerMinute"] == 1
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
