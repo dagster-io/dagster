@@ -8,6 +8,7 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_condition import (
     MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -18,6 +19,7 @@ from .asset_reconciliation_scenario import (
     run_request,
     single_asset_run,
 )
+from .basic_scenarios import diamond
 from .freshness_policy_scenarios import daily_to_unpartitioned, overlapping_freshness_inf
 from .partition_scenarios import (
     hourly_partitions_def,
@@ -211,5 +213,17 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2020, month=2, day=7, hour=4),
         expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2020-02-06")],
+    ),
+    "auto_materialize_policy_diamond_duplicate_conditions": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            diamond,
+            AutoMaterializePolicy.eager(),
+        ),
+        unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
+        expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
+        expected_conditions={
+            "asset3": {ParentMaterializedAutoMaterializeCondition()},
+            "asset4": {ParentMaterializedAutoMaterializeCondition()},
+        },
     ),
 }
