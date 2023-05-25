@@ -36,11 +36,7 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
-from dagster._config.snap import (
-    ConfigFieldSnap,
-    ConfigSchemaSnapshot,
-    snap_from_config_type,
-)
+from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
@@ -70,10 +66,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-    ScheduleType,
-)
+from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
@@ -1627,7 +1620,6 @@ def external_resource_data_from_def(
     if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
         module_name = check.not_none(inspect.getmodule(resource_type_def.resource_fn)).__name__
         resource_type = f"{module_name}.{resource_type_def.resource_fn.__name__}"
-        dagster_maintained = resource_type_def._dagster_maintained
     # if it's a Pythonic resource, get the underlying Pythonic class name
     elif isinstance(
         resource_type_def,
@@ -1637,10 +1629,20 @@ def external_resource_data_from_def(
         ),
     ):
         resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
-        dagster_maintained = resource_type_def._dagster_maintained
     else:
         resource_type = _get_class_name(type(resource_type_def))
-        dagster_maintained = False  # TODO - make real
+
+    dagster_maintained = (
+        resource_type_def._dagster_maintained
+        if type(resource_type_def)
+        in (
+            ResourceDefinition,
+            IOManagerDefinition,
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        )
+        else False
+    )
 
     return ExternalResourceData(
         name=name,

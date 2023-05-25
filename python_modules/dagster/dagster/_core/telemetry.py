@@ -560,12 +560,10 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
         else:
             used_custom_resources = True
 
-    d = {
+    return {
         "dagster_resources": str(used_dagster_resources),
         "has_custom_resources": str(used_custom_resources),
     }
-
-    return d  # TODO - directly return the dictionary. keeping it this way for now for debugging
 
 
 def log_external_repo_stats(
