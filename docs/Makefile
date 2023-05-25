@@ -17,12 +17,12 @@ apidoc-watch-build:
 		sphinx
 
 next-dev-install:
-	yarn --cwd=next install
+	cd next; yarn install
 
 next-watch-build:
-	yarn --cwd=next dev
+	cd next; yarn dev
 
 mdx-format: 
-	yarn --cwd=next mdx-format
+	cd next; yarn mdx-format
 
 mdx-full-format: docs_black docs_ruff mdx-format

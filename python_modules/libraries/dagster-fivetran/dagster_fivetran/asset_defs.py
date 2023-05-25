@@ -476,7 +476,7 @@ def load_assets_from_fivetran_instance(
         )
         fivetran_assets = load_assets_from_fivetran_instance(
             fivetran_instance,
-            connection_filter=lambda meta: "snowflake" in meta.name,
+            connector_filter=lambda meta: "snowflake" in meta.name,
         )
     """
     if isinstance(key_prefix, str):
