@@ -56,23 +56,28 @@ def databricks_client_factory(request):
     [
         (None, None),
         ({}, "databricks"),
-        ({
-            "python_params": [
-                "--input",
-                "schema.db.input_table",
-                "--output",
-                "schema.db.output_table",
-            ]
-        }, "another_databricks_resource"),
+        (
+            {
+                "python_params": [
+                    "--input",
+                    "schema.db.input_table",
+                    "--output",
+                    "schema.db.output_table",
+                ]
+            },
+            "custom_databricks_resource_key",
+        ),
     ],
     ids=[
-        "no Databricks job configuration",
-        "empty Databricks job configuration",
-        "Databricks job configuration with python params",
+        "no Databricks job configuration, no databricks resource key",
+        "empty Databricks job configuration, and default databricks resource key",
+        "Databricks job configuration with python params and custom databricks resource key",
     ],
 )
 def test_databricks_run_now_op(
-    databricks_client_factory, mocker: MockerFixture, databricks_job_configuration: Optional[dict],
+    databricks_client_factory,
+    mocker: MockerFixture,
+    databricks_job_configuration: Optional[dict],
     databricks_resource_key: Optional[dict],
 ) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
@@ -82,7 +87,9 @@ def test_databricks_run_now_op(
     mock_run_now.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
-    databricks_resource_name = databricks_resource_key if databricks_resource_key is not None else "databricks"
+    databricks_resource_name = (
+        databricks_resource_key if databricks_resource_key is not None else "databricks"
+    )
 
     if databricks_resource_key is not None:
         test_databricks_run_now_op = create_databricks_run_now_op(
