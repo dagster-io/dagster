@@ -1,12 +1,23 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading, useViewport} from '@dagster-io/ui';
+import {
+  Box,
+  Button,
+  Dialog,
+  Icon,
+  Tooltip,
+  Colors,
+  Subheading,
+  useViewport,
+  NonIdealState,
+  Spinner,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
-import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -32,34 +43,73 @@ export const OpJobPartitionsView: React.FC<{
   repoAddress: RepoAddress;
 }> = ({partitionSetName, repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const queryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
+  const {data, loading} = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
     {
       variables: {partitionSetName, repositorySelector},
     },
   );
 
+  if (!data) {
+    if (loading) {
+      return (
+        <Box padding={32} flex={{direction: 'column', alignItems: 'center'}}>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <Spinner purpose="body-text" />
+            <div>Loading partitions…</div>
+          </Box>
+        </Box>
+      );
+    }
+
+    return (
+      <Box padding={32}>
+        <NonIdealState
+          icon="error"
+          title="An error occurred"
+          description="An unexpected error occurred."
+        />
+      </Box>
+    );
+  }
+
+  const {partitionSetOrError} = data;
+  if (partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
+    return (
+      <Box padding={32}>
+        <NonIdealState
+          icon="search"
+          title="Partition set not found"
+          description={partitionSetOrError.message}
+        />
+      </Box>
+    );
+  }
+
+  if (partitionSetOrError.__typename === 'PythonError') {
+    return (
+      <Box padding={32}>
+        <PythonErrorInfo error={partitionSetOrError} />
+      </Box>
+    );
+  }
+
+  if (partitionSetOrError.partitionsOrError.__typename === 'PythonError') {
+    return (
+      <Box padding={32}>
+        <PythonErrorInfo error={partitionSetOrError.partitionsOrError} />
+      </Box>
+    );
+  }
+
+  const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
+
   return (
-    <Loading queryResult={queryResult}>
-      {({partitionSetOrError}) => {
-        if (
-          partitionSetOrError.__typename !== 'PartitionSet' ||
-          partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-        ) {
-          return null;
-        }
-
-        const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
-
-        return (
-          <OpJobPartitionsViewContent
-            partitionNames={partitionNames}
-            partitionSet={partitionSetOrError}
-            repoAddress={repoAddress}
-          />
-        );
-      }}
-    </Loading>
+    <OpJobPartitionsViewContent
+      partitionNames={partitionNames}
+      partitionSet={partitionSetOrError}
+      repoAddress={repoAddress}
+    />
   );
 };
 
@@ -348,6 +398,10 @@ const PARTITIONS_STATUS_QUERY = gql`
         id
         ...OpJobPartitionSet
       }
+      ... on PartitionSetNotFoundError {
+        message
+      }
+      ...PythonErrorFragment
     }
   }
 
@@ -361,6 +415,7 @@ const PARTITIONS_STATUS_QUERY = gql`
           name
         }
       }
+      ...PythonErrorFragment
     }
     partitionStatusesOrError {
       ... on PartitionStatuses {
