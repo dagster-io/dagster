@@ -478,6 +478,11 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
     class Config:
         extra = "allow"
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_dbt_client(self) -> DbtCliClient:
         context = self.get_resource_context()
         default_flags = {
