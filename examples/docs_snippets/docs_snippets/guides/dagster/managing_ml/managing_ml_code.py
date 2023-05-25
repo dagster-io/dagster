@@ -83,7 +83,7 @@ from sklearn import linear_model
 
 
 @asset
-def ml_model(training_data, test_data, model_accuracy):
+def other_ml_model(training_data, test_data, model_accuracy):
     reg = linear_model.LinearRegression()
     reg.fit(training_data)
     new_model_accuracy = reg.score(test_data)
