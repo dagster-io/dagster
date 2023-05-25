@@ -28,6 +28,11 @@ class FakeADLS2Resource(ConfigurableResource):
     account_name: str
     storage_account: Optional[str] = None
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @property
     @cached_method
     def adls2_client(self) -> "FakeADLS2ServiceClient":

@@ -181,6 +181,11 @@ class GithubResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> GithubClient:
         return GithubClient(
             client=requests.Session(),

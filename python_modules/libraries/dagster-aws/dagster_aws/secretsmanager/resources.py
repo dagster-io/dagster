@@ -50,6 +50,11 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
             )
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> "botocore.client.SecretsManager":
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
@@ -160,6 +165,11 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
         default=None,
         description="AWS Secrets Manager secrets with this tag will be fetched and made available.",
     )
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     @contextmanager
     def secrets_in_environment(

@@ -44,6 +44,11 @@ class SlackResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> WebClient:
         """Returns a ``slack_sdk.WebClient`` for interacting with the Slack API."""
         return WebClient(self.token)
