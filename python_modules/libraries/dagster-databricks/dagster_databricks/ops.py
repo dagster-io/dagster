@@ -108,7 +108,7 @@ def create_databricks_run_now_op(
     def _databricks_run_now_op(
         context: OpExecutionContext, config: DatabricksRunNowOpConfig
     ) -> None:
-        databricks: DatabricksClient = context.resources.databricks
+        databricks: DatabricksClient = getattr(context.resources, databricks_resource_key)
         jobs_service = JobsService(databricks.api_client)
 
         run_id: int = jobs_service.run_now(
