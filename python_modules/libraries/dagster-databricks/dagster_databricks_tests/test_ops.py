@@ -87,10 +87,6 @@ def test_databricks_run_now_op(
     mock_run_now.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
-    databricks_resource_name = (
-        databricks_resource_key if databricks_resource_key is not None else "databricks"
-    )
-
     if databricks_resource_key is not None:
         test_databricks_run_now_op = create_databricks_run_now_op(
             databricks_job_id=databricks_job_id,
@@ -104,6 +100,10 @@ def test_databricks_run_now_op(
             databricks_job_configuration=databricks_job_configuration,
             poll_interval_seconds=0.01,
         )
+
+    databricks_resource_name = (
+        databricks_resource_key if databricks_resource_key is not None else "databricks"
+    )
 
     @job(
         resource_defs={
@@ -125,7 +125,20 @@ def test_databricks_run_now_op(
     assert mock_get_run.call_count == 4
 
 
-def test_databricks_submit_run_op(databricks_client_factory, mocker: MockerFixture) -> None:
+@pytest.mark.parametrize(
+    "databricks_resource_key",
+    [None, "databricks", "custom_databricks_resource_key"],
+    ids=[
+        "no databricks resource key",
+        "default databricks resource key",
+        "custom databricks resource key",
+    ],
+)
+def test_databricks_submit_run_op(
+    databricks_client_factory,
+    mocker: MockerFixture,
+    databricks_resource_key: Optional[dict],
+) -> None:
     mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
     databricks_job_configuration = {
@@ -141,14 +154,25 @@ def test_databricks_submit_run_op(databricks_client_factory, mocker: MockerFixtu
     mock_submit_run.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
-    test_databricks_submit_run_op = create_databricks_submit_run_op(
-        databricks_job_configuration=databricks_job_configuration,
-        poll_interval_seconds=0.01,
+    if databricks_resource_key is not None:
+        test_databricks_submit_run_op = create_databricks_submit_run_op(
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+            databricks_resource_key=databricks_resource_key,
+        )
+    else:
+        test_databricks_submit_run_op = create_databricks_submit_run_op(
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+        )
+
+    databricks_resource_name = (
+        databricks_resource_key if databricks_resource_key is not None else "databricks"
     )
 
     @job(
         resource_defs={
-            "databricks": databricks_client_factory(
+            databricks_resource_name: databricks_client_factory(
                 host="https://abc123.cloud.databricks.com/", token="token"
             )
         }
