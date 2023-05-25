@@ -57,6 +57,11 @@ class SSMResource(ResourceWithBoto3Configuration):
             )
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> "botocore.client.ssm":
         return construct_ssm_client(
             max_attempts=self.max_attempts,
@@ -183,6 +188,11 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
             " String or StringList"
         ),
     )
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     @contextmanager
     def parameters_in_environment(

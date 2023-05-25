@@ -73,6 +73,11 @@ class ADLS2Resource(ADLS2BaseResource):
     of each.
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @property
     @cached_method
     def _raw_credential(self) -> Any:

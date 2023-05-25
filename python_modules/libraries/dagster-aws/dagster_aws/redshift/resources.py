@@ -335,6 +335,11 @@ class RedshiftClientResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> RedshiftClient:
         conn_args = {
             k: getattr(self, k, None)

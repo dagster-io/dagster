@@ -265,6 +265,11 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> AthenaClient:
         """Returns an Athena client object."""
         client = boto3.client(
