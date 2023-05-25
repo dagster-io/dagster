@@ -162,6 +162,14 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
+    def purge_evaluations(self, before: float) -> None:
+        """Wipe evaluations before a certain timestamp.
+
+        Args:
+            before (datetime): All evaluations before this datetime will get purged
+        """
+
+    @abc.abstractmethod
     def upgrade(self) -> None:
         """Perform any needed migrations."""
 
