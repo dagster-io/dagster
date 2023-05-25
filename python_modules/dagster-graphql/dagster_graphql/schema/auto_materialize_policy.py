@@ -8,6 +8,7 @@ from dagster._core.definitions.auto_materialize_policy import (
 
 class GrapheneAutoMaterializePolicy(graphene.ObjectType):
     policyType = graphene.NonNull(graphene.Enum.from_enum(AutoMaterializePolicyType))
+    maxMaterializationsPerMinute = graphene.Int()
 
     class Meta:
         name = "AutoMaterializePolicy"
@@ -18,4 +19,5 @@ class GrapheneAutoMaterializePolicy(graphene.ObjectType):
         )
         super().__init__(
             policyType=auto_materialize_policy.policy_type,
+            maxMaterializationsPerMinute=auto_materialize_policy.max_materializations_per_minute,
         )
