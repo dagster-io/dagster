@@ -1,0 +1,178 @@
+# isort: skip_file
+
+## eager_materilization_start
+
+from dagster import AutoMaterializePolicy, asset
+
+
+@asset
+def my_data():
+    ...
+
+
+@asset(
+    auto_materialize_policy=AutoMaterializePolicy.eager(
+        max_materializations_per_minute=60
+    )
+)
+def my_ml_model(my_data):
+    ...
+
+
+## eager_materilization_end
+
+## lazy_materlization_start
+
+from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
+
+
+@asset
+def my_data():
+    ...
+
+
+@asset(
+    auto_materialize_policy=AutoMaterializePolicy.lazy(),
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
+)
+def my_ml_model(my_data):
+    ...
+
+
+## lazy_materlization_end
+
+
+## without_policy_start
+from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
+
+
+@asset
+def my_data():
+    ...
+
+
+@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
+def my_ml_model(my_data):
+    ...
+
+
+@asset(
+    auto_materialize_policy=AutoMaterializePolicy.lazy(),
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
+)
+def predictions(my_ml_model):
+    ...
+
+
+## without_policy_end
+
+## basic_schedule_start
+
+from dagster import AssetSelection, define_asset_job, ScheduleDefinition
+
+ml_asset_job = define_asset_job("ml_asset_job", AssetSelection.groups("ml_asset_group"))
+
+basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
+
+## basic_schedule_end
+
+## conditional_monitoring_start
+
+from dagster import RunRequest, asset
+from sklearn import linear_model
+
+
+@asset
+def ml_model(training_data, test_data, model_accuracy):
+    reg = linear_model.LinearRegression()
+    reg.fit(training_data)
+    new_model_accuracy = reg.score(test_data)
+    if new_model_accuracy > model_accuracy:
+        yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+
+
+## conditional_monitoring_end
+
+## success_slack_start
+
+from dagster import asset_sensor, RunRequest, asset
+from sklearn import linear_model
+
+
+@asset
+def ml_model(training_data, test_data, model_accuracy):
+    reg = linear_model.LinearRegression()
+    reg.fit(training_data)
+    new_model_accuracy = reg.score(test_data)
+    if new_model_accuracy > model_accuracy:
+        yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+
+
+## success_slack_end
+
+## fail_slack_start
+
+import os
+from dagster import run_failure_sensor, RunFailureSensorContext, define_asset_job
+
+ml_job = define_asset_job("ml_training_job", selection=[ml_model])
+
+slack_on_run_failure = make_slack_on_run_failure_sensor(
+    channel="#ml_monitor_channel",
+    slack_token=os.getenv("MY_SLACK_TOKEN"),
+    monitored_jobs=(["ml_job"]),
+)
+## fail_slack_end
+
+## ui_plot_start
+from dagster import MetadataValue
+
+
+def make_plot(eval_metric):
+    plt.clf()
+    training_plot = seaborn.lineplot(eval_metric)
+    fig = training_plot.get_figure()
+    buffer = BytesIO()
+    fig.savefig(buffer)
+    image_data = base64.b64encode(buffer.getvalue())
+    return MetadataValue.md(f"![img](data:image/png;base64,{image_data.decode()})")
+
+
+## ui_plot_end
+
+## metadata_use_start
+
+from dagster import asset
+import xgboost as xgb
+from sklearn.metrics import mean_absolute_error
+
+
+@asset
+def xgboost_comments_model(transformed_training_data, transformed_test_data):
+    transformed_X_train, transformed_y_train = transformed_training_data
+    transformed_X_test, transformed_y_test = transformed_test_data
+    # Train XGBoost model, which is a highly efficient and flexible model
+    xgb_r = xgb.XGBRegressor(
+        objective="reg:squarederror", eval_metric=mean_absolute_error, n_estimators=20
+    )
+    xgb_r.fit(
+        transformed_X_train,
+        transformed_y_train,
+        eval_set=[(transformed_X_test, transformed_y_test)],
+    )
+
+    ## plot the mean absolute error values as the training progressed
+    metadata = {}
+    for eval_metric in xgb_r.evals_result()["validation_0"].keys():
+        metadata[f"{eval_metric} plot"] = make_plot(
+            xgb_r.evals_result_["validation_0"][eval_metric]
+        )
+    # keep track of the score
+    metadata["score (mean_absolute_error)"] = xgb_r.evals_result_["validation_0"][
+        "mean_absolute_error"
+    ][-1]
+
+    return Output(xgb_r, metadata=metadata)
+
+
+## metadata_use_end
