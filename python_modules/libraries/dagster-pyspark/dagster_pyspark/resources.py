@@ -45,7 +45,7 @@ class PySparkResource(ConfigurableResource):
     """
 
     spark_config: Dict[str, Any]
-    _spark_session = PrivateAttr()
+    _spark_session = PrivateAttr(default=None)
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._spark_session = spark_session_from_config(self.spark_config)
@@ -79,7 +79,10 @@ def pyspark_resource(init_context) -> PySparkResource:
             def my_spark_job():
                 my_op()
     """
-    return PySparkResource.from_resource_context(init_context)
+    context_updated_config = init_context.replace_config(
+        {"spark_config": init_context.resource_config["spark_conf"]}
+    )
+    return PySparkResource.from_resource_context(context_updated_config)
 
 
 class LazyPySparkResource(ConfigurableResource):
@@ -110,7 +113,7 @@ class LazyPySparkResource(ConfigurableResource):
     """
 
     spark_config: Dict[str, Any]
-    _spark_session = PrivateAttr()
+    _spark_session = PrivateAttr(default=None)
 
     def _init_session(self) -> None:
         if self._spark_session is None:
@@ -128,7 +131,7 @@ class LazyPySparkResource(ConfigurableResource):
 
 
 @resource({"spark_conf": spark_config()})
-def lazy_pyspark_resource(init_context) -> LazyPySparkResource:
+def lazy_pyspark_resource(init_context: InitResourceContext) -> LazyPySparkResource:
     """This resource provides access to a lazily-created  PySpark SparkSession for executing PySpark
     code within Dagster, avoiding the creation of a SparkSession object until the .spark_session attribute
     of the resource is accessed. This is helpful for avoiding the creation (and startup penalty) of a SparkSession
@@ -150,4 +153,7 @@ def lazy_pyspark_resource(init_context) -> LazyPySparkResource:
             def my_spark_job():
                 my_op()
     """
-    return LazyPySparkResource.from_resource_context(init_context)
+    context_updated_config = init_context.replace_config(
+        {"spark_config": init_context.resource_config["spark_conf"]}
+    )
+    return LazyPySparkResource.from_resource_context(context_updated_config)
