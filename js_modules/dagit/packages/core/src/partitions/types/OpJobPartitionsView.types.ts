@@ -17,7 +17,16 @@ export type PartitionsStatusQuery = {
         pipelineName: string;
         partitionsOrError:
           | {__typename: 'Partitions'; results: Array<{__typename: 'Partition'; name: string}>}
-          | {__typename: 'PythonError'};
+          | {
+              __typename: 'PythonError';
+              message: string;
+              stack: Array<string>;
+              errorChain: Array<{
+                __typename: 'ErrorChainLink';
+                isExplicitLink: boolean;
+                error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+              }>;
+            };
         partitionStatusesOrError:
           | {
               __typename: 'PartitionStatuses';
@@ -40,8 +49,17 @@ export type PartitionsStatusQuery = {
               }>;
             };
       }
-    | {__typename: 'PartitionSetNotFoundError'}
-    | {__typename: 'PythonError'};
+    | {__typename: 'PartitionSetNotFoundError'; message: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      };
 };
 
 export type OpJobPartitionSetFragment = {
@@ -51,7 +69,16 @@ export type OpJobPartitionSetFragment = {
   pipelineName: string;
   partitionsOrError:
     | {__typename: 'Partitions'; results: Array<{__typename: 'Partition'; name: string}>}
-    | {__typename: 'PythonError'};
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      };
   partitionStatusesOrError:
     | {
         __typename: 'PartitionStatuses';
