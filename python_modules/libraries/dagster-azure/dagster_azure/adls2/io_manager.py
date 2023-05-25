@@ -178,6 +178,11 @@ class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
         default="dagster", description="ADLS Gen2 file system prefix to write to."
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @property
     @cached_method
     def _internal_io_manager(self) -> PickledObjectADLS2IOManager:

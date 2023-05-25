@@ -130,6 +130,11 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
         default="dagster", description="Prefix to use for the S3 bucket for this file manager."
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @cached_method
     def inner_io_manager(self) -> PickledObjectS3IOManager:
         return PickledObjectS3IOManager(

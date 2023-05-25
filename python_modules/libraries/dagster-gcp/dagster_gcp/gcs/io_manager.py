@@ -146,6 +146,11 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     gcs_bucket: str = Field(description="GCS bucket to store files")
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @property
     @cached_method
     def _internal_io_manager(self) -> PickledObjectGCSIOManager:

@@ -100,6 +100,11 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def create_io_manager(self, context: InitResourceContext) -> "LocalOutputNotebookIOManager":
         return LocalOutputNotebookIOManager(
             base_dir=self.base_dir or check.not_none(context.instance).storage_directory(),
