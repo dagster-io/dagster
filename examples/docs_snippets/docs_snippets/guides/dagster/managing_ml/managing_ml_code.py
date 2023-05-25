@@ -78,7 +78,7 @@ basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 
 ## conditional_monitoring_start
 
-from dagster import RunRequest, asset, Output 
+from dagster import RunRequest, asset, Output
 from sklearn import linear_model
 
 
@@ -130,6 +130,7 @@ import seaborn
 import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
+
 
 def make_plot(eval_metric):
     plt.clf()
