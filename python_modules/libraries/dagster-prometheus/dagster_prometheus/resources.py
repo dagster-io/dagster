@@ -3,6 +3,7 @@ from dagster import (
     ConfigurableResource,
     resource,
 )
+from dagster._core.execution.context.init import InitResourceContext
 from prometheus_client.exposition import default_handler
 from pydantic import Field, PrivateAttr
 
@@ -49,7 +50,7 @@ class PrometheusResource(ConfigurableResource):
     )
     _registry: prometheus_client.CollectorRegistry = PrivateAttr(default=None)
 
-    def __post_init__(self) -> None:
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         self._registry = prometheus_client.CollectorRegistry()
 
     @property

@@ -789,10 +789,6 @@ class ConfigurableResourceFactory(
             nested_resources={k: v for k, v in resource_pointers.items()},
             resource_context=None,
         )
-        self.__post_init__()
-
-    def __post_init__(self) -> None:
-        pass
 
     @property
     def _schema(self):
