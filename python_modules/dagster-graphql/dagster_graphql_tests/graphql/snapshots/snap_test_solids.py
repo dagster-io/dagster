@@ -410,6 +410,14 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_static_partitioned_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'static_partitioned_assets_job'
                         },
                         'solidHandle': {
@@ -442,7 +450,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': '__ASSET_JOB_4'
+                            'name': '__ASSET_JOB_6'
                         },
                         'solidHandle': {
                             'handleID': 'downstream_weekly_partitioned_asset'
@@ -738,6 +746,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_bottom'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_bottom'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'fresh_diamond_assets'
                         },
                         'solidHandle': {
@@ -787,6 +811,22 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_left'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_left'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
                         },
                         'solidHandle': {
                             'handleID': 'fresh_diamond_left'
@@ -850,6 +890,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_right'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_right'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'fresh_diamond_assets'
                         },
                         'solidHandle': {
@@ -899,6 +955,22 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_top'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_top'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
                         },
                         'solidHandle': {
                             'handleID': 'fresh_diamond_top'
@@ -1050,6 +1122,14 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_partition_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'hanging_partition_asset_job'
                         },
                         'solidHandle': {
@@ -1130,6 +1210,14 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'middle_static_partitioned_asset_1'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'static_partitioned_assets_job'
                         },
                         'solidHandle': {
@@ -1144,6 +1232,14 @@ snapshots['test_query_all_solids 1'] = {
                     'name': 'middle_static_partitioned_asset_2'
                 },
                 'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'middle_static_partitioned_asset_2'
+                        }
+                    },
                     {
                         'pipeline': {
                             'name': 'static_partitioned_assets_job'
@@ -2266,6 +2362,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'typed_assets'
                         },
                         'solidHandle': {
@@ -2315,6 +2427,22 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_4'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
                         },
                         'solidHandle': {
                             'handleID': 'typed_multi_asset'
@@ -2423,6 +2551,22 @@ snapshots['test_query_all_solids 1'] = {
                         'solidHandle': {
                             'handleID': 'unpartitioned_upstream_of_partitioned'
                         }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unpartitioned_upstream_of_partitioned'
+                        }
                     }
                 ]
             },
@@ -2474,6 +2618,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_5'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_6'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'typed_assets'
                         },
                         'solidHandle': {
@@ -2490,7 +2650,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': '__ASSET_JOB_3'
+                            'name': '__ASSET_JOB_5'
                         },
                         'solidHandle': {
                             'handleID': 'upstream_daily_partitioned_asset'
@@ -2520,6 +2680,14 @@ snapshots['test_query_all_solids 1'] = {
                     'name': 'upstream_static_partitioned_asset'
                 },
                 'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_3'
+                        },
+                        'solidHandle': {
+                            'handleID': 'upstream_static_partitioned_asset'
+                        }
+                    },
                     {
                         'pipeline': {
                             'name': 'static_partitioned_assets_job'
