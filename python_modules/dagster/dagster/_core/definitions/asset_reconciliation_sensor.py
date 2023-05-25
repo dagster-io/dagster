@@ -644,7 +644,9 @@ def determine_asset_partitions_to_auto_materialize(
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
-    materialization_counts_by_asset_key: Dict[AssetKey, int] = defaultdict(int)
+    materialization_requests_by_asset_key: Mapping[
+        AssetKey, Set[AssetKeyPartitionKey]
+    ] = defaultdict(set)
     evaluation_time = instance_queryer.evaluation_time
 
     (
@@ -769,13 +771,17 @@ def determine_asset_partitions_to_auto_materialize(
         # need to ensure they would not cause us to exceed the rate limit
         if conditions:
             if (
+                # has a rate limit
                 auto_materialize_policy.max_materializations_per_minute is not None
-                and materialization_counts_by_asset_key[candidate.asset_key]
+                # has not already been requested
+                and candidate not in materialization_requests_by_asset_key[candidate.asset_key]
+                # current number of requested asset partitions exceeds the rate limit
+                and len(materialization_requests_by_asset_key[candidate.asset_key])
                 >= auto_materialize_policy.max_materializations_per_minute
             ):
                 conditions.add(MaxMaterializationsExceededAutoMaterializeCondition())
             else:
-                materialization_counts_by_asset_key[candidate.asset_key] += 1
+                materialization_requests_by_asset_key[candidate.asset_key].add(candidate)
 
         return conditions
 
