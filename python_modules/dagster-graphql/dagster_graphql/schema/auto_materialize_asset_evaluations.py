@@ -7,6 +7,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeDecisionType,
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
+    MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
@@ -56,6 +57,12 @@ class GrapheneParentOutdatedAutoMaterializeCondition(graphene.ObjectType):
         interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
 
 
+class GrapheneMaxMaterializationsExceededAutoMaterializeCondition(graphene.ObjectType):
+    class Meta:
+        name = "MaxMaterializationsExceededAutoMaterializeCondition"
+        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
+
+
 class GrapheneAutoMaterializeCondition(graphene.Union):
     class Meta:
         name = "AutoMaterializeCondition"
@@ -65,6 +72,7 @@ class GrapheneAutoMaterializeCondition(graphene.Union):
             GrapheneParentMaterializedAutoMaterializeCondition,
             GrapheneMissingAutoMaterializeCondition,
             GrapheneParentOutdatedAutoMaterializeCondition,
+            GrapheneMaxMaterializationsExceededAutoMaterializeCondition,
         )
 
 
@@ -86,6 +94,10 @@ def create_graphene_auto_materialize_condition(
         return GrapheneMissingAutoMaterializeCondition(decisionType=condition.decision_type)
     elif isinstance(condition, ParentOutdatedAutoMaterializeCondition):
         return GrapheneParentOutdatedAutoMaterializeCondition(decisionType=condition.decision_type)
+    elif isinstance(condition, MaxMaterializationsExceededAutoMaterializeCondition):
+        return GrapheneMaxMaterializationsExceededAutoMaterializeCondition(
+            decisionType=condition.decision_type
+        )
     else:
         check.failed(f"Unexpected condition type {type(condition)}")
 

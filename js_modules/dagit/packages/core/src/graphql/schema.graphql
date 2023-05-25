@@ -3049,6 +3049,7 @@ union AutoMaterializeCondition =
   | ParentMaterializedAutoMaterializeCondition
   | MissingAutoMaterializeCondition
   | ParentOutdatedAutoMaterializeCondition
+  | MaxMaterializationsExceededAutoMaterializeCondition
 
 type FreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
@@ -3077,6 +3078,10 @@ type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDeci
 }
 
 type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+}
+
+type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
 }
 
