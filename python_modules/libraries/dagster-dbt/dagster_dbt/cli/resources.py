@@ -4,6 +4,7 @@ import dagster._check as check
 from dagster import resource
 from dagster._annotations import public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
@@ -502,6 +503,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
         return self.get_dbt_client()
 
 
+@dagster_maintained_resource
 @resource(config_schema=DbtCliClientResource.to_config_schema())
 def dbt_cli_resource(context) -> DbtCliClient:
     """This resource issues dbt CLI commands against a configured dbt project."""

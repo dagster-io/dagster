@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping, Optional
 import dagster._check as check
 import yaml
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
@@ -248,6 +249,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         return self.get_client()
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=define_dataproc_create_cluster_config(),
     description="Manage a Dataproc cluster resource",

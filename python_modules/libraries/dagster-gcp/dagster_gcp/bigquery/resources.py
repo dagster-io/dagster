@@ -82,6 +82,7 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             yield client
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=BigQueryResource.to_config_schema(),
     description="Dagster resource for connecting to BigQuery",

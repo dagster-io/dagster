@@ -4,6 +4,7 @@ from dagster import (
     resource,
 )
 from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from prometheus_client.exposition import default_handler
 from pydantic import Field, PrivateAttr
 
@@ -145,6 +146,7 @@ class PrometheusResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=PrometheusResource.to_config_schema(),
     description="""This resource is for sending metrics to a Prometheus Pushgateway.""",
