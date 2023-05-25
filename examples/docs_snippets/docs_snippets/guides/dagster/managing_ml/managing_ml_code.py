@@ -113,7 +113,7 @@ def ml_model(training_data, test_data, model_accuracy):
 ## fail_slack_start
 
 import os
-from dagster import run_failure_sensor, RunFailureSensorContext, define_asset_job
+from dagster import make_slack_on_run_failure_sensor, define_asset_job
 
 ml_job = define_asset_job("ml_training_job", selection=[ml_model])
 
@@ -126,7 +126,10 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 
 ## ui_plot_start
 from dagster import MetadataValue
-
+import seaborn
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
 
 def make_plot(eval_metric):
     plt.clf()

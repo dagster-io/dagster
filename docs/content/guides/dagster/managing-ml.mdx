@@ -120,7 +120,7 @@ Integrating your machine learning models into Dagster allows you see when the mo
 In this example, the model is being evaluated against the previous model’s accuracy. If the model’s accuracy has improved, the model is returned for use in downstream steps, such as inference or deploying to production.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=conditional_monitoring_start  endbefore=conditional_monitoring_end
-from dagster import RunRequest, asset
+from dagster import RunRequest, asset, Output
 from sklearn import linear_model
 
 
@@ -153,7 +153,7 @@ We can also set up a sensor that triggers if an asset fails to materialize. Aler
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=fail_slack_start   endbefore=fail_slack_end
 import os
-from dagster import run_failure_sensor, RunFailureSensorContext, define_asset_job
+from dagster import make_slack_on_run_failure_sensor, define_asset_job
 
 ml_job = define_asset_job("ml_training_job", selection=[ml_model])
 
@@ -176,7 +176,10 @@ Dagster’s [`MetadataValue` types](/\_apidocs/ops#event-metadata>) enables type
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=ui_plot_start   endbefore=ui_plot_end
 from dagster import MetadataValue
-
+import seaborn
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
 
 def make_plot(eval_metric):
     plt.clf()
