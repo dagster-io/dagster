@@ -359,6 +359,7 @@ export type BoolMetadataEntry = MetadataEntry & {
 
 export enum BulkActionStatus {
   CANCELED = 'CANCELED',
+  CANCELING = 'CANCELING',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   REQUESTED = 'REQUESTED',

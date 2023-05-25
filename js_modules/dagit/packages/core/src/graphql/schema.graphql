@@ -2448,6 +2448,7 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
+  CANCELING
 }
 
 type AssetBackfillData {

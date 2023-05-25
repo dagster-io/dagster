@@ -30,6 +30,7 @@ class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELING = "CANCELING"
     CANCELED = "CANCELED"
 
     @staticmethod
