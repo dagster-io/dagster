@@ -7,6 +7,7 @@ import {
   useExecutionSessionStorage,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
+import {useFeatureFlags} from '../app/Flags';
 import {RepoAddress} from '../workspace/types';
 
 import {LaunchpadType} from './LaunchpadRoot';
@@ -28,7 +29,13 @@ interface Props {
 export const LaunchpadStoredSessionsContainer = (props: Props) => {
   const {launchpadType, pipeline, partitionSets, repoAddress, rootDefaultYaml} = props;
 
-  const initialDataForMode = useInitialDataForMode(pipeline, partitionSets, rootDefaultYaml);
+  const {flagAutoLoadDefaults} = useFeatureFlags();
+  const initialDataForMode = useInitialDataForMode(
+    pipeline,
+    partitionSets,
+    rootDefaultYaml,
+    flagAutoLoadDefaults,
+  );
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
 
   const onCreateSession = () => {

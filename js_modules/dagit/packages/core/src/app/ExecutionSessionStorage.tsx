@@ -215,6 +215,7 @@ export const useInitialDataForMode = (
   pipeline: LaunchpadSessionPipelineFragment,
   partitionSets: LaunchpadSessionPartitionSetsFragment,
   rootDefaultYaml: string | undefined,
+  shouldPopulateWithDefaults: boolean,
 ) => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
@@ -239,7 +240,7 @@ export const useInitialDataForMode = (
       };
     }
 
-    return {runConfigYaml: rootDefaultYaml};
+    return shouldPopulateWithDefaults ? {runConfigYaml: rootDefaultYaml} : {};
   }, [isAssetJob, isJob, partitionSetsForMode, presets, rootDefaultYaml]);
 };
 
