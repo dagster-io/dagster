@@ -162,6 +162,8 @@ This launcher will start each run in a new container, using whatever image set i
 
 Any container that launches runs - usually the `dagster-daemon` container if you're maintaining a [run queue](/guides/customizing-run-queue-priority) or launching runs from schedules or sensors - must have permissions to create Docker containers in order to use this run launcher. Mounting `/var/run/docker.sock` as a volume is one way to give it these permissions.
 
+Note that any environment variables listed in the run launcher may also need to be included in your code server container if they are checked when your code is imported or referenced as <PyObject object="EnvVar" />s in your job configuration.
+
 ---
 
 ## Mounting volumes

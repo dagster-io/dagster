@@ -50,7 +50,7 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 - A Dagit container for loading and launching jobs
 - A `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors
 - A Postgres container for persistent storage
-- A container with user job code
+- A code server container that provides information about your code to Dagit and the daemon.
 
 The [Dagster instance](/deployment/dagster-instance) uses the <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> to launch each run in its own ECS task.
 
@@ -199,6 +199,8 @@ run_launcher:
 ```
 
 In this example, any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
+
+Note that these secrets may also need to be included in your code server task definition if they are checked when your code is imported or referenced as <PyObject object="EnvVar" />s in your job configuration.
 
 ---
 
