@@ -52,18 +52,18 @@ def databricks_client_factory(request):
 
 
 @pytest.mark.parametrize(
-    "databricks_job_configuration",
+    "databricks_job_configuration,databricks_resource_key",
     [
-        None,
-        {},
-        {
+        (None, None),
+        ({}, "databricks"),
+        ({
             "python_params": [
                 "--input",
                 "schema.db.input_table",
                 "--output",
                 "schema.db.output_table",
             ]
-        },
+        }, "another_databricks_resource"),
     ],
     ids=[
         "no Databricks job configuration",
@@ -72,7 +72,8 @@ def databricks_client_factory(request):
     ],
 )
 def test_databricks_run_now_op(
-    databricks_client_factory, mocker: MockerFixture, databricks_job_configuration: Optional[dict]
+    databricks_client_factory, mocker: MockerFixture, databricks_job_configuration: Optional[dict],
+    databricks_resource_key: Optional[dict],
 ) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
@@ -81,15 +82,25 @@ def test_databricks_run_now_op(
     mock_run_now.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
-    test_databricks_run_now_op = create_databricks_run_now_op(
-        databricks_job_id=databricks_job_id,
-        databricks_job_configuration=databricks_job_configuration,
-        poll_interval_seconds=0.01,
-    )
+    databricks_resource_name = databricks_resource_key if databricks_resource_key is not None else "databricks"
+
+    if databricks_resource_key is not None:
+        test_databricks_run_now_op = create_databricks_run_now_op(
+            databricks_job_id=databricks_job_id,
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+            databricks_resource_key=databricks_resource_key,
+        )
+    else:
+        test_databricks_run_now_op = create_databricks_run_now_op(
+            databricks_job_id=databricks_job_id,
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+        )
 
     @job(
         resource_defs={
-            "databricks": databricks_client_factory(
+            databricks_resource_name: databricks_client_factory(
                 host="https://abc123.cloud.databricks.com/", token="token"
             )
         }
