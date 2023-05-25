@@ -46,6 +46,7 @@ class CheckRunHealthResult(NamedTuple):
 
     status: WorkerStatus
     msg: Optional[str] = None
+    transient: bool = False  # If the health check is a failure, will it potentially pass on retry?
 
     def __str__(self) -> str:
         return f"{self.status.value}: '{self.msg}'"
