@@ -16,6 +16,7 @@ from dagster import (
     resource,
 )
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dateutil import parser
 from pydantic import Field
@@ -391,6 +392,7 @@ class FivetranResource(ConfigurableResource):
         return FivetranOutput(connector_details=final_details, schema_config=schema_config)
 
 
+@dagster_maintained_resource
 @resource(config_schema=FivetranResource.to_config_schema())
 def fivetran_resource(context: InitResourceContext) -> FivetranResource:
     """This resource allows users to programatically interface with the Fivetran REST API to launch

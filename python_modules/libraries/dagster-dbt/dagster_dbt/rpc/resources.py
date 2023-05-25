@@ -18,7 +18,10 @@ from dagster import (
     _check as check,
     resource,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_definition import (
+    ResourceDefinition,
+    dagster_maintained_resource,
+)
 from dagster._core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource
@@ -577,6 +580,7 @@ class DbtRpcSyncResource(DbtRpcResource):
         return out
 
 
+@dagster_maintained_resource
 @resource(
     description="A resource representing a dbt RPC client.",
     config_schema={
@@ -606,6 +610,7 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
     )
 
 
+@dagster_maintained_resource
 @resource(
     description="A resource representing a synchronous dbt RPC client.",
     config_schema={

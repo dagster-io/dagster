@@ -3,6 +3,7 @@ import subprocess
 
 import dagster._check as check
 from dagster import resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.log_manager import DagsterLogManager
 
 from .types import SparkOpError
@@ -60,6 +61,7 @@ class SparkResource:
             raise SparkOpError("Spark job failed. Please consult your logs.")
 
 
+@dagster_maintained_resource
 @resource
 def spark_resource(context):
     return SparkResource(context.log)
