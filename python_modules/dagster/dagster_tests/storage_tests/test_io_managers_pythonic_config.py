@@ -4,8 +4,8 @@ from typing import Any, Type
 
 from dagster import (
     Config,
-    DataVersion,
     ConfigurableIOManagerFactory,
+    DataVersion,
     Definitions,
     FilesystemIOManager,
     In,
@@ -490,6 +490,8 @@ def test_observable_source_asset_io_manager_def() -> None:
         result = defs.get_implicit_global_asset_job_def().execute_in_process()
         assert result.success
         assert result.output_for_node("my_downstream_asset") == "foobar"
+
+
 def test_telemetry_custom_io_manager():
     class MyIOManager(ConfigurableIOManager):
         def handle_output(self, context, obj):

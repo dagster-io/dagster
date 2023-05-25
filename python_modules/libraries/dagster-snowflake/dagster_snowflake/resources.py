@@ -645,7 +645,7 @@ class SnowflakeConnection:
 
 @resource(
     config_schema=SnowflakeResource.to_config_schema(),
-    description="THIS ONE This resource is for connecting to the Snowflake data warehouse",
+    description="This resource is for connecting to the Snowflake data warehouse",
 )
 def snowflake_resource(context) -> SnowflakeConnection:
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
