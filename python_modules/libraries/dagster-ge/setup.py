@@ -37,5 +37,11 @@ setup(
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
     ],
+    extras_require={
+        "test": [
+            # https://github.com/great-expectations/great_expectations/issues/7990
+            "typing_extensions<4.6.0",
+        ],
+    },
     zip_safe=False,
 )
