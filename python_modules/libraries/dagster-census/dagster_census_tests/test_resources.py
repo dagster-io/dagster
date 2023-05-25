@@ -57,9 +57,10 @@ def test_get_sync_run():
         assert census.get_sync_run(sync_run_id="94")
 
 
-def test_poll_sync_run():
+def test_poll_sync_run() -> None:
     mock_logger = MagicMock()
-    census = CensusResource(api_key="foo", log=mock_logger)
+    census = CensusResource(api_key="foo")
+    census._log = mock_logger  # noqa: SLF001
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.GET,

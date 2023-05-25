@@ -5,7 +5,15 @@ import time
 from typing import Any, Mapping, Optional
 
 import requests
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
+from dagster import (
+    ConfigurableResource,
+    Failure,
+    __version__,
+    get_dagster_logger,
+    resource,
+)
+from dagster._core.execution.context.init import InitResourceContext
+from pydantic import Field, PrivateAttr
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
@@ -17,22 +25,24 @@ CENSUS_VERSION = "v1"
 DEFAULT_POLL_INTERVAL = 10
 
 
-class CensusResource:
-    """This class exposes methods on top of the Census REST API."""
+class CensusResource(ConfigurableResource):
+    """This resource exposes methods on top of the Census REST API."""
 
-    def __init__(
-        self,
-        api_key: str,
-        request_max_retries: int = 3,
-        request_retry_delay: float = 0.25,
-        log: logging.Logger = get_dagster_logger(),
-    ):
-        self.api_key = api_key
+    api_key: str = Field(description="Census API key")
+    request_max_retries: int = Field(
+        default=3, description="Maximum number of retries for a request"
+    )
+    request_retry_delay: float = Field(
+        default=0.25, description="Delay between retries for a request"
+    )
+    _log: Optional[logging.Logger] = PrivateAttr(default=None)
 
-        self._request_max_retries = request_max_retries
-        self._request_retry_delay = request_retry_delay
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._log = context.log
 
-        self._log = log
+    @property
+    def log(self) -> logging.Logger:
+        return self._log or get_dagster_logger()
 
     @property
     def _api_key(self):
@@ -76,13 +86,13 @@ class CensusResource:
                 response.raise_for_status()
                 return response.json()
             except RequestException as e:
-                self._log.error("Request to Census API failed: %s", e)
-                if num_retries == self._request_max_retries:
+                self.log.error("Request to Census API failed: %s", e)
+                if num_retries == self.request_max_retries:
                     break
                 num_retries += 1
-                time.sleep(self._request_retry_delay)
+                time.sleep(self.request_retry_delay)
 
-        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
+        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_sync(self, sync_id: int) -> Mapping[str, Any]:
         """Gets details about a given sync from the Census API.
@@ -160,7 +170,7 @@ class CensusResource:
             sync_id = response_dict["data"]["sync_id"]
 
             if response_dict["data"]["status"] == "working":
-                self._log.debug(
+                self.log.debug(
                     f"Sync {sync_id} still running after {datetime.datetime.now() - poll_start}."
                 )
                 continue
@@ -175,10 +185,10 @@ class CensusResource:
 
             break
 
-        self._log.debug(
+        self.log.debug(
             f"Sync {sync_id} has finished running after {datetime.datetime.now() - poll_start}."
         )
-        self._log.info(f"View sync details here: {log_url}.")
+        self.log.info(f"View sync details here: {log_url}.")
 
         return response_dict
 
@@ -239,26 +249,7 @@ class CensusResource:
 
 
 @resource(
-    config_schema={
-        "api_key": Field(
-            StringSource,
-            is_required=True,
-            description="Census API Key.",
-        ),
-        "request_max_retries": Field(
-            int,
-            default_value=3,
-            description=(
-                "The maximum number of times requests to the Census API should be retried "
-                "before failing."
-            ),
-        ),
-        "request_retry_delay": Field(
-            float,
-            default_value=0.25,
-            description="Time (in seconds) to wait between each request retry.",
-        ),
-    },
+    config_schema=CensusResource.to_config_schema(),
     description="This resource helps manage Census connectors",
 )
 def census_resource(context) -> CensusResource:
@@ -284,9 +275,4 @@ def census_resource(context) -> CensusResource:
             ...
 
     """
-    return CensusResource(
-        api_key=context.resource_config["api_key"],
-        request_max_retries=context.resource_config["request_max_retries"],
-        request_retry_delay=context.resource_config["request_retry_delay"],
-        log=context.log,
-    )
+    return CensusResource.from_resource_context(context)
