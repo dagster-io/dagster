@@ -15,6 +15,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._utils.backoff import backoff
 from pydantic import Field
 
@@ -83,6 +84,7 @@ def build_duckdb_io_manager(
 
     """
 
+    @dagster_maintained_io_manager
     @io_manager(config_schema=DuckDBIOManager.to_config_schema())
     def duckdb_io_manager(init_context):
         """IO Manager for storing outputs in a DuckDB database.

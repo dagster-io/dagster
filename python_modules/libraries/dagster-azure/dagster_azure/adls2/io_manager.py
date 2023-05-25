@@ -10,6 +10,7 @@ from dagster import (
     io_manager,
 )
 from dagster._config.pythonic_config import ConfigurableIOManager
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.cached_method import cached_method
@@ -195,6 +196,7 @@ class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
+@dagster_maintained_io_manager
 @io_manager(
     config_schema=ConfigurablePickledObjectADLS2IOManager.to_config_schema(),
     required_resource_keys={"adls2"},

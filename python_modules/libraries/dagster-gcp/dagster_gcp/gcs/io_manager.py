@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
@@ -159,6 +160,7 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
+@dagster_maintained_io_manager
 @io_manager(
     config_schema=ConfigurablePickledObjectGCSIOManager.to_config_schema(),
     required_resource_keys={"gcs"},

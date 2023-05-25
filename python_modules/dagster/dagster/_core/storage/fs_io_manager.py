@@ -18,7 +18,7 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
@@ -125,6 +125,7 @@ class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemI
         return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
+@dagster_maintained_io_manager
 @io_manager(
     config_schema=FilesystemIOManager.to_config_schema(),
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
@@ -327,6 +328,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             return pickle.load(read_obj)
 
 
+@dagster_maintained_io_manager
 @io_manager(config_schema={"base_dir": DagsterField(StringSource, is_required=True)})
 @experimental
 def custom_path_fs_io_manager(
