@@ -579,6 +579,11 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     #     "1.1.0",  # breaking version
     #     "Use Bar instead.",
     # ),
+    "file_relative_path": (
+        "dagster._utils",
+        "1.4.0",
+        "Construct the relative path using `pathlib.Path(__file__)` instead.",
+    )
 }
 
 _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
