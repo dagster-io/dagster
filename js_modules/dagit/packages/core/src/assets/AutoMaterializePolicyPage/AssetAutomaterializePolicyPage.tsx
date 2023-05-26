@@ -191,7 +191,7 @@ function LeftPanel({
           );
         })}
       </Box>
-      {(queryResult.data?.autoMaterializeAssetEvaluations?.length || 0) > 0 ? (
+      {queryResult.data?.autoMaterializeAssetEvaluations?.length ? (
         <PaginationWrapper>
           <CursorPaginationControls {...paginationProps} />
         </PaginationWrapper>
