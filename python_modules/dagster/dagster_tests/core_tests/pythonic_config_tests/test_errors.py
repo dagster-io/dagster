@@ -421,3 +421,32 @@ def test_trying_to_set_an_undefined_field_resource() -> None:
     ):
         my_resource = MyResource(my_str="foo")
         my_resource._my_random_other_field = "bar"  # noqa: SLF001
+
+
+def test_custom_dagster_type_as_config_type() -> None:
+    from datetime import datetime
+
+    from dagster import Config, DagsterType
+
+    DagsterDatetime = DagsterType(
+        name="DagsterDatetime",
+        description="Standard library `datetime.datetime` type as a DagsterType",
+        type_check_fn=lambda _, obj: isinstance(obj, datetime),
+    )
+
+    with pytest.raises(
+        DagsterInvalidPythonicConfigDefinitionError,
+        match="""Error defining Dagster config class 'MyOpConfig' on field 'dagster_type_field'.
+Unable to resolve config type <class 'dagster._core.types.dagster_type.DagsterType'> to a supported Dagster config type.
+
+
+This config type can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    ):
+
+        class MyOpConfig(Config):
+            dagster_type_field: DagsterDatetime = datetime(year=2023, month=4, day=30)  # type: ignore
