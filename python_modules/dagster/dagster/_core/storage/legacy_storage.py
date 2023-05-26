@@ -698,8 +698,8 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             asset_key, limit, cursor
         )
 
-    def purge_evaluations(self, before: float):
-        return self._storage.schedule_storage.purge_evaluations(before)
+    def purge_asset_evaluations(self, before: float):
+        return self._storage.schedule_storage.purge_asset_evaluations(before)
 
     def upgrade(self) -> None:
         return self._storage.schedule_storage.upgrade()

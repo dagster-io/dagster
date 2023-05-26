@@ -175,6 +175,6 @@ class AssetDaemon(IntervalDaemon):
             schedule_storage.add_auto_materialize_asset_evaluations(
                 new_cursor.evaluation_id, evaluations
             )
-            schedule_storage.purge_evaluations(
+            schedule_storage.purge_asset_evaluations(
                 before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
             )

@@ -511,7 +511,7 @@ class SqlScheduleStorage(ScheduleStorage):
             rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
-    def purge_evaluations(self, before: float):
+    def purge_asset_evaluations(self, before: float):
         check.float_param(before, "before")
 
         utc_before = utc_datetime_from_timestamp(before)

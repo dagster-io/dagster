@@ -799,7 +799,7 @@ class TestScheduleStorage:
             == subset
         )
 
-    def test_purge_evaluations(self, storage):
+    def test_purge_asset_evaluations(self, storage):
         if not self.can_purge():
             pytest.skip("Storage cannot purge")
 
@@ -816,14 +816,14 @@ class TestScheduleStorage:
             ],
         )
 
-        storage.purge_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
+        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
 
         res = storage.get_auto_materialize_asset_evaluations(
             asset_key=AssetKey("asset_one"), limit=100
         )
         assert len(res) == 1
 
-        storage.purge_evaluations(before=pendulum.now().add(minutes=10).timestamp())
+        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
 
         res = storage.get_auto_materialize_asset_evaluations(
             asset_key=AssetKey("asset_one"), limit=100
