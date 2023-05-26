@@ -20,6 +20,7 @@ import {Redirect} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
@@ -61,7 +62,7 @@ function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
 export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey}) => {
   const {queryResult, paginationProps} = useEvaluationsQueryResult({assetKey});
 
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(queryResult, 1000);
 
   const evaluations = React.useMemo(() => {
     return queryResult.data?.autoMaterializeAssetEvaluations || [];
@@ -230,8 +231,6 @@ const RightPanel = ({
     }
   }, [data, setMaxMaterializationsPerMinute]);
 
-  console.log(data?.assetNodeOrError?.autoMaterializePolicy);
-
   return (
     <Box flex={{direction: 'column'}} style={{width: '294px'}}>
       <Box
@@ -241,7 +240,9 @@ const RightPanel = ({
         <Subheading>Overview</Subheading>
       </Box>
       {error ? (
-        <Box></Box>
+        <Box>
+          <ErrorWrapper>{JSON.stringify(error)}</ErrorWrapper>
+        </Box>
       ) : !data ? (
         <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
           <Spinner purpose="section" />
@@ -446,6 +447,15 @@ const MiddlePanel = ({
       </Box>
     );
   }
+  if (error) {
+    return (
+      <Box flex={{direction: 'column', grow: 1}}>
+        <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
+          <ErrorWrapper>{JSON.stringify(error)}</ErrorWrapper>
+        </Box>
+      </Box>
+    );
+  }
 
   if (!evaluationData) {
     if (selectedEvaluationId) {
@@ -492,16 +502,6 @@ const MiddlePanel = ({
         </Box>
       );
     }
-  }
-
-  if (error) {
-    return (
-      <Box flex={{direction: 'column', grow: 1}}>
-        <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
-          <Spinner purpose="section" />
-        </Box>
-      </Box>
-    );
   }
 
   return (
