@@ -62,7 +62,7 @@ function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
 export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey}) => {
   const {queryResult, paginationProps} = useEvaluationsQueryResult({assetKey});
 
-  useQueryRefreshAtInterval(queryResult, 1000);
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const evaluations = React.useMemo(() => {
     return queryResult.data?.autoMaterializeAssetEvaluations || [];
@@ -240,7 +240,7 @@ const RightPanel = ({
         <Subheading>Overview</Subheading>
       </Box>
       {error ? (
-        <Box>
+        <Box padding={24}>
           <ErrorWrapper>{JSON.stringify(error)}</ErrorWrapper>
         </Box>
       ) : !data ? (
@@ -450,7 +450,7 @@ const MiddlePanel = ({
   if (error) {
     return (
       <Box flex={{direction: 'column', grow: 1}}>
-        <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
+        <Box flex={{direction: 'row', justifyContent: 'center'}} padding={24}>
           <ErrorWrapper>{JSON.stringify(error)}</ErrorWrapper>
         </Box>
       </Box>
@@ -489,7 +489,7 @@ const MiddlePanel = ({
                   </div>
                   <div>
                     <ExternalAnchorButton
-                      icon={<Icon name="materialization" />}
+                      icon={<Icon name="open_in_new" />}
                       href="https://docs.dagster.io/concepts/assets/asset-auto-execution"
                     >
                       View documentation
