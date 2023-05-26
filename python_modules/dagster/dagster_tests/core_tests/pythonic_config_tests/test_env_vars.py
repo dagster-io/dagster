@@ -5,6 +5,18 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
 
 
+def test_direct_use_env_var() -> None:
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "Attempted to directly retrieve environment variable"
+            ' EnvVar\\("A_STR"\\). EnvVar should only be used as input to Dagster'
+            " config or resources."
+        ),
+    ):
+        str(EnvVar("A_STR"))
+
+
 def test_str_env_var() -> None:
     executed = {}
 

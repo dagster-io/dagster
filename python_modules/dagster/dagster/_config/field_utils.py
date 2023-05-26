@@ -500,3 +500,12 @@ class EnvVar(str):
     @classmethod
     def int(cls, name: str) -> "IntEnvVar":
         return IntEnvVar.create(name=name)
+
+    def __str__(self) -> str:
+        raise RuntimeError(
+            f'Attempted to directly retrieve environment variable EnvVar("{self.env_var_name()}").'
+            " EnvVar should only be used as input to Dagster config or resources."
+        )
+
+    def env_var_name(self) -> str:
+        return repr(self)[1:-1]
