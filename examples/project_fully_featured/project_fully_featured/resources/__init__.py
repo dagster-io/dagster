@@ -108,4 +108,5 @@ RESOURCES_LOCAL = {
     ),
     "new_style_io": SnowflakePandasIOManager.configure_at_launch(),
     "new_style_resource": SnowflakeResource.configure_at_launch(),
+    "custom_configure_at_launch": DuckDBPartitionedParquetIOManager.configure_at_launch(),
 }
