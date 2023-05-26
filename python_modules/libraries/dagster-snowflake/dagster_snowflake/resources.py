@@ -35,6 +35,14 @@ except ImportError:
 class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """A resource for connecting to the Snowflake data warehouse.
 
+    If connector configuration is not set, SnowflakeResource.get_connection() will return a
+    snowflake.connector.Connection object
+    (see https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection).
+    If connector="sqlalchemy" configuration is set, then SnowflakeResource.get_connection() will
+    return a SQLAlchemy Connection (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection)
+    or a SQLAlchemy raw connection
+    (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection).
+
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
     Examples:
@@ -46,6 +54,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             @op
             def get_one(snowflake_resource: SnowflakeResource):
                 with snowflake_resource.get_connection() as conn:
+                    # conn is a snowflake.connector.Connection object
                     conn.cursor().execute("SELECT 1")
 
             @job
@@ -403,8 +412,16 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
         """Gets a connection to Snowflake as a context manager.
 
-        If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
-        you do not need to create a connection using this context manager.
+        If connector configuration is not set, SnowflakeResource.get_connection() will return a
+        snowflake.connector.Connection object
+        (see https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection).
+        If connector="sqlalchemy" configuration is set, then SnowflakeResource.get_connection() will
+        return a SQLAlchemy Connection
+        (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection) or
+        a SQLAlchemy raw connection
+        (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection)
+        if raw_conn=True.
+
 
         Args:
             raw_conn (bool): If using the sqlalchemy connector, you can set raw_conn to True to create a raw
@@ -455,7 +472,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 class SnowflakeConnection:
     """A connection to Snowflake that can execute queries. In general this class should not be
     directly instantiated, but rather used as a resource in an op or asset via the
-    :py:func:`SnowflakeResource`.
+    :py:func:`snowflake_resource`.
+
+    Note that the SnowflakeConnection is only used by the snowflake_resource. The pythonic SnowflakeResource does
+    not use this SnowflakeConnection class.
     """
 
     def __init__(
