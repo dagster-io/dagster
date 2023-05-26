@@ -82,8 +82,6 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
     },
   });
 
-  console.log({selectedEvaluationId});
-
   const selectedEvaluation: EvaluationType | undefined = React.useMemo(() => {
     if (selectedEvaluationId) {
       return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
