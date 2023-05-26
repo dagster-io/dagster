@@ -1,5 +1,6 @@
 # encoding: utf-8
 import hashlib
+import os
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
 
 import dagster._check as check
@@ -499,3 +500,14 @@ class EnvVar(str):
     @classmethod
     def int(cls, name: str) -> "IntEnvVar":
         return IntEnvVar.create(name=name)
+
+    def __str__(self) -> str:
+        if self not in os.environ:
+            raise ValueError(
+                f'Attempted to retrieve environment variable EnvVar("{self.env_var_name()}"), which'
+                " is not set in the environment"
+            )
+        return str(os.getenv(self))
+
+    def env_var_name(self) -> str:
+        return repr(self)[1:-1]

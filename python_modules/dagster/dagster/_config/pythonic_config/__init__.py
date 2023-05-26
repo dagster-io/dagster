@@ -314,7 +314,7 @@ def _config_value_to_dict_representation(field: Optional[ModelField], value: Any
     elif isinstance(value, list):
         return [_config_value_to_dict_representation(None, v) for v in value]
     elif isinstance(value, EnvVar):
-        return {"env": str(value)}
+        return {"env": value.env_var_name()}
     elif isinstance(value, IntEnvVar):
         return {"env": value.name}
     if isinstance(value, Config):

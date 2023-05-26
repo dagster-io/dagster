@@ -1,8 +1,30 @@
+import os
+
 import pytest
 from dagster import Definitions, EnvVar, RunConfig, asset
 from dagster._config.pythonic_config import Config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
+
+
+def test_direct_use_env_var() -> None:
+    # Users can directly stringify an EnvVar to resolve it to its value
+    with environ({"A_STR": "foo"}):
+        my_env_var = EnvVar("A_STR")
+
+        assert str(my_env_var) == "foo"
+
+    if "NOT_EXISTING_ENV_VAR" in os.environ:
+        del os.environ["NOT_EXISTING_ENV_VAR"]
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            'Attempted to retrieve environment variable EnvVar\\("NOT_EXISTING_ENV_VAR"\\), which'
+            " is not set in the environment"
+        ),
+    ):
+        str(EnvVar("NOT_EXISTING_ENV_VAR"))
 
 
 def test_str_env_var() -> None:
