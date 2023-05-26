@@ -16,7 +16,7 @@ import styled from 'styled-components/macro';
 
 import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';
-import {PartitionDefinitionType} from '../graphql/types';
+import {PartitionDefinitionType, RunStatus} from '../graphql/types';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
@@ -147,7 +147,10 @@ const OrdinalPartitionSelector: React.FC<{
         return <AssetPartitionStatusDot status={partitionStatusAtIndex(health.ranges, index)} />;
       } else {
         return (
-          <RunStatusDot size={10} status={health.runStatusForPartitionKey(partitionKey, index)} />
+          <RunStatusDot
+            size={10}
+            status={health.runStatusForPartitionKey(partitionKey, index) || RunStatus.NOT_STARTED}
+          />
         );
       }
     },
