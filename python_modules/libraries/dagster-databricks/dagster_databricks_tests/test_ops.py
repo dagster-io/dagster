@@ -78,7 +78,7 @@ def test_databricks_run_now_op(
     databricks_client_factory,
     mocker: MockerFixture,
     databricks_job_configuration: Optional[dict],
-    databricks_resource_key: Optional[dict],
+    databricks_resource_key: Optional[str],
 ) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
@@ -137,7 +137,7 @@ def test_databricks_run_now_op(
 def test_databricks_submit_run_op(
     databricks_client_factory,
     mocker: MockerFixture,
-    databricks_resource_key: Optional[dict],
+    databricks_resource_key: Optional[str],
 ) -> None:
     mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")

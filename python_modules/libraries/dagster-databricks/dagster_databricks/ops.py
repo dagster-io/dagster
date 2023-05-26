@@ -25,7 +25,7 @@ def create_databricks_run_now_op(
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
     name: Optional[str] = None,
-    databricks_resource_key: Optional[str] = "databricks",
+    databricks_resource_key: str = "databricks",
 ) -> OpDefinition:
     """Creates an op that launches an existing databricks job.
 
@@ -45,7 +45,7 @@ def create_databricks_run_now_op(
             before raising an error.
         name (Optional[str]): The name of the op. If not provided, the name will be
             _databricks_run_now_op.
-        databricks_resource_key (Optional[str]): The name of the resource key used by this op. If not
+        databricks_resource_key (str): The name of the resource key used by this op. If not
             provided, the resource key will be "databricks".
 
     Returns:
@@ -138,7 +138,7 @@ def create_databricks_submit_run_op(
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
     name: Optional[str] = None,
-    databricks_resource_key: Optional[str] = "databricks",
+    databricks_resource_key: str = "databricks",
 ) -> OpDefinition:
     """Creates an op that submits a one-time run of a set of tasks on Databricks.
 
@@ -155,7 +155,7 @@ def create_databricks_submit_run_op(
             before raising an error.
         name (Optional[str]): The name of the op. If not provided, the name will be
             _databricks_submit_run_op.
-        databricks_resource_key (Optional[str]): The name of the resource key used by this op. If not
+        databricks_resource_key (str): The name of the resource key used by this op. If not
             provided, the resource key will be "databricks".
 
     Returns:
