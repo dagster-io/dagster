@@ -92,7 +92,7 @@ setup(
         "tomli",
         "tqdm",
         "typing_extensions>=4.4.0",
-        "sqlalchemy>=1.0,<2.0.0",
+        "sqlalchemy>=1.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
         'psutil >= 1.0; platform_system=="Windows"',
