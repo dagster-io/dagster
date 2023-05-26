@@ -1,5 +1,6 @@
 # encoding: utf-8
 import hashlib
+import os
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
@@ -493,8 +494,11 @@ class IntEnvVar(int):
 class EnvVar(str):
     """Class used to represent an environment variable in the Dagster config system.
 
+    This class is intended to be used to populate config fields or resources.
     The environment variable will be resolved to a string value when the config is
     loaded.
+
+    To access the value of the environment variable, use the `get_value` method.
     """
 
     @classmethod
@@ -502,10 +506,20 @@ class EnvVar(str):
         return IntEnvVar.create(name=name)
 
     def __str__(self) -> str:
+        """Raises an exception of the EnvVar value is directly accessed. Users should instead use
+        the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
+        """
         raise RuntimeError(
             f'Attempted to directly retrieve environment variable EnvVar("{self.env_var_name()}").'
             " EnvVar should only be used as input to Dagster config or resources."
         )
 
     def env_var_name(self) -> str:
-        return repr(self)[1:-1]
+        """Returns the name of the environment variable."""
+        return super().__str__()
+
+    def get_value(self, default: Optional[str] = None) -> Optional[str]:
+        """Returns the value of the environment variable, or the default value if the
+        environment variable is not set. If no default is provided, None will be returned.
+        """
+        return os.getenv(self.env_var_name(), default=default)
