@@ -20,7 +20,7 @@ from dagster._utils.hosted_user_process import (
 )
 from dagster._utils.interrupts import capture_interrupts
 
-from .utils import get_instance_for_cli, get_possibly_ephemeral_instance_for_cli
+from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 
 @click.group(name="asset")
@@ -34,7 +34,7 @@ def asset_cli():
 @click.option("--partition", help="Asset partition to target", required=False)
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
-        with get_possibly_ephemeral_instance_for_cli(
+        with get_possibly_temporary_instance_for_cli(
             "``dagster asset materialize``",
         ) as instance:
             execute_materialize_command(instance, kwargs)

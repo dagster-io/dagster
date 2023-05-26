@@ -5,7 +5,7 @@ import click
 import dagster._check as check
 import dagster._seven as seven
 import requests
-from dagster._cli.utils import get_possibly_ephemeral_instance_for_cli
+from dagster._cli.utils import get_instance_for_cli, get_temporary_instance_for_cli
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
@@ -196,7 +196,9 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
         res = execute_query_against_remote(remote, query, variables)
         print(res)  # noqa: T201
     else:
-        with get_possibly_ephemeral_instance_for_cli() as instance:
+        with (
+            get_temporary_instance_for_cli() if ephemeral_instance else get_instance_for_cli()
+        ) as instance:
             with get_workspace_process_context_from_kwargs(
                 instance, version=__version__, read_only=False, kwargs=kwargs
             ) as workspace_process_context:

@@ -26,8 +26,38 @@ def _load_env_var_dict(logger: logging.Logger) -> None:
 
 
 @contextmanager
-def get_possibly_ephemeral_instance_for_cli(
-    cli_command: Optional[str] = "this command",
+def _get_temporary_instance(cli_command: str, logger: logging.Logger) -> Iterator[DagsterInstance]:
+    # make the temp dir in the cwd since default temp dir roots
+    # have issues with FS notify-based event log watching
+    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
+        logger.info(
+            f"Using temporary directory {tempdir} for storage. This will be removed when"
+            f" {cli_command} exits."
+        )
+        logger.info(
+            "To persist information across sessions, set the environment variable DAGSTER_HOME"
+            " to a directory to use."
+        )
+
+        with DagsterInstance.from_ref(
+            InstanceRef.from_dir(tempdir, config_dir=os.getcwd())
+        ) as instance:
+            yield instance
+
+
+@contextmanager
+def get_temporary_instance_for_cli(
+    cli_command: str = "this command",
+    logger: logging.Logger = logging.getLogger("dagster"),
+) -> Iterator[DagsterInstance]:
+    _load_env_var_dict(logger)
+    with _get_temporary_instance(cli_command, logger) as instance:
+        yield instance
+
+
+@contextmanager
+def get_possibly_temporary_instance_for_cli(
+    cli_command: str = "this command",
     instance_ref: Optional[InstanceRef] = None,
     logger: logging.Logger = logging.getLogger("dagster"),
 ) -> Iterator[DagsterInstance]:
@@ -50,22 +80,8 @@ def get_possibly_ephemeral_instance_for_cli(
         with DagsterInstance.get() as instance:
             yield instance
     else:
-        # make the temp dir in the cwd since default temp dir roots
-        # have issues with FS notify-based event log watching
-        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
-            logger.info(
-                f"Using temporary directory {tempdir} for storage. This will be removed when"
-                f" {cli_command} exits."
-            )
-            logger.info(
-                "To persist information across sessions, set the environment variable DAGSTER_HOME"
-                " to a directory to use."
-            )
-
-            with DagsterInstance.from_ref(
-                InstanceRef.from_dir(tempdir, config_dir=os.getcwd())
-            ) as instance:
-                yield instance
+        with _get_temporary_instance(cli_command, logger) as instance:
+            yield instance
 
 
 @contextmanager

@@ -6,7 +6,7 @@ from typing import Optional
 import click
 import dagster._check as check
 import uvicorn
-from dagster._cli.utils import get_possibly_ephemeral_instance_for_cli
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
@@ -158,7 +158,7 @@ def dagit(
     configure_loggers()
     logger = logging.getLogger("dagit")
 
-    with get_possibly_ephemeral_instance_for_cli(
+    with get_possibly_temporary_instance_for_cli(
         cli_command="dagit",
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         logger=logger,

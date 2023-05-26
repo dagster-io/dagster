@@ -63,7 +63,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
 from .config_scaffolder import scaffold_job_config
-from .utils import get_instance_for_cli, get_possibly_ephemeral_instance_for_cli
+from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
@@ -90,7 +90,7 @@ def job_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn):
-    with get_possibly_ephemeral_instance_for_cli("``dagster job list``") as instance:
+    with get_possibly_temporary_instance_for_cli("``dagster job list``") as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repository:
@@ -143,7 +143,7 @@ def get_job_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @job_target_argument
 def job_print_command(verbose, **cli_args):
-    with get_possibly_ephemeral_instance_for_cli("``dagster job print``") as instance:
+    with get_possibly_temporary_instance_for_cli("``dagster job print``") as instance:
         return execute_print_command(instance, verbose, cli_args, click.echo)
 
 
@@ -311,7 +311,7 @@ def add_step_to_table(memoized_plan):
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 def job_execute_command(**kwargs: ClickArgValue):
     with capture_interrupts():
-        with get_possibly_ephemeral_instance_for_cli("``dagster job execute``") as instance:
+        with get_possibly_temporary_instance_for_cli("``dagster job execute``") as instance:
             execute_execute_command(instance, kwargs)
 
 
