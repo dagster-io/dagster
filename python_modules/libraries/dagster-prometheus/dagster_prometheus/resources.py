@@ -24,7 +24,7 @@ class PrometheusResource(ConfigurableResource):
 
         @op
         def example_prometheus_op(prometheus: PrometheusResource):
-            prometheus.get_client().push_to_gateway(job="my_job")
+            prometheus.push_to_gateway(job="my_job")
 
         @job
         def my_job():
