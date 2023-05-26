@@ -5,17 +5,16 @@ description: This guide illustrates how to use Dagster to automate and manage yo
 
 # Managing machine learning models with Dagster
 
-<Note>
-  Recommended prerequisites for this guide are{" "}
-  <a href="docs/content/guides/dagster/ml-pipeline.mdx">
-    Building machine learning pipelines with Dagster
-  </a>{" "}
-  and{" "}
-  <a href="docs/content/guides/dagster/automating-pipelines.mdx">
-    Automating your data pipelines
-  </a>
-  .
-</Note>
+## Prerequisites
+
+Before proceeding, we recommend reading the following guides:
+
+- [Automating your data pipelines](docs/content/guides/dagster/automating-pipelines)
+- [Building machine learning pipelines with Dagster](docs/content/guides/dagster/ml-pipeline)
+
+--- 
+
+## Overview 
 
 This guide will review ways to manage and maintain your machine learning (ML) model in Dagster.
 
@@ -196,7 +195,7 @@ def make_plot(eval_metric):
     return MetadataValue.md(f"![img](data:image/png;base64,{image_data.decode()})")
 ```
 
-Using the graph and other evaluation data in a machine learning model asset. In this example, we’re using a dictionary called metadata to store the Markdown plots and the score value in Dagster.
+In this example, we’re using a dictionary called metadata to store the Markdown plots and the score value in Dagster.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=metadata_use_start endbefore=metadata_use_end
 from dagster import asset
