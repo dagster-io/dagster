@@ -27,7 +27,7 @@ class PySparkResource(ConfigurableResource):
 
             @op
             def my_op(pyspark: PySparkResource)
-                spark_session = pyspark.get_client().spark_session
+                spark_session = pyspark.spark_session
                 dataframe = spark_session.read.json("examples/src/main/resources/people.json")
 
 
@@ -96,7 +96,7 @@ class LazyPySparkResource(ConfigurableResource):
 
             @op
             def my_op(lazy_pyspark: LazyPySparkResource)
-                spark_session = lazy_pyspark.get_client().spark_session
+                spark_session = lazy_pyspark.spark_session
                 dataframe = spark_session.read.json("examples/src/main/resources/people.json")
 
             @job(
