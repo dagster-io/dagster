@@ -22,7 +22,9 @@ This guide will review ways to manage and maintain your machine learning (ML) mo
 Machine learning models are highly dependent on data at a point in time and must be managed to ensure they produce the same results as when you were in the development phase. In this guide, you'll learn how to:
 
 - Automate training of your model when new data is available or when you want to use your model for predictions
-- Integrate metadata about your model into the Dagster UI to display info about your model's performance.
+- Integrate metadata about your model into the Dagster UI to display info about your model's performance
+
+---
 
 ## Machine learning operations
 
@@ -54,7 +56,7 @@ def my_ml_model(my_data):
     ...
 ```
 
-Some machine learning models might more cumbersome to retrain; it also might not be as important to update them as soon as new data arrives. For this, we can use a lazy auto-materialization policy which can be used in two different ways. The first, by using it with a `freshness_policy` as shown below. In this case, my_ml_model will only be auto-materialized once a week.
+Some machine learning models might more be cumbersome to retrain; it also might be less important to update them as soon as new data arrives. For this, we can use a lazy auto-materialization policy which can be used in two different ways. The first, by using it with a `freshness_policy` as shown below. In this case, `my_ml_model` will only be auto-materialized once a week.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=lazy_materlization_start endbefore=lazy_materlization_end
 from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
@@ -73,7 +75,7 @@ def my_other_ml_model(my_other_data):
     ...
 ```
 
-his can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time.
+This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time.
 
 The other way we can use lazy auto-materializations is without a `freshness_policy`. This will trigger the auto-materialization only if a downstream asset requires `my_ml_model`.
 
@@ -101,7 +103,7 @@ def predictions(some_ml_model):
     ...
 ```
 
-We can also use a more traditional schedule to our machine learning assets to be re-materialized or retrained on the latest data, for example setting up a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules).
+We can also use a more traditional schedule on our machine learning assets, causing them to be re-materialized or retrained on the latest data. For example, setting up a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules).
 
 This can be useful if you have data that is also being scheduled on a cron schedule and want to add your machine model jobs to run on a schedule as well.
 
@@ -115,7 +117,7 @@ basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 
 ### Monitoring
 
-Integrating your machine learning models into Dagster allows you see when the model and its and its data dependencies were refreshed, or when a refresh process has failed. By using Dagster to monitor performance changes and process failures on your ML model, it becomes possible to set up remediation paths, such as automated model retraining, that can help resolve issues like model drift.
+Integrating your machine learning models into Dagster allows you to see when the model and its data dependencies were refreshed, or when a refresh process has failed. By using Dagster to monitor performance changes and process failures on your ML model, it becomes possible to set up remediation paths, such as automated model retraining, that can help resolve issues like model drift.
 
 In this example, the model is being evaluated against the previous model’s accuracy. If the model’s accuracy has improved, the model is returned for use in downstream steps, such as inference or deploying to production.
 
@@ -133,7 +135,7 @@ def other_ml_model(training_data, test_data, model_accuracy):
         yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
 ```
 
-We can also monitor the score or other information of a model through alerts, such as email or Slack. In the example below, we set up a Slack message to alert the score of ml_model upon success. The message can be customized to include information such as which features were most influential in model training, the volume of data that the model was trained on or in this case, and the score of the model.
+We can also monitor the score or other information of a model through alerts, such as email or Slack. In the example below, we set up a Slack message to post the score of `ml_model` upon success. The message can be customized to include information such as which features were most influential in model training, the volume of data that the model was trained on, or in this case, the score of the model.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=success_slack_start  endbefore=success_slack_end
 from dagster import asset_sensor, RunRequest, asset
@@ -164,6 +166,8 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 )
 ```
 
+---
+
 ## Enhancing the Dagster UI with metadata
 
 Understanding the performance of your ML model is critical to both the model development process and production. Metadata can significantly enhance the usability of the Dagster UI to show what’s going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
@@ -172,7 +176,7 @@ One of the easiest ways to utilize Dagster’s metadata is by using a dictionary
 
 Another way is to store relevant data for a single training iteration as a graph that you can view directly from the Dagster UI. In this example, we’ll define a function that uses data produced by a machine learning model to plot an evaluation metric as the model goes through the training process and render that in the Dagster UI.
 
-Dagster’s [`MetadataValue` types](/\_apidocs/ops#event-metadata>) enables types such as tables, URLs, notebooks and Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric’s performance throughout each training iteration also known as an epoch during the training cycle.
+Dagster’s <PyObject object="MetadataValue" /> types enable types such as tables, URLs, notebooks, Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric’s performance throughout each training iteration also known as an epoch during the training cycle.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=ui_plot_start   endbefore=ui_plot_end
 from dagster import MetadataValue
@@ -228,7 +232,7 @@ def xgboost_comments_model(transformed_training_data, transformed_test_data):
     return Output(xgb_r, metadata=metadata)
 ```
 
-If we look at the `xgboost_comments_model` asset in the Dagster UI, we see the metadata rendered. Numerical values, such as the `score (mean_absolute_error)` will be logged for each materialization and plotted for each materilization, which can be useful to understand the score over time for machine learning models.
+If we look at the `xgboost_comments_model` asset in the Dagster UI, we see the metadata rendered. Numerical values, such as the `score (mean_absolute_error)` will be logged and plotted for each materialization, which can be useful to understand the score over time for machine learning models.
 
 <Image
 alt="alt"
@@ -237,12 +241,14 @@ width={1188}
 height={541}
 />
 
-The Markdown plots are also available to inspect the evaluation metrics during the training cycle by clicking on `[Show Markdown]`. <Image
+The Markdown plots are also available to inspect the evaluation metrics during the training cycle by clicking on **[Show Markdown]**. <Image
 alt="alt"
 src="/images/guides/managing_ml/plot_ui.png"
 width={1188}
 height={541}
 />
+
+---
 
 ## Related
 
