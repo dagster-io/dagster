@@ -4,9 +4,11 @@ from dagster._utils import file_relative_path
 from dagster_aws.s3 import S3Resource
 from dagster_aws.s3.io_manager import ConfigurablePickledObjectS3IOManager
 from dagster_dbt import DbtCliClientResource
+from dagster_gcp import bigquery_resource, BigQueryResource
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake import SnowflakeResource, snowflake_resource
 from dagster_snowflake_pandas import SnowflakePandasIOManager, snowflake_pandas_io_manager
+from dagster_duckdb_pandas import duckdb_pandas_io_manager, DuckDBPandasIOManager
 
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
@@ -98,15 +100,18 @@ RESOURCES_LOCAL = {
     "dbt": dbt_local_resource,
     "old_style_io": snowflake_pandas_io_manager,
     "old_style_resource": snowflake_resource,
-    "old_style_resource_configured": snowflake_resource.configured({"account": "bar"}),
-    "old_style_io_configured": snowflake_pandas_io_manager.configured({"account": "bar"}),
+    "old_style_resource_configured": bigquery_resource.configured({"project": "bar"}),
+    "old_style_io_configured": duckdb_pandas_io_manager.configured({"database": "bar"}),
     "new_style_io_configured": SnowflakePandasIOManager(
         database="foo", account="foo", password="foo", user="foo"
     ),
     "new_style_resource_configured": SnowflakeResource(
         database="foo", account="foo", password="foo", user="foo"
     ),
-    "new_style_io": SnowflakePandasIOManager.configure_at_launch(),
-    "new_style_resource": SnowflakeResource.configure_at_launch(),
+    "new_style_io": DuckDBPandasIOManager.configure_at_launch(),
+    "new_style_resource": BigQueryResource.configure_at_launch(),
     "custom_configure_at_launch": DuckDBPartitionedParquetIOManager.configure_at_launch(),
+    "duplicate_resource": SnowflakeResource(
+        database="foo", account="foo", password="foo", user="foo"
+    ),
 }
