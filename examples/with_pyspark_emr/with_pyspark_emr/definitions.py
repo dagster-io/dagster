@@ -27,7 +27,7 @@ class ParquetIOManager(ConfigurableIOManager):
         obj.write.parquet(self._get_path(context))
 
     def load_input(self, context):
-        spark = self.pyspark.get_client().spark_session
+        spark = self.pyspark.spark_session
         return spark.read.parquet(self._get_path(context.upstream_output))
 
 
@@ -35,7 +35,7 @@ class ParquetIOManager(ConfigurableIOManager):
 def make_people(pyspark: PySparkResource, pyspark_step_launcher: ResourceParam[Any]) -> DataFrame:
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
-    return pyspark.get_client().spark_session.createDataFrame(rows, schema)
+    return pyspark.spark_session.createDataFrame(rows, schema)
 
 
 @op
