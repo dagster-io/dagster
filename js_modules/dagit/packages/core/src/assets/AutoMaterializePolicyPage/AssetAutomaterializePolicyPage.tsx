@@ -24,6 +24,7 @@ import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {
   AutomaterializePolicyTag,
   automaterializePolicyDescription,
@@ -149,19 +150,14 @@ function LeftPanel({
   selectedEvaluation?: EvaluationType;
 }) {
   return (
-    <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'scroll'}}>
-      <Box
-        style={{flex: 1, minHeight: 0, overflowY: 'scroll'}}
-        flex={{grow: 1, direction: 'column'}}
-      >
+    <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
+      <Box style={{flex: 1, minHeight: 0, overflowY: 'auto'}} flex={{grow: 1, direction: 'column'}}>
         {evaluations.map((evaluation) => {
-          const date = dayjs.unix(evaluation.timestamp);
-          const formattedDate = date.format('lll');
           const isSelected = selectedEvaluation === evaluation;
           return (
             <EvaluationRow
               flex={{justifyContent: 'space-between'}}
-              key={evaluation.evaluationId + '' + Math.random()}
+              key={evaluation.evaluationId}
               padding={{horizontal: 24, vertical: 8}}
               border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               onClick={() => {
@@ -169,7 +165,7 @@ function LeftPanel({
               }}
               $selected={isSelected}
             >
-              {formattedDate}
+              <TimestampDisplay timestamp={evaluation.timestamp} />
               {evaluation.numRequested ? (
                 <Icon name="auto_materialize_policy" size={24} />
               ) : evaluation.numSkipped ? (
@@ -225,7 +221,7 @@ const RightPanel = ({
   React.useEffect(() => {
     if (data?.assetNodeOrError.__typename === 'AssetNode') {
       const max = data.assetNodeOrError.autoMaterializePolicy?.maxMaterializationsPerMinute;
-      if (max !== undefined && max !== null) {
+      if (typeof max === 'number') {
         setMaxMaterializationsPerMinute(max);
       }
     }
@@ -291,7 +287,7 @@ const RightPanel = ({
             />
           )}
           {data.assetNodeOrError.freshnessPolicy ? (
-            <RightPanelSection title="Freshness Policy">
+            <RightPanelSection title="Freshness policy">
               <RightPanelDetail title="Maximum lag minutes" tooltip="test" value={2} />
               <Box flex={{direction: 'column', gap: 8}}>
                 This asset will be considered late if it is not materialized within 2 minutes of
