@@ -4,13 +4,22 @@ things from dagster runs.
 """
 import atexit
 import sys
+from contextlib import contextmanager
 from itertools import islice
 from os import environ
-from typing import Any, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 import mlflow
-from dagster import Field, Noneable, Permissive, StringSource, resource
+from dagster import (
+    ConfigurableResource,
+    Field,
+    Noneable,
+    Permissive,
+    StringSource,
+    resource,
+)
 from mlflow.entities.run_status import RunStatus
+from pydantic import Field as PyField
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),
@@ -54,7 +63,7 @@ class MlflowMeta(type):
         return class_cls
 
 
-class MlFlow(metaclass=MlflowMeta):
+class MlFlowTrackingClient(metaclass=MlflowMeta):
     """Class for setting up an mlflow resource for dagster runs.
     This takes care of all the configuration required to use mlflow tracking and the complexities of
     mlflow tracking dagster parallel runs.
@@ -199,7 +208,7 @@ class MlFlow(metaclass=MlflowMeta):
         Args:
             params (dict): Parameters to be logged
         """
-        for param_chunk in MlFlow.chunks(params, 100):
+        for param_chunk in MlFlowTrackingClient.chunks(params, 100):
             mlflow.log_params(param_chunk)
 
     @staticmethod
@@ -216,6 +225,30 @@ class MlFlow(metaclass=MlflowMeta):
         it = iter(params)
         for _ in range(0, len(params), size):
             yield {k: params[k] for k in islice(it, size)}
+
+
+class MLFlowTrackingResource(ConfigurableResource):
+    experiment_name: str = PyField(description="MlFlow experiment name.")
+    mlflow_tracking_url: Optional[str] = PyField(
+        default=None, description="MlFlow trakcing server URI."
+    )
+    parent_run_id: Optional[str] = PyField(
+        default=None, description="MlFlow run ID of parent run, if this is a nested run."
+    )
+    env: Dict[str, str] = PyField(default={}, description="Environment variables for MlFlow setup.")
+    env_to_tag: Optional[List[str]] = PyField(
+        default=None, description="List of environment variables to log as tags in MlFlow."
+    )
+    extra_tags: Dict[str, str] = PyField(
+        default={}, description="Any extra key-value tags to log in MlFlow."
+    )
+
+    @contextmanager
+    def get_tracking_client(self) -> Generator[MlFlowTrackingClient, None, None]:
+        context = self.get_resource_context()
+        client = MlFlowTrackingClient(context)
+        yield client
+        client.cleanup_on_error()
 
 
 @resource(config_schema=CONFIG_SCHEMA)
@@ -274,6 +307,6 @@ def mlflow_tracking(context):
                 }
             })
     """
-    mlf = MlFlow(context)
+    mlf = MlFlowTrackingClient(context)
     yield mlf
     mlf.cleanup_on_error()
