@@ -69,7 +69,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
     return queryResult.data?.autoMaterializeAssetEvaluations || [];
   }, [queryResult.data?.autoMaterializeAssetEvaluations]);
 
-  const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState({
+  const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<string>({
     queryKey: 'evaluation',
   });
 
@@ -111,7 +111,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
               queryResult={queryResult}
               paginationProps={paginationProps}
               onSelectEvaluation={(evaluation) => {
-                setSelectedEvaluationId(evaluation.evaluationId);
+                setSelectedEvaluationId(evaluation.evaluationId.toString());
               }}
               selectedEvaluation={selectedEvaluation}
             />
@@ -121,6 +121,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
               assetKey={assetKey}
               key={selectedEvaluation?.evaluationId || ''}
               maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+              selectedEvaluationId={selectedEvaluationId?.toString()}
             />
           </Box>
         </Box>
@@ -171,19 +172,21 @@ function LeftPanel({
               ) : evaluation.numSkipped ? (
                 <div
                   style={{
+                    margin: '7px',
                     borderRadius: '50%',
                     height: '10px',
                     width: '10px',
-                    color: Colors.Yellow500,
+                    background: Colors.Yellow500,
                   }}
                 />
               ) : (
                 <div
                   style={{
+                    margin: '7px',
                     borderRadius: '50%',
                     height: '10px',
                     width: '10px',
-                    color: Colors.Yellow50,
+                    background: Colors.Yellow50,
                   }}
                 />
               )}
@@ -384,10 +387,12 @@ const MiddlePanel = ({
       variables: {
         assetKey,
         cursor: selectedEvaluationId,
-        limit: 1,
+        limit: 2,
       },
     },
   );
+
+  console.log({selectedEvaluationId, data});
 
   const evaluationData = React.useMemo(() => {
     return data?.autoMaterializeAssetEvaluations[0];
