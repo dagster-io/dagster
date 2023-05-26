@@ -12,6 +12,10 @@ class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     project: Optional[str] = Field(default=None, description="Project name")
 
     def get_client(self) -> storage.Client:
+        """Creates a GCS Client.
+
+        Returns: google.cloud.storage.Client
+        """
         return _gcs_client_from_config(project=self.project)
 
     def get_object_to_set_on_execution_context(self) -> Any:
@@ -28,11 +32,18 @@ def gcs_resource(init_context) -> storage.Client:
 
 
 class GCSFileManagerResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """FileManager that provides abstract access to GCS."""
+
     project: Optional[str] = Field(default=None, description="Project name")
     gcs_bucket: str = Field(description="GCS bucket to store files")
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
 
     def get_client(self) -> GCSFileManager:
+        """Creates a :py:class:`~dagster_gcp.GCSFileManager` object that implements the
+        :py:class:`~dagster._core.storage.file_manager.FileManager` API .
+
+        Returns: GCSFileManager
+        """
         gcs_client = _gcs_client_from_config(project=self.project)
         return GCSFileManager(
             client=gcs_client,

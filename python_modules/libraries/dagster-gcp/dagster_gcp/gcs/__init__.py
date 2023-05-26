@@ -12,6 +12,7 @@ from .io_manager import (
     gcs_pickle_io_manager as gcs_pickle_io_manager,
 )
 from .resources import (
+    GCSFileManagerResource as GCSFileManagerResource,
     GCSResource as GCSResource,
     gcs_file_manager as gcs_file_manager,
     gcs_resource as gcs_resource,
