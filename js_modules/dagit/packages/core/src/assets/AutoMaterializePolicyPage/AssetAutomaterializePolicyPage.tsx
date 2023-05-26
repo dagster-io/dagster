@@ -69,15 +69,24 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
     return queryResult.data?.autoMaterializeAssetEvaluations || [];
   }, [queryResult.data?.autoMaterializeAssetEvaluations]);
 
-  const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<string>({
+  const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
+    number | undefined
+  >({
     queryKey: 'evaluation',
+    decode: (raw) => {
+      try {
+        return raw.evaluation ? parseInt(raw.evaluation) : undefined;
+      } catch (e) {
+        return undefined;
+      }
+    },
   });
+
+  console.log({selectedEvaluationId});
 
   const selectedEvaluation: EvaluationType | undefined = React.useMemo(() => {
     if (selectedEvaluationId) {
-      return evaluations.find(
-        (evaluation) => evaluation.evaluationId.toString() === selectedEvaluationId,
-      );
+      return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
     }
     return evaluations[0];
   }, [selectedEvaluationId, evaluations]);
@@ -121,7 +130,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
               assetKey={assetKey}
               key={selectedEvaluation?.evaluationId || ''}
               maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-              selectedEvaluationId={selectedEvaluationId?.toString()}
+              selectedEvaluationId={selectedEvaluationId}
             />
           </Box>
         </Box>
@@ -378,7 +387,7 @@ const MiddlePanel = ({
   maxMaterializationsPerMinute,
 }: {
   assetKey: Omit<AssetKey, '__typename'>;
-  selectedEvaluationId?: string;
+  selectedEvaluationId?: number;
   maxMaterializationsPerMinute: number;
 }) => {
   const {data, loading, error} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
@@ -386,13 +395,11 @@ const MiddlePanel = ({
     {
       variables: {
         assetKey,
-        cursor: selectedEvaluationId,
+        cursor: selectedEvaluationId ? (selectedEvaluationId + 1).toString() : undefined,
         limit: 2,
       },
     },
   );
-
-  console.log({selectedEvaluationId, data});
 
   const evaluationData = React.useMemo(() => {
     return data?.autoMaterializeAssetEvaluations[0];
