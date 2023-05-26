@@ -11,21 +11,21 @@ from datahub.emitter.kafka_emitter import (
     KafkaEmitterConfig,
 )
 from datahub.emitter.rest_emitter import DatahubRestEmitter
-from pydantic import Field as PyField
+from pydantic import Field
 
 
 class DatahubRESTEmitterResource(ConfigurableResource):
-    connection: str = PyField(description="Datahub GMS Server")
-    token: Optional[str] = PyField(default=None, description="Personal Access Token")
-    connect_timeout_sec: Optional[float] = PyField(default=None)
-    read_timeout_sec: Optional[float] = PyField(default=None)
-    retry_status_codes: Optional[List[int]] = PyField(default=None)
-    retry_methods: Optional[List[str]] = PyField(default=None)
-    retry_max_times: Optional[int] = PyField(default=None)
-    extra_headers: Optional[Dict[str, str]] = PyField(default=None)
-    ca_certificate_path: Optional[str] = PyField(default=None)
-    server_telemetry_id: Optional[str] = PyField(default=None)
-    disable_ssl_verification: bool = PyField(default=False)
+    connection: str = Field(description="Datahub GMS Server")
+    token: Optional[str] = Field(default=None, description="Personal Access Token")
+    connect_timeout_sec: Optional[float] = None
+    read_timeout_sec: Optional[float] = None
+    retry_status_codes: Optional[List[int]] = None
+    retry_methods: Optional[List[str]] = None
+    retry_max_times: Optional[int] = None
+    extra_headers: Optional[Dict[str, str]] = None
+    ca_certificate_path: Optional[str] = None
+    server_telemetry_id: Optional[str] = None
+    disable_ssl_verification: bool = False
 
     def get_emitter(self) -> DatahubRestEmitter:
         return DatahubRestEmitter(
@@ -64,17 +64,17 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
 
 
 class DatahubConnection(Config):
-    bootstrap: str = PyField(description="Kafka Boostrap Servers. Comma delimited")
-    schema_registry_url: str = PyField(description="Schema Registry Location.")
-    schema_registry_config: Dict[str, Any] = PyField(
+    bootstrap: str = Field(description="Kafka Boostrap Servers. Comma delimited")
+    schema_registry_url: str = Field(description="Schema Registry Location.")
+    schema_registry_config: Dict[str, Any] = Field(
         default={}, description="Extra Schema Registry Config."
     )
 
 
 class DatahubKafkaEmitterResource(ConfigurableResource):
     connection: DatahubConnection
-    topic: Optional[str] = PyField(default=None)
-    topic_routes: Dict[str, str] = PyField(
+    topic: Optional[str] = None
+    topic_routes: Dict[str, str] = Field(
         default={
             MCE_KEY: DEFAULT_MCE_KAFKA_TOPIC,
             MCP_KEY: DEFAULT_MCP_KAFKA_TOPIC,
