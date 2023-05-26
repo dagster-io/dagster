@@ -111,7 +111,7 @@ const Trace = styled.div`
   padding-bottom: 1em;
 `;
 
-const ErrorWrapper = styled.div`
+export const ErrorWrapper = styled.div`
   background-color: #fdf2f4;
   border: 1px solid #d17257;
   border-radius: 3px;
@@ -121,7 +121,7 @@ const ErrorWrapper = styled.div`
   overflow: auto;
 `;
 
-const ErrorWrapperCentered = styled(ErrorWrapper)`
+export const ErrorWrapperCentered = styled(ErrorWrapper)`
   position: absolute;
   left: 50%;
   top: 100px;

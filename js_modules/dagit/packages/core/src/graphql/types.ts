@@ -319,6 +319,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
 export type AutoMaterializeCondition =
   | DownstreamFreshnessAutoMaterializeCondition
   | FreshnessAutoMaterializeCondition
+  | MaxMaterializationsExceededAutoMaterializeCondition
   | MissingAutoMaterializeCondition
   | ParentMaterializedAutoMaterializeCondition
   | ParentOutdatedAutoMaterializeCondition;
@@ -2128,6 +2129,11 @@ export type MaterializedPartitionRangeStatuses2D = {
   primaryDimStartKey: Scalars['String'];
   primaryDimStartTime: Maybe<Scalars['Float']>;
   secondaryDim: PartitionStatus1D;
+};
+
+export type MaxMaterializationsExceededAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
 };
 
 export type MessageEvent = {
@@ -7811,6 +7817,23 @@ export const buildMaterializedPartitionRangeStatuses2D = (
         : relationshipsToOmit.has('DefaultPartitionStatuses')
         ? ({} as DefaultPartitionStatuses)
         : buildDefaultPartitionStatuses({}, relationshipsToOmit),
+  };
+};
+
+export const buildMaxMaterializationsExceededAutoMaterializeCondition = (
+  overrides?: Partial<MaxMaterializationsExceededAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+} & MaxMaterializationsExceededAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MaxMaterializationsExceededAutoMaterializeCondition');
+  return {
+    __typename: 'MaxMaterializationsExceededAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
   };
 };
 
