@@ -1165,7 +1165,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            self.__class__,
+            self.resource_cls,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
@@ -1358,7 +1358,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             output_config_schema = factory_cls.output_config_schema()
 
         return ConfigurableIOManagerFactoryResourceDefinition(
-            self.__class__,
+            self.resource_cls,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
