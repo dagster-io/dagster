@@ -490,6 +490,30 @@ class IntEnvVar(int):
         var.name = name
         return var
 
+    def __int__(self) -> int:
+        """Raises an exception of the EnvVar value is directly accessed. Users should instead use
+        the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
+        """
+        raise RuntimeError(
+            f'Attempted to directly retrieve environment variable IntEnvVar("{self.name}").'
+            " IntEnvVar should only be used as input to Dagster config or resources."
+        )
+
+    def __str__(self) -> str:
+        return str(int(self))
+
+    def get_value(self, default: Optional[int] = None) -> Optional[int]:
+        """Returns the value of the environment variable, or the default value if the
+        environment variable is not set. If no default is provided, None will be returned.
+        """
+        value = os.getenv(self.name, default=default)
+        return int(value) if value else None
+
+    @property
+    def env_var_name(self) -> str:
+        """Returns the name of the environment variable."""
+        return self.name
+
 
 class EnvVar(str):
     """Class used to represent an environment variable in the Dagster config system.
@@ -510,10 +534,11 @@ class EnvVar(str):
         the `get_value` method, or use the EnvVar as an input to Dagster config or resources.
         """
         raise RuntimeError(
-            f'Attempted to directly retrieve environment variable EnvVar("{self.env_var_name()}").'
+            f'Attempted to directly retrieve environment variable EnvVar("{self.env_var_name}").'
             " EnvVar should only be used as input to Dagster config or resources."
         )
 
+    @property
     def env_var_name(self) -> str:
         """Returns the name of the environment variable."""
         return super().__str__()
@@ -522,4 +547,4 @@ class EnvVar(str):
         """Returns the value of the environment variable, or the default value if the
         environment variable is not set. If no default is provided, None will be returned.
         """
-        return os.getenv(self.env_var_name(), default=default)
+        return os.getenv(self.env_var_name, default=default)
