@@ -78,8 +78,6 @@ class UPathIOManager(MemoizableIOManager):
         return self.path_exists(self._get_path(context))
 
     def _with_extension(self, path: "UPath") -> "UPath":
-        from upath import UPath
-
         return UPath(f"{path}{self.extension}") if self.extension else path
 
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> "UPath":
