@@ -12,6 +12,7 @@ export type GetEvaluationsQuery = {
   __typename: 'DagitQuery';
   autoMaterializeAssetEvaluations: Array<{
     __typename: 'AutoMaterializeAssetEvaluationRecord';
+    id: string;
     evaluationId: number;
     numRequested: number;
     numSkipped: number;

@@ -644,6 +644,7 @@ const CenterAlignedRow = React.forwardRef((props: React.ComponentProps<typeof Bo
 export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     autoMaterializeAssetEvaluations(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+      id
       evaluationId
       numRequested
       numSkipped
