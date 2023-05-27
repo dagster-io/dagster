@@ -74,11 +74,8 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
   >({
     queryKey: 'evaluation',
     decode: (raw) => {
-      try {
-        return raw.evaluation ? parseInt(raw.evaluation) : undefined;
-      } catch (e) {
-        return undefined;
-      }
+      const value = parseInt(raw.evaluation);
+      return isNaN(value) ? undefined : value;
     },
   });
 
