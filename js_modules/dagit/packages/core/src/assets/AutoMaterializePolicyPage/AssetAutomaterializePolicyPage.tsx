@@ -553,7 +553,7 @@ const MiddlePanel = ({
             met={!!conditionResults.waitingOnUpstreamData}
           />
           <Condition
-            text={`Exceeds ${maxMaterializationsPerMinute} materializations per hour`}
+            text={`Exceeds ${maxMaterializationsPerMinute} materializations per minute`}
             met={!!conditionResults.exceedsXMaterializationsPerHour}
           />
         </Box>
