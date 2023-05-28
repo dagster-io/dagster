@@ -1066,10 +1066,6 @@ def open_server_process(
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.opt_int_param(max_workers, "max_workers")
 
-    from dagster._core.test_utils import get_mocked_system_timezone
-
-    mocked_system_timezone = get_mocked_system_timezone()
-
     executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
 
     subprocess_args = [
@@ -1082,7 +1078,6 @@ def open_server_process(
         *(["--heartbeat"] if heartbeat else []),
         *(["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else []),
         *(["--fixed-server-id", fixed_server_id] if fixed_server_id else []),
-        *(["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else []),
         *(["--log-level", log_level]),
         # only use the Python environment if it has been explicitly set in the workspace,
         *(["--use-python-environment-entry-point"] if executable_path else []),
