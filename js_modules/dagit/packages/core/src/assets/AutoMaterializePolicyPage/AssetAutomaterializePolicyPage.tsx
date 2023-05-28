@@ -115,7 +115,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
               queryResult={queryResult}
               paginationProps={paginationProps}
               onSelectEvaluation={(evaluation) => {
-                setSelectedEvaluationId(evaluation.evaluationId.toString());
+                setSelectedEvaluationId(evaluation.evaluationId);
               }}
               selectedEvaluation={selectedEvaluation}
             />
