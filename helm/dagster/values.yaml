@@ -395,7 +395,7 @@ dagster-user-deployments:
         periodSeconds: 20
         timeoutSeconds: 3
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 15  # Allow roughly 300 seconds to start up by default
 
       # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
       # enable startup probes.
