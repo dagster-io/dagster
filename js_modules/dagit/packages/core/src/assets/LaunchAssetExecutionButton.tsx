@@ -41,7 +41,8 @@ import {
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
-  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey};
+  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey}
+  | {type: 'pureAll'};
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -403,11 +404,17 @@ async function stateForLaunchingAssets(
   );
 
   if (!inSameRepo || !inSameOrNoPartitionSpace || !jobName) {
+    if (!partitionDefinition) {
+      return {type: 'error', error: ERROR_INVALID_ASSET_SELECTION};
+    }
     const anchorAsset = getAnchorAssetForPartitionMappedBackfill(assets);
     if (!anchorAsset) {
       return {
-        type: 'error',
-        error: ERROR_INVALID_ASSET_SELECTION,
+        type: 'partitions',
+        assets,
+        target: {type: 'pureAll'},
+        upstreamAssetKeys: [],
+        repoAddress,
       };
     }
     return {
