@@ -69,15 +69,19 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
     return queryResult.data?.autoMaterializeAssetEvaluations || [];
   }, [queryResult.data?.autoMaterializeAssetEvaluations]);
 
-  const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState({
+  const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
+    number | undefined
+  >({
     queryKey: 'evaluation',
+    decode: (raw) => {
+      const value = parseInt(raw.evaluation);
+      return isNaN(value) ? undefined : value;
+    },
   });
 
   const selectedEvaluation: EvaluationType | undefined = React.useMemo(() => {
     if (selectedEvaluationId) {
-      return evaluations.find(
-        (evaluation) => evaluation.evaluationId.toString() === selectedEvaluationId,
-      );
+      return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
     }
     return evaluations[0];
   }, [selectedEvaluationId, evaluations]);
@@ -121,6 +125,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
               assetKey={assetKey}
               key={selectedEvaluation?.evaluationId || ''}
               maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+              selectedEvaluationId={selectedEvaluationId}
             />
           </Box>
         </Box>
@@ -171,19 +176,21 @@ function LeftPanel({
               ) : evaluation.numSkipped ? (
                 <div
                   style={{
+                    margin: '7px',
                     borderRadius: '50%',
                     height: '10px',
                     width: '10px',
-                    color: Colors.Yellow500,
+                    background: Colors.Yellow500,
                   }}
                 />
               ) : (
                 <div
                   style={{
+                    margin: '7px',
                     borderRadius: '50%',
                     height: '10px',
                     width: '10px',
-                    color: Colors.Yellow50,
+                    background: Colors.Yellow50,
                   }}
                 />
               )}
@@ -375,7 +382,7 @@ const MiddlePanel = ({
   maxMaterializationsPerMinute,
 }: {
   assetKey: Omit<AssetKey, '__typename'>;
-  selectedEvaluationId?: string;
+  selectedEvaluationId?: number;
   maxMaterializationsPerMinute: number;
 }) => {
   const {data, loading, error} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
@@ -383,8 +390,8 @@ const MiddlePanel = ({
     {
       variables: {
         assetKey,
-        cursor: selectedEvaluationId,
-        limit: 1,
+        cursor: selectedEvaluationId ? (selectedEvaluationId + 1).toString() : undefined,
+        limit: 2,
       },
     },
   );
@@ -546,7 +553,7 @@ const MiddlePanel = ({
             met={!!conditionResults.waitingOnUpstreamData}
           />
           <Condition
-            text={`Exceeds ${maxMaterializationsPerMinute} materializations per hour`}
+            text={`Exceeds ${maxMaterializationsPerMinute} materializations per minute`}
             met={!!conditionResults.exceedsXMaterializationsPerHour}
           />
         </Box>
@@ -637,6 +644,7 @@ const CenterAlignedRow = React.forwardRef((props: React.ComponentProps<typeof Bo
 export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     autoMaterializeAssetEvaluations(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+      id
       evaluationId
       numRequested
       numSkipped
