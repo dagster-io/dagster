@@ -341,6 +341,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return Tags(arn, cluster, cpu, memory)
 
+    def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
+        return run_args.get_command_args()
+
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
         run = context.dagster_run
@@ -365,7 +368,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
-        command = args.get_command_args()
+        command = self._get_command_args(args, context)
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
