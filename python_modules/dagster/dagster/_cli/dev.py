@@ -14,7 +14,7 @@ from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
 
 from .job import apply_click_params
-from .utils import get_instance_for_service
+from .utils import get_possibly_temporary_instance_for_cli
 from .workspace.cli_target import (
     ClickArgValue,
     get_workspace_load_target,
@@ -95,7 +95,7 @@ def dev_command(
                 " unless it is placed in the same folder as DAGSTER_HOME."
             )
 
-    with get_instance_for_service("dagster dev", logger_fn=logger.info) as instance:
+    with get_possibly_temporary_instance_for_cli("dagster dev", logger=logger) as instance:
         logger.info("Launching Dagster services...")
 
         args = [

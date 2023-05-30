@@ -6,7 +6,7 @@ from typing import Optional
 import click
 import dagster._check as check
 import uvicorn
-from dagster._cli.utils import get_instance_for_service
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
@@ -158,10 +158,10 @@ def dagit(
     configure_loggers()
     logger = logging.getLogger("dagit")
 
-    with get_instance_for_service(
-        "dagit",
+    with get_possibly_temporary_instance_for_cli(
+        cli_command="dagit",
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
-        logger_fn=logger.info,
+        logger=logger,
     ) as instance:
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout, db_pool_recycle)
