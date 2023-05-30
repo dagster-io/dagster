@@ -6,7 +6,12 @@ import styled from 'styled-components/macro';
 
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {MISSING_LIVE_DATA, toGraphId} from '../asset-graph/Utils';
+import {
+  MISSING_LIVE_DATA,
+  displayNameForAssetKey,
+  toGraphId,
+  tokenForAssetKey,
+} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
@@ -19,6 +24,7 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {testId} from '../testing/testId';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {RepoAddress} from './types';
@@ -76,7 +82,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   };
 
   return (
-    <Row $height={height} $start={start}>
+    <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
       <RowGrid
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         $showRepoColumn={showRepoColumn}
