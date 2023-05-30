@@ -201,7 +201,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     PipelineExecutionConfigSchemaQueryVariables
   >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
     variables: {selector: pipelineSelector, mode: currentSession?.mode},
-    partialRefetch: true,
   });
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
