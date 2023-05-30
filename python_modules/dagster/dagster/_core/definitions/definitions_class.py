@@ -142,6 +142,27 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     schedules = schedules or []
     sensors = sensors or []
 
+    # Add jobs in schedules and sensors as well
+    jobs = [
+        *jobs,
+        *[
+            schedule.job
+            for schedule in schedules
+            if isinstance(schedule, ScheduleDefinition)
+            and schedule.has_loadable_target()
+            and isinstance(schedule.job, (JobDefinition, UnresolvedAssetJobDefinition))
+        ],
+        *[
+            job
+            for sensor in sensors
+            if sensor.has_loadable_targets()
+            for job in sensor.jobs
+            if isinstance(job, (JobDefinition, UnresolvedAssetJobDefinition))
+        ],
+    ]
+    # Dedupe
+    jobs = list({id(job): job for job in jobs}.values())
+
     # Find unsatisfied jobs
     unsatisfied_jobs = [
         job

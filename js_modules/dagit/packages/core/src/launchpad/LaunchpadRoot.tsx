@@ -176,6 +176,11 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
+        rootDefaultYaml={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError.rootDefaultYaml
+            : undefined
+        }
       />
     );
   } else {
@@ -187,6 +192,11 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
           pipeline={pipelineOrError}
           partitionSets={partitionSetsOrError}
           repoAddress={repoAddress}
+          rootDefaultYaml={
+            result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+              ? result.data.runConfigSchemaOrError.rootDefaultYaml
+              : undefined
+          }
         />
       </React.Suspense>
     );
@@ -227,6 +237,18 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
       ...LaunchpadSessionPartitionSetsFragment
       ...PythonErrorFragment
+    }
+    runConfigSchemaOrError(
+      selector: {
+        pipelineName: $pipelineName
+        repositoryName: $repositoryName
+        repositoryLocationName: $repositoryLocationName
+      }
+    ) {
+      __typename
+      ... on RunConfigSchema {
+        rootDefaultYaml
+      }
     }
   }
 

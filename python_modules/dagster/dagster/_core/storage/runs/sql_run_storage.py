@@ -856,7 +856,12 @@ class SqlRunStorage(RunStorage):
                 snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
                 snapshot_type=snapshot_type.value,
             )
-            conn.execute(snapshot_insert)
+            try:
+                conn.execute(snapshot_insert)
+            except db_exc.IntegrityError:
+                # on_conflict_do_nothing equivalent
+                pass
+
             return snapshot_id
 
     def get_run_storage_id(self) -> str:

@@ -948,6 +948,10 @@ class TestRunStorage:
 
         snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)
         fetched_ep_snapshot = storage.get_execution_plan_snapshot(snapshot_id)
+
+        # idempotent
+        assert storage.add_execution_plan_snapshot(ep_snapshot) == snapshot_id
+
         assert fetched_ep_snapshot
         assert serialize_pp(fetched_ep_snapshot) == serialize_pp(ep_snapshot)
         assert storage.has_execution_plan_snapshot(snapshot_id)

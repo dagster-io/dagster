@@ -19,6 +19,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorStatus
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 
+from .utils import get_instance_for_cli
+
 
 @click.group(name="schedule")
 def schedule_cli():
@@ -146,7 +148,7 @@ def schedule_preview_command(**kwargs):
 
 
 def execute_preview_command(cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -168,7 +170,7 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -247,7 +249,7 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -285,7 +287,7 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -319,7 +321,7 @@ def schedule_logs_command(schedule_name, **kwargs):
 
 
 def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -385,7 +387,7 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -450,7 +452,7 @@ def schedule_wipe_command():
 
 
 def execute_wipe_command(print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         confirmation = click.prompt(
             "Are you sure you want to turn off all schedules and delete all schedule history? Type"
             " DELETE"
@@ -468,7 +470,7 @@ def schedule_debug_command():
 
 
 def execute_debug_command(print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         debug_info = instance.scheduler_debug_info()
 
         output = ""

@@ -50,7 +50,6 @@ from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
-    mock_system_timezone,
     wait_for_futures,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -819,55 +818,54 @@ def test_no_started_schedules(
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_schedule_without_timezone(instance: DagsterInstance, executor: ThreadPoolExecutor):
-    with mock_system_timezone("US/Eastern"):
-        with create_test_daemon_workspace_context(
-            workspace_load_target=workspace_load_target(),
-            instance=instance,
-        ) as workspace_context:
-            code_location = next(
-                iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-            ).code_location
-            assert code_location is not None
-            external_repo = code_location.get_repository("the_repo")
-            external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
-            schedule_origin = external_schedule.get_external_origin()
-            initial_datetime = create_pendulum_time(
-                year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"
+    with create_test_daemon_workspace_context(
+        workspace_load_target=workspace_load_target(),
+        instance=instance,
+    ) as workspace_context:
+        code_location = next(
+            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+        ).code_location
+        assert code_location is not None
+        external_repo = code_location.get_repository("the_repo")
+        external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
+        schedule_origin = external_schedule.get_external_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="UTC"
+        )
+
+        with pendulum.test(initial_datetime):
+            instance.start_schedule(external_schedule)
+
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+            assert instance.get_runs_count() == 1
+
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+            assert len(ticks) == 1
+
+            expected_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
             )
 
-            with pendulum.test(initial_datetime):
-                instance.start_schedule(external_schedule)
+            wait_for_all_runs_to_start(instance)
+            validate_run_started(
+                instance,
+                next(iter(instance.get_runs())),
+                execution_time=expected_datetime,
+            )
 
-                evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-
-                assert instance.get_runs_count() == 1
-
-                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-
-                assert len(ticks) == 1
-
-                expected_datetime = create_pendulum_time(year=2019, month=2, day=27, tz="UTC")
-
-                validate_tick(
-                    ticks[0],
-                    external_schedule,
-                    expected_datetime,
-                    TickStatus.SUCCESS,
-                    [run.run_id for run in instance.get_runs()],
-                )
-
-                wait_for_all_runs_to_start(instance)
-                validate_run_started(
-                    instance,
-                    next(iter(instance.get_runs())),
-                    execution_time=expected_datetime,
-                )
-
-                # Verify idempotence
-                evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-                assert instance.get_runs_count() == 1
-                ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-                assert len(ticks) == 1
+            # Verify idempotence
+            evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 1
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())

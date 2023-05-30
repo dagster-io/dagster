@@ -6,6 +6,7 @@ import {
   IExecutionSessionChanges,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
+import {useFeatureFlags} from '../app/Flags';
 import {RepoAddress} from '../workspace/types';
 
 import {LaunchpadType} from './LaunchpadRoot';
@@ -21,12 +22,26 @@ interface Props {
   partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
   sessionPresets: Partial<IExecutionSession>;
+  rootDefaultYaml: string | undefined;
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets} = props;
+  const {
+    launchpadType,
+    pipeline,
+    partitionSets,
+    repoAddress,
+    sessionPresets,
+    rootDefaultYaml,
+  } = props;
 
-  const initialData = useInitialDataForMode(pipeline, partitionSets);
+  const {flagAutoLoadDefaults} = useFeatureFlags();
+  const initialData = useInitialDataForMode(
+    pipeline,
+    partitionSets,
+    rootDefaultYaml,
+    flagAutoLoadDefaults,
+  );
   const initialSessionComplete = createSingleSession({
     ...sessionPresets,
     runConfigYaml: initialData.runConfigYaml,
