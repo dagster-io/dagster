@@ -23,7 +23,7 @@ from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
-    GrapheneAutoMaterializeAssetEvaluationRecord,
+    GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
 )
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
@@ -469,8 +469,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Provides fields for testing behavior",
     )
 
-    autoMaterializeAssetEvaluations = graphene.Field(
-        non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord),
+    autoMaterializeAssetEvaluationsOrError = graphene.Field(
+        non_null_list(GrapheneAutoMaterializeAssetEvaluationRecordsOrError),
         assetKey=graphene.Argument(GrapheneAssetKeyInput),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),

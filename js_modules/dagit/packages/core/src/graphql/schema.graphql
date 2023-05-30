@@ -2900,11 +2900,11 @@ type DagitQuery {
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
   shouldShowNux: Boolean!
   test: TestFields
-  autoMaterializeAssetEvaluations(
+  autoMaterializeAssetEvaluationsOrError(
     assetKey: AssetKeyInput
     limit: Int!
     cursor: String
-  ): [AutoMaterializeAssetEvaluationRecord!]!
+  ): [AutoMaterializeAssetEvaluationRecordsOrError!]!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3034,6 +3034,14 @@ type TestFields {
   alwaysException: String
 }
 
+union AutoMaterializeAssetEvaluationRecordsOrError =
+    AutoMaterializeAssetEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+
+type AutoMaterializeAssetEvaluationRecords {
+  records: [AutoMaterializeAssetEvaluationRecord!]!
+}
+
 type AutoMaterializeAssetEvaluationRecord {
   id: ID!
   evaluationId: Int!
@@ -3084,6 +3092,10 @@ type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionW
 
 type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+}
+
+type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
+  message: String!
 }
 
 type DagitMutation {

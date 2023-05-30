@@ -4,6 +4,7 @@ from dagster import AssetKey, DagsterInstance
 from dagster._core.errors import DagsterError
 
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
+    GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
     GrapheneAutoMaterializeAssetEvaluationRecord,
 )
 from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
@@ -17,13 +18,15 @@ def fetch_auto_materialize_asset_evaluations(
 ) -> Sequence[GrapheneAutoMaterializeAssetEvaluationRecord]:
     """Fetch asset policy evaluations from storage."""
     if instance.schedule_storage is None:
-        raise DagsterError(
-            "Instance does not have schedule storage configured, cannot fetch evaluations."
+        return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
+            message="Instance does not have schedule storage configured, cannot fetch evaluations."
         )
     if not instance.schedule_storage.supports_auto_materialize_asset_evaluations:
-        raise DagsterError(
-            "Auto materialize evaluations are not getting logged. Run `dagster instance"
-            " migrate` to enable."
+        return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
+            message=(
+                "Auto materialize evaluations are not getting logged. Run `dagster instance"
+                " migrate` to enable."
+            )
         )
 
     return [

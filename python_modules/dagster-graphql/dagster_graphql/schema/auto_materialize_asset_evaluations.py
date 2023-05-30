@@ -1,6 +1,7 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import dagster._check as check
+from dagster_graphql.schema.errors import GrapheneError
 import graphene
 from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeCondition,
@@ -127,3 +128,30 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             ],
             timestamp=record.timestamp,
         )
+
+
+class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
+    records = non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord)
+
+    class Meta:
+        name = "AutoMaterializeAssetEvaluationRecords"
+
+    def __init__(self, records: List[AutoMaterializeAssetEvaluationRecord]):
+        super().__init__(records=records)
+
+
+class GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AutoMaterializeAssetEvaluationNeedsMigrationError"
+
+
+class GrapheneAutoMaterializeAssetEvaluationRecordsOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAutoMaterializeAssetEvaluationRecords,
+            GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
+        )
+        name = "AutoMaterializeAssetEvaluationRecordsOrError"
