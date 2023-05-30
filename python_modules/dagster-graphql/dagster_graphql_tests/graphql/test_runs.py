@@ -394,10 +394,9 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         with mock.patch(
             "dagster._core.storage.runs.sql_run_storage.SqlRunStorage.get_run_tag_keys",
         ) as get_run_tag_keys_mock:
-            with instance_for_test():
-                get_run_tag_keys_mock.side_effect = Exception("wah wah")
-                all_tag_keys_result = execute_dagster_graphql(graphql_context, ALL_TAG_KEYS_QUERY)
-                all_tag_keys_result.data["runTagKeysOrError"]["__typename"] == "PythonError"  # type: ignore
+            get_run_tag_keys_mock.side_effect = Exception("wah wah")
+            all_tag_keys_result = execute_dagster_graphql(graphql_context, ALL_TAG_KEYS_QUERY)
+            assert all_tag_keys_result.data["runTagKeysOrError"]["__typename"] == "PythonError"
 
     def test_run_config(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
