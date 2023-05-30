@@ -107,6 +107,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
+        # this attribute will be updated by the @dagster_maintained_resource and @dagster_maintained_io_manager decorators
         self._dagster_maintained = False
 
     @staticmethod

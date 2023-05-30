@@ -817,6 +817,8 @@ class ConfigurableResourceFactory(
     @classmethod
     @property
     def _dagster_maintained(cls) -> bool:
+        """This property should be overridden to return True by all dagster maintained resources and IO managers.
+        """
         return False
 
     @classmethod
