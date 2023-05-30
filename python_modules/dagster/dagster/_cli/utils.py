@@ -7,22 +7,22 @@ from typing import Iterator, Optional
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.secrets.env_file import get_env_var_dict
+from dagster._utils.env import environ
 
 
-def _load_env_var_dict(logger: logging.Logger) -> None:
+@contextmanager
+def _inject_local_env_file(logger: logging.Logger) -> Iterator[None]:
     dotenv_file_path = os.getcwd()
 
     env_var_dict = get_env_var_dict(dotenv_file_path)
 
-    # Load any env vars
-    for k, v in env_var_dict.items():
-        os.environ[k] = v
-
-    if len(env_var_dict):
-        logger.info(
-            "Loaded environment variables from .env file: "
-            + ",".join([env_var for env_var in env_var_dict]),
-        )
+    with environ(env_var_dict):
+        if len(env_var_dict):
+            logger.info(
+                "Loaded environment variables from .env file: "
+                + ",".join([env_var for env_var in env_var_dict]),
+            )
+        yield
 
 
 @contextmanager
@@ -50,9 +50,9 @@ def get_temporary_instance_for_cli(
     cli_command: str = "this command",
     logger: logging.Logger = logging.getLogger("dagster"),
 ) -> Iterator[DagsterInstance]:
-    _load_env_var_dict(logger)
-    with _get_temporary_instance(cli_command, logger) as instance:
-        yield instance
+    with _inject_local_env_file(logger):
+        with _get_temporary_instance(cli_command, logger) as instance:
+            yield instance
 
 
 @contextmanager
@@ -72,16 +72,16 @@ def get_possibly_temporary_instance_for_cli(
         a serialized instance_ref object rather than loading it from a dagster.yaml file.
     logger: Customize any log messages emitted while creating the instance.
     """
-    _load_env_var_dict(logger)
-    if instance_ref:
-        with DagsterInstance.from_ref(instance_ref) as instance:
-            yield instance
-    elif is_dagster_home_set():
-        with DagsterInstance.get() as instance:
-            yield instance
-    else:
-        with _get_temporary_instance(cli_command, logger) as instance:
-            yield instance
+    with _inject_local_env_file(logger):
+        if instance_ref:
+            with DagsterInstance.from_ref(instance_ref) as instance:
+                yield instance
+        elif is_dagster_home_set():
+            with DagsterInstance.get() as instance:
+                yield instance
+        else:
+            with _get_temporary_instance(cli_command, logger) as instance:
+                yield instance
 
 
 @contextmanager
@@ -99,11 +99,10 @@ def get_instance_for_cli(
         a serialized instance_ref object rather than loading it from a dagster.yaml file.
     logger: Customize any log messages emitted while creating the instance.
     """
-    _load_env_var_dict(logger)
-
-    if instance_ref:
-        with DagsterInstance.from_ref(instance_ref) as instance:
-            yield instance
-    else:
-        with DagsterInstance.get() as instance:
-            yield instance
+    with _inject_local_env_file(logger):
+        if instance_ref:
+            with DagsterInstance.from_ref(instance_ref) as instance:
+                yield instance
+        else:
+            with DagsterInstance.get() as instance:
+                yield instance
