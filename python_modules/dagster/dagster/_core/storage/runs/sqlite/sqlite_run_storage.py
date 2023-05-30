@@ -109,11 +109,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     @contextmanager
     def connect(self) -> Iterator[Connection]:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        conn = engine.connect()
-        try:
-            yield conn
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            with conn.begin():
+                yield conn
 
     def _alembic_upgrade(self, rev: str = "head") -> None:
         alembic_config = get_alembic_config(__file__)

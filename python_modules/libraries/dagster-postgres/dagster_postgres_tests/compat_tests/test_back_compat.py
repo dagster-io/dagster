@@ -31,11 +31,13 @@ from sqlalchemy import inspect
 
 
 def get_columns(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(c["name"] for c in db.inspect(conn).get_columns(table_name))
 
 
 def get_indexes(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(i["name"] for i in db.inspect(conn).get_indexes(table_name))
 
 
 def get_primary_key(instance, table_name: str):
@@ -46,7 +48,8 @@ def get_primary_key(instance, table_name: str):
 
 
 def get_tables(instance):
-    return instance.run_storage._engine.table_names()
+    with instance.run_storage.connect() as conn:
+        return db.inspect(conn).get_table_names()
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
@@ -398,8 +401,10 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
 
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
     engine = db.create_engine(conn_string)
-    engine.execute("drop schema public cascade;")
-    engine.execute("create schema public;")
+    with engine.connect() as conn:
+        with conn.begin():
+            conn.execute(db.text("drop schema public cascade;"))
+            conn.execute(db.text("create schema public;"))
     env = os.environ.copy()
     env["PGPASSWORD"] = password
     subprocess.check_call(

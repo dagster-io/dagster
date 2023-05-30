@@ -6,6 +6,7 @@ import tempfile
 from urllib.parse import urlparse
 
 import pytest
+import sqlalchemy as db
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -22,28 +23,32 @@ from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.sql import db_select
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
-from sqlalchemy import create_engine, inspect
 
 
 def get_columns(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(c["name"] for c in db.inspect(conn).get_columns(table_name))
 
 
 def get_indexes(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(i["name"] for i in db.inspect(conn).get_indexes(table_name))
 
 
 def get_tables(instance):
-    return instance.run_storage._engine.table_names()
+    with instance.run_storage.connect() as conn:
+        return db.inspect(conn).get_table_names()
 
 
 def _reconstruct_from_file(backcompat_conn_string, path, _username="root", _password="test"):
     parse_result = urlparse(backcompat_conn_string)
     hostname = parse_result.hostname
     port = parse_result.port
-    engine = create_engine(backcompat_conn_string)
-    engine.execute("drop schema test;")
-    engine.execute("create schema test;")
+    engine = db.create_engine(backcompat_conn_string)
+    with engine.connect() as conn:
+        with conn.begin():
+            conn.execute(db.text("drop schema test;"))
+            conn.execute(db.text("create schema test;"))
     env = os.environ.copy()
     env["MYSQL_PWD"] = "test"
     subprocess.check_call(
