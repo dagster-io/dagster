@@ -470,7 +470,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     )
 
     autoMaterializeAssetEvaluationsOrError = graphene.Field(
-        non_null_list(GrapheneAutoMaterializeAssetEvaluationRecordsOrError),
+        GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
         assetKey=graphene.Argument(GrapheneAssetKeyInput),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
@@ -987,7 +987,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_test(self, _):
         return GrapheneTestFields()
 
-    def resolve_autoMaterializeAssetEvaluations(
+    def resolve_autoMaterializeAssetEvaluationsOrError(
         self,
         graphene_info: ResolveInfo,
         assetKey: GrapheneAssetKeyInput,

@@ -1,7 +1,6 @@
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
 
 import dagster._check as check
-from dagster_graphql.schema.errors import GrapheneError
 import graphene
 from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeCondition,
@@ -15,6 +14,8 @@ from dagster._core.definitions.auto_materialize_condition import (
 )
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
+
+from dagster_graphql.schema.errors import GrapheneError
 
 from .util import non_null_list
 

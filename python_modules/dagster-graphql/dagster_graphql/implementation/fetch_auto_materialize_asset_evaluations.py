@@ -1,11 +1,11 @@
-from typing import Optional, Sequence
+from typing import Optional
 
 from dagster import AssetKey, DagsterInstance
-from dagster._core.errors import DagsterError
 
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
     GrapheneAutoMaterializeAssetEvaluationRecord,
+    GrapheneAutoMaterializeAssetEvaluationRecords,
 )
 from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 
@@ -15,7 +15,7 @@ def fetch_auto_materialize_asset_evaluations(
     asset_key: GrapheneAssetKeyInput,
     limit: int,
     cursor: Optional[str],
-) -> Sequence[GrapheneAutoMaterializeAssetEvaluationRecord]:
+):
     """Fetch asset policy evaluations from storage."""
     if instance.schedule_storage is None:
         return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
@@ -29,11 +29,13 @@ def fetch_auto_materialize_asset_evaluations(
             )
         )
 
-    return [
-        GrapheneAutoMaterializeAssetEvaluationRecord(record)
-        for record in instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey.from_graphql_input(asset_key),
-            limit=limit,
-            cursor=int(cursor) if cursor else None,
-        )
-    ]
+    return GrapheneAutoMaterializeAssetEvaluationRecords(
+        records=[
+            GrapheneAutoMaterializeAssetEvaluationRecord(record)
+            for record in instance.schedule_storage.get_auto_materialize_asset_evaluations(
+                asset_key=AssetKey.from_graphql_input(asset_key),
+                limit=limit,
+                cursor=int(cursor) if cursor else None,
+            )
+        ]
+    )
