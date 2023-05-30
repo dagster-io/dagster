@@ -12,6 +12,7 @@ from dagster import (
 from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
+    DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
@@ -435,17 +436,15 @@ def test_custom_dagster_type_as_config_type() -> None:
     )
 
     with pytest.raises(
-        DagsterInvalidPythonicConfigDefinitionError,
-        match="""Error defining Dagster config class 'MyOpConfig' on field 'dagster_type_field'.
-Unable to resolve config type <class 'dagster._core.types.dagster_type.DagsterType'> to a supported Dagster config type.
-
+        DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
+        match="""Error defining Dagster config class 'MyOpConfig' on field 'dagster_type_field'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
 
 This config type can be a:
     - Python primitive type
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+    - A Pydantic discriminated union type""",
     ):
 
         class MyOpConfig(Config):
