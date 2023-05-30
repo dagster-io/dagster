@@ -1,3 +1,4 @@
+import zlib
 from typing import ContextManager, Mapping, Optional
 
 import dagster._check as check
@@ -12,7 +13,8 @@ from dagster._core.storage.runs import (
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster._core.storage.runs.schema import KeyValueStoreTable
+from dagster._core.storage.runs.schema import KeyValueStoreTable, SnapshotsTable
+from dagster._core.storage.runs.sql_run_storage import SnapshotType
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -216,6 +218,20 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
         with self.connect() as conn:
             conn.execute(upsert_stmt)
+
+    def _add_snapshot(self, snapshot_id: str, snapshot_obj, snapshot_type: SnapshotType) -> str:
+        with self.connect() as conn:
+            snapshot_insert = (
+                db_dialects.postgresql.insert(SnapshotsTable)
+                .values(
+                    snapshot_id=snapshot_id,
+                    snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
+                    snapshot_type=snapshot_type.value,
+                )
+                .on_conflict_do_nothing()
+            )
+            conn.execute(snapshot_insert)
+            return snapshot_id
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)
