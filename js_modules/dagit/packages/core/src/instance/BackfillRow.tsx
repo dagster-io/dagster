@@ -98,7 +98,7 @@ export const BackfillRow = ({
       );
       return {counts, statuses: null};
     }
-    const statuses = data.partitionBackfillOrError.partitionStatuses.results;
+    const statuses = data.partitionBackfillOrError.partitionStatuses?.results;
     const counts = countBy(statuses, (k) => k.runStatus);
     return {counts, statuses};
   }, [data]);
@@ -147,7 +147,7 @@ export const BackfillRow = ({
       </td>
       <td>
         {backfill.isValidSerialization ? (
-          counts ? (
+          counts && statuses ? (
             <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
           ) : (
             <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
@@ -200,7 +200,8 @@ const BackfillMenu = ({
         <Menu>
           {backfill.hasCancelPermission ? (
             <>
-              {backfill.numCancelable > 0 ? (
+              {(backfill.isAssetBackfill && backfill.status === BulkActionStatus.REQUESTED) ||
+              backfill.numCancelable > 0 ? (
                 <MenuItem
                   text="Cancel backfill submission"
                   icon="cancel"
@@ -464,6 +465,8 @@ export const BackfillStatusTag = ({
         return <Tag intent="primary">In progress</Tag>;
       }
       return <Tag intent="warning">Incomplete</Tag>;
+    case BulkActionStatus.CANCELING:
+      return <Tag>Canceling</Tag>;
   }
 };
 

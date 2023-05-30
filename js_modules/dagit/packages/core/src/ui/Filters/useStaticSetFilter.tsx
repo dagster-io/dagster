@@ -129,11 +129,12 @@ export function useStaticSetFilter<TValue>({
       icon,
       state,
       getStringValue,
-      renderLabel,
-      allValues,
-      matchType,
       renderActiveStateLabel,
-      menuWidth,
+      renderLabel,
+      matchType,
+      allValues,
+      allowMultipleSelections,
+      getKey,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);

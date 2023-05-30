@@ -1,8 +1,10 @@
 from dagster import OpExecutionContext
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtCli
+from dagster_dbt.cli import DbtCli, DbtManifest
 
-from tutorial_dbt_dagster_v2.assets import manifest
+from . import MANIFEST_PATH
+
+manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 
 @dbt_assets(manifest=manifest)

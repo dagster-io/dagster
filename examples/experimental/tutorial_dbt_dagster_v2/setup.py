@@ -6,6 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster-dbt",
+        "dbt-core>=1.4.0",
         "dbt-duckdb",
     ],
     extras_require={"dev": ["dagit"]},

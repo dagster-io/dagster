@@ -319,6 +319,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
 export type AutoMaterializeCondition =
   | DownstreamFreshnessAutoMaterializeCondition
   | FreshnessAutoMaterializeCondition
+  | MaxMaterializationsExceededAutoMaterializeCondition
   | MissingAutoMaterializeCondition
   | ParentMaterializedAutoMaterializeCondition
   | ParentOutdatedAutoMaterializeCondition;
@@ -359,6 +360,7 @@ export type BoolMetadataEntry = MetadataEntry & {
 
 export enum BulkActionStatus {
   CANCELED = 'CANCELED',
+  CANCELING = 'CANCELING',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
   REQUESTED = 'REQUESTED',
@@ -2129,6 +2131,11 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
+export type MaxMaterializationsExceededAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
+};
+
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -2383,7 +2390,7 @@ export type PartitionBackfill = {
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
-  partitionStatuses: PartitionStatuses;
+  partitionStatuses: Maybe<PartitionStatuses>;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
   status: BulkActionStatus;
@@ -7810,6 +7817,23 @@ export const buildMaterializedPartitionRangeStatuses2D = (
         : relationshipsToOmit.has('DefaultPartitionStatuses')
         ? ({} as DefaultPartitionStatuses)
         : buildDefaultPartitionStatuses({}, relationshipsToOmit),
+  };
+};
+
+export const buildMaxMaterializationsExceededAutoMaterializeCondition = (
+  overrides?: Partial<MaxMaterializationsExceededAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+} & MaxMaterializationsExceededAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MaxMaterializationsExceededAutoMaterializeCondition');
+  return {
+    __typename: 'MaxMaterializationsExceededAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
   };
 };
 
