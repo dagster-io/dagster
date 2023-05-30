@@ -296,25 +296,30 @@ const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Eleme
 );
 
 const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
+  function errorState(status: string) {
+    return (
+      <Box margin={{bottom: 12}}>
+        <TagButton
+          onClick={() =>
+            backfill.error &&
+            showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
+          }
+        >
+          <Tag intent="danger">{status}</Tag>
+        </TagButton>
+      </Box>
+    );
+  }
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
       return <Tag>In Progress</Tag>;
 
     case BulkActionStatus.CANCELING:
+      return errorState('Canceling');
     case BulkActionStatus.CANCELED:
+      return errorState('Canceled');
     case BulkActionStatus.FAILED:
-      return (
-        <Box margin={{bottom: 12}}>
-          <TagButton
-            onClick={() =>
-              backfill.error &&
-              showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-            }
-          >
-            <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
-          </TagButton>
-        </Box>
-      );
+      return errorState('Failed');
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
     default:
