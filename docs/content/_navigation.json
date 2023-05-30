@@ -455,7 +455,7 @@
                 "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
               },
               {
-                "title": "SSO and SCIM",
+                "title": "SSO and provisioning",
                 "children": [
                   {
                     "title": "Azure Active Directory",
@@ -473,7 +473,7 @@
                         "path": "/dagster-cloud/account/authentication/okta/saml-sso"
                       },
                       {
-                        "title": "SCIM",
+                        "title": "SCIM provisioning",
                         "path": "/dagster-cloud/account/authentication/okta/scim-provisioning"
                       }
                     ]

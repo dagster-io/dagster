@@ -8,6 +8,8 @@ title: Managing users in Dagster Cloud | Dagster Docs
 
 In this guide, we'll cover how to add and remove users in your Dagster Cloud organization.
 
+**Note**: If utilizing [SCIM provisioning](/dagster-cloud/account/authentication/utilizing-scim-provisioning), you'll need to manage users through your Identity Provider (IdP) instead of Dagster Cloud.
+
 ---
 
 ## Adding users
@@ -19,8 +21,9 @@ In this guide, we'll cover how to add and remove users in your Dagster Cloud org
 
 Before you start, note that:
 
+- **If SCIM provisioning is enabled,** you'll need to add new users in your IdP. Adding users will be disabled in Dagster Cloud.
 - **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
-- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster Cloud. Refer to the [SSO setup guides](/dagster-cloud/account/authentication) for setup instructions for each of our supported IdP solutions.
+- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster Cloud. Refer to the [SSO setup guides](/dagster-cloud/account/authentication#sso) for setup instructions for each of our supported IdP solutions.
 
   By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/managing-deployments/deployment-settings-reference#sso-default-role).
 
@@ -98,7 +101,7 @@ In the **Roles** section, you can assign the select the appropriate [user role](
   in Dagster Cloud.
 </Note>
 
-Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the Identity Provider (IdP). Removing the user in Dagster Cloud doesn't remove them from the IdP.
+Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the IdP. Removing the user in Dagster Cloud doesn't remove them from the IdP.
 
 1. Sign in to your Dagster Cloud account.
 2. Click the **user menu (your icon) > Cloud Settings**.
