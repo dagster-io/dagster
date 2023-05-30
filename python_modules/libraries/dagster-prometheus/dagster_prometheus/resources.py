@@ -19,8 +19,8 @@ class PrometheusResource(ConfigurableResource):
 
     .. code-block:: python
 
-        from dagster import job, op, Definitions
         from dagster_prometheus import PrometheusResource
+        from dagster import Definitions, job, op
 
         @op
         def example_prometheus_op(prometheus: PrometheusResource):
