@@ -1317,3 +1317,14 @@ retention:
       skipped: 7
       started: -1
       success: -1
+####################################################################################################
+# Additional fields on the instance to configure that aren't already determined by a key above.
+# See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.
+####################################################################################################
+# Example:
+#
+# additionalInstanceConfig:
+#   auto_materialize: # See: https://docs.dagster.io/deployment/dagster-instance#auto-materialize
+#     run_tags:
+#       key: value
+additionalInstanceConfig: {}

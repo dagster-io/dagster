@@ -146,3 +146,7 @@ data:
         purge_after_days: {{ .Values.retention.schedule.purgeAfterDays | toYaml | nindent 12 }}
       {{- end }}
     {{- end }}
+
+    {{- if .Values.additionalInstanceConfig }}
+    {{- .Values.additionalInstanceConfig | toYaml | nindent 4}}
+    {{- end }}

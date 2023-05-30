@@ -71,6 +71,10 @@
         },
         "retention": {
             "$ref": "#/definitions/Retention"
+        },
+        "additionalInstanceConfig": {
+            "title": "Additionalinstanceconfig",
+            "type": "object"
         }
     },
     "required": [
