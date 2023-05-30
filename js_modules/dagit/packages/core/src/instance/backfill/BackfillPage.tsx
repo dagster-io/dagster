@@ -63,7 +63,9 @@ export const BackfillPage = () => {
   let isInProgress = true;
   if (backfill && backfill.__typename === 'PartitionBackfill') {
     // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
-    isInProgress = backfill.status === BulkActionStatus.REQUESTED;
+    isInProgress = [BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING].includes(
+      backfill.status,
+    );
   }
   const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
 
@@ -103,6 +105,14 @@ export const BackfillPage = () => {
             {
               token: 'status',
               value: RunStatus.STARTING,
+            },
+            {
+              token: 'status',
+              value: RunStatus.CANCELING,
+            },
+            {
+              token: 'status',
+              value: RunStatus.NOT_STARTED,
             },
           );
           break;
@@ -289,27 +299,27 @@ const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
       return <Tag>In Progress</Tag>;
+
+    case BulkActionStatus.CANCELING:
     case BulkActionStatus.CANCELED:
     case BulkActionStatus.FAILED:
-      if (backfill.error) {
-        return (
-          <Box margin={{bottom: 12}}>
-            <TagButton
-              onClick={() =>
-                backfill.error &&
-                showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-              }
-            >
-              <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
-            </TagButton>
-          </Box>
-        );
-      }
-      break;
+      return (
+        <Box margin={{bottom: 12}}>
+          <TagButton
+            onClick={() =>
+              backfill.error &&
+              showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
+            }
+          >
+            <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
+          </TagButton>
+        </Box>
+      );
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
+    default:
+      return <Tag>{backfill.status}</Tag>;
   }
-  return null;
 };
 
 function StatusBar({
