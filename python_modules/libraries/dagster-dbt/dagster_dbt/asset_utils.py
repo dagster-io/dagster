@@ -176,6 +176,7 @@ def get_deps(
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     deps: Mapping[str, FrozenSet[str]],
+    io_manager_key: Optional[str] = None,
 ) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]],]:
     """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
     non_argument_deps: Set[AssetKey] = set()
@@ -191,6 +192,7 @@ def get_dbt_multi_asset_args(
         outs[output_name] = AssetOut(
             key=asset_key,
             dagster_type=Nothing,
+            io_manager_key=io_manager_key,
             description=default_description_fn(node_info, display_raw_sql=False),
             is_required=False,
             metadata=default_metadata_fn(node_info),

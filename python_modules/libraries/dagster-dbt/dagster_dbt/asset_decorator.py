@@ -14,6 +14,7 @@ def dbt_assets(
     manifest: DbtManifest,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
@@ -24,6 +25,11 @@ def dbt_assets(
             to include. Defaults to "*".
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
+            assets. When other ops are downstream of the loaded assets, the IOManager specified
+            here determines how the inputs to those ops are loaded. Defaults to "io_manager".
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the dbt assets.
 
     Examples:
         .. code-block:: python
@@ -47,6 +53,7 @@ def dbt_assets(
     ) = get_dbt_multi_asset_args(
         dbt_nodes=manifest.node_info_by_dbt_unique_id,
         deps=deps,
+        io_manager_key=io_manager_key,
     )
 
     def inner(fn) -> AssetsDefinition:
