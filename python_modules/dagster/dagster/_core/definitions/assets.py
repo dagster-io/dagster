@@ -961,7 +961,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 # of the underlying op.
                 op_valid = False
                 # create a new input for this key
-                input_name = f"input_{input_index}"
+                input_name = f"artificial_input_{input_index}"
                 input_index += 1
                 ins[input_name] = In(Nothing)
                 input_names_by_key[input_key] = input_name
