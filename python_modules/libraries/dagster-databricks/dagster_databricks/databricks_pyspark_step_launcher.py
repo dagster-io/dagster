@@ -285,6 +285,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             ).decode()
             log.info(f"Captured stderr for step {step_key}:")
             log.info(stderr)
+            sys.stderr.write(stderr)
         except Exception as e:
             log.error(
                 f"Encountered exception {e} when attempting to load stderr logs for step"
