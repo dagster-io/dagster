@@ -9,7 +9,6 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ContextManager, Iterable, Iterator, Optional, Sequence
 
-import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import NullPool
@@ -32,6 +31,7 @@ from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
     create_engine,
+    db_select,
     get_alembic_config,
     run_alembic_upgrade,
     stamp_alembic_rev,
@@ -288,7 +288,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
