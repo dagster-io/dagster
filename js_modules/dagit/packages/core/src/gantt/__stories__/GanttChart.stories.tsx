@@ -1,60 +1,67 @@
-import {CustomTooltipProvider} from '@dagster-io/ui';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {Box, Button, Colors, CustomTooltipProvider} from '@dagster-io/ui';
 import {Meta} from '@storybook/react';
 import React, {useState} from 'react';
 
-import {RunStatus} from '../../graphql/types';
+import {RunStatus, buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/types';
 import {extractMetadataFromLogs} from '../../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../../runs/types/RunMetadataProvider.types';
-import {StorybookProvider} from '../../testing/StorybookProvider';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {IGanttNode} from '../Constants';
 import {GanttChart, GanttChartLoadingState} from '../GanttChart';
+import {RUN_GROUP_PANEL_QUERY} from '../RunGroupPanel';
+import {RunGroupPanelQuery, RunGroupPanelQueryVariables} from '../types/RunGroupPanel.types';
 
 const R1_START = 1619468000;
 const R2_START = 1619468000 + 30000;
 
-const APOLLO_MOCKS = {
-  RunGroupOrError: () => ({
-    __typename: 'RunGroup',
-    rootRunId: 'r1',
-    runs: [
-      {
-        __typename: 'Run',
-        id: 'r1',
-        runId: 'r1',
-        parentRunId: null,
-        status: RunStatus.FAILURE,
-        stepKeysToExecute: [],
-        pipelineName: 'Test',
-        tags: [],
-        stats: {
-          __typename: 'RunStatsSnapshot',
-          id: 'r1',
-          enqueuedTime: R1_START,
-          launchTime: R1_START + 12,
-          startTime: R1_START + 24,
-          endTime: R1_START + 400,
-        },
-      },
-      {
-        __typename: 'Run',
-        id: 'r2',
-        runId: 'r2',
-        parentRunId: 'r1',
-        status: RunStatus.STARTING,
-        stepKeysToExecute: [],
-        pipelineName: 'Test',
-        tags: [],
-        stats: {
-          __typename: 'RunStatsSnapshot',
-          id: 'r2',
-          enqueuedTime: R2_START,
-          launchTime: R2_START + 12,
-          startTime: null,
-          endTime: null,
-        },
-      },
-    ],
-  }),
+const runGroupMock: MockedResponse<RunGroupPanelQuery, RunGroupPanelQueryVariables> = {
+  request: {
+    query: RUN_GROUP_PANEL_QUERY,
+    variables: {runId: 'r2'},
+  },
+  result: {
+    data: {
+      __typename: 'DagitQuery',
+      runGroupOrError: buildRunGroup({
+        rootRunId: 'r1',
+        runs: [
+          buildRun({
+            id: 'r1',
+            runId: 'r1',
+            parentRunId: null,
+            status: RunStatus.FAILURE,
+            stepKeysToExecute: [],
+            pipelineName: 'Test',
+            tags: [],
+            stats: buildRunStatsSnapshot({
+              id: 'r1',
+              enqueuedTime: R1_START,
+              launchTime: R1_START + 12,
+              startTime: R1_START + 24,
+              endTime: R1_START + 400,
+            }),
+          }),
+          buildRun({
+            id: 'r2',
+            runId: 'r2',
+            parentRunId: 'r1',
+            status: RunStatus.STARTING,
+            stepKeysToExecute: [],
+            pipelineName: 'Test',
+            tags: [],
+            stats: buildRunStatsSnapshot({
+              id: 'r2',
+              enqueuedTime: R2_START,
+              launchTime: R2_START + 12,
+              startTime: null,
+              endTime: null,
+            }),
+          }),
+        ],
+      }),
+    },
+  },
 };
 
 const GRAPH: IGanttNode[] = [
@@ -358,74 +365,66 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
 ];
 
 for (let ii = 0; ii < LOGS.length; ii++) {
-  LOGS[ii].timestamp = `${R2_START + ii * 100}`;
+  LOGS[ii].timestamp = `${R2_START * 1000 + ii * 3000000}`;
 }
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'GanttChart',
   component: GanttChart,
-  argTypes: {
-    progress: {
-      defaultValue: 0,
-      control: {
-        type: 'range',
-        min: 0,
-        max: LOGS.length,
-        step: 1,
-      },
-    },
-    focusedTime: {
-      control: {
-        type: 'range',
-        min: Number(LOGS[0].timestamp),
-        max: Number(LOGS[LOGS.length - 1].timestamp),
-        step: 1,
-      },
-    },
-    metadata: {control: {disable: true}},
-    runId: {control: {disable: true}},
-    graph: {control: {disable: true}},
-    selection: {control: {disable: true}},
-    toolbarActions: {control: {disable: true}},
-  },
 } as Meta;
-
-export const EmptyStateCase = () => {
-  return (
-    <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
-      <CustomTooltipProvider />
-      <div style={{width: '100%', height: 400}}>
-        <GanttChartLoadingState runId="r2" />
-      </div>
-    </StorybookProvider>
-  );
-};
 
 export const InteractiveCase = (argValues: any) => {
   const [selectionQuery, setSelectionQuery] = useState<string>('');
   const [selectionKeys, setSelectionKeys] = useState<string[]>([]);
+  const [progress, setProgress] = useState<number>(5);
 
-  const metadata = extractMetadataFromLogs(LOGS.slice(0, argValues.progress));
+  const metadata = extractMetadataFromLogs(LOGS.slice(0, progress));
+
   return (
-    <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
-      <CustomTooltipProvider />
-      <div style={{width: '100%', height: 400}}>
-        <GanttChart
-          key={metadata.mostRecentLogAt}
-          overrideNowTime={metadata.mostRecentLogAt}
-          metadata={metadata}
-          focusedTime={argValues.focusedTime}
-          runId="r2"
-          graph={GRAPH}
-          selection={{query: selectionQuery, keys: selectionKeys}}
-          onClickStep={(step) => {
-            setSelectionKeys([step]);
-            setSelectionQuery([step].join(', ') || '*');
-          }}
-          onSetSelection={setSelectionQuery}
-        />
-      </div>
-    </StorybookProvider>
+    <MockedProvider mocks={[runGroupMock]}>
+      <WorkspaceProvider>
+        <CustomTooltipProvider />
+        <Box
+          flex={{gap: 8, alignItems: 'center'}}
+          padding={8}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        >
+          <Button onClick={() => setProgress(5)}>Reset</Button>
+          <Button onClick={() => setProgress(Math.min(LOGS.length - 1, progress + 1))}>
+            Send Next Log
+          </Button>
+          {`Log ${progress} / ${LOGS.length - 1}`}
+        </Box>
+        <div style={{width: '100%', height: 400}}>
+          <GanttChart
+            overrideNowTime={metadata.mostRecentLogAt}
+            metadata={metadata}
+            focusedTime={argValues.focusedTime}
+            runId="r2"
+            graph={GRAPH}
+            selection={{query: selectionQuery, keys: selectionKeys}}
+            onClickStep={(step) => {
+              setSelectionKeys([step]);
+              setSelectionQuery([step].join(', ') || '*');
+            }}
+            onSetSelection={setSelectionQuery}
+          />
+        </div>
+      </WorkspaceProvider>
+    </MockedProvider>
+  );
+};
+
+export const EmptyStateCase = () => {
+  return (
+    <MockedProvider mocks={[runGroupMock]}>
+      <WorkspaceProvider>
+        <CustomTooltipProvider />
+        <div style={{width: '100%', height: 400}}>
+          <GanttChartLoadingState runId="r2" />
+        </div>
+      </WorkspaceProvider>
+    </MockedProvider>
   );
 };
