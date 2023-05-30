@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from dagster._core.assets import AssetDetails
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.sql import db_select
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import utc_datetime_from_timestamp
 

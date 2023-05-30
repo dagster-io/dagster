@@ -8,7 +8,7 @@ from tqdm import tqdm
 from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
-from dagster._core.storage.sql import db_select
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import deserialize_value
 
 from ...execution.job_backfill import PartitionBackfill
