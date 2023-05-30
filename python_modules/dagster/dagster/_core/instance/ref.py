@@ -556,8 +556,7 @@ class InstanceRef(
         )
 
     @property
-    def secrets_loader(self) -> "SecretsLoader":
-        from dagster._core.secrets.env_file import EnvFileLoader
+    def secrets_loader(self) -> Optional["SecretsLoader"]:
         from dagster._core.secrets.loader import SecretsLoader
 
         # Defining a default here rather than in stored config to avoid
@@ -566,11 +565,7 @@ class InstanceRef(
         return (
             self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
-            else ConfigurableClassData(
-                "dagster._core.secrets.env_file",
-                "EnvFileLoader",
-                yaml.dump({}),
-            ).rehydrate(as_type=EnvFileLoader)
+            else None
         )
 
     @property
