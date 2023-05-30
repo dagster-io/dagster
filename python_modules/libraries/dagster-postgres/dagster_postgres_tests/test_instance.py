@@ -210,15 +210,15 @@ def test_statement_timeouts(hostname):
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._run_storage.connect() as conn:  # noqa: SLF001
-                conn.execute("select pg_sleep(1)").fetchone()
+                conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._event_storage._connect() as conn:  # noqa: SLF001
-                conn.execute("select pg_sleep(1)").fetchone()
+                conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._schedule_storage.connect() as conn:  # noqa: SLF001
-                conn.execute("select pg_sleep(1)").fetchone()
+                conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
 
 def test_skip_autocreate(hostname, conn_string):
@@ -306,7 +306,8 @@ def test_configured_other_schema(hostname):
             hostname=hostname,
         )
     ).connect() as conn:
-        conn.execute("create schema other_schema;")
+        with conn.begin():
+            conn.execute(db.text("create schema other_schema;"))
 
     with instance_for_test(
         overrides=yaml.safe_load(schema_specified_pg_config(hostname))

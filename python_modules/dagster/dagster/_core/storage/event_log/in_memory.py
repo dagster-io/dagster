@@ -4,6 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Callable, Optional
 
+import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -50,8 +51,8 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _connect(self):
         with self._engine.connect() as conn:
             with conn.begin():
-                conn.execute("PRAGMA journal_mode=WAL;")
-                conn.execute("PRAGMA foreign_keys=ON;")
+                conn.execute(db.text("PRAGMA journal_mode=WAL;"))
+                conn.execute(db.text("PRAGMA foreign_keys=ON;"))
                 yield conn
 
     def run_connection(self, run_id=None):
