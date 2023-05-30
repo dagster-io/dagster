@@ -12,6 +12,7 @@ import time
 import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
@@ -261,15 +262,18 @@ class DagsterApiServer(DagsterApiServicer):
         #  - When using an integration that spins up gRPC servers (for example, the Dagster Helm
         #    chart or the deploy_docker example)
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._exit_stack = ExitStack()
 
         try:
             if inject_env_vars_from_instance:
+                from dagster._cli.utils import get_instance_for_cli
+
                 # If arguments indicate it wants to load env vars, use the passed-in instance
                 # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
-                with DagsterInstance.from_ref(
-                    instance_ref
-                ) if instance_ref else DagsterInstance.get() as instance:
-                    instance.inject_env_vars(location_name)
+                self._instance = self._exit_stack.enter_context(
+                    get_instance_for_cli(instance_ref=instance_ref)
+                )
+                self._instance.inject_env_vars(location_name)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
@@ -308,6 +312,8 @@ class DagsterApiServer(DagsterApiServicer):
         if self.__heartbeat_thread:
             self.__heartbeat_thread.join()
         self.__cleanup_thread.join()
+
+        self._exit_stack.close()
 
     def _heartbeat_thread(self, heartbeat_timeout: float) -> None:
         while True:
