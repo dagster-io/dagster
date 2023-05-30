@@ -28,7 +28,6 @@ export const RunRoot = () => {
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
-    partialRefetch: true,
     variables: {runId},
   });
 

@@ -49,7 +49,6 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
     variables: {
       scheduleSelector,
     },
-    partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
 
@@ -116,7 +115,6 @@ const SchedulePreviousRuns: React.FC<{
           tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
         },
       },
-      partialRefetch: true,
       notifyOnNetworkStatusChange: true,
     },
   );
