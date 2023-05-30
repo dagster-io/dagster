@@ -10,8 +10,8 @@ export type GetEvaluationsQueryVariables = Types.Exact<{
 
 export type GetEvaluationsQuery = {
   __typename: 'DagitQuery';
-  autoMaterializeAssetEvaluationsOrError: Array<
-    | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'}
+  autoMaterializeAssetEvaluationsOrError:
+    | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | {
         __typename: 'AutoMaterializeAssetEvaluationRecords';
         records: Array<{
@@ -50,7 +50,7 @@ export type GetEvaluationsQuery = {
           >;
         }>;
       }
-  >;
+    | null;
 };
 
 export type GetPolicyInfoQueryVariables = Types.Exact<{

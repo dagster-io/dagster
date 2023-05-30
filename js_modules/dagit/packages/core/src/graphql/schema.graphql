@@ -2904,7 +2904,7 @@ type DagitQuery {
     assetKey: AssetKeyInput
     limit: Int!
     cursor: String
-  ): [AutoMaterializeAssetEvaluationRecordsOrError!]!
+  ): AutoMaterializeAssetEvaluationRecordsOrError
 }
 
 union WorkspaceOrError = Workspace | PythonError

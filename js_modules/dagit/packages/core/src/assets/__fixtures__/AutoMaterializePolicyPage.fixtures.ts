@@ -5,6 +5,7 @@ import {
   AutoMaterializePolicyType,
   buildAssetNode,
   buildAutoMaterializeAssetEvaluationRecord,
+  buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
   buildFreshnessPolicy,
 } from '../../graphql/types';
@@ -85,7 +86,9 @@ export const Evaluations = {
         limit: PAGE_SIZE + 1,
       },
       data: {
-        autoMaterializeAssetEvaluations: [],
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          records: [],
+        }),
       },
     });
   },
@@ -97,26 +100,28 @@ export const Evaluations = {
         limit: PAGE_SIZE + 1,
       },
       data: {
-        autoMaterializeAssetEvaluations: [
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 0,
-          }),
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 1,
-          }),
-          {
-            ...buildAutoMaterializeAssetEvaluationRecord(),
-            evaluationId: 2,
-            numRequested: 0,
-            numSkipped: 5,
-          },
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 3,
-          }),
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 3,
-          }),
-        ],
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          records: [
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 0,
+            }),
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 1,
+            }),
+            {
+              ...buildAutoMaterializeAssetEvaluationRecord(),
+              evaluationId: 2,
+              numRequested: 0,
+              numSkipped: 5,
+            },
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 3,
+            }),
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 3,
+            }),
+          ],
+        }),
       },
     });
   },
