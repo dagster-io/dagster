@@ -7,7 +7,12 @@ from dagster import (
     AssetIn,
     AssetOut,
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
     SourceAsset,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     multi_asset,
 )
@@ -281,14 +286,35 @@ def test_sources():
         assert AssetSelection.keys("a", "b", "c").sources().resolve([a, b, c]) == {a.key}
 
 
-def test_self_dep():
+@pytest.mark.parametrize(
+    "partitions_def,partition_mapping",
+    [
+        (
+            DailyPartitionsDefinition(start_date="2020-01-01"),
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            MultiPartitionMapping(
+                {
+                    "time": DimensionPartitionMapping(
+                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                    ),
+                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                }
+            ),
+        ),
+    ],
+)
+def test_self_dep(partitions_def, partition_mapping):
     @asset(
-        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-        ins={
-            "a": AssetIn(
-                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
-            )
-        },
+        partitions_def=partitions_def,
+        ins={"a": AssetIn(partition_mapping=partition_mapping)},
     )
     def a(a):
         ...

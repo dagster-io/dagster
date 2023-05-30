@@ -1,5 +1,10 @@
 from dagster import (
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionKey,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
     StaticPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
@@ -67,6 +72,28 @@ root_assets_different_partitions_same_downstream = [
         {"root1": None, "root2": StaticPartitionMapping({"1": "a", "2": "b"})},
         partitions_def=two_partitions_partitions_def,
     ),
+]
+
+multipartitioned_self_dependency = [
+    asset_def(
+        "asset1",
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+            }
+        ),
+        deps={
+            "asset1": MultiPartitionMapping(
+                {
+                    "time": DimensionPartitionMapping(
+                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                    ),
+                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                }
+            )
+        },
+    )
 ]
 
 
@@ -202,6 +229,38 @@ exotic_partition_mapping_scenarios = {
             unevaluated_runs=[],
         ),
         expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-02")],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+    ),
+    "self_dependency_multipartitioned": AssetReconciliationScenario(
+        assets=multipartitioned_self_dependency,
+        unevaluated_runs=[],
+        expected_run_requests=[
+            run_request(
+                asset_keys=["asset1"],
+                partition_key=MultiPartitionKey({"time": key_tuple[0], "abc": key_tuple[1]}),
+            )
+            for key_tuple in [("2020-01-01", "a"), ("2020-01-01", "b"), ("2020-01-01", "c")]
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
+    ),
+    "self_dependency_prior_multipartition_materialized": AssetReconciliationScenario(
+        assets=multipartitioned_self_dependency,
+        unevaluated_runs=[
+            single_asset_run(
+                asset_key="asset1",
+                partition_key=MultiPartitionKey({"time": "2020-01-01", "abc": "a"}),
+            )
+        ],
+        cursor_from=AssetReconciliationScenario(
+            assets=multipartitioned_self_dependency,
+            unevaluated_runs=[],
+        ),
+        expected_run_requests=[
+            run_request(
+                asset_keys=["asset1"],
+                partition_key=MultiPartitionKey({"time": "2020-01-02", "abc": "a"}),
+            )
+        ],
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
     ),
 }
