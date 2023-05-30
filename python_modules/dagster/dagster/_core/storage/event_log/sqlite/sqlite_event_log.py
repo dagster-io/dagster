@@ -215,6 +215,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             with engine.connect() as conn:
                 with conn.begin():
                     yield conn
+            engine.dispose()
 
     def run_connection(self, run_id: Optional[str] = None) -> Any:
         return self._connect(run_id)  # type: ignore  # bad sig
