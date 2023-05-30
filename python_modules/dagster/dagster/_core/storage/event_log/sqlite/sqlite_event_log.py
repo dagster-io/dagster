@@ -212,12 +212,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
-            conn = engine.connect()
-
-            try:
-                yield conn
-            finally:
-                conn.close()
+            with engine.connect() as conn:
+                with conn.begin():
+                    yield conn
             engine.dispose()
 
     def run_connection(self, run_id: Optional[str] = None) -> Any:
