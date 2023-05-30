@@ -29,19 +29,16 @@ class InMemoryRunStorage(SqlRunStorage):
         # hold one connection for life of instance, but vend new ones for specific calls
         self._held_conn = self._engine.connect()
 
-        with self.connect() as conn:
-            RunStorageSqlMetadata.create_all(conn)
-
-        with self.connect() as conn:
-            # needs to do this as a separate connection since stamp_alembic_rev closes the current
-            # connection
+        with self._held_conn.begin():
+            RunStorageSqlMetadata.create_all(self._held_conn)
             alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
             stamp_alembic_rev(alembic_config, self._held_conn)
 
-        with self.connect() as conn:
-            table_names = db.inspect(conn).get_table_names()
+            table_names = db.inspect(self._held_conn).get_table_names()
+
             if "instance_info" not in table_names:
-                InstanceInfo.create(conn)
+                InstanceInfo.create(self._held_conn)
+
         self.migrate()
         self.optimize()
 
