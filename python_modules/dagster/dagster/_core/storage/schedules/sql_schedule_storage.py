@@ -32,7 +32,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow, db_select
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
@@ -85,7 +85,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
-            query = db.select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
+            query = db_select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
             if repository_selector_id:
                 query = query.where(
                     InstigatorsTable.c.repository_selector_id == repository_selector_id
@@ -98,7 +98,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
 
         else:
-            query = db.select([JobTable.c.job_body]).select_from(JobTable)
+            query = db_select([JobTable.c.job_body]).select_from(JobTable)
             if repository_origin_id:
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
             if instigator_type:
@@ -117,13 +117,13 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = (
-                db.select([InstigatorsTable.c.instigator_body])
+                db_select([InstigatorsTable.c.instigator_body])
                 .select_from(InstigatorsTable)
                 .where(InstigatorsTable.c.selector_id == selector_id)
             )
         else:
             query = (
-                db.select([JobTable.c.job_body])
+                db_select([JobTable.c.job_body])
                 .select_from(JobTable)
                 .where(JobTable.c.job_origin_id == origin_id)
             )
@@ -135,7 +135,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.str_param(selector_id, "selector_id")
 
         query = (
-            db.select([JobTable.c.job_body])
+            db_select([JobTable.c.job_body])
             .select_from(JobTable)
             .where(JobTable.c.selector_id == selector_id)
         )
@@ -241,7 +241,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def _jobs_has_selector_state(self, conn: Connection, selector_id: str) -> bool:
         query = (
-            db.select([db.func.count()])
+            db_select([db.func.count()])
             .select_from(JobTable)
             .where(JobTable.c.selector_id == selector_id)
         )
@@ -308,7 +308,7 @@ class SqlScheduleStorage(ScheduleStorage):
             .label("rank")
         )
         subquery = (
-            db.select(
+            db_select(
                 [
                     JobTickTable.c.id,
                     JobTickTable.c.selector_id,
@@ -326,7 +326,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         query = (
-            db.select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
+            db_select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
             .order_by(subquery.c.rank.asc())
             .where(subquery.c.rank <= limit)
         )
@@ -356,7 +356,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
         base_query = (
-            db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
             .select_from(JobTickTable)
             .order_by(JobTickTable.c.timestamp.desc())
         )
@@ -493,7 +493,7 @@ class SqlScheduleStorage(ScheduleStorage):
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
         with self.connect() as conn:
             query = (
-                db.select(
+                db_select(
                     [
                         AssetDaemonAssetEvaluationsTable.c.id,
                         AssetDaemonAssetEvaluationsTable.c.asset_evaluation_body,
@@ -533,7 +533,7 @@ class SqlScheduleStorage(ScheduleStorage):
             return False
 
         query = (
-            db.select([1])
+            db_select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
