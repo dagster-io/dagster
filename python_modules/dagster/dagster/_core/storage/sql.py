@@ -1,6 +1,6 @@
 import threading
 from functools import lru_cache
-from typing import Any, Iterable, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -211,11 +211,3 @@ def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw) -> str:
 
 class MySQLCompatabilityTypes:
     UniqueText = db.String(512)
-
-
-def db_select(items: Iterable):
-    """Utility class that allows compatability between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
-    if db.__version__.startswith("2."):
-        return db.select(*items)
-
-    return db.select(items)

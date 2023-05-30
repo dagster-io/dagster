@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.schedules.base import ScheduleStorage
-from dagster._core.storage.sql import db_select
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import deserialize_value
 from dagster._utils import PrintFn
 

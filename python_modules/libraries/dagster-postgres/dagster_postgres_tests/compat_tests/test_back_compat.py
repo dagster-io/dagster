@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.sql import db_select
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
