@@ -38,7 +38,7 @@ from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_select, db_subquery
+from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
 from dagster._serdes import (
     deserialize_value,
     serialize_value,
@@ -1028,16 +1028,16 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
-        asset_key = AssetKey.from_db_string(row[1])
+        asset_key = AssetKey.from_db_string(row["asset_key"])
         if asset_key:
             return AssetRecord(
-                storage_id=row[0],
+                storage_id=row["id"],
                 asset_entry=AssetEntry(
                     asset_key=asset_key,
                     last_materialization_record=last_materialization_record,
-                    last_run_id=row[3],
-                    asset_details=AssetDetails.from_db_string(row[4]),
-                    cached_status=AssetStatusCacheValue.from_db_string(row[5])
+                    last_run_id=row["last_run_id"],
+                    asset_details=AssetDetails.from_db_string(row["asset_details"]),
+                    cached_status=AssetStatusCacheValue.from_db_string(row["cached_status_data"])
                     if can_cache_asset_status_data
                     else None,
                 ),
@@ -1054,10 +1054,14 @@ class SqlEventLogStorage(EventLogStorage):
         to_backcompat_fetch = set()
         results: Dict[AssetKey, Optional[EventLogRecord]] = {}
         for row in raw_asset_rows:
-            asset_key = AssetKey.from_db_string(row[1])
+            asset_key = AssetKey.from_db_string(row["asset_key"])
             if not asset_key:
                 continue
-            event_or_materialization = deserialize_value(row[2], NamedTuple) if row[2] else None
+            event_or_materialization = (
+                deserialize_value(row["last_materialization"], NamedTuple)
+                if row["last_materialization"]
+                else None
+            )
             if isinstance(event_or_materialization, EventLogRecord):
                 results[asset_key] = event_or_materialization
             else:
@@ -1098,14 +1102,14 @@ class SqlEventLogStorage(EventLogStorage):
             )
         )
         with self.index_connection() as conn:
-            event_rows = conn.execute(backcompat_query).fetchall()
+            event_rows = db_fetch_mappings(conn, backcompat_query)
 
         for row in event_rows:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
+            asset_key = AssetKey.from_db_string(cast(Optional[str], row["asset_key"]))
             if asset_key:
                 results[asset_key] = EventLogRecord(
-                    storage_id=cast(int, row[1]),
-                    event_log_entry=deserialize_value(cast(str, row[2]), EventLogEntry),
+                    storage_id=cast(int, row["id"]),
+                    event_log_entry=deserialize_value(cast(str, row["event"]), EventLogEntry),
                 )
         return results
 
@@ -1133,7 +1137,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         asset_records: List[AssetRecord] = []
         for row in rows:
-            asset_key = AssetKey.from_db_string(row[1])
+            asset_key = AssetKey.from_db_string(row["asset_key"])
             if asset_key:
                 asset_records.append(
                     self._construct_asset_record_from_row(
@@ -1152,7 +1156,10 @@ class SqlEventLogStorage(EventLogStorage):
 
     def all_asset_keys(self):
         rows = self._fetch_asset_rows()
-        asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
+        asset_keys = [
+            AssetKey.from_db_string(row["asset_key"])
+            for row in sorted(rows, key=lambda x: x["asset_key"])
+        ]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_asset_keys(
@@ -1162,7 +1169,10 @@ class SqlEventLogStorage(EventLogStorage):
         cursor: Optional[str] = None,
     ) -> Sequence[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
-        asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
+        asset_keys = [
+            AssetKey.from_db_string(row["asset_key"])
+            for row in sorted(rows, key=lambda x: x["asset_key"])
+        ]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_latest_materialization_events(
@@ -1259,26 +1269,28 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
             with self.index_connection() as conn:
-                rows = conn.execute(query).fetchall()
+                rows = db_fetch_mappings(conn, query)
 
             return rows, False, None
 
         with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+            rows = db_fetch_mappings(conn, query)
 
         wiped_timestamps_by_asset_key: Dict[AssetKey, float] = {}
         row_by_asset_key: Dict[AssetKey, SqlAlchemyRow] = OrderedDict()
 
         for row in rows:
-            asset_key = AssetKey.from_db_string(cast(str, row[1]))
+            asset_key = AssetKey.from_db_string(cast(str, row["asset_key"]))
             if not asset_key:
                 continue
-            asset_details = AssetDetails.from_db_string(row[4])
+            asset_details = AssetDetails.from_db_string(row["asset_details"])
             if not asset_details or not asset_details.last_wipe_timestamp:
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event_or_record = (
-                deserialize_value(cast(str, row[2]), NamedTuple) if row[2] else None
+                deserialize_value(cast(str, row["last_materialization"]), NamedTuple)
+                if row["last_materialization"]
+                else None
             )
             if isinstance(materialization_or_event_or_record, (EventLogRecord, EventLogEntry)):
                 if isinstance(materialization_or_event_or_record, EventLogRecord):
@@ -1309,7 +1321,7 @@ class SqlEventLogStorage(EventLogStorage):
                     row_by_asset_key.pop(asset_key)
 
         has_more = limit and len(rows) == limit
-        new_cursor = rows[-1][0] if rows else None
+        new_cursor = rows[-1]["id"] if rows else None
 
         return row_by_asset_key.values(), has_more, new_cursor  # type: ignore
 
@@ -1335,7 +1347,7 @@ class SqlEventLogStorage(EventLogStorage):
             db_select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
-                    db.func.max(SqlEventLogStorageTable.c.timestamp),
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
                 ]
             )
             .where(
@@ -1347,8 +1359,8 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
         )
         with self.index_connection() as conn:
-            backcompat_rows = conn.execute(backcompat_query).fetchall()
-        return {AssetKey.from_db_string(row[0]): row[1] for row in backcompat_rows}  # type: ignore
+            backcompat_rows = db_fetch_mappings(conn, backcompat_query)
+        return {AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows}  # type: ignore
 
     def _can_mark_assets_as_migrated(self, rows):
         if not self.has_asset_key_index_cols():
@@ -1397,17 +1409,20 @@ class SqlEventLogStorage(EventLogStorage):
         check.sequence_param(asset_keys, "asset_key", AssetKey)
         rows = None
         with self.index_connection() as conn:
-            rows = conn.execute(
+            rows = db_fetch_mappings(
+                conn,
                 db_select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
                     AssetKeyTable.c.asset_key.in_(
                         [asset_key.to_string() for asset_key in asset_keys]
                     ),
-                )
-            ).fetchall()
+                ),
+            )
 
             asset_key_to_details = {
-                cast(str, row[0]): (
-                    deserialize_value(cast(str, row[1]), AssetDetails) if row[1] else None
+                cast(str, row["asset_key"]): (
+                    deserialize_value(cast(str, row["asset_details"]), AssetDetails)
+                    if row["asset_details"]
+                    else None
                 )
                 for row in rows
             }
@@ -1761,8 +1776,8 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         with self.index_connection() as conn:
-            materialization_planned_rows = conn.execute(materialization_planned_events).fetchall()
-            materialization_rows = conn.execute(materialization_events).fetchall()
+            materialization_planned_rows = db_fetch_mappings(conn, materialization_planned_events)
+            materialization_rows = db_fetch_mappings(conn, materialization_events)
 
         materialization_planned_rows_by_partition = {
             cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
@@ -1858,6 +1873,6 @@ def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
     """Utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
     supported in sqlalchemy 1.3.
     """
-    if not row.has_key(column):
+    if column not in row.keys():
         return None
     return row[column]

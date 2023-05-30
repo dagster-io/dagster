@@ -950,7 +950,7 @@ def test_add_bulk_actions_columns():
                 db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.isnot(None))
-            )[0]
+            )["count"]
             assert migrated_row_count > 0
             assert backfill_count == migrated_row_count
 
@@ -978,7 +978,7 @@ def test_add_bulk_actions_columns():
                 db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.is_(None))
-            )[0]
+            )["count"]
             assert unmigrated_row_count == 0
 
             # test downgrade
