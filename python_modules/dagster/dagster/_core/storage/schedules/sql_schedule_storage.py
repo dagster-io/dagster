@@ -33,7 +33,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_select, db_subquery
+from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
@@ -508,7 +508,7 @@ class SqlScheduleStorage(ScheduleStorage):
             if cursor:
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
 
-            rows = conn.execute(query)
+            rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
     def wipe(self) -> None:
