@@ -82,7 +82,7 @@ from dagster import RunRequest, asset, Output
 from sklearn import linear_model
 
 
-@asset
+@asset(output_required=False)
 def other_ml_model(training_data, test_data, model_accuracy):
     reg = linear_model.LinearRegression()
     reg.fit(training_data)
@@ -93,19 +93,23 @@ def other_ml_model(training_data, test_data, model_accuracy):
 
 ## conditional_monitoring_end
 
+
 ## success_slack_start
 
-from dagster import asset_sensor, RunRequest, asset
+from dagster import asset, slack_on_success
 from sklearn import linear_model
 
 
 @asset
-def ml_model(training_data, test_data, model_accuracy):
+def ml_model(training_data, test_data, context):
     reg = linear_model.LinearRegression()
     reg.fit(training_data)
-    new_model_accuracy = reg.score(test_data)
-    if new_model_accuracy > model_accuracy:
-        yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+    context.log.info(reg.score(test_data))
+    return reg
+
+
+@slack_on_success(channel="#ml_alert-channel",
+		message_fn = f'Machine learning model has been materialized with score "{context.log.info}" and has succeeded.')
 
 
 ## success_slack_end
