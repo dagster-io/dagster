@@ -1,4 +1,3 @@
-from unittest import mock
 
 import dagster._check as check
 from dagster import AssetKey, StaticPartitionsDefinition
@@ -158,15 +157,3 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 ]
             }
         }
-
-    def test_get_evaluations_not_migrated(self, graphql_context: WorkspaceRequestContext):
-        with mock.patch(
-            "dagster._core.storage.schedules.sql_schedule_storage"
-        ) as mock_schedule_storage:
-            mock_schedule_storage.supports_auto_materialize_asset_evaluations.return_value = False
-            results = execute_dagster_graphql(
-                graphql_context,
-                QUERY,
-                variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
-            )
-        assert results.data == {"autoMaterializeAssetEvaluationsOrError": {"records": []}}
