@@ -4,6 +4,7 @@ import {DocumentNode} from 'graphql';
 import {
   AutoMaterializePolicyType,
   buildAssetNode,
+  buildAutoMaterializeAssetEvaluationNeedsMigrationError,
   buildAutoMaterializeAssetEvaluationRecord,
   buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
@@ -88,6 +89,42 @@ export const Evaluations = {
       data: {
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
           records: [],
+        }),
+      },
+    });
+  },
+  Errors: (assetKeyPath: string[], single?: boolean) => {
+    return buildGetEvaluationsQuery({
+      variables: {
+        assetKey: {path: assetKeyPath},
+        cursor: undefined,
+        limit: (single ? 1 : PAGE_SIZE) + 1,
+      },
+      data: {
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationNeedsMigrationError(
+          {
+            message: 'Test message',
+          },
+        ),
+      },
+    });
+  },
+  Single: (assetKeyPath?: string[]) => {
+    return buildGetEvaluationsQuery({
+      variables: {
+        assetKey: {path: assetKeyPath || ['test']},
+        cursor: undefined,
+        limit: 2,
+      },
+      data: {
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          records: assetKeyPath
+            ? [
+                buildAutoMaterializeAssetEvaluationRecord({
+                  evaluationId: 0,
+                }),
+              ]
+            : [],
         }),
       },
     });

@@ -20,7 +20,6 @@ import {Redirect} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
