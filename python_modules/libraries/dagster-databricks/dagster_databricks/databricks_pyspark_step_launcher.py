@@ -2,6 +2,7 @@ import gzip
 import io
 import os.path
 import pickle
+import sys
 import tempfile
 import time
 import zlib
@@ -272,6 +273,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             ).decode()
             log.info(f"Captured stdout for step {step_key}:")
             log.info(stdout)
+            sys.stdout.write(stdout)
         except Exception as e:
             log.error(
                 f"Encountered exception {e} when attempting to load stdout logs for step"
