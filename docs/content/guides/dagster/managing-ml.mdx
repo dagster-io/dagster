@@ -5,24 +5,21 @@ description: This guide illustrates how to use Dagster to automate and manage yo
 
 # Managing machine learning models with Dagster
 
-## Prerequisites
-
-Before proceeding, we recommend reading the following guides:
-
-- [Automating your data pipelines](/guides/dagster/automating-pipelines)
-- [Building machine learning pipelines with Dagster](/guides/dagster/ml-pipeline)
-
----
-
-## Overview
-
-This guide will review ways to manage and maintain your machine learning (ML) models in Dagster.
+This guide reviews ways to manage and maintain your machine learning (ML) models in Dagster.
 
 Machine learning models are highly dependent on data at a point in time and must be managed to ensure they produce the same results as when you were in the development phase. In this guide, you'll learn how to:
 
 - Automate training of your model when new data is available or when you want to use your model for predictions
 - Integrate metadata about your model into the Dagster UI to display info about your model's performance
 
+---
+
+## Prerequisites
+
+Before proceeding, we recommend reading the following guides:
+
+- [Automating your data pipelines](/guides/dagster/automating-pipelines)
+- [Building machine learning pipelines with Dagster](/guides/dagster/ml-pipeline)
 ---
 
 ## Machine learning operations (MLOps)
@@ -239,7 +236,9 @@ width={1188}
 height={541}
 />
 
-The Markdown plots are also available to inspect the evaluation metrics during the training cycle by clicking on **\[Show Markdown]**. <Image
+The Markdown plots are also available to inspect the evaluation metrics during the training cycle by clicking on **\[Show Markdown]**:
+
+<Image
 alt="alt"
 src="/images/guides/managing_ml/plot_ui.png"
 width={1188}
@@ -263,7 +262,7 @@ width={650}
 height={400}
 />
 
-We can also view any plots that were generated through the asset's metadata. In this example, the plots of `score (mean_absolute_error)`
+We can also view any plots generated through the asset's metadata. In this example, we're viewing plots of `score (mean_absolute_error)`.
 
 <Image
 alt="alt"
