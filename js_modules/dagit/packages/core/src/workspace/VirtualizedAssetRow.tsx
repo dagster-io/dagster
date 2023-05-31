@@ -6,12 +6,7 @@ import styled from 'styled-components/macro';
 
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {
-  MISSING_LIVE_DATA,
-  displayNameForAssetKey,
-  toGraphId,
-  tokenForAssetKey,
-} from '../asset-graph/Utils';
+import {MISSING_LIVE_DATA, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
