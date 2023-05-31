@@ -122,6 +122,11 @@ class LazyPySparkResource(ConfigurableResource):
     spark_config: Dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def _init_session(self) -> None:
         if self._spark_session is None:
             self._spark_session = spark_session_from_config(self.spark_config)

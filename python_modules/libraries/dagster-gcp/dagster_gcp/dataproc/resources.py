@@ -199,6 +199,11 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
         with open(path, "r", encoding="utf8") as f:
             return yaml.safe_load(f)
