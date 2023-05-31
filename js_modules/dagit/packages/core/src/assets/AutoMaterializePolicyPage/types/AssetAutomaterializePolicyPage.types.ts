@@ -10,41 +10,47 @@ export type GetEvaluationsQueryVariables = Types.Exact<{
 
 export type GetEvaluationsQuery = {
   __typename: 'DagitQuery';
-  autoMaterializeAssetEvaluations: Array<{
-    __typename: 'AutoMaterializeAssetEvaluationRecord';
-    id: string;
-    evaluationId: number;
-    numRequested: number;
-    numSkipped: number;
-    numDiscarded: number;
-    timestamp: number;
-    conditions: Array<
-      | {
-          __typename: 'DownstreamFreshnessAutoMaterializeCondition';
-          decisionType: Types.AutoMaterializeDecisionType;
-        }
-      | {
-          __typename: 'FreshnessAutoMaterializeCondition';
-          decisionType: Types.AutoMaterializeDecisionType;
-        }
-      | {
-          __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
-          decisionType: Types.AutoMaterializeDecisionType;
-        }
-      | {
-          __typename: 'MissingAutoMaterializeCondition';
-          decisionType: Types.AutoMaterializeDecisionType;
-        }
-      | {
-          __typename: 'ParentMaterializedAutoMaterializeCondition';
-          decisionType: Types.AutoMaterializeDecisionType;
-        }
-      | {
-          __typename: 'ParentOutdatedAutoMaterializeCondition';
-          decisionType: Types.AutoMaterializeDecisionType;
-        }
-    >;
-  }>;
+  autoMaterializeAssetEvaluationsOrError:
+    | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
+    | {
+        __typename: 'AutoMaterializeAssetEvaluationRecords';
+        records: Array<{
+          __typename: 'AutoMaterializeAssetEvaluationRecord';
+          id: string;
+          evaluationId: number;
+          numRequested: number;
+          numSkipped: number;
+          numDiscarded: number;
+          timestamp: number;
+          conditions: Array<
+            | {
+                __typename: 'DownstreamFreshnessAutoMaterializeCondition';
+                decisionType: Types.AutoMaterializeDecisionType;
+              }
+            | {
+                __typename: 'FreshnessAutoMaterializeCondition';
+                decisionType: Types.AutoMaterializeDecisionType;
+              }
+            | {
+                __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+                decisionType: Types.AutoMaterializeDecisionType;
+              }
+            | {
+                __typename: 'MissingAutoMaterializeCondition';
+                decisionType: Types.AutoMaterializeDecisionType;
+              }
+            | {
+                __typename: 'ParentMaterializedAutoMaterializeCondition';
+                decisionType: Types.AutoMaterializeDecisionType;
+              }
+            | {
+                __typename: 'ParentOutdatedAutoMaterializeCondition';
+                decisionType: Types.AutoMaterializeDecisionType;
+              }
+          >;
+        }>;
+      }
+    | null;
 };
 
 export type GetPolicyInfoQueryVariables = Types.Exact<{

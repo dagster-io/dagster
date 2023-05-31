@@ -41,16 +41,33 @@ import {
 
 dayjs.extend(LocalizedFormat);
 
-type EvaluationType = GetEvaluationsQuery['autoMaterializeAssetEvaluations'][0];
+type EvaluationType = Extract<
+  GetEvaluationsQuery['autoMaterializeAssetEvaluationsOrError'],
+  {__typename: 'AutoMaterializeAssetEvaluationRecords'}
+>['records'][0];
 
 // This function exists mostly to use the return type later
 function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
   return useCursorPaginatedQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>({
     nextCursorForResult: (data) => {
-      return data.autoMaterializeAssetEvaluations[PAGE_SIZE - 1]?.evaluationId.toString();
+      if (
+        data.autoMaterializeAssetEvaluationsOrError?.__typename ===
+        'AutoMaterializeAssetEvaluationRecords'
+      ) {
+        return data.autoMaterializeAssetEvaluationsOrError.records[
+          PAGE_SIZE - 1
+        ]?.evaluationId.toString();
+      }
+      return undefined;
     },
     getResultArray: (data) => {
-      return data?.autoMaterializeAssetEvaluations || [];
+      if (
+        data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
+        'AutoMaterializeAssetEvaluationRecords'
+      ) {
+        return data.autoMaterializeAssetEvaluationsOrError.records;
+      }
+      return [];
     },
     variables: {
       assetKey,
@@ -66,8 +83,14 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const evaluations = React.useMemo(() => {
-    return queryResult.data?.autoMaterializeAssetEvaluations || [];
-  }, [queryResult.data?.autoMaterializeAssetEvaluations]);
+    if (
+      queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
+      'AutoMaterializeAssetEvaluationRecords'
+    ) {
+      return queryResult.data?.autoMaterializeAssetEvaluationsOrError.records;
+    }
+    return [];
+  }, [queryResult.data?.autoMaterializeAssetEvaluationsOrError]);
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
     number | undefined
@@ -112,7 +135,6 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
           >
             <LeftPanel
               evaluations={evaluations}
-              queryResult={queryResult}
               paginationProps={paginationProps}
               onSelectEvaluation={(evaluation) => {
                 setSelectedEvaluationId(evaluation.evaluationId);
@@ -143,13 +165,11 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
 export const PAGE_SIZE = 30;
 function LeftPanel({
   evaluations,
-  queryResult,
   paginationProps,
   onSelectEvaluation,
   selectedEvaluation,
 }: {
   evaluations: EvaluationType[];
-  queryResult: ReturnType<typeof useEvaluationsQueryResult>['queryResult'];
   paginationProps: ReturnType<typeof useEvaluationsQueryResult>['paginationProps'];
   onSelectEvaluation: (evaluation: EvaluationType) => void;
   selectedEvaluation?: EvaluationType;
@@ -198,7 +218,7 @@ function LeftPanel({
           );
         })}
       </Box>
-      {queryResult.data?.autoMaterializeAssetEvaluations?.length ? (
+      {evaluations.length ? (
         <PaginationWrapper>
           <CursorPaginationControls {...paginationProps} />
         </PaginationWrapper>
@@ -397,8 +417,14 @@ const MiddlePanel = ({
   );
 
   const evaluationData = React.useMemo(() => {
-    return data?.autoMaterializeAssetEvaluations[0];
-  }, [data?.autoMaterializeAssetEvaluations]);
+    if (
+      data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
+      'AutoMaterializeAssetEvaluationRecords'
+    ) {
+      return data?.autoMaterializeAssetEvaluationsOrError.records[0];
+    }
+    return null;
+  }, [data?.autoMaterializeAssetEvaluationsOrError]);
 
   const conditionResults = React.useMemo(() => {
     const results: Partial<{
@@ -455,6 +481,23 @@ const MiddlePanel = ({
       <Box flex={{direction: 'column', grow: 1}}>
         <Box flex={{direction: 'row', justifyContent: 'center'}} padding={24}>
           <ErrorWrapper>{JSON.stringify(error)}</ErrorWrapper>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (
+    data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
+    'AutoMaterializeAssetEvaluationNeedsMigrationError'
+  ) {
+    return (
+      <Box flex={{direction: 'column', grow: 1}}>
+        <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
+          <NonIdealState
+            icon="error"
+            title="Error"
+            description={data.autoMaterializeAssetEvaluationsOrError.message}
+          />
         </Box>
       </Box>
     );
@@ -643,17 +686,24 @@ const CenterAlignedRow = React.forwardRef((props: React.ComponentProps<typeof Bo
 
 export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
-    autoMaterializeAssetEvaluations(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
-      id
-      evaluationId
-      numRequested
-      numSkipped
-      numDiscarded
-      timestamp
-      conditions {
-        ... on AutoMaterializeConditionWithDecisionType {
-          decisionType
+    autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+      ... on AutoMaterializeAssetEvaluationRecords {
+        records {
+          id
+          evaluationId
+          numRequested
+          numSkipped
+          numDiscarded
+          timestamp
+          conditions {
+            ... on AutoMaterializeConditionWithDecisionType {
+              decisionType
+            }
+          }
         }
+      }
+      ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
+        message
       }
     }
   }
