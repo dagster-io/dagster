@@ -1058,6 +1058,7 @@ def reconcile(
     current_time = pendulum.now("UTC")
 
     instance_queryer = CachingInstanceQueryer(instance=instance, evaluation_time=current_time)
+    print(target_asset_keys)
 
     target_parent_asset_keys = {
         parent

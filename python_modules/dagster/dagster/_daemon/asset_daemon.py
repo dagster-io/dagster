@@ -66,6 +66,8 @@ class AssetDaemon(IntervalDaemon):
             for target_key in asset_graph.non_source_asset_keys
             if asset_graph.get_auto_materialize_policy(target_key) is not None
         }
+        print(asset_graph._auto_materialize_policies_by_key)
+        print(target_asset_keys)
 
         if not target_asset_keys:
             yield

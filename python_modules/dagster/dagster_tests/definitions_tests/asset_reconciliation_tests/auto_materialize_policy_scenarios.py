@@ -1,4 +1,3 @@
-import copy
 from typing import Sequence
 
 from dagster import (
@@ -11,10 +10,12 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (
     AssetReconciliationScenario,
+    asset_def,
     run,
     run_request,
     single_asset_run,
@@ -25,7 +26,36 @@ from .partition_scenarios import (
     hourly_partitions_def,
     hourly_to_daily_partitions,
     two_assets_in_sequence_one_partition,
+    two_partitions_partitions_def,
 )
+
+time_partitioned_eager_after_non_partitioned = [
+    asset_def("unpartitioned"),
+    asset_def(
+        "time_partitioned",
+        ["unpartitioned"],
+        partitions_def=hourly_partitions_def,
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
+    ),
+]
+dynamic_partitioned_eager_after_non_partitioned = [
+    asset_def("unpartitioned"),
+    asset_def(
+        "dynamic_partitioned",
+        ["unpartitioned"],
+        partitions_def=DynamicPartitionsDefinition(name="foo"),
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
+    ),
+]
+static_partitioned_eager_after_non_partitioned = [
+    asset_def("unpartitioned"),
+    asset_def(
+        "static_partitioned",
+        ["unpartitioned"],
+        partitions_def=two_partitions_partitions_def,
+        auto_materialize_policy=AutoMaterializePolicy.eager(),
+    ),
+]
 
 
 def with_auto_materialize_policy(
@@ -36,11 +66,7 @@ def with_auto_materialize_policy(
     """
     ret = []
     for assets_def in assets_defs:
-        new_assets_def = copy.copy(assets_def)
-        new_assets_def._auto_materialize_policies_by_key = {  # noqa: SLF001
-            asset_key: auto_materialize_policy for asset_key in new_assets_def.asset_keys
-        }
-        ret.append(new_assets_def)
+        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
     return ret
 
 
@@ -225,5 +251,27 @@ auto_materialize_policy_scenarios = {
             "asset3": {ParentMaterializedAutoMaterializeCondition()},
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
+    ),
+    "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
+        assets=time_partitioned_eager_after_non_partitioned,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        expected_run_requests=[],
+    ),
+    "time_partitioned_after_partitioned_upstream_materialized": AssetReconciliationScenario(
+        assets=time_partitioned_eager_after_non_partitioned,
+        unevaluated_runs=[run(["asset1"])],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        expected_run_requests=[run_request(asset_keys=["asset2"], partition_key="2020-01-01")],
+    ),
+    "time_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
+        assets=time_partitioned_eager_after_non_partitioned,
+        unevaluated_runs=[
+            run(["asset1"]),
+            run(["asset2"], partition_key="2020-01-01"),
+            run(["asset1"]),
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        expected_run_requests=[],
     ),
 }
