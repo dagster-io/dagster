@@ -24,7 +24,7 @@ def test_asset_reconciliation_cursor_evaluation_id():
         20,
         {AssetKey("a")},
         {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
-        None,
+        0,
     )
 
     c2 = c.with_updates(

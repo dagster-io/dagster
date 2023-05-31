@@ -89,11 +89,6 @@ class AssetDaemon(IntervalDaemon):
             run_tags=None,
         )
 
-        if schedule_storage.supports_auto_materialize_asset_evaluations:
-            schedule_storage.add_auto_materialize_asset_evaluations(
-                check.not_none(new_cursor.evaluation_id), evaluations
-            )
-
         for run_request in run_requests:
             yield
 
@@ -157,3 +152,10 @@ class AssetDaemon(IntervalDaemon):
             instance.submit_run(run.run_id, workspace)
 
         instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
+
+        # We enforce uniqueness per (asset key, evaluation id). Store the evaluations after the cursor,
+        # so that if the daemon crashes and doesn't update the cursor we don't try to write duplicates.
+        if schedule_storage.supports_auto_materialize_asset_evaluations:
+            schedule_storage.add_auto_materialize_asset_evaluations(
+                check.not_none(new_cursor.evaluation_id), evaluations
+            )
