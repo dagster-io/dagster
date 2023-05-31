@@ -1,5 +1,24 @@
 # Changelog
 
+# 1.3.7 (core) / 0.19.7 (libraries)
+
+### New
+
+- Adding a `.env` file in the working directory when running `dagster dev` can now be used for Dagster system variables like `DAGSTER_HOME` or environment variables referenced in your `dagster.yaml` file using an `env:` key. Previously, setting a `.env` file only worked for environment variables referenced in your Dagster code.
+- When using the GraphQL Python client, `submit_job_execution` can now take in a `RunConfig` object. Previously, it could only take a Python dictionary with the run configuration.
+- Asset backfills can now be canceled via a button in the UI. This will terminate unfinished runs and prevent new runs from being queued.
+- Introduced a new user setting which allows automatically expanding default config for jobs in the launchpad.
+- [dagit] Dagit now supports displaying a Polars tag on the asset graph.
+
+### Bugfixes
+
+- Fixed an issue where setting a resource in an op didn’t work if the Dagster job was only referenced within a schedule or sensor and wasn’t included in the `jobs` argument to  `Definitions`.
+- [dagster-slack][dagster-pagerduty][dagster-msteams][dagster-airflow] Fixed issue where pre-built sensors and hooks which created urls to the runs page in the UI would use the old `/instance/runs` path instead of the new `/runs`.
+
+### Community Contributions
+
+- [dagster-databricks] Added a configurable resource key to `create_databricks_run_now_op`, thanks @srggrs!
+
 # 1.3.6 (core) / 0.19.6 (libraries)
 
 ### New
