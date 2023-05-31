@@ -946,8 +946,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         ins = {}
 
         input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
-        output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
         op_valid = True
+        input_index = 0
         for input_key in input_keys:
             input_name = input_names_by_key.get(input_key)
             if input_name is not None:
@@ -960,9 +960,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 # a new input such that the dependency would be respected, and therefore a new copy
                 # of the underlying op.
                 op_valid = False
-                output_name = output_names_by_key[input_key]
-                ins[output_name] = In(Nothing)
-                input_names_by_key[input_key] = output_name
+                # create a new input for this key
+                input_name = f"artificial_input_{input_index}"
+                input_index += 1
+                ins[input_name] = In(Nothing)
+                input_names_by_key[input_key] = input_name
 
         # must create a new copy of the op
         if op_valid:
