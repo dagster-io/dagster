@@ -83,36 +83,22 @@ from sklearn import linear_model
 
 
 @asset(output_required=False)
-def other_ml_model(training_data, test_data, model_accuracy):
+def machine_learning_model(training_data, test_data, context):
+    # Get the model accuracy from metadata of the previous materilization of this machine learning model
+    instance = context.instance
+    materialization = instance.get_latest_materialization_event(
+        AssetKey(["machine_learning_model"])
+    )
+    previous_model_accuracy = materialization.metadata["model_accuracy"]
     reg = linear_model.LinearRegression()
     reg.fit(training_data)
     new_model_accuracy = reg.score(test_data)
-    if new_model_accuracy > model_accuracy:
+    if new_model_accuracy > previous_model_accuracy:
         yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
 
 
 ## conditional_monitoring_end
 
-
-## success_slack_start
-
-from dagster import asset, slack_on_success
-from sklearn import linear_model
-
-
-@asset
-def ml_model(training_data, test_data, context):
-    reg = linear_model.LinearRegression()
-    reg.fit(training_data)
-    context.log.info(reg.score(test_data))
-    return reg
-
-
-@slack_on_success(channel="#ml_alert-channel",
-		message_fn = f'Machine learning model has been materialized with score "{context.log.info}" and has succeeded.')
-
-
-## success_slack_end
 
 ## fail_slack_start
 

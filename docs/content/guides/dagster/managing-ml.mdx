@@ -18,8 +18,9 @@ Machine learning models are highly dependent on data at a point in time and must
 
 Before proceeding, we recommend reading the following guides:
 
-- [Automating your data pipelines](/guides/dagster/automating-pipelines)
-- [Building machine learning pipelines with Dagster](/guides/dagster/ml-pipeline)
+- [Automating your data pipelines](/guides/dagster/automating-pipelines) which provides background on using [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
+- [Building machine learning pipelines with Dagster](/guides/dagster/ml-pipeline) which walks through using [assets](/concepts/assets/software-defined-assets) for machine learning.
+
 ---
 
 ## Machine learning operations (MLOps)
@@ -69,9 +70,7 @@ def my_other_ml_model(my_other_data):
     ...
 ```
 
-This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time.
-
-This can be useful if you want your machine learning model to be refreshed whenever the model is being used for a prediction. In this case, we are using the model once a week for `predictions`, ensuring that `my_ml_model` is retrained before it is used.
+This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time. In this case, we are using the model once a week for `predictions`, ensuring that `my_ml_model` is retrained before it is used.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=without_policy_start endbefore=without_policy_end
 from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
@@ -119,31 +118,18 @@ from sklearn import linear_model
 
 
 @asset(output_required=False)
-def other_ml_model(training_data, test_data, model_accuracy):
+def machine_learning_model(training_data, test_data, context):
+    # Get the model accuracy from metadata of the previous materilization of this machine learning model
+    instance = context.instance
+    materialization = instance.get_latest_materialization_event(
+        AssetKey(["machine_learning_model"])
+    )
+    previous_model_accuracy = materialization.metadata["model_accuracy"]
     reg = linear_model.LinearRegression()
     reg.fit(training_data)
     new_model_accuracy = reg.score(test_data)
-    if new_model_accuracy > model_accuracy:
+    if new_model_accuracy > previous_model_accuracy:
         yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
-```
-
-We can also monitor the score or other information of a model through alerts, such as email or Slack. In the example below, we set up a Slack message to post the score of `ml_model` upon success. The message can be customized to include information such as which features were most influential in model training, the volume of data that the model was trained on, or in this case, the score of the model.
-
-```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=success_slack_start  endbefore=success_slack_end
-from dagster import asset, slack_on_success
-from sklearn import linear_model
-
-
-@asset
-def ml_model(training_data, test_data, context):
-    reg = linear_model.LinearRegression()
-    reg.fit(training_data)
-    context.log.info(reg.score(test_data))
-    return reg
-
-
-@slack_on_success(channel="#ml_alert-channel",
-		message_fn = f'Machine learning model has been materialized with score "{context.log.info}" and has succeeded.')
 ```
 
 We can also set up a sensor that triggers if an asset fails to materialize. Alerts can be customized and sent through e-mail or natively through Slack. In this example, a Slack message is sent anytime the `ml_job` fails.
