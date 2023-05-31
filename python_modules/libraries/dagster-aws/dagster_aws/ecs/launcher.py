@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import uuid
 import warnings
 from collections import namedtuple
 from typing import Any, Dict, List, Mapping, Optional, Sequence
@@ -9,6 +10,7 @@ import boto3
 from botocore.exceptions import ClientError
 from dagster import (
     Array,
+    DagsterRunStatus,
     Field,
     Noneable,
     Permissive,
@@ -25,6 +27,7 @@ from dagster._core.launcher.base import (
     WorkerStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import RUN_WORKER_ID_TAG
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
@@ -325,6 +328,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         tags = {
             "ecs/task_arn": task_arn,
             "ecs/cluster": cluster,
+            RUN_WORKER_ID_TAG: str(uuid.uuid4().hex)[0:6],
         }
         self._instance.add_run_tags(run_id, tags)
 
@@ -695,21 +699,36 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
+    @property
+    def include_cluster_info_in_failure_messages(self):
+        return True
+
+    def _is_transient_startup_failure(self, run, task):
+        if not task.get("stoppedReason"):
+            return False
+        return (
+            run.status == DagsterRunStatus.STARTING
+            and "Timeout waiting for network interface provisioning to complete"
+            in task.get("stoppedReason")
+        )
+
     def check_run_worker_health(self, run: DagsterRun):
+        run_worker_id = run.tags.get(RUN_WORKER_ID_TAG)
+
         tags = self._get_run_tags(run.run_id)
         container_context = EcsContainerContext.create_for_run(run, self)
 
         if not (tags.arn and tags.cluster):
-            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "", run_worker_id=run_worker_id)
 
         tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
         if not tasks:
-            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "", run_worker_id=run_worker_id)
 
         t = tasks[0]
 
         if t.get("lastStatus") in RUNNING_STATUSES:
-            return CheckRunHealthResult(WorkerStatus.RUNNING)
+            return CheckRunHealthResult(WorkerStatus.RUNNING, run_worker_id=run_worker_id)
         elif t.get("lastStatus") in STOPPED_STATUSES:
             failed_containers = []
             for c in t.get("containers"):
@@ -720,6 +739,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     container_str = "Containers"
                 else:
                     container_str = "Container"
+
+                failure_text = []
+
+                if self.include_cluster_info_in_failure_messages:
+                    failure_text.append(
+                        f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
+                        f" reason: {t.get('stoppedReason')}."
+                        + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
+                    )
 
                 logs = []
 
@@ -738,22 +766,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         )
                     )
 
-                logs_text = (
-                    ("Task logs:\n" + "\n".join(logs))
-                    if logs
-                    else "Check the logs for the failed task for details."
-                )
+                if logs:
+                    failure_text.append("Run worker logs:\n" + "\n".join(logs))
 
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
-                    (
-                        f"ECS task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
-                        f" reason: {t.get('stoppedReason')}."
-                        f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                        f" {logs_text}"
-                    ),
+                    "\n\n".join(failure_text),
+                    transient=self._is_transient_startup_failure(run, t),
+                    run_worker_id=run_worker_id,
                 )
 
-            return CheckRunHealthResult(WorkerStatus.SUCCESS)
+            return CheckRunHealthResult(WorkerStatus.SUCCESS, run_worker_id=run_worker_id)
 
-        return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")
+        return CheckRunHealthResult(
+            WorkerStatus.UNKNOWN, "ECS task health status is unknown.", run_worker_id=run_worker_id
+        )

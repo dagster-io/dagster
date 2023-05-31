@@ -12,6 +12,8 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.tags import RUN_WORKER_ID_TAG
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import (
     DEFAULT_LINUX_RESOURCES,
@@ -1032,6 +1034,7 @@ def test_status(
         job,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
+        tags={RUN_WORKER_ID_TAG: "abcdef"},
     )
 
     instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
@@ -1050,7 +1053,8 @@ def test_status(
 
     for status in RUNNING_STATUSES:
         task["lastStatus"] = status
-        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+        running_health_check = instance.run_launcher.check_run_worker_health(run)
+        assert running_health_check.status == WorkerStatus.RUNNING
 
     for status in STOPPED_STATUSES:
         task["lastStatus"] = status
@@ -1065,9 +1069,12 @@ def test_status(
         assert failure_health_check.status == WorkerStatus.FAILED
         assert (
             failure_health_check.msg
-            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed. Check the logs for the failed task for details."
+            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed."
         )
+
+        assert not failure_health_check.transient
+        assert failure_health_check.run_worker_id == "abcdef"
 
         # with logs, the failure includes the run worker logs
 
@@ -1088,15 +1095,41 @@ def test_status(
 
         assert (
             failure_health_check.msg
-            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed. Task logs:\nOops something bad happened"
+            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed.\n\nRun worker logs:\nOops something bad happened"
         )
 
-        # Failure includes logs
-        assert "Task logs:\nOops something bad happened" in failure_health_check.msg
-
     task["lastStatus"] = "foo"
-    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN
+    unknown_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert unknown_health_check.status == WorkerStatus.UNKNOWN
+    assert unknown_health_check.run_worker_id == "abcdef"
+
+    task["lastStatus"] = "STOPPED"
+    task["stoppedReason"] = "Timeout waiting for network interface provisioning to complete."
+
+    started_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert started_health_check.status == WorkerStatus.FAILED
+    assert not started_health_check.transient
+    assert started_health_check.run_worker_id == "abcdef"
+
+    # STARTING runs with these errors are considered a transient failure that can be retried
+    starting_run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
+        status=DagsterRunStatus.STARTING,
+        tags={RUN_WORKER_ID_TAG: "efghi"},
+    )
+    instance.run_launcher.launch_run(LaunchRunContext(dagster_run=starting_run, workspace=None))
+    task_arn = instance.get_run_by_id(starting_run.run_id).tags["ecs/task_arn"]
+    task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
+    task["lastStatus"] = "STOPPED"
+    task["stoppedReason"] = "Timeout waiting for network interface provisioning to complete."
+
+    starting_health_check = instance.run_launcher.check_run_worker_health(starting_run)
+    assert starting_health_check.status == WorkerStatus.FAILED
+    assert starting_health_check.transient
+    assert starting_health_check.run_worker_id == "efghi"
 
 
 def test_overrides_too_long(
