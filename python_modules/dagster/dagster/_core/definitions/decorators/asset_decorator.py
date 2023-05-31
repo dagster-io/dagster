@@ -416,6 +416,10 @@ def multi_asset(
     Each argument to the decorated function references an upstream asset that this asset depends on.
     The name of the argument designates the name of the upstream asset.
 
+    You can set I/O managers keys, auto-materialize policies, freshness policies, group names, etc.
+    on an individual asset within the multi-asset by attaching them to the :py:class:`AssetOut`
+    corresponding to that asset in the `outs` parameter.
+
     Args:
         name (Optional[str]): The name of the op.
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
@@ -451,6 +455,34 @@ def multi_asset(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
+
+    Examples:
+        .. code-block:: python
+
+            # Use IO managers to handle I/O:
+            @multi_asset(
+                outs={
+                    "my_string_asset": AssetOut(),
+                    "my_int_asset": AssetOut(),
+                }
+            )
+            def my_function(upstream_asset: int):
+                result = upstream_asset + 1
+                return str(result), result
+
+            # Handle I/O on your own:
+            @multi_asset(
+                outs={
+                    "asset1": AssetOut(),
+                    "asset2": AssetOut(),
+                },
+                non_argument_deps={"asset0"},
+            )
+            def my_function():
+                asset0_value = load(path="asset0")
+                asset1_result, asset2_result = do_some_transformation(asset0_value)
+                write(asset1_result, path="asset1")
+                write(asset2_result, path="asset2")
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
