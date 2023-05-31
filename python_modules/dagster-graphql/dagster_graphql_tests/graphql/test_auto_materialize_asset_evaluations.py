@@ -1,4 +1,3 @@
-
 import dagster._check as check
 from dagster import AssetKey, StaticPartitionsDefinition
 from dagster._core.definitions.asset_reconciliation_sensor import (
