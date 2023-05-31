@@ -56,6 +56,7 @@ class _ScheduleLaunchContext:
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
+        schedule_state_lock: threading.Lock,
     ):
         self._external_schedule = external_schedule
         self._instance = instance
@@ -64,6 +65,7 @@ class _ScheduleLaunchContext:
         self._purge_settings = defaultdict(set)
         for status, day_offset in tick_retention_settings.items():
             self._purge_settings[day_offset].add(status)
+        self._schedule_state_lock = schedule_state_lock
 
     @property
     def failure_count(self) -> int:
@@ -87,6 +89,23 @@ class _ScheduleLaunchContext:
 
     def _write(self):
         self._instance.update_tick(self._tick)
+        with self._schedule_state_lock:
+            # fetch the most recent state.  we do this at exit as opposed to during context
+            # initialization time because we want to minimize the window of clobbering the state
+            # upon updating the state data.
+            state = self._instance.get_instigator_state(
+                self._external_schedule.get_external_origin_id(),
+                self._external_schedule.selector_id,
+            )
+            self._instance.update_instigator_state(
+                state.with_data(
+                    ScheduleInstigatorData(
+                        cron_schedule=state.instigator_data.cron_schedule,
+                        start_timestamp=state.instigator_data.start_timestamp,
+                        last_tick=self._tick,
+                    )
+                )
+            )
 
     def __enter__(self):
         return self
@@ -239,12 +258,12 @@ def launch_scheduled_runs(
     # and can no longer be found in the workspace (so that if they are later added
     # back again, their timestamps will start at the correct place)
     states_to_delete = {
-        schedule_state
+        selector_id: schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
         if selector_id not in schedules
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
-    for state in states_to_delete:
+    for state in states_to_delete.values():
         location_name = state.origin.external_repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
         if location_name not in error_locations:
@@ -431,13 +450,15 @@ def launch_scheduled_runs_for_schedule_iterator(
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
 
-    with schedule_state_lock:
-        instigator_origin_id = external_schedule.get_external_origin_id()
-        ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
-        latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
-
+    instigator_origin_id = external_schedule.get_external_origin_id()
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
-    start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
+    start_timestamp_utc = instigator_data.start_timestamp
+    latest_tick = instigator_data.last_tick
+    if not latest_tick:
+        # try to fetch the last tick
+        with schedule_state_lock:
+            ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
+            latest_tick = ticks[0] if ticks else None
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -524,7 +545,7 @@ def launch_scheduled_runs_for_schedule_iterator(
             _check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(
-            external_schedule, tick, instance, logger, tick_retention_settings
+            external_schedule, tick, instance, logger, tick_retention_settings, schedule_state_lock
         ) as tick_context:
             try:
                 _check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")

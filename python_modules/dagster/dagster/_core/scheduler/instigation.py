@@ -36,6 +36,14 @@ class InstigatorStatus(Enum):
     STOPPED = "STOPPED"
 
 
+@whitelist_for_serdes(old_storage_names={"JobTickStatus"})
+class TickStatus(Enum):
+    STARTED = "STARTED"
+    SKIPPED = "SKIPPED"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+
+
 @whitelist_for_serdes
 class DynamicPartitionsRequestResult(
     NamedTuple(
@@ -69,183 +77,6 @@ class DynamicPartitionsRequestResult(
             deleted_partitions,
             check.sequence_param(skipped_partitions, "skipped_partitions"),
         )
-
-
-@whitelist_for_serdes(old_storage_names={"SensorJobData"})
-class SensorInstigatorData(
-    NamedTuple(
-        "_SensorInstigatorData",
-        [
-            # the last completed tick timestamp, exposed to the context as a deprecated field
-            ("last_tick_timestamp", Optional[float]),
-            ("last_run_key", Optional[str]),
-            ("min_interval", Optional[int]),
-            ("cursor", Optional[str]),
-            # the last time a tick was initiated, used to prevent issuing multiple threads from
-            # evaluating ticks within the minimum interval
-            ("last_tick_start_timestamp", Optional[float]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        last_tick_timestamp: Optional[float] = None,
-        last_run_key: Optional[str] = None,
-        min_interval: Optional[int] = None,
-        cursor: Optional[str] = None,
-        last_tick_start_timestamp: Optional[float] = None,
-    ):
-        return super(SensorInstigatorData, cls).__new__(
-            cls,
-            check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
-            check.opt_str_param(last_run_key, "last_run_key"),
-            check.opt_int_param(min_interval, "min_interval"),
-            check.opt_str_param(cursor, "cursor"),
-            check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
-        )
-
-
-@whitelist_for_serdes(old_storage_names={"ScheduleJobData"})
-class ScheduleInstigatorData(
-    NamedTuple(
-        "_ScheduleInstigatorData",
-        [("cron_schedule", Union[str, Sequence[str]]), ("start_timestamp", Optional[float])],
-    )
-):
-    # removed scheduler, 1/5/2022 (0.13.13)
-    def __new__(
-        cls, cron_schedule: Union[str, Sequence[str]], start_timestamp: Optional[float] = None
-    ):
-        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, list))
-        if not isinstance(cron_schedule, str):
-            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
-
-        return super(ScheduleInstigatorData, cls).__new__(
-            cls,
-            cron_schedule,
-            # Time in UTC at which the user started running the schedule (distinct from
-            # `start_date` on partition-based schedules, which is used to define
-            # the range of partitions)
-            check.opt_float_param(start_timestamp, "start_timestamp"),
-        )
-
-
-def check_instigator_data(
-    instigator_type: InstigatorType,
-    instigator_data: Optional[InstigatorData],
-) -> Optional[InstigatorData]:
-    if instigator_type == InstigatorType.SCHEDULE:
-        check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
-    elif instigator_type == InstigatorType.SENSOR:
-        check.opt_inst_param(instigator_data, "instigator_data", SensorInstigatorData)
-    else:
-        check.failed(
-            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR,"
-            " InstigatorType.SCHEDULE"
-        )
-
-    return instigator_data
-
-
-@whitelist_for_serdes(
-    old_storage_names={"JobState"},
-    storage_field_names={
-        "instigator_type": "job_type",
-        "instigator_data": "job_specific_data",
-    },
-)
-class InstigatorState(
-    NamedTuple(
-        "_InstigationState",
-        [
-            ("origin", ExternalInstigatorOrigin),
-            ("instigator_type", InstigatorType),
-            ("status", InstigatorStatus),
-            ("instigator_data", Optional[InstigatorData]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        origin: ExternalInstigatorOrigin,
-        instigator_type: InstigatorType,
-        status: InstigatorStatus,
-        instigator_data: Optional[InstigatorData] = None,
-    ):
-        return super(InstigatorState, cls).__new__(
-            cls,
-            check.inst_param(origin, "origin", ExternalInstigatorOrigin),
-            check.inst_param(instigator_type, "instigator_type", InstigatorType),
-            check.inst_param(status, "status", InstigatorStatus),
-            check_instigator_data(instigator_type, instigator_data),
-        )
-
-    @property
-    def is_running(self) -> bool:
-        return self.status != InstigatorStatus.STOPPED
-
-    @property
-    def name(self) -> str:
-        return self.origin.instigator_name
-
-    @property
-    def instigator_name(self) -> str:
-        return self.origin.instigator_name
-
-    @property
-    def repository_origin_id(self) -> str:
-        return self.origin.external_repository_origin.get_id()
-
-    @property
-    def repository_selector(self) -> RepositorySelector:
-        return RepositorySelector(
-            self.origin.external_repository_origin.code_location_origin.location_name,
-            self.origin.external_repository_origin.repository_name,
-        )
-
-    @property
-    def repository_selector_id(self) -> str:
-        return create_snapshot_id(self.repository_selector)
-
-    @property
-    def instigator_origin_id(self) -> str:
-        return self.origin.get_id()
-
-    @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.origin.external_repository_origin.code_location_origin.location_name,
-                self.origin.external_repository_origin.repository_name,
-                self.origin.instigator_name,
-            )
-        )
-
-    def with_status(self, status: InstigatorStatus) -> "InstigatorState":
-        check.inst_param(status, "status", InstigatorStatus)
-        return InstigatorState(
-            self.origin,
-            instigator_type=self.instigator_type,
-            status=status,
-            instigator_data=self.instigator_data,
-        )
-
-    def with_data(self, instigator_data: InstigatorData) -> "InstigatorState":
-        check_instigator_data(self.instigator_type, instigator_data)
-        return InstigatorState(
-            self.origin,
-            instigator_type=self.instigator_type,
-            status=self.status,
-            instigator_data=instigator_data,
-        )
-
-
-@whitelist_for_serdes(old_storage_names={"JobTickStatus"})
-class TickStatus(Enum):
-    STARTED = "STARTED"
-    SKIPPED = "SKIPPED"
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
 
 
 @whitelist_for_serdes(
@@ -366,6 +197,183 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         self,
     ) -> Sequence[DynamicPartitionsRequestResult]:
         return self.tick_data.dynamic_partitions_request_results
+
+
+@whitelist_for_serdes(old_storage_names={"SensorJobData"})
+class SensorInstigatorData(
+    NamedTuple(
+        "_SensorInstigatorData",
+        [
+            # the last completed tick timestamp, exposed to the context as a deprecated field
+            ("last_tick_timestamp", Optional[float]),
+            ("last_run_key", Optional[str]),
+            ("min_interval", Optional[int]),
+            ("cursor", Optional[str]),
+            # the last time a tick was initiated, used to prevent issuing multiple threads from
+            # evaluating ticks within the minimum interval
+            ("last_tick_start_timestamp", Optional[float]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        last_tick_timestamp: Optional[float] = None,
+        last_run_key: Optional[str] = None,
+        min_interval: Optional[int] = None,
+        cursor: Optional[str] = None,
+        last_tick_start_timestamp: Optional[float] = None,
+    ):
+        return super(SensorInstigatorData, cls).__new__(
+            cls,
+            check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
+            check.opt_str_param(last_run_key, "last_run_key"),
+            check.opt_int_param(min_interval, "min_interval"),
+            check.opt_str_param(cursor, "cursor"),
+            check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
+        )
+
+
+@whitelist_for_serdes(old_storage_names={"ScheduleJobData"})
+class ScheduleInstigatorData(
+    NamedTuple(
+        "_ScheduleInstigatorData",
+        [
+            ("cron_schedule", Union[str, Sequence[str]]),
+            ("start_timestamp", Optional[float]),
+            ("last_tick", Optional[InstigatorTick]),
+        ],
+    )
+):
+    # removed scheduler, 1/5/2022 (0.13.13)
+    def __new__(
+        cls,
+        cron_schedule: Union[str, Sequence[str]],
+        start_timestamp: Optional[float] = None,
+        last_tick: Optional[InstigatorTick] = None,
+    ):
+        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, list))
+        if not isinstance(cron_schedule, str):
+            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
+
+        return super(ScheduleInstigatorData, cls).__new__(
+            cls,
+            cron_schedule,
+            # Time in UTC at which the user started running the schedule (distinct from
+            # `start_date` on partition-based schedules, which is used to define
+            # the range of partitions)
+            check.opt_float_param(start_timestamp, "start_timestamp"),
+            check.opt_inst_param(last_tick, "last_tick", InstigatorTick),
+        )
+
+
+def check_instigator_data(
+    instigator_type: InstigatorType,
+    instigator_data: Optional[InstigatorData],
+) -> Optional[InstigatorData]:
+    if instigator_type == InstigatorType.SCHEDULE:
+        check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
+    elif instigator_type == InstigatorType.SENSOR:
+        check.opt_inst_param(instigator_data, "instigator_data", SensorInstigatorData)
+    else:
+        check.failed(
+            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR,"
+            " InstigatorType.SCHEDULE"
+        )
+
+    return instigator_data
+
+
+@whitelist_for_serdes(
+    old_storage_names={"JobState"},
+    storage_field_names={
+        "instigator_type": "job_type",
+        "instigator_data": "job_specific_data",
+    },
+)
+class InstigatorState(
+    NamedTuple(
+        "_InstigationState",
+        [
+            ("origin", ExternalInstigatorOrigin),
+            ("instigator_type", InstigatorType),
+            ("status", InstigatorStatus),
+            ("instigator_data", Optional[InstigatorData]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        origin: ExternalInstigatorOrigin,
+        instigator_type: InstigatorType,
+        status: InstigatorStatus,
+        instigator_data: Optional[InstigatorData] = None,
+    ):
+        return super(InstigatorState, cls).__new__(
+            cls,
+            check.inst_param(origin, "origin", ExternalInstigatorOrigin),
+            check.inst_param(instigator_type, "instigator_type", InstigatorType),
+            check.inst_param(status, "status", InstigatorStatus),
+            check_instigator_data(instigator_type, instigator_data),
+        )
+
+    @property
+    def is_running(self) -> bool:
+        return self.status != InstigatorStatus.STOPPED
+
+    @property
+    def name(self) -> str:
+        return self.origin.instigator_name
+
+    @property
+    def instigator_name(self) -> str:
+        return self.origin.instigator_name
+
+    @property
+    def repository_origin_id(self) -> str:
+        return self.origin.external_repository_origin.get_id()
+
+    @property
+    def repository_selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            self.origin.external_repository_origin.code_location_origin.location_name,
+            self.origin.external_repository_origin.repository_name,
+        )
+
+    @property
+    def repository_selector_id(self) -> str:
+        return create_snapshot_id(self.repository_selector)
+
+    @property
+    def instigator_origin_id(self) -> str:
+        return self.origin.get_id()
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.origin.external_repository_origin.code_location_origin.location_name,
+                self.origin.external_repository_origin.repository_name,
+                self.origin.instigator_name,
+            )
+        )
+
+    def with_status(self, status: InstigatorStatus) -> "InstigatorState":
+        check.inst_param(status, "status", InstigatorStatus)
+        return InstigatorState(
+            self.origin,
+            instigator_type=self.instigator_type,
+            status=status,
+            instigator_data=self.instigator_data,
+        )
+
+    def with_data(self, instigator_data: InstigatorData) -> "InstigatorState":
+        check_instigator_data(self.instigator_type, instigator_data)
+        return InstigatorState(
+            self.origin,
+            instigator_type=self.instigator_type,
+            status=self.status,
+            instigator_data=instigator_data,
+        )
 
 
 @whitelist_for_serdes(

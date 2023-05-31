@@ -2390,12 +2390,10 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             evaluate_schedules(full_workspace_context, executor, pendulum.now("UTC"))
             assert instance.get_runs_count() == 4  # still 4
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-            assert len(ticks) == 1
-            assert ticks[0].status == TickStatus.SUCCESS
+            assert len(ticks) == 0
 
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
-            assert len(ticks) == 1
-            assert ticks[0].status == TickStatus.SUCCESS
+            assert len(ticks) == 0
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
