@@ -58,6 +58,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
+import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {
   executionParamsForAssetJob,
@@ -442,8 +443,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         />
         {target.type === 'pureAll' ? (
           <ToggleableSection
-            title={<Subheading>Partition selection</Subheading>}
             isInitiallyOpen={true}
+            title={
+              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                <Subheading>Partition selection</Subheading>
+                <span>All partitions</span>
+              </Box>
+            }
           >
             <Box
               padding={{vertical: 12, horizontal: 24}}
@@ -458,8 +464,17 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           </ToggleableSection>
         ) : (
           <ToggleableSection
-            title={<Subheading>Partition selection</Subheading>}
             isInitiallyOpen={true}
+            title={
+              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                <Subheading>Partition selection</Subheading>
+                {target.type === 'pureWithAnchorAsset' ? (
+                  <span /> // we won't know until runtime
+                ) : (
+                  <span>{partitionCountString(keysInSelection.length)}</span>
+                )}
+              </Box>
+            }
           >
             {target.type === 'pureWithAnchorAsset' && (
               <Box
