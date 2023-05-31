@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 import dagster._check as check
 from dagster import ConfigurableResource, resource
-from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.execution.context.init import InitResourceContext
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
 from pydantic import PrivateAttr

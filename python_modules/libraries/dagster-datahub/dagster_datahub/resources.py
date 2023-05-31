@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from dagster import InitResourceContext, resource
 from dagster._config.pythonic_config import Config, ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from datahub.emitter.kafka_emitter import (
     DEFAULT_MCE_KAFKA_TOPIC,
     DEFAULT_MCP_KAFKA_TOPIC,
@@ -43,6 +44,7 @@ class DatahubRESTEmitterResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(config_schema=DatahubRESTEmitterResource.to_config_schema())
 def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitter:
     emitter = DatahubRestEmitter(
@@ -87,6 +89,7 @@ class DatahubKafkaEmitterResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(config_schema=DatahubKafkaEmitterResource.to_config_schema())
 def datahub_kafka_emitter(init_context: InitResourceContext) -> DatahubKafkaEmitter:
     return DatahubKafkaEmitter(KafkaEmitterConfig.parse_obj(init_context.resource_config))
