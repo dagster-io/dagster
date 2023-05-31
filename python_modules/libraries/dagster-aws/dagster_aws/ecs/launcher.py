@@ -40,7 +40,7 @@ from .tasks import (
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from .utils import get_task_logs, sanitize_family, task_definitions_match
+from .utils import get_task_definition_family, get_task_logs, task_definitions_match
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -530,9 +530,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self._current_task
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
-        return sanitize_family(
-            run.external_job_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
-        )
+        return get_task_definition_family("run", check.not_none(run.external_job_origin))
 
     def _get_container_name(self, container_context) -> str:
         return container_context.container_name or self.container_name
