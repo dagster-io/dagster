@@ -23,7 +23,7 @@ import {
   buildExpectedLaunchSingleRunMutation,
   buildLaunchAssetLoaderMock,
   LaunchAssetCheckUpstreamWeeklyRootMock,
-  LaunchAssetWarningsMock,
+  buildLaunchAssetWarningsMock,
   LaunchAssetLoaderResourceJob7Mock,
   LaunchAssetLoaderResourceJob8Mock,
   LaunchAssetLoaderResourceMyAssetJobMock,
@@ -333,12 +333,35 @@ describe('LaunchAssetExecutionButton', () => {
       await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchMutationMock);
     });
 
-    it('should show an error if two roots have different partition defintions', async () => {
-      renderButton({
+    it('should offer to materialize all partitions if roots have different partition defintions ("pureAll" case)', async () => {
+      const LaunchPureAllMutationMock = buildExpectedLaunchBackfillMutation({
+        tags: [],
+        assetSelection: [
+          {path: ['asset_daily']},
+          {path: ['asset_weekly']},
+          {path: ['asset_weekly_root']},
+        ],
+        allPartitions: true,
+      });
+
+      await renderButton({
         scope: {all: [ASSET_DAILY, ASSET_WEEKLY, ASSET_WEEKLY_ROOT]},
+        launchMock: LaunchPureAllMutationMock,
       });
       await clickMaterializeButton();
-      await expectErrorShown(ERROR_INVALID_ASSET_SELECTION);
+
+      // expect the dialog to be displayed
+      await waitFor(() => screen.findByTestId('choose-partitions-dialog'));
+
+      // expect the "all partitions only" warning and no anchor asset label
+      expect(await screen.queryByTestId('anchor-asset-label')).toBeNull();
+      expect(await screen.queryByTestId('pure-all-partitions-only')).toBeVisible();
+
+      // backfill options for run as tags, missing only are not available
+      expect(await screen.queryByTestId('missing-only-checkbox')).toBeNull();
+      expect(await screen.queryByTestId('ranges-as-tags-true-radio')).toBeNull();
+
+      await expectLaunchExecutesMutationAndCloses('Launch backfill', LaunchPureAllMutationMock);
     });
   });
 });
@@ -357,12 +380,12 @@ function renderButton({
   const assetKeys = ('all' in scope ? scope.all : scope.selected).map((s) => s.assetKey);
 
   const mocks: MockedResponse<Record<string, any>>[] = [
-    LaunchAssetWarningsMock,
     LaunchAssetLoaderResourceJob7Mock,
     LaunchAssetLoaderResourceJob8Mock,
     LaunchAssetLoaderResourceMyAssetJobMock,
     LaunchAssetCheckUpstreamWeeklyRootMock,
     ...PartitionHealthAssetMocks,
+    buildLaunchAssetWarningsMock([]),
     buildConfigPartitionSelectionLatestPartitionMock('2020-01-02', 'my_asset_job_partition_set'),
     buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', 'my_asset_job_partition_set'),
     buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', '__ASSET_JOB_7_partition_set'),
