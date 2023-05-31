@@ -14,13 +14,15 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactory,
 )
 from dagster._core.storage.root_input_manager import RootInputManagerDefinition
+from dagster_duckdb import DuckDBIOManager
+from dagster_gcp import BigQueryIOManager
+from dagster_snowflake.snowflake_io_manager import SnowflakeIOManager
 
 
 def test_telemetry():
     libraries_dir = file_relative_path(__file__, "python_modules/libraries")
 
     libraries = [library.name.replace("-", "_") for library in os.scandir(libraries_dir)]
-
     libraries.append("dagster")
 
     # TODO - might need to add dagster-census to the dev install script - figure out why it's not there already
@@ -31,6 +33,21 @@ def test_telemetry():
     libraries.remove("dagster_ge")
 
     resources_without_telemetry = []
+
+    exceptions = [
+        # the actual class definitions are set to False
+        ResourceDefinition,
+        IOManagerDefinition,
+        RootInputManagerDefinition,
+        ConfigurableResource,
+        ConfigurableIOManager,
+        ConfigurableLegacyIOManagerAdapter,
+        ConfigurableIOManagerFactory,
+        # the base DB IO managers are set to False since users can instantiate their own versions
+        SnowflakeIOManager,
+        DuckDBIOManager,
+        BigQueryIOManager,
+    ]
 
     for library in libraries:
         print(f"Analyzing {library}")
@@ -64,16 +81,8 @@ def test_telemetry():
             ]
         )
         for _, klass in resources.items():
-            if (
-                klass is ResourceDefinition
-                or klass is IOManagerDefinition
-                or klass is RootInputManagerDefinition
-                or klass is ConfigurableResource
-                or klass is ConfigurableIOManager
-                or klass is ConfigurableLegacyIOManagerAdapter
-                or klass is ConfigurableIOManagerFactory
-            ):
-                # klass is the actual definition object
+            if klass in exceptions:
+                # the klass is purposely set to dagster_maintained=False
                 continue
             try:
                 if not klass._dagster_maintained:
