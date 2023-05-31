@@ -59,6 +59,7 @@ interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' |
   children?: React.ReactNode;
   icon?: IconName | 'spinner';
   rightIcon?: IconName | 'spinner';
+  tooltipText?: string;
 }
 
 const IconOrSpinner: React.FC<{icon: IconName | 'spinner' | null; color: string}> = React.memo(
