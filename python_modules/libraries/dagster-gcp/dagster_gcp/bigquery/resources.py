@@ -56,6 +56,11 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @contextmanager
     def get_client(self) -> Iterator[bigquery.Client]:
         """Context manager to create a BigQuery Client.

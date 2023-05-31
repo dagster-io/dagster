@@ -639,6 +639,11 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_dbt_client(self) -> DbtCloudClient:
         context = self.get_resource_context()
         assert context.log
