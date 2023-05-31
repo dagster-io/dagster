@@ -47,7 +47,7 @@ from dagster_tests.definitions_tests.asset_reconciliation_tests.partition_scenar
     non_partitioned_after_partitioned,
     one_asset_one_partition,
     one_asset_two_partitions,
-    partitioned_after_non_partitioned,
+    time_partitioned_after_non_partitioned,
     two_assets_in_sequence_one_partition,
     two_assets_in_sequence_two_partitions,
     two_dynamic_assets,
@@ -101,8 +101,9 @@ scenarios = {
     "non_partitioned_after_partitioned": scenario(
         non_partitioned_after_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
     ),
-    "partitioned_after_non_partitioned": scenario(
-        partitioned_after_non_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+    "time_partitioned_after_non_partitioned": scenario(
+        time_partitioned_after_non_partitioned,
+        create_pendulum_time(year=2020, month=1, day=7, hour=4),
     ),
     "unpartitioned_after_dynamic_asset": scenario(unpartitioned_after_dynamic_asset),
     "two_dynamic_assets": scenario(two_dynamic_assets),
@@ -149,7 +150,7 @@ scenarios = {
             [("asset1", "2022-01-01"), ("asset1", "2022-01-02"), ("asset2", None)],
         ),
         (
-            "partitioned_after_non_partitioned",
+            "time_partitioned_after_non_partitioned",
             ["2022-01-01", "2022-01-02"],
             [("asset1", None), ("asset2", "2022-01-01"), ("asset2", "2022-01-02")],
         ),

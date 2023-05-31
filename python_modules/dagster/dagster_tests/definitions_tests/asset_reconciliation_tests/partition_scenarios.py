@@ -76,7 +76,7 @@ time_multipartitioned_asset = [asset_def("asset1", partitions_def=time_multipart
 static_multipartitioned_asset = [asset_def("asset1", partitions_def=static_multipartitions_def)]
 
 
-partitioned_after_non_partitioned = [
+time_partitioned_after_non_partitioned = [
     asset_def("asset1"),
     asset_def(
         "asset2",
@@ -302,5 +302,29 @@ partition_scenarios = {
             run_request(asset_keys=["asset1"], partition_key=partition_key)
             for partition_key in static_multipartitions_def.get_partition_keys()
         ],
+    ),
+    "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
+        assets=time_partitioned_after_non_partitioned,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        expected_run_requests=[],
+    ),
+    "time_partitioned_after_partitioned_upstream_materialized": AssetReconciliationScenario(
+        assets=time_partitioned_after_non_partitioned,
+        unevaluated_runs=[run(["asset1"])],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        expected_run_requests=[run_request(asset_keys=["asset2"], partition_key="2020-01-01")],
+    ),
+    "time_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
+        assets=time_partitioned_after_non_partitioned,
+        unevaluated_runs=[
+            run(["asset1"]),
+            run(["asset2"], partition_key="2020-01-01"),
+            run(["asset1"]),
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        # asset2's partition is not re-evaluated because we don't consider asset1's update to
+        #
+        expected_run_requests=[],
     ),
 }
