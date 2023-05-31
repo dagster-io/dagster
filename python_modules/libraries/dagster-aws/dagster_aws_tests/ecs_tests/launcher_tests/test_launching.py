@@ -20,6 +20,7 @@ from dagster_aws.ecs.launcher import (
     STOPPED_STATUSES,
 )
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
+from dagster_aws.ecs.utils import get_task_definition_family
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -51,9 +52,7 @@ def test_default_launcher(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
-    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
-    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
-    assert task_definition["family"] == "in_process"
+    assert task_definition["family"] == get_task_definition_family("run", run.external_job_origin)
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
@@ -222,9 +221,7 @@ def test_launcher_dont_use_current_task(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
-    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
-    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
-    assert task_definition["family"] == "in_process"
+    assert task_definition["family"] == get_task_definition_family("run", run.external_job_origin)
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
