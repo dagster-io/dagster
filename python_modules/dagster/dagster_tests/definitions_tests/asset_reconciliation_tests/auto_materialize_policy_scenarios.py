@@ -10,7 +10,6 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (
@@ -38,22 +37,13 @@ time_partitioned_eager_after_non_partitioned = [
         auto_materialize_policy=AutoMaterializePolicy.eager(),
     ),
 ]
-dynamic_partitioned_eager_after_non_partitioned = [
-    asset_def("unpartitioned"),
-    asset_def(
-        "dynamic_partitioned",
-        ["unpartitioned"],
-        partitions_def=DynamicPartitionsDefinition(name="foo"),
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
-    ),
-]
 static_partitioned_eager_after_non_partitioned = [
     asset_def("unpartitioned"),
     asset_def(
         "static_partitioned",
         ["unpartitioned"],
         partitions_def=two_partitions_partitions_def,
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
+        auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=2),
     ),
 ]
 
@@ -277,5 +267,21 @@ auto_materialize_policy_scenarios = {
         # do not execute, as we don't consider the already-materialized partitions to be invalidated
         # by the new materialization of the upstream
         expected_run_requests=[],
+    ),
+    "static_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
+        assets=static_partitioned_eager_after_non_partitioned,
+        unevaluated_runs=[
+            run(["unpartitioned"]),
+            run(["static_partitioned"], partition_key="a"),
+            run(["static_partitioned"], partition_key="b"),
+            run(["unpartitioned"]),
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
+        # do execute, as we do consider the already-materialized partitions to be invalidated
+        # by the new materialization of the upstream
+        expected_run_requests=[
+            run_request(asset_keys=["static_partitioned"], partition_key="a"),
+            run_request(asset_keys=["static_partitioned"], partition_key="b"),
+        ],
     ),
 }
