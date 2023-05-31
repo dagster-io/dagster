@@ -150,13 +150,7 @@ class DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(DagsterError):
         self.field_name = field_name
         super(DagsterInvalidDagsterTypeInPythonicConfigDefinitionError, self).__init__(
             f"""Error defining Dagster config class '{config_class_name}' on field '{field_name}'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
-
-This config type can be a:
-    - Python primitive type
-        - int, float, bool, str, list
-    - A Python Dict or List type containing other valid types
-    - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}""",
             **kwargs,
         )
 
