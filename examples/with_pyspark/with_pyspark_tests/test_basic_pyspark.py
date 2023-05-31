@@ -1,6 +1,6 @@
-from with_pyspark.definitions import make_and_filter_data_job
+from with_pyspark.definitions import defs
 
 
 def test_basic_pyspark():
-    res = make_and_filter_data_job.execute_in_process()
+    res = defs.get_implicit_global_asset_job_def().execute_in_process()
     assert res.success

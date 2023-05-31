@@ -1,13 +1,13 @@
 import os
 
-from dagster import ConfigurableIOManager, Definitions, graph, op
+from dagster import ConfigurableIOManager, Definitions, asset
 from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
 class LocalParquetIOManager(ConfigurableIOManager):
     def _get_path(self, context):
-        return os.path.join(context.run_id, context.step_key, context.name)
+        return os.path.join(*context.asset_key.path)
 
     def handle_output(self, context, obj):
         obj.write.parquet(self._get_path(context))
@@ -17,26 +17,19 @@ class LocalParquetIOManager(ConfigurableIOManager):
         return spark.read.parquet(self._get_path(context.upstream_output))
 
 
-@op
-def make_people() -> DataFrame:
+@asset
+def people() -> DataFrame:
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
     spark = SparkSession.builder.getOrCreate()  # type: ignore
     return spark.createDataFrame(rows, schema)
 
 
-@op
-def filter_over_50(people: DataFrame) -> DataFrame:
+@asset
+def people_over_50(people: DataFrame) -> DataFrame:
     return people.filter(people["age"] > 50)
 
 
-@graph
-def make_and_filter_data():
-    filter_over_50(make_people())
-
-
-make_and_filter_data_job = make_and_filter_data.to_job(
-    resource_defs={"io_manager": LocalParquetIOManager()}
+defs = Definitions(
+    assets=[people, people_over_50], resources={"io_manager": LocalParquetIOManager()}
 )
-
-defs = Definitions(jobs=[make_and_filter_data_job])
