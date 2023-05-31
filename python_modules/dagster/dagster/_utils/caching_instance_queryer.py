@@ -596,7 +596,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # for existence of upstream materialization, do not worry about timestamps
             if time_or_dynamic_partitioned and parent.partition_key is None:
                 pass
-                return self.materialization_exists(parent)
+                # return self.materialization_exists(parent)
 
             if asset_graph.is_source(parent.asset_key):
                 if asset_graph.is_observable(

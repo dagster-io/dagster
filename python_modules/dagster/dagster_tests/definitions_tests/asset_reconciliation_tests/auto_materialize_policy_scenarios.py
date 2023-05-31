@@ -255,23 +255,27 @@ auto_materialize_policy_scenarios = {
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
         expected_run_requests=[],
     ),
     "time_partitioned_after_partitioned_upstream_materialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
-        unevaluated_runs=[run(["asset1"])],
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
-        expected_run_requests=[run_request(asset_keys=["asset2"], partition_key="2020-01-01")],
+        unevaluated_runs=[run(["unpartitioned"])],
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
+        expected_run_requests=[
+            run_request(asset_keys=["time_partitioned"], partition_key="2013-01-06-00:00")
+        ],
     ),
     "time_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
         unevaluated_runs=[
-            run(["asset1"]),
-            run(["asset2"], partition_key="2020-01-01"),
-            run(["asset1"]),
+            run(["unpartitioned"]),
+            run(["time_partitioned"], partition_key="2013-01-06-00:00"),
+            run(["unpartitioned"]),
         ],
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=1),
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
+        # do not execute, as we don't consider the already-materialized partitions to be invalidated
+        # by the new materialization of the upstream
         expected_run_requests=[],
     ),
 }
