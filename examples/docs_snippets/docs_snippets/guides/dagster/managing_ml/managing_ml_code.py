@@ -99,7 +99,9 @@ def machine_learning_model(training_data, test_data, context):
 
 ## conditional_monitoring_end
 
-
+@asset 
+def ml_model():
+    pass 
 ## fail_slack_start
 
 import os
