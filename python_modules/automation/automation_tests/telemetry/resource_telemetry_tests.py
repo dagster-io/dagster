@@ -19,7 +19,9 @@ from dagster_gcp import BigQueryIOManager
 from dagster_snowflake.snowflake_io_manager import SnowflakeIOManager
 
 
-def test_telemetry():
+def test_resource_telemetry():
+    # assert that all Resources and I/O Managers have dagster_maintained=True (or are known exceptions)
+
     libraries_dir = file_relative_path(__file__, "python_modules/libraries")
 
     libraries = [library.name.replace("-", "_") for library in os.scandir(libraries_dir)]
