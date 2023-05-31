@@ -38,6 +38,7 @@ from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
 from dagster._serdes import (
     deserialize_value,
     serialize_value,
@@ -418,7 +419,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         query = (
-            db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+            db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .order_by(
                 SqlEventLogStorageTable.c.id.asc()
@@ -486,7 +487,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.str_param(run_id, "run_id")
 
         query = (
-            db.select(
+            db_select(
                 [
                     SqlEventLogStorageTable.c.dagster_event_type,
                     db.func.count().label("n_events_of_type"),
@@ -558,7 +559,7 @@ class SqlEventLogStorage(EventLogStorage):
         # choose to revisit this in the future, especially if we are able to do JSON-column queries
         # in SQL as a way of bypassing the serdes layer in all cases.
         raw_event_query = (
-            db.select([SqlEventLogStorageTable.c.event])
+            db_select([SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .where(SqlEventLogStorageTable.c.step_key != None)  # noqa: E711
             .where(
@@ -655,7 +656,7 @@ class SqlEventLogStorage(EventLogStorage):
             SqlEventLogStorageTable.c.run_id == run_id
         )
         removed_asset_key_query = (
-            db.select([SqlEventLogStorageTable.c.asset_key])
+            db_select([SqlEventLogStorageTable.c.asset_key])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
             .group_by(SqlEventLogStorageTable.c.asset_key)
@@ -672,7 +673,7 @@ class SqlEventLogStorage(EventLogStorage):
             remaining_asset_keys = [
                 AssetKey.from_db_string(row[0])
                 for row in conn.execute(
-                    db.select([SqlEventLogStorageTable.c.asset_key])
+                    db_select([SqlEventLogStorageTable.c.asset_key])
                     .where(SqlEventLogStorageTable.c.asset_key.in_(keys_to_check))
                     .group_by(SqlEventLogStorageTable.c.asset_key)
                 )
@@ -722,7 +723,7 @@ class SqlEventLogStorage(EventLogStorage):
         """
         with self.run_connection(run_id=run_id) as conn:
             query = (
-                db.select([SqlEventLogStorageTable])
+                db_select([SqlEventLogStorageTable])
                 .where(SqlEventLogStorageTable.c.id == record_id)
                 .order_by(SqlEventLogStorageTable.c.id.asc())
             )
@@ -733,7 +734,7 @@ class SqlEventLogStorage(EventLogStorage):
         in a secondary index table.  Can be used to checkpoint event_log data migrations.
         """
         query = (
-            db.select([1])
+            db_select([1])
             .where(SecondaryIndexMigrationTable.c.name == name)
             .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
@@ -831,7 +832,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
             if self.supports_intersect:
                 intersections = [
-                    db.select([AssetEventTagsTable.c.event_id]).where(
+                    db_select([AssetEventTagsTable.c.event_id]).where(
                         db.and_(
                             AssetEventTagsTable.c.asset_key
                             == event_records_filter.asset_key.to_string(),  # type: ignore  # (bad sig?)
@@ -856,8 +857,12 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: Optional[AssetKey],
     ) -> db.Table:
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
+        i = 0
         for key, value in tags.items():
-            tags_table = AssetEventTagsTable.alias()
+            i += 1
+            tags_table = db_subquery(
+                db_select([AssetEventTagsTable]), f"asset_event_tags_subquery_{i}"
+            )
             table = table.join(
                 tags_table,
                 db.and_(
@@ -900,7 +905,7 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             table = SqlEventLogStorageTable
 
-        query = db.select(
+        query = db_select(
             [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
         ).select_from(table)
 
@@ -979,7 +984,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         query = (
-            db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+            db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.id > after_cursor)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
@@ -1012,7 +1017,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_maximum_record_id(self) -> Optional[int]:
         with self.index_connection() as conn:
-            result = conn.execute(db.select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
+            result = conn.execute(db_select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
             return result[0]  # type: ignore
 
     def _construct_asset_record_from_row(
@@ -1023,16 +1028,16 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
-        asset_key = AssetKey.from_db_string(row[1])
+        asset_key = AssetKey.from_db_string(row["asset_key"])
         if asset_key:
             return AssetRecord(
-                storage_id=row[0],
+                storage_id=row["id"],
                 asset_entry=AssetEntry(
                     asset_key=asset_key,
                     last_materialization_record=last_materialization_record,
-                    last_run_id=row[3],
-                    asset_details=AssetDetails.from_db_string(row[4]),
-                    cached_status=AssetStatusCacheValue.from_db_string(row[5])
+                    last_run_id=row["last_run_id"],
+                    asset_details=AssetDetails.from_db_string(row["asset_details"]),
+                    cached_status=AssetStatusCacheValue.from_db_string(row["cached_status_data"])
                     if can_cache_asset_status_data
                     else None,
                 ),
@@ -1049,17 +1054,21 @@ class SqlEventLogStorage(EventLogStorage):
         to_backcompat_fetch = set()
         results: Dict[AssetKey, Optional[EventLogRecord]] = {}
         for row in raw_asset_rows:
-            asset_key = AssetKey.from_db_string(row[1])
+            asset_key = AssetKey.from_db_string(row["asset_key"])
             if not asset_key:
                 continue
-            event_or_materialization = deserialize_value(row[2], NamedTuple) if row[2] else None
+            event_or_materialization = (
+                deserialize_value(row["last_materialization"], NamedTuple)
+                if row["last_materialization"]
+                else None
+            )
             if isinstance(event_or_materialization, EventLogRecord):
                 results[asset_key] = event_or_materialization
             else:
                 to_backcompat_fetch.add(asset_key)
 
-        latest_event_subquery = (
-            db.select(
+        latest_event_subquery = db_subquery(
+            db_select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
                     db.func.max(SqlEventLogStorageTable.c.id).label("id"),
@@ -1074,10 +1083,10 @@ class SqlEventLogStorage(EventLogStorage):
                     == DagsterEventType.ASSET_MATERIALIZATION.value,
                 )
             )
-            .group_by(SqlEventLogStorageTable.c.asset_key)
-            .alias("latest_materializations")
+            .group_by(SqlEventLogStorageTable.c.asset_key),
+            "latest_event_subquery",
         )
-        backcompat_query = db.select(
+        backcompat_query = db_select(
             [
                 SqlEventLogStorageTable.c.asset_key,
                 SqlEventLogStorageTable.c.id,
@@ -1093,14 +1102,14 @@ class SqlEventLogStorage(EventLogStorage):
             )
         )
         with self.index_connection() as conn:
-            event_rows = conn.execute(backcompat_query).fetchall()
+            event_rows = db_fetch_mappings(conn, backcompat_query)
 
         for row in event_rows:
-            asset_key = AssetKey.from_db_string(cast(Optional[str], row[0]))
+            asset_key = AssetKey.from_db_string(cast(Optional[str], row["asset_key"]))
             if asset_key:
                 results[asset_key] = EventLogRecord(
-                    storage_id=cast(int, row[1]),
-                    event_log_entry=deserialize_value(cast(str, row[2]), EventLogEntry),
+                    storage_id=cast(int, row["id"]),
+                    event_log_entry=deserialize_value(cast(str, row["event"]), EventLogEntry),
                 )
         return results
 
@@ -1128,7 +1137,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         asset_records: List[AssetRecord] = []
         for row in rows:
-            asset_key = AssetKey.from_db_string(row[1])
+            asset_key = AssetKey.from_db_string(row["asset_key"])
             if asset_key:
                 asset_records.append(
                     self._construct_asset_record_from_row(
@@ -1147,7 +1156,10 @@ class SqlEventLogStorage(EventLogStorage):
 
     def all_asset_keys(self):
         rows = self._fetch_asset_rows()
-        asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
+        asset_keys = [
+            AssetKey.from_db_string(row["asset_key"])
+            for row in sorted(rows, key=lambda x: x["asset_key"])
+        ]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_asset_keys(
@@ -1157,7 +1169,10 @@ class SqlEventLogStorage(EventLogStorage):
         cursor: Optional[str] = None,
     ) -> Sequence[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
-        asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
+        asset_keys = [
+            AssetKey.from_db_string(row["asset_key"])
+            for row in sorted(rows, key=lambda x: x["asset_key"])
+        ]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_latest_materialization_events(
@@ -1243,7 +1258,7 @@ class SqlEventLogStorage(EventLogStorage):
             columns.append(AssetKeyTable.c.last_materialization_timestamp)
             columns.append(AssetKeyTable.c.wipe_timestamp)
 
-        query = db.select(columns).order_by(AssetKeyTable.c.asset_key.asc())
+        query = db_select(columns).order_by(AssetKeyTable.c.asset_key.asc())
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
@@ -1254,26 +1269,28 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
             with self.index_connection() as conn:
-                rows = conn.execute(query).fetchall()
+                rows = db_fetch_mappings(conn, query)
 
             return rows, False, None
 
         with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
+            rows = db_fetch_mappings(conn, query)
 
         wiped_timestamps_by_asset_key: Dict[AssetKey, float] = {}
         row_by_asset_key: Dict[AssetKey, SqlAlchemyRow] = OrderedDict()
 
         for row in rows:
-            asset_key = AssetKey.from_db_string(cast(str, row[1]))
+            asset_key = AssetKey.from_db_string(cast(str, row["asset_key"]))
             if not asset_key:
                 continue
-            asset_details = AssetDetails.from_db_string(row[4])
+            asset_details = AssetDetails.from_db_string(row["asset_details"])
             if not asset_details or not asset_details.last_wipe_timestamp:
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event_or_record = (
-                deserialize_value(cast(str, row[2]), NamedTuple) if row[2] else None
+                deserialize_value(cast(str, row["last_materialization"]), NamedTuple)
+                if row["last_materialization"]
+                else None
             )
             if isinstance(materialization_or_event_or_record, (EventLogRecord, EventLogEntry)):
                 if isinstance(materialization_or_event_or_record, EventLogRecord):
@@ -1304,7 +1321,7 @@ class SqlEventLogStorage(EventLogStorage):
                     row_by_asset_key.pop(asset_key)
 
         has_more = limit and len(rows) == limit
-        new_cursor = rows[-1][0] if rows else None
+        new_cursor = rows[-1]["id"] if rows else None
 
         return row_by_asset_key.values(), has_more, new_cursor  # type: ignore
 
@@ -1327,10 +1344,10 @@ class SqlEventLogStorage(EventLogStorage):
         # fetches the latest materialization timestamp for the given asset_keys.  Uses the (slower)
         # raw event log table.
         backcompat_query = (
-            db.select(
+            db_select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
-                    db.func.max(SqlEventLogStorageTable.c.timestamp),
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
                 ]
             )
             .where(
@@ -1342,8 +1359,8 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).asc())
         )
         with self.index_connection() as conn:
-            backcompat_rows = conn.execute(backcompat_query).fetchall()
-        return {AssetKey.from_db_string(row[0]): row[1] for row in backcompat_rows}  # type: ignore
+            backcompat_rows = db_fetch_mappings(conn, backcompat_query)
+        return {AssetKey.from_db_string(row["asset_key"]): row["timestamp"] for row in backcompat_rows}  # type: ignore
 
     def _can_mark_assets_as_migrated(self, rows):
         if not self.has_asset_key_index_cols():
@@ -1392,17 +1409,20 @@ class SqlEventLogStorage(EventLogStorage):
         check.sequence_param(asset_keys, "asset_key", AssetKey)
         rows = None
         with self.index_connection() as conn:
-            rows = conn.execute(
-                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
+            rows = db_fetch_mappings(
+                conn,
+                db_select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details]).where(
                     AssetKeyTable.c.asset_key.in_(
                         [asset_key.to_string() for asset_key in asset_keys]
                     ),
-                )
-            ).fetchall()
+                ),
+            )
 
             asset_key_to_details = {
-                cast(str, row[0]): (
-                    deserialize_value(cast(str, row[1]), AssetDetails) if row[1] else None
+                cast(str, row["asset_key"]): (
+                    deserialize_value(cast(str, row["asset_details"]), AssetDetails)
+                    if row["asset_details"]
+                    else None
                 )
                 for row in rows
             }
@@ -1473,19 +1493,13 @@ class SqlEventLogStorage(EventLogStorage):
 
         asset_details = self._get_assets_details([asset_key])[0]
         if not filter_tags:
-            tags_query = (
-                db.select(
-                    [
-                        AssetEventTagsTable.c.key,
-                        AssetEventTagsTable.c.value,
-                        AssetEventTagsTable.c.event_id,
-                    ]
-                    if not filter_tags
-                    else [AssetEventTagsTable.c.event_id]
-                )
-                .distinct(AssetEventTagsTable.c.key, AssetEventTagsTable.c.event_id)
-                .where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
-            )
+            tags_query = db_select(
+                [
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                    AssetEventTagsTable.c.event_id,
+                ]
+            ).where(AssetEventTagsTable.c.asset_key == asset_key.to_string())
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
@@ -1494,7 +1508,7 @@ class SqlEventLogStorage(EventLogStorage):
         elif self.supports_intersect:
 
             def get_tag_filter_query(tag_key, tag_value):
-                filter_query = db.select([AssetEventTagsTable.c.event_id]).where(
+                filter_query = db_select([AssetEventTagsTable.c.event_id]).where(
                     db.and_(
                         AssetEventTagsTable.c.asset_key == asset_key.to_string(),
                         AssetEventTagsTable.c.key == tag_key,
@@ -1513,7 +1527,7 @@ class SqlEventLogStorage(EventLogStorage):
                 for tag_key, tag_value in filter_tags.items()
             ]
 
-            tags_query = db.select(
+            tags_query = db_select(
                 [
                     AssetEventTagsTable.c.key,
                     AssetEventTagsTable.c.value,
@@ -1526,7 +1540,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
         else:
             table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
-            tags_query = db.select(
+            tags_query = db_select(
                 [
                     AssetEventTagsTable.c.key,
                     AssetEventTagsTable.c.value,
@@ -1556,7 +1570,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_asset_run_ids(self, asset_key: AssetKey) -> Sequence[str]:
         check.inst_param(asset_key, "asset_key", AssetKey)
         query = (
-            db.select(
+            db_select(
                 [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
             )
             .where(
@@ -1643,7 +1657,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.sequence_param(asset_keys, "asset_keys", AssetKey)
 
         query = (
-            db.select(
+            db_select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
                     SqlEventLogStorageTable.c.partition,
@@ -1695,7 +1709,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_subquery = (
-            db.select(
+            db_select(
                 [
                     SqlEventLogStorageTable.c.dagster_event_type,
                     SqlEventLogStorageTable.c.partition,
@@ -1714,62 +1728,56 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         assets_details = self._get_assets_details([asset_key])
-        latest_event_ids_subquery = self._add_assets_wipe_filter_to_query(
-            latest_event_ids_subquery, assets_details, [asset_key]
-        ).alias("latest_materialization_event_ids")
+        latest_event_ids_subquery = db_subquery(
+            self._add_assets_wipe_filter_to_query(
+                latest_event_ids_subquery, assets_details, [asset_key]
+            ),
+            "latest_event_ids_subquery",
+        )
 
-        latest_events_subquery = (
-            db.select(
+        latest_events_subquery = db_subquery(
+            db_select(
                 [
                     SqlEventLogStorageTable.c.dagster_event_type,
                     SqlEventLogStorageTable.c.partition,
                     SqlEventLogStorageTable.c.run_id,
                     SqlEventLogStorageTable.c.id,
                 ]
-            )
-            .select_from(
+            ).select_from(
                 latest_event_ids_subquery.join(
                     SqlEventLogStorageTable,
                     SqlEventLogStorageTable.c.id == latest_event_ids_subquery.c.id,
                 ),
-            )
-            .alias("latest_materialization_events")
+            ),
+            "latest_events_subquery",
         )
 
-        materialization_planned_events = (
-            db.select(
-                [
-                    latest_events_subquery.c.dagster_event_type,
-                    latest_events_subquery.c.partition,
-                    latest_events_subquery.c.run_id,
-                    latest_events_subquery.c.id,
-                ]
-            )
-            .where(
-                latest_events_subquery.c.dagster_event_type
-                == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
-            )
-            .alias("materialization_planned_events")
+        materialization_planned_events = db_select(
+            [
+                latest_events_subquery.c.dagster_event_type,
+                latest_events_subquery.c.partition,
+                latest_events_subquery.c.run_id,
+                latest_events_subquery.c.id,
+            ]
+        ).where(
+            latest_events_subquery.c.dagster_event_type
+            == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
         )
 
-        materialization_events = (
-            db.select(
-                [
-                    latest_events_subquery.c.dagster_event_type,
-                    latest_events_subquery.c.partition,
-                    latest_events_subquery.c.run_id,
-                ]
-            )
-            .where(
-                latest_events_subquery.c.dagster_event_type
-                == DagsterEventType.ASSET_MATERIALIZATION.value
-            )
-            .alias("materialization_events")
+        materialization_events = db_select(
+            [
+                latest_events_subquery.c.dagster_event_type,
+                latest_events_subquery.c.partition,
+                latest_events_subquery.c.run_id,
+            ]
+        ).where(
+            latest_events_subquery.c.dagster_event_type
+            == DagsterEventType.ASSET_MATERIALIZATION.value
         )
 
         with self.index_connection() as conn:
-            materialization_planned_rows = conn.execute(materialization_planned_events).fetchall()
-            materialization_rows = conn.execute(materialization_events).fetchall()
+            materialization_planned_rows = db_fetch_mappings(conn, materialization_planned_events)
+            materialization_rows = db_fetch_mappings(conn, materialization_events)
 
         materialization_planned_rows_by_partition = {
             cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
@@ -1801,7 +1809,7 @@ class SqlEventLogStorage(EventLogStorage):
             DynamicPartitionsTable.c.partition,
         ]
         query = (
-            db.select(columns)
+            db_select(columns)
             .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
             .order_by(DynamicPartitionsTable.c.id)
         )
@@ -1825,7 +1833,7 @@ class SqlEventLogStorage(EventLogStorage):
         self._check_partitions_table()
         with self.index_connection() as conn:
             existing_rows = conn.execute(
-                db.select([DynamicPartitionsTable.c.partition]).where(
+                db_select([DynamicPartitionsTable.c.partition]).where(
                     db.and_(
                         DynamicPartitionsTable.c.partition.in_(partition_keys),
                         DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
@@ -1865,6 +1873,6 @@ def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
     """Utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
     supported in sqlalchemy 1.3.
     """
-    if not row.has_key(column):
+    if column not in row.keys():
         return None
     return row[column]

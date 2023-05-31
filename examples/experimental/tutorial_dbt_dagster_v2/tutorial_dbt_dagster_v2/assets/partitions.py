@@ -2,11 +2,13 @@ import json
 
 from dagster import DailyPartitionsDefinition, OpExecutionContext
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtCli
+from dagster_dbt.cli import DbtCli, DbtManifest
 
-from tutorial_dbt_dagster_v2.assets import manifest
+from . import MANIFEST_PATH
 
 DBT_SELECT_SEED = "resource_type:seed"
+
+manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 
 @dbt_assets(manifest=manifest, select=DBT_SELECT_SEED)

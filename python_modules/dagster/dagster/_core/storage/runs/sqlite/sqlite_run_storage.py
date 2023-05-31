@@ -90,7 +90,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 RunStorageSqlMetadata.create_all(engine)
-                connection.execute("PRAGMA journal_mode=WAL;")
+                connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
@@ -109,11 +109,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     @contextmanager
     def connect(self) -> Iterator[Connection]:
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        conn = engine.connect()
-        try:
-            yield conn
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            with conn.begin():
+                yield conn
 
     def _alembic_upgrade(self, rev: str = "head") -> None:
         alembic_config = get_alembic_config(__file__)

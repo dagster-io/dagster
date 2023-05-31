@@ -35,6 +35,7 @@ import numpy from './optag-images/numpy.svg';
 import openai from './optag-images/openai.svg';
 import pandas from './optag-images/pandas.svg';
 import plotly from './optag-images/plotly.svg';
+import polars from './optag-images/polars.svg';
 import postgres from './optag-images/postgres.svg';
 import powerbi from './optag-images/powerbi.svg';
 import pyspark from './optag-images/pyspark.svg';
@@ -363,6 +364,11 @@ export const KNOWN_TAGS = {
     color: '#326CE5',
     icon: k8s,
     content: 'K8s',
+  },
+  polars: {
+    color: '#24292E',
+    icon: polars,
+    content: 'Polars',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };

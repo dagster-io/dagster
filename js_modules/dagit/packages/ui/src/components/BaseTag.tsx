@@ -12,6 +12,7 @@ interface Props {
   interactive?: boolean;
   rightIcon?: React.ReactNode;
   label?: React.ReactNode;
+  tooltipText?: string;
 }
 
 const BaseTagTooltipStyle: React.CSSProperties = {
@@ -23,7 +24,7 @@ const BaseTagTooltipStyle: React.CSSProperties = {
   pointerEvents: 'none',
   borderRadius: 8,
   border: 'none',
-  top: -10,
+  top: -9,
   left: -13,
 };
 
@@ -35,13 +36,14 @@ export const BaseTag = (props: Props) => {
     interactive = false,
     rightIcon,
     label,
+    tooltipText,
   } = props;
   return (
     <StyledTag $fillColor={fillColor} $interactive={interactive} $textColor={textColor}>
       {icon || null}
       {label !== undefined && label !== null ? (
         <span
-          data-tooltip={typeof label === 'string' ? label : undefined}
+          data-tooltip={typeof label === 'string' ? label : tooltipText}
           data-tooltip-style={JSON.stringify({
             ...BaseTagTooltipStyle,
             backgroundColor: fillColor,

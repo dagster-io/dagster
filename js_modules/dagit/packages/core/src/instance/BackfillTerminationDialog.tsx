@@ -39,12 +39,12 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses.results.filter(
+    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses?.results.filter(
       (partition) =>
         partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
     );
     return (
-      unfinishedPartitions.reduce(
+      unfinishedPartitions?.reduce(
         (accum, partition) =>
           partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
         {},
@@ -67,14 +67,24 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
   return (
     <>
       <Dialog
-        isOpen={!!backfill && backfill.status !== BulkActionStatus.CANCELED && !!numUnscheduled}
+        isOpen={
+          !!backfill &&
+          backfill.status !== BulkActionStatus.CANCELED &&
+          (backfill.isAssetBackfill || !!numUnscheduled)
+        }
         title="Cancel backfill"
         onClose={onClose}
       >
-        <DialogBody>
-          There {numUnscheduled === 1 ? 'is 1 partition ' : `are ${numUnscheduled} partitions `}
-          yet to be queued or launched.
-        </DialogBody>
+        {backfill.isAssetBackfill ? (
+          <DialogBody>
+            Confirm cancellation of asset backfill? This will mark unfinished runs as canceled.
+          </DialogBody>
+        ) : (
+          <DialogBody>
+            There {numUnscheduled === 1 ? 'is 1 partition ' : `are ${numUnscheduled} partitions `}
+            yet to be queued or launched.
+          </DialogBody>
+        )}
         <DialogFooter>
           <Button intent="none" onClick={onClose}>
             Close
@@ -90,16 +100,18 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
           )}
         </DialogFooter>
       </Dialog>
-      <TerminationDialog
-        isOpen={
-          !!backfill &&
-          (!numUnscheduled || backfill.status !== 'REQUESTED') &&
-          !!Object.keys(unfinishedMap).length
-        }
-        onClose={onClose}
-        onComplete={onComplete}
-        selectedRuns={unfinishedMap}
-      />
+      {unfinishedMap && (
+        <TerminationDialog
+          isOpen={
+            !!backfill &&
+            (!numUnscheduled || backfill.status !== 'REQUESTED') &&
+            !!Object.keys(unfinishedMap).length
+          }
+          onClose={onClose}
+          onComplete={onComplete}
+          selectedRuns={unfinishedMap}
+        />
+      )}
     </>
   );
 };

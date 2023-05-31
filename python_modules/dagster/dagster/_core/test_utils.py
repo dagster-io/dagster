@@ -54,7 +54,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -465,20 +465,6 @@ def get_crash_signals() -> Sequence[Signals]:
 
 
 _mocked_system_timezone: Dict[str, Optional[str]] = {"timezone": None}
-
-
-@contextmanager
-def mock_system_timezone(override_timezone: str) -> Iterator[None]:
-    with mock_pendulum_timezone(override_timezone):
-        try:
-            _mocked_system_timezone["timezone"] = override_timezone
-            yield
-        finally:
-            _mocked_system_timezone["timezone"] = None
-
-
-def get_mocked_system_timezone() -> Optional[str]:
-    return _mocked_system_timezone["timezone"]
 
 
 # Test utility for creating a test workspace for a function

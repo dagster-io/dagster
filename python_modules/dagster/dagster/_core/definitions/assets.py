@@ -24,7 +24,9 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_selection import get_graph_subset
+from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -236,6 +238,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._selected_asset_keys,
             partition_mappings=self._partition_mappings,
+            partitions_def=self._partitions_def,
         )
 
     @staticmethod
@@ -946,8 +949,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         ins = {}
 
         input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
-        output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
         op_valid = True
+        input_index = 0
         for input_key in input_keys:
             input_name = input_names_by_key.get(input_key)
             if input_name is not None:
@@ -960,9 +963,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 # a new input such that the dependency would be respected, and therefore a new copy
                 # of the underlying op.
                 op_valid = False
-                output_name = output_names_by_key[input_key]
-                ins[output_name] = In(Nothing)
-                input_names_by_key[input_key] = output_name
+                # create a new input for this key
+                input_name = f"artificial_input_{input_index}"
+                input_index += 1
+                ins[input_name] = In(Nothing)
+                input_names_by_key[input_key] = input_name
 
         # must create a new copy of the op
         if op_valid:
@@ -1375,20 +1380,50 @@ def _validate_self_deps(
     input_keys: Iterable[AssetKey],
     output_keys: Iterable[AssetKey],
     partition_mappings: Mapping[AssetKey, PartitionMapping],
+    partitions_def: Optional[PartitionsDefinition],
 ) -> None:
     output_keys_set = set(output_keys)
     for input_key in input_keys:
         if input_key in output_keys_set:
             if input_key in partition_mappings:
                 partition_mapping = partition_mappings[input_key]
+                time_window_partition_mapping = get_self_dep_time_window_partition_mapping(
+                    partition_mapping, partitions_def
+                )
                 if (
-                    isinstance(partition_mapping, TimeWindowPartitionMapping)
-                    and (partition_mapping.start_offset or 0) < 0
-                    and (partition_mapping.end_offset or 0) < 0
+                    time_window_partition_mapping is not None
+                    and (time_window_partition_mapping.start_offset or 0) < 0
+                    and (time_window_partition_mapping.end_offset or 0) < 0
                 ):
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are time-partitioned and each"
-                " partition depends on earlier partitions"
+                "Assets can only depend on themselves if they are:\n(a) time-partitioned and each"
+                " partition depends on earlier partitions\n(b) multipartitioned, with one time"
+                " dimension that depends on earlier time partitions"
             )
+
+
+def get_self_dep_time_window_partition_mapping(
+    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+) -> Optional[TimeWindowPartitionMapping]:
+    """Returns a time window partition mapping dimension of the provided partition mapping,
+    if exists.
+    """
+    if isinstance(partition_mapping, TimeWindowPartitionMapping):
+        return partition_mapping
+    elif isinstance(partition_mapping, MultiPartitionMapping):
+        if not isinstance(partitions_def, MultiPartitionsDefinition):
+            return None
+
+        time_partition_mapping = partition_mapping.downstream_mappings_by_upstream_dimension.get(
+            partitions_def.time_window_dimension.name
+        )
+
+        if time_partition_mapping is None or not isinstance(
+            time_partition_mapping.partition_mapping, TimeWindowPartitionMapping
+        ):
+            return None
+
+        return time_partition_mapping.partition_mapping
+    return None

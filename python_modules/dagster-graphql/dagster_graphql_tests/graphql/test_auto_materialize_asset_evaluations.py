@@ -14,14 +14,18 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 
 QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
-    autoMaterializeAssetEvaluations(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
-        numRequested
-        numSkipped
-        numDiscarded
-        conditions {
-            __typename
-            ... on AutoMaterializeConditionWithDecisionType {
-                decisionType
+    autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+        ... on AutoMaterializeAssetEvaluationRecords {
+            records {
+                numRequested
+                numSkipped
+                numDiscarded
+                conditions {
+                    __typename
+                    ... on AutoMaterializeConditionWithDecisionType {
+                        decisionType
+                    }
+                }
             }
         }
     }
@@ -36,7 +40,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             QUERY,
             variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
         )
-        assert results.data == {"autoMaterializeAssetEvaluations": []}
+        assert results.data == {"autoMaterializeAssetEvaluationsOrError": {"records": []}}
 
         check.not_none(
             graphql_context.instance.schedule_storage
@@ -66,9 +70,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "autoMaterializeAssetEvaluations": [
-                {"numRequested": 0, "numSkipped": 0, "numDiscarded": 0, "conditions": []}
-            ]
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {"numRequested": 0, "numSkipped": 0, "numDiscarded": 0, "conditions": []}
+                ]
+            }
         }
 
         results = execute_dagster_graphql(
@@ -77,19 +83,21 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "autoMaterializeAssetEvaluations": [
-                {
-                    "numRequested": 1,
-                    "numSkipped": 0,
-                    "numDiscarded": 0,
-                    "conditions": [
-                        {
-                            "__typename": "MissingAutoMaterializeCondition",
-                            "decisionType": "MATERIALIZE",
-                        }
-                    ],
-                }
-            ]
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {
+                        "numRequested": 1,
+                        "numSkipped": 0,
+                        "numDiscarded": 0,
+                        "conditions": [
+                            {
+                                "__typename": "MissingAutoMaterializeCondition",
+                                "decisionType": "MATERIALIZE",
+                            }
+                        ],
+                    }
+                ]
+            }
         }
 
     def test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
@@ -98,7 +106,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             QUERY,
             variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
         )
-        assert results.data == {"autoMaterializeAssetEvaluations": []}
+        assert results.data == {"autoMaterializeAssetEvaluationsOrError": {"records": []}}
 
         partitions_def = StaticPartitionsDefinition(["a", "b"])
 
@@ -132,17 +140,19 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "autoMaterializeAssetEvaluations": [
-                {
-                    "numRequested": 1,
-                    "numSkipped": 0,
-                    "numDiscarded": 0,
-                    "conditions": [
-                        {
-                            "__typename": "MissingAutoMaterializeCondition",
-                            "decisionType": "MATERIALIZE",
-                        }
-                    ],
-                }
-            ]
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {
+                        "numRequested": 1,
+                        "numSkipped": 0,
+                        "numDiscarded": 0,
+                        "conditions": [
+                            {
+                                "__typename": "MissingAutoMaterializeCondition",
+                                "decisionType": "MATERIALIZE",
+                            }
+                        ],
+                    }
+                ]
+            }
         }

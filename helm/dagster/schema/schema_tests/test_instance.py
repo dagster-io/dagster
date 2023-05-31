@@ -4,7 +4,7 @@ import tempfile
 import pytest
 import yaml
 from dagster._config import process_config, resolve_to_config_type
-from dagster._core.instance.config import retention_config_schema
+from dagster._core.instance.config import dagster_instance_config, retention_config_schema
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.run_coordinator import QueuedRunCoordinator
 from dagster._core.test_utils import environ
@@ -944,6 +944,32 @@ def test_retention(template: HelmTemplate):
     assert instance["retention"]["sensor"]["purge_after_days"]["skipped"] == 7
     assert instance["retention"]["sensor"]["purge_after_days"]["success"] == 30
     assert instance["retention"]["sensor"]["purge_after_days"]["failure"] == 30
+
+
+def _check_valid_instance_yaml(dagster_config, instance_class=K8sRunLauncher):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
+            yaml.dump(dagster_config, fd, default_flow_style=False)
+            # Raises if the config is invalid
+            dagster_instance_config(temp_dir)
+
+
+def test_additional_config(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        additionalInstanceConfig={
+            "code_servers": {
+                "reload_timeout": 500,
+            }
+        }
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_instance_yaml(instance)
+    code_server_config = instance["code_servers"]
+    assert code_server_config["reload_timeout"] == 500
 
 
 def test_retention_backcompat(template: HelmTemplate):

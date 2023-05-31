@@ -11,12 +11,14 @@ import {
   Checkbox,
   NonIdealState,
 } from '@dagster-io/ui';
+import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {testId} from '../testing/testId';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
@@ -51,28 +53,17 @@ export const AssetTable: React.FC<Props> = ({
 }) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
-  const groupedByFirstComponent: {[pathComponent: string]: Asset[]} = {};
+  const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
+  const displayKeys = Object.keys(groupedByDisplayKey).sort();
 
-  assets.forEach((asset) => {
-    const displayPathKey = JSON.stringify(displayPathForAsset(asset));
-    groupedByFirstComponent[displayPathKey] = [
-      ...(groupedByFirstComponent[displayPathKey] || []),
-      asset,
-    ];
-  });
-
-  const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    Object.keys(groupedByFirstComponent),
+  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    displayKeys,
   );
 
   const checkedAssets: Asset[] = [];
-  const checkedPathsOnscreen: string[] = [];
-
-  const pageDisplayPathKeys = Object.keys(groupedByFirstComponent).sort();
-  pageDisplayPathKeys.forEach((pathKey) => {
-    if (checkedPaths.has(pathKey)) {
-      checkedPathsOnscreen.push(pathKey);
-      checkedAssets.push(...(groupedByFirstComponent[pathKey] || []));
+  displayKeys.forEach((displayKey) => {
+    if (checkedDisplayKeys.has(displayKey)) {
+      checkedAssets.push(...(groupedByDisplayKey[displayKey] || []));
     }
   });
 
@@ -125,23 +116,19 @@ export const AssetTable: React.FC<Props> = ({
         headerCheckbox={
           <Checkbox
             indeterminate={
-              checkedPathsOnscreen.length > 0 &&
-              checkedPathsOnscreen.length !== pageDisplayPathKeys.length
+              checkedDisplayKeys.size > 0 && checkedDisplayKeys.size !== displayKeys.length
             }
-            checked={
-              checkedPathsOnscreen.length > 0 &&
-              checkedPathsOnscreen.length === pageDisplayPathKeys.length
-            }
+            checked={checkedDisplayKeys.size > 0 && checkedDisplayKeys.size === displayKeys.length}
             onChange={(e) => {
               if (e.target instanceof HTMLInputElement) {
-                onToggleAll(checkedPathsOnscreen.length !== pageDisplayPathKeys.length);
+                onToggleAll(checkedDisplayKeys.size !== displayKeys.length);
               }
             }}
           />
         }
         prefixPath={prefixPath}
-        groups={groupedByFirstComponent}
-        checkedPaths={checkedPaths}
+        groups={groupedByDisplayKey}
+        checkedDisplayKeys={checkedDisplayKeys}
         onToggleFactory={onToggleFactory}
         showRepoColumn
         view={view}
@@ -165,7 +152,12 @@ export const AssetTable: React.FC<Props> = ({
           <Box flex={{alignItems: 'center', gap: 8}}>
             {checkedAssets.some((c) => !c.definition) ? (
               <Tooltip content="One or more selected assets are not software-defined and cannot be launched directly.">
-                <Button intent="primary" icon={<Icon name="materialization" />} disabled>
+                <Button
+                  intent="primary"
+                  data-testid={testId('materialize-button')}
+                  icon={<Icon name="materialization" />}
+                  disabled
+                >
                   {checkedAssets.length > 1
                     ? `Materialize (${checkedAssets.length.toLocaleString()})`
                     : 'Materialize'}

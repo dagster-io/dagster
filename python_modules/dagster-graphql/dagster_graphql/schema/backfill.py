@@ -109,6 +109,7 @@ class GrapheneBulkActionStatus(graphene.Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELED = "CANCELED"
+    CANCELING = "CANCELING"
 
     class Meta:
         name = "BulkActionStatus"
@@ -153,7 +154,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
-    partitionStatuses = graphene.NonNull(
+    partitionStatuses = graphene.Field(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
     )
     partitionStatusCounts = non_null_list(
@@ -276,6 +277,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
+        if self._backfill_job.is_asset_backfill:
+            return None
+
         partition_set_origin = self._backfill_job.partition_set_origin
         partition_set_name = (
             partition_set_origin.partition_set_name if partition_set_origin else None

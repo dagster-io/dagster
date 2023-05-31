@@ -2,6 +2,7 @@ from typing import AbstractSet, Any, Mapping, Optional
 
 import pytest
 from dagster import AssetKey, DailyPartitionsDefinition, PartitionsDefinition, file_relative_path
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtManifest
 
@@ -125,6 +126,18 @@ def test_partitions_def(partitions_def: Optional[PartitionsDefinition]) -> None:
         ...
 
     assert my_dbt_assets.partitions_def == partitions_def
+
+
+@pytest.mark.parametrize("io_manager_key", [None, "my_io_manager_key"])
+def test_io_manager_key(io_manager_key: Optional[str]) -> None:
+    @dbt_assets(manifest=manifest, io_manager_key=io_manager_key)
+    def my_dbt_assets():
+        ...
+
+    expected_io_manager_key = DEFAULT_IO_MANAGER_KEY if io_manager_key is None else io_manager_key
+
+    for output_def in my_dbt_assets.node_def.output_defs:
+        assert output_def.io_manager_key == expected_io_manager_key
 
 
 @pytest.mark.parametrize(

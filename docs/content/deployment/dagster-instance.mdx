@@ -167,7 +167,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
       <td>
         Configures storage for artifacts that require a local disk or when using
         the filesystem I/O manager (
-        <PyObject module="dagster" object="fs_io_manager" />
+        <PyObject module="dagster" object="FilesytemIOManager" />
         ).
       </td>
     </tr>
@@ -690,7 +690,7 @@ compute_logs:
 The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
 
 - Configure storage for artifacts that require a local disk, or
-- Store inputs and outputs when using the filesystem I/O manager (<PyObject module="dagster" object="fs_io_manager" />). Refer to the <Link href="/concepts/io-management/io-managers">I/O managers documentation</Link> for more information on how other I/O managers store artifacts.
+- Store inputs and outputs when using the filesystem I/O manager (<PyObject module="dagster" object="FilesytemIOManager" />). Refer to the <Link href="/concepts/io-management/io-managers">I/O managers documentation</Link> for more information on how other I/O managers store artifacts.
 
 **Note**: <PyObject module="dagster._core.storage.root" object="LocalArtifactStorage" /> is currently the only option for local artifact storage. This option configures the directory used by the default filesystem I/O Manager, as well as any artifacts that require a local disk.
 

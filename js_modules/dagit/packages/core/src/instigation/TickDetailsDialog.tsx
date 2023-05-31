@@ -20,7 +20,6 @@ export const TickDetailsDialog: React.FC<{
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, timestamp: timestamp || 0},
     skip: !timestamp,
-    partialRefetch: true,
   });
 
   const tick =

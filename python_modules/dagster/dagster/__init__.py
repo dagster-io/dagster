@@ -131,6 +131,7 @@ from dagster._core.definitions.configurable import configured as configured
 from dagster._core.definitions.data_version import (
     DataProvenance as DataProvenance,
     DataVersion as DataVersion,
+    DataVersionsByPartition as DataVersionsByPartition,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,

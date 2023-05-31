@@ -34,7 +34,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
   const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
     variables: {sensorSelector},
-    partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
 

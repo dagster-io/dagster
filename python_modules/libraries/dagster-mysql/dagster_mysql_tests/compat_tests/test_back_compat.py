@@ -6,6 +6,7 @@ import tempfile
 from urllib.parse import urlparse
 
 import pytest
+import sqlalchemy as db
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -19,30 +20,35 @@ from dagster import (
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
-from sqlalchemy import create_engine, inspect
 
 
 def get_columns(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(c["name"] for c in db.inspect(conn).get_columns(table_name))
 
 
 def get_indexes(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+    with instance.run_storage.connect() as conn:
+        return set(i["name"] for i in db.inspect(conn).get_indexes(table_name))
 
 
 def get_tables(instance):
-    return instance.run_storage._engine.table_names()
+    with instance.run_storage.connect() as conn:
+        return db.inspect(conn).get_table_names()
 
 
 def _reconstruct_from_file(backcompat_conn_string, path, _username="root", _password="test"):
     parse_result = urlparse(backcompat_conn_string)
     hostname = parse_result.hostname
     port = parse_result.port
-    engine = create_engine(backcompat_conn_string)
-    engine.execute("drop schema test;")
-    engine.execute("create schema test;")
+    engine = db.create_engine(backcompat_conn_string)
+    with engine.connect() as conn:
+        with conn.begin():
+            conn.execute(db.text("drop schema test;"))
+            conn.execute(db.text("create schema test;"))
     env = os.environ.copy()
     env["MYSQL_PWD"] = "test"
     subprocess.check_call(
@@ -163,25 +169,25 @@ def test_jobs_selector_id_migration(backcompat_conn_string):
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorsTable)
+                db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
             migrated_job_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
             legacy_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(JobTickTable)
+                db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -191,7 +197,7 @@ def test_jobs_selector_id_migration(backcompat_conn_string):
             instance.reindex()
 
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -377,7 +383,7 @@ def test_add_dynamic_partitions_table(backcompat_conn_string):
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
     import sqlalchemy as db
 
-    query = db.select([db.func.count()]).select_from(table)
+    query = db_select([db.func.count()]).select_from(table)
     if with_non_null_id:
         query = query.where(table.c.id.isnot(None))
     with run_storage.connect() as conn:

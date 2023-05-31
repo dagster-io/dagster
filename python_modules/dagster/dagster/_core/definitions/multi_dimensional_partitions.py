@@ -414,23 +414,6 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         )
         return next(iter(time_window_dims))
 
-    def get_cron_schedule(
-        self,
-        minute_of_hour: Optional[int] = None,
-        hour_of_day: Optional[int] = None,
-        day_of_week: Optional[int] = None,
-        day_of_month: Optional[int] = None,
-    ) -> str:
-        return cast(
-            TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
-        ).get_cron_schedule(minute_of_hour, hour_of_day, day_of_week, day_of_month)
-
-    @property
-    def timezone(self) -> Optional[str]:
-        return cast(
-            TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
-        ).timezone
-
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         if not isinstance(partition_key, MultiPartitionKey):
             partition_key = self.get_partition_key_from_str(partition_key)

@@ -1,5 +1,63 @@
 # Changelog
 
+# 1.3.7 (core) / 0.19.7 (libraries)
+
+### New
+
+- Adding a `.env` file in the working directory when running `dagster dev` can now be used for Dagster system variables like `DAGSTER_HOME` or environment variables referenced in your `dagster.yaml` file using an `env:` key. Previously, setting a `.env` file only worked for environment variables referenced in your Dagster code.
+- When using the GraphQL Python client, `submit_job_execution` can now take in a `RunConfig` object. Previously, it could only take a Python dictionary with the run configuration.
+- Asset backfills can now be canceled via a button in the UI. This will terminate unfinished runs and prevent new runs from being queued.
+- Introduced a new user setting which allows automatically expanding default config for jobs in the launchpad.
+- [dagit] Dagit now supports displaying a Polars tag on the asset graph.
+
+### Bugfixes
+
+- Fixed an issue where setting a resource in an op didn’t work if the Dagster job was only referenced within a schedule or sensor and wasn’t included in the `jobs` argument to  `Definitions`.
+- [dagster-slack][dagster-pagerduty][dagster-msteams][dagster-airflow] Fixed issue where pre-built sensors and hooks which created urls to the runs page in the UI would use the old `/instance/runs` path instead of the new `/runs`.
+
+### Community Contributions
+
+- [dagster-databricks] Added a configurable resource key to `create_databricks_run_now_op`, thanks @srggrs!
+
+# 1.3.6 (core) / 0.19.6 (libraries)
+
+### New
+
+- Added an experimental `dagster code-server start` command that can be used to launch a code server, much like `dagster api grpc`. Unlike `dagster api grpc`, however, `dagster code-server start` runs the code in a subprocess, so it can reload code from the Dagster UI without needing to restart the command. This can be useful for jobs that load code from some external source and may want to reload job definitions without restarting the process.
+- Added a new `sensors.num_submit_workers` key to `dagster.yaml` that can be used to decrease latency when a sensor emits multiple run requests within a single tick. See [the docs](https://docs.dagster.io/deployment/dagster-instance#sensor-evaluation) for more information.
+- [dagster-k8s] The `k8s_job_executor` can now be used to launch each step of a job in its own Kubernetes, pod, even if the Dagster deployment is not using the `K8sRunLauncher` to launch each run in its own Kubernetes pod.
+- [ui] When viewing a list of schedules or sensors in Overview or on individual code locations, it is now possible to filter by running state.
+- [ui] A new experimental asset overview page is available via user settings.
+
+### Bugfixes
+
+- Fixed issue where asset jobs featuring a subset of a larger multi_asset could be rendered as an op-based job.
+- Fixed an issue where Pythonic IO managers could not be passed to the `io_manager_def` param on an asset.
+- Fixed an issue where late-binding an executor to a job, such as providing one to Definitions, would not correctly update the config schema.
+- [dagster-k8s] Fixed an issue where setting `maxResumeRunAttempts` to null in the helm chart would cause it to be set to a default value of 3 instead of disabling run retries.
+- [dagster-k8s] Fixed an issue where the `k8s_job_executor` would sometimes fail with a 409 Conflict error after retrying the creation of a Kubernetes pod for a step, due to the job having already been created during a previous attempt despite raising an error.
+- [dagster-dbt] Fixed an issue where dbt logs were not being captured when invoking dbt commands using the resource.
+- [dagster-dbt] Fixed an issue where if `op_name` was passed to `load_assets_from_dbt_manifest`, and a `select` parameter was specified, a suffix would be appended to the desired op name.
+- [ui] Fixed an issue where using a path prefix for `dagit` would lead to JavaScript bundle loading errors.
+- [ui] Resizing the viewport while viewing the Run timeline now correctly resizes the timeline and its contents.
+- [ui] Ctrl-scroll to zoom the DAG view, and shift-scroll to pan horizontally now work on all platforms and an instructional tooltip explains the zoom interaction.
+
+### Experimental
+
+- [dagster-dbt] Added a new implementation of the dbt Resource, `DbtCli`, in `dagster_dbt.cli`. This new resource only support `dbt-core>=1.4.0`.
+- [dagster-dbt] Added a new decorator `@dbt_assets` in `dagster_dbt.asset_decorator` that allows you to specify a compute function for a selected set of dbt assets that loaded as an `AssetsDefinition`.
+
+### Documentation
+
+- [dagster-duckdb] New guide and API reference page for the DuckDB I/O managers and resource
+- [rbac] - Added documentation for the new [Dagster Cloud Teams feature](https://docs.dagster.io/dagster-cloud/account/managing-users/managing-teams) for role-based access control (RBAC). We’ve also revamped the documentation for Dagster Cloud user roles and permissions - [check it out here](https://docs.dagster.io/dagster-cloud/account/managing-users/managing-user-roles-permissions).
+- Fixed a typo in the "Using Environment Variables and Secrets" guide (thanks **[snikch](https://github.com/snikch)!**)
+
+### Dagster Cloud
+
+- Fixed a bug in the multi-asset sensor where using context methods to fetch materializations by partition would cause a timeout.
+- The ECS agent can now configure sidecars to be included with the tasks that the agent launches. See [the docs](https://docs.dagster.io/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference#amazon-ecs-agent-configuration-reference) for more information.
+
 # 1.3.5 (core) / 0.19.5 (libraries)
 
 ### New

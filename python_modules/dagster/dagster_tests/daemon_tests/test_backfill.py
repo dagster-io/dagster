@@ -867,3 +867,63 @@ def test_backfill_from_failure_for_subselection(
     child_run = list(instance.get_runs(limit=1))[0]
     assert child_run.resolved_op_selection == run.resolved_op_selection
     assert child_run.op_selection == run.op_selection
+
+
+def test_asset_backfill_cancellation(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    backfill_id = "backfill_with_multiple_assets_selected"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 1
+    run = instance.get_runs()[0]
+    assert run.tags[BACKFILL_ID_TAG] == backfill_id
+    assert run.asset_selection == {AssetKey(["asset_a"])}
+
+    wait_for_all_runs_to_start(instance, timeout=30)
+    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.CANCELED
+    assert instance.get_runs_count() == 1  # Assert that additional runs are not created

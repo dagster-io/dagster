@@ -68,6 +68,7 @@ describe('AssetView', () => {
     });
 
     // Test is incorrect. The asset has not materialization timestamp at all.
+    // eslint-disable-next-line jest/no-disabled-tests
     it.skip('does not show historical view alert if `asOf` is past latest materialization', async () => {
       // `act` because we're asserting a null state.
       act(() => {
@@ -84,6 +85,7 @@ describe('AssetView', () => {
     });
 
     // Test is incorrect. The asset has not materialization timestamp at all.
+    // eslint-disable-next-line jest/no-disabled-tests
     it.skip('does not show historical view alert if `asOf` is equal to latest materialization', async () => {
       // `act` because we're asserting a null state.
       act(() => {

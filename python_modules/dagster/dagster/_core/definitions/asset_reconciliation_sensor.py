@@ -235,7 +235,7 @@ class AssetReconciliationCursor(NamedTuple):
     latest_storage_id: Optional[int]
     materialized_or_requested_root_asset_keys: AbstractSet[AssetKey]
     materialized_or_requested_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
-    evaluation_id: Optional[int]
+    evaluation_id: int
 
     def was_previously_materialized_or_requested(self, asset_key: AssetKey) -> bool:
         return asset_key in self.materialized_or_requested_root_asset_keys
@@ -284,7 +284,7 @@ class AssetReconciliationCursor(NamedTuple):
         run_requests: Sequence[RunRequest],
         newly_materialized_root_asset_keys: AbstractSet[AssetKey],
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
-        evaluation_id: Optional[int],
+        evaluation_id: int,
         asset_graph: AssetGraph,
     ) -> "AssetReconciliationCursor":
         """Returns a cursor that represents this cursor plus the updates that have happened within the
@@ -365,7 +365,7 @@ class AssetReconciliationCursor(NamedTuple):
             serialized_materialized_or_requested_root_partitions_by_asset_key,
         ) = data[:3]
 
-        evaluation_id = data[3] if len(data) == 4 else None
+        evaluation_id = data[3] if len(data) == 4 else 0
 
         materialized_or_requested_root_partitions_by_asset_key = {}
         for (
@@ -644,7 +644,9 @@ def determine_asset_partitions_to_auto_materialize(
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
-    materialization_counts_by_asset_key: Dict[AssetKey, int] = defaultdict(int)
+    materialization_requests_by_asset_key: Mapping[
+        AssetKey, Set[AssetKeyPartitionKey]
+    ] = defaultdict(set)
     evaluation_time = instance_queryer.evaluation_time
 
     (
@@ -769,13 +771,17 @@ def determine_asset_partitions_to_auto_materialize(
         # need to ensure they would not cause us to exceed the rate limit
         if conditions:
             if (
+                # has a rate limit
                 auto_materialize_policy.max_materializations_per_minute is not None
-                and materialization_counts_by_asset_key[candidate.asset_key]
+                # has not already been requested
+                and candidate not in materialization_requests_by_asset_key[candidate.asset_key]
+                # current number of requested asset partitions exceeds the rate limit
+                and len(materialization_requests_by_asset_key[candidate.asset_key])
                 >= auto_materialize_policy.max_materializations_per_minute
             ):
                 conditions.add(MaxMaterializationsExceededAutoMaterializeCondition())
             else:
-                materialization_counts_by_asset_key[candidate.asset_key] += 1
+                materialization_requests_by_asset_key[candidate.asset_key].add(candidate)
 
         return conditions
 
@@ -1115,7 +1121,7 @@ def reconcile(
             asset_graph=asset_graph,
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
-            evaluation_id=cursor.evaluation_id + 1 if cursor.evaluation_id is not None else 0,
+            evaluation_id=cursor.evaluation_id + 1,
         ),
         build_auto_materialize_asset_evaluations(
             asset_graph, conditions_by_asset_partition, dynamic_partitions_store=instance_queryer
