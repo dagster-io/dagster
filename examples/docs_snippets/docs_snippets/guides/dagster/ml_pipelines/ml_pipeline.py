@@ -82,6 +82,12 @@ def transformed_test_data(test_data, tfidf_vectorizer):
 
 ## vectorizer_end
 
+@asset
+def transformed_training_data():
+    pass
+@asset 
+def transformed_test_data():
+    pass 
 
 ## models_start
 
