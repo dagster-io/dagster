@@ -78,30 +78,46 @@ basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 
 ## conditional_monitoring_start
 
-from dagster import RunRequest, asset, Output
 from sklearn import linear_model
+from dagster import asset, Output, AssetKey
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 
 @asset(output_required=False)
-def machine_learning_model(training_data, test_data, context):
+def conditional_machine_learning_model(context):
+    X, y = np.random.randint(5000, size=(5000, 2)), range(5000)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.33, random_state=42
+    )
+    reg = linear_model.LinearRegression()
+    reg.fit(X_train, y_train)
+
     # Get the model accuracy from metadata of the previous materilization of this machine learning model
     instance = context.instance
     materialization = instance.get_latest_materialization_event(
-        AssetKey(["machine_learning_model"])
+        AssetKey(["conditional_machine_learning_model"])
     )
-    previous_model_accuracy = materialization.metadata["model_accuracy"]
-    reg = linear_model.LinearRegression()
-    reg.fit(training_data)
-    new_model_accuracy = reg.score(test_data)
-    if new_model_accuracy > previous_model_accuracy:
-        yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+    if materialization is None:
+        yield Output(reg, metadata={"model_accuracy": reg.score(X_test, y_test)})
+
+    else:
+        previous_model_accuracy = materialization.asset_materialization.metadata[
+            "model_accuracy"
+        ]
+        new_model_accuracy = reg.score(X_test, y_test)
+        if new_model_accuracy > previous_model_accuracy:
+            yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
 
 
 ## conditional_monitoring_end
 
-@asset 
+
+@asset
 def ml_model():
-    pass 
+    pass
+
+
 ## fail_slack_start
 
 import os

@@ -16,10 +16,9 @@ Machine learning models are highly dependent on data at a point in time and must
 
 ## Prerequisites
 
-Before proceeding, we recommend reading the following guides:
+Before proceeding, the following guide is recommended:
 
 - [Automating your data pipelines](/guides/dagster/automating-pipelines) which provides background on using [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
-- [Building machine learning pipelines with Dagster](/guides/dagster/ml-pipeline) which walks through using [assets](/concepts/assets/software-defined-assets) for machine learning.
 
 ---
 
@@ -31,7 +30,7 @@ You might have thought about your data sources, feature sets, and the best model
 
 Whether you have a large or small model, Dagster can help automate data refreshes and model training based on your business needs.
 
-We can use [auto-materializing assets](/concepts/assets/asset-auto-execution) to update a machine learning model when the upstream data is updated. This can be done by setting the `AutoMaterializePolicy` to `eager`, which means that our machine learning model asset will be refreshed anytime our data asset is updated.
+[Auto-materializing assets](/concepts/assets/asset-auto-execution) can be used to update a machine learning model when the upstream data is updated. This can be done by setting the `AutoMaterializePolicy` to `eager`, which means that our machine learning model asset will be refreshed anytime our data asset is updated.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=eager_materilization_start endbefore=eager_materilization_end
 from dagster import AutoMaterializePolicy, asset
@@ -51,7 +50,7 @@ def my_ml_model(my_data):
     ...
 ```
 
-Some machine learning models might more be cumbersome to retrain; it also might be less important to update them as soon as new data arrives. For this, we can use a lazy auto-materialization policy which can be used in two different ways. The first, by using it with a `freshness_policy` as shown below. In this case, `my_ml_model` will only be auto-materialized once a week.
+Some machine learning models might more be cumbersome to retrain; it also might be less important to update them as soon as new data arrives. For this, a lazy auto-materialization policy which can be used in two different ways. The first, by using it with a `freshness_policy` as shown below. In this case, `my_ml_model` will only be auto-materialized once a week.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=lazy_materlization_start endbefore=lazy_materlization_end
 from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
@@ -70,7 +69,7 @@ def my_other_ml_model(my_other_data):
     ...
 ```
 
-This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time. In this case, we are using the model once a week for `predictions`, ensuring that `my_ml_model` is retrained before it is used.
+This can be useful if you know that you want your machine learning model retrained at least once a week. While Dagster allows you to refresh a machine learning model as often as you like, best practice is to re-train as seldomly as possible. Model retraining can be costly to compute and having a minimal number of model versions can reduce the complexity of reproducing results at a later point in time. In this case, the model is updated once a week for `predictions`, ensuring that `my_ml_model` is retrained before it is used.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=without_policy_start endbefore=without_policy_end
 from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
@@ -94,7 +93,7 @@ def predictions(some_ml_model):
     ...
 ```
 
-We can also use a more traditional schedule on our machine learning assets, causing them to be re-materialized or retrained on the latest data. For example, setting up a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules).
+A more traditional schedule can also be used to update machine learning assets, causing them to be re-materialized or retrained on the latest data. For example, setting up a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules).
 
 This can be useful if you have data that is also being scheduled on a cron schedule and want to add your machine model jobs to run on a schedule as well.
 
@@ -113,26 +112,39 @@ Integrating your machine learning models into Dagster allows you to see when the
 In this example, the model is being evaluated against the previous model’s accuracy. If the model’s accuracy has improved, the model is returned for use in downstream steps, such as inference or deploying to production.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=conditional_monitoring_start  endbefore=conditional_monitoring_end
-from dagster import RunRequest, asset, Output
 from sklearn import linear_model
+from dagster import asset, Output, AssetKey
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 
 @asset(output_required=False)
-def machine_learning_model(training_data, test_data, context):
+def conditional_machine_learning_model(context):
+    X, y = np.random.randint(5000, size=(5000, 2)), range(5000)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.33, random_state=42
+    )
+    reg = linear_model.LinearRegression()
+    reg.fit(X_train, y_train)
+
     # Get the model accuracy from metadata of the previous materilization of this machine learning model
     instance = context.instance
     materialization = instance.get_latest_materialization_event(
-        AssetKey(["machine_learning_model"])
+        AssetKey(["conditional_machine_learning_model"])
     )
-    previous_model_accuracy = materialization.metadata["model_accuracy"]
-    reg = linear_model.LinearRegression()
-    reg.fit(training_data)
-    new_model_accuracy = reg.score(test_data)
-    if new_model_accuracy > previous_model_accuracy:
-        yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+    if materialization is None:
+        yield Output(reg, metadata={"model_accuracy": reg.score(X_test, y_test)})
+
+    else:
+        previous_model_accuracy = materialization.asset_materialization.metadata[
+            "model_accuracy"
+        ]
+        new_model_accuracy = reg.score(X_test, y_test)
+        if new_model_accuracy > previous_model_accuracy:
+            yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
 ```
 
-We can also set up a sensor that triggers if an asset fails to materialize. Alerts can be customized and sent through e-mail or natively through Slack. In this example, a Slack message is sent anytime the `ml_job` fails.
+A sensor can be set up that triggers if an asset fails to materialize. Alerts can be customized and sent through e-mail or natively through Slack. In this example, a Slack message is sent anytime the `ml_job` fails.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=fail_slack_start   endbefore=fail_slack_end
 import os
@@ -155,7 +167,7 @@ Understanding the performance of your ML model is critical to both the model dev
 
 One of the easiest ways to utilize Dagster’s metadata is by using a dictionary to track different metrics that are relevant for an ML model.
 
-Another way is to store relevant data for a single training iteration as a graph that you can view directly from the Dagster UI. In this example, we’ll define a function that uses data produced by a machine learning model to plot an evaluation metric as the model goes through the training process and render that in the Dagster UI.
+Another way is to store relevant data for a single training iteration as a graph that you can view directly from the Dagster UI. In this example, a function is defined that uses data produced by a machine learning model to plot an evaluation metric as the model goes through the training process and render that in the Dagster UI.
 
 Dagster’s <PyObject object="MetadataValue" /> types enable types such as tables, URLs, notebooks, Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric’s performance throughout each training iteration also known as an epoch during the training cycle.
 
@@ -177,7 +189,7 @@ def make_plot(eval_metric):
     return MetadataValue.md(f"![img](data:image/png;base64,{image_data.decode()})")
 ```
 
-In this example, we’re using a dictionary called metadata to store the Markdown plots and the score value in Dagster.
+In this example, a dictionary is used called `metadata` to store the Markdown plots and the score value in Dagster.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=metadata_use_start endbefore=metadata_use_end
 from dagster import asset
@@ -213,7 +225,7 @@ def xgboost_comments_model(transformed_training_data, transformed_test_data):
     return Output(xgb_r, metadata=metadata)
 ```
 
-If we look at the `xgboost_comments_model` asset in the Dagster UI, we see the metadata rendered. Numerical values, such as the `score (mean_absolute_error)` will be logged and plotted for each materialization, which can be useful to understand the score over time for machine learning models.
+In the Dagster UI, the `xgboost_comments_model` has the metadata rendered. Numerical values, such as the `score (mean_absolute_error)` will be logged and plotted for each materialization, which can be useful to understand the score over time for machine learning models.
 
 <Image
 alt="alt"
@@ -233,13 +245,13 @@ height={541}
 
 ---
 
-## Version control
+## Tracking model history
 
-Version control of your machine learning model is as critical as version control of your data and code. Using Dagster will enable you to understand - what the data was that was used to train the model, when it was refreshed, what code version and finally what version of the ML model was used to generate whatever predictions it is used for the predicted values.
+Viewing previous versions of a machine learning model can be useful to understand the evaluation history or referencing a model that was used for inference. Using Dagster will enable you to understand - what the data was that was used to train the model, when it was refreshed, what code version and finally what version of the ML model was used to generate whatever predictions it is used for the predicted values.
 
 In Dagster, each time an asset is materialized, the metadata and model are stored. Dagster registers the code version, data version and source data for each asset, so understanding what data was used to train a model is linked.
 
-In the screenshot below, we can see each materialization of `xgboost_comments_model` and the path for where each iteration of the model is stored.
+In the screenshot below, each materialization of `xgboost_comments_model` and the path for where each iteration of the model is stored.
 
 <Image
 alt="alt"
@@ -248,7 +260,7 @@ width={650}
 height={400}
 />
 
-We can also view any plots generated through the asset's metadata. In this example, we're viewing plots of `score (mean_absolute_error)`.
+Any plots generated through the asset's metadata can be viewed in the metadata section. In this example, the plots of `score (mean_absolute_error)` are available for analysis.
 
 <Image
 alt="alt"
