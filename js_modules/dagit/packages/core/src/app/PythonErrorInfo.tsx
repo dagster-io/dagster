@@ -97,7 +97,7 @@ export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
   }
 `;
 
-export const CopyErrorButton = ({copy}: {copy: () => void}) => {
+export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
   return (
     <div style={{position: 'relative'}}>
       <CopyErrorButtonWrapper
