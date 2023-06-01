@@ -14,6 +14,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -262,12 +263,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
-              <Tab
-                id="auto-materialize-policy"
-                title="Auto-materialize policy"
-                onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
-                disabled={!definition}
-              />
+              {useFeatureFlags().flagAssetAutomaterializePolicyPage ? (
+                <Tab
+                  id="auto-materialize-policy"
+                  title="Auto-materialize policy"
+                  onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
+                  disabled={!definition}
+                />
+              ) : null}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
