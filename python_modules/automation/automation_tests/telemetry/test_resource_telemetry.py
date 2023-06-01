@@ -52,7 +52,6 @@ def test_resource_telemetry():
     ]
 
     for library in libraries:
-        print(f"Analyzing {library}")
         package = __import__(library)
 
         resources = dict(
@@ -87,7 +86,7 @@ def test_resource_telemetry():
                 # the klass is purposely set to dagster_maintained=False
                 continue
             try:
-                if not klass._dagster_maintained:
+                if not klass._dagster_maintained:  # noqa: SLF001
                     resources_without_telemetry.append(klass)
             except Exception:
                 resources_without_telemetry.append(klass)
