@@ -12,7 +12,7 @@ def my_data():
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.eager(),
-    )
+)
 def my_ml_model(my_data):
     ...
 
@@ -151,7 +151,11 @@ def make_plot(eval_metric):
 
 ## ui_plot_end
 
-from docs_snippets.guides.dagster.ml_pipelines.ml_pipeline import transformed_test_data, transformed_train_data
+from docs_snippets.guides.dagster.ml_pipelines.ml_pipeline import (
+    transformed_test_data,
+    transformed_train_data,
+)
+
 ## metadata_use_start
 
 from dagster import asset
