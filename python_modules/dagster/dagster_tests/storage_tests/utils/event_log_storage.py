@@ -3596,6 +3596,32 @@ class TestEventLogStorage:
         assert foo_info.pending_step_count == 1
         assert foo_info.assigned_step_count == 4
 
+    def test_concurrency_run_ids(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_wipe():
+            # this test requires wiping
+            pytest.skip(
+                "storage does not support reading run ids for the purpose of freeing concurrency"
+                " slots"
+            )
+
+        storage.wipe()
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+
+        storage.set_concurrency_slots("foo", 1)
+
+        storage.claim_concurrency_slot("foo", one, "a")
+        storage.claim_concurrency_slot("foo", two, "b")
+        storage.claim_concurrency_slot("foo", one, "c")
+
+        storage.get_concurrency_run_ids() == {one, two}
+        storage.free_concurrency_slots_for_run(one)
+        storage.get_concurrency_run_ids() == {two}
+
     def test_threaded_concurrency(self, storage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
