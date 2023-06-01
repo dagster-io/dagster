@@ -10,7 +10,6 @@ import {
   Spinner,
   Mono,
   Subheading,
-  Tooltip,
   Tag,
 } from '@dagster-io/ui';
 import dayjs from 'dayjs';
@@ -380,7 +379,6 @@ const RightPanelSection = ({
 
 const RightPanelDetail = ({
   title,
-  tooltip,
   value,
 }: {
   title: React.ReactNode;
