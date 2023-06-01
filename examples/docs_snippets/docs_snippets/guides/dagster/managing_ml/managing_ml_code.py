@@ -114,7 +114,7 @@ def conditional_machine_learning_model(context):
 @asset
 def ml_model():
     pass
-
+slack_token= "782823"
 
 ## fail_slack_start
 
@@ -126,7 +126,7 @@ ml_job = define_asset_job("ml_training_job", selection=[ml_model])
 
 slack_on_run_failure = make_slack_on_run_failure_sensor(
     channel="#ml_monitor_channel",
-    slack_token=os.getenv("MY_SLACK_TOKEN"),
+    slack_token= slack_token, 
     monitored_jobs=([ml_job]),
 )
 ## fail_slack_end
