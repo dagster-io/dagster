@@ -2459,6 +2459,7 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
         from dagster._daemon.daemon import (
             BackfillDaemon,
+            ConcurrencySlotsDaemon,
             MonitoringDaemon,
             SchedulerDaemon,
             SensorDaemon,
@@ -2477,6 +2478,11 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
         if self.run_monitoring_enabled:
             daemons.append(MonitoringDaemon.daemon_type())
+            if (
+                self.event_log_storage.supports_global_concurrency_limits
+                and self.run_monitoring_settings.get("free_concurrency_slots_seconds")
+            ):
+                daemons.append(ConcurrencySlotsDaemon.daemon_type())
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
         if self.auto_materialize_enabled:
