@@ -2901,7 +2901,7 @@ type DagitQuery {
   shouldShowNux: Boolean!
   test: TestFields
   autoMaterializeAssetEvaluationsOrError(
-    assetKey: AssetKeyInput
+    assetKey: AssetKeyInput!
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
@@ -3062,10 +3062,12 @@ union AutoMaterializeCondition =
 
 type FreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 interface AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 enum AutoMaterializeDecisionType {
@@ -3076,22 +3078,27 @@ enum AutoMaterializeDecisionType {
 
 type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeys: [String!]
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {

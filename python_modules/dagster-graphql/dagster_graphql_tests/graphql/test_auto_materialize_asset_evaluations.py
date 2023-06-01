@@ -1,5 +1,5 @@
 import dagster._check as check
-from dagster import AssetKey, StaticPartitionsDefinition
+from dagster import AssetKey
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AutoMaterializeAssetEvaluation,
 )
@@ -11,6 +11,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
+from dagster_graphql_tests.graphql.repo import static_partitions_def
 
 QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
@@ -24,6 +25,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     __typename
                     ... on AutoMaterializeConditionWithDecisionType {
                         decisionType
+                        partitionKeys
                     }
                 }
             }
@@ -93,6 +95,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                             {
                                 "__typename": "MissingAutoMaterializeCondition",
                                 "decisionType": "MATERIALIZE",
+                                "partitionKeys": None,
                             }
                         ],
                     }
@@ -104,11 +107,13 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
-            variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
+            variables={
+                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
+                "limit": 10,
+                "cursor": None,
+            },
         )
         assert results.data == {"autoMaterializeAssetEvaluationsOrError": {"records": []}}
-
-        partitions_def = StaticPartitionsDefinition(["a", "b"])
 
         check.not_none(
             graphql_context.instance.schedule_storage
@@ -116,18 +121,20 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             evaluation_id=10,
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
-                    asset_key=AssetKey("asset_two"),
+                    asset_key=AssetKey("upstream_static_partitioned_asset"),
                     partition_subsets_by_condition=[
                         (
                             MissingAutoMaterializeCondition(),
                             SerializedPartitionsSubset.from_subset(
-                                partitions_def.empty_subset().with_partition_keys("a"),
-                                partitions_def,
+                                static_partitions_def.empty_subset().with_partition_keys(
+                                    ["a", "b"]
+                                ),
+                                static_partitions_def,
                                 None,  # type: ignore
                             ),
                         )
                     ],
-                    num_requested=1,
+                    num_requested=2,
                     num_skipped=0,
                     num_discarded=0,
                 ),
@@ -137,19 +144,24 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
-            variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
+            variables={
+                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
+                "limit": 10,
+                "cursor": None,
+            },
         )
         assert results.data == {
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {
-                        "numRequested": 1,
+                        "numRequested": 2,
                         "numSkipped": 0,
                         "numDiscarded": 0,
                         "conditions": [
                             {
                                 "__typename": "MissingAutoMaterializeCondition",
                                 "decisionType": "MATERIALIZE",
+                                "partitionKeys": ["a", "b"],
                             }
                         ],
                     }
