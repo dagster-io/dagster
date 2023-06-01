@@ -66,10 +66,6 @@ class Signup:
     def __hash__(self):
         return hash(self.properties())
 
-    def __str__(self) -> str:
-        return
-
-
 class DataGenerator:
     def __init__(self, seed: int = 0):
         self.seed = seed
