@@ -1,3 +1,8 @@
+---
+title: "Tutorial, part seven: Connecting to external services | Dagster Docs"
+description: Learn how to connect to external services in Dagster with resources
+---
+
 Throughout the tutorial, you have built a data pipeline that connects to different external services, such as Hacker News. By building this asset graph, Dagster acts as a control plane of multiple different external services. However, connecting to these services and managing their use can be difficult. Resources are the recommended way to manage these connections in Dagster.
 
 Resources are Dagster objects that connect to external services, such as Slack, Snowflake, or S3. In this section, you’ll learn more about resources, including how to:
@@ -69,6 +74,13 @@ To confirm that this worked:
 
 ![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d1aaa68c-cb55-4805-a797-66dcdb672d5f/Untitled.png)
 
+<Image
+alt="the resources overview page in the Dagster UI"
+src="/images/tutorial/resources-overview.png"
+width={1152}
+height={610}
+/>
+
 ---
 
 # Step 2: Using the resource
@@ -101,7 +113,12 @@ def signups(hackernews_api: DataGeneratorResource):
 
 Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `2`: one for the asset using it and another for the job using this asset. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/744666e8-c107-400f-aa71-8f65e90b0cc9/Untitled.png)
+<Image
+alt="indicating how many times a resource is used in the Dagster UI"
+src="/images/tutorial/resources-uses.png"
+width={1152}
+height={610}
+/>
 
 ---
 
@@ -122,7 +139,12 @@ defs = Definitions(
 
 Confirm this worked by materializing the `signups` asset again. The `Earliest Signup` date should be a year ago from the `Latest Signup` date.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/c671280f-29df-48b1-8f05-8ac4fa91c52a/Untitled.png)
+<Image
+alt="the Dagster asset graph with metadata about when the earliest signup was"
+src="/images/tutorial/resources-materialization.png"
+width={1152}
+height={610}
+/>
 
 ## Configuring based on the environment
 
