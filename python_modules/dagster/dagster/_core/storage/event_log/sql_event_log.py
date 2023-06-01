@@ -1909,7 +1909,7 @@ class SqlEventLogStorage(EventLogStorage):
         keys_to_assign = None
         with self.index_connection() as conn:
             count_row = conn.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(ConcurrencySlotsTable)
                 .where(
                     db.and_(
@@ -1923,7 +1923,7 @@ class SqlEventLogStorage(EventLogStorage):
             if existing > num:
                 # need to delete some slots, favoring ones where the slot is unallocated
                 rows = conn.execute(
-                    db.select([ConcurrencySlotsTable.c.id])
+                    db_select([ConcurrencySlotsTable.c.id])
                     .select_from(ConcurrencySlotsTable)
                     .where(
                         db.and_(
@@ -1978,7 +1978,7 @@ class SqlEventLogStorage(EventLogStorage):
     def has_unassigned_slots(self, concurrency_key: str) -> bool:
         with self.index_connection() as conn:
             pending_row = conn.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(PendingStepsTable)
                 .where(
                     db.and_(
@@ -1988,7 +1988,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             ).fetchone()
             slots = conn.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(ConcurrencySlotsTable)
                 .where(
                     db.and_(
@@ -2006,7 +2006,7 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> ConcurrencyClaimStatus:
         with self.index_connection() as conn:
             pending_row = conn.execute(
-                db.select(
+                db_select(
                     [
                         PendingStepsTable.c.assigned_timestamp,
                         PendingStepsTable.c.priority,
@@ -2031,17 +2031,9 @@ class SqlEventLogStorage(EventLogStorage):
                     enqueued_timestamp=None,
                 )
 
-            priority = cast(int, pending_row["priority"]) if pending_row["priority"] else None
-            assigned_timestamp = (
-                cast(datetime, pending_row["assigned_timestamp"])
-                if pending_row["assigned_timestamp"]
-                else None
-            )
-            create_timestamp = (
-                cast(datetime, pending_row["create_timestamp"])
-                if pending_row["create_timestamp"]
-                else None
-            )
+            priority = cast(int, pending_row[1]) if pending_row[1] else None
+            assigned_timestamp = cast(datetime, pending_row[0]) if pending_row[0] else None
+            create_timestamp = cast(datetime, pending_row[2]) if pending_row[2] else None
             if assigned_timestamp is None:
                 return ConcurrencyClaimStatus(
                     concurrency_key=concurrency_key,
@@ -2053,7 +2045,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             # pending step is assigned, check to see if it's been claimed
             slot_row = conn.execute(
-                db.select([db.func.count()]).where(
+                db_select([db.func.count()]).where(
                     db.and_(
                         ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
                         ConcurrencySlotsTable.c.run_id == run_id,
@@ -2075,7 +2067,7 @@ class SqlEventLogStorage(EventLogStorage):
     def can_claim_from_pending(self, concurrency_key: str, run_id: str, step_key: str):
         with self.index_connection() as conn:
             row = conn.execute(
-                db.select([PendingStepsTable.c.assigned_timestamp]).where(
+                db_select([PendingStepsTable.c.assigned_timestamp]).where(
                     db.and_(
                         PendingStepsTable.c.run_id == run_id,
                         PendingStepsTable.c.step_key == step_key,
@@ -2088,7 +2080,7 @@ class SqlEventLogStorage(EventLogStorage):
     def has_pending_step(self, concurrency_key: str, run_id: str, step_key: str):
         with self.index_connection() as conn:
             row = conn.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(PendingStepsTable)
                 .where(
                     db.and_(
@@ -2107,7 +2099,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             for key in concurrency_keys:
                 row = conn.execute(
-                    db.select([PendingStepsTable.c.id])
+                    db_select([PendingStepsTable.c.id])
                     .where(
                         db.and_(
                             PendingStepsTable.c.concurrency_key == key,
@@ -2212,7 +2204,7 @@ class SqlEventLogStorage(EventLogStorage):
         """
         with self.index_connection() as conn:
             result = conn.execute(
-                db.select([ConcurrencySlotsTable.c.id])
+                db_select([ConcurrencySlotsTable.c.id])
                 .select_from(ConcurrencySlotsTable)
                 .where(
                     db.and_(
@@ -2221,9 +2213,8 @@ class SqlEventLogStorage(EventLogStorage):
                         ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
                     )
                 )
-                .limit(1),
-                for_update=True,
-                skip_locked=True,
+                .with_for_update(skip_locked=True, nowait=True)
+                .limit(1)
             ).fetchone()
             if not result or not result[0]:
                 return ConcurrencySlotStatus.BLOCKED
@@ -2240,7 +2231,7 @@ class SqlEventLogStorage(EventLogStorage):
         """Get the set of concurrency limited keys."""
         with self.index_connection() as conn:
             rows = conn.execute(
-                db.select([ConcurrencySlotsTable.c.concurrency_key])
+                db_select([ConcurrencySlotsTable.c.concurrency_key])
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
                 .distinct()
@@ -2259,7 +2250,7 @@ class SqlEventLogStorage(EventLogStorage):
         """
         with self.index_connection() as conn:
             slot_query = (
-                db.select(
+                db_select(
                     [
                         ConcurrencySlotsTable.c.run_id,
                         ConcurrencySlotsTable.c.deleted,
@@ -2270,9 +2261,9 @@ class SqlEventLogStorage(EventLogStorage):
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
                 .group_by(ConcurrencySlotsTable.c.run_id, ConcurrencySlotsTable.c.deleted)
             )
-            slot_rows = conn.execute(slot_query).fetchall()
+            slot_rows = db_fetch_mappings(conn, slot_query)
             pending_query = (
-                db.select(
+                db_select(
                     [
                         PendingStepsTable.c.run_id,
                         db.case(
@@ -2286,7 +2277,7 @@ class SqlEventLogStorage(EventLogStorage):
                 .where(PendingStepsTable.c.concurrency_key == concurrency_key)
                 .group_by(PendingStepsTable.c.run_id, "is_assigned")
             )
-            pending_rows = conn.execute(pending_query).fetchall()
+            pending_rows = db_fetch_mappings(conn, pending_query)
 
             return ConcurrencyKeyInfo(
                 concurrency_key=concurrency_key,
@@ -2356,13 +2347,14 @@ class SqlEventLogStorage(EventLogStorage):
             # next, fetch the slots to free up, while grabbing the concurrency keys so that we can
             # allocate any pending steps from the queue for the freed slots, if necessary
             select_query = (
-                db.select([ConcurrencySlotsTable.c.id, ConcurrencySlotsTable.c.concurrency_key])
+                db_select([ConcurrencySlotsTable.c.id, ConcurrencySlotsTable.c.concurrency_key])
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.run_id == run_id)
+                .with_for_update(skip_locked=True, nowait=True)
             )
             if step_key:
                 select_query = select_query.where(ConcurrencySlotsTable.c.step_key == step_key)
-            rows = conn.execute(select_query, for_update=True, skip_locked=True).fetchall()
+            rows = conn.execute(select_query).fetchall()
             if not rows:
                 return []
 
