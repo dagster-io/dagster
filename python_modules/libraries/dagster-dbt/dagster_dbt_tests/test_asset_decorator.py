@@ -140,10 +140,7 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
         assert output_def.io_manager_key == expected_io_manager_key
 
 
-@pytest.mark.parametrize(
-    "partitions_def", [None, DailyPartitionsDefinition(start_date="2023-01-01")]
-)
-def test_with_attributes(partitions_def: Optional[PartitionsDefinition]) -> None:
+def test_with_asset_key_replacements() -> None:
     class CustomizedDbtManifest(DbtManifest):
         @classmethod
         def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
@@ -151,7 +148,7 @@ def test_with_attributes(partitions_def: Optional[PartitionsDefinition]) -> None
 
     manifest = CustomizedDbtManifest.read(path=manifest_path)
 
-    @dbt_assets(manifest=manifest, partitions_def=partitions_def)
+    @dbt_assets(manifest=manifest)
     def my_dbt_assets():
         ...
 
@@ -164,3 +161,21 @@ def test_with_attributes(partitions_def: Optional[PartitionsDefinition]) -> None
         AssetKey(["prefix", "sort_hot_cereals_by_calories"]),
         AssetKey(["prefix", "sort_by_calories"]),
     }
+
+
+def test_with_description_replacements() -> None:
+    expected_description = "customized description"
+
+    class CustomizedDbtManifest(DbtManifest):
+        @classmethod
+        def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+            return expected_description
+
+    manifest = CustomizedDbtManifest.read(path=manifest_path)
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    for description in my_dbt_assets.descriptions_by_key.values():
+        assert description == expected_description
