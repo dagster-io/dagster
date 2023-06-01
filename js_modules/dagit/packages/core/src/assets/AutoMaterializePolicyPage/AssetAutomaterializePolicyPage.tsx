@@ -389,12 +389,7 @@ const RightPanelDetail = ({
 }) => {
   return (
     <Box flex={{direction: 'column', gap: 2}}>
-      <CenterAlignedRow flex={{gap: 6}}>
-        {title}{' '}
-        <Tooltip content={<>{tooltip}</>} position="top">
-          <Icon name="info" />
-        </Tooltip>
-      </CenterAlignedRow>
+      <CenterAlignedRow flex={{gap: 6}}>{title}</CenterAlignedRow>
       {value}
     </Box>
   );
