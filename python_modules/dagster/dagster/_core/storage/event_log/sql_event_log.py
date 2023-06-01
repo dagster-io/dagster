@@ -38,7 +38,12 @@ from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
+from dagster._core.storage.sqlalchemy_compat import (
+    db_case,
+    db_fetch_mappings,
+    db_select,
+    db_subquery,
+)
 from dagster._serdes import (
     deserialize_value,
     serialize_value,
@@ -1932,7 +1937,7 @@ class SqlEventLogStorage(EventLogStorage):
                         )
                     )
                     .order_by(
-                        db.case([(ConcurrencySlotsTable.c.run_id.is_(None), 1)], else_=0).desc(),
+                        db_case([(ConcurrencySlotsTable.c.run_id.is_(None), 1)], else_=0).desc(),
                         ConcurrencySlotsTable.c.id.desc(),
                     )
                     .limit(existing - num)
@@ -2213,7 +2218,7 @@ class SqlEventLogStorage(EventLogStorage):
                         ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
                     )
                 )
-                .with_for_update(skip_locked=True, nowait=True)
+                .with_for_update(skip_locked=True)
                 .limit(1)
             ).fetchone()
             if not result or not result[0]:
@@ -2266,7 +2271,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select(
                     [
                         PendingStepsTable.c.run_id,
-                        db.case(
+                        db_case(
                             [(PendingStepsTable.c.assigned_timestamp.is_(None), False)],
                             else_=True,
                         ).label("is_assigned"),
@@ -2307,6 +2312,15 @@ class SqlEventLogStorage(EventLogStorage):
                     cast(str, row["run_id"]) for row in pending_rows if row["is_assigned"]
                 },
             )
+
+    def get_concurrency_run_ids(self) -> Sequence[str]:
+        with self.index_connection() as conn:
+            rows = conn.execute(
+                db_select([PendingStepsTable.c.run_id])
+                .distinct()
+                .order_by(PendingStepsTable.c.create_timestamp.asc())
+            ).fetchall()
+            return [cast(str, row[0]) for row in rows]
 
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
         freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id)
@@ -2350,7 +2364,7 @@ class SqlEventLogStorage(EventLogStorage):
                 db_select([ConcurrencySlotsTable.c.id, ConcurrencySlotsTable.c.concurrency_key])
                 .select_from(ConcurrencySlotsTable)
                 .where(ConcurrencySlotsTable.c.run_id == run_id)
-                .with_for_update(skip_locked=True, nowait=True)
+                .with_for_update(skip_locked=True)
             )
             if step_key:
                 select_query = select_query.where(ConcurrencySlotsTable.c.step_key == step_key)

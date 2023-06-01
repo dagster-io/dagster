@@ -567,6 +567,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             concurrency_key, run_id, step_key
         )
 
+    def get_concurrency_run_ids(self) -> Sequence[str]:
+        return self._storage.event_log_storage.get_concurrency_run_ids()
+
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
         return self._storage.event_log_storage.free_concurrency_slots_for_run(run_id)
 
