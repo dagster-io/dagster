@@ -362,9 +362,7 @@ const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({ent
           {records.map((record, idx) => (
             <tr key={idx}>
               {schema.columns.map((column) => (
-                <td key={column.name}>
-                  {record[column.name] ? record[column.name].toString() : null}
-                </td>
+                <td key={column.name}>{record[column.name]?.toString()}</td>
               ))}
             </tr>
           ))}
