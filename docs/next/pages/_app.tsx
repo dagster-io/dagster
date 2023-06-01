@@ -5,6 +5,7 @@ import path from 'path';
 import {useVersion} from 'util/useVersion';
 
 import {PersistentTabProvider} from 'components/PersistentTabContext';
+import {collectHeadings, RightSidebar} from 'components/SidebarNavigation';
 import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';
@@ -13,7 +14,7 @@ import * as React from 'react';
 import FeedbackModal from '../components/FeedbackModal';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import {VersionedContentLayout, RightSidebar} from '../components/mdx/MDXRenderer';
+import {VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import * as gtag from '../util/gtag';
 
 const BASE_URL = 'https://docs.dagster.io';
@@ -41,29 +42,6 @@ const DEFAULT_SEO = {
   },
 };
 
-// function collectHeadings(node, sections = []) {
-//   if (node) {
-//     if (node.name === 'Heading') {
-//       console.log(node);
-//       const title = node.children[0];
-
-//       if (typeof title === 'string') {
-//         sections.push({
-//           ...node.attributes,
-//           title,
-//         });
-//       }
-//     }
-
-//     if (node.children) {
-//       for (const child of node.children) {
-//         collectHeadings(child, sections);
-//       }
-//     }
-//   }
-
-//   return sections;
-// }
 interface Props {
   children: React.ReactNode;
   asPath: string;
@@ -96,16 +74,15 @@ const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
   ).href;
 
   const {markdoc} = pageProps;
-  let navigationItems = [];
+  let navigationItemsForMDX = null;
+  let headings = null;
   if (markdoc) {
-    // const tableOfContents = pageProps.markdoc?.content
-    //   ? collectHeadings(pageProps.markdoc.content, {})
-    //   : {};
-    navigationItems = [];
+    headings = markdoc?.content ? collectHeadings(markdoc.content) : {};
   } else {
+    // handle MDX content (will be deprecated once we move all to markdoc)
     const tableOfContents = pageProps?.data?.tableOfContents;
     if (tableOfContents?.items) {
-      navigationItems = tableOfContents.items.filter((item) => item?.items);
+      navigationItemsForMDX = tableOfContents.items.filter((item) => item?.items);
     }
   }
 
@@ -137,7 +114,8 @@ const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
 
               <RightSidebar
                 editMode={editMode}
-                navigationItems={navigationItems}
+                navigationItemsForMDX={navigationItemsForMDX}
+                headings={headings}
                 githubLink={githubLink}
                 toggleFeedback={toggleFeedback}
               />
@@ -151,7 +129,7 @@ const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
 
 const MyApp = ({Component, pageProps}: AppProps) => {
   const router = useRouter();
-  const asPathFromPageProps = pageProps?.data?.asPath;
+  const asPathFromPageProps = (pageProps as any)?.data?.asPath;
 
   const {asPath} = useVersion();
 

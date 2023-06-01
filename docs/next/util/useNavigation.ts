@@ -26,7 +26,6 @@ export function flatten(yx: any, parentKey = '') {
 
   return xs.reduce((acc: any, x: any, idx: number) => {
     const navKey = getNavKey(parentKey, idx);
-    // console.log(navKey, x);
     acc = acc.concat({key: navKey, ...x});
     if (x.children) {
       acc = acc.concat(flatten(x.children, navKey));
