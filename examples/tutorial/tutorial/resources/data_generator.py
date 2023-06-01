@@ -1,10 +1,11 @@
-from dagster import ConfigurableResource
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from faker import Faker
-from pydantic import Field
 from random import Random
 from typing import Sequence
+
+from dagster import ConfigurableResource
+from faker import Faker
+from pydantic import Field
 
 # This file holds a resource you'll use in the tutorial
 # You won't need to use this file/class until the Connecting to External Services section of the tutorial (Part 8).
@@ -36,11 +37,11 @@ class Signup:
         self._registered_at = dt
 
     def to_dict(self) -> dict:
-        props = {k: v for k, v in asdict(self).items() if not k.startswith("_")} 
+        props = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
         props["registered_at"] = self.registered_at.isoformat()
         return props
 
-    def __properties(self):
+    def properties(self):
         return (
             self.name,
             self.email,
@@ -58,15 +59,16 @@ class Signup:
 
     def __eq__(self, other):
         if type(other) is type(self):
-            return self.__properties() == other.__properties()
+            return self.properties() == other.properties()
         else:
             return False
 
     def __hash__(self):
-        return hash(self.__properties())
-    
+        return hash(self.properties())
+
     def __str__(self) -> str:
-        return 
+        return
+
 
 class DataGenerator:
     def __init__(self, seed: int = 0):
@@ -88,7 +90,7 @@ class DataGenerator:
             email_verified=self.fake.boolean(),
             enabled=self.fake.boolean(),
         )
-    
+
     def get_signups_for_date(self, date: datetime) -> Sequence[Signup]:
         date_to_seed = date.strftime("%Y%m%d")
         Faker.seed(date_to_seed)
@@ -102,14 +104,15 @@ class DataGenerator:
             # TODO: `date_time_between_dates` is being hijacked by the Faker.seed call
             signup.registered_at = self.fake.date_time_between_dates(date, date + timedelta(days=1))
             signups.append(signup.to_dict())
-            print(signup.to_dict())
 
         new_seed = self.random.randint(0, 100000)
         Faker.seed(new_seed)
         self.random = Random(new_seed)
         return sorted(signups, key=lambda x: x["registered_at"])
-    
-    def get_signups_for_dates(self, start_date: datetime, end_date: datetime = None) -> Sequence[Signup]:
+
+    def get_signups_for_dates(
+        self, start_date: datetime, end_date: datetime = None
+    ) -> Sequence[Signup]:
         signups = []
 
         end_date_to_use = end_date or (datetime.now() - timedelta(days=1))
@@ -118,7 +121,7 @@ class DataGenerator:
         while current_date < end_date_to_use:
             signups.extend(self.get_signups_for_date(current_date))
             current_date += timedelta(days=1)
-        
+
         return signups
 
     def get_signups(self, num_days: int = 7) -> Sequence[Signup]:
@@ -126,9 +129,10 @@ class DataGenerator:
 
         return self.get_signups_for_dates(start_date)
 
+
 class DataGeneratorResource(ConfigurableResource):
     """Resource for generating simulated data for experimenting with Dagster.
-    
+
     Examples:
         .. code-block:: python
             from dagster import Definitions, asset
@@ -145,13 +149,14 @@ class DataGeneratorResource(ConfigurableResource):
     """
 
     seed: int = Field(
-        description="Seed for the random number generator. If not provided, a static seed will be used.",
+        description=(
+            "Seed for the random number generator. If not provided, a static seed will be used."
+        ),
         default=0,
     )
 
     num_days: int = Field(
-        description="Number of days to generate data for. Defaults to 7",
-        default=7
+        description="Number of days to generate data for. Defaults to 7", default=7
     )
 
     @property
@@ -167,8 +172,7 @@ class DataGeneratorResource(ConfigurableResource):
             result.extend(self.generator.get_signups_for_date(yday))
 
         return result
-    
+
     def get_signups_for_date(self, date: str):
         date_obj = datetime.strptime(date, "%m-%d-%Y")
         return self.generator.get_signups_for_date(date_obj)
-    
