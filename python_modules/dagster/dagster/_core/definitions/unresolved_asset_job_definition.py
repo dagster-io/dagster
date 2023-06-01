@@ -10,7 +10,7 @@ from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
-from .metadata import MetadataValue
+from .metadata import RawMetadataValue
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
@@ -39,7 +39,7 @@ class UnresolvedAssetJobDefinition(
             ),
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
-            ("metadata", Optional[Mapping[str, MetadataValue]]),
+            ("metadata", Optional[Mapping[str, RawMetadataValue]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
         ],
@@ -54,7 +54,7 @@ class UnresolvedAssetJobDefinition(
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
     ):
@@ -249,7 +249,7 @@ def define_asset_job(
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    metadata: Optional[Mapping[str, MetadataValue]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
@@ -295,7 +295,7 @@ def define_asset_job(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
-        metadata (Optional[Mapping[str, MetadataValue]]):
+        metadata (Optional[Mapping[str, RawMetadataValue]]):
 
         description (Optional[str]):
             A description for the Job.
