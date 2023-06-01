@@ -64,13 +64,13 @@ def build_bigquery_io_manager(
                 }
             )
 
-        You can tell Dagster in which dataset to create tables by setting the "dataset" configuration value.
+        You can tell Dagster in which dataset to create tables by setting the ``dataset`` configuration value.
         If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based
         on the assets and ops using the I/O Manager. For assets, the dataset will be determined from the asset key,
         as shown in the above example. The final prefix before the asset name will be used as the dataset. For example,
-        if the asset "my_table" had the key prefix ["gcp", "bigquery", "my_dataset"], the dataset "my_dataset" will be
-        used. For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is
-        not provided via config or on the asset/op, "public" will be used for the dataset.
+        if the asset ``my_table`` had the key prefix ``["gcp", "bigquery", "my_dataset"]``, the dataset ``my_dataset`` will be
+        used. For ops, the dataset can be specified by including a `schema` entry in output metadata. If ``schema`` is
+        not provided via config or on the asset/op, ``public`` will be used for the dataset.
 
         .. code-block:: python
 
@@ -81,8 +81,8 @@ def build_bigquery_io_manager(
                 # the returned value will be stored at my_dataset.my_table
                 ...
 
-        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
-        In or AssetIn.
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata ``columns`` to the
+        :py:class:`~dagster.In` or :py:class:`~dagster.AssetIn`.
 
         .. code-block:: python
 
@@ -95,11 +95,11 @@ def build_bigquery_io_manager(
 
         If you cannot upload a file to your Dagster deployment, or otherwise cannot
         `authenticate with GCP <https://cloud.google.com/docs/authentication/provide-credentials-adc>`_
-        via a standard method, you can provide a service account key as the "gcp_credentials" configuration.
-        Dagster willstore this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
-        After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
+        via a standard method, you can provide a service account key as the ``gcp_credentials`` configuration.
+        Dagster willstore this key in a temporary file and set ``GOOGLE_APPLICATION_CREDENTIALS`` to point to the file.
+        After the run completes, the file will be deleted, and ``GOOGLE_APPLICATION_CREDENTIALS`` will be
         unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
-        the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
+        the base64 encoded with this shell command: ``cat $GOOGLE_APPLICATION_CREDENTIALS | base64``
     """
 
     @dagster_maintained_io_manager
@@ -163,13 +163,13 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
                 }
             )
 
-        You can tell Dagster in which dataset to create tables by setting the "dataset" configuration value.
+        You can tell Dagster in which dataset to create tables by setting the ``dataset`` configuration value.
         If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based
         on the assets and ops using the I/O Manager. For assets, the dataset will be determined from the asset key,
         as shown in the above example. The final prefix before the asset name will be used as the dataset. For example,
-        if the asset "my_table" had the key prefix ["gcp", "bigquery", "my_dataset"], the dataset "my_dataset" will be
-        used. For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is
-        not provided via config or on the asset/op, "public" will be used for the dataset.
+        if the asset ``my_table`` had the key prefix ``["gcp", "bigquery", "my_dataset"]``, the dataset ``my_dataset`` will be
+        used. For ops, the dataset can be specified by including a ``schema`` entry in output metadata. If ``schema`` is
+        not provided via config or on the asset/op, ``public`` will be used for the dataset.
 
         .. code-block:: python
 
@@ -180,8 +180,8 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
                 # the returned value will be stored at my_dataset.my_table
                 ...
 
-        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
-        In or AssetIn.
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata ``columns`` to the
+        :py:class:`~dagster.In` or :py:class:`~dagster.AssetIn`.
 
         .. code-block:: python
 
@@ -194,11 +194,11 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 
         If you cannot upload a file to your Dagster deployment, or otherwise cannot
         `authenticate with GCP <https://cloud.google.com/docs/authentication/provide-credentials-adc>`_
-        via a standard method, you can provide a service account key as the "gcp_credentials" configuration.
-        Dagster will store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
-        After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
+        via a standard method, you can provide a service account key as the ``gcp_credentials`` configuration.
+        Dagster will store this key in a temporary file and set ``GOOGLE_APPLICATION_CREDENTIALS`` to point to the file.
+        After the run completes, the file will be deleted, and ``GOOGLE_APPLICATION_CREDENTIALS`` will be
         unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
-        the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
+        the base64 encoded with this shell command: ``cat $GOOGLE_APPLICATION_CREDENTIALS | base64``
     """
 
     project: str = Field(description="The GCP project to use.")
@@ -212,7 +212,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     location: Optional[str] = Field(
         default=None,
         description=(
-            "The GCP location. **Note:** When using PySpark DataFrames, the default"
+            "The GCP location. Note: When using PySpark DataFrames, the default"
             " location of the project will be used. A custom location can be specified in"
             " your SparkSession configuration."
         ),
@@ -221,10 +221,10 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         default=None,
         description=(
             "GCP authentication credentials. If provided, a temporary file will be created"
-            " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
+            " with the credentials and ``GOOGLE_APPLICATION_CREDENTIALS`` will be set to the"
             " temporary file. To avoid issues with newlines in the keys, you must base64"
             " encode the key. You can retrieve the base64 encoded key with this shell"
-            " command: cat $GOOGLE_AUTH_CREDENTIALS | base64"
+            " command: ``cat $GOOGLE_AUTH_CREDENTIALS | base64``"
         ),
     )
     temporary_gcs_bucket: Optional[str] = Field(

@@ -158,6 +158,18 @@ class DataprocClient:
 
 
 class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """Resource for connecting to a Dataproc cluster.
+
+    Example:
+        .. code-block::
+
+            @asset
+            def my_asset(dataproc: DataprocResource):
+                with dataproc.get_client() as client:
+                    # client is a dagster_gcp.DataprocClient
+                    ...
+    """
+
     project_id: str = Field(
         description=(
             "Required. Project ID for the project which the client acts on behalf of. Will be"
