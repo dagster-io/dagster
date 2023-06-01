@@ -27,7 +27,6 @@ For a detailed look at SCIM provisioning, [check out this blog post](https://www
 When SCIM is enabled in Dagster Cloud, a few things about user management will change:
 
 - **New users must be added in the IdP.** The ability to add new users will be disabled in Dagster Cloud while SCIM is enabled.
-- **Updates to users' emails and names must be completed in the IdP.** When these attributes are changed in the IdP, they'll automatically be synced to Dagster Cloud. You'll still be able to change user permissions in Dagster Cloud, however.
 - **Only 'unsynced' users can be removed in Dagster Cloud.** 'Synced' users will have an icon indicating they're externally managed by the IdP, while unsynced users will not. For example, the first two users in the following image are synced, while the last isn't:
 
   <Image
