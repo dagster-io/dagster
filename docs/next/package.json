@@ -40,7 +40,7 @@
     "new-github-issue-url": "^0.2.1",
     "next": "^13.5.4",
     "next-mdx-remote": "^2.1.4",
-    "next-remote-watch": "git+https://github.com/hashicorp/next-remote-watch.git#405c803c6b9b19eb8307d66cf5c93fc3a66a1c5",
+    "next-remote-watch": "^2.0.0",
     "next-seo": "^4.17.0",
     "postcss": "^8.2.8",
     "react": "^18.2.0",
