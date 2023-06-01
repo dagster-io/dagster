@@ -10,6 +10,7 @@ from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
+from .metadata import MetadataValue
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
@@ -38,6 +39,7 @@ class UnresolvedAssetJobDefinition(
             ),
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
+            ("metadata", Optional[Mapping[str, MetadataValue]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
         ],
@@ -52,6 +54,7 @@ class UnresolvedAssetJobDefinition(
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
     ):
@@ -69,6 +72,7 @@ class UnresolvedAssetJobDefinition(
             config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
+            metadata=check.opt_mapping_param(metadata, "metadata"),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
@@ -230,6 +234,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
+            metadata=self.metadata,
             asset_selection=selected_asset_keys,
             partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
@@ -244,6 +249,7 @@ def define_asset_job(
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[Mapping[str, MetadataValue]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
@@ -289,6 +295,8 @@ def define_asset_job(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        metadata (Optional[Mapping[str, MetadataValue]]):
+
         description (Optional[str]):
             A description for the Job.
         partitions_def (Optional[PartitionsDefinition]):
@@ -369,6 +377,7 @@ def define_asset_job(
         config=config,
         description=description,
         tags=tags,
+        metadata=metadata,
         partitions_def=partitions_def,
         executor_def=executor_def,
     )

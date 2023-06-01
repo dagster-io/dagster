@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
+    MetadataValue,
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
 
@@ -741,6 +742,7 @@ def build_asset_selection_job(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[Mapping[str, MetadataValue]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> "JobDefinition":
@@ -780,6 +782,7 @@ def build_asset_selection_job(
             partitions_def=partitions_def,
             description=description,
             tags=tags,
+            metadata=metadata,
             _asset_selection_data=asset_selection_data,
         )
     else:
@@ -792,6 +795,7 @@ def build_asset_selection_job(
             partitions_def=partitions_def,
             description=description,
             tags=tags,
+            metadata=metadata,
             _asset_selection_data=asset_selection_data,
         )
 
