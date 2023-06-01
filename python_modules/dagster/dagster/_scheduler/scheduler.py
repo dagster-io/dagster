@@ -49,6 +49,12 @@ if TYPE_CHECKING:
     from dagster._daemon.daemon import DaemonIterator
 
 
+# how often do we update the job row in the database with the last iteration timestamp.  This
+# creates a checkpoint so that if the cron schedule changes, we don't try to backfill schedule ticks
+# from the start of the schedule, just since the last recorded iteration interval.
+LAST_RECORDED_ITERATION_INTERVAL = 3600
+
+
 class _ScheduleLaunchContext:
     def __init__(
         self,
@@ -438,7 +444,7 @@ def launch_scheduled_runs_for_schedule_iterator(
         latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
-    start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
+    start_timestamp_utc: float = instigator_data.start_timestamp or 0
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -446,21 +452,22 @@ def launch_scheduled_runs_for_schedule_iterator(
             and latest_tick.failure_count <= max_tick_retries
         ):
             # Scheduler was interrupted while performing this tick, re-do it
-            start_timestamp_utc = (
-                max(start_timestamp_utc, latest_tick.timestamp)
-                if start_timestamp_utc
-                else latest_tick.timestamp
+            start_timestamp_utc = max(
+                start_timestamp_utc,
+                latest_tick.timestamp,
+                instigator_data.last_iteration_timestamp or 0.0,
             )
         else:
-            start_timestamp_utc = (
-                max(start_timestamp_utc, latest_tick.timestamp + 1)
-                if start_timestamp_utc
-                else latest_tick.timestamp + 1
+            start_timestamp_utc = max(
+                start_timestamp_utc,
+                latest_tick.timestamp + 1,
+                instigator_data.last_iteration_timestamp or 0.0,
             )
     else:
-        start_timestamp_utc = instigator_data.start_timestamp
-
-    start_timestamp_utc = check.not_none(start_timestamp_utc)
+        start_timestamp_utc = max(
+            start_timestamp_utc,
+            instigator_data.last_iteration_timestamp or 0.0,
+        )
 
     schedule_name = external_schedule.name
 
@@ -483,6 +490,24 @@ def launch_scheduled_runs_for_schedule_iterator(
     if not tick_times:
         if log_verbose_checks:
             logger.info(f"No new tick times to evaluate for {schedule_name}")
+
+        # insert last considered timestamp here
+        if (
+            not instigator_data.last_iteration_timestamp
+            or instigator_data.last_iteration_timestamp + LAST_RECORDED_ITERATION_INTERVAL
+            < end_datetime_utc.timestamp()
+        ):
+            with schedule_state_lock:
+                instance.update_instigator_state(
+                    schedule_state.with_data(
+                        ScheduleInstigatorData(
+                            cron_schedule=instigator_data.cron_schedule,
+                            start_timestamp=instigator_data.start_timestamp,
+                            last_iteration_timestamp=end_datetime_utc.timestamp(),
+                        )
+                    )
+                )
+
         return
 
     if not external_schedule.partition_set_name and len(tick_times) > 1:
