@@ -160,20 +160,6 @@ def monitor_started_run(
     check_run_timeout(instance, run_record, logger)
 
 
-def monitor_canceled_run(
-    instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
-) -> None:
-    run = run_record.dagster_run
-    check.invariant(run.status == DagsterRunStatus.CANCELED)
-    global_concurrency_keys = instance.event_log_storage.get_concurrency_keys()
-    if not global_concurrency_keys:
-        return
-
-    freed_slots = instance.event_log_storage.free_concurrency_slots_for_run(run.run_id)
-    if freed_slots:
-        logger.info(f"Freed {freed_slots} slots for canceled run {run.run_id}")
-
-
 def execute_monitoring_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -210,8 +196,6 @@ def execute_monitoring_iteration(
             ):
                 monitor_canceling_run(instance, run_record, logger)
                 pass
-            elif run_record.dagster_run.status == DagsterRunStatus.CANCELED:
-                monitor_canceled_run(instance, run_record, logger)
             else:
                 check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
