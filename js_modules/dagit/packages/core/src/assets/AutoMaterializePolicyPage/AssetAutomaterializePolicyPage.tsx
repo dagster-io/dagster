@@ -315,10 +315,14 @@ const RightPanel = ({
           )}
           {data.assetNodeOrError.freshnessPolicy ? (
             <RightPanelSection title="Freshness policy">
-              <RightPanelDetail title="Maximum lag minutes" tooltip="test" value={2} />
+              <RightPanelDetail
+                title="Maximum lag minutes"
+                value={data.assetNodeOrError.freshnessPolicy.maximumLagMinutes}
+              />
               <Box flex={{direction: 'column', gap: 8}}>
-                This asset will be considered late if it is not materialized within 2 minutes of
-                it’s upstream dependencies.
+                This asset will be considered late if it is not materialized within{' '}
+                {data.assetNodeOrError.freshnessPolicy.maximumLagMinutes} minutes of it’s upstream
+                dependencies.
                 <Link
                   to={assetDetailsPathForKey(assetKey, {view: 'lineage', lineageScope: 'upstream'})}
                 >
