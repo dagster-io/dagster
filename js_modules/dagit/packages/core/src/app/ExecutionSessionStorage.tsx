@@ -4,9 +4,9 @@ import * as React from 'react';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
-  LaunchpadSessionPipelineFragment,
   LaunchpadSessionPartitionSetsFragment,
-} from '../launchpad/types/LaunchpadRoot.types';
+  LaunchpadSessionPipelineFragment,
+} from '../launchpad/types/LaunchpadAllowedRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
