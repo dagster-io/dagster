@@ -688,8 +688,3 @@ def snowflake_resource(context) -> SnowflakeConnection:
     return SnowflakeConnection(
         config=context, log=context.log, snowflake_connection_resource=snowflake_resource
     )
-
-
-def _filter_password(args):
-    """Remove password from connection args for logging."""
-    return {k: v for k, v in args.items() if k != "password"}
