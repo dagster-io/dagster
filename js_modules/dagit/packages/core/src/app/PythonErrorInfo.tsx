@@ -109,7 +109,7 @@ export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
           });
         }}
       >
-        <Icon name="copy_to_clipboard" color={Colors.Red700} />
+        <Icon name="content_copy" /> Copy
       </CopyErrorButtonWrapper>
     </div>
   );
@@ -117,6 +117,9 @@ export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
 
 const CopyErrorButtonWrapper = styled.button`
   position: absolute;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
   top: 0px;
   right: -8px;
   border: 1px solid ${Colors.KeylineGray};
@@ -165,7 +168,7 @@ export const ErrorWrapper = styled.div`
     display: none;
   }
   &:hover ${CopyErrorButtonWrapper} {
-    display: block;
+    display: flex;
   }
 `;
 
