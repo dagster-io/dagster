@@ -572,6 +572,7 @@ def test_dagster_home_not_dir():
             DagsterInstance.get()
 
 
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows paths formatted differently")
 def test_dagster_env_vars_from_dotenv_file():
     with tempfile.TemporaryDirectory() as working_dir, tempfile.TemporaryDirectory() as dagster_home:
         # Create a dagster.yaml file in the dagster_home folder that requires SQLITE_STORAGE_BASE_DIR to be set
