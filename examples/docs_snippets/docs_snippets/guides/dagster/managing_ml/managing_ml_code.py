@@ -11,10 +11,8 @@ def my_data():
 
 
 @asset(
-    auto_materialize_policy=AutoMaterializePolicy.eager(
-        max_materializations_per_minute=60
+    auto_materialize_policy=AutoMaterializePolicy.eager(),
     )
-)
 def my_ml_model(my_data):
     ...
 
@@ -121,14 +119,15 @@ def ml_model():
 ## fail_slack_start
 
 import os
-from dagster import make_slack_on_run_failure_sensor, define_asset_job
+from dagster import define_asset_job
+from dagster_slack import make_slack_on_run_failure_sensor
 
 ml_job = define_asset_job("ml_training_job", selection=[ml_model])
 
 slack_on_run_failure = make_slack_on_run_failure_sensor(
     channel="#ml_monitor_channel",
     slack_token=os.getenv("MY_SLACK_TOKEN"),
-    monitored_jobs=(["ml_job"]),
+    monitored_jobs=([ml_job]),
 )
 ## fail_slack_end
 
@@ -152,6 +151,7 @@ def make_plot(eval_metric):
 
 ## ui_plot_end
 
+from docs_snippets.guides.dagster.ml_pipelines.ml_pipeline import transformed_test_data, transformed_train_data
 ## metadata_use_start
 
 from dagster import asset
