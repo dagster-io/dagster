@@ -49,7 +49,6 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
         <CopyErrorButton
           copy={() => {
             const text = wrapperRef.current?.innerText || '';
-            console.log({text});
             copy(text);
           }}
         />
