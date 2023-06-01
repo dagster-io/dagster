@@ -1,3 +1,5 @@
+# isort: skip_file
+
 from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 from dagster._core.definitions.materialize import materialize
 from docs_snippets.guides.dagster.managing_ml.managing_ml_code import (

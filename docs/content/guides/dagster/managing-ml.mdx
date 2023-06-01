@@ -42,9 +42,7 @@ def my_data():
 
 
 @asset(
-    auto_materialize_policy=AutoMaterializePolicy.eager(
-        max_materializations_per_minute=60
-    )
+    auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
 def my_ml_model(my_data):
     ...
@@ -148,14 +146,15 @@ A sensor can be set up that triggers if an asset fails to materialize. Alerts ca
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=fail_slack_start   endbefore=fail_slack_end
 import os
-from dagster import make_slack_on_run_failure_sensor, define_asset_job
+from dagster import define_asset_job
+from dagster_slack import make_slack_on_run_failure_sensor
 
 ml_job = define_asset_job("ml_training_job", selection=[ml_model])
 
 slack_on_run_failure = make_slack_on_run_failure_sensor(
     channel="#ml_monitor_channel",
     slack_token=os.getenv("MY_SLACK_TOKEN"),
-    monitored_jobs=(["ml_job"]),
+    monitored_jobs=([ml_job]),
 )
 ```
 
