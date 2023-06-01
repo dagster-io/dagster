@@ -101,7 +101,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
-        io_def._dagster_maintained = self.dagster_maintained
+        io_def._dagster_maintained = self.dagster_maintained  # noqa: SLF001
 
         return io_def
 
@@ -245,7 +245,7 @@ def io_manager(
 
 
 def dagster_maintained_io_manager(io_manager_def: IOManagerDefinition) -> IOManagerDefinition:
-    io_manager_def._dagster_maintained = True
+    io_manager_def._dagster_maintained = True  # noqa: SLF001
     return io_manager_def
 
 

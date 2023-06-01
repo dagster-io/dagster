@@ -1537,7 +1537,7 @@ def test_telemetry_custom_resource():
     class MyResource(ConfigurableResource):
         my_value: str
 
-    assert not MyResource(my_value="foo")._dagster_maintained
+    assert not MyResource(my_value="foo")._dagster_maintained  # noqa: SLF001
 
 
 def test_telemetry_dagster_resource():
@@ -1549,4 +1549,4 @@ def test_telemetry_dagster_resource():
         def _dagster_maintained(cls) -> bool:
             return True
 
-    assert MyResource(my_value="foo")._dagster_maintained
+    assert MyResource(my_value="foo")._dagster_maintained  # noqa: SLF001

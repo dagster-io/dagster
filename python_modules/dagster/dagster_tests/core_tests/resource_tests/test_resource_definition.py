@@ -1224,7 +1224,7 @@ def test_telemetry_custom_resource():
     def my_resource():
         return MyResource()
 
-    assert not my_resource._dagster_maintained
+    assert not my_resource._dagster_maintained  # noqa: SLF001
 
 
 def test_telemetry_dagster_io_manager():
@@ -1237,4 +1237,4 @@ def test_telemetry_dagster_io_manager():
     def my_resource():
         return MyResource()
 
-    assert my_resource._dagster_maintained
+    assert my_resource._dagster_maintained  # noqa: SLF001

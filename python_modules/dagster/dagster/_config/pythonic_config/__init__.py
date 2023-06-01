@@ -1173,7 +1173,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._dagster_maintained,
+            dagster_maintained=self.resource_cls._dagster_maintained,  # noqa: SLF001
         )
 
 
@@ -1368,7 +1368,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._dagster_maintained,
+            dagster_maintained=self.resource_cls._dagster_maintained,  # noqa: SLF001
         )
 
 
