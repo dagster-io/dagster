@@ -1,5 +1,4 @@
 # ruff: noqa: SLF001
-
 import datetime
 import json
 import os
@@ -37,6 +36,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
@@ -843,25 +843,25 @@ def test_jobs_selector_id_migration():
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorsTable)
+                db_select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 
             migrated_job_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTable)
                 .where(JobTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_job_count == legacy_count
 
             legacy_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(JobTickTable)
+                db_select([db.func.count()]).select_from(JobTickTable)
             )[0][0]
             assert legacy_tick_count > 0
 
             # tick migrations are optional
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -871,7 +871,7 @@ def test_jobs_selector_id_migration():
             instance.reindex()
 
             migrated_tick_count = instance.schedule_storage.execute(
-                db.select([db.func.count()])
+                db_select([db.func.count()])
                 .select_from(JobTickTable)
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
@@ -947,10 +947,10 @@ def test_add_bulk_actions_columns():
             # check data migration
             backfill_count = len(instance.get_backfills())
             migrated_row_count = instance._run_storage.fetchone(
-                db.select([db.func.count()])
+                db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.isnot(None))
-            )[0]
+            )["count"]
             assert migrated_row_count > 0
             assert backfill_count == migrated_row_count
 
@@ -975,10 +975,10 @@ def test_add_bulk_actions_columns():
                 )
             )
             unmigrated_row_count = instance._run_storage.fetchone(
-                db.select([db.func.count()])
+                db_select([db.func.count().label("count")])
                 .select_from(BulkActionsTable)
                 .where(BulkActionsTable.c.selector_id.is_(None))
-            )[0]
+            )["count"]
             assert unmigrated_row_count == 0
 
             # test downgrade
@@ -1098,7 +1098,7 @@ def test_add_dynamic_partitions_table():
 
 
 def _get_table_row_count(run_storage, table, with_non_null_id=False):
-    query = db.select([db.func.count()]).select_from(table)
+    query = db_select([db.func.count()]).select_from(table)
     if with_non_null_id:
         query = query.where(table.c.id.isnot(None))
     with run_storage.connect() as conn:

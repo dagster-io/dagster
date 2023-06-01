@@ -16,6 +16,7 @@ from .schedule_definition import (
 )
 from .time_window_partitions import (
     TimeWindowPartitionsDefinition,
+    get_time_partitions_def,
     has_one_dimension_time_window_partitioning,
 )
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -45,17 +46,16 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
             )
 
         partitions_def = _check_valid_schedule_partitions_def(partitions_def)
-
-        cron_schedule = partitions_def.get_cron_schedule(
-            self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
-        )
+        time_partitions_def = get_time_partitions_def(partitions_def)
 
         return ScheduleDefinition(
             job=resolved_job,
             name=self.name,
             execution_fn=_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags),
-            execution_timezone=partitions_def.timezone,
-            cron_schedule=cron_schedule,
+            execution_timezone=time_partitions_def.timezone,
+            cron_schedule=time_partitions_def.get_cron_schedule(
+                self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
+            ),
         )
 
 
@@ -144,17 +144,16 @@ def build_schedule_from_partitioned_job(
         if partitions_def is None:
             check.failed("The provided job is not partitioned")
 
-        time_window_partitions_def = _check_valid_schedule_partitions_def(partitions_def)
-
-        cron_schedule = time_window_partitions_def.get_cron_schedule(
-            minute_of_hour, hour_of_day, day_of_week, day_of_month
-        )
+        partitions_def = _check_valid_schedule_partitions_def(partitions_def)
+        time_partitions_def = get_time_partitions_def(partitions_def)
 
         return schedule(
-            cron_schedule=cron_schedule,
+            cron_schedule=time_partitions_def.get_cron_schedule(
+                minute_of_hour, hour_of_day, day_of_week, day_of_month
+            ),
             job=job,
             default_status=default_status,
-            execution_timezone=time_window_partitions_def.timezone,
+            execution_timezone=time_partitions_def.timezone,
             name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
             description=check.opt_str_param(description, "description"),
         )(_get_schedule_evaluation_fn(partitions_def, job, tags))

@@ -36,6 +36,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,
@@ -168,7 +169,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        connection.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                         stamp_alembic_rev(alembic_config, connection)
 
                 break
@@ -212,12 +213,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
-            conn = engine.connect()
-
-            try:
-                yield conn
-            finally:
-                conn.close()
+            with engine.connect() as conn:
+                with conn.begin():
+                    yield conn
             engine.dispose()
 
     def run_connection(self, run_id: Optional[str] = None) -> Any:
@@ -288,7 +286,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:

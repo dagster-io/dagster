@@ -10,13 +10,13 @@ import {
 import {useFeatureFlags} from '../app/Flags';
 import {RepoAddress} from '../workspace/types';
 
-import {LaunchpadType} from './LaunchpadRoot';
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadTabs} from './LaunchpadTabs';
+import {LaunchpadType} from './types';
 import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
-} from './types/LaunchpadRoot.types';
+} from './types/LaunchpadAllowedRoot.types';
 
 interface Props {
   launchpadType: LaunchpadType;

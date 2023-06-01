@@ -4,7 +4,9 @@ import {DocumentNode} from 'graphql';
 import {
   AutoMaterializePolicyType,
   buildAssetNode,
+  buildAutoMaterializeAssetEvaluationNeedsMigrationError,
   buildAutoMaterializeAssetEvaluationRecord,
+  buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
   buildFreshnessPolicy,
 } from '../../graphql/types';
@@ -85,7 +87,45 @@ export const Evaluations = {
         limit: PAGE_SIZE + 1,
       },
       data: {
-        autoMaterializeAssetEvaluations: [],
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          records: [],
+        }),
+      },
+    });
+  },
+  Errors: (assetKeyPath: string[], single?: boolean) => {
+    return buildGetEvaluationsQuery({
+      variables: {
+        assetKey: {path: assetKeyPath},
+        cursor: undefined,
+        limit: (single ? 1 : PAGE_SIZE) + 1,
+      },
+      data: {
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationNeedsMigrationError(
+          {
+            message: 'Test message',
+          },
+        ),
+      },
+    });
+  },
+  Single: (assetKeyPath?: string[]) => {
+    return buildGetEvaluationsQuery({
+      variables: {
+        assetKey: {path: assetKeyPath || ['test']},
+        cursor: undefined,
+        limit: 2,
+      },
+      data: {
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          records: assetKeyPath
+            ? [
+                buildAutoMaterializeAssetEvaluationRecord({
+                  evaluationId: 0,
+                }),
+              ]
+            : [],
+        }),
       },
     });
   },
@@ -97,26 +137,28 @@ export const Evaluations = {
         limit: PAGE_SIZE + 1,
       },
       data: {
-        autoMaterializeAssetEvaluations: [
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 0,
-          }),
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 1,
-          }),
-          {
-            ...buildAutoMaterializeAssetEvaluationRecord(),
-            evaluationId: 2,
-            numRequested: 0,
-            numSkipped: 5,
-          },
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 3,
-          }),
-          buildAutoMaterializeAssetEvaluationRecord({
-            evaluationId: 3,
-          }),
-        ],
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          records: [
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 0,
+            }),
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 1,
+            }),
+            {
+              ...buildAutoMaterializeAssetEvaluationRecord(),
+              evaluationId: 2,
+              numRequested: 0,
+              numSkipped: 5,
+            },
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 3,
+            }),
+            buildAutoMaterializeAssetEvaluationRecord({
+              evaluationId: 3,
+            }),
+          ],
+        }),
       },
     });
   },

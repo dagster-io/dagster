@@ -63,12 +63,23 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
 
   const allTimezoneItems = React.useMemo(() => {
     const date = new Date();
-    const allTimezoneItems = Intl.supportedValuesOf('timeZone')
-      .map((timeZone) => {
-        const {label, value} = extractOffset(date, timeZone);
-        return {offsetLabel: label, offset: value, key: timeZone};
-      })
-      .sort((a, b) => a.offset - b.offset);
+
+    let allTimezoneItems: {offsetLabel: string; offset: number; key: string}[] = [];
+    let explicitlyAddUTC = true;
+    try {
+      allTimezoneItems = Intl.supportedValuesOf('timeZone')
+        .map((timeZone) => {
+          const {label, value} = extractOffset(date, timeZone);
+          return {offsetLabel: label, offset: value, key: timeZone};
+        })
+        .sort((a, b) => a.offset - b.offset);
+      // Some browsers include UTC. (Firefox) Some don't. (Chrome, Safari)
+      // Determine whether we need to explicitly add it to the list.
+      explicitlyAddUTC = !allTimezoneItems.some((tz) => tz.key === 'UTC');
+    } catch (e) {
+      // `Intl.supportedValuesOf` is unavailable in this browser. Only
+      // support the Automatic timezone and UTC.
+    }
 
     const automaticOffsetLabel = () => {
       const abbreviation = browserTimezoneAbbreviation();
@@ -85,10 +96,6 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
       (tz) => timezonesForLocaleSet.has(tz.key) && !POPULAR_TIMEZONES.has(tz.key),
     );
 
-    // Some browsers include UTC. (Firefox) Some don't. (Chrome, Safari)
-    // Include it in the "popular" list either way.
-    const browserIncludesUTC = allTimezoneItems.some((tz) => tz.key === 'UTC');
-
     return [
       {
         key: 'Automatic',
@@ -100,15 +107,15 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
         offsetLabel: '',
         offset: 0,
       },
-      ...(browserIncludesUTC
-        ? []
-        : [
+      ...(explicitlyAddUTC
+        ? [
             {
               key: 'UTC',
               offsetLabel: '0:00',
               offset: 0,
             },
-          ]),
+          ]
+        : []),
       ...allTimezoneItems.filter((tz) => POPULAR_TIMEZONES.has(tz.key)),
       ...(timezonesForLocale.length
         ? [

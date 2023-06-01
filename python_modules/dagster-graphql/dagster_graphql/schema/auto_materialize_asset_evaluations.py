@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import dagster._check as check
 import graphene
@@ -14,6 +14,8 @@ from dagster._core.definitions.auto_materialize_condition import (
 )
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
+
+from dagster_graphql.schema.errors import GrapheneError
 
 from .util import non_null_list
 
@@ -127,3 +129,30 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             ],
             timestamp=record.timestamp,
         )
+
+
+class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
+    records = non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord)
+
+    class Meta:
+        name = "AutoMaterializeAssetEvaluationRecords"
+
+    def __init__(self, records: List[AutoMaterializeAssetEvaluationRecord]):
+        super().__init__(records=records)
+
+
+class GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AutoMaterializeAssetEvaluationNeedsMigrationError"
+
+
+class GrapheneAutoMaterializeAssetEvaluationRecordsOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAutoMaterializeAssetEvaluationRecords,
+            GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
+        )
+        name = "AutoMaterializeAssetEvaluationRecordsOrError"

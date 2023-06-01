@@ -395,7 +395,7 @@ dagster-user-deployments:
         periodSeconds: 20
         timeoutSeconds: 3
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 15  # Allow roughly 300 seconds to start up by default
 
       # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
       # enable startup probes.
@@ -1317,3 +1317,14 @@ retention:
       skipped: 7
       started: -1
       success: -1
+####################################################################################################
+# Additional fields on the instance to configure that aren't already determined by a key above.
+# See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.
+####################################################################################################
+# Example:
+#
+# additionalInstanceConfig:
+#   auto_materialize: # See: https://docs.dagster.io/deployment/dagster-instance#auto-materialize
+#     run_tags:
+#       key: value
+additionalInstanceConfig: {}

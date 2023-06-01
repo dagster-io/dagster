@@ -47,13 +47,13 @@ import {
 } from './ConfigEditorConfigPicker';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';
-import {LaunchpadType} from './LaunchpadRoot';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
 import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
+import {LaunchpadType} from './types';
 import {
   ConfigEditorPipelinePresetFragment,
   ConfigPartitionSelectionQuery,
@@ -62,7 +62,7 @@ import {
 import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
-} from './types/LaunchpadRoot.types';
+} from './types/LaunchpadAllowedRoot.types';
 import {
   PipelineExecutionConfigSchemaQuery,
   PipelineExecutionConfigSchemaQueryVariables,
