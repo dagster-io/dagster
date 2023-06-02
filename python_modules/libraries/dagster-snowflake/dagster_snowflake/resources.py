@@ -77,7 +77,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
     account: Optional[str] = Field(
         default=None,
-        description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+        description=(
+            "Your Snowflake account name. For more details, see the `Snowflake documentation."
+            " <https://docs.snowflake.com/developer-guide/python-connector/python-connector-api>`__"
+        ),
     )
 
     user: str = Field(description="User login name.")
@@ -120,30 +123,30 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     private_key: Optional[str] = Field(
         default=None,
         description=(
-            "Raw private key to use. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
-            " set private_key_path and private_key_password. To avoid issues with newlines in the"
-            " keys, you can base64 encode the key. You can retrieve the base64 encoded key with"
-            " this shell command: cat rsa_key.p8 | base64"
+            "Raw private key to use. See the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
+            " Alternately, set private_key_path and private_key_password. To avoid issues with"
+            " newlines in the keys, you can base64 encode the key. You can retrieve the base64"
+            " encoded key with this shell command: cat rsa_key.p8 | base64"
         ),
     )
 
     private_key_password: Optional[str] = Field(
         default=None,
         description=(
-            "Raw private key password to use. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
-            " both private_key and private_key_path if the private key is encrypted. For"
-            " unencrypted keys, this config can be omitted or set to None."
+            "Raw private key password to use. See the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
+            " Required for both private_key and private_key_path if the private key is encrypted."
+            " For unencrypted keys, this config can be omitted or set to None."
         ),
     )
 
     private_key_path: Optional[str] = Field(
         default=None,
         description=(
-            "Raw private key path to use. See"
-            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
-            " set the raw private key as private_key."
+            "Raw private key path to use. See the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
+            " Alternately, set the raw private key as private_key."
         ),
     )
 
@@ -199,8 +202,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     validate_default_parameters: Optional[bool] = Field(
         default=None,
         description=(
-            "False by default. Raise an exception if either one of specified database, "
-            "schema or warehouse doesn't exists if True."
+            "If True, raise an exception if the warehouse, database, or schema doesn't exist."
+            " Defaults to False."
         ),
     )
 
@@ -413,13 +416,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         """Gets a connection to Snowflake as a context manager.
 
         If connector configuration is not set, SnowflakeResource.get_connection() will return a
-        snowflake.connector.Connection object
-        (see https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection).
+        `snowflake.connector.Connection <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection>`__
         If connector="sqlalchemy" configuration is set, then SnowflakeResource.get_connection() will
-        return a SQLAlchemy Connection
-        (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection) or
-        a SQLAlchemy raw connection
-        (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection)
+        return a `SQLAlchemy Connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection>`__
+        or a SQLAlchemy raw connection `SQLAlchemy raw connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection>`__
         if raw_conn=True.
 
 
@@ -474,7 +474,7 @@ class SnowflakeConnection:
     directly instantiated, but rather used as a resource in an op or asset via the
     :py:func:`snowflake_resource`.
 
-    Note that the SnowflakeConnection is only used by the snowflake_resource. The pythonic SnowflakeResource does
+    Note that the SnowflakeConnection is only used by the snowflake_resource. The Pythonic SnowflakeResource does
     not use this SnowflakeConnection class.
     """
 
@@ -527,8 +527,9 @@ class SnowflakeConnection:
 
         Args:
             sql (str): the query to be executed
-            parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to the query. See
-                https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data
+            parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to the query. See the
+                `Snowflake documentation <https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data>`__
+                for more information.
             fetch_results (bool): If True, will return the result of the query. Defaults to False. If True
                 and use_pandas_result is also True, results will be returned as a Pandas DataFrame.
             use_pandas_result (bool): If True, will return the result of the query as a Pandas DataFrame.
@@ -578,8 +579,9 @@ class SnowflakeConnection:
 
         Args:
             sql_queries (str): List of queries to be executed in series
-            parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to every query. See
-                https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data
+            parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to every query. See the
+                `Snowflake documentation <https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data>`__
+                for more information.
             fetch_results (bool): If True, will return the results of the queries as a list. Defaults to False. If True
                 and use_pandas_result is also True, results will be returned as Pandas DataFrames.
             use_pandas_result (bool): If True, will return the results of the queries as a list of a Pandas DataFrames.
