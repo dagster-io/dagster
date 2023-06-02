@@ -823,6 +823,10 @@
             "path": "/guides/dagster/ml-pipeline"
           },
           {
+            "title": "Managing machine learning models with Dagster",
+            "path": "/guides/dagster/managing-ml"
+          },
+          {
             "title": "Exploring a Dagster project",
             "path": "/guides/dagster/example_project"
           }
