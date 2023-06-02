@@ -589,7 +589,7 @@
     "source": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso",
     "destination": "/dagster-cloud/account/authentication/okta/saml-sso",
     "statusCode": 302
-  }
+  },
   {
     "source": "/dagster-cloud/developing-testing",
     "destination": "/dagster-cloud/managing-deployments",
