@@ -5,7 +5,6 @@ from dagster import (
     IAttachDifferentObjectToOpContext,
     resource,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
 from .databricks import DatabricksClient
@@ -27,11 +26,6 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         ),
     )
 
-    @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        return True
-
     def get_client(self) -> DatabricksClient:
         return DatabricksClient(
             host=self.host,
@@ -43,7 +37,6 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         return self.get_client()
 
 
-@dagster_maintained_resource
 @resource(config_schema=DatabricksClientResource.to_config_schema())
 def databricks_client(init_context) -> DatabricksClient:
     return DatabricksClientResource.from_resource_context(init_context).get_client()

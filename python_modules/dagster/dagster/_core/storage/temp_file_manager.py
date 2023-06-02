@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 
-from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
+from dagster._core.definitions.resource_definition import resource
 
 
 class TempfileManager:
@@ -42,7 +42,6 @@ def _tempfile_manager():
         manager.close()
 
 
-@dagster_maintained_resource
 @resource
 def tempfile_resource(_init_context):
     with _tempfile_manager() as manager:

@@ -10,7 +10,6 @@ from typing import Any, Optional
 
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
@@ -219,7 +218,6 @@ class MlFlow(metaclass=MlflowMeta):
             yield {k: params[k] for k in islice(it, size)}
 
 
-@dagster_maintained_resource
 @resource(config_schema=CONFIG_SCHEMA)
 def mlflow_tracking(context):
     """This resource initializes an MLflow run that's used for all steps within a Dagster run.
