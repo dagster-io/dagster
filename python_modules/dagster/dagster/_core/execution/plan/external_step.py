@@ -9,7 +9,7 @@ import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
+from dagster._core.definitions.resource_definition import resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
 
 
-@dagster_maintained_resource
 @resource(
     config_schema={
         "scratch_dir": Field(
