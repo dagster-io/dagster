@@ -231,7 +231,7 @@ width={1188}
 height={541}
 />
 
-The Markdown plots are also available to inspect the evaluation metrics during the training cycle by clicking on **\[Show Markdown]**:
+The Markdown plots are also available to inspect the evaluation metrics during the training cycle by clicking on **[Show Markdown]**:
 
 <Image
 alt="alt"
@@ -244,7 +244,11 @@ height={541}
 
 ## Tracking model history
 
-Viewing previous versions of a machine learning model can be useful to understand the evaluation history or referencing a model that was used for inference. Using Dagster will enable you to understand - what the data was that was used to train the model, when it was refreshed, what code version and finally what version of the ML model was used to generate whatever predictions it is used for the predicted values.
+Viewing previous versions of a machine learning model can be useful to understand the evaluation history or referencing a model that was used for inference. Using Dagster will enable you to understand:
+
+- What data was used to train the model
+- When the model was refreshed
+- The code version and ML model version was used to generate the predictions used for predicted values
 
 In Dagster, each time an asset is materialized, the metadata and model are stored. Dagster registers the code version, data version and source data for each asset, so understanding what data was used to train a model is linked.
 
