@@ -1,3 +1,4 @@
+import os
 import threading
 from functools import lru_cache
 from typing import Any, Optional, Tuple, Union
@@ -64,8 +65,14 @@ _alembic_lock = threading.Lock()
 
 
 def stamp_alembic_rev(
-    alembic_config: Config, conn: Connection, rev: str = "head", quiet: bool = True
+    alembic_config: Config, conn: Connection, rev: str = "head", quiet: Optional[bool] = False
 ) -> None:
+    if quiet is None:
+        quiet = (
+            bool(os.environ["OVERRIDE_ALEMBIC_QUIET"])
+            if "OVERRIDE_ALEMBIC_QUIET" in os.environ
+            else True
+        )
     with _alembic_lock, quieten(quiet):
         alembic_config.attributes["connection"] = conn
         stamp(alembic_config, rev)
