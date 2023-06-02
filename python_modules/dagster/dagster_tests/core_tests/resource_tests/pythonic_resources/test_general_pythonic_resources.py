@@ -1531,3 +1531,22 @@ def test_context_on_resource_nested() -> None:
 
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_telemetry_custom_resource():
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+    assert not MyResource(my_value="foo")._dagster_maintained  # noqa: SLF001
+
+
+def test_telemetry_dagster_resource():
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+        @classmethod
+        @property
+        def _dagster_maintained(cls) -> bool:
+            return True
+
+    assert MyResource(my_value="foo")._dagster_maintained  # noqa: SLF001
