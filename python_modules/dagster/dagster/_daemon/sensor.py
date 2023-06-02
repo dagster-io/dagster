@@ -52,6 +52,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
@@ -261,7 +262,7 @@ def execute_sensor_iteration_loop(
         settings = workspace_process_context.instance.get_settings("sensors")
         if settings.get("use_threads"):
             threadpool_executor = stack.enter_context(
-                ThreadPoolExecutor(
+                InheritContextThreadPoolExecutor(
                     max_workers=settings.get("num_workers"),
                     thread_name_prefix="sensor_daemon_worker",
                 )
@@ -269,7 +270,7 @@ def execute_sensor_iteration_loop(
             num_submit_workers = settings.get("num_submit_workers")
             if num_submit_workers:
                 submit_threadpool_executor = stack.enter_context(
-                    ThreadPoolExecutor(
+                    InheritContextThreadPoolExecutor(
                         max_workers=settings.get("num_submit_workers"),
                         thread_name_prefix="sensor_submit_worker",
                     )

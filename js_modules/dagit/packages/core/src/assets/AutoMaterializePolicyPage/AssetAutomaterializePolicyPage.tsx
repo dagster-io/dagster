@@ -10,7 +10,6 @@ import {
   Spinner,
   Mono,
   Subheading,
-  Tooltip,
   Tag,
 } from '@dagster-io/ui';
 import dayjs from 'dayjs';
@@ -315,10 +314,14 @@ const RightPanel = ({
           )}
           {data.assetNodeOrError.freshnessPolicy ? (
             <RightPanelSection title="Freshness policy">
-              <RightPanelDetail title="Maximum lag minutes" tooltip="test" value={2} />
+              <RightPanelDetail
+                title="Maximum lag minutes"
+                value={data.assetNodeOrError.freshnessPolicy.maximumLagMinutes}
+              />
               <Box flex={{direction: 'column', gap: 8}}>
-                This asset will be considered late if it is not materialized within 2 minutes of
-                it’s upstream dependencies.
+                This asset will be considered late if it is not materialized within{' '}
+                {data.assetNodeOrError.freshnessPolicy.maximumLagMinutes} minutes of it’s upstream
+                dependencies.
                 <Link
                   to={assetDetailsPathForKey(assetKey, {view: 'lineage', lineageScope: 'upstream'})}
                 >
@@ -376,7 +379,6 @@ const RightPanelSection = ({
 
 const RightPanelDetail = ({
   title,
-  tooltip,
   value,
 }: {
   title: React.ReactNode;
@@ -385,12 +387,7 @@ const RightPanelDetail = ({
 }) => {
   return (
     <Box flex={{direction: 'column', gap: 2}}>
-      <CenterAlignedRow flex={{gap: 6}}>
-        {title}{' '}
-        <Tooltip content={<>{tooltip}</>} position="top">
-          <Icon name="info" />
-        </Tooltip>
-      </CenterAlignedRow>
+      <CenterAlignedRow flex={{gap: 6}}>{title}</CenterAlignedRow>
       {value}
     </Box>
   );
