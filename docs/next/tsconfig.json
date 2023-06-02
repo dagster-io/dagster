@@ -18,6 +18,6 @@
     "downlevelIteration": true,
     "incremental": true
   },
-  "include": ["next-env.d.ts", "global.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["next-env.d.ts", "global.d.ts", "**/*.ts", "**/*.tsx", "markdoc/config.js"],
   "exclude": ["node_modules"]
 }

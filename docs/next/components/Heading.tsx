@@ -8,5 +8,8 @@ export function Heading({id = '', level = 1, children, className}) {
       className: ['heading', className].filter(Boolean).join(' '),
     },
     children,
+    <a className="no-underline group" href={`#${id}`}>
+      <span className="ml-2 text-gray-200 hover:text-gray-800 hover:underline">#</span>
+    </a>,
   );
 }
