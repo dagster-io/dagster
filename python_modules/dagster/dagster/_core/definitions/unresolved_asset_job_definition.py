@@ -295,8 +295,10 @@ def define_asset_job(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
-        metadata (Optional[Mapping[str, RawMetadataValue]]):
-
+        metadata (Optional[Mapping[str, RawMetadataValue]]): Arbitrary metadata about the job.
+            Keys are displayed string labels, and values are one of the following: string, float,
+            int, JSON-serializable dict, JSON-serializable list, and one of the data classes
+            returned by a MetadataValue static method.
         description (Optional[str]):
             A description for the Job.
         partitions_def (Optional[PartitionsDefinition]):
