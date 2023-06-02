@@ -278,7 +278,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
 
 def dagster_maintained_resource(
     resource_def: ResourceDefinition,
-) -> Callable[[ResourceDefinition], ResourceDefinition]:
+) -> ResourceDefinition:
     resource_def._dagster_maintained = True  # noqa: SLF001
     return resource_def
 
