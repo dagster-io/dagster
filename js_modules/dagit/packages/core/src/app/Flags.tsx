@@ -14,7 +14,6 @@ export const FeatureFlag = {
   flagRunsTableFiltering: 'flagRunsTableFiltering' as const,
   flagOverviewAssetsTab: 'flagOverviewAssetsTab' as const,
   flagAutoLoadDefaults: 'flagAutoLoadDefaults' as const,
-  flagAssetAutomaterializePolicyPage: 'flagAssetAutomaterializePolicyPage' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

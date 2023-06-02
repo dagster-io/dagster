@@ -263,7 +263,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
-              {useFeatureFlags().flagAssetAutomaterializePolicyPage ? (
+              {definition?.autoMaterializePolicy ? (
                 <Tab
                   id="auto-materialize-policy"
                   title="Auto-materialize policy"

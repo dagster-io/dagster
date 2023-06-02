@@ -32,8 +32,4 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Automatically load default config in launchpad',
     flagType: FeatureFlag.flagAutoLoadDefaults,
   },
-  {
-    key: 'Experimental Asset Auto-materialize policy evaluations page',
-    flagType: FeatureFlag.flagAssetAutomaterializePolicyPage,
-  },
 ];
