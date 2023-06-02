@@ -28,6 +28,11 @@ class DatahubRESTEmitterResource(ConfigurableResource):
     server_telemetry_id: Optional[str] = None
     disable_ssl_verification: bool = False
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_emitter(self) -> DatahubRestEmitter:
         return DatahubRestEmitter(
             gms_server=self.connection,
@@ -82,6 +87,11 @@ class DatahubKafkaEmitterResource(ConfigurableResource):
             MCP_KEY: DEFAULT_MCP_KAFKA_TOPIC,
         }
     )
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     def get_emitter(self) -> DatahubKafkaEmitter:
         return DatahubKafkaEmitter(

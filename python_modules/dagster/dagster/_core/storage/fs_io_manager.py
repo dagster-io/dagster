@@ -120,6 +120,11 @@ class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemI
 
     base_dir: Optional[str] = Field(default=None, description="Base directory for storing files.")
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def create_io_manager(self, context: InitResourceContext) -> "PickledObjectFilesystemIOManager":
         base_dir = self.base_dir or check.not_none(context.instance).storage_directory()
         return PickledObjectFilesystemIOManager(base_dir=base_dir)

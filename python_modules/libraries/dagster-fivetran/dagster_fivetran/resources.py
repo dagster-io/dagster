@@ -58,6 +58,11 @@ class FivetranResource(ConfigurableResource):
         description="Time (in seconds) to wait between each request retry.",
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @property
     def _auth(self) -> HTTPBasicAuth:
         return HTTPBasicAuth(self.api_key, self.api_secret)

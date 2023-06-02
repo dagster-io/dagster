@@ -22,6 +22,11 @@ class TwilioResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def create_client(self) -> Client:
         return Client(self.account_sid, self.auth_token)
 

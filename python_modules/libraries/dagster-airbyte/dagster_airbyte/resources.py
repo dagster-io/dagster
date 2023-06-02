@@ -70,6 +70,11 @@ class BaseAirbyteResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @property
     @cached_method
     def _log(self) -> logging.Logger:

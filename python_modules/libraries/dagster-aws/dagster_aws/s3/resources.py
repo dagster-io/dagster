@@ -83,6 +83,11 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
 
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> Any:
         return construct_s3_client(
             max_attempts=self.max_attempts,

@@ -61,6 +61,11 @@ class MSTeamsResource(ConfigurableResource):
         default=True, description="Whether to verify SSL certificates, defaults to True"
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> TeamsClient:
         return TeamsClient(
             hook_url=self.hook_url,

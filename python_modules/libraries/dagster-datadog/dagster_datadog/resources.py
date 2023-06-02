@@ -86,6 +86,11 @@ class DatadogResource(ConfigurableResource):
         )
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> DatadogClient:
         return DatadogClient(self.api_key, self.app_key)
 
