@@ -28,7 +28,7 @@ def execute_concurrency_slots_iteration(
         yield
         return
 
-    run_records = instance.get_run_records(filters=RunsFilter(run_ids=run_ids))
+    run_records = instance.get_run_records(filters=RunsFilter(run_ids=list(run_ids)))
     now = pendulum.now("UTC").timestamp()
     for run_record in run_records:
         if run_record.dagster_run.status not in FINISHED_STATUSES:
