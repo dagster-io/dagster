@@ -39,6 +39,11 @@ class ECRPublicResource(ConfigurableResource):
     Similar to the AWS CLI's `aws ecr-public get-login-password` command.
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> ECRPublicClient:
         return ECRPublicClient()
 
@@ -47,6 +52,11 @@ class FakeECRPublicResource(ConfigurableResource):
     """This resource behaves like ecr_public_resource except it stubs out the real AWS API
     requests and always returns `'token'` as its login password.
     """
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     def get_client(self) -> FakeECRPublicClient:
         return FakeECRPublicClient()
