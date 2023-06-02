@@ -4,7 +4,11 @@ const withMarkdoc = require('@markdoc/next.js');
 
 const redirectUrls = require('./util/redirectUrls.json');
 
-module.exports = withMarkdoc()({
+module.exports = withMarkdoc(
+  {
+    schemaPath: './markdoc/',
+  } /* config: https://markdoc.io/docs/nextjs#options */,
+)({
   async redirects() {
     return [
       {

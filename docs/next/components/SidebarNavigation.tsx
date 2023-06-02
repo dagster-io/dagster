@@ -29,79 +29,6 @@ export function collectHeadings(node, headings = []) {
   return headings;
 }
 
-// ==============================
-// handling MDX (will be deprecated)
-// ==============================
-
-// Travel the tree to get the headings
-export function getMDXItems(node, current) {
-  if (!node) {
-    return {};
-  } else if (node.type === `paragraph`) {
-    visit(node, (item) => {
-      if (item.type === `link`) {
-        const url: string = item['url'];
-        // workaround for https://github.com/syntax-tree/mdast-util-toc/issues/70
-        // remove ids of HTML elements from the headings, i.e. "experimental", "cross", "check"
-        current.url = url
-          .replace(/^#cross-/, '#')
-          .replace(/^#check-/, '#')
-          .replace(/-experimental-?$/, '');
-      }
-      if (item.type === `text`) {
-        current.title = item['value'];
-      }
-    });
-    return current;
-  } else {
-    if (node.type === `list`) {
-      current.items = node.children.map((i) => getMDXItems(i, {}));
-      return current;
-    } else if (node.type === `listItem`) {
-      const heading = getMDXItems(node.children[0], {});
-      if (node.children.length > 1) {
-        getMDXItems(node.children[1], heading);
-      }
-      return heading;
-    }
-  }
-  return {};
-}
-
-// By parsing the AST, we generate a sidebar navigation tree like this:
-//
-// {"items": [{
-//   "url": "#something-if",
-//   "title": "Something if",
-//   "items": [
-//     {
-//       "url": "#something-else",
-//       "title": "Something else"
-//     },
-//     {
-//       "url": "#something-elsefi",
-//       "title": "Something elsefi"
-//     }
-//   ]},
-//   {
-//     "url": "#something-iffi",
-//     "title": "Something iffi"
-//   }]}
-
-// Given the tree, get all the IDS
-export const getIds = (items) => {
-  return items.reduce((acc, item) => {
-    if (item.url) {
-      // url has a # as first character, remove it to get the raw CSS-id
-      acc.push(item.url.slice(1));
-    }
-    if (item.items) {
-      acc.push(...getIds(item.items));
-    }
-    return acc;
-  }, []);
-};
-
 // Calculate the ID currently on the page to highlight it
 const useActiveId = (itemIds) => {
   const [activeId, setActiveId] = useState(`test`);
@@ -140,7 +67,7 @@ const renderItems = (items, activeId) => {
       {items.map((item, idx) => (
         <li key={`${idx}`} className={cx(MARGINS[item.level - 1], 'mt-2 list-inside ')}>
           <a
-            href={item.url}
+            href={`#${item.id}`}
             className={cx(
               'font-normal text-sm text-gray-500 hover:text-gray-800 transition leading-2',
               {
@@ -251,6 +178,76 @@ export const RightSidebar = ({
 // ==============================
 // handling MDX (will be deprecated)
 // ==============================
+
+// Travel the tree to get the headings
+export function getMDXItems(node, current) {
+  if (!node) {
+    return {};
+  } else if (node.type === `paragraph`) {
+    visit(node, (item) => {
+      if (item.type === `link`) {
+        const url: string = item['url'];
+        // workaround for https://github.com/syntax-tree/mdast-util-toc/issues/70
+        // remove ids of HTML elements from the headings, i.e. "experimental", "cross", "check"
+        current.url = url
+          .replace(/^#cross-/, '#')
+          .replace(/^#check-/, '#')
+          .replace(/-experimental-?$/, '');
+      }
+      if (item.type === `text`) {
+        current.title = item['value'];
+      }
+    });
+    return current;
+  } else {
+    if (node.type === `list`) {
+      current.items = node.children.map((i) => getMDXItems(i, {}));
+      return current;
+    } else if (node.type === `listItem`) {
+      const heading = getMDXItems(node.children[0], {});
+      if (node.children.length > 1) {
+        getMDXItems(node.children[1], heading);
+      }
+      return heading;
+    }
+  }
+  return {};
+}
+
+// By parsing the AST, we generate a sidebar navigation tree like this:
+//
+// {"items": [{
+//   "url": "#something-if",
+//   "title": "Something if",
+//   "items": [
+//     {
+//       "url": "#something-else",
+//       "title": "Something else"
+//     },
+//     {
+//       "url": "#something-elsefi",
+//       "title": "Something elsefi"
+//     }
+//   ]},
+//   {
+//     "url": "#something-iffi",
+//     "title": "Something iffi"
+//   }]}
+
+// Given the tree, get all the IDS
+export const getIds = (items) => {
+  return items.reduce((acc, item) => {
+    if (item.url) {
+      // url has a # as first character, remove it to get the raw CSS-id
+      acc.push(item.url.slice(1));
+    }
+    if (item.items) {
+      acc.push(...getIds(item.items));
+    }
+    return acc;
+  }, []);
+};
+
 const MDX_ITEM_MARGINS = ['ml-0', 'ml-1', 'ml-2', 'ml-3'];
 
 const renderMDXItems = (items, activeId, depth, key) => {

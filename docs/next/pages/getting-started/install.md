@@ -2,7 +2,7 @@
 title: Installing Dagster | Dagster Docs
 description: Install Dagster
 ---
-# {% $markdoc.frontmatter.title %}
+# Installing Dagster
 
 ## Requirements
 
@@ -14,8 +14,6 @@ To check that Python and the pip package manager are already installed in your e
 python --version
 pip --version
 ```
-
-### test right side bar
 
 ---
 
@@ -66,21 +64,11 @@ poetry add dagster dagit
 
 ## Related
 
-<ArticleList>
-  <ArticleListItem
-    title="Creating a new Dagster project"
-    href="/getting-started/create-new-project"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dagster project files"
-    href="/getting-started/project-file-reference"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Running Dagster locally"
-    href="/guides/running-dagster-locally"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Contributing to Dagster"
-    href="/community/contributing"
-  ></ArticleListItem>
-</ArticleList>
+{% table %}
+---
+* [Creating a new Dagster project](/getting-started/create-new-project)
+* [Dagster project files](/getting-started/project-file-reference)
+---
+* [Running Dagster locally](/guides/running-dagster-locally)
+* [Contributing to Dagster](/community/contributing)
+{% /table %}
