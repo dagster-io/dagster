@@ -262,12 +262,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
-              <Tab
-                id="auto-materialize-policy"
-                title="Auto-materialize policy"
-                onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
-                disabled={!definition}
-              />
+              {definition?.autoMaterializePolicy ? (
+                <Tab
+                  id="auto-materialize-policy"
+                  title="Auto-materialize policy"
+                  onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
+                  disabled={!definition}
+                />
+              ) : null}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
