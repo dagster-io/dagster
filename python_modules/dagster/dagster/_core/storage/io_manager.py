@@ -92,7 +92,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "IOManagerDefinition":
-        io_def = IOManagerDefinition(
+        return IOManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
@@ -100,10 +100,6 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             input_config_schema=self.input_config_schema,
             output_config_schema=self.output_config_schema,
         )
-
-        io_def._dagster_maintained = self.dagster_maintained  # noqa: SLF001
-
-        return io_def
 
     @public
     @staticmethod
@@ -242,11 +238,6 @@ def io_manager(
         )(resource_fn)
 
     return _wrap
-
-
-def dagster_maintained_io_manager(io_manager_def: IOManagerDefinition) -> IOManagerDefinition:
-    io_manager_def._dagster_maintained = True  # noqa: SLF001
-    return io_manager_def
 
 
 class _IOManagerDecoratorCallable:

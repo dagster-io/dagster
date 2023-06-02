@@ -107,9 +107,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
-        # this attribute will be updated by the @dagster_maintained_resource and @dagster_maintained_io_manager decorators
-        self._dagster_maintained = False
-
     @staticmethod
     def dagster_internal_init(
         *,
@@ -149,10 +146,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
-
-    @property
-    def dagster_maintained(self) -> bool:
-        return self._dagster_maintained
 
     @public
     @staticmethod
@@ -213,17 +206,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
     ) -> "ResourceDefinition":
-        resource_def = ResourceDefinition.dagster_internal_init(
+        return ResourceDefinition.dagster_internal_init(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
             required_resource_keys=self.required_resource_keys,
             version=self.version,
         )
-
-        resource_def._dagster_maintained = self.dagster_maintained  # noqa: SLF001
-
-        return resource_def
 
     def __call__(self, *args, **kwargs):
         from dagster._core.execution.context.init import UnboundInitResourceContext
@@ -274,13 +263,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         source_key = cast(str, outer_context)
         for resource_key in sorted(list(self.required_resource_keys)):
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
-
-
-def dagster_maintained_resource(
-    resource_def: ResourceDefinition,
-) -> ResourceDefinition:
-    resource_def._dagster_maintained = True  # noqa: SLF001
-    return resource_def
 
 
 class _ResourceDecoratorCallable:

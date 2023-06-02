@@ -585,10 +585,6 @@ class ExternalResource:
     def job_ops_using(self) -> List[ResourceJobUsageEntry]:
         return self._external_resource_data.job_ops_using
 
-    @property
-    def is_dagster_maintained(self) -> bool:
-        return self._external_resource_data.dagster_maintained
-
 
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):

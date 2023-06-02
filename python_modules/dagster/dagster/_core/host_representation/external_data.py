@@ -36,7 +36,11 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
-from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
+from dagster._config.snap import (
+    ConfigFieldSnap,
+    ConfigSchemaSnapshot,
+    snap_from_config_type,
+)
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
@@ -66,7 +70,10 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    ScheduleType,
+)
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
@@ -967,7 +974,6 @@ class ExternalResourceData(
             ("is_top_level", bool),
             ("asset_keys_using", List[AssetKey]),
             ("job_ops_using", List[ResourceJobUsageEntry]),
-            ("dagster_maintained", bool),
         ],
     )
 ):
@@ -989,7 +995,6 @@ class ExternalResourceData(
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
         job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
-        dagster_maintained: bool = False,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -1035,7 +1040,6 @@ class ExternalResourceData(
                 )
             )
             or [],
-            dagster_maintained=dagster_maintained,
         )
 
 
@@ -1632,18 +1636,6 @@ def external_resource_data_from_def(
     else:
         resource_type = _get_class_name(type(resource_type_def))
 
-    dagster_maintained = (
-        resource_type_def._dagster_maintained  # noqa: SLF001
-        if type(resource_type_def)
-        in (
-            ResourceDefinition,
-            IOManagerDefinition,
-            ConfigurableResourceFactoryResourceDefinition,
-            ConfigurableIOManagerFactoryResourceDefinition,
-        )
-        else False
-    )
-
     return ExternalResourceData(
         name=name,
         resource_snapshot=build_resource_def_snap(name, resource_def),
@@ -1656,7 +1648,6 @@ def external_resource_data_from_def(
         asset_keys_using=resource_asset_usage_map.get(name, []),
         job_ops_using=resource_job_usage_map.get(name, []),
         resource_type=resource_type,
-        dagster_maintained=dagster_maintained,
     )
 
 
