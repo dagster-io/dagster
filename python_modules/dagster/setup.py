@@ -27,9 +27,6 @@ def get_version() -> str:
 
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
 GRPC_VERSION_FLOOR = "1.44.0"
-# Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
-# (except on python 3.11, where newer versions are required just to install the grpcio package)
-GRPC_VERSION_CAP = "1.48.0"
 
 
 setup(
@@ -81,10 +78,8 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         "croniter>=0.3.34",
-        f"grpcio>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-        f"grpcio>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+        f"grpcio>={GRPC_VERSION_FLOOR}",
+        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
         "pendulum",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
@@ -113,8 +108,7 @@ setup(
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
             "docker",
-            f"grpcio-tools>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-            f"grpcio-tools>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+            f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
             "objgraph",
             "pytest-cov==2.10.1",
