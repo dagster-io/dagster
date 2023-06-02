@@ -29,7 +29,7 @@ def get_version() -> str:
 GRPC_VERSION_FLOOR = "1.44.0"
 # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
 # (except on python 3.11, where newer versions are required just to install the grpcio package)
-GRPC_VERSION_CAP = "1.48.0"
+GRPC_VERSION_CAP = "1.52.0"
 
 
 setup(
