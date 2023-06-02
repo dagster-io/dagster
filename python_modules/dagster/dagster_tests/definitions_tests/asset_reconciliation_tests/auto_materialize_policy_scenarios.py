@@ -11,10 +11,13 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (
     AssetReconciliationScenario,
+    asset_def,
     run,
     run_request,
     single_asset_run,
@@ -225,5 +228,29 @@ auto_materialize_policy_scenarios = {
             "asset3": {ParentMaterializedAutoMaterializeCondition()},
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
+    ),
+    "zzz": AssetReconciliationScenario(
+        assets=[
+            asset_def(
+                "hourly", partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+            ),
+            asset_def("a", ["hourly"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
+            asset_def(
+                "b",
+                ["a"],
+                freshness_policy=FreshnessPolicy(maximum_lag_minutes=60 * 2),
+                auto_materialize_policy=AutoMaterializePolicy.lazy(),
+            ),
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=1, hour=5, minute=7, tz="UTC"),
+        unevaluated_runs=[
+            run(["hourly"], partition_key="2020-01-01-00:00"),
+            run(["hourly"], partition_key="2020-01-01-01:00"),
+            run(["a", "b", "c"]),
+            run(["hourly"], partition_key="2020-01-01-04:00"),
+            run(["hourly"], partition_key="2020-01-01-05:00"),
+            # run(["a"]),
+        ],
+        expected_run_requests=[],
     ),
 }
