@@ -40,6 +40,14 @@ pip install dagster dagit
 pip install dagster dagit --find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels
 ```
 
+**Need to install Dagster using a more recent version of `grpcio`**? On Python 3.7-3.10, `dagster` currently has a `grpcio<1.48` pin due to reports of sporadic crashes and hangs with more recent versions. If you see a version incompatibility error when installing `dagster` due to this pin, you can set the DAGSTER_NO_GRPCIO_PIN environment variable when installing to allow more recent versions of `grpcio` to be installed.
+
+For example:
+
+```bash
+DAGSTER_NO_GRPCIO_PIN=1 pip install dagster dagit
+```
+
 ---
 
 ## Installing Dagster from source
@@ -61,6 +69,14 @@ poetry add dagster dagit
 ```bash
 poetry source add grpcio https://github.com/dagster-io/build-grpcio/wiki/Wheels
 poetry add dagster dagit
+```
+
+**Need to install Dagster using a more recent version of `grpcio`**? On Python 3.7-3.10, `dagster` currently has a `grpcio<1.48` pin due to reports of sporadic crashes and hangs with more recent versions. If you see a version incompatibility error when installing `dagster` due to this pin, you can set the DAGSTER_NO_GRPCIO_PIN environment variable when installing to allow more recent versions of `grpcio` to be installed.
+
+For example:
+
+```bash
+DAGSTER_NO_GRPCIO_PIN=1 poetry add dagster dagit
 ```
 
 ---

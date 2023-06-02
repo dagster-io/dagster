@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Dict
 
@@ -30,6 +31,22 @@ GRPC_VERSION_FLOOR = "1.44.0"
 # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
 # (except on python 3.11, where newer versions are required just to install the grpcio package)
 GRPC_VERSION_CAP = "1.48.0"
+
+
+def get_grpcio_requires():
+    return (
+        ["grpcio", "grpcio-health-checking"]
+        if os.getenv("DAGSTER_NO_GRPCIO_PIN")
+        else [
+            f"grpcio>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
+            f"grpcio>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+            (
+                f"grpcio-health-checking>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP};"
+                " python_version<'3.11'"
+            ),
+            f"grpcio-health-checking>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+        ]
+    )
 
 
 setup(
@@ -81,10 +98,9 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,<1.11.0",
         "croniter>=0.3.34",
-        f"grpcio>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-        f"grpcio>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+    ]
+    + get_grpcio_requires()
+    + [
         "packaging>=20.9",
         "pendulum",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
