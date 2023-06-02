@@ -920,6 +920,12 @@ def test_launch_run_with_container_context(
     task_arn = list(set(tasks).difference(existing_tasks))[0]
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
+    assert any(tag == {"key": "HAS_VALUE", "value": "SEE"} for tag in task["tags"])
+    assert any(tag == {"key": "DOES_NOT_HAVE_VALUE"} for tag in task["tags"])
+    assert any(
+        tag == {"key": "ABC", "value": "DEF"} for tag in task["tags"]
+    )  # from container context
+
     assert (
         task.get("overrides").get("memory")
         == container_context_config["ecs"]["run_resources"]["memory"]

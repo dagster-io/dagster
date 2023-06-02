@@ -78,6 +78,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
+        run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -172,6 +173,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 )
 
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
+
+        self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -332,8 +335,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         }
         self._instance.add_run_tags(run_id, tags)
 
-    def build_ecs_tags_for_run_task(self, run):
-        return [{"key": "dagster/run_id", "value": run.run_id}]
+    def build_ecs_tags_for_run_task(self, run, container_context: EcsContainerContext):
+        return [{"key": "dagster/run_id", "value": run.run_id}, *container_context.run_ecs_tags]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -399,7 +402,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         }
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
-            *self.build_ecs_tags_for_run_task(run),
+            *self.build_ecs_tags_for_run_task(run, container_context),
         ]
 
         run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
