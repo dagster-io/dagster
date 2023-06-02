@@ -448,7 +448,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_concurrency_run_ids(self) -> Sequence[str]:
+    def get_concurrency_run_ids(self) -> Set[str]:
         """Get a list of run_ids that are occupying or waiting for a concurrency key slot."""
         raise NotImplementedError()
 

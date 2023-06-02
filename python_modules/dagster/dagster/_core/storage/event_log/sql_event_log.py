@@ -2313,14 +2313,10 @@ class SqlEventLogStorage(EventLogStorage):
                 },
             )
 
-    def get_concurrency_run_ids(self) -> Sequence[str]:
+    def get_concurrency_run_ids(self) -> Set[str]:
         with self.index_connection() as conn:
-            rows = conn.execute(
-                db_select([PendingStepsTable.c.run_id])
-                .distinct()
-                .order_by(PendingStepsTable.c.create_timestamp.asc())
-            ).fetchall()
-            return [cast(str, row[0]) for row in rows]
+            rows = conn.execute(db_select([PendingStepsTable.c.run_id]).distinct()).fetchall()
+            return set([cast(str, row[0]) for row in rows])
 
     def free_concurrency_slots_for_run(self, run_id: str) -> None:
         freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id)
