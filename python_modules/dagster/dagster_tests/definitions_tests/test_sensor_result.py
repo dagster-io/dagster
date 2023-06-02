@@ -185,3 +185,38 @@ def test_sensor_result_asset_sensor():
                 DagsterInvariantViolationError, match="The cursor is managed by the asset sensor"
             ):
                 asset_sensor_set_cursor.evaluate_tick(ctx)
+
+
+def test_yield_and_return():
+    @job
+    def job1():
+        pass
+
+    @sensor(job=job1)
+    def sensor_with_yield_run_request_and_return_skip_reason(context):
+        if context.cursor == "skip":
+            return SkipReason("This is a skip reason")
+        else:
+            yield RunRequest()
+
+    result_with_skip = sensor_with_yield_run_request_and_return_skip_reason.evaluate_tick(
+        build_sensor_context(cursor="skip")
+    )
+    assert result_with_skip.skip_message == "This is a skip reason"
+    assert result_with_skip.run_requests == []
+
+    result_without_skip = sensor_with_yield_run_request_and_return_skip_reason.evaluate_tick(
+        build_sensor_context(cursor="go")
+    )
+    assert result_without_skip.skip_message is None
+    assert len(result_without_skip.run_requests) == 1
+
+    @sensor(job=job1)
+    def sensor_with_yield_and_return_run_request(context):
+        yield RunRequest()
+        return RunRequest()
+
+    result_yield_and_return_run_request = sensor_with_yield_and_return_run_request.evaluate_tick(
+        build_sensor_context()
+    )
+    assert len(result_yield_and_return_run_request.run_requests) == 2
