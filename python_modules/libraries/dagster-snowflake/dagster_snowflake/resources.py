@@ -14,6 +14,7 @@ from dagster import (
     resource,
 )
 from dagster._annotations import public
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, root_validator, validator
@@ -286,6 +287,11 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         )
 
         return values
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     @property
     @cached_method
@@ -643,6 +649,7 @@ class SnowflakeConnection:
         self.execute_queries(sql_queries)
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=SnowflakeResource.to_config_schema(),
     description="This resource is for connecting to the Snowflake data warehouse",

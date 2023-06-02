@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from google.cloud import bigquery
 from pydantic import Field
 
@@ -55,6 +56,11 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @contextmanager
     def get_client(self) -> Iterator[bigquery.Client]:
         """Context manager to create a BigQuery Client.
@@ -82,6 +88,7 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             yield client
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=BigQueryResource.to_config_schema(),
     description="Dagster resource for connecting to BigQuery",
