@@ -150,8 +150,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
-    @property
-    def dagster_maintained(self) -> bool:
+    def _is_dagster_maintained(self) -> bool:
         return self._dagster_maintained
 
     @public
@@ -221,7 +220,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             version=self.version,
         )
 
-        resource_def._dagster_maintained = self.dagster_maintained  # noqa: SLF001
+        resource_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
 
         return resource_def
 

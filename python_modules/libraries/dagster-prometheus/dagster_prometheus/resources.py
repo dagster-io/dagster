@@ -52,8 +52,7 @@ class PrometheusResource(ConfigurableResource):
     _registry: prometheus_client.CollectorRegistry = PrivateAttr(default=None)
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def setup_for_execution(self, context: InitResourceContext) -> None:

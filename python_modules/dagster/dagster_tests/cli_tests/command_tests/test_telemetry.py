@@ -371,8 +371,7 @@ def test_get_stats_from_external_repo_resources():
         foo: str
 
         @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
+        def _is_dagster_maintained(cls) -> bool:
             return True
 
     class CustomResource(ConfigurableResource):
@@ -407,8 +406,7 @@ def test_get_stats_from_external_repo_io_managers():
         foo: str
 
         @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
+        def _is_dagster_maintained(cls) -> bool:
             return True
 
         def handle_output(self, context: OutputContext, obj: Any) -> None:
@@ -523,16 +521,14 @@ def test_get_stats_from_external_repo_delayed_resource_configuration():
         foo: str
 
         @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
+        def _is_dagster_maintained(cls) -> bool:
             return True
 
     class MyIOManager(ConfigurableIOManager):
         foo: str
 
         @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
+        def _is_dagster_maintained(cls) -> bool:
             return True
 
         def handle_output(self, context: OutputContext, obj: Any) -> None:

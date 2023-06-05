@@ -101,8 +101,7 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
     )
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def create_io_manager(self, context: InitResourceContext) -> "LocalOutputNotebookIOManager":

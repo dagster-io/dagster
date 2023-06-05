@@ -40,8 +40,7 @@ class ECRPublicResource(ConfigurableResource):
     """
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def get_client(self) -> ECRPublicClient:
@@ -54,8 +53,7 @@ class FakeECRPublicResource(ConfigurableResource):
     """
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def get_client(self) -> FakeECRPublicClient:

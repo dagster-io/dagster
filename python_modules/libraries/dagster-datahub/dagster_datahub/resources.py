@@ -29,8 +29,7 @@ class DatahubRESTEmitterResource(ConfigurableResource):
     disable_ssl_verification: bool = False
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def get_emitter(self) -> DatahubRestEmitter:
@@ -89,8 +88,7 @@ class DatahubKafkaEmitterResource(ConfigurableResource):
     )
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def get_emitter(self) -> DatahubKafkaEmitter:

@@ -49,8 +49,7 @@ class PySparkResource(ConfigurableResource):
     _spark_session = PrivateAttr(default=None)
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
@@ -123,8 +122,7 @@ class LazyPySparkResource(ConfigurableResource):
     _spark_session = PrivateAttr(default=None)
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def _init_session(self) -> None:

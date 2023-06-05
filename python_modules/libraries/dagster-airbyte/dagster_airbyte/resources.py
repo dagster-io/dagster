@@ -71,8 +71,7 @@ class BaseAirbyteResource(ConfigurableResource):
     )
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     @property

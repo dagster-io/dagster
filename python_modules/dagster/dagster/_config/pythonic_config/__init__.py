@@ -647,6 +647,9 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
     ) -> AbstractSet[str]:
         return self._resolve_resource_keys(resource_mapping)
 
+    def _is_dagster_maintained(self) -> bool:
+        return self._dagster_maintained
+
 
 class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
     def __init__(
@@ -815,9 +818,8 @@ class ConfigurableResourceFactory(
         return self._state__internal__.resolved_config_dict
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        """This property should be overridden to return True by all dagster maintained resources and IO managers.
+    def _is_dagster_maintained(cls) -> bool:
+        """This should be overridden to return True by all dagster maintained resources and IO managers.
         """
         return False
 
@@ -844,7 +846,7 @@ class ConfigurableResourceFactory(
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self._dagster_maintained,
+            dagster_maintained=self._is_dagster_maintained(),
         )
 
     @abstractmethod
@@ -1173,7 +1175,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._dagster_maintained,  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 
@@ -1243,7 +1245,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self._dagster_maintained,
+            dagster_maintained=self._is_dagster_maintained(),
         )
 
     def __call__(self, *args, **kwargs):
@@ -1324,7 +1326,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
             nested_resources=self.nested_resources,
             input_config_schema=self.__class__.input_config_schema(),
             output_config_schema=self.__class__.output_config_schema(),
-            dagster_maintained=self._dagster_maintained,
+            dagster_maintained=self._is_dagster_maintained(),
         )
 
     @classmethod
@@ -1368,7 +1370,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._dagster_maintained,  # noqa: SLF001
+            dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
 
@@ -1624,7 +1626,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self._dagster_maintained,
+            dagster_maintained=self._is_dagster_maintained(),
         )
 
 

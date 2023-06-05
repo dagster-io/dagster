@@ -131,8 +131,7 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     )
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     @cached_method

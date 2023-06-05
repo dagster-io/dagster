@@ -200,8 +200,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     )
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     def _read_yaml_config(self, path: str) -> Mapping[str, Any]:

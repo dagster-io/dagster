@@ -1633,7 +1633,7 @@ def external_resource_data_from_def(
         resource_type = _get_class_name(type(resource_type_def))
 
     dagster_maintained = (
-        resource_type_def._dagster_maintained  # noqa: SLF001
+        resource_type_def._is_dagster_maintained()  # noqa: SLF001
         if type(resource_type_def)
         in (
             ResourceDefinition,

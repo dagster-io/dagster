@@ -500,14 +500,13 @@ def test_telemetry_custom_io_manager():
         def load_input(self, context):
             return 1
 
-    assert not MyIOManager._dagster_maintained
+    assert not MyIOManager._is_dagster_maintained()
 
 
 def test_telemetry_dagster_io_manager():
     class MyIOManager(ConfigurableIOManager):
         @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
+        def _is_dagster_maintained(cls) -> bool:
             return True
 
         def handle_output(self, context, obj):
@@ -516,7 +515,7 @@ def test_telemetry_dagster_io_manager():
         def load_input(self, context):
             return 1
 
-    assert MyIOManager()._dagster_maintained  # noqa: SLF001
+    assert MyIOManager()._is_dagster_maintained()  # noqa: SLF001
 
 
 def test_telemetry_custom_io_manager_factory():
@@ -531,7 +530,7 @@ def test_telemetry_custom_io_manager_factory():
         def create_io_manager(self, _) -> IOManager:
             return MyIOManager()
 
-    assert not AnIOManagerFactory()._dagster_maintained  # noqa: SLF001
+    assert not AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
 
 
 def test_telemetry_dagster_io_manager_factory():
@@ -544,11 +543,10 @@ def test_telemetry_dagster_io_manager_factory():
 
     class AnIOManagerFactory(ConfigurableIOManagerFactory):
         @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
+        def _is_dagster_maintained(cls) -> bool:
             return True
 
         def create_io_manager(self, _) -> IOManager:
             return MyIOManager()
 
-    assert AnIOManagerFactory()._dagster_maintained  # noqa: SLF001
+    assert AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001

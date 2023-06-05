@@ -147,8 +147,7 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
+    def _is_dagster_maintained(cls) -> bool:
         return True
 
     @property
