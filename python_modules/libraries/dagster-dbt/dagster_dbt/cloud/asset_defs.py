@@ -77,7 +77,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
         self._dbt_cloud: DbtCloudClient = (
-            dbt_cloud_resource_def._process_config_and_initialize().get_dbt_client()  # noqa: SLF001
+            dbt_cloud_resource_def.process_config_and_initialize().get_dbt_client()
             if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
             else dbt_cloud_resource_def(build_init_resource_context())
         )
