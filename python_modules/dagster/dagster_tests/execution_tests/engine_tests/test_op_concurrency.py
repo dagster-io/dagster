@@ -277,8 +277,8 @@ def test_multi_run_concurrency(instance, workspace, two_tier_job_def):
     run_two = _create_run(instance, workspace, two_tier_job_def)
     instance.launch_run(run_id=run_one.run_id, workspace=workspace)
     instance.launch_run(run_id=run_two.run_id, workspace=workspace)
-    run_one = poll_for_finished_run(instance, run_one.run_id)
-    run_two = poll_for_finished_run(instance, run_two.run_id)
+    run_one = spoll_for_finished_run(instance, run_one.run_id)
+    run_two = spoll_for_finished_run(instance, run_two.run_id)
 
     assert run_one.status == DagsterRunStatus.SUCCESS
     assert run_two.status == DagsterRunStatus.SUCCESS
@@ -302,3 +302,32 @@ def test_multi_run_concurrency(instance, workspace, two_tier_job_def):
     assert foo_info.active_slot_count == 0
     assert foo_info.pending_step_count == 0
     assert foo_info.assigned_step_count == 0
+
+
+def spoll_for_finished_run(instance: DagsterInstance, run_id: str):
+    from dagster._core.storage.dagster_run import RunsFilter
+
+    total_time = 0
+    interval = 0.01
+
+    filters = RunsFilter(
+        run_ids=run_id,
+        statuses=[
+            DagsterRunStatus.SUCCESS,
+            DagsterRunStatus.FAILURE,
+            DagsterRunStatus.CANCELED,
+        ],
+    )
+
+    while True:
+        runs = instance.get_runs(filters, limit=1)
+
+        if runs:
+            return runs[0]
+        else:
+            time.sleep(interval)
+            foo_info = instance.event_log_storage.get_concurrency_info("foo")
+            print("waiting for", run_id, foo_info)
+            total_time += interval
+            if total_time > 20:
+                raise Exception("Timed out")
