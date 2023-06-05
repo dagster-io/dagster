@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, NamedTuple, Optional, Type, TypeVar, Union, cast
 
 from typing_extensions import Self
 
@@ -192,6 +192,61 @@ T_Configurable = TypeVar(
 )
 
 
+class UpdatedFunctionAndConfigSchema(NamedTuple):
+    function: Callable[[Any], Any]
+    config_schema: Optional[UserConfigSchema]
+
+
+def _wrap_user_fn_if_pythonic_config(
+    user_fn: Any, config_schema: Optional[UserConfigSchema]
+) -> UpdatedFunctionAndConfigSchema:
+    """Helper function which allows users to provide a Pythonic config object to a @configurable
+    function. Detects if the function has a single parameter annotated with a Config class.
+    If so, wraps the function to convert the config dictionary into the appropriate Config object.
+    """
+    from dagster._config.pythonic_config import (
+        Config,
+        infer_schema_from_config_annotation,
+        safe_is_subclass,
+    )
+    from dagster._core.decorator_utils import get_function_params
+
+    config_fn_params = get_function_params(user_fn)
+    check.invariant(len(config_fn_params) == 1, "Config mapping should have exactly one parameter")
+
+    param = config_fn_params[0]
+
+    # If the parameter is a subclass of Config, we can infer the config schema from the
+    # type annotation. We'll also wrap the config mapping function to convert the config
+    # dictionary into the appropriate Config object.
+    if safe_is_subclass(param.annotation, Config):
+        check.invariant(
+            config_schema is None,
+            "Cannot provide config_schema to config mapping with Config-annotated param",
+        )
+
+        config_schema_from_class = infer_schema_from_config_annotation(
+            param.annotation, param.default
+        )
+        config_cls = cast(Type[Config], param.annotation)
+
+        param_name = param.name
+
+        def wrapped_fn(config_as_dict) -> Any:
+            config_input = config_cls(**config_as_dict)
+            output = user_fn(**{param_name: config_input})
+
+            if isinstance(output, Config):
+                return output._convert_to_config_dictionary()  # noqa: SLF001
+            else:
+                return output
+
+        return UpdatedFunctionAndConfigSchema(
+            function=wrapped_fn, config_schema=config_schema_from_class
+        )
+    return UpdatedFunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
+
+
 def configured(
     configurable: T_Configurable,
     config_schema: Optional[UserConfigSchema] = None,
@@ -250,10 +305,14 @@ def configured(
                 else None
             )
             name: str = check.not_none(kwargs.get("name") or fn_name)
+
+            updated_fn, new_config_schema = _wrap_user_fn_if_pythonic_config(
+                config_or_config_fn, config_schema
+            )
             return configurable.configured(
-                config_or_config_fn=config_or_config_fn,
+                config_or_config_fn=updated_fn,
                 name=name,
-                config_schema=config_schema,
+                config_schema=new_config_schema,
                 **{k: v for k, v in kwargs.items() if k != "name"},
             )
 
@@ -261,8 +320,11 @@ def configured(
     elif isinstance(configurable, AnonymousConfigurableDefinition):
 
         def _configured(config_or_config_fn: object) -> T_Configurable:
+            updated_fn, new_config_schema = _wrap_user_fn_if_pythonic_config(
+                config_or_config_fn, config_schema
+            )
             return configurable.configured(
-                config_schema=config_schema, config_or_config_fn=config_or_config_fn, **kwargs
+                config_schema=new_config_schema, config_or_config_fn=updated_fn, **kwargs
             )
 
         return _configured
