@@ -1,10 +1,12 @@
 import copy
+import datetime
 from typing import Sequence
 
 from dagster import (
     AssetsDefinition,
     PartitionKeyRange,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_condition import (
     MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
@@ -12,7 +14,6 @@ from dagster._core.definitions.auto_materialize_condition import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (
@@ -23,7 +24,10 @@ from .asset_reconciliation_scenario import (
     single_asset_run,
 )
 from .basic_scenarios import diamond
-from .freshness_policy_scenarios import daily_to_unpartitioned, overlapping_freshness_inf
+from .freshness_policy_scenarios import (
+    daily_to_unpartitioned,
+    overlapping_freshness_inf,
+)
 from .partition_scenarios import (
     hourly_partitions_def,
     hourly_to_daily_partitions,
@@ -229,28 +233,26 @@ auto_materialize_policy_scenarios = {
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
     ),
-    "zzz": AssetReconciliationScenario(
+    "auto_materialize_policy_lazy_with_manual_source": AssetReconciliationScenario(
         assets=[
+            asset_def("a"),
+            asset_def("b", ["a"]),
+            asset_def("c", ["b"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
+            asset_def("d", ["c"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
             asset_def(
-                "hourly", partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-            ),
-            asset_def("a", ["hourly"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
-            asset_def(
-                "b",
-                ["a"],
-                freshness_policy=FreshnessPolicy(maximum_lag_minutes=60 * 2),
+                "e",
+                ["d"],
                 auto_materialize_policy=AutoMaterializePolicy.lazy(),
+                freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
             ),
         ],
-        current_time=create_pendulum_time(year=2020, month=1, day=1, hour=5, minute=7, tz="UTC"),
         unevaluated_runs=[
-            run(["hourly"], partition_key="2020-01-01-00:00"),
-            run(["hourly"], partition_key="2020-01-01-01:00"),
-            run(["a", "b", "c"]),
-            run(["hourly"], partition_key="2020-01-01-04:00"),
-            run(["hourly"], partition_key="2020-01-01-05:00"),
-            # run(["a"]),
+            run(["a", "b", "c", "d"]),
+            run(["a", "b"]),
+            run(["a"]),
         ],
-        expected_run_requests=[],
+        asset_selection=AssetSelection.keys("c", "d", "e"),
+        between_runs_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["c", "d", "e"])],
     ),
 }
