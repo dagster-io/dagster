@@ -252,6 +252,7 @@ def build_source_asset_observation_job(
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that observes the given source assets.
@@ -338,6 +339,7 @@ def build_source_asset_observation_job(
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
+        hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
 
