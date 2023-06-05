@@ -72,13 +72,15 @@ describe('getEvaluationsWithSkips', () => {
         {
           __typename: 'no_conditions_met',
           amount: 7,
-          timestamp: Date.now() / 1000,
+          startTimestamp: evaluations[0].timestamp + 60,
+          endTimestamp: 'now',
         },
         ...evaluations,
         {
           __typename: 'no_conditions_met',
           amount: 1,
-          timestamp: evaluations[1].timestamp - 60,
+          endTimestamp: evaluations[1].timestamp - 60,
+          startTimestamp: 0,
         },
       ]);
     },
@@ -119,7 +121,8 @@ describe('getEvaluationsWithSkips', () => {
       {
         __typename: 'no_conditions_met',
         amount: 1,
-        timestamp: evaluations[0].timestamp - 60,
+        endTimestamp: evaluations[0].timestamp - 60,
+        startTimestamp: evaluations[1].timestamp + 60,
       },
       evaluations[1],
     ]);
