@@ -665,9 +665,7 @@ class JobDefinition(IHasInternalInit):
                 run_config
                 if run_config
                 else convert_config_input(
-                    self.partitioned_config.get_run_config_for_partition_key(
-                        partition_key
-                    )
+                    self.partitioned_config.get_run_config_for_partition_key(partition_key)
                 )
             )
             merged_tags.update(
