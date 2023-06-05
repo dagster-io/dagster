@@ -133,12 +133,10 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
 
 class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
     records = non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord)
+    currentEvaluationId = graphene.Int()
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecords"
-
-    def __init__(self, records: List[AutoMaterializeAssetEvaluationRecord]):
-        super().__init__(records=records)
 
 
 class GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(graphene.ObjectType):

@@ -1,6 +1,7 @@
 from typing import Optional
 
 from dagster import AssetKey, DagsterInstance
+from dagster._daemon.asset_daemon import get_current_evaluation_id
 
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
@@ -29,6 +30,8 @@ def fetch_auto_materialize_asset_evaluations(
             )
         )
 
+    current_evaluation_id = get_current_evaluation_id(instance)
+
     return GrapheneAutoMaterializeAssetEvaluationRecords(
         records=[
             GrapheneAutoMaterializeAssetEvaluationRecord(record)
@@ -37,5 +40,6 @@ def fetch_auto_materialize_asset_evaluations(
                 limit=limit,
                 cursor=int(cursor) if cursor else None,
             )
-        ]
+        ],
+        currentEvaluationId=current_evaluation_id,
     )
