@@ -26,6 +26,7 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
+from dagster._annotations import deprecated
 from dagster._config.config_type import (
     Array,
     ConfigFloatInstance,
@@ -52,7 +53,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
 
 from .attach_other_object_to_context import (
@@ -915,7 +916,13 @@ class ConfigurableResourceFactory(
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
+    @deprecated
     def with_resource_context(
+        self, resource_context: InitResourceContext
+    ) -> "ConfigurableResourceFactory[TResValue]":
+        return self.with_replaced_resource_context(resource_context)
+
+    def with_replaced_resource_context(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given resource init context bound."""
@@ -929,7 +936,7 @@ class ConfigurableResourceFactory(
 
     def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+            updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
@@ -941,7 +948,7 @@ class ConfigurableResourceFactory(
         self, context: InitResourceContext
     ) -> Generator[TResValue, None, None]:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+            updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
@@ -983,6 +990,20 @@ class ConfigurableResourceFactory(
         return check.not_none(
             self._state__internal__.resource_context,
             additional_message="Attempted to get context before resource was initialized.",
+        )
+
+    def process_config_and_initialize(self) -> TResValue:
+        """Initializes this resource, fully processing its config and returning the prepared
+        resource value.
+        """
+        from dagster._config.post_process import post_process_config
+
+        return self.from_resource_context(
+            build_init_resource_context(
+                config=post_process_config(
+                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                ).value
+            )
         )
 
     @classmethod
