@@ -194,7 +194,8 @@ export function getEvaluationsWithSkips({
       evalsWithSkips.push({
         __typename: 'no_conditions_met' as const,
         amount: current - evaluation.evaluationId,
-        timestamp: prevEvaluation?.timestamp ? prevEvaluation?.timestamp - 60 : Date.now() / 1000,
+        endTimestamp: prevEvaluation?.timestamp ? prevEvaluation?.timestamp - 60 : ('now' as const),
+        startTimestamp: evaluation.timestamp + 60,
       });
     }
     evalsWithSkips.push(evaluation);
@@ -205,7 +206,8 @@ export function getEvaluationsWithSkips({
     evalsWithSkips.push({
       __typename: 'no_conditions_met' as const,
       amount: current - 0,
-      timestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : Date.now() / 1000,
+      endTimestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : ('now' as const),
+      startTimestamp: 0,
     });
   }
   return evalsWithSkips;
@@ -251,14 +253,48 @@ function LeftPanel({
             return (
               <EvaluationRow
                 style={{cursor: 'default'}}
-                key={`skip-${evaluation.timestamp}`}
+                key={`skip-${evaluation.endTimestamp}`}
                 flex={{direction: 'column'}}
               >
                 <Box
-                  padding={{left: 32}}
+                  padding={{left: 12}}
                   border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+                  flex={{direction: 'column', gap: 4}}
+                  style={{width: '100%'}}
                 >
                   <div>No materialization conditions met </div>
+                  <div>
+                    {evaluation.startTimestamp ? (
+                      <>
+                        <TimestampDisplay timestamp={evaluation.startTimestamp} />
+                        {' - '}
+                      </>
+                    ) : (
+                      'Before '
+                    )}
+                    {evaluation.endTimestamp === 'now' ? (
+                      'now'
+                    ) : (
+                      <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                    )}
+                  </div>
+                </Box>
+              </EvaluationRow>
+            );
+          }
+          if (evaluation.numSkipped) {
+            return (
+              <EvaluationRow style={{cursor: 'default'}} key={`skip-${evaluation.timestamp}`}>
+                <Box
+                  padding={{left: 12}}
+                  border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+                  flex={{direction: 'column', gap: 4}}
+                  style={{width: '100%'}}
+                >
+                  <div style={{color: Colors.Yellow700}}>
+                    {evaluation.numSkipped} materialization{evaluation.numSkipped === 1 ? '' : 's'}{' '}
+                    skipped{' '}
+                  </div>
                   <TimestampDisplay timestamp={evaluation.timestamp} />
                 </Box>
               </EvaluationRow>
@@ -267,37 +303,18 @@ function LeftPanel({
           const isSelected = selectedEvaluation === evaluation;
           return (
             <EvaluationRow
-              flex={{justifyContent: 'space-between'}}
               key={evaluation.evaluationId}
               onClick={() => {
                 onSelectEvaluation(evaluation);
               }}
               $selected={isSelected}
             >
-              <TimestampDisplay timestamp={evaluation.timestamp} />
-              {evaluation.numRequested ? (
-                <Icon name="auto_materialize_policy" size={24} />
-              ) : evaluation.numSkipped ? (
-                <div
-                  style={{
-                    margin: '7px',
-                    borderRadius: '50%',
-                    height: '10px',
-                    width: '10px',
-                    background: Colors.Yellow500,
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    margin: '7px',
-                    borderRadius: '50%',
-                    height: '10px',
-                    width: '10px',
-                    background: Colors.Yellow50,
-                  }}
-                />
-              )}
+              <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
+                <div style={{color: Colors.Blue700}}>
+                  {evaluation.numRequested} run{evaluation.numRequested === 1 ? '' : 's'} requested
+                </div>
+                <TimestampDisplay timestamp={evaluation.timestamp} />
+              </Box>
             </EvaluationRow>
           );
         })}
