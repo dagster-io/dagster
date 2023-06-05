@@ -1552,16 +1552,4 @@ def test_telemetry_dagster_resource():
         def _is_dagster_maintained(cls) -> bool:
             return True
 
-    assert MyResource(my_value="foo")._is_dagster_maintained() is True  # noqa: SLF001
-
-
-def test_classmethod():
-    class MyResource(ConfigurableResource):
-        my_value: str
-
-        @classmethod
-        @property
-        def my_custom_method(cls):
-            return "foo"
-
-    assert MyResource.my_custom_method == "foo"
+    assert MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001

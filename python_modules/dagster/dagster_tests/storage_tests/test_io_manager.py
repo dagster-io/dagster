@@ -1100,7 +1100,7 @@ def test_telemetry_custom_io_manager():
     def my_io_manager():
         return MyIOManager()
 
-    assert not my_io_manager._dagster_maintained()  # noqa: SLF001
+    assert not my_io_manager._is_dagster_maintained()  # noqa: SLF001
 
 
 def test_telemetry_dagster_io_manager():
@@ -1116,4 +1116,4 @@ def test_telemetry_dagster_io_manager():
     def my_io_manager():
         return MyIOManager()
 
-    assert my_io_manager._dagster_maintained()  # noqa: SLF001
+    assert my_io_manager._is_dagster_maintained()  # noqa: SLF001
