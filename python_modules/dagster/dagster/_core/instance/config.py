@@ -337,7 +337,6 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 "max_resume_run_attempts": Field(int, is_required=False),
                 "poll_interval_seconds": Field(int, is_required=False),
                 "cancellation_thread_poll_interval_seconds": Field(int, is_required=False),
-                "free_concurrency_slots_seconds": Field(int, is_required=False),
             },
         ),
         "run_retries": Field(
