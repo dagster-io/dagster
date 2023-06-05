@@ -169,6 +169,48 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
   );
 };
 
+export function getEvaluationsWithSkips({
+  isLoading,
+  currentEvaluationId,
+  evaluations,
+  isFirstPage,
+  isLastPage,
+}: {
+  evaluations: EvaluationType[];
+  currentEvaluationId: number | null;
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  isLoading: boolean;
+}) {
+  if (isLoading || !currentEvaluationId) {
+    return [];
+  }
+  const evalsWithSkips = [];
+  let current = isFirstPage ? currentEvaluationId : evaluations[0]?.evaluationId || 1;
+  for (let i = 0; i < evaluations.length; i++) {
+    const evaluation = evaluations[i];
+    const prevEvaluation = evaluations[i - 1];
+    if (evaluation.evaluationId !== current) {
+      evalsWithSkips.push({
+        __typename: 'no_conditions_met' as const,
+        amount: current - evaluation.evaluationId,
+        timestamp: prevEvaluation?.timestamp ? prevEvaluation?.timestamp - 60 : Date.now() / 1000,
+      });
+    }
+    evalsWithSkips.push(evaluation);
+    current = evaluation.evaluationId - 1;
+  }
+  if (isLastPage && current > 0) {
+    const lastEvaluation = evaluations[evaluations.length - 1];
+    evalsWithSkips.push({
+      __typename: 'no_conditions_met' as const,
+      amount: current - 0,
+      timestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : Date.now() / 1000,
+    });
+  }
+  return evalsWithSkips;
+}
+
 export const PAGE_SIZE = 30;
 function LeftPanel({
   evaluations,
@@ -189,37 +231,17 @@ function LeftPanel({
   isLastPage: boolean;
   isLoading: boolean;
 }) {
-  const evaluationsWithSkips = React.useMemo(() => {
-    if (isLoading || !currentEvaluationId) {
-      return [];
-    }
-    const evalsWithSkips = [];
-    let current = isFirstPage ? currentEvaluationId : evaluations[0]?.evaluationId || 1;
-    for (let i = 0; i < evaluations.length; i++) {
-      const evaluation = evaluations[i];
-      const prevEvaluation = evaluations[i - 1];
-      if (evaluation.evaluationId !== current) {
-        evalsWithSkips.push({
-          __typename: 'no_conditions_met' as const,
-          amount: current - evaluation.evaluationId,
-          timestamp: prevEvaluation?.timestamp ? prevEvaluation?.timestamp - 60 : Date.now() / 1000,
-        });
-      }
-      evalsWithSkips.push(evaluation);
-      current = evaluation.evaluationId;
-    }
-    if (isLastPage && current !== 1) {
-      const lastEvaluation = evaluations[evaluations.length - 1];
-      evalsWithSkips.push({
-        __typename: 'no_conditions_met' as const,
-        amount: currentEvaluationId - (lastEvaluation?.evaluationId || 0),
-        timestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : Date.now() / 1000,
-      });
-    }
-    return evalsWithSkips;
-  }, [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading]);
-
-  console.log({evaluationsWithSkips});
+  const evaluationsWithSkips = React.useMemo(
+    () =>
+      getEvaluationsWithSkips({
+        currentEvaluationId,
+        evaluations,
+        isFirstPage,
+        isLastPage,
+        isLoading,
+      }),
+    [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
+  );
 
   return (
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
