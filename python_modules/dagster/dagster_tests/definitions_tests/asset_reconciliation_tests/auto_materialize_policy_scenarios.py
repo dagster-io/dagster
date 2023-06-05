@@ -4,6 +4,7 @@ from dagster import (
     AssetsDefinition,
     PartitionKeyRange,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_condition import (
     MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
@@ -250,12 +251,14 @@ auto_materialize_policy_scenarios = {
     ),
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
+        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
         expected_run_requests=[],
     ),
     "time_partitioned_after_partitioned_upstream_materialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
+        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[run(["unpartitioned_root_a"])],
         current_time=create_pendulum_time(year=2013, month=1, day=5, hour=1, minute=5),
         expected_run_requests=[
@@ -264,6 +267,7 @@ auto_materialize_policy_scenarios = {
     ),
     "time_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
+        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[
             run(["unpartitioned_root_a"]),
             run(["time_partitioned"], partition_key="2013-01-05-00:00"),
@@ -276,6 +280,7 @@ auto_materialize_policy_scenarios = {
     ),
     "time_partitioned_after_partitioned_upstream_rematerialized2": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
+        asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[
             run(["unpartitioned_root_a"]),
             run(["unpartitioned_root_b"]),
@@ -294,6 +299,7 @@ auto_materialize_policy_scenarios = {
     ),
     "static_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(
         assets=static_partitioned_eager_after_non_partitioned,
+        asset_selection=AssetSelection.keys("static_partitioned"),
         unevaluated_runs=[
             run(["unpartitioned"]),
             run(["static_partitioned"], partition_key="a"),

@@ -16,13 +16,14 @@ ASSET_RECONCILIATION_SCENARIOS = {
     **partition_scenarios,
     **basic_scenarios,
     **freshness_policy_scenarios,
+    **auto_materialize_policy_scenarios,
     **observable_source_asset_scenarios,
     **definition_change_scenarios,
     **active_run_scenarios,
 }
 
 # put repos in the global namespace so that the daemon can load them with LoadableTargetOrigin
-for scenario_name, scenario in auto_materialize_policy_scenarios.items():
+for scenario_name, scenario in ASSET_RECONCILIATION_SCENARIOS.items():
     assert scenario.assets is not None and scenario.code_locations is None
     d = Definitions(assets=scenario.assets, executor=in_process_executor)
     globals()["hacky_daemon_repo_" + scenario_name] = d.get_repository_def()
