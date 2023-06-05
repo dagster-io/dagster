@@ -34,6 +34,7 @@ from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition, default_job_io_manager
+from .metadata import RawMetadataValue
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition
@@ -116,6 +117,7 @@ def build_assets_job(
         Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
@@ -229,6 +231,7 @@ def build_assets_job(
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
+        metadata=metadata,
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
