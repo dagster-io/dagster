@@ -29,9 +29,9 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
     DEFAULT_DATA_VERSION,
+    NULL_EVENT_POINTER,
     DataVersion,
     compute_logical_data_version,
-    extract_data_version_from_entry,
     get_input_data_version_tag,
     get_input_event_pointer_tag,
 )
@@ -359,7 +359,7 @@ def core_dagster_event_sequence_for_step(
     inputs = {}
 
     if step_context.is_sda_step:
-        step_context.fetch_external_input_asset_records()
+        step_context.fetch_external_input_asset_version_info()
 
     for step_input in step_context.step.step_inputs:
         input_def = step_context.op_def.input_def_named(step_input.name)
@@ -495,11 +495,11 @@ def _get_output_asset_materializations(
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
-    step_context.wipe_input_asset_record(asset_key)
+    step_context.wipe_input_asset_version_info(asset_key)
 
     tags: Dict[str, str]
     if (
-        step_context.is_external_input_asset_records_loaded
+        step_context.is_external_input_asset_version_info_loaded
         and asset_key in step_context.job_def.asset_layer.asset_keys
     ):
         assert isinstance(output, Output)
@@ -573,16 +573,19 @@ def _get_input_provenance_data(
         # the most recent materialization record (it will retrieve a cached record if it's already
         # been asked for). For this to be correct, the output materializations for the step must be
         # generated in topological order -- we assume this.
-        event = step_context.get_input_asset_record(key)
-        if event is not None:
-            data_version = (
-                extract_data_version_from_entry(event.event_log_entry) or DEFAULT_DATA_VERSION
-            )
-        else:
+        version_info = step_context.get_input_asset_version_info(key)
+
+        # This can only happen for source assets that have never been observed.
+        if version_info is None:
+            storage_id = None
             data_version = DEFAULT_DATA_VERSION
+        else:
+            storage_id = version_info.storage_id
+            data_version = version_info.data_version or DEFAULT_DATA_VERSION
+
         input_provenance[key] = {
             "data_version": data_version,
-            "storage_id": event.storage_id if event else None,
+            "storage_id": storage_id,
         }
     return input_provenance
 
@@ -598,7 +601,7 @@ def _build_data_version_tags(
     for key, meta in input_provenance_data.items():
         tags[get_input_data_version_tag(key)] = meta["data_version"].value
         tags[get_input_event_pointer_tag(key)] = (
-            str(meta["storage_id"]) if meta["storage_id"] else "NULL"
+            str(meta["storage_id"]) if meta["storage_id"] else NULL_EVENT_POINTER
         )
     tags[DATA_VERSION_TAG] = data_version.value
     if data_version_is_user_provided:
