@@ -1,3 +1,4 @@
+import tempfile
 from logging import Logger
 
 import pendulum
@@ -12,18 +13,24 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.concurrency import execute_concurrency_slots_iteration
+from dagster._daemon.monitoring.concurrency import execute_concurrency_slots_iteration
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 @pytest.fixture
 def instance():
-    with instance_for_test(
-        overrides={
-            "run_monitoring": {"enabled": True, "free_concurrency_slots_seconds": 60},
-        },
-    ) as instance:
-        yield instance
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "run_monitoring": {"enabled": True, "free_concurrency_slots_seconds": 60},
+            },
+        ) as instance:
+            yield instance
 
 
 @pytest.fixture
@@ -36,7 +43,7 @@ def workspace_context(instance):
 
 @pytest.fixture
 def logger():
-    return get_default_daemon_logger("ConcurrencySlotsDaemon")
+    return get_default_daemon_logger("MonitoringDaemon")
 
 
 def test_global_concurrency_release(

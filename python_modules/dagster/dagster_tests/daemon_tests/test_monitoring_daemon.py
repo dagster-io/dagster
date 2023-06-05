@@ -22,7 +22,7 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.monitoring.monitoring_daemon import (
+from dagster._daemon.monitoring.run_monitoring import (
     monitor_canceling_run,
     monitor_started_run,
     monitor_starting_run,

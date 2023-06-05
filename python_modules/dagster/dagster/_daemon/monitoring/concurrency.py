@@ -11,6 +11,8 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
 
+RUN_BATCH_SIZE = 1000
+
 
 def execute_concurrency_slots_iteration(
     workspace_process_context: IWorkspaceProcessContext,
@@ -23,18 +25,26 @@ def execute_concurrency_slots_iteration(
         yield
         return
 
+    if not instance.event_log_storage.supports_global_concurrency_limits:
+        yield
+        return
+
     run_ids = instance.event_log_storage.get_concurrency_run_ids()
     if not run_ids:
         yield
         return
 
-    run_records = instance.get_run_records(filters=RunsFilter(run_ids=list(run_ids)))
-    now = pendulum.now("UTC").timestamp()
+    now = pendulum.now("UTC")
+    run_records = instance.get_run_records(
+        filters=RunsFilter(
+            run_ids=list(run_ids),
+            statuses=FINISHED_STATUSES,
+            updated_before=now.subtract(seconds=timeout_seconds),
+        ),
+        limit=RUN_BATCH_SIZE,
+    )
     for run_record in run_records:
-        if run_record.dagster_run.status not in FINISHED_STATUSES:
-            continue
-
-        if run_record.end_time + timeout_seconds < now:
+        if run_record.end_time + timeout_seconds < now.timestamp():
             freed_slots = instance.event_log_storage.free_concurrency_slots_for_run(
                 run_record.dagster_run.run_id
             )
