@@ -46,6 +46,8 @@ class CheckRunHealthResult(NamedTuple):
 
     status: WorkerStatus
     msg: Optional[str] = None
+    transient: Optional[bool] = None
+    run_worker_id: Optional[str] = None  # Identifier for a particular run worker
 
     def __str__(self) -> str:
         return f"{self.status.value}: '{self.msg}'"

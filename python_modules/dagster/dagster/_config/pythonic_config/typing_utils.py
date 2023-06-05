@@ -4,6 +4,8 @@ import pydantic
 from pydantic import Field
 from typing_extensions import dataclass_transform, get_origin
 
+from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
+
 from .utils import safe_is_subclass
 
 if TYPE_CHECKING:
@@ -51,7 +53,29 @@ class LateBoundTypesForResourceTypeChecking:
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseResourceMeta(pydantic.main.ModelMetaclass):
+class BaseConfigMeta(pydantic.main.ModelMetaclass):
+    def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
+        annotations = namespaces.get("__annotations__", {})
+
+        # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
+        # being created
+        # Any user-created Config class will have DagsterType loaded by the time it's created, so this
+        # will only affect the base Config classes (where this error won't be an issue)
+        try:
+            from dagster._core.types.dagster_type import DagsterType
+
+            for field in annotations:
+                if isinstance(annotations[field], DagsterType):
+                    raise DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(name, field)
+
+        except ImportError:
+            pass
+
+        return super().__new__(cls, name, bases, namespaces, **kwargs)
+
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+class BaseResourceMeta(BaseConfigMeta):
     """Custom metaclass for Resource and PartialResource. This metaclass is responsible for
     transforming the type annotations on the class so that Pydantic constructor-time validation
     does not error when users provide partially configured resources to resource params.

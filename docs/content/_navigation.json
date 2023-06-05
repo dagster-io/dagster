@@ -455,7 +455,7 @@
                 "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
               },
               {
-                "title": "Setting up SSO",
+                "title": "SSO and provisioning",
                 "children": [
                   {
                     "title": "Azure Active Directory",
@@ -467,7 +467,16 @@
                   },
                   {
                     "title": "Okta",
-                    "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                    "children": [
+                      {
+                        "title": "SSO",
+                        "path": "/dagster-cloud/account/authentication/okta/saml-sso"
+                      },
+                      {
+                        "title": "SCIM provisioning",
+                        "path": "/dagster-cloud/account/authentication/okta/scim-provisioning"
+                      }
+                    ]
                   },
                   {
                     "title": "OneLogin",
@@ -821,6 +830,10 @@
           {
             "title": "Building machine learning pipelines",
             "path": "/guides/dagster/ml-pipeline"
+          },
+          {
+            "title": "Managing machine learning models with Dagster",
+            "path": "/guides/dagster/managing-ml"
           },
           {
             "title": "Exploring a Dagster project",

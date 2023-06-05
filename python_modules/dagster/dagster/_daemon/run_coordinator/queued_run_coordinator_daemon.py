@@ -25,6 +25,7 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
@@ -48,7 +49,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         if self._executor is None:
             # assumes max_workers wont change
             self._executor = self._exit_stack.enter_context(
-                ThreadPoolExecutor(
+                InheritContextThreadPoolExecutor(
                     max_workers=max_workers,
                     thread_name_prefix="run_dequeue_worker",
                 )

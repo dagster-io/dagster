@@ -1,5 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter} from 'react-router';
 
@@ -46,13 +47,13 @@ describe('AssetTable', () => {
 
       const row1 = await screen.findByTestId(`row-dashboards/cost_dashboard`);
       const checkbox1 = row1.querySelector('input[type=checkbox]') as HTMLInputElement;
-      await checkbox1.click();
+      await userEvent.click(checkbox1);
 
       expect(await screen.findByTestId('materialize-button')).toHaveTextContent('Materialize');
 
       const row2 = await screen.findByTestId(`row-dashboards/traffic_dashboard`);
       const checkbox2 = row2.querySelector('input[type=checkbox]') as HTMLInputElement;
-      await checkbox2.click();
+      await userEvent.click(checkbox2);
 
       expect(await screen.findByTestId('materialize-button')).toHaveTextContent('Materialize (2)');
     });
