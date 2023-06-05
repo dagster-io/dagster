@@ -14,6 +14,7 @@ export type GetEvaluationsQuery = {
     | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | {
         __typename: 'AutoMaterializeAssetEvaluationRecords';
+        currentEvaluationId: number | null;
         records: Array<{
           __typename: 'AutoMaterializeAssetEvaluationRecord';
           id: string;

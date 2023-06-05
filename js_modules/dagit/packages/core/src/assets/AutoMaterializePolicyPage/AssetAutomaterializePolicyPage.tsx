@@ -81,14 +81,18 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const evaluations = React.useMemo(() => {
+  const {evaluations, currentEvaluationId} = React.useMemo(() => {
     if (
       queryResult.data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
       'AutoMaterializeAssetEvaluationRecords'
     ) {
-      return queryResult.data?.autoMaterializeAssetEvaluationsOrError.records;
+      return {
+        evaluations: queryResult.data?.autoMaterializeAssetEvaluationsOrError.records,
+        currentEvaluationId:
+          queryResult.data.autoMaterializeAssetEvaluationsOrError.currentEvaluationId,
+      };
     }
-    return [];
+    return {evaluations: [], currentEvaluationId: null};
   }, [queryResult.data?.autoMaterializeAssetEvaluationsOrError]);
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
@@ -139,6 +143,10 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
                 setSelectedEvaluationId(evaluation.evaluationId);
               }}
               selectedEvaluation={selectedEvaluation}
+              currentEvaluationId={currentEvaluationId}
+              isFirstPage={!paginationProps.hasPrevCursor}
+              isLastPage={!paginationProps.hasNextCursor}
+              isLoading={queryResult.loading && !queryResult.data}
             />
           </Box>
           <Box flex={{grow: 1}} style={{minHeight: 0}}>
@@ -161,58 +169,159 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
   );
 };
 
+export function getEvaluationsWithSkips({
+  isLoading,
+  currentEvaluationId,
+  evaluations,
+  isFirstPage,
+  isLastPage,
+}: {
+  evaluations: EvaluationType[];
+  currentEvaluationId: number | null;
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  isLoading: boolean;
+}) {
+  if (isLoading || !currentEvaluationId) {
+    return [];
+  }
+  const evalsWithSkips = [];
+  let current = isFirstPage ? currentEvaluationId : evaluations[0]?.evaluationId || 1;
+  for (let i = 0; i < evaluations.length; i++) {
+    const evaluation = evaluations[i];
+    const prevEvaluation = evaluations[i - 1];
+    if (evaluation.evaluationId !== current) {
+      evalsWithSkips.push({
+        __typename: 'no_conditions_met' as const,
+        amount: current - evaluation.evaluationId,
+        endTimestamp: prevEvaluation?.timestamp ? prevEvaluation?.timestamp - 60 : ('now' as const),
+        startTimestamp: evaluation.timestamp + 60,
+      });
+    }
+    evalsWithSkips.push(evaluation);
+    current = evaluation.evaluationId - 1;
+  }
+  if (isLastPage && current > 0) {
+    const lastEvaluation = evaluations[evaluations.length - 1];
+    evalsWithSkips.push({
+      __typename: 'no_conditions_met' as const,
+      amount: current - 0,
+      endTimestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : ('now' as const),
+      startTimestamp: 0,
+    });
+  }
+  return evalsWithSkips;
+}
+
 export const PAGE_SIZE = 30;
 function LeftPanel({
   evaluations,
   paginationProps,
   onSelectEvaluation,
   selectedEvaluation,
+  currentEvaluationId,
+  isFirstPage,
+  isLastPage,
+  isLoading,
 }: {
   evaluations: EvaluationType[];
   paginationProps: ReturnType<typeof useEvaluationsQueryResult>['paginationProps'];
   onSelectEvaluation: (evaluation: EvaluationType) => void;
   selectedEvaluation?: EvaluationType;
+  currentEvaluationId: number | null;
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  isLoading: boolean;
 }) {
+  const evaluationsWithSkips = React.useMemo(
+    () =>
+      getEvaluationsWithSkips({
+        currentEvaluationId,
+        evaluations,
+        isFirstPage,
+        isLastPage,
+        isLoading,
+      }),
+    [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
+  );
+
   return (
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
       <Box style={{flex: 1, minHeight: 0, overflowY: 'auto'}} flex={{grow: 1, direction: 'column'}}>
-        {evaluations.map((evaluation) => {
+        {evaluationsWithSkips.map((evaluation) => {
+          if (evaluation.__typename === 'no_conditions_met') {
+            return (
+              <EvaluationRow
+                style={{cursor: 'default'}}
+                key={`skip-${evaluation.endTimestamp}`}
+                flex={{direction: 'column'}}
+              >
+                <Box
+                  padding={{left: 16}}
+                  border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+                  flex={{direction: 'column', gap: 4}}
+                  style={{width: '100%'}}
+                >
+                  <div>No materialization conditions met </div>
+                  <div>
+                    {evaluation.startTimestamp ? (
+                      <>
+                        <TimestampDisplay timestamp={evaluation.startTimestamp} />
+                        {' - '}
+                      </>
+                    ) : (
+                      'Before '
+                    )}
+                    {evaluation.endTimestamp === 'now' ? (
+                      'now'
+                    ) : (
+                      <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                    )}
+                  </div>
+                </Box>
+              </EvaluationRow>
+            );
+          }
+          if (evaluation.numSkipped) {
+            return (
+              <EvaluationRow style={{cursor: 'default'}} key={`skip-${evaluation.timestamp}`}>
+                <Box
+                  padding={{left: 16}}
+                  border={{side: 'left', width: 1, color: Colors.KeylineGray}}
+                  flex={{direction: 'column', gap: 4}}
+                  style={{width: '100%'}}
+                >
+                  <div style={{color: Colors.Yellow700}}>
+                    {evaluation.numSkipped} materialization{evaluation.numSkipped === 1 ? '' : 's'}{' '}
+                    skipped{' '}
+                  </div>
+                  <TimestampDisplay timestamp={evaluation.timestamp} />
+                </Box>
+              </EvaluationRow>
+            );
+          }
           const isSelected = selectedEvaluation === evaluation;
           return (
             <EvaluationRow
-              flex={{justifyContent: 'space-between'}}
               key={evaluation.evaluationId}
-              padding={{horizontal: 24, vertical: 8}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               onClick={() => {
                 onSelectEvaluation(evaluation);
               }}
               $selected={isSelected}
             >
-              <TimestampDisplay timestamp={evaluation.timestamp} />
-              {evaluation.numRequested ? (
-                <Icon name="auto_materialize_policy" size={24} />
-              ) : evaluation.numSkipped ? (
-                <div
-                  style={{
-                    margin: '7px',
-                    borderRadius: '50%',
-                    height: '10px',
-                    width: '10px',
-                    background: Colors.Yellow500,
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    margin: '7px',
-                    borderRadius: '50%',
-                    height: '10px',
-                    width: '10px',
-                    background: Colors.Yellow50,
-                  }}
-                />
-              )}
+              <Box
+                flex={{direction: 'row', gap: 8}}
+                style={{color: Colors.Blue700, marginLeft: '-8px'}}
+              >
+                <Icon name="done" color={Colors.Blue700} />
+                <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
+                  <div>
+                    {evaluation.numRequested} run{evaluation.numRequested === 1 ? '' : 's'}{' '}
+                    requested
+                  </div>
+                  <TimestampDisplay timestamp={evaluation.timestamp} />
+                </Box>
+              </Box>
             </EvaluationRow>
           );
         })}
@@ -685,6 +794,7 @@ export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
       ... on AutoMaterializeAssetEvaluationRecords {
+        currentEvaluationId
         records {
           id
           evaluationId
@@ -753,6 +863,8 @@ const EvaluationRow = styled(CenterAlignedRow)<{$selected: boolean}>`
         : null}
     width: 295px;
   }
+  padding: 8px 24px;
+  border-bottom: 1px solid ${Colors.KeylineGray};
 `;
 
 const AutomaterializePage = styled(Box)`
