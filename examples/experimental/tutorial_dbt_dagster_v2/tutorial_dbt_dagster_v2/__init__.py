@@ -1,8 +1,8 @@
 from dagster import Definitions
 from dagster_dbt.cli import DbtCli
 
-from tutorial_dbt_dagster_v2.assets import DBT_PROJECT_DIR
-from tutorial_dbt_dagster_v2.assets.build import my_dbt_assets
+from .assets import DBT_PROJECT_DIR
+from .assets.build import my_dbt_assets
 
 defs = Definitions(
     assets=[my_dbt_assets],

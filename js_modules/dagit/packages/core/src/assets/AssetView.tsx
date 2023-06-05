@@ -45,6 +45,7 @@ import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
+import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -212,12 +213,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     );
   };
 
-  // const renderAutomaterializePolicyTab = () => {
-  //   if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
-  //     return <AssetLoadingDefinitionState />;
-  //   }
-  //   return <AssetAutomaterializePolicyPage />;
-  // };
+  const renderAutomaterializePolicyTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
+    return <AssetAutomaterializePolicyPage assetKey={assetKey} />;
+  };
 
   return (
     <Box
@@ -261,12 +262,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 onClick={() => setParams({...params, view: 'lineage'})}
                 disabled={!definition}
               />
-              {/* <Tab
-                id="auto-materialize-policy"
-                title="Auto-materialize policy"
-                onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
-                disabled={!definition}
-              /> */}
+              {definition?.autoMaterializePolicy ? (
+                <Tab
+                  id="auto-materialize-policy"
+                  title="Auto-materialize policy"
+                  onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
+                  disabled={!definition}
+                />
+              ) : null}
             </Tabs>
             {refreshState && (
               <Box padding={{bottom: 8}}>
@@ -306,9 +309,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           renderEventsTab()
         ) : selectedTab === 'plots' ? (
           renderPlotsTab()
+        ) : selectedTab === 'auto-materialize-policy' ? (
+          renderAutomaterializePolicyTab()
         ) : (
-          // ) : selectedTab === 'auto-materialize-policy' ? (
-          //   renderAutomaterializePolicyTab()
           <span />
         )}
       </ErrorBoundary>

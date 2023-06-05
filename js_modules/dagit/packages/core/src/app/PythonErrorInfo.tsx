@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Icon, FontFamily} from '@dagster-io/ui';
+import {Button, Icon, FontFamily, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -8,6 +8,8 @@ import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 
+import {showSharedToaster} from './DomUtils';
+import {useCopyToClipboard} from './browser';
 import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 
 export type GenericError = {
@@ -32,6 +34,9 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
   const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
+  const copy = useCopyToClipboard();
+
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
 
   return (
     <>
@@ -40,7 +45,13 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
       ) : (
         context
       )}
-      <Wrapper>
+      <Wrapper ref={wrapperRef}>
+        <CopyErrorButton
+          copy={() => {
+            const text = wrapperRef.current?.innerText || '';
+            copy(text);
+          }}
+        />
         <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
           <div style={{marginTop: 10, marginBottom: 10}}>
@@ -86,6 +97,39 @@ export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
   }
 `;
 
+export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
+  return (
+    <div style={{position: 'relative'}}>
+      <CopyErrorButtonWrapper
+        onClick={async () => {
+          const message = copy();
+          await showSharedToaster({
+            message: message ?? <div>Copied value</div>,
+            intent: 'success',
+          });
+        }}
+      >
+        <Icon name="content_copy" /> Copy
+      </CopyErrorButtonWrapper>
+    </div>
+  );
+};
+
+const CopyErrorButtonWrapper = styled.button`
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  top: 0px;
+  right: -8px;
+  border: 1px solid ${Colors.KeylineGray};
+  background: transparent;
+  cursor: pointer;
+  border: none;
+  box-shadow: none;
+  outline: none;
+`;
+
 const ContextHeader = styled.h4`
   font-weight: 400;
   margin: 0 0 1em;
@@ -111,7 +155,7 @@ const Trace = styled.div`
   padding-bottom: 1em;
 `;
 
-const ErrorWrapper = styled.div`
+export const ErrorWrapper = styled.div`
   background-color: #fdf2f4;
   border: 1px solid #d17257;
   border-radius: 3px;
@@ -119,9 +163,16 @@ const ErrorWrapper = styled.div`
   max-height: calc(100vh - 250px);
   padding: 1em 2em;
   overflow: auto;
+
+  ${CopyErrorButtonWrapper} {
+    display: none;
+  }
+  &:hover ${CopyErrorButtonWrapper} {
+    display: flex;
+  }
 `;
 
-const ErrorWrapperCentered = styled(ErrorWrapper)`
+export const ErrorWrapperCentered = styled(ErrorWrapper)`
   position: absolute;
   left: 50%;
   top: 100px;

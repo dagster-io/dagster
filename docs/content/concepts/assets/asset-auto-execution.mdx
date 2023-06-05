@@ -21,6 +21,8 @@ To enable assets to be automatically materialized, you need to first flip a togg
 - If you're using an open source Dagster deployment, you can get to this toggle by clicking "Deployment" in the top navigation pane and then clicking on the "Daemons" tab.
 - If you're using Dagster Cloud, you can get to this toggle by clicking "Deployment" in the top navigation pane, then clicking on the "Agents" tab, then looking under "Cloud service statuses".
 
+**First time using auto-materialize? Have a large number of partitioned assets?** We recommend starting small: add auto-materialize policies only to a subset of your assets and then expand incrementally. Auto-materializing has a startup cost that’s roughly proportional to the number of materialized partitions of assets that are ancestors of assets with auto-materialize policies. Turning on auto-materializing with large numbers of partitioned assets at once can overload the database and make the database unavailable to other Dagster components that rely on it.
+
 ### Auto-materialize policies
 
 You can set up an asset to be auto-materialized by assigning it an <PyObject object="AutoMaterializePolicy" />. In this example, we use <PyObject object="AutoMaterializePolicy" method="eager" /> to indicate that, any time that `asset1` is materialized, `asset2` should be automatically materialized right after:

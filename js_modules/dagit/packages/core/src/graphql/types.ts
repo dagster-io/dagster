@@ -305,6 +305,11 @@ export type AssetWipeSuccess = {
 
 export type AssetsOrError = AssetConnection | PythonError;
 
+export type AutoMaterializeAssetEvaluationNeedsMigrationError = Error & {
+  __typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError';
+  message: Scalars['String'];
+};
+
 export type AutoMaterializeAssetEvaluationRecord = {
   __typename: 'AutoMaterializeAssetEvaluationRecord';
   conditions: Array<AutoMaterializeCondition>;
@@ -316,9 +321,19 @@ export type AutoMaterializeAssetEvaluationRecord = {
   timestamp: Scalars['Float'];
 };
 
+export type AutoMaterializeAssetEvaluationRecords = {
+  __typename: 'AutoMaterializeAssetEvaluationRecords';
+  records: Array<AutoMaterializeAssetEvaluationRecord>;
+};
+
+export type AutoMaterializeAssetEvaluationRecordsOrError =
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+  | AutoMaterializeAssetEvaluationRecords;
+
 export type AutoMaterializeCondition =
   | DownstreamFreshnessAutoMaterializeCondition
   | FreshnessAutoMaterializeCondition
+  | MaxMaterializationsExceededAutoMaterializeCondition
   | MissingAutoMaterializeCondition
   | ParentMaterializedAutoMaterializeCondition
   | ParentOutdatedAutoMaterializeCondition;
@@ -666,7 +681,7 @@ export type DagitQuery = {
   assetOrError: AssetOrError;
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
-  autoMaterializeAssetEvaluations: Array<AutoMaterializeAssetEvaluationRecord>;
+  autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
   executionPlanOrError: ExecutionPlanOrError;
@@ -741,7 +756,7 @@ export type DagitQueryAssetsOrErrorArgs = {
   prefix?: InputMaybe<Array<Scalars['String']>>;
 };
 
-export type DagitQueryAutoMaterializeAssetEvaluationsArgs = {
+export type DagitQueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
@@ -2128,6 +2143,11 @@ export type MaterializedPartitionRangeStatuses2D = {
   primaryDimStartKey: Scalars['String'];
   primaryDimStartTime: Maybe<Scalars['Float']>;
   secondaryDim: PartitionStatus1D;
+};
+
+export type MaxMaterializationsExceededAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
+  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+  decisionType: AutoMaterializeDecisionType;
 };
 
 export type MessageEvent = {
@@ -4646,6 +4666,20 @@ export const buildAssetWipeSuccess = (
   };
 };
 
+export const buildAutoMaterializeAssetEvaluationNeedsMigrationError = (
+  overrides?: Partial<AutoMaterializeAssetEvaluationNeedsMigrationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError';
+} & AutoMaterializeAssetEvaluationNeedsMigrationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializeAssetEvaluationNeedsMigrationError');
+  return {
+    __typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
+  };
+};
+
 export const buildAutoMaterializeAssetEvaluationRecord = (
   overrides?: Partial<AutoMaterializeAssetEvaluationRecord>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -4667,6 +4701,20 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2522,
     numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 6444,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 0.19,
+  };
+};
+
+export const buildAutoMaterializeAssetEvaluationRecords = (
+  overrides?: Partial<AutoMaterializeAssetEvaluationRecords>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AutoMaterializeAssetEvaluationRecords';
+} & AutoMaterializeAssetEvaluationRecords => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecords');
+  return {
+    __typename: 'AutoMaterializeAssetEvaluationRecords',
+    records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
   };
 };
 
@@ -5239,10 +5287,12 @@ export const buildDagitQuery = (
         : relationshipsToOmit.has('AssetConnection')
         ? ({} as AssetConnection)
         : buildAssetConnection({}, relationshipsToOmit),
-    autoMaterializeAssetEvaluations:
-      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluations')
-        ? overrides.autoMaterializeAssetEvaluations!
-        : [],
+    autoMaterializeAssetEvaluationsOrError:
+      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationsOrError')
+        ? overrides.autoMaterializeAssetEvaluationsOrError!
+        : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
+        ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
+        : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
@@ -7811,6 +7861,23 @@ export const buildMaterializedPartitionRangeStatuses2D = (
         : relationshipsToOmit.has('DefaultPartitionStatuses')
         ? ({} as DefaultPartitionStatuses)
         : buildDefaultPartitionStatuses({}, relationshipsToOmit),
+  };
+};
+
+export const buildMaxMaterializationsExceededAutoMaterializeCondition = (
+  overrides?: Partial<MaxMaterializationsExceededAutoMaterializeCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
+} & MaxMaterializationsExceededAutoMaterializeCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MaxMaterializationsExceededAutoMaterializeCondition');
+  return {
+    __typename: 'MaxMaterializationsExceededAutoMaterializeCondition',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
   };
 };
 

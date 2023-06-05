@@ -1,5 +1,8 @@
+import hashlib
 import re
 from typing import Any, Mapping
+
+from dagster._core.host_representation.origin import ExternalJobOrigin
 
 from .tasks import DagsterEcsTaskDefinitionConfig
 
@@ -7,6 +10,34 @@ from .tasks import DagsterEcsTaskDefinitionConfig
 def sanitize_family(family):
     # Trim the location name and remove special characters
     return re.sub(r"[^\w^\-]", "", family)[:255]
+
+
+def _get_family_hash(name):
+    m = hashlib.sha1()
+    m.update(name.encode("utf-8"))
+    name_hash = m.hexdigest()[:8]
+    return f"{name[:55]}_{name_hash}"
+
+
+def get_task_definition_family(
+    prefix: str,
+    job_origin: ExternalJobOrigin,
+) -> str:
+    job_name = job_origin.job_name
+    repo_name = job_origin.external_repository_origin.repository_name
+    location_name = job_origin.external_repository_origin.code_location_origin.location_name
+
+    assert len(prefix) < 32
+
+    # Truncate the location name if it's too long (but add a unique suffix at the end so that no matter what it's unique)
+    # Relies on the fact that org name and deployment name are always <= 64 characters long to
+    # stay well underneath the 255 character limit imposed by ECS
+
+    final_family = f"{prefix}_{_get_family_hash(location_name)}_{_get_family_hash(repo_name)}_{_get_family_hash(job_name)}"
+
+    assert len(final_family) <= 255
+
+    return sanitize_family(final_family)
 
 
 def task_definitions_match(

@@ -190,10 +190,12 @@ export const ASSET_WEEKLY_ROOT: AssetNodeForGraphQueryFragment = {
   },
 };
 
-export const LaunchAssetWarningsMock: MockedResponse<LaunchAssetWarningsQuery> = {
+export const buildLaunchAssetWarningsMock = (
+  upstreamAssetKeys: AssetKeyInput[],
+): MockedResponse<LaunchAssetWarningsQuery> => ({
   request: {
     query: LAUNCH_ASSET_WARNINGS_QUERY,
-    variables: {},
+    variables: {upstreamAssetKeys: upstreamAssetKeys.map((a) => ({path: a.path}))},
   },
   result: {
     data: {
@@ -212,7 +214,7 @@ export const LaunchAssetWarningsMock: MockedResponse<LaunchAssetWarningsQuery> =
       }),
     },
   },
-};
+});
 
 export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery> = {
   request: {

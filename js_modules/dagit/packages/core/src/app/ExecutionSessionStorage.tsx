@@ -4,9 +4,9 @@ import * as React from 'react';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
-  LaunchpadSessionPipelineFragment,
   LaunchpadSessionPartitionSetsFragment,
-} from '../launchpad/types/LaunchpadRoot.types';
+  LaunchpadSessionPipelineFragment,
+} from '../launchpad/types/LaunchpadAllowedRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -214,6 +214,8 @@ export const useInvalidateConfigsForRepo = () => {
 export const useInitialDataForMode = (
   pipeline: LaunchpadSessionPipelineFragment,
   partitionSets: LaunchpadSessionPartitionSetsFragment,
+  rootDefaultYaml: string | undefined,
+  shouldPopulateWithDefaults: boolean,
 ) => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
@@ -234,11 +236,12 @@ export const useInitialDataForMode = (
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
       return {
         base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null, tags: null},
+        runConfigYaml: rootDefaultYaml,
       };
     }
 
-    return {};
-  }, [isAssetJob, isJob, partitionSetsForMode, presets]);
+    return shouldPopulateWithDefaults ? {runConfigYaml: rootDefaultYaml} : {};
+  }, [isAssetJob, isJob, partitionSetsForMode, presets, rootDefaultYaml]);
 };
 
 export const allStoredSessions = () => {

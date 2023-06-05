@@ -62,6 +62,12 @@ export type LaunchpadRootQuery = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       };
+  runConfigSchemaOrError:
+    | {__typename: 'InvalidSubsetError'}
+    | {__typename: 'ModeNotFoundError'}
+    | {__typename: 'PipelineNotFoundError'}
+    | {__typename: 'PythonError'}
+    | {__typename: 'RunConfigSchema'; rootDefaultYaml: string};
 };
 
 export type LaunchpadSessionPartitionSetsFragment = {

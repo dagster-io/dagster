@@ -3,7 +3,8 @@ import os
 import click
 
 import dagster._check as check
-from dagster._core.instance import DagsterInstance
+
+from .utils import get_instance_for_cli
 
 
 @click.group(name="instance")
@@ -13,7 +14,7 @@ def instance_cli():
 
 @instance_cli.command(name="info", help="List the information about the current instance.")
 def info_command():
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         home = os.environ.get("DAGSTER_HOME")
 
         if instance.is_ephemeral:
@@ -39,13 +40,14 @@ def info_command():
 
 @instance_cli.command(name="migrate", help="Automatically migrate an out of date instance.")
 def migrate_command():
-    home = os.environ.get("DAGSTER_HOME")
-    if not home:
-        click.echo("$DAGSTER_HOME is not set; ephemeral instances do not need to be migrated.")
+    with get_instance_for_cli() as instance:
+        home = os.environ.get("DAGSTER_HOME")
+        if not home:
+            click.echo("$DAGSTER_HOME is not set; ephemeral instances do not need to be migrated.")
+            return
 
-    click.echo(f"$DAGSTER_HOME: {home}\n")
+        click.echo(f"$DAGSTER_HOME: {home}\n")
 
-    with DagsterInstance.get() as instance:
         instance.upgrade(click.echo)
 
         click.echo(instance.info_str())
@@ -53,7 +55,7 @@ def migrate_command():
 
 @instance_cli.command(name="reindex", help="Rebuild index over historical runs for performance.")
 def reindex_command():
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         home = os.environ.get("DAGSTER_HOME")
 
         if instance.is_ephemeral:

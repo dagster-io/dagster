@@ -22,6 +22,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import asset, multi_asset
+from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
@@ -603,6 +604,27 @@ def test_simple_partitions():
         _get_partitioned_assets(partitions_def), []
     )
     assert job.partitions_def == partitions_def
+
+
+def test_hooks():
+    @asset
+    def a():
+        pass
+
+    @asset
+    def b(a):
+        pass
+
+    @success_hook
+    def foo(_):
+        pass
+
+    @failure_hook
+    def bar(_):
+        pass
+
+    job = define_asset_job("with_hooks", hooks={foo, bar}).resolve([a, b], [])
+    assert job.hook_defs == {foo, bar}
 
 
 def test_partitioned_schedule():

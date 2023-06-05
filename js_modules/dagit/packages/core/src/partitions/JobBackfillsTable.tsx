@@ -30,7 +30,6 @@ export const JobBackfillsTable = ({
       cursor,
       limit: BACKFILL_PAGE_SIZE,
     },
-    partialRefetch: true,
   });
 
   const refetch = queryResult.refetch;

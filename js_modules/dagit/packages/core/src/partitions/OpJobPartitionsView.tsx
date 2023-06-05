@@ -139,7 +139,7 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
   }, [partitions]);
 }
 
-const OpJobPartitionsViewContent: React.FC<{
+export const OpJobPartitionsViewContent: React.FC<{
   partitionNames: string[];
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
@@ -191,6 +191,13 @@ const OpJobPartitionsViewContent: React.FC<{
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
+  const {partitionStatusesOrError} = partitionSet;
+  const partitionStatuses = React.useMemo(() => {
+    return partitionStatusesOrError.__typename === 'PartitionStatuses'
+      ? partitionStatusesOrError.results
+      : [];
+  }, [partitionStatusesOrError]);
+
   const {runStatusData, runDurationData} = React.useMemo(() => {
     // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
     // rather than looking at the duration of the most recent run returned in `partitions` above
@@ -198,17 +205,14 @@ const OpJobPartitionsViewContent: React.FC<{
     const runStatusData: {[name: string]: RunStatus} = {};
     const runDurationData: {[name: string]: number | undefined} = {};
 
-    (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
-      ? partitionSet.partitionStatusesOrError.results
-      : []
-    ).forEach((p) => {
+    partitionStatuses.forEach((p) => {
       runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
       if (selectedPartitions.includes(p.partitionName)) {
         runDurationData[p.partitionName] = p.runDuration || undefined;
       }
     });
     return {runStatusData, runDurationData};
-  }, [partitionSet, selectedPartitions]);
+  }, [partitionStatuses, selectedPartitions]);
 
   const health = React.useMemo(() => {
     return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
@@ -257,12 +261,12 @@ const OpJobPartitionsViewContent: React.FC<{
               icon={<Icon name="add_circle" />}
               active={showBackfillSetup}
             >
-              Launch backfill...
+              Launch backfill…
             </Button>
           ) : (
             <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
               <Button icon={<Icon name="add_circle" />} disabled>
-                Launch backfill...
+                Launch backfill…
               </Button>
             </Tooltip>
           )}

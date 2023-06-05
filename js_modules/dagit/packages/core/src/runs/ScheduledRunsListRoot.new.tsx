@@ -33,7 +33,6 @@ export const ScheduledRunListRoot = () => {
   const queryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
     SCHEDULED_RUNS_LIST_QUERY,
     {
-      partialRefetch: true,
       notifyOnNetworkStatusChange: true,
     },
   );

@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {InstigationStatus} from '../graphql/types';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {StatusAndMessage} from './DeploymentStatusType';
@@ -28,13 +29,15 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
 
     // Find any schedules or sensors in the repo list.
     for (const repo of options) {
-      if (repo.repository.sensors.some((s) => s.sensorState.status === 'RUNNING')) {
+      if (repo.repository.sensors.some((s) => s.sensorState.status === InstigationStatus.RUNNING)) {
         anySensors = true;
         break;
       }
     }
     for (const repo of options) {
-      if (repo.repository.schedules.some((s) => s.scheduleState.status === 'RUNNING')) {
+      if (
+        repo.repository.schedules.some((s) => s.scheduleState.status === InstigationStatus.RUNNING)
+      ) {
         anySchedules = true;
         break;
       }
@@ -93,7 +96,7 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
   return null;
 };
 
-const INSTANCE_WARNING_QUERY = gql`
+export const INSTANCE_WARNING_QUERY = gql`
   query InstanceWarningQuery {
     instance {
       id

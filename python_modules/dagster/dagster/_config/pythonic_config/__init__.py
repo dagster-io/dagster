@@ -95,7 +95,7 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
+from .typing_utils import BaseConfigMeta, BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
 Self = TypeVar("Self", bound="ConfigurableResourceFactory")
@@ -176,7 +176,7 @@ class MakeConfigCacheable(BaseModel):
         return name.endswith(INTERNAL_MARKER)
 
 
-class Config(MakeConfigCacheable):
+class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
     """Base class for Dagster configuration models, used to specify config schema for
     ops and assets. Subclasses :py:class:`pydantic.BaseModel`.
 

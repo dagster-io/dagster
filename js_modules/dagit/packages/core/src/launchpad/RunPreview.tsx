@@ -27,7 +27,7 @@ import {
   ConfigEditorRunConfigSchemaFragment,
 } from '../configeditor/types/ConfigEditorUtils.types';
 
-import {LaunchpadType} from './LaunchpadRoot';
+import {LaunchpadType} from './types';
 import {
   RunPreviewValidationErrorsFragment,
   RunPreviewValidationFragment,
