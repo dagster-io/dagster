@@ -26,6 +26,7 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
+from dagster._annotations import deprecated
 from dagster._config.config_type import (
     Array,
     ConfigFloatInstance,
@@ -915,7 +916,13 @@ class ConfigurableResourceFactory(
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
+    @deprecated
     def with_resource_context(
+        self, resource_context: InitResourceContext
+    ) -> "ConfigurableResourceFactory[TResValue]":
+        return self.with_replaced_resource_context(resource_context)
+
+    def with_replaced_resource_context(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given resource init context bound."""
@@ -929,7 +936,7 @@ class ConfigurableResourceFactory(
 
     def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+            updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
@@ -941,7 +948,7 @@ class ConfigurableResourceFactory(
         self, context: InitResourceContext
     ) -> Generator[TResValue, None, None]:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+            updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
@@ -985,7 +992,7 @@ class ConfigurableResourceFactory(
             additional_message="Attempted to get context before resource was initialized.",
         )
 
-    def _process_config_and_initialize(self) -> TResValue:
+    def process_config_and_initialize(self) -> TResValue:
         """Initializes this resource, fully processing its config and returning the prepared
         resource value.
         """
