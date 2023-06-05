@@ -211,6 +211,9 @@ def _wrap_user_fn_if_pythonic_config(
     )
     from dagster._core.decorator_utils import get_function_params
 
+    if not isinstance(user_fn, Callable):
+        return UpdatedFunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
+
     config_fn_params = get_function_params(user_fn)
     check.invariant(len(config_fn_params) == 1, "Config mapping should have exactly one parameter")
 
