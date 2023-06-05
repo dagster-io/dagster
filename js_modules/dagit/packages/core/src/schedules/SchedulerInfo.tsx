@@ -14,9 +14,9 @@ export const SchedulerInfo: React.FC<Props> = ({daemonHealth, ...boxProps}) => {
     const schedulerHealths = daemonHealth.allDaemonStatuses.filter(
       (daemon) => daemon.daemonType === 'SCHEDULER',
     );
-    if (schedulerHealths) {
-      const schedulerHealth = schedulerHealths[0];
-      healthy = !!(schedulerHealth.required && schedulerHealth.healthy);
+    if (schedulerHealths.length > 0) {
+      const schedulerHealth = schedulerHealths[0]!;
+      healthy = schedulerHealth.required && schedulerHealth.healthy;
     }
   }
 

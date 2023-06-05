@@ -34,7 +34,7 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
     if (!repoAddress) {
       const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
       return reposWithMatch.length
-        ? buildPipelineSelector(optionToRepoAddress(reposWithMatch[0]), pipelineName)
+        ? buildPipelineSelector(optionToRepoAddress(reposWithMatch[0]!), pipelineName)
         : null;
     }
     return buildPipelineSelector(repoAddress, pipelineName);

@@ -257,8 +257,8 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
                 left: 0,
                 width: indexToPct(
                   Math.min(
-                    partitionNames.indexOf(selected[selected.length - 1]),
-                    partitionNames.indexOf(selected[0]),
+                    partitionNames.indexOf(selected[selected.length - 1]!),
+                    partitionNames.indexOf(selected[0]!),
                   ),
                 ),
                 height: small ? 14 : 24,
@@ -268,14 +268,14 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
               style={{
                 left: `min(calc(100% - 3px), ${indexToPct(
                   Math.min(
-                    partitionNames.indexOf(selected[0]),
-                    partitionNames.indexOf(selected[selected.length - 1]),
+                    partitionNames.indexOf(selected[0]!),
+                    partitionNames.indexOf(selected[selected.length - 1]!),
                   ),
                 )})`,
                 width: indexToPct(
                   Math.abs(
-                    partitionNames.indexOf(selected[selected.length - 1]) -
-                      partitionNames.indexOf(selected[0]),
+                    partitionNames.indexOf(selected[selected.length - 1]!) -
+                      partitionNames.indexOf(selected[0]!),
                   ) + 1,
                 ),
                 height: small ? 14 : 24,
@@ -289,8 +289,8 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
                   partitionNames.length -
                     1 -
                     Math.max(
-                      partitionNames.indexOf(selected[selected.length - 1]),
-                      partitionNames.indexOf(selected[0]),
+                      partitionNames.indexOf(selected[selected.length - 1]!),
+                      partitionNames.indexOf(selected[0]!),
                     ),
                 ),
                 height: small ? 14 : 24,
@@ -349,8 +349,8 @@ function splitColorSegments(partitionNames: string[], segments: ColorSegment[]):
   for (const segment of segments) {
     for (let idx = segment.start.idx; idx <= segment.end.idx; idx++) {
       result.push({
-        start: {idx, key: partitionNames[idx]},
-        end: {idx, key: partitionNames[idx]},
+        start: {idx, key: partitionNames[idx]!},
+        end: {idx, key: partitionNames[idx]!},
         label: segment.label,
         style: segment.style,
       });

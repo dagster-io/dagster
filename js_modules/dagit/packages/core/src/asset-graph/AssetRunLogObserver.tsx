@@ -19,8 +19,8 @@ function removeCallback(runId: string, callback: ObservedRunCallback) {
   if (!ObservedRuns[runId]) {
     console.log('[ObserveRuns]: Attempted to release runId that has already been released.');
   }
-  ObservedRuns[runId] = ObservedRuns[runId].filter((w) => w !== callback);
-  if (ObservedRuns[runId].length === 0) {
+  ObservedRuns[runId] = ObservedRuns[runId]!.filter((w) => w !== callback);
+  if (ObservedRuns[runId]!.length === 0) {
     delete ObservedRuns[runId];
   }
 }

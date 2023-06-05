@@ -90,7 +90,7 @@ export const ScheduleDetails: React.FC<{
               <Tag icon="timer">
                 Next tick:{' '}
                 <TimestampDisplay
-                  timestamp={futureTicks.results[0].timestamp!}
+                  timestamp={futureTicks.results[0]!.timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />

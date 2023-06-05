@@ -51,7 +51,10 @@ export const withMiddleTruncation = (text: string, options: {maxLength: number})
     // breakpoint which would give us more prefix. All else equal,
     // "my_great_l…_name" looks better than "my_g…_solid_name"
     const middleIdx = Math.floor(breakpoints.length / 2);
-    breakpoint = breakpoints[Math.max(firstUsableIdx, middleIdx)];
+    const breakpointAtIndex = breakpoints[Math.max(firstUsableIdx, middleIdx)];
+    if (breakpointAtIndex !== undefined) {
+      breakpoint = breakpointAtIndex;
+    }
   }
 
   const result = [

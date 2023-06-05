@@ -99,8 +99,8 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
   // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
-  Object.keys(graphData.downstream).forEach((upstreamId) => {
-    const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
+  Object.entries(graphData.downstream).forEach(([upstreamId, graphDataDownstream]) => {
+    const downstreamIds = Object.keys(graphDataDownstream);
     downstreamIds.forEach((downstreamId) => {
       if (
         !shouldRender(graphData.nodes[downstreamId]) &&
@@ -155,10 +155,11 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     for (const node of renderedNodes) {
       if (node.definition.groupName) {
         const groupId = parentNodeIdForNode(node);
-        groups[groupId].bounds =
-          groups[groupId].bounds.width === 0
-            ? nodes[node.id].bounds
-            : extendBounds(groups[groupId].bounds, nodes[node.id].bounds);
+        const groupForId = groups[groupId]!;
+        groupForId.bounds =
+          groupForId.bounds.width === 0
+            ? nodes[node.id]!.bounds
+            : extendBounds(groupForId.bounds, nodes[node.id]!.bounds);
       }
     }
     for (const group of Object.values(groups)) {

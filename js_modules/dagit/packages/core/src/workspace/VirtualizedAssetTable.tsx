@@ -49,13 +49,12 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   const rows: Row[] = React.useMemo(() => {
-    return Object.keys(groups).map((displayKey) => {
+    return Object.entries(groups).map(([displayKey, assets]) => {
       const path = [...prefixPath, ...JSON.parse(displayKey)];
-      const assets = groups[displayKey];
-      const isFolder = assets.length > 1 || path.join('/') !== assets[0].key.path.join('/');
+      const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
       return isFolder
         ? {type: 'folder', path, displayKey, assets}
-        : {type: 'asset', path, displayKey, asset: assets[0]};
+        : {type: 'asset', path, displayKey, asset: assets[0]!};
     });
   }, [prefixPath, groups]);
 
@@ -65,7 +64,7 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
         <VirtualizedAssetCatalogHeader headerCheckbox={headerCheckbox} view={view} />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
-            const row: Row = rows[index];
+            const row: Row = rows[index]!;
             const rowType = () => {
               if (row.type === 'folder') {
                 return 'folder';

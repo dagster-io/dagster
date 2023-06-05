@@ -73,7 +73,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
           __typename: 'no_conditions_met',
           evaluationId: 10,
           amount: 7,
-          startTimestamp: evaluations[0].timestamp + 60,
+          startTimestamp: evaluations[0]!.timestamp + 60,
           endTimestamp: 'now',
         },
         ...evaluations,
@@ -81,7 +81,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
           __typename: 'no_conditions_met',
           evaluationId: 1,
           amount: 1,
-          endTimestamp: evaluations[1].timestamp - 60,
+          endTimestamp: evaluations[1]!.timestamp - 60,
           startTimestamp: 0,
         },
       ]);
@@ -124,8 +124,8 @@ describe('getEvaluationsWithEmptyAdded', () => {
         __typename: 'no_conditions_met',
         evaluationId: 2,
         amount: 1,
-        endTimestamp: evaluations[0].timestamp - 60,
-        startTimestamp: evaluations[1].timestamp + 60,
+        endTimestamp: evaluations[0]!.timestamp - 60,
+        startTimestamp: evaluations[1]!.timestamp + 60,
       },
       evaluations[1],
     ]);

@@ -142,11 +142,11 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
-  const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
+  const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
-  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
 
   const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
   const allDefinitionsForMaterialize = applyingEmptyDefault
@@ -187,14 +187,14 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           }
         }
 
-        const existing = explorerPath.opNames[0].split(',');
+        const existing = explorerPath.opNames[0]!.split(',');
         nextOpsNameSelection = (existing.includes(token)
           ? without(existing, token)
           : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
-      const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]];
+      const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]!];
       if (nextCenter) {
         viewportEl.current?.zoomToSVGCoords(nextCenter.bounds.x, nextCenter.bounds.y, true);
       }
@@ -258,7 +258,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     const node = nextId && assetGraphData.nodes[nextId];
     if (node && viewportEl.current) {
       onSelectNode(e, node.assetKey, node);
-      viewportEl.current.zoomToSVGBox(layout.nodes[nextId].bounds, true);
+      viewportEl.current.zoomToSVGBox(layout.nodes[nextId]!.bounds, true);
     }
   };
 
@@ -332,7 +332,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                     ))}
 
                   {Object.values(layout.nodes).map(({id, bounds}) => {
-                    const graphNode = assetGraphData.nodes[id];
+                    const graphNode = assetGraphData.nodes[id]!;
                     const path = JSON.parse(id);
                     if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
                       return;
@@ -480,7 +480,7 @@ const graphDirectionOf = ({
     const node = stack.pop()!;
 
     const downstream = [...Object.keys(graph.downstream[node.id] || {})]
-      .map((n) => graph.nodes[n])
+      .map((n) => graph.nodes[n]!)
       .filter(Boolean);
     if (downstream.some((d) => d.id === to.id)) {
       return 'downstream';
@@ -506,7 +506,7 @@ const opsInRange = (
   }
 
   const downstream = [...Object.keys(graph.downstream[from.id] || {})]
-    .map((n) => graph.nodes[n])
+    .map((n) => graph.nodes[n]!)
     .filter(Boolean);
 
   const ledToTarget: string[] = [];

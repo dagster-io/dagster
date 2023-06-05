@@ -8,7 +8,7 @@ export const scaffoldType = (
   configTypeKey: string,
   typeLookup: {[key: string]: AllConfigTypesForEditorFragment},
 ): any => {
-  const type = typeLookup[configTypeKey];
+  const type = typeLookup[configTypeKey]!;
 
   switch (type.__typename) {
     case 'CompositeConfigType':
@@ -34,7 +34,7 @@ export const scaffoldType = (
     case 'NullableConfigType':
       // If a type is nullable we include it in the scaffolded config anyway
       // by using the inner type
-      const innerType = type.typeParamKeys[0];
+      const innerType = type.typeParamKeys[0]!;
       return scaffoldType(innerType, typeLookup);
     case 'EnumConfigType':
       // Here we just join all the potential enum values with a |. The user needs to delete

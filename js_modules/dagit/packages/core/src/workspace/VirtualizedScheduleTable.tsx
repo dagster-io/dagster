@@ -44,7 +44,7 @@ export const VirtualizedScheduleTable = ({
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: ScheduleInfo = schedules[index];
+              const row: ScheduleInfo = schedules[index]!;
               const scheduleKey = makeScheduleKey(repoAddress, row.name);
               return (
                 <VirtualizedScheduleRow

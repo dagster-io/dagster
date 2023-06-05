@@ -134,7 +134,7 @@ export function responseToYamlValidationResult(
   const topLevelKey = Object.keys(parsed);
   errors.forEach((error) => {
     if (error.path.length === 0 && topLevelKey.length) {
-      error.path = [topLevelKey[0]];
+      error.path = [topLevelKey[0]!];
     }
   });
 

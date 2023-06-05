@@ -23,9 +23,9 @@ export function invocationsOfPlannedDynamicStep(plannedStepKey: string, runtimeS
 }
 
 export function dynamicKeyWithoutIndex(stepKey: string) {
-  return stepKey.split('[')[0];
+  return stepKey.split('[')[0]!;
 }
 
 export function replacePlannedIndex(stepKey: string, stepKeyWithIndex: string) {
-  return stepKey.replace('[?]', stepKeyWithIndex.match(/(\[.*\])/)![1]);
+  return stepKey.replace('[?]', stepKeyWithIndex.match(/(\[.*\])/)![1]!);
 }

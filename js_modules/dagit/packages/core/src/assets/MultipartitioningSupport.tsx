@@ -45,7 +45,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
     };
   }
 
-  const dimensions = assetHealth[0].dimensions;
+  const dimensions = assetHealth[0]!.dimensions;
 
   if (!assetHealth.every((h) => h.dimensions.length === dimensions.length)) {
     throw new Error('Attempting to show unified asset health for assets with different dimensions');
@@ -54,7 +54,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
   if (
     !assetHealth.every((h) =>
       h.dimensions.every(
-        (dim, idx) => dim.partitionKeys.length === dimensions[idx].partitionKeys.length,
+        (dim, idx) => dim.partitionKeys.length === dimensions[idx]!.partitionKeys.length,
       ),
     )
   ) {
@@ -73,7 +73,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
       uniq(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
-        dimensions[dimensionIdx].partitionKeys,
+        dimensions[dimensionIdx]!.partitionKeys,
         assetHealth.map((health) =>
           health.rangesForSingleDimension(dimensionIdx, otherDimensionSelectedRanges),
         ),
@@ -101,7 +101,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
  */
 export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
   if (rangeSets.length === 1) {
-    return rangeSets[0];
+    return rangeSets[0]!;
   }
 
   const transitions: Transition[] = [];
@@ -177,9 +177,9 @@ export function assembleRangesFromTransitions(
 
     if (!isEqual(last?.value, value)) {
       if (last) {
-        last.end = {idx: idx - 1, key: allKeys[idx - 1]};
+        last.end = {idx: idx - 1, key: allKeys[idx - 1]!};
       }
-      result.push({start: {idx, key: allKeys[idx]}, end: {idx, key: allKeys[idx]}, value});
+      result.push({start: {idx, key: allKeys[idx]!}, end: {idx, key: allKeys[idx]!}, value});
     }
   }
   return result.filter(
@@ -206,7 +206,7 @@ export function explodePartitionKeysInSelection(
     return [];
   }
   if (selections.length === 1) {
-    return selections[0].selectedKeys.map((key) => {
+    return selections[0]!.selectedKeys.map((key) => {
       return {
         partitionKey: key,
         state: stateForKey([key]),
@@ -215,8 +215,8 @@ export function explodePartitionKeysInSelection(
   }
   if (selections.length === 2) {
     const all: {partitionKey: string; state: AssetPartitionStatus[]}[] = [];
-    for (const key of selections[0].selectedKeys) {
-      for (const subkey of selections[1].selectedKeys) {
+    for (const key of selections[0]!.selectedKeys) {
+      for (const subkey of selections[1]!.selectedKeys) {
         all.push({
           partitionKey: `${key}|${subkey}`,
           state: stateForKey([key, subkey]),

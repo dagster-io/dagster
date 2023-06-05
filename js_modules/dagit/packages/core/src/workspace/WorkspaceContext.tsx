@@ -361,7 +361,7 @@ export const useActivePipelineForName = (pipelineName: string, snapshotId?: stri
   const {options} = useRepositoryOptions();
   const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
   if (reposWithMatch.length) {
-    const match = reposWithMatch[0];
+    const match = reposWithMatch[0]!;
     return match.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
   }
   return null;

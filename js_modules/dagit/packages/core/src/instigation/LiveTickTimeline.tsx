@@ -132,7 +132,7 @@ export const LiveTickTimeline: React.FC<{
               // This is the future tick
               return '';
             }
-            const tick = ticks[tooltipItem.dataIndex];
+            const tick = ticks[tooltipItem.dataIndex]!;
             const cursorLabel = tick.cursor ? `Cursor: ${tick.cursor}\n` : '';
 
             // returning an array of strings ensures that each string is displayed on its own line

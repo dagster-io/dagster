@@ -5,23 +5,17 @@
     },
     "module": "es2022",
     "target": "es2022",
+    "strict": true,
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
-    "types": [
-      "jest",
-      "node"
-    ],
+    "types": ["jest", "node"],
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "strict": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -38,9 +32,5 @@
     "scripts",
     "webpack"
   ],
-  "include": [
-    "src",
-    "types",
-    "typings.d.ts"
-  ]
+  "include": ["src", "types", "typings.d.ts"]
 }

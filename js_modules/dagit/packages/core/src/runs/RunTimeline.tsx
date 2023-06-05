@@ -99,11 +99,10 @@ export const RunTimeline = (props: Props) => {
 
   const flattened: RowType[] = React.useMemo(() => {
     const flat: RowType[] = [];
-    for (const repoKey in buckets) {
-      const bucket = buckets[repoKey];
+    Object.entries(buckets).forEach(([repoKey, bucket]) => {
       const repoAddress = repoAddressFromPath(repoKey);
       if (!repoAddress) {
-        continue;
+        return;
       }
 
       flat.push({type: 'header', repoAddress, jobCount: bucket.length});
@@ -112,7 +111,7 @@ export const RunTimeline = (props: Props) => {
           flat.push({type: 'job', repoAddress, job});
         });
       }
-    }
+    });
 
     return flat;
   }, [buckets, expandedKeys]);

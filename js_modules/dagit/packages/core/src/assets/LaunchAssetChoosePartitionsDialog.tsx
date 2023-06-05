@@ -97,7 +97,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0].assetKey);
+      : displayNameForAssetKey(props.assets[0]!.assetKey);
 
   const title = `Launch runs to materialize ${displayName}`;
 
@@ -177,7 +177,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
-  const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
+  const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = React.useState(false);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
@@ -281,7 +281,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           repositoryName: repoAddress.name,
         },
         partitionSetName: target.partitionSetName,
-        partitionName: keysFiltered[0].partitionKey,
+        partitionName: keysFiltered[0]!.partitionKey,
       },
     });
 
@@ -318,11 +318,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
       allTags.push({
         key: DagsterTag.AssetPartitionRangeStart,
-        value: keysInSelection[0].partitionKey,
+        value: keysInSelection[0]!.partitionKey,
       });
       allTags.push({
         key: DagsterTag.AssetPartitionRangeEnd,
-        value: keysInSelection[keysInSelection.length - 1].partitionKey,
+        value: keysInSelection[keysInSelection.length - 1]!.partitionKey,
       });
     }
 
@@ -511,7 +511,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   health={{
                     ranges: displayedHealth.rangesForSingleDimension(
                       idx,
-                      selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
+                      selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
                     ),
                   }}
                   dimensionType={range.dimension.type}
@@ -727,7 +727,7 @@ const UpstreamUnavailableWarning: React.FC<{
 
   const upstreamUnavailableSpans =
     selections.length === 1
-      ? assembleIntoSpans(selections[0].selectedKeys, upstreamUnavailable).filter(
+      ? assembleIntoSpans(selections[0]!.selectedKeys, upstreamUnavailable).filter(
           (s) => s.status === true,
         )
       : [];
@@ -740,8 +740,9 @@ const UpstreamUnavailableWarning: React.FC<{
     if (selections.length > 1) {
       throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
     }
+    const selection = selections[0]!;
     setSelections([
-      {...selections[0], selectedKeys: reject(selections[0].selectedKeys, upstreamUnavailable)},
+      {...selection, selectedKeys: reject(selection.selectedKeys, upstreamUnavailable)},
     ]);
   };
 
@@ -752,7 +753,7 @@ const UpstreamUnavailableWarning: React.FC<{
       description={
         <>
           {upstreamUnavailableSpans
-            .map((span) => stringForSpan(span, selections[0].selectedKeys))
+            .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {
             ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '

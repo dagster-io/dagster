@@ -43,7 +43,7 @@ export const closestNodeInDirection = (
     return;
   }
 
-  const current = layout.nodes[selectedNodeKey];
+  const current = layout.nodes[selectedNodeKey]!;
   const center = (op: OpLayout | AssetLayout): {x: number; y: number} => ({
     x: op.bounds.x + op.bounds.width / 2,
     y: op.bounds.y + op.bounds.height / 2,
@@ -71,8 +71,8 @@ export const closestNodeInDirection = (
     return Number.NaN;
   };
 
-  const closest = Object.keys(layout.nodes)
-    .map((name) => ({name, score: score(layout.nodes[name])}))
+  const closest = Object.entries(layout.nodes)
+    .map(([name, node]) => ({name, score: score(node)}))
     .filter((e) => e.name !== selectedNodeKey && !Number.isNaN(e.score))
     .sort((a, b) => b.score - a.score)
     .pop();
@@ -89,34 +89,34 @@ export function computeNodeKeyPrefixBoundingBoxes(layout: OpGraphLayout) {
   const groups: {[base: string]: IBounds[]} = {};
   let maxDepth = 0;
 
-  for (const key of Object.keys(layout.nodes)) {
+  Object.entries(layout.nodes).forEach(([key, node]) => {
     const parts = key.split('.');
     if (parts.length === 1) {
-      continue;
+      return;
     }
     for (let ii = 1; ii < parts.length; ii++) {
       const base = parts.slice(0, ii).join('.');
-      groups[base] = groups[base] || [];
-      groups[base].push(layout.nodes[key].bounds);
+      const target = groups[base] || [];
+      target.push(node.bounds);
+      groups[base] = target;
       maxDepth = Math.max(maxDepth, ii);
     }
-  }
+  });
 
   const boxes: (IBounds & {name: string})[] = [];
-  for (const base of Object.keys(groups)) {
-    const group = groups[base];
+  Object.entries(groups).forEach(([base, group]) => {
     const depth = base.split('.').length;
     const margin = 5 + (maxDepth - depth) * 5;
 
     if (group.length === 1) {
-      continue;
+      return;
     }
     const x1 = Math.min(...group.map((l) => l.x)) - margin;
     const x2 = Math.max(...group.map((l) => l.x + l.width)) + margin;
     const y1 = Math.min(...group.map((l) => l.y)) - margin;
     const y2 = Math.max(...group.map((l) => l.y + l.height)) + margin;
     boxes.push({name: base, x: x1, y: y1, width: x2 - x1, height: y2 - y1});
-  }
+  });
 
   return boxes;
 }

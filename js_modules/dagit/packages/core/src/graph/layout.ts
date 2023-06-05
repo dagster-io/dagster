@@ -192,8 +192,7 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
 
   // Read the Dagre layout and map "nodes" back to our solids, but with
   // X,Y coordinates this time.
-  Object.keys(dagreNodes).forEach((opName) => {
-    const node = dagreNodes[opName];
+  Object.entries(dagreNodes).forEach(([opName, node]) => {
     const op = pipelineOps.find(({name}) => name === opName);
     if (!op) {
       return;
@@ -211,9 +210,9 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   g.edges().forEach(function (e) {
     const conn = edges.find((c) => c.from.opName === e.v && c.to.opName === e.w);
     const points = g.edge(e).points;
-    if (conn) {
-      conn.from.point = points[0];
-      conn.to.point = points[points.length - 1];
+    if (conn && points.length > 0) {
+      conn.from.point = points[0]!;
+      conn.to.point = points[points.length - 1]!;
     }
   });
 

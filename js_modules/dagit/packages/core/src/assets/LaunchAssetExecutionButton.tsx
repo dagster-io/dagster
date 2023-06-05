@@ -160,7 +160,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   const [isOpen, setIsOpen] = React.useState(false);
 
   const options = optionsForButton(scope, liveDataForStale);
-  const firstOption = options[0];
+  const firstOption = options[0]!;
   const hasMaterializePermission = firstOption.hasMaterializePermission;
 
   const {MaterializeButton} = useLaunchPadHooks();
@@ -433,8 +433,8 @@ async function stateForLaunchingAssets(
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
       pipelineName: jobName,
-      repositoryName: assets[0].repository.name,
-      repositoryLocationName: assets[0].repository.location.name,
+      repositoryName: assets[0]!.repository.name,
+      repositoryLocationName: assets[0]!.repository.location.name,
     },
   });
   const pipeline = resourceResult.data.pipelineOrError;
@@ -448,7 +448,7 @@ async function stateForLaunchingAssets(
 
   const partitionSetName = partitionSets.results[0]?.name;
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
-  const resources = pipeline.modes[0].resources.filter((r) =>
+  const resources = pipeline.modes[0]!.resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
   );
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
@@ -478,7 +478,7 @@ async function stateForLaunchingAssets(
       },
     };
   }
-  if (partitionDefinition) {
+  if (partitionDefinition && partitionSetName) {
     return {
       type: 'partitions',
       assets,
@@ -528,6 +528,7 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
   // the anchor asset but we do it alphabetically so that it is deterministic.
   const first = partitionedRoots[0];
   if (
+    first &&
     !partitionedRoots.every((r) =>
       partitionDefinitionsEqual(first.partitionDefinition!, r.partitionDefinition!),
     )

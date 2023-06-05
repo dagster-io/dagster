@@ -44,7 +44,7 @@ export const AssetEventList: React.FC<{
     <AssetListContainer ref={parentRef}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
-          const group = groups[index];
+          const group = groups[index]!;
           return (
             <AssetListRow
               key={key}

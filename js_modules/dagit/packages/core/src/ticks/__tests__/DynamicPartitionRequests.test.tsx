@@ -37,18 +37,21 @@ describe('DynamicPartitionRequests', () => {
     expect(headerRow).toBeVisible();
 
     //First row
-    expect(getByText(allRows[1], 'part1')).toBeVisible();
-    expect(getByText(allRows[1], 'Add Partition')).toBeVisible();
-    expect(getByText(allRows[1], 'def1')).toBeVisible();
+    const firstRow = allRows[1]!;
+    expect(getByText(firstRow, 'part1')).toBeVisible();
+    expect(getByText(firstRow, 'Add Partition')).toBeVisible();
+    expect(getByText(firstRow, 'def1')).toBeVisible();
 
     //Second row
-    expect(getByText(allRows[2], 'part2')).toBeVisible();
-    expect(getByText(allRows[2], 'Add Partition')).toBeVisible();
-    expect(getByText(allRows[2], 'def1')).toBeVisible();
+    const secondRow = allRows[2]!;
+    expect(getByText(secondRow, 'part2')).toBeVisible();
+    expect(getByText(secondRow, 'Add Partition')).toBeVisible();
+    expect(getByText(secondRow, 'def1')).toBeVisible();
 
     //Third row
-    expect(getByText(allRows[3], 'part3')).toBeVisible();
-    expect(getByText(allRows[3], 'Delete Partition')).toBeVisible();
-    expect(getByText(allRows[3], 'def2')).toBeVisible();
+    const thirdRow = allRows[3]!;
+    expect(getByText(thirdRow, 'part3')).toBeVisible();
+    expect(getByText(thirdRow, 'Delete Partition')).toBeVisible();
+    expect(getByText(thirdRow, 'def2')).toBeVisible();
   });
 });

@@ -203,7 +203,7 @@ export const buildLiveDataForNode = (
     lastObservation,
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
-    stepKey: assetNode.opNames[0],
+    stepKey: assetNode.opNames[0]!,
     freshnessInfo: assetNode.freshnessInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
