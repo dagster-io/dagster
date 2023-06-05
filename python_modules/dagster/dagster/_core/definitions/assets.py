@@ -786,6 +786,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -807,6 +808,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
         group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
+        )
+        descriptions_by_key = check.opt_mapping_param(
+            descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
         )
 
         if group_names_by_key:
@@ -881,7 +885,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
-            for key, description in self._descriptions_by_key.items()
+            for key, description in descriptions_by_key.items()
         }
 
         return __class__.dagster_internal_init(

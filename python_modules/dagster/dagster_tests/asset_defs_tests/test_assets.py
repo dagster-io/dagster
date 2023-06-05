@@ -122,6 +122,40 @@ def test_retain_group():
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
 
 
+def test_with_replaced_description() -> None:
+    @multi_asset(
+        outs={
+            "foo": AssetOut(description="foo"),
+            "bar": AssetOut(description="bar"),
+            "baz": AssetOut(description="baz"),
+        }
+    )
+    def abc():
+        ...
+
+    assert abc.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+        AssetKey("baz"): "baz",
+    }
+
+    # If there's no replacement description for the asset key, the original description is retained.
+    replaced = abc.with_attributes(descriptions_by_key={})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+        AssetKey("baz"): "baz",
+    }
+
+    # Otherwise, use the replaced description.
+    replaced = abc.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar_prime",
+        AssetKey("baz"): "baz",
+    }
+
+
 def test_retain_freshness_policy():
     fp = FreshnessPolicy(maximum_lag_minutes=24.5)
 
