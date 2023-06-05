@@ -88,6 +88,7 @@ export const Evaluations = {
       },
       data: {
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          currentEvaluationId: 1000,
           records: [],
         }),
       },
@@ -118,6 +119,7 @@ export const Evaluations = {
       },
       data: {
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          currentEvaluationId: 1000,
           records: assetKeyPath
             ? [
                 buildAutoMaterializeAssetEvaluationRecord({
