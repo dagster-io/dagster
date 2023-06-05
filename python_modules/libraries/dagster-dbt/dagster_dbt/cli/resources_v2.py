@@ -238,6 +238,14 @@ class DbtCliTask:
         """
         return list(self.stream_raw_events())
 
+    def is_successful(self) -> bool:
+        """Return whether the dbt CLI process completed successfully.
+
+        Returns:
+            bool: True, if the dbt CLI process returns with a zero exit code, and False otherwise.
+        """
+        return self.process.wait() == 0
+
     def stream(self) -> Iterator[Union[Output, AssetObservation]]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
@@ -265,11 +273,8 @@ class DbtCliTask:
 
             yield event
 
-        # TODO: handle the return codes here!
-        # https://docs.getdbt.com/reference/exit-codes
-        return_code = self.process.wait()
-
-        return return_code
+        # Ensure that the dbt CLI process has completed.
+        self.process.wait()
 
     def get_artifact(
         self,
