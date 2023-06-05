@@ -257,7 +257,7 @@ function LeftPanel({
                 flex={{direction: 'column'}}
               >
                 <Box
-                  padding={{left: 12}}
+                  padding={{left: 16}}
                   border={{side: 'left', width: 1, color: Colors.KeylineGray}}
                   flex={{direction: 'column', gap: 4}}
                   style={{width: '100%'}}
@@ -286,7 +286,7 @@ function LeftPanel({
             return (
               <EvaluationRow style={{cursor: 'default'}} key={`skip-${evaluation.timestamp}`}>
                 <Box
-                  padding={{left: 12}}
+                  padding={{left: 16}}
                   border={{side: 'left', width: 1, color: Colors.KeylineGray}}
                   flex={{direction: 'column', gap: 4}}
                   style={{width: '100%'}}
@@ -309,11 +309,18 @@ function LeftPanel({
               }}
               $selected={isSelected}
             >
-              <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
-                <div style={{color: Colors.Blue700}}>
-                  {evaluation.numRequested} run{evaluation.numRequested === 1 ? '' : 's'} requested
-                </div>
-                <TimestampDisplay timestamp={evaluation.timestamp} />
+              <Box
+                flex={{direction: 'row', gap: 8}}
+                style={{color: Colors.Blue700, marginLeft: '-8px'}}
+              >
+                <Icon name="done" color={Colors.Blue700} />
+                <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
+                  <div>
+                    {evaluation.numRequested} run{evaluation.numRequested === 1 ? '' : 's'}{' '}
+                    requested
+                  </div>
+                  <TimestampDisplay timestamp={evaluation.timestamp} />
+                </Box>
               </Box>
             </EvaluationRow>
           );
