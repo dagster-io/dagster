@@ -15,6 +15,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
     TimeWindow,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from pydantic import Field
@@ -101,6 +102,7 @@ def build_bigquery_io_manager(
         the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
     """
 
+    @dagster_maintained_io_manager
     @io_manager(config_schema=BigQueryIOManager.to_config_schema())
     def bigquery_io_manager(init_context):
         """I/O Manager for storing outputs in a BigQuery database.

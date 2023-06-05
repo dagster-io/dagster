@@ -3,6 +3,7 @@ from dagster import (
     ConfigurableResource,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from prometheus_client.exposition import default_handler
 from pydantic import Field, PrivateAttr
@@ -49,6 +50,11 @@ class PrometheusResource(ConfigurableResource):
         description="is how long delete will attempt to connect before giving up. Defaults to 30s.",
     )
     _registry: prometheus_client.CollectorRegistry = PrivateAttr(default=None)
+
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._registry = prometheus_client.CollectorRegistry()
@@ -145,6 +151,7 @@ class PrometheusResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=PrometheusResource.to_config_schema(),
     description="""This resource is for sending metrics to a Prometheus Pushgateway.""",

@@ -8,6 +8,7 @@ from dagster import (
     resource,
 )
 from dagster._config.field_utils import Shape
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -56,6 +57,11 @@ class SSMResource(ResourceWithBoto3Configuration):
             )
     """
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> "botocore.client.ssm":
         return construct_ssm_client(
             max_attempts=self.max_attempts,
@@ -64,6 +70,7 @@ class SSMResource(ResourceWithBoto3Configuration):
         )
 
 
+@dagster_maintained_resource
 @resource(config_schema=SSMResource.to_config_schema())
 def ssm_resource(context) -> "botocore.client.ssm":
     """Resource that gives access to AWS Systems Manager Parameter Store.
@@ -182,6 +189,11 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
         ),
     )
 
+    @classmethod
+    @property
+    def _dagster_maintained(cls) -> bool:
+        return True
+
     @contextmanager
     def parameters_in_environment(
         self,
@@ -276,6 +288,7 @@ LEGACY_PARAMETERSTORE_SCHEMA = {
 }
 
 
+@dagster_maintained_resource
 @resource(config_schema=LEGACY_PARAMETERSTORE_SCHEMA)
 @contextmanager
 def parameter_store_resource(context) -> Any:
