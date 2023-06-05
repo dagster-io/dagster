@@ -101,7 +101,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
-        io_def._dagster_maintained = self.dagster_maintained()  # noqa: SLF001
+        io_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
 
         return io_def
 
