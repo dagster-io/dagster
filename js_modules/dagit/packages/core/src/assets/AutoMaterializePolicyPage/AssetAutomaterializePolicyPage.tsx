@@ -92,7 +92,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
           queryResult.data.autoMaterializeAssetEvaluationsOrError.currentEvaluationId,
       };
     }
-    return {evaluations: [], currentEvaluationId: 1};
+    return {evaluations: [], currentEvaluationId: null};
   }, [queryResult.data?.autoMaterializeAssetEvaluationsOrError]);
 
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
