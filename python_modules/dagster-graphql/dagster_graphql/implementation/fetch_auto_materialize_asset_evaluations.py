@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING, Optional
 
 from dagster import AssetKey
-from dagster._core.host_representation.external_data import ExternalAssetNode
 
-from dagster_graphql.implementation.fetch_assets import asset_node_iter
+from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
     GrapheneAutoMaterializeAssetEvaluationRecord,
@@ -38,15 +37,10 @@ def fetch_auto_materialize_asset_evaluations(
 
     asset_key = AssetKey.from_graphql_input(graphene_asset_key)
 
-    asset_node: Optional[ExternalAssetNode] = None
-    for _, _, external_asset_node in asset_node_iter(graphene_info):
-        if external_asset_node.asset_key == asset_key:
-            asset_node = external_asset_node
-            break
-
+    asset_node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key)
     partitions_def = (
-        asset_node.partitions_def_data.get_partitions_definition()
-        if asset_node and asset_node.partitions_def_data
+        asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
+        if asset_node and asset_node.external_asset_node.partitions_def_data
         else None
     )
 
