@@ -16,7 +16,6 @@ from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
-from dagster._core.test_utils import poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
@@ -311,7 +310,7 @@ def spoll_for_finished_run(instance: DagsterInstance, run_id: str):
     interval = 0.01
 
     filters = RunsFilter(
-        run_ids=run_id,
+        run_ids=[run_id],
         statuses=[
             DagsterRunStatus.SUCCESS,
             DagsterRunStatus.FAILURE,
@@ -327,7 +326,7 @@ def spoll_for_finished_run(instance: DagsterInstance, run_id: str):
         else:
             time.sleep(interval)
             foo_info = instance.event_log_storage.get_concurrency_info("foo")
-            print("waiting for", run_id, foo_info)
+            print("waiting for", run_id, foo_info)  # noqa: T201
             total_time += interval
             if total_time > 20:
                 raise Exception("Timed out")
