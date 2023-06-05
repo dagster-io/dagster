@@ -22,7 +22,6 @@ from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
-from dagster._utils.env import environ
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
@@ -1240,59 +1239,58 @@ def test_logging_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    with environ({"OVERRIDE_ALEMBIC_QUIET": "False"}):
-        freeze_datetime = pendulum.now()
-        with pendulum.test(freeze_datetime):
-            success_sensor = external_repo.get_external_sensor("logging_status_sensor")
-            instance.start_sensor(success_sensor)
+    freeze_datetime = pendulum.now()
+    with pendulum.test(freeze_datetime):
+        success_sensor = external_repo.get_external_sensor("logging_status_sensor")
+        instance.start_sensor(success_sensor)
 
-            evaluate_sensors(workspace_context, executor)
+        evaluate_sensors(workspace_context, executor)
 
-            ticks = instance.get_ticks(
-                success_sensor.get_external_origin_id(), success_sensor.selector_id
-            )
-            assert len(ticks) == 1
-            validate_tick(
-                ticks[0],
-                success_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
-            external_job = external_repo.get_full_external_job("foo_job")
-            run = instance.create_run_for_job(
-                foo_job,
-                external_job_origin=external_job.get_external_origin(),
-                job_code_origin=external_job.get_python_origin(),
-            )
-            instance.submit_run(run.run_id, workspace_context.create_request_context())
-            wait_for_all_runs_to_finish(instance)
-            run = instance.get_runs()[0]
-            assert run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        external_job = external_repo.get_full_external_job("foo_job")
+        run = instance.create_run_for_job(
+            foo_job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        instance.submit_run(run.run_id, workspace_context.create_request_context())
+        wait_for_all_runs_to_finish(instance)
+        run = instance.get_runs()[0]
+        assert run.status == DagsterRunStatus.SUCCESS
+        freeze_datetime = freeze_datetime.add(seconds=60)
 
-        with pendulum.test(freeze_datetime):
-            # should fire the success sensor and the started sensor
-            evaluate_sensors(workspace_context, executor)
+    with pendulum.test(freeze_datetime):
+        # should fire the success sensor and the started sensor
+        evaluate_sensors(workspace_context, executor)
 
-            ticks = instance.get_ticks(
-                success_sensor.get_external_origin_id(), success_sensor.selector_id
-            )
-            assert len(ticks) == 2
-            validate_tick(
-                ticks[0],
-                success_sensor,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-            )
-            tick = ticks[0]
-            assert tick.log_key
-            records = get_instigation_log_records(instance, tick.log_key)
-            assert len(records) == 1
-            assert records
-            record = records[0]
-            assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
-            instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore
+        ticks = instance.get_ticks(
+            success_sensor.get_external_origin_id(), success_sensor.selector_id
+        )
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            success_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        tick = ticks[0]
+        assert tick.log_key
+        records = get_instigation_log_records(instance, tick.log_key)
+        assert len(records) == 1
+        assert records
+        record = records[0]
+        assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
+        instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore

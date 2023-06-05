@@ -1,4 +1,3 @@
-import os
 import threading
 from functools import lru_cache
 from typing import Any, Optional, Tuple, Union
@@ -14,7 +13,6 @@ from sqlalchemy.ext.compiler import compiles
 from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
-from dagster._utils.log import quieten
 
 create_engine = db.create_engine  # exported
 
@@ -64,16 +62,8 @@ def run_alembic_downgrade(
 _alembic_lock = threading.Lock()
 
 
-def stamp_alembic_rev(
-    alembic_config: Config, conn: Connection, rev: str = "head", quiet: Optional[bool] = False
-) -> None:
-    if quiet is None:
-        quiet = (
-            bool(os.environ["OVERRIDE_ALEMBIC_QUIET"])
-            if "OVERRIDE_ALEMBIC_QUIET" in os.environ
-            else True
-        )
-    with _alembic_lock, quieten(quiet):
+def stamp_alembic_rev(alembic_config: Config, conn: Connection, rev: str = "head") -> None:
+    with _alembic_lock:
         alembic_config.attributes["connection"] = conn
         stamp(alembic_config, rev)
 
