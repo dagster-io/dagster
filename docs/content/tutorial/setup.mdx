@@ -9,7 +9,7 @@ To complete this tutorial, you'll need:
 
 - **To install Python and pip.** This tutorial assumes that you have some familiarity with Python, but you should be able to follow along even if you're coming from a different programming language. To check that Python and `pip` (Python's package manager) are already installed in your environment or install them, follow the instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/). <DagsterVersion />
 
-- To install Dagster, run the following command from your terminal:
+- **To install Dagster**. Run the following command from your terminal:
 
   ```bash
   pip install dagster
@@ -19,12 +19,12 @@ To complete this tutorial, you'll need:
 
 ## Creating your first Dagster project
 
-To verify that your Dagster installation was successful, it's time for you to create your first Dagster project! You'll use the Dagster scaffolding command to give you an empty Dagster project that you can run locally.
+To verify that you successfully installed Dagster, let's create your first Dagster project! You'll use the Dagster scaffolding command to give you an empty Dagster project that you can run locally.
 
 To create the project, run:
 
 ```bash
-dagster project from-example --example tutorial --name tutorial-project
+dagster project from-example --example tutorial --name my-tutorial-project
 ```
 
 After running this command, you should see a new directory called `tutorial-project` in your current directory. This directory contains the files that make up your Dagster project. Next, you'll install the Python dependencies you'll be using during the tutorial.
@@ -48,9 +48,9 @@ This command also installs packages that aren't necessary for every Dagster proj
   <a href="https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs">
     editable mode
   </a>
-  , which means that most changes you make in your Dagster project will
-  automatically be applied. The main exceptions are when you're adding new
-  assets or installing additional dependencies.
+  , which means that most changes you make in your Dagster project will automatically
+  be applied. The main exceptions are when you're adding new assets or installing
+  additional dependencies.
 </Note>
 
 To verify that it worked and that you can run Dagster locally, run:

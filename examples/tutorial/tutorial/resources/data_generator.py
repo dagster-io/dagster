@@ -1,7 +1,7 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from random import Random
-from typing import Sequence
+from typing import Sequence, Union
 
 from dagster import ConfigurableResource
 from faker import Faker
@@ -26,15 +26,7 @@ class Signup:
     sso_id: str
     email_verified: bool
     enabled: bool
-    _registered_at: datetime = None
-
-    @property
-    def registered_at(self) -> datetime:
-        return self._registered_at
-
-    @registered_at.setter
-    def registered_at(self, dt: datetime) -> None:
-        self._registered_at = dt
+    registered_at: datetime
 
     def to_dict(self) -> dict:
         props = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
@@ -66,6 +58,9 @@ class Signup:
     def __hash__(self):
         return hash(self.properties())
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
 
 class DataGenerator:
     def __init__(self, seed: int = 0):
@@ -73,7 +68,10 @@ class DataGenerator:
         self.fake = Faker()
         self.random = Random(seed)
 
-    def generate_signup(self) -> Signup:
+    def generate_signup(self, date) -> Signup:
+        # TODO: `date_time_between_dates` is being hijacked by the Faker.seed call
+        registered_at = self.fake.date_time_between_dates(date, date + timedelta(days=1))
+
         return Signup(
             name=self.fake.name(),
             email=self.fake.email(),
@@ -86,6 +84,7 @@ class DataGenerator:
             sso_id=self.fake.uuid4(),
             email_verified=self.fake.boolean(),
             enabled=self.fake.boolean(),
+            registered_at=registered_at,
         )
 
     def get_signups_for_date(self, date: datetime) -> Sequence[Signup]:
@@ -97,9 +96,7 @@ class DataGenerator:
         num_signups = self.random.randint(25, 100)
 
         for i in range(num_signups):
-            signup = self.generate_signup()
-            # TODO: `date_time_between_dates` is being hijacked by the Faker.seed call
-            signup.registered_at = self.fake.date_time_between_dates(date, date + timedelta(days=1))
+            signup = self.generate_signup(date)
             signups.append(signup.to_dict())
 
         new_seed = self.random.randint(0, 100000)
@@ -108,7 +105,7 @@ class DataGenerator:
         return sorted(signups, key=lambda x: x["registered_at"])
 
     def get_signups_for_dates(
-        self, start_date: datetime, end_date: datetime = None
+        self, start_date: datetime, end_date: Union[datetime, None] = None
     ) -> Sequence[Signup]:
         signups = []
 
