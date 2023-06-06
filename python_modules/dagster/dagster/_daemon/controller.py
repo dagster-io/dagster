@@ -268,7 +268,7 @@ class DagsterDaemonController(AbstractContextManager):
 
                 # periodically refresh the shared workspace context
                 if (time.time() - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
-                    self._workspace_process_context.reload_workspace()
+                    self._workspace_process_context.refresh_workspace()
                     last_workspace_update_time = time.time()
 
                 if self._instance.daemon_skip_heartbeats_without_errors:

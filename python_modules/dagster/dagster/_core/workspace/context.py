@@ -409,6 +409,12 @@ class IWorkspaceProcessContext(ABC):
 
     @abstractmethod
     def reload_workspace(self) -> None:
+        """Reload the code in each code location."""
+        pass
+
+    @abstractmethod
+    def refresh_workspace(self) -> None:
+        """Refresh the snapshots for each code location, without reloading the underlying code."""
         pass
 
     @property
@@ -653,6 +659,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def shutdown_code_location(self, name: str) -> None:
         with self._lock:
             self._location_entry_dict[name].origin.shutdown_server()
+
+    def refresh_workspace(self) -> None:
+        updated_locations = {
+            origin.location_name: self._load_location(origin, reload=False)
+            for origin in self._origins
+        }
+        self._update_workspace(updated_locations)
 
     def reload_workspace(self) -> None:
         updated_locations = {
