@@ -906,6 +906,21 @@ def test_launcher_run_resources(
     assert task.get("overrides").get("cpu") == "1024"
 
 
+def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job):
+    with instance_cm(
+        {
+            "run_ecs_tags": [{"key": "dagster/run_id", "value": "NOPE"}],
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        with pytest.raises(Exception, match="Cannot override system ECS tag: dagster/run_id"):
+            instance.launch_run(run.run_id, workspace)
+
+
 def test_launch_run_with_container_context(
     ecs,
     instance,
