@@ -718,6 +718,12 @@ def determine_asset_partitions_to_auto_materialize(
         instance=instance_queryer.instance,
     )
 
+    def will_be_materialized_for_freshness(asset_partition: AssetKeyPartitionKey) -> bool:
+        return asset_partition in conditions_by_asset_partition_for_freshness and all(
+            condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+            for condition in conditions_by_asset_partition_for_freshness[asset_partition]
+        )
+
     def parents_will_be_reconciled(
         asset_graph: AssetGraph,
         candidate: AssetKeyPartitionKey,
@@ -808,7 +814,11 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             return False
 
-        if all(parents_will_be_reconciled(asset_graph, candidate) for candidate in candidates_unit):
+        if all(
+            will_be_materialized_for_freshness(candidate)
+            or parents_will_be_reconciled(asset_graph, candidate)
+            for candidate in candidates_unit
+        ):
             unit_conditions = set().union(
                 *(conditions_for_candidate(candidate) for candidate in candidates_unit)
             )
