@@ -693,7 +693,7 @@ const MiddlePanel = ({
             met={!!conditionResults.upstreamDataHasChangedSinceLatestMaterialization}
           />
           <Condition
-            text="Required to meet a freshness policy"
+            text="Required to meet this asset's freshness policy"
             met={!!conditionResults.requiredToMeetAFreshnessPolicy}
           />
           <Condition
