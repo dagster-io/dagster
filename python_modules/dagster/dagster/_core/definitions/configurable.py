@@ -9,6 +9,7 @@ from dagster import (
 )
 from dagster._config import EvaluateValueResult
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.decorator_utils import get_function_params
 
 from .definition_config_schema import (
     CoercableToConfigSchema,
@@ -192,14 +193,14 @@ T_Configurable = TypeVar(
 )
 
 
-class UpdatedFunctionAndConfigSchema(NamedTuple):
+class FunctionAndConfigSchema(NamedTuple):
     function: Callable[[Any], Any]
     config_schema: Optional[UserConfigSchema]
 
 
 def _wrap_user_fn_if_pythonic_config(
     user_fn: Any, config_schema: Optional[UserConfigSchema]
-) -> UpdatedFunctionAndConfigSchema:
+) -> FunctionAndConfigSchema:
     """Helper function which allows users to provide a Pythonic config object to a @configurable
     function. Detects if the function has a single parameter annotated with a Config class.
     If so, wraps the function to convert the config dictionary into the appropriate Config object.
@@ -209,45 +210,43 @@ def _wrap_user_fn_if_pythonic_config(
         infer_schema_from_config_annotation,
         safe_is_subclass,
     )
-    from dagster._core.decorator_utils import get_function_params
 
     if not isinstance(user_fn, Callable):
-        return UpdatedFunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
+        return FunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
 
     config_fn_params = get_function_params(user_fn)
-    check.invariant(len(config_fn_params) == 1, "Config mapping should have exactly one parameter")
+    check.invariant(
+        len(config_fn_params) == 1, "@configured function should have exactly one parameter"
+    )
 
     param = config_fn_params[0]
 
     # If the parameter is a subclass of Config, we can infer the config schema from the
     # type annotation. We'll also wrap the config mapping function to convert the config
     # dictionary into the appropriate Config object.
-    if safe_is_subclass(param.annotation, Config):
-        check.invariant(
-            config_schema is None,
-            "Cannot provide config_schema to config mapping with Config-annotated param",
-        )
+    if not safe_is_subclass(param.annotation, Config):
+        return FunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
 
-        config_schema_from_class = infer_schema_from_config_annotation(
-            param.annotation, param.default
-        )
-        config_cls = cast(Type[Config], param.annotation)
+    check.invariant(
+        config_schema is None,
+        "Cannot provide config_schema to @configured function with Config-annotated param",
+    )
 
-        param_name = param.name
+    config_schema_from_class = infer_schema_from_config_annotation(param.annotation, param.default)
+    config_cls = cast(Type[Config], param.annotation)
 
-        def wrapped_fn(config_as_dict) -> Any:
-            config_input = config_cls(**config_as_dict)
-            output = user_fn(**{param_name: config_input})
+    param_name = param.name
 
-            if isinstance(output, Config):
-                return output._convert_to_config_dictionary()  # noqa: SLF001
-            else:
-                return output
+    def wrapped_fn(config_as_dict) -> Any:
+        config_input = config_cls(**config_as_dict)
+        output = user_fn(**{param_name: config_input})
 
-        return UpdatedFunctionAndConfigSchema(
-            function=wrapped_fn, config_schema=config_schema_from_class
-        )
-    return UpdatedFunctionAndConfigSchema(function=user_fn, config_schema=config_schema)
+        if isinstance(output, Config):
+            return output._convert_to_config_dictionary()  # noqa: SLF001
+        else:
+            return output
+
+    return FunctionAndConfigSchema(function=wrapped_fn, config_schema=config_schema_from_class)
 
 
 def configured(

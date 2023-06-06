@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+import pytest
 from dagster import (
     Config,
     RunConfig,
@@ -7,6 +8,7 @@ from dagster import (
     job,
     op,
 )
+from dagster._check import CheckError
 
 
 def test_config_mapping_return_config_dict() -> None:
@@ -65,3 +67,48 @@ def test_config_mapping_return_config_object() -> None:
     )
     assert result.success
     assert result.output_for_node("do_something_simplified") == "foo"
+
+
+def test_config_annotation_no_config_schema_err() -> None:
+    class DoSomethingConfig(Config):
+        config_param: str
+
+    @op
+    def do_something(config: DoSomethingConfig) -> str:
+        return config.config_param
+
+    class DoSomethingSimplifiedConfig(Config):
+        simplified_param: str
+
+    # Ensure that we error if we try to provide a config_schema to a @configured function
+    # which has a Config-annotated param - no need to provide a config_schema in this case
+    with pytest.raises(
+        CheckError,
+        match="Cannot provide config_schema to @configured function with Config-annotated param",
+    ):
+
+        @configured(do_something, config_schema={"simplified_param": str})
+        def do_something_simplified(config_in: DoSomethingSimplifiedConfig):
+            ...
+
+
+def test_config_annotation_extra_param_err() -> None:
+    class DoSomethingConfig(Config):
+        config_param: str
+
+    @op
+    def do_something(config: DoSomethingConfig) -> str:
+        return config.config_param
+
+    class DoSomethingSimplifiedConfig(Config):
+        simplified_param: str
+
+    # Ensure that we error if the @configured function has an extra param
+    with pytest.raises(
+        CheckError,
+        match="@configured function should have exactly one parameter",
+    ):
+
+        @configured(do_something)
+        def do_something_simplified(config_in: DoSomethingSimplifiedConfig, useless_param: str):
+            ...
