@@ -158,7 +158,14 @@ def instance_cm(stub_aws, stub_ecs_metadata) -> Callable[..., ContextManager[Dag
 def instance(
     instance_cm: Callable[..., ContextManager[DagsterInstance]]
 ) -> Iterator[DagsterInstance]:
-    with instance_cm() as dagster_instance:
+    with instance_cm(
+        {
+            "run_ecs_tags": [
+                {"key": "HAS_VALUE", "value": "SEE"},
+                {"key": "DOES_NOT_HAVE_VALUE"},
+            ]
+        }
+    ) as dagster_instance:
         yield dagster_instance
 
 
@@ -465,6 +472,12 @@ def container_context_config(configured_secret: Secret) -> Mapping[str, Any]:
                     "image": "busybox:latest",
                 }
             ],
+            "server_ecs_tags": [
+                {
+                    "key": "FOO",  # no value
+                }
+            ],
+            "run_ecs_tags": [{"key": "ABC", "value": "DEF"}],  # with value
         },
     }
 
@@ -518,6 +531,12 @@ def other_container_context_config(other_configured_secret):
                 {
                     "name": "OtherRunAgent",
                     "image": "otherrun:latest",
+                }
+            ],
+            "server_ecs_tags": [{"key": "BAZ", "value": "QUUX"}],
+            "run_ecs_tags": [
+                {
+                    "key": "GHI",
                 }
             ],
         },
