@@ -29,7 +29,7 @@ def instance():
                 "event_log_storage": {
                     "module": "dagster.utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
-                    "config": {"base_dir": temp_dir},
+                    "config": {"base_dir": temp_dir, "sleep_interval": 0.01},
                 },
             }
         ) as _instance:
