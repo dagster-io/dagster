@@ -1028,7 +1028,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
         else:
             # multi_asset subsetting
-            return AssetsDefinition(
+            return AssetsDefinition.dagster_internal_init(
                 # keep track of the original mapping
                 keys_by_input_name=self._keys_by_input_name,
                 keys_by_output_name=self._keys_by_output_name,
@@ -1043,6 +1043,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
                 auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
+                descriptions_by_key=self.descriptions_by_key,
             )
 
     @public
