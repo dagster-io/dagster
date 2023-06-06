@@ -275,7 +275,8 @@ def configured(
     Args:
         configurable (ConfigurableDefinition): An object that can be configured.
         config_schema (ConfigSchema): The config schema that the inputs to the decorated function
-            must satisfy.
+            must satisfy. Alternatively, annotate the config parameter to the decorated function
+            with a subclass of :py:class:`Config` and omit this argument.
         **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the returned
             object.
 
@@ -286,15 +287,32 @@ def configured(
 
     .. code-block:: python
 
-        dev_s3 = configured(s3_resource, name="dev_s3")({'bucket': 'dev'})
+        class GreetingConfig(Config):
+            message: str
 
-        @configured(s3_resource)
+        @op
+        def greeting_op(config: GreetingConfig):
+            print(config.message)
+
+        class HelloConfig(Config):
+            name: str
+
+        @configured(greeting_op)
+        def hello_op(config: HelloConfig):
+            return GreetingConfig(message=f"Hello, {config.name}!")
+
+    .. code-block:: python
+
+        dev_s3 = configured(S3Resource, name="dev_s3")({'bucket': 'dev'})
+
+        @configured(S3Resource)
         def dev_s3(_):
             return {'bucket': 'dev'}
 
-        @configured(s3_resource, {'bucket_prefix', str})
+        @configured(S3Resource, {'bucket_prefix', str})
         def dev_s3(config):
             return {'bucket': config['bucket_prefix'] + 'dev'}
+
     """
     _check_configurable_param(configurable)
 
