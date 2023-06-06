@@ -8,7 +8,6 @@ import {
   Icon,
   NonIdealState,
   Spinner,
-  Mono,
   Subheading,
   Tag,
 } from '@dagster-io/ui';
@@ -183,6 +182,19 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
   );
 };
 
+type NoConditionsMetEvaluation = {
+  __typename: 'no_conditions_met';
+  evaluationId: number;
+  amount: number;
+  endTimestamp: number | 'now';
+  startTimestamp: number;
+  numSkipped?: undefined;
+  numRequested?: undefined;
+  numDiscarded?: undefined;
+  numRequests?: undefined;
+  conditions?: undefined;
+};
+
 export function getEvaluationsWithEmptyAdded({
   isLoading,
   currentEvaluationId,
@@ -238,10 +250,10 @@ function LeftPanel({
   selectedEvaluation,
 }: {
   evaluations: EvaluationType[];
-  evaluationsIncludingEmpty: any[];
+  evaluationsIncludingEmpty: Array<NoConditionsMetEvaluation | EvaluationType>;
   paginationProps: ReturnType<typeof useEvaluationsQueryResult>['paginationProps'];
-  onSelectEvaluation: (evaluation: EvaluationType) => void;
-  selectedEvaluation?: any;
+  onSelectEvaluation: (evaluation: EvaluationType | NoConditionsMetEvaluation) => void;
+  selectedEvaluation?: NoConditionsMetEvaluation | EvaluationType;
 }) {
   return (
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
@@ -516,7 +528,7 @@ const MiddlePanel = ({
   maxMaterializationsPerMinute,
 }: {
   assetKey: Omit<AssetKey, '__typename'>;
-  selectedEvaluation?: any;
+  selectedEvaluation?: EvaluationType | NoConditionsMetEvaluation;
   maxMaterializationsPerMinute: number;
 }) => {
   const {data, loading, error} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
@@ -531,16 +543,6 @@ const MiddlePanel = ({
       },
     },
   );
-
-  const evaluationData = React.useMemo(() => {
-    if (
-      data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
-      'AutoMaterializeAssetEvaluationRecords'
-    ) {
-      return data?.autoMaterializeAssetEvaluationsOrError.records[0];
-    }
-    return null;
-  }, [data?.autoMaterializeAssetEvaluationsOrError]);
 
   const conditionResults = React.useMemo(() => {
     const results: Partial<{
@@ -628,11 +630,11 @@ const MiddlePanel = ({
       >
         <Subheading>Result</Subheading>
         <Box>
-          {selectedEvaluation?.numSkipped > 0 || selectedEvaluation?.numDiscarded ? (
+          {selectedEvaluation?.numSkipped || selectedEvaluation?.numDiscarded ? (
             <Tag intent="warning">Skipped</Tag>
           ) : (
             <>
-              {selectedEvaluation?.numRequested > 0 ? (
+              {selectedEvaluation?.numRequested ? (
                 <Tag intent="primary">
                   {selectedEvaluation?.numRequested} run
                   {selectedEvaluation?.numRequested === 1 ? '' : 's'} requested
