@@ -282,6 +282,7 @@ function LeftPanel({
               </EvaluationRow>
             );
           }
+          const isSelected = selectedEvaluation === evaluation;
           if (evaluation.numSkipped) {
             return (
               <EvaluationRow
@@ -307,7 +308,6 @@ function LeftPanel({
               </EvaluationRow>
             );
           }
-          const isSelected = selectedEvaluation === evaluation;
           return (
             <EvaluationRow
               key={evaluation.evaluationId}
