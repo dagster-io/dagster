@@ -5,7 +5,7 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {ActivatableButton} from '../runs/RunListTabs.new';
+import {ActivatableButton} from '../runs/RunListTabs';
 
 import {OverviewAssetsRoot} from './OverviewAssetsRoot';
 import {OverviewTabs} from './OverviewTabs';
