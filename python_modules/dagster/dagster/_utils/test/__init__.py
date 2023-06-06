@@ -12,7 +12,7 @@ from dagster import (
     NodeInvocation,
     _check as check,
 )
-from dagster._config import Field, IntSource, StringSource
+from dagster._config import Field, StringSource
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions import (
     GraphDefinition,
@@ -309,7 +309,7 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
 
     @classmethod
     def config_type(cls) -> UserConfigSchema:
-        return {"base_dir": StringSource, "sleep_interval": Field(IntSource, is_required=False)}
+        return {"base_dir": StringSource, "sleep_interval": Field(float, is_required=False)}
 
     @classmethod
     def from_config_value(

@@ -40,7 +40,7 @@ def error_graph():
 
 @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
 def simple_op(context):
-    time.sleep(0.2)
+    time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
