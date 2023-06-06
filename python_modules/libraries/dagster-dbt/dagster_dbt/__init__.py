@@ -38,16 +38,6 @@ from .errors import (
     DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
     DagsterDbtError as DagsterDbtError,
 )
-from .ops import (
-    dbt_build_op as dbt_build_op,
-    dbt_compile_op as dbt_compile_op,
-    dbt_docs_generate_op as dbt_docs_generate_op,
-    dbt_ls_op as dbt_ls_op,
-    dbt_run_op as dbt_run_op,
-    dbt_seed_op as dbt_seed_op,
-    dbt_snapshot_op as dbt_snapshot_op,
-    dbt_test_op as dbt_test_op,
-)
 from .version import __version__ as __version__
 
 # isort: split
@@ -85,6 +75,19 @@ if TYPE_CHECKING:
     )
     from .types import DbtOutput as DbtOutput
 
+    ##### Deprecating dbt ops
+    # isort: split
+    from .ops import (
+        dbt_build_op as dbt_build_op,
+        dbt_compile_op as dbt_compile_op,
+        dbt_docs_generate_op as dbt_docs_generate_op,
+        dbt_ls_op as dbt_ls_op,
+        dbt_run_op as dbt_run_op,
+        dbt_seed_op as dbt_seed_op,
+        dbt_snapshot_op as dbt_snapshot_op,
+        dbt_test_op as dbt_test_op,
+    )
+
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
@@ -95,7 +98,7 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     **{
         value: (
             module,
-            "0.21.0",
+            "0.24.0",
             additional_warn_text,
         )
         for value, module, additional_warn_text in [
@@ -119,6 +122,23 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
             ("DagsterDbtCliHandledRuntimeError", "dagster_dbt.errors", None),
             ("DagsterDbtCliOutputsNotFoundError", "dagster_dbt.errors", None),
             ("DbtOutput", "dagster_dbt.types", None),
+        ]
+    },
+    **{
+        value: (
+            module,
+            "0.24.0",
+            "Use the @op decorator and DbtCliResource instead.",
+        )
+        for value, module in [
+            ("dbt_build_op", "dagster_dbt.ops"),
+            ("dbt_compile_op", "dagster_dbt.ops"),
+            ("dbt_docs_generate_op", "dagster_dbt.ops"),
+            ("dbt_ls_op", "dagster_dbt.ops"),
+            ("dbt_run_op", "dagster_dbt.ops"),
+            ("dbt_seed_op", "dagster_dbt.ops"),
+            ("dbt_snapshot_op", "dagster_dbt.ops"),
+            ("dbt_test_op", "dagster_dbt.ops"),
         ]
     },
 }
