@@ -18,6 +18,7 @@ import {
   TextInput,
   Button,
   NonIdealState,
+  Page,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
@@ -64,33 +65,26 @@ const InstanceConcurrencyPage = React.memo(() => {
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
 
-  if (!data) {
-    return (
-      <>
-        <PageHeader
-          title={<Heading>{pageTitle}</Heading>}
-          tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
-        />
-        <Box padding={{vertical: 64}}>
-          <Spinner purpose="section" />
-        </Box>
-      </>
-    );
-  }
+  const content = data ? (
+    flagInstanceConcurrencyLimits ? (
+      <ConcurrencyLimits limits={data.instance.concurrencyLimits} refetch={queryResult.refetch} />
+    ) : (
+      <Redirect to="/config" />
+    )
+  ) : (
+    <Box padding={{vertical: 64}}>
+      <Spinner purpose="section" />
+    </Box>
+  );
 
-  const limits = data.instance.concurrencyLimits;
   return (
-    <>
+    <Page>
       <PageHeader
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
       />
-      {flagInstanceConcurrencyLimits ? (
-        <ConcurrencyLimits limits={limits} refetch={queryResult.refetch} />
-      ) : (
-        <Redirect to="/config" />
-      )}
-    </>
+      {content}
+    </Page>
   );
 });
 
@@ -144,10 +138,16 @@ const ConcurrencyLimits: React.FC<{
           </Button>
         </Box>
         {limits.length === 0 ? (
-          <Box padding={{vertical: 64}} flex={{justifyContent: 'center'}}>
-            No concurrency limits have been configured for this instance.&nbsp;
-            <ButtonLink onClick={() => onAdd()}>Add a concurrency limit</ButtonLink>.
-          </Box>
+          <NonIdealState
+            icon="error"
+            title="No concurrency limits"
+            description={
+              <Box padding={{vertical: 64}} flex={{justifyContent: 'center'}}>
+                No concurrency limits have been configured for this instance.&nbsp;
+                <ButtonLink onClick={() => onAdd()}>Add a concurrency limit</ButtonLink>.
+              </Box>
+            }
+          />
         ) : (
           <Table>
             <thead>
@@ -307,7 +307,7 @@ const AddConcurrencyLimitDialog: React.FC<{
             placeholder="Concurrency key"
           />
         </Box>
-        <Box margin={{bottom: 4}}>Concurrency limit:</Box>
+        <Box margin={{bottom: 4}}>Concurrency limit (1-1000):</Box>
         <Box>
           <TextInput
             value={limitInput || ''}
@@ -323,7 +323,7 @@ const AddConcurrencyLimitDialog: React.FC<{
         <Button
           intent="primary"
           onClick={save}
-          disabled={!isValidLimit(limitInput.trim()) || !keyInput}
+          disabled={!isValidLimit(limitInput.trim()) || !keyInput || isSubmitting}
         >
           {isSubmitting ? 'Adding...' : 'Add limit'}
         </Button>
@@ -373,7 +373,7 @@ const EditConcurrencyLimitDialog: React.FC<{
         <Box margin={{bottom: 16}}>
           <strong>{concurrencyKey}</strong>
         </Box>
-        <Box margin={{bottom: 4}}>Concurrency limit:</Box>
+        <Box margin={{bottom: 4}}>Concurrency limit (1-1000):</Box>
         <Box>
           <TextInput
             value={limitInput || ''}
@@ -431,16 +431,14 @@ const DeleteConcurrencyLimitDialog: React.FC<{
   return (
     <Dialog isOpen={open} title={title} onClose={onClose}>
       <DialogBody>
-        <Box flex={{justifyContent: 'flex-start'}}>
-          Delete concurrency limit&nbsp;<strong>{concurrencyKey}</strong>?
-        </Box>
+        Delete concurrency limit&nbsp;<strong>{concurrencyKey}</strong>?
       </DialogBody>
       <DialogFooter>
         <Button intent="none" onClick={onClose}>
           Close
         </Button>
         {isSubmitting ? (
-          <Button intent="primary" disabled>
+          <Button intent="danger" disabled>
             Deleting...
           </Button>
         ) : (
