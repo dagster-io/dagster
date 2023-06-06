@@ -14,8 +14,6 @@ from .parquet_io_manager import (
 )
 from .snowflake_io_manager import SnowflakeIOManager
 
-
-
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
 dbt_local_resource = DbtCliClientResource(
