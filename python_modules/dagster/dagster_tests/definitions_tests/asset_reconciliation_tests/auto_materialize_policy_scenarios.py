@@ -1,3 +1,4 @@
+import datetime
 from typing import Sequence
 
 from dagster import (
@@ -11,6 +12,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from .asset_reconciliation_scenario import (
@@ -21,7 +23,10 @@ from .asset_reconciliation_scenario import (
     single_asset_run,
 )
 from .basic_scenarios import diamond
-from .freshness_policy_scenarios import daily_to_unpartitioned, overlapping_freshness_inf
+from .freshness_policy_scenarios import (
+    daily_to_unpartitioned,
+    overlapping_freshness_inf,
+)
 from .partition_scenarios import (
     hourly_partitions_def,
     hourly_to_daily_partitions,
@@ -248,6 +253,28 @@ auto_materialize_policy_scenarios = {
             "asset3": {ParentMaterializedAutoMaterializeCondition()},
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
+    ),
+    "auto_materialize_policy_lazy_with_manual_source": AssetReconciliationScenario(
+        assets=[
+            asset_def("a"),
+            asset_def("b", ["a"]),
+            asset_def("c", ["b"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
+            asset_def("d", ["c"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
+            asset_def(
+                "e",
+                ["d"],
+                auto_materialize_policy=AutoMaterializePolicy.lazy(),
+                freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+            ),
+        ],
+        unevaluated_runs=[
+            run(["a", "b", "c", "d"]),
+            run(["a", "b"]),
+            run(["a"]),
+        ],
+        asset_selection=AssetSelection.keys("c", "d", "e"),
+        between_runs_delta=datetime.timedelta(minutes=35),
+        expected_run_requests=[run_request(asset_keys=["c", "d", "e"])],
     ),
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
