@@ -463,6 +463,18 @@ export type ComputeLogs = {
   stepKey: Scalars['String'];
 };
 
+export type ConcurrencyKeyInfo = {
+  __typename: 'ConcurrencyKeyInfo';
+  activeRunIds: Array<Scalars['String']>;
+  activeSlotCount: Scalars['Int'];
+  assignedStepCount: Scalars['Int'];
+  assignedStepRunIds: Array<Scalars['String']>;
+  concurrencyKey: Scalars['String'];
+  pendingStepCount: Scalars['Int'];
+  pendingStepRunIds: Array<Scalars['String']>;
+  slotCount: Scalars['Int'];
+};
+
 export type ConfigType = {
   description: Maybe<Scalars['String']>;
   isSelector: Scalars['Boolean'];
@@ -540,6 +552,7 @@ export type DagitMutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  freeConcurrencySlotsForRun: Scalars['Boolean'];
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
@@ -552,6 +565,7 @@ export type DagitMutation = {
   scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
   setAutoMaterializePaused: Scalars['Boolean'];
+  setConcurrencyLimit: Scalars['Boolean'];
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -579,6 +593,10 @@ export type DagitMutationDeletePipelineRunArgs = {
 };
 
 export type DagitMutationDeleteRunArgs = {
+  runId: Scalars['String'];
+};
+
+export type DagitMutationFreeConcurrencySlotsForRunArgs = {
   runId: Scalars['String'];
 };
 
@@ -631,6 +649,11 @@ export type DagitMutationSensorDryRunArgs = {
 
 export type DagitMutationSetAutoMaterializePausedArgs = {
   paused: Scalars['Boolean'];
+};
+
+export type DagitMutationSetConcurrencyLimitArgs = {
+  concurrencyKey: Scalars['String'];
+  limit: Scalars['Int'];
 };
 
 export type DagitMutationSetSensorCursorArgs = {
@@ -1668,6 +1691,7 @@ export type InputTag = {
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean'];
+  concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String'];
   hasCapturedLogManager: Scalars['Boolean'];
@@ -4972,6 +4996,38 @@ export const buildComputeLogs = (
   };
 };
 
+export const buildConcurrencyKeyInfo = (
+  overrides?: Partial<ConcurrencyKeyInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ConcurrencyKeyInfo'} & ConcurrencyKeyInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConcurrencyKeyInfo');
+  return {
+    __typename: 'ConcurrencyKeyInfo',
+    activeRunIds:
+      overrides && overrides.hasOwnProperty('activeRunIds') ? overrides.activeRunIds! : [],
+    activeSlotCount:
+      overrides && overrides.hasOwnProperty('activeSlotCount') ? overrides.activeSlotCount! : 1206,
+    assignedStepCount:
+      overrides && overrides.hasOwnProperty('assignedStepCount')
+        ? overrides.assignedStepCount!
+        : 3480,
+    assignedStepRunIds:
+      overrides && overrides.hasOwnProperty('assignedStepRunIds')
+        ? overrides.assignedStepRunIds!
+        : [],
+    concurrencyKey:
+      overrides && overrides.hasOwnProperty('concurrencyKey') ? overrides.concurrencyKey! : 'quasi',
+    pendingStepCount:
+      overrides && overrides.hasOwnProperty('pendingStepCount') ? overrides.pendingStepCount! : 370,
+    pendingStepRunIds:
+      overrides && overrides.hasOwnProperty('pendingStepRunIds')
+        ? overrides.pendingStepRunIds!
+        : [],
+    slotCount: overrides && overrides.hasOwnProperty('slotCount') ? overrides.slotCount! : 455,
+  };
+};
+
 export const buildConfigType = (
   overrides?: Partial<ConfigType>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -5150,6 +5206,10 @@ export const buildDagitMutation = (
         : relationshipsToOmit.has('DeletePipelineRunSuccess')
         ? ({} as DeletePipelineRunSuccess)
         : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    freeConcurrencySlotsForRun:
+      overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
+        ? overrides.freeConcurrencySlotsForRun!
+        : false,
     launchPartitionBackfill:
       overrides && overrides.hasOwnProperty('launchPartitionBackfill')
         ? overrides.launchPartitionBackfill!
@@ -5219,6 +5279,10 @@ export const buildDagitMutation = (
     setAutoMaterializePaused:
       overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
         ? overrides.setAutoMaterializePaused!
+        : true,
+    setConcurrencyLimit:
+      overrides && overrides.hasOwnProperty('setConcurrencyLimit')
+        ? overrides.setConcurrencyLimit!
         : true,
     setNuxSeen: overrides && overrides.hasOwnProperty('setNuxSeen') ? overrides.setNuxSeen! : true,
     setSensorCursor:
@@ -6959,6 +7023,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('autoMaterializePaused')
         ? overrides.autoMaterializePaused!
         : true,
+    concurrencyLimits:
+      overrides && overrides.hasOwnProperty('concurrencyLimits')
+        ? overrides.concurrencyLimits!
+        : [],
     daemonHealth:
       overrides && overrides.hasOwnProperty('daemonHealth')
         ? overrides.daemonHealth!
