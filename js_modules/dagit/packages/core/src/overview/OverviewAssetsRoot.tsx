@@ -72,7 +72,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     }
     return groupedAssetsUnfiltered.filter((group) => {
       return (
-        group.groupName.toLowerCase().includes(searchValue.toLowerCase()) ||
+        (group.groupName || UNGROUPED_ASSETS).toLowerCase().includes(searchValue.toLowerCase()) ||
         group.repositoryName.toLowerCase().includes(searchValue.toLowerCase())
       );
     });
@@ -160,7 +160,7 @@ function groupAssets(assets: Assets) {
   const groups: Record<
     string,
     {
-      groupName: string;
+      groupName?: string;
       repositoryName: string;
       assets: Assets;
     }
@@ -210,6 +210,7 @@ function VirtualHeaderRow() {
   );
 }
 
+const UNGROUPED_ASSETS = 'Ungrouped Assets';
 type RowProps = {
   height: number;
   start: number;
@@ -302,12 +303,16 @@ function VirtualRow({height, start, group}: RowProps) {
           <Box flex={{direction: 'column', gap: 2}}>
             <Box flex={{direction: 'row', gap: 8}}>
               <Icon name="asset_group" />
-              <Link
-                style={{fontWeight: 700}}
-                to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
-              >
-                {group.groupName}
-              </Link>
+              {group.groupName ? (
+                <Link
+                  style={{fontWeight: 700}}
+                  to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
+                >
+                  {group.groupName}
+                </Link>
+              ) : (
+                UNGROUPED_ASSETS
+              )}
             </Box>
             <div {...containerProps}>
               <RepositoryLinkWrapper maxWidth={viewport.width}>
