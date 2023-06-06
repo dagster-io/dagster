@@ -20,7 +20,7 @@ def execute_concurrency_slots_iteration(
     _debug_crash_flags: Optional[DebugCrashFlags] = None,
 ) -> Iterator[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
-    timeout_seconds = instance.run_monitoring_settings.get("free_slots_after_run_finish_seconds")
+    timeout_seconds = instance.run_monitoring_settings.get("free_slots_after_run_end_seconds")
     if not timeout_seconds:
         yield
         return
