@@ -664,10 +664,14 @@ class RunConfig:
 
     def to_config_dict(self):
         return {
-            "loggers": self.loggers,
-            "resources": _convert_config_classes(self.resources),
-            "ops": _convert_config_classes(self.ops),
-            "execution": self.execution,
+            k: v
+            for k, v in {
+                "loggers": self.loggers,
+                "resources": _convert_config_classes(self.resources),
+                "ops": _convert_config_classes(self.ops),
+                "execution": self.execution,
+            }.items()
+            if v != {}
         }
 
 

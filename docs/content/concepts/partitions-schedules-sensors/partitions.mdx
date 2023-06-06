@@ -382,17 +382,19 @@ With the job above, it's possible to supply any value for the `date` param, whic
 First, you define the <PyObject object="PartitionedConfig"/>. In this case, because each partition is a date, you can use the <PyObject object="daily_partitioned_config" decorator /> decorator. It defines the full set of partitions - every date between the start date and the current date, as well as how to determine the run config for a given partition.
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_config endbefore=end_partitioned_config
-from dagster import daily_partitioned_config
+from dagster import daily_partitioned_config, RunConfig
 from datetime import datetime
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
 def my_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+    return RunConfig(
+        ops={
+            "process_data_for_date": ProcessDataForDateConfig(
+                date=start.strftime("%Y-%m-%d")
+            )
         }
-    }
+    )
 ```
 
 Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
@@ -434,7 +436,7 @@ In addition to the <PyObject object="daily_partitioned_config" decorator /> deco
 Not all jobs are partitioned by time. Here's a partitioned job where the partitions are continents:
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, RunConfig, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -449,7 +451,9 @@ CONTINENTS = [
 
 @static_partitioned_config(partition_keys=CONTINENTS)
 def continent_config(partition_key: str):
-    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+    return RunConfig(
+        ops={"continent_op": ContinentOpConfig(continent_name=partition_key)}
+    )
 
 
 class ContinentOpConfig(Config):
@@ -528,17 +532,19 @@ from datetime import datetime
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
 def my_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+    return RunConfig(
+        ops={
+            "process_data_for_date": ProcessDataForDateConfig(
+                date=start.strftime("%Y-%m-%d")
+            )
         }
-    }
+    )
 
 
 def test_my_partitioned_config():
     # assert that the decorated function returns the expected output
     run_config = my_partitioned_config(datetime(2020, 1, 3), datetime(2020, 1, 4))
-    assert run_config == {
+    assert run_config.to_config_dict() == {
         "ops": {"process_data_for_date": {"config": {"date": "2020-01-03"}}}
     }
 
@@ -550,21 +556,19 @@ def test_my_partitioned_config():
 If you want to test that your <PyObject object="PartitionedConfig" /> creates the partitions you expect, you can use the `get_partition_keys` or `get_run_config_for_partition_key` functions.
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
-from dagster import Config
+from dagster import Config, RunConfig
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
 def my_offset_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data": {
-                "config": {
-                    "start": start.strftime("%Y-%m-%d-%H:%M"),
-                    "end": _end.strftime("%Y-%m-%d-%H:%M"),
-                }
-            }
+    return RunConfig(
+        ops={
+            "process_data": ProcessDataConfig(
+                start=start.strftime("%Y-%m-%d-%H:%M"),
+                end=_end.strftime("%Y-%m-%d-%H:%M"),
+            )
         }
-    }
+    )
 
 
 class ProcessDataConfig(Config):
@@ -595,7 +599,7 @@ def test_my_offset_partitioned_config():
     assert validate_run_config(do_more_stuff_partitioned, run_config)
 
     # test that the contents of run_config are what you expect
-    assert run_config == {
+    assert run_config.to_config_dict() == {
         "ops": {
             "process_data": {
                 "config": {"start": "2020-01-01-00:15", "end": "2020-01-02-00:15"}
