@@ -145,6 +145,10 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._watchers[run_id][callback] = cursor
 
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
+
     def on_modified(self):
         keys = [
             (run_id, callback)
