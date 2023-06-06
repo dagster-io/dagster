@@ -58,9 +58,9 @@ import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
-  additionalActions?: React.ReactNode[];
+  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
   onAddTag?: (token: RunFilterToken) => void;
-}> = React.memo(({run, onAddTag, additionalActions}) => {
+}> = React.memo(({run, onAddTag, additionalActionsForRun}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags'
@@ -234,7 +234,7 @@ export const RunActionsMenu: React.FC<{
                     onClick={() => setVisibleDialog('terminate')}
                   />
                 )}
-                {additionalActions}
+                {additionalActionsForRun?.(run)}
                 <MenuDivider />
               </>
               <MenuExternalLink

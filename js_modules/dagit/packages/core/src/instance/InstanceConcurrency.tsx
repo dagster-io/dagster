@@ -114,6 +114,10 @@ const ConcurrencyLimits: React.FC<{
   const [action, setAction] = React.useState<DialogAction>();
   const [selectedRuns, setSelectedRuns] = React.useState<string[] | undefined>(undefined);
   const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
+  const onRunsDialogClose = React.useCallback(() => {
+    setSelectedRuns(undefined);
+    setSelectedKey(undefined);
+  }, [setSelectedKey, setSelectedRuns]);
 
   const limitsByKey = Object.fromEntries(
     limits.map(({concurrencyKey, slotCount}) => [concurrencyKey, slotCount]),
@@ -142,10 +146,10 @@ const ConcurrencyLimits: React.FC<{
             icon="error"
             title="No concurrency limits"
             description={
-              <Box padding={{vertical: 64}} flex={{justifyContent: 'center'}}>
+              <>
                 No concurrency limits have been configured for this instance.&nbsp;
                 <ButtonLink onClick={() => onAdd()}>Add a concurrency limit</ButtonLink>.
-              </Box>
+              </>
             }
           />
         ) : (
@@ -218,10 +222,7 @@ const ConcurrencyLimits: React.FC<{
             Active runs for <strong>{selectedKey}</strong>
           </span>
         }
-        onClose={() => {
-          setSelectedRuns(undefined);
-          setSelectedKey(undefined);
-        }}
+        onClose={onRunsDialogClose}
         runIds={selectedRuns}
       />
     </>
@@ -474,28 +475,31 @@ const ConcurrencyRunsDialog: React.FC<{
     FreeConcurrencySlotsForRunMutationVariables
   >(FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION);
 
-  const freeSlotsActionMenuItem = (run: RunTableRunFragment) => {
-    return doneStatuses.has(run.status)
-      ? [
-          <MenuItem
-            key="free-concurrency-slots"
-            icon="status"
-            text="Free concurrency slots for run"
-            onClick={async () => {
-              const resp = await freeSlots({variables: {runId: run.id}});
-              if (resp.data?.freeConcurrencySlotsForRun) {
-                await showSharedToaster({
-                  intent: 'success',
-                  icon: 'copy_to_clipboard_done',
-                  message: 'Freed concurrency slots',
-                });
-              }
-              onClose();
-            }}
-          />,
-        ]
-      : [];
-  };
+  const freeSlotsActionMenuItem = React.useCallback(
+    (run: RunTableRunFragment) => {
+      return doneStatuses.has(run.status)
+        ? [
+            <MenuItem
+              key="free-concurrency-slots"
+              icon="status"
+              text="Free concurrency slots for run"
+              onClick={async () => {
+                const resp = await freeSlots({variables: {runId: run.id}});
+                if (resp.data?.freeConcurrencySlotsForRun) {
+                  await showSharedToaster({
+                    intent: 'success',
+                    icon: 'copy_to_clipboard_done',
+                    message: 'Freed concurrency slots',
+                  });
+                }
+                onClose();
+              }}
+            />,
+          ]
+        : [];
+    },
+    [freeSlots, onClose],
+  );
 
   return (
     <Dialog
@@ -512,7 +516,7 @@ const ConcurrencyRunsDialog: React.FC<{
         ) : data.pipelineRunsOrError.__typename === 'Runs' ? (
           <RunTable
             runs={data.pipelineRunsOrError.results}
-            additionalActionsForRow={freeSlotsActionMenuItem}
+            additionalActionsForRun={freeSlotsActionMenuItem}
           />
         ) : (
           <Box padding={{vertical: 64}}>
