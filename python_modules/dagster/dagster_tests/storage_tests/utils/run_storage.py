@@ -1202,6 +1202,16 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
+        wrong_job = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            job_name="bar_job",
+            status=DagsterRunStatus.SUCCESS,
+            tags={
+                PARTITION_NAME_TAG: "ignorable",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(wrong_job)
         partition_data = storage.get_run_partition_data(
             runs_filter=RunsFilter(
                 job_name="foo_job",
