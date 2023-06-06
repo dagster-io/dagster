@@ -38,7 +38,12 @@ from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
+from dagster._core.storage.sqlalchemy_compat import (
+    db_case,
+    db_fetch_mappings,
+    db_select,
+    db_subquery,
+)
 from dagster._serdes import (
     deserialize_value,
     serialize_value,
@@ -49,6 +54,11 @@ from dagster._utils import (
     datetime_as_float,
     utc_datetime_from_naive,
     utc_datetime_from_timestamp,
+)
+from dagster._utils.concurrency import (
+    ConcurrencyClaimStatus,
+    ConcurrencyKeyInfo,
+    ConcurrencySlotStatus,
 )
 
 from ..dagster_run import DagsterRunStatsSnapshot
@@ -66,7 +76,9 @@ from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DA
 from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
+    ConcurrencySlotsTable,
     DynamicPartitionsTable,
+    PendingStepsTable,
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
 )
@@ -74,6 +86,7 @@ from .schema import (
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
+MAX_CONCURRENCY_SLOTS = 1000
 MIN_ASSET_ROWS = 25
 
 # We are using third-party library objects for DB connections-- at this time, these libraries are
@@ -633,6 +646,12 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("dynamic_partitions"):
                 conn.execute(DynamicPartitionsTable.delete())
 
+            if self.has_table("concurrency_slots"):
+                conn.execute(ConcurrencySlotsTable.delete())
+
+            if self.has_table("pending_steps"):
+                conn.execute(PendingStepsTable.delete())
+
         with self.index_connection() as conn:
             conn.execute(SqlEventLogStorageTable.delete())
             conn.execute(AssetKeyTable.delete())
@@ -642,6 +661,12 @@ class SqlEventLogStorage(EventLogStorage):
 
             if self.has_table("dynamic_partitions"):
                 conn.execute(DynamicPartitionsTable.delete())
+
+            if self.has_table("concurrency_slots"):
+                conn.execute(ConcurrencySlotsTable.delete())
+
+            if self.has_table("pending_steps"):
+                conn.execute(PendingStepsTable.delete())
 
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
@@ -1867,6 +1892,495 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             )
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return self.has_table(ConcurrencySlotsTable.name)
+
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
+        """Allocate a set of concurrency slots.
+
+        Args:
+            concurrency_key (str): The key to allocate the slots for.
+            num (int): The number of slots to allocate.
+        """
+        if num > MAX_CONCURRENCY_SLOTS:
+            raise DagsterInvalidInvocationError(
+                f"Cannot have more than {MAX_CONCURRENCY_SLOTS} slots per concurrency key."
+            )
+        if num < 0:
+            raise DagsterInvalidInvocationError("Cannot have a negative number of slots.")
+
+        keys_to_assign = None
+        with self.index_connection() as conn:
+            count_row = conn.execute(
+                db_select([db.func.count()])
+                .select_from(ConcurrencySlotsTable)
+                .where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                    )
+                )
+            ).fetchone()
+            existing = cast(int, count_row[0]) if count_row else 0
+
+            if existing > num:
+                # need to delete some slots, favoring ones where the slot is unallocated
+                rows = conn.execute(
+                    db_select([ConcurrencySlotsTable.c.id])
+                    .select_from(ConcurrencySlotsTable)
+                    .where(
+                        db.and_(
+                            ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                            ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                        )
+                    )
+                    .order_by(
+                        db_case([(ConcurrencySlotsTable.c.run_id.is_(None), 1)], else_=0).desc(),
+                        ConcurrencySlotsTable.c.id.desc(),
+                    )
+                    .limit(existing - num)
+                ).fetchall()
+
+                if rows:
+                    # mark rows as deleted
+                    conn.execute(
+                        ConcurrencySlotsTable.update()
+                        .values(deleted=True)
+                        .where(ConcurrencySlotsTable.c.id.in_([row[0] for row in rows]))
+                    )
+
+                # actually delete rows that are marked as deleted and are not claimed... the rest
+                # will be deleted when the slots are released by the free_concurrency_slots
+                conn.execute(
+                    ConcurrencySlotsTable.delete().where(
+                        db.and_(
+                            ConcurrencySlotsTable.c.deleted == True,  # noqa: E712
+                            ConcurrencySlotsTable.c.run_id == None,  # noqa: E711
+                        )
+                    )
+                )
+            elif num > existing:
+                # need to add some slots
+                rows = [
+                    {
+                        "concurrency_key": concurrency_key,
+                        "run_id": None,
+                        "step_key": None,
+                        "deleted": False,
+                    }
+                    for _ in range(existing, num)
+                ]
+                conn.execute(ConcurrencySlotsTable.insert().values(rows))
+                keys_to_assign = [concurrency_key for _ in range(existing, num)]
+
+        if keys_to_assign:
+            # we've added some slots... if there are any pending steps, we can assign them now or
+            # they will be unutilized until free_concurrency_slots is called
+            self.assign_pending_steps(keys_to_assign)
+
+    def has_unassigned_slots(self, concurrency_key: str) -> bool:
+        with self.index_connection() as conn:
+            pending_row = conn.execute(
+                db_select([db.func.count()])
+                .select_from(PendingStepsTable)
+                .where(
+                    db.and_(
+                        PendingStepsTable.c.concurrency_key == concurrency_key,
+                        PendingStepsTable.c.assigned_timestamp != None,  # noqa: E711
+                    )
+                )
+            ).fetchone()
+            slots = conn.execute(
+                db_select([db.func.count()])
+                .select_from(ConcurrencySlotsTable)
+                .where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                    )
+                )
+            ).fetchone()
+        pending_count = cast(int, pending_row[0]) if pending_row else 0
+        slots_count = cast(int, slots[0]) if slots else 0
+        return slots_count > pending_count
+
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        with self.index_connection() as conn:
+            pending_row = conn.execute(
+                db_select(
+                    [
+                        PendingStepsTable.c.assigned_timestamp,
+                        PendingStepsTable.c.priority,
+                        PendingStepsTable.c.create_timestamp,
+                    ]
+                ).where(
+                    db.and_(
+                        PendingStepsTable.c.run_id == run_id,
+                        PendingStepsTable.c.step_key == step_key,
+                        PendingStepsTable.c.concurrency_key == concurrency_key,
+                    )
+                )
+            ).fetchone()
+
+            if not pending_row:
+                # no pending step pending_row exists, the slot is blocked and the enqueued timestamp is None
+                return ConcurrencyClaimStatus(
+                    concurrency_key=concurrency_key,
+                    slot_status=ConcurrencySlotStatus.BLOCKED,
+                    priority=None,
+                    assigned_timestamp=None,
+                    enqueued_timestamp=None,
+                )
+
+            priority = cast(int, pending_row[1]) if pending_row[1] else None
+            assigned_timestamp = cast(datetime, pending_row[0]) if pending_row[0] else None
+            create_timestamp = cast(datetime, pending_row[2]) if pending_row[2] else None
+            if assigned_timestamp is None:
+                return ConcurrencyClaimStatus(
+                    concurrency_key=concurrency_key,
+                    slot_status=ConcurrencySlotStatus.BLOCKED,
+                    priority=priority,
+                    assigned_timestamp=None,
+                    enqueued_timestamp=create_timestamp,
+                )
+
+            # pending step is assigned, check to see if it's been claimed
+            slot_row = conn.execute(
+                db_select([db.func.count()]).where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                        ConcurrencySlotsTable.c.run_id == run_id,
+                        ConcurrencySlotsTable.c.step_key == step_key,
+                    )
+                )
+            ).fetchone()
+
+            return ConcurrencyClaimStatus(
+                concurrency_key=concurrency_key,
+                slot_status=ConcurrencySlotStatus.CLAIMED
+                if slot_row and slot_row[0]
+                else ConcurrencySlotStatus.BLOCKED,
+                priority=priority,
+                assigned_timestamp=assigned_timestamp,
+                enqueued_timestamp=create_timestamp,
+            )
+
+    def can_claim_from_pending(self, concurrency_key: str, run_id: str, step_key: str):
+        with self.index_connection() as conn:
+            row = conn.execute(
+                db_select([PendingStepsTable.c.assigned_timestamp]).where(
+                    db.and_(
+                        PendingStepsTable.c.run_id == run_id,
+                        PendingStepsTable.c.step_key == step_key,
+                        PendingStepsTable.c.concurrency_key == concurrency_key,
+                    )
+                )
+            ).fetchone()
+            return row and row[0] is not None
+
+    def has_pending_step(self, concurrency_key: str, run_id: str, step_key: str):
+        with self.index_connection() as conn:
+            row = conn.execute(
+                db_select([db.func.count()])
+                .select_from(PendingStepsTable)
+                .where(
+                    db.and_(
+                        PendingStepsTable.c.concurrency_key == concurrency_key,
+                        PendingStepsTable.c.run_id == run_id,
+                        PendingStepsTable.c.step_key == step_key,
+                    )
+                )
+            ).fetchone()
+            return row and cast(int, row[0]) > 0
+
+    def assign_pending_steps(self, concurrency_keys: Sequence[str]):
+        if not concurrency_keys:
+            return
+
+        with self.index_connection() as conn:
+            for key in concurrency_keys:
+                row = conn.execute(
+                    db_select([PendingStepsTable.c.id])
+                    .where(
+                        db.and_(
+                            PendingStepsTable.c.concurrency_key == key,
+                            PendingStepsTable.c.assigned_timestamp == None,  # noqa: E711
+                        )
+                    )
+                    .order_by(
+                        PendingStepsTable.c.priority.desc(),
+                        PendingStepsTable.c.create_timestamp.asc(),
+                    )
+                    .limit(1)
+                ).fetchone()
+                if row:
+                    conn.execute(
+                        PendingStepsTable.update()
+                        .where(PendingStepsTable.c.id == row[0])
+                        .values(assigned_timestamp=db.func.now())
+                    )
+
+    def add_pending_step(
+        self,
+        concurrency_key: str,
+        run_id: str,
+        step_key: str,
+        priority: Optional[int] = None,
+        should_assign: bool = False,
+    ):
+        with self.index_connection() as conn:
+            try:
+                conn.execute(
+                    PendingStepsTable.insert().values(
+                        [
+                            dict(
+                                run_id=run_id,
+                                step_key=step_key,
+                                concurrency_key=concurrency_key,
+                                priority=priority or 0,
+                                assigned_timestamp=db.func.now() if should_assign else None,
+                            )
+                        ]
+                    )
+                )
+            except db_exc.IntegrityError:
+                # do nothing
+                pass
+
+    def _remove_pending_steps(self, run_id: str, step_key: Optional[str] = None):
+        query = PendingStepsTable.delete().where(PendingStepsTable.c.run_id == run_id)
+        if step_key:
+            query = query.where(PendingStepsTable.c.step_key == step_key)
+        with self.index_connection() as conn:
+            conn.execute(query)
+
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ) -> ConcurrencyClaimStatus:
+        """Claim concurrency slot for step.
+
+        Args:
+            concurrency_keys (str): The concurrency key to claim.
+            run_id (str): The run id to claim for.
+            step_key (str): The step key to claim for.
+        """
+        # first, register the step by adding to pending queue
+        if not self.has_pending_step(
+            concurrency_key=concurrency_key, run_id=run_id, step_key=step_key
+        ):
+            has_unassigned_slots = self.has_unassigned_slots(concurrency_key)
+            self.add_pending_step(
+                concurrency_key=concurrency_key,
+                run_id=run_id,
+                step_key=step_key,
+                priority=priority,
+                should_assign=has_unassigned_slots,
+            )
+
+        # if the step is not assigned (i.e. has not been popped from queue), block the claim
+        claim_status = self.check_concurrency_claim(
+            concurrency_key=concurrency_key, run_id=run_id, step_key=step_key
+        )
+        if claim_status.is_claimed or not claim_status.is_assigned:
+            return claim_status
+
+        # attempt to claim a concurrency slot... this should generally work because we only assign
+        # based on the number of unclaimed slots, but this should act as a safeguard, using the slot
+        # rows as a semaphore
+        slot_status = self._claim_concurrency_slot(
+            concurrency_key=concurrency_key, run_id=run_id, step_key=step_key
+        )
+        return claim_status.with_slot_status(slot_status)
+
+    def _claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencySlotStatus:
+        """Claim a concurrency slot for the step.  Helper method that is called for steps that are
+        popped off the priority queue.
+
+        Args:
+            concurrency_key (str): The concurrency key to claim.
+            run_id (str): The run id to claim a slot for.
+            step_key (str): The step key to claim a slot for.
+        """
+        with self.index_connection() as conn:
+            result = conn.execute(
+                db_select([ConcurrencySlotsTable.c.id])
+                .select_from(ConcurrencySlotsTable)
+                .where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                        ConcurrencySlotsTable.c.step_key == None,  # noqa: E711
+                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                    )
+                )
+                .with_for_update(skip_locked=True)
+                .limit(1)
+            ).fetchone()
+            if not result or not result[0]:
+                return ConcurrencySlotStatus.BLOCKED
+            if not conn.execute(
+                ConcurrencySlotsTable.update()
+                .values(run_id=run_id, step_key=step_key)
+                .where(ConcurrencySlotsTable.c.id == result[0])
+            ).rowcount:
+                return ConcurrencySlotStatus.BLOCKED
+
+            return ConcurrencySlotStatus.CLAIMED
+
+    def get_concurrency_keys(self) -> Set[str]:
+        """Get the set of concurrency limited keys."""
+        with self.index_connection() as conn:
+            rows = conn.execute(
+                db_select([ConcurrencySlotsTable.c.concurrency_key])
+                .select_from(ConcurrencySlotsTable)
+                .where(ConcurrencySlotsTable.c.deleted == False)  # noqa: E712
+                .distinct()
+            ).fetchall()
+            return {cast(str, row[0]) for row in rows}
+
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
+        """Get the list of concurrency slots for a given concurrency key.
+
+        Args:
+            concurrency_key (str): The concurrency key to get the slots for.
+
+        Returns:
+            List[Tuple[str, int]]: A list of tuples of run_id and the number of slots it is
+                occupying for the given concurrency key.
+        """
+        with self.index_connection() as conn:
+            slot_query = (
+                db_select(
+                    [
+                        ConcurrencySlotsTable.c.run_id,
+                        ConcurrencySlotsTable.c.deleted,
+                        db.func.count().label("count"),
+                    ]
+                )
+                .select_from(ConcurrencySlotsTable)
+                .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
+                .group_by(ConcurrencySlotsTable.c.run_id, ConcurrencySlotsTable.c.deleted)
+            )
+            slot_rows = db_fetch_mappings(conn, slot_query)
+            pending_query = (
+                db_select(
+                    [
+                        PendingStepsTable.c.run_id,
+                        db_case(
+                            [(PendingStepsTable.c.assigned_timestamp.is_(None), False)],
+                            else_=True,
+                        ).label("is_assigned"),
+                        db.func.count().label("count"),
+                    ]
+                )
+                .select_from(PendingStepsTable)
+                .where(PendingStepsTable.c.concurrency_key == concurrency_key)
+                .group_by(PendingStepsTable.c.run_id, "is_assigned")
+            )
+            pending_rows = db_fetch_mappings(conn, pending_query)
+
+            return ConcurrencyKeyInfo(
+                concurrency_key=concurrency_key,
+                slot_count=sum(
+                    [
+                        cast(int, slot_row["count"])
+                        for slot_row in slot_rows
+                        if not slot_row["deleted"]
+                    ]
+                ),
+                active_slot_count=sum(
+                    [cast(int, slot_row["count"]) for slot_row in slot_rows if slot_row["run_id"]]
+                ),
+                active_run_ids={
+                    cast(str, slot_row["run_id"]) for slot_row in slot_rows if slot_row["run_id"]
+                },
+                pending_step_count=sum(
+                    [cast(int, row["count"]) for row in pending_rows if not row["is_assigned"]]
+                ),
+                pending_run_ids={
+                    cast(str, row["run_id"]) for row in pending_rows if not row["is_assigned"]
+                },
+                assigned_step_count=sum(
+                    [cast(int, row["count"]) for row in pending_rows if row["is_assigned"]]
+                ),
+                assigned_run_ids={
+                    cast(str, row["run_id"]) for row in pending_rows if row["is_assigned"]
+                },
+            )
+
+    def get_concurrency_run_ids(self) -> Set[str]:
+        with self.index_connection() as conn:
+            rows = conn.execute(db_select([PendingStepsTable.c.run_id]).distinct()).fetchall()
+            return set([cast(str, row[0]) for row in rows])
+
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id)
+        self._remove_pending_steps(run_id=run_id)
+        if freed_concurrency_keys:
+            # assign any pending steps that can now claim a slot
+            self.assign_pending_steps(freed_concurrency_keys)
+
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
+        freed_concurrency_keys = self._free_concurrency_slots(run_id=run_id, step_key=step_key)
+        self._remove_pending_steps(run_id=run_id, step_key=step_key)
+        if freed_concurrency_keys:
+            # assign any pending steps that can now claim a slot
+            self.assign_pending_steps(freed_concurrency_keys)
+
+    def _free_concurrency_slots(self, run_id: str, step_key: Optional[str] = None) -> Sequence[str]:
+        """Frees concurrency slots for a given run/step.
+
+        Args:
+            run_id (str): The run id to free the slots for.
+            step_key (Optional[str]): The step key to free the slots for. If not provided, all the
+                slots for all the steps of the run will be freed.
+        """
+        with self.index_connection() as conn:
+            # first delete any rows that apply and are marked as deleted.  This happens when the
+            # configured number of slots has been reduced, and some of the pruned slots included
+            # ones that were already allocated to the run/step
+            delete_query = ConcurrencySlotsTable.delete().where(
+                db.and_(
+                    ConcurrencySlotsTable.c.run_id == run_id,
+                    ConcurrencySlotsTable.c.deleted == True,  # noqa: E712
+                )
+            )
+            if step_key:
+                delete_query = delete_query.where(ConcurrencySlotsTable.c.step_key == step_key)
+            conn.execute(delete_query)
+
+            # next, fetch the slots to free up, while grabbing the concurrency keys so that we can
+            # allocate any pending steps from the queue for the freed slots, if necessary
+            select_query = (
+                db_select([ConcurrencySlotsTable.c.id, ConcurrencySlotsTable.c.concurrency_key])
+                .select_from(ConcurrencySlotsTable)
+                .where(ConcurrencySlotsTable.c.run_id == run_id)
+                .with_for_update(skip_locked=True)
+            )
+            if step_key:
+                select_query = select_query.where(ConcurrencySlotsTable.c.step_key == step_key)
+            rows = conn.execute(select_query).fetchall()
+            if not rows:
+                return []
+
+            # now, actually free the slots
+            conn.execute(
+                ConcurrencySlotsTable.update()
+                .values(run_id=None, step_key=None)
+                .where(
+                    db.and_(
+                        ConcurrencySlotsTable.c.id.in_([row[0] for row in rows]),
+                    )
+                )
+            )
+
+            # return the concurrency keys for the freed slots
+            return [cast(str, row[1]) for row in rows]
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

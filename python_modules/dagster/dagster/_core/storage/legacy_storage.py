@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializ
 from dagster._core.event_api import EventHandlerFn
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
@@ -544,6 +545,36 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_records_for_run(
             run_id, cursor, of_type, limit, ascending
         )
+
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
+        return self._storage.event_log_storage.set_concurrency_slots(concurrency_key, num)
+
+    def get_concurrency_keys(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_keys()
+
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
+        return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
+
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ) -> ConcurrencyClaimStatus:
+        return self._storage.event_log_storage.claim_concurrency_slot(
+            concurrency_key, run_id, step_key, priority
+        )
+
+    def check_concurrency_claim(self, concurrency_key: str, run_id: str, step_key: str):
+        return self._storage.event_log_storage.check_concurrency_claim(
+            concurrency_key, run_id, step_key
+        )
+
+    def get_concurrency_run_ids(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_run_ids()
+
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        return self._storage.event_log_storage.free_concurrency_slots_for_run(run_id)
+
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
+        return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
