@@ -1,6 +1,6 @@
 import sys
 from contextlib import ExitStack
-from typing import Iterator, Sequence, cast
+from typing import Iterator, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -16,6 +16,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.compute_logs import create_compute_log_file_key
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.execution.plan.execute_step import core_dagster_event_sequence_for_step
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import (
     ErrorSource,
     StepFailureData,
@@ -29,13 +30,18 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 
 def inner_plan_execution_iterator(
-    job_context: PlanExecutionContext, execution_plan: ExecutionPlan
+    job_context: PlanExecutionContext,
+    execution_plan: ExecutionPlan,
+    instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(job_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     compute_log_manager = job_context.instance.compute_log_manager
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
-    with execution_plan.start(retry_mode=job_context.retry_mode) as active_execution:
+    with execution_plan.start(
+        retry_mode=job_context.retry_mode,
+        instance_concurrency_context=instance_concurrency_context,
+    ) as active_execution:
         with ExitStack() as capture_stack:
             # begin capturing logs for the whole process if this is a captured log manager
             if isinstance(compute_log_manager, CapturedLogManager):
@@ -54,6 +60,11 @@ def inner_plan_execution_iterator(
             # https://github.com/dagster-io/dagster/issues/811
             while not active_execution.is_complete:
                 step = active_execution.get_next_step()
+
+                if not step:
+                    active_execution.sleep_til_ready()
+                    continue
+
                 step_context = cast(
                     StepExecutionContext,
                     job_context.for_step(step, active_execution.get_known_state()),
