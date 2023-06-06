@@ -2901,7 +2901,7 @@ type DagitQuery {
   shouldShowNux: Boolean!
   test: TestFields
   autoMaterializeAssetEvaluationsOrError(
-    assetKey: AssetKeyInput
+    assetKey: AssetKeyInput!
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
@@ -3062,10 +3062,12 @@ union AutoMaterializeCondition =
 
 type FreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 interface AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 enum AutoMaterializeDecisionType {
@@ -3074,24 +3076,39 @@ enum AutoMaterializeDecisionType {
   DISCARD
 }
 
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
 type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
