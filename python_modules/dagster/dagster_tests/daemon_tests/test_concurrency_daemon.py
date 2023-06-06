@@ -27,7 +27,7 @@ def instance():
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
-                "run_monitoring": {"enabled": True, "free_concurrency_slots_seconds": 60},
+                "run_monitoring": {"enabled": True, "free_slots_after_run_finish_seconds": 60},
             },
         ) as instance:
             yield instance
