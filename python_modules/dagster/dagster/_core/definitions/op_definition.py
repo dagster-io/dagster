@@ -481,19 +481,6 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                     args = args[1:]
                 return op_invocation_result(self, context, *args, **kwargs)
 
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, OpDefinition):
-            return False
-        return (
-            self.compute_fn == other.compute_fn
-            and self.name == other.name
-            and self.description == other.description
-            and self.config_schema == other.config_schema
-            and self.required_resource_keys == other.required_resource_keys
-            and self.tags == other.tags
-            and self.retry_policy == other.retry_policy
-        )
-
 
 def _resolve_output_defs_from_outs(
     compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
