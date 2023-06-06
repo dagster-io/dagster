@@ -284,7 +284,14 @@ function LeftPanel({
           }
           if (evaluation.numSkipped) {
             return (
-              <EvaluationRow style={{cursor: 'default'}} key={`skip-${evaluation.timestamp}`}>
+              <EvaluationRow
+                style={{cursor: 'default'}}
+                key={`skip-${evaluation.timestamp}`}
+                onClick={() => {
+                  onSelectEvaluation(evaluation);
+                }}
+                $selected={isSelected}
+              >
                 <Box
                   padding={{left: 16}}
                   border={{side: 'left', width: 1, color: Colors.KeylineGray}}
