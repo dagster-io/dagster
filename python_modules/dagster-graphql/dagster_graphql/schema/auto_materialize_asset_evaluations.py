@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import dagster._check as check
 import graphene
@@ -185,12 +185,10 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
 
 class GrapheneAutoMaterializeAssetEvaluationRecords(graphene.ObjectType):
     records = non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord)
+    currentEvaluationId = graphene.Int()
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecords"
-
-    def __init__(self, records: List[GrapheneAutoMaterializeAssetEvaluationRecord]):
-        super().__init__(records=records)
 
 
 class GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(graphene.ObjectType):

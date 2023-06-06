@@ -3,6 +3,7 @@ from datetime import datetime
 import dagster._check as check
 from dagster import AssetKey
 from dagster._core.definitions.asset_reconciliation_sensor import (
+    AssetReconciliationCursor,
     AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
@@ -11,6 +12,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._daemon.asset_daemon import CURSOR_KEY
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -41,6 +43,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     }
                 }
             }
+            currentEvaluationId
         }
     }
 }
@@ -54,7 +57,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             QUERY,
             variables={"assetKey": {"path": ["foo"]}, "limit": 10, "cursor": None},
         )
-        assert results.data == {"autoMaterializeAssetEvaluationsOrError": {"records": []}}
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {"records": [], "currentEvaluationId": None}
+        }
 
         check.not_none(
             graphql_context.instance.schedule_storage
@@ -87,7 +92,8 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
                     {"numRequested": 0, "numSkipped": 0, "numDiscarded": 0, "conditions": []}
-                ]
+                ],
+                "currentEvaluationId": None,
             }
         }
 
@@ -111,7 +117,8 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                             }
                         ],
                     }
-                ]
+                ],
+                "currentEvaluationId": None,
             }
         }
 
@@ -125,7 +132,9 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 "cursor": None,
             },
         )
-        assert results.data == {"autoMaterializeAssetEvaluationsOrError": {"records": []}}
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {"records": [], "currentEvaluationId": None}
+        }
 
         check.not_none(
             graphql_context.instance.schedule_storage
@@ -249,6 +258,44 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                             }
                         ],
                     }
-                ]
+                ],
+                "currentEvaluationId": None,
+            }
+        }
+
+    def test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
+        graphql_context.instance.daemon_cursor_storage.set_cursor_values(
+            {CURSOR_KEY: AssetReconciliationCursor.empty().serialize()}
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
+        )
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [],
+                "currentEvaluationId": 0,
+            }
+        }
+
+        graphql_context.instance.daemon_cursor_storage.set_cursor_values(
+            {
+                CURSOR_KEY: AssetReconciliationCursor.empty()
+                .with_updates(0, [], set(), {}, 42, None)  # type: ignore
+                .serialize()
+            }
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
+        )
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [],
+                "currentEvaluationId": 42,
             }
         }

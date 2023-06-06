@@ -9,18 +9,18 @@ import {
   buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
   buildFreshnessPolicy,
-} from '../../graphql/types';
+} from '../../../graphql/types';
 import {
   GET_EVALUATIONS_QUERY,
   GET_POLICY_INFO_QUERY,
   PAGE_SIZE,
-} from '../AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+} from '../AssetAutomaterializePolicyPage';
 import {
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
   GetPolicyInfoQuery,
   GetPolicyInfoQueryVariables,
-} from '../AutoMaterializePolicyPage/types/AssetAutomaterializePolicyPage.types';
+} from '../types/AssetAutomaterializePolicyPage.types';
 
 export function buildQueryMock<
   TQuery extends {__typename: 'DagitQuery'},
@@ -88,6 +88,7 @@ export const Evaluations = {
       },
       data: {
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          currentEvaluationId: 1000,
           records: [],
         }),
       },
@@ -118,6 +119,7 @@ export const Evaluations = {
       },
       data: {
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
+          currentEvaluationId: 1000,
           records: assetKeyPath
             ? [
                 buildAutoMaterializeAssetEvaluationRecord({
