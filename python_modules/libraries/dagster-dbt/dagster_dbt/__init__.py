@@ -28,16 +28,6 @@ from .errors import (
     DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
     DagsterDbtError as DagsterDbtError,
 )
-from .ops import (
-    dbt_build_op as dbt_build_op,
-    dbt_compile_op as dbt_compile_op,
-    dbt_docs_generate_op as dbt_docs_generate_op,
-    dbt_ls_op as dbt_ls_op,
-    dbt_run_op as dbt_run_op,
-    dbt_seed_op as dbt_seed_op,
-    dbt_snapshot_op as dbt_snapshot_op,
-    dbt_test_op as dbt_test_op,
-)
 from .types import DbtOutput as DbtOutput
 from .version import __version__ as __version__
 
@@ -73,6 +63,19 @@ if TYPE_CHECKING:
         local_dbt_rpc_resource as local_dbt_rpc_resource,
     )
 
+    ##### Deprecating dbt ops
+    # isort: split
+    from .ops import (
+        dbt_build_op as dbt_build_op,
+        dbt_compile_op as dbt_compile_op,
+        dbt_docs_generate_op as dbt_docs_generate_op,
+        dbt_ls_op as dbt_ls_op,
+        dbt_run_op as dbt_run_op,
+        dbt_seed_op as dbt_seed_op,
+        dbt_snapshot_op as dbt_snapshot_op,
+        dbt_test_op as dbt_test_op,
+    )
+
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
@@ -95,6 +98,23 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
             ("dbt_rpc_sync_resource", "dagster_dbt.rpc"),
             ("local_dbt_rpc_resource", "dagster_dbt.rpc"),
             ("DagsterDbtRpcUnexpectedPollOutputError", "dagster_dbt.errors"),
+        ]
+    },
+    **{
+        value: (
+            module,
+            "1.4.0",
+            "Use the `@op` decorator and the `DbtCli` resource.",
+        )
+        for value, module in [
+            ("dbt_build_op", "dagster_dbt.ops"),
+            ("dbt_compile_op", "dagster_dbt.ops"),
+            ("dbt_docs_generate_op", "dagster_dbt.ops"),
+            ("dbt_ls_op", "dagster_dbt.ops"),
+            ("dbt_run_op", "dagster_dbt.ops"),
+            ("dbt_seed_op", "dagster_dbt.ops"),
+            ("dbt_snapshot_op", "dagster_dbt.ops"),
+            ("dbt_test_op", "dagster_dbt.ops"),
         ]
     },
 }
