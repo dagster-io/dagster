@@ -2,7 +2,6 @@ import copy
 import logging
 import sys
 import traceback
-from contextlib import contextmanager
 from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
@@ -215,17 +214,6 @@ def default_date_format_string():
 
 def define_default_formatter():
     return logging.Formatter(default_format_string(), default_date_format_string())
-
-
-@contextmanager
-def quieten(quiet=True, level=logging.WARNING):
-    if quiet:
-        logging.disable(level)
-    try:
-        yield
-    finally:
-        if quiet:
-            logging.disable(logging.NOTSET)
 
 
 def configure_loggers(handler="default", log_level="INFO"):

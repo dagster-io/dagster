@@ -1258,7 +1258,6 @@ def test_logging_run_status_sensor(
         )
 
         freeze_datetime = freeze_datetime.add(seconds=60)
-        time.sleep(1)
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("foo_job")
@@ -1291,6 +1290,7 @@ def test_logging_run_status_sensor(
         assert tick.log_key
         records = get_instigation_log_records(instance, tick.log_key)
         assert len(records) == 1
+        assert records
         record = records[0]
         assert record[DAGSTER_META_KEY]["orig_message"] == f"run succeeded: {run.run_id}"
         instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore
