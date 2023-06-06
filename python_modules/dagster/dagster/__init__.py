@@ -109,6 +109,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._config.source import (
     BoolSource as BoolSource,
+    FloatSource as FloatSource,
     IntSource as IntSource,
     StringSource as StringSource,
 )

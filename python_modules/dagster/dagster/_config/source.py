@@ -100,6 +100,36 @@ class BoolSourceType(ScalarUnion):
             ) from e
 
 
+class FloatSourceType(ScalarUnion):
+    def __init__(self):
+        super(FloatSourceType, self).__init__(
+            scalar_type=float,
+            non_scalar_schema=Selector({"env": str}),
+            _key="FloatSourceType",
+        )
+
+    def post_process(self, value):
+        check.param_invariant(isinstance(value, (dict, float)), "value", "Should be pre-validated")
+
+        if not isinstance(value, dict):
+            return value
+
+        check.invariant(len(value) == 1, "Selector should have one entry")
+
+        key, cfg = list(value.items())[0]
+        check.invariant(key == "env", "Only valid key is env")
+        value = _ensure_env_variable(cfg)
+        try:
+            return float(value)
+        except ValueError as e:
+            raise PostProcessingError(
+                (
+                    'Value "{value}" stored in env variable "{var}" cannot be coerced into a float.'
+                ).format(value=value, var=cfg)
+            ) from e
+
+
 StringSource: StringSourceType = StringSourceType()
 IntSource: IntSourceType = IntSourceType()
 BoolSource: BoolSourceType = BoolSourceType()
+FloatSource: FloatSourceType = FloatSourceType()
