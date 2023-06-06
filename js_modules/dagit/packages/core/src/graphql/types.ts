@@ -323,6 +323,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
 
 export type AutoMaterializeAssetEvaluationRecords = {
   __typename: 'AutoMaterializeAssetEvaluationRecords';
+  currentEvaluationId: Maybe<Scalars['Int']>;
   records: Array<AutoMaterializeAssetEvaluationRecord>;
 };
 
@@ -340,6 +341,7 @@ export type AutoMaterializeCondition =
 
 export type AutoMaterializeConditionWithDecisionType = {
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export enum AutoMaterializeDecisionType {
@@ -757,7 +759,7 @@ export type DagitQueryAssetsOrErrorArgs = {
 };
 
 export type DagitQueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
-  assetKey?: InputMaybe<AssetKeyInput>;
+  assetKey: AssetKeyInput;
   cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
 };
@@ -1100,6 +1102,7 @@ export type DisplayableEvent = {
 export type DownstreamFreshnessAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'DownstreamFreshnessAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export type DryRunInstigationTick = {
@@ -1488,6 +1491,7 @@ export type FloatMetadataEntry = MetadataEntry & {
 export type FreshnessAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'FreshnessAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export type FreshnessPolicy = {
@@ -2148,6 +2152,7 @@ export type MaterializedPartitionRangeStatuses2D = {
 export type MaxMaterializationsExceededAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export type MessageEvent = {
@@ -2174,6 +2179,7 @@ export type MetadataItemDefinition = {
 export type MissingAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'MissingAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export type MissingFieldConfigError = PipelineConfigValidationError & {
@@ -2361,11 +2367,13 @@ export type OutputMapping = {
 export type ParentMaterializedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'ParentMaterializedAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export type ParentOutdatedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'ParentOutdatedAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
 export type Partition = {
@@ -2450,6 +2458,13 @@ export type PartitionKeyRange = {
   end: Scalars['String'];
   start: Scalars['String'];
 };
+
+export type PartitionKeys = {
+  __typename: 'PartitionKeys';
+  partitionKeys: Array<Scalars['String']>;
+};
+
+export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
 
 export enum PartitionRangeStatus {
   FAILED = 'FAILED',
@@ -2552,6 +2567,11 @@ export type PartitionStatuses = {
 };
 
 export type PartitionStatusesOrError = PartitionStatuses | PythonError;
+
+export type PartitionSubsetDeserializationError = Error & {
+  __typename: 'PartitionSubsetDeserializationError';
+  message: Scalars['String'];
+};
 
 export type PartitionTags = {
   __typename: 'PartitionTags';
@@ -4714,6 +4734,10 @@ export const buildAutoMaterializeAssetEvaluationRecords = (
   relationshipsToOmit.add('AutoMaterializeAssetEvaluationRecords');
   return {
     __typename: 'AutoMaterializeAssetEvaluationRecords',
+    currentEvaluationId:
+      overrides && overrides.hasOwnProperty('currentEvaluationId')
+        ? overrides.currentEvaluationId!
+        : 9797,
     records: overrides && overrides.hasOwnProperty('records') ? overrides.records! : [],
   };
 };
@@ -4732,6 +4756,12 @@ export const buildAutoMaterializeConditionWithDecisionType = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -5744,6 +5774,12 @@ export const buildDownstreamFreshnessAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -6551,6 +6587,12 @@ export const buildFreshnessAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -7878,6 +7920,12 @@ export const buildMaxMaterializationsExceededAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -7944,6 +7992,12 @@ export const buildMissingAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -8407,6 +8461,12 @@ export const buildParentMaterializedAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -8424,6 +8484,12 @@ export const buildParentOutdatedAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
   };
 };
 
@@ -8584,6 +8650,19 @@ export const buildPartitionKeyRange = (
     __typename: 'PartitionKeyRange',
     end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : 'repudiandae',
     start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : 'qui',
+  };
+};
+
+export const buildPartitionKeys = (
+  overrides?: Partial<PartitionKeys>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeys'} & PartitionKeys => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeys');
+  return {
+    __typename: 'PartitionKeys',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };
 };
 
@@ -8783,6 +8862,18 @@ export const buildPartitionStatuses = (
   return {
     __typename: 'PartitionStatuses',
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildPartitionSubsetDeserializationError = (
+  overrides?: Partial<PartitionSubsetDeserializationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionSubsetDeserializationError'} & PartitionSubsetDeserializationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionSubsetDeserializationError');
+  return {
+    __typename: 'PartitionSubsetDeserializationError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
   };
 };
 

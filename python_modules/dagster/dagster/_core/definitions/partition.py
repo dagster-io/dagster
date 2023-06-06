@@ -930,6 +930,9 @@ class SerializedPartitionsSubset(NamedTuple):
             serialized_partitions_def_class_name=self.serialized_partitions_def_class_name,
         )
 
+    def deserialize(self, partitions_def: PartitionsDefinition) -> PartitionsSubset:
+        return partitions_def.deserialize_subset(self.serialized_subset)
+
 
 class DefaultPartitionsSubset(PartitionsSubset[T_str]):
     # Every time we change the serialization format, we should increment the version number.

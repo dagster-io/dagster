@@ -275,7 +275,8 @@ class AssetReconciliationCursor(NamedTuple):
             ]
         else:
             return materialized_or_requested_subset.get_partition_keys_not_in_subset(
-                dynamic_partitions_store=dynamic_partitions_store
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
 
     def with_updates(
@@ -399,6 +400,12 @@ class AssetReconciliationCursor(NamedTuple):
             materialized_or_requested_root_partitions_by_asset_key=materialized_or_requested_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
         )
+
+    @classmethod
+    def get_evaluation_id_from_serialized(cls, cursor: str) -> Optional[int]:
+        data = json.loads(cursor)
+        check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
+        return data[3] if len(data) == 4 else None
 
     def serialize(self) -> str:
         serializable_materialized_or_requested_root_partitions_by_asset_key = {

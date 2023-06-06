@@ -16,7 +16,6 @@ from dagster import (
     resource,
 )
 from dagster._config.pythonic_config import infer_schema_from_config_class
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
@@ -69,11 +68,6 @@ class BaseAirbyteResource(ConfigurableResource):
             " that do not impact your Airbyte deployment."
         ),
     )
-
-    @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        return True
 
     @property
     @cached_method
@@ -666,7 +660,6 @@ class AirbyteResource(BaseAirbyteResource):
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
-@dagster_maintained_resource
 @resource(config_schema=AirbyteResource.to_config_schema())
 def airbyte_resource(context) -> AirbyteResource:
     """This resource allows users to programatically interface with the Airbyte REST API to launch
@@ -704,7 +697,6 @@ def airbyte_resource(context) -> AirbyteResource:
     return AirbyteResource.from_resource_context(context)
 
 
-@dagster_maintained_resource
 @resource(config_schema=infer_schema_from_config_class(AirbyteCloudResource))
 def airbyte_cloud_resource(context) -> AirbyteCloudResource:
     """This resource allows users to programatically interface with the Airbyte Cloud REST API to launch

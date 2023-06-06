@@ -1,10 +1,10 @@
-import {Box, Tag, Tooltip} from '@dagster-io/ui';
+import {Box, Tag} from '@dagster-io/ui';
 import React from 'react';
 
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 import {DagsterTag} from './RunTag';
-import {RunFilterToken} from './RunsFilterInputNew';
+import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
 
 type Props = {
@@ -52,11 +52,7 @@ export function RunCreatedByCell(props: Props) {
       </Tag>
     );
   } else {
-    creator = (
-      <Tooltip content="No user specified. Add a `dagster/user` tag to specify one">
-        <Tag icon="account_circle">Manually launched</Tag>
-      </Tooltip>
-    );
+    creator = <Tag icon="account_circle">Manually launched</Tag>;
   }
 
   return (

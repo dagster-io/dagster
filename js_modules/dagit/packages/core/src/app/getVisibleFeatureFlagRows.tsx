@@ -21,10 +21,6 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
   {
-    key: 'Experimental runs table view with filtering',
-    flagType: FeatureFlag.flagRunsTableFiltering,
-  },
-  {
     key: 'Experimental overview assets tab',
     flagType: FeatureFlag.flagOverviewAssetsTab,
   },

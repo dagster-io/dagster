@@ -462,6 +462,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
         self._watch_threads: Dict[str, threading.Thread] = {}
 
+        self._state_subscribers_lock = threading.Lock()
         self._state_subscriber_id_iter = count()
         self._state_subscribers: Dict[int, LocationStateSubscriber] = {}
         self.add_state_subscriber(LocationStateSubscriber(self._location_state_events_handler))
@@ -500,12 +501,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> int:
         token = next(self._state_subscriber_id_iter)
-        self._state_subscribers[token] = subscriber
+        with self._state_subscribers_lock:
+            self._state_subscribers[token] = subscriber
         return token
 
     def rm_state_subscriber(self, token: int) -> None:
-        if token in self._state_subscribers:
-            del self._state_subscribers[token]
+        with self._state_subscribers_lock:
+            if token in self._state_subscribers:
+                del self._state_subscribers[token]
 
     @property
     def instance(self) -> DagsterInstance:
@@ -528,8 +531,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def _send_state_event_to_subscribers(self, event: LocationStateChangeEvent) -> None:
         check.inst_param(event, "event", LocationStateChangeEvent)
-        for subscriber in self._state_subscribers.values():
-            subscriber.handle_event(event)
+        with self._state_subscribers_lock:
+            for subscriber in self._state_subscribers.values():
+                subscriber.handle_event(event)
 
     def _start_watch_thread(self, origin: GrpcServerCodeLocationOrigin) -> None:
         from dagster._grpc.server_watcher import create_grpc_watch_thread

@@ -20,7 +20,7 @@ from dbt.node_types import NodeType
 from pydantic import Field
 from typing_extensions import Literal
 
-from ..asset_utils import default_asset_key_fn, output_name_fn
+from ..asset_utils import default_asset_key_fn, default_description_fn, output_name_fn
 
 logger = get_dagster_logger()
 
@@ -61,6 +61,10 @@ class DbtManifest:
     def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
         return default_asset_key_fn(node_info)
 
+    @classmethod
+    def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+        return default_description_fn(node_info)
+
     @property
     def node_info_by_asset_key(self) -> Mapping[AssetKey, Mapping[str, Any]]:
         """A mapping of the default asset key for a dbt node to the node's dictionary representation in the manifest.
@@ -83,6 +87,15 @@ class DbtManifest:
         return {
             DbtManifest.node_info_to_asset_key(node_info): self.node_info_to_asset_key(node_info)
             for node_info in self.node_info_by_dbt_unique_id.values()
+        }
+
+    @property
+    def descriptions_by_asset_key(self) -> Mapping[AssetKey, str]:
+        """A mapping of the default asset key for a dbt node to the node's description in the manifest.
+        """
+        return {
+            self.node_info_to_asset_key(node): self.node_info_to_description(node)
+            for node in self.node_info_by_dbt_unique_id.values()
         }
 
     def get_node_info_by_output_name(self, output_name: str) -> Mapping[str, Any]:
@@ -238,6 +251,14 @@ class DbtCliTask:
         """
         return list(self.stream_raw_events())
 
+    def is_successful(self) -> bool:
+        """Return whether the dbt CLI process completed successfully.
+
+        Returns:
+            bool: True, if the dbt CLI process returns with a zero exit code, and False otherwise.
+        """
+        return self.process.wait() == 0
+
     def stream(self) -> Iterator[Union[Output, AssetObservation]]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
@@ -265,11 +286,8 @@ class DbtCliTask:
 
             yield event
 
-        # TODO: handle the return codes here!
-        # https://docs.getdbt.com/reference/exit-codes
-        return_code = self.process.wait()
-
-        return return_code
+        # Ensure that the dbt CLI process has completed.
+        self.process.wait()
 
     def get_artifact(
         self,

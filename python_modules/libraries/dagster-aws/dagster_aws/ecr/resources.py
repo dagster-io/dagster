@@ -3,7 +3,6 @@ import datetime
 import boto3
 from botocore.stub import Stubber
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 class ECRPublicClient:
@@ -39,11 +38,6 @@ class ECRPublicResource(ConfigurableResource):
     Similar to the AWS CLI's `aws ecr-public get-login-password` command.
     """
 
-    @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        return True
-
     def get_client(self) -> ECRPublicClient:
         return ECRPublicClient()
 
@@ -53,16 +47,10 @@ class FakeECRPublicResource(ConfigurableResource):
     requests and always returns `'token'` as its login password.
     """
 
-    @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        return True
-
     def get_client(self) -> FakeECRPublicClient:
         return FakeECRPublicClient()
 
 
-@dagster_maintained_resource
 @resource(
     description=(
         "This resource enables connecting to AWS Public and getting a login password from it."
@@ -73,7 +61,6 @@ def ecr_public_resource(context) -> ECRPublicClient:
     return ECRPublicResource.from_resource_context(context).get_client()
 
 
-@dagster_maintained_resource
 @resource(
     description=(
         "This resource behaves like ecr_public_resource except it stubs out the real AWS API"

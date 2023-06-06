@@ -115,7 +115,7 @@ def test_load_instance(conn_string):
         file_relative_path(__file__, "../dagster_mysql/__init__.py")
     )
     with engine.connect() as conn:
-        stamp_alembic_rev(alembic_config, conn, rev=None, quiet=False)
+        stamp_alembic_rev(alembic_config, conn, rev=None)
 
     # Now load from scratch, verify it loads without errors
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))):

@@ -26,6 +26,7 @@ from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
 )
+from dagster._annotations import deprecated
 from dagster._config.config_type import (
     Array,
     ConfigFloatInstance,
@@ -52,7 +53,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
 
 from .attach_other_object_to_context import (
@@ -95,7 +96,7 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
+from .typing_utils import BaseConfigMeta, BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
 Self = TypeVar("Self", bound="ConfigurableResourceFactory")
@@ -176,7 +177,7 @@ class MakeConfigCacheable(BaseModel):
         return name.endswith(INTERNAL_MARKER)
 
 
-class Config(MakeConfigCacheable):
+class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
     """Base class for Dagster configuration models, used to specify config schema for
     ops and assets. Subclasses :py:class:`pydantic.BaseModel`.
 
@@ -620,7 +621,6 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, CoercibleToResource],
-        dagster_maintained: bool = False,
     ):
         super().__init__(
             resource_fn=resource_fn,
@@ -630,7 +630,6 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         self._configurable_resource_cls = configurable_resource_cls
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
-        self._dagster_maintained = dagster_maintained
 
     @property
     def configurable_resource_cls(self) -> Type:
@@ -659,7 +658,6 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         nested_resources: Mapping[str, CoercibleToResource],
         input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
         output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
-        dagster_maintained: bool = False,
     ):
         input_config_schema_resolved: CoercableToConfigSchema = (
             cast(Type[Config], input_config_schema).to_config_schema()
@@ -681,7 +679,6 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         self._resolve_resource_keys = resolve_resource_keys
         self._nested_resources = nested_resources
         self._configurable_resource_cls = configurable_resource_cls
-        self._dagster_maintained = dagster_maintained
 
     @property
     def configurable_resource_cls(self) -> Type:
@@ -815,13 +812,6 @@ class ConfigurableResourceFactory(
         return self._state__internal__.resolved_config_dict
 
     @classmethod
-    @property
-    def _dagster_maintained(cls) -> bool:
-        """This property should be overridden to return True by all dagster maintained resources and IO managers.
-        """
-        return False
-
-    @classmethod
     def _is_cm_resource_cls(cls: Type["ConfigurableResourceFactory"]) -> bool:
         return (
             cls.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
@@ -844,7 +834,6 @@ class ConfigurableResourceFactory(
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self._dagster_maintained,
         )
 
     @abstractmethod
@@ -927,7 +916,13 @@ class ConfigurableResourceFactory(
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
+    @deprecated
     def with_resource_context(
+        self, resource_context: InitResourceContext
+    ) -> "ConfigurableResourceFactory[TResValue]":
+        return self.with_replaced_resource_context(resource_context)
+
+    def with_replaced_resource_context(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given resource init context bound."""
@@ -941,7 +936,7 @@ class ConfigurableResourceFactory(
 
     def _initialize_and_run(self, context: InitResourceContext) -> TResValue:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+            updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
@@ -953,7 +948,7 @@ class ConfigurableResourceFactory(
         self, context: InitResourceContext
     ) -> Generator[TResValue, None, None]:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
-            updated_resource = has_nested_resource.with_resource_context(  # noqa: SLF001
+            updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
@@ -995,6 +990,20 @@ class ConfigurableResourceFactory(
         return check.not_none(
             self._state__internal__.resource_context,
             additional_message="Attempted to get context before resource was initialized.",
+        )
+
+    def process_config_and_initialize(self) -> TResValue:
+        """Initializes this resource, fully processing its config and returning the prepared
+        resource value.
+        """
+        from dagster._config.post_process import post_process_config
+
+        return self.from_resource_context(
+            build_init_resource_context(
+                config=post_process_config(
+                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                ).value
+            )
         )
 
     @classmethod
@@ -1167,13 +1176,12 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     @cached_method
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
-            self.resource_cls,
+            self.__class__,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self.resource_cls._dagster_maintained,  # noqa: SLF001
         )
 
 
@@ -1243,7 +1251,6 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self._dagster_maintained,
         )
 
     def __call__(self, *args, **kwargs):
@@ -1324,7 +1331,6 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
             nested_resources=self.nested_resources,
             input_config_schema=self.__class__.input_config_schema(),
             output_config_schema=self.__class__.output_config_schema(),
-            dagster_maintained=self._dagster_maintained,
         )
 
     @classmethod
@@ -1360,7 +1366,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             output_config_schema = factory_cls.output_config_schema()
 
         return ConfigurableIOManagerFactoryResourceDefinition(
-            self.resource_cls,
+            self.__class__,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
@@ -1368,7 +1374,6 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
             nested_resources=self._state__internal__.nested_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
-            dagster_maintained=self.resource_cls._dagster_maintained,  # noqa: SLF001
         )
 
 
@@ -1624,7 +1629,6 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
             description=self.__doc__,
             resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
-            dagster_maintained=self._dagster_maintained,
         )
 
 

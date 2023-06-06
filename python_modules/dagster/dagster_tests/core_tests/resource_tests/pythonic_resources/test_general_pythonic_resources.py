@@ -1389,7 +1389,9 @@ def test_context_on_resource_basic() -> None:
         ContextUsingResource().access_context()
 
     # Can access context after binding one
-    ContextUsingResource().with_resource_context(build_init_resource_context()).access_context()
+    ContextUsingResource().with_replaced_resource_context(
+        build_init_resource_context()
+    ).access_context()
 
     @asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -1432,7 +1434,7 @@ def test_context_on_resource_use_instance() -> None:
         with DagsterInstance.ephemeral() as instance:
             assert (
                 OutputDirResource(output_dir=None)
-                .with_resource_context(build_init_resource_context(instance=instance))
+                .with_replaced_resource_context(build_init_resource_context(instance=instance))
                 .get_effective_output_dir()
                 == "/tmp"
             )
@@ -1531,22 +1533,3 @@ def test_context_on_resource_nested() -> None:
 
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
-
-
-def test_telemetry_custom_resource():
-    class MyResource(ConfigurableResource):
-        my_value: str
-
-    assert not MyResource(my_value="foo")._dagster_maintained  # noqa: SLF001
-
-
-def test_telemetry_dagster_resource():
-    class MyResource(ConfigurableResource):
-        my_value: str
-
-        @classmethod
-        @property
-        def _dagster_maintained(cls) -> bool:
-            return True
-
-    assert MyResource(my_value="foo")._dagster_maintained  # noqa: SLF001

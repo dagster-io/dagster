@@ -20,6 +20,8 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
@@ -580,12 +582,25 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not self.materialization_exists(asset_partition):
             return False
 
+        time_or_dynamic_partitioned = isinstance(
+            asset_graph.get_partitions_def(asset_partition.asset_key),
+            (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
+        )
         for parent in asset_graph.get_parents_partitions(
             self,
             self._evaluation_time,
             asset_partition.asset_key,
             asset_partition.partition_key,
         ):
+            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
+            # for existence of upstream materialization, do not worry about timestamps
+            if time_or_dynamic_partitioned and parent.partition_key is None:
+                return (
+                    # no materializations exist for source assets
+                    asset_graph.is_source(parent.asset_key)
+                    or self.materialization_exists(parent)
+                )
+
             if asset_graph.is_source(parent.asset_key):
                 if asset_graph.is_observable(
                     parent.asset_key
