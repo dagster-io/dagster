@@ -44,7 +44,12 @@ from dagster._core.snap import (
     create_job_snapshot_id,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery
-from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
+from dagster._core.storage.sqlalchemy_compat import (
+    db_fetch_mappings,
+    db_scalar_subquery,
+    db_select,
+    db_subquery,
+)
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -224,7 +229,7 @@ class SqlRunStorage(RunStorage):
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
             cursor_query = db_select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
-            query = query.where(RunsTable.c.id < cursor_query)
+            query = query.where(RunsTable.c.id < db_scalar_subquery(cursor_query))
 
         if limit:
             query = query.limit(limit)

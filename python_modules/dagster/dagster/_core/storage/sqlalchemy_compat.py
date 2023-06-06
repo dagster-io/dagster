@@ -35,3 +35,11 @@ def db_fetch_mappings(conn, query: Any) -> Sequence[Any]:
         return conn.execute(query).mappings().all()
 
     return conn.execute(query).fetchall()
+
+
+def db_scalar_subquery(query):
+    """Utility class that allows compatability between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
+    if not IS_SQLALCHEMY_VERSION_1:
+        return query.scalar_subquery()
+
+    return query.as_scalar()
