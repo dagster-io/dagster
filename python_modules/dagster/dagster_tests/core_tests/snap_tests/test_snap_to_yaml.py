@@ -18,6 +18,12 @@ def test_basic_default():
     assert yaml_str == "a: foo\n"
 
 
+def test_basic_no_nested_fields():
+    snap = snap_from_config_type(resolve_to_config_type(str))
+    yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
+    assert yaml_str == "{}\n"
+
+
 def test_with_spaces():
     snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "with spaces")}))
     yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
