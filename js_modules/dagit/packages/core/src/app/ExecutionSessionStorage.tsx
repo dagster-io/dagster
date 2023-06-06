@@ -241,7 +241,14 @@ export const useInitialDataForMode = (
     }
 
     return shouldPopulateWithDefaults ? {runConfigYaml: rootDefaultYaml} : {};
-  }, [isAssetJob, isJob, partitionSetsForMode, presets, rootDefaultYaml]);
+  }, [
+    isAssetJob,
+    isJob,
+    partitionSetsForMode,
+    presets,
+    rootDefaultYaml,
+    shouldPopulateWithDefaults,
+  ]);
 };
 
 export const allStoredSessions = () => {
