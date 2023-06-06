@@ -275,7 +275,8 @@ class AssetReconciliationCursor(NamedTuple):
             ]
         else:
             return materialized_or_requested_subset.get_partition_keys_not_in_subset(
-                dynamic_partitions_store=dynamic_partitions_store
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
 
     def with_updates(
