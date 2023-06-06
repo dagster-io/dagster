@@ -36,12 +36,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     """A resource for connecting to the Snowflake data warehouse.
 
     If connector configuration is not set, SnowflakeResource.get_connection() will return a
-    snowflake.connector.Connection object
-    (see https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection).
-    If connector="sqlalchemy" configuration is set, then SnowflakeResource.get_connection() will
-    return a SQLAlchemy Connection (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection)
-    or a SQLAlchemy raw connection
-    (see https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection).
+    `snowflake.connector.Connection <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection>`__
+    object. If connector="sqlalchemy" configuration is set, then SnowflakeResource.get_connection() will
+    return a `SQLAlchemy Connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection>`__
+    or a `SQLAlchemy raw connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection>`__.
 
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
@@ -90,7 +88,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     database: Optional[str] = Field(
         default=None,
         description=(
-            "Name of the default database to use. After login, you can use USE DATABASE "
+            "Name of the default database to use. After login, you can use ``USE DATABASE`` "
             " to change the database."
         ),
     )
@@ -98,7 +96,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     schema_: Optional[str] = Field(
         default=None,
         description=(
-            "Name of the default schema to use. After login, you can use USE SCHEMA to "
+            "Name of the default schema to use. After login, you can use ``USE SCHEMA`` to "
             "change the schema."
         ),
         alias="schema",
@@ -107,7 +105,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     role: Optional[str] = Field(
         default=None,
         description=(
-            "Name of the default role to use. After login, you can use USE ROLE to change "
+            "Name of the default role to use. After login, you can use ``USE ROLE`` to change "
             " the role."
         ),
     )
@@ -115,7 +113,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
     warehouse: Optional[str] = Field(
         default=None,
         description=(
-            "Name of the default warehouse to use. After login, you can use USE WAREHOUSE "
+            "Name of the default warehouse to use. After login, you can use ``USE WAREHOUSE`` "
             "to change the role."
         ),
     )
@@ -127,7 +125,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
             " Alternately, set private_key_path and private_key_password. To avoid issues with"
             " newlines in the keys, you can base64 encode the key. You can retrieve the base64"
-            " encoded key with this shell command: cat rsa_key.p8 | base64"
+            " encoded key with this shell command: ``cat rsa_key.p8 | base64``"
         ),
     )
 
@@ -136,8 +134,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key password to use. See the `Snowflake documentation"
             " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
-            " Required for both private_key and private_key_path if the private key is encrypted."
-            " For unencrypted keys, this config can be omitted or set to None."
+            " Required for both ``private_key`` and ``private_key_path`` if the private key is"
+            " encrypted. For unencrypted keys, this config can be omitted or set to None."
         ),
     )
 
@@ -146,7 +144,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         description=(
             "Raw private key path to use. See the `Snowflake documentation"
             " <https://docs.snowflake.com/en/user-guide/key-pair-auth.html>`__ for details."
-            " Alternately, set the raw private key as private_key."
+            " Alternately, set the raw private key as ``private_key``."
         ),
     )
 
@@ -236,8 +234,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         default=None,
         description=(
             "Optional parameter when connector is set to sqlalchemy. Snowflake SQLAlchemy takes a"
-            " flag cache_column_metadata=True such that all of column metadata for all tables are"
-            ' "cached"'
+            " flag ``cache_column_metadata=True`` such that all of column metadata for all tables"
+            ' are "cached"'
         ),
     )
 
@@ -419,7 +417,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         `snowflake.connector.Connection <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection>`__
         If connector="sqlalchemy" configuration is set, then SnowflakeResource.get_connection() will
         return a `SQLAlchemy Connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Connection>`__
-        or a SQLAlchemy raw connection `SQLAlchemy raw connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection>`__
+        or a `SQLAlchemy raw connection <https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine.raw_connection>`__
         if raw_conn=True.
 
 
