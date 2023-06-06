@@ -56,6 +56,9 @@ class DagitDebugWorkspaceProcessContext(IWorkspaceProcessContext):
     def reload_workspace(self) -> None:
         pass
 
+    def refresh_workspace(self) -> None:
+        pass
+
     @property
     def instance(self) -> DagsterInstance:
         return self._instance
