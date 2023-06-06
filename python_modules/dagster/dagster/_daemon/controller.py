@@ -68,7 +68,7 @@ def create_daemon_grpc_server_registry(
 ) -> GrpcServerRegistry:
     return GrpcServerRegistry(
         instance_ref=instance.get_ref(),
-        reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
+        reload_interval=0,  # refresh_workspace call handles the reload
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
         log_level=code_server_log_level,
@@ -110,6 +110,7 @@ def daemon_controller_from_instance(
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
+                grpc_server_registry=grpc_server_registry,
             )
         )
 
@@ -119,6 +120,7 @@ def daemon_controller_from_instance(
 class DagsterDaemonController(AbstractContextManager):
     _daemon_uuid: str
     _daemons: Dict[str, DagsterDaemon]
+    _grpc_server_registry: Optional[GrpcServerRegistry]
     _daemon_threads: Dict[str, threading.Thread]
     _workspace_process_context: IWorkspaceProcessContext
     _instance: DagsterInstance
@@ -133,6 +135,7 @@ class DagsterDaemonController(AbstractContextManager):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         daemons: Sequence[DagsterDaemon],
+        grpc_server_registry: Optional[GrpcServerRegistry] = None,
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -154,6 +157,8 @@ class DagsterDaemonController(AbstractContextManager):
         self._heartbeat_tolerance_seconds = check.numeric_param(
             heartbeat_tolerance_seconds, "heartbeat_tolerance_seconds"
         )
+
+        self._grpc_server_registry = grpc_server_registry
 
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
@@ -268,6 +273,8 @@ class DagsterDaemonController(AbstractContextManager):
 
                 # periodically refresh the shared workspace context
                 if (time.time() - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
+                    if self._grpc_server_registry:
+                        self._grpc_server_registry.clear_all_grpc_endpoints()
                     self._workspace_process_context.refresh_workspace()
                     last_workspace_update_time = time.time()
 
