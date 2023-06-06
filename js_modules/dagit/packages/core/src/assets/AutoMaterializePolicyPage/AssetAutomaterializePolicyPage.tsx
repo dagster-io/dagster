@@ -707,10 +707,12 @@ const MiddlePanel = ({
           <Condition
             text="Waiting on upstream data"
             met={!!conditionResults.waitingOnUpstreamData}
+            skip={true}
           />
           <Condition
             text={`Exceeds ${maxMaterializationsPerMinute} materializations per minute`}
             met={!!conditionResults.exceedsXMaterializationsPerHour}
+            skip={true}
           />
         </Box>
       </CollapsibleSection>
@@ -767,16 +769,19 @@ const CollapsibleSection = ({
 const Condition = ({
   text,
   met,
+  skip = false,
 }: {
   text: React.ReactNode;
   met: boolean;
   details?: React.ReactNode;
+  skip?: boolean;
 }) => {
+  const activeColor = skip ? Colors.Yellow700 : Colors.Green700;
   return (
     <CenterAlignedRow flex={{justifyContent: 'space-between'}}>
       <CenterAlignedRow flex={{gap: 8}}>
-        <Icon name={met ? 'done' : 'close'} color={met ? Colors.Green700 : Colors.Gray400} />
-        <div style={{color: met ? Colors.Green700 : undefined}}>{text}</div>
+        <Icon name={met ? 'done' : 'close'} color={met ? activeColor : Colors.Gray400} />
+        <div style={{color: met ? activeColor : undefined}}>{text}</div>
       </CenterAlignedRow>
       <div />
     </CenterAlignedRow>
