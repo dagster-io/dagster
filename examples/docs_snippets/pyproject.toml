@@ -12,7 +12,7 @@ target-version = ['py38', 'py39', 'py310', 'py311']
 
 [tool.ruff]
 
-# Extend root configuration.
+# Extend example root configuration.
 extend = "../pyproject.toml"
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
@@ -34,6 +34,12 @@ extend-ignore = [
   # purposes.
   "F841",
 
+  # (isort): No need to automatically insert imports in docs snippets.
+  "I002",
+
+  # (flake8-type-checking) We can't use this in docs_snippets because we don't auto-insert `from
+  # __future__ import annotations`. But we also don't need it becasse we don't use `TYPE_CHECKING`.
+  "TCH",
 ]
 
 [tool.ruff.isort]

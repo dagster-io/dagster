@@ -4,3 +4,14 @@
 # has the effect of making each example package treated as first-party, where `dagster` and
 # integrations will be treated as third-party. This is appropriate for example code.
 extend = "../pyproject.toml"
+
+extend-ignore = [
+
+  # (isort): No need to automatically insert imports in docs snippets.
+  "I002",
+
+  # (flake8-type-checking) We can't use this in docs_snippets because we don't auto-insert `from
+  # __future__ import annotations`. But we also don't need it becasse we don't use `TYPE_CHECKING`.
+  "TCH",
+
+]
