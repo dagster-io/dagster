@@ -1,4 +1,4 @@
-import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui';
+import {Box, Button, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -9,6 +9,7 @@ import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
+import {StepComputeLogsDialog} from '../runs/StepComputeLogsDialog';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -24,6 +25,7 @@ export const LatestMaterializationMetadata: React.FC<{
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
 }> = ({assetKey, latest, liveData}) => {
+  const [showingComputeLogs, setShowingComputeLogs] = React.useState(false);
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -55,11 +57,30 @@ export const LatestMaterializationMetadata: React.FC<{
           <td>
             {latestRun ? (
               <div>
-                <Box>
-                  {'Run '}
-                  <Link to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}>
-                    <Mono>{titleForRun({id: latestEvent.runId})}</Mono>
-                  </Link>
+                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                  <Box>
+                    {'Run '}
+                    <Link to={`/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}>
+                      <Mono>{titleForRun({id: latestEvent.runId})}</Mono>
+                    </Link>
+                  </Box>
+                  {latestEvent.stepKey && (
+                    <>
+                      <StepComputeLogsDialog
+                        runId={latestEvent.runId}
+                        stepKeys={[latestEvent.stepKey]}
+                        isOpen={showingComputeLogs}
+                        onClose={() => setShowingComputeLogs(false)}
+                      />
+                      <Button
+                        small
+                        icon={<Icon name="wysiwyg" />}
+                        onClick={() => setShowingComputeLogs(true)}
+                      >
+                        Compute Logs
+                      </Button>
+                    </>
+                  )}
                 </Box>
                 {!isHiddenAssetGroupJob(latestRun.pipelineName) && (
                   <>

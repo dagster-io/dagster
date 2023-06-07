@@ -3,14 +3,11 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
-  Group,
   IconName,
   Icon,
   MenuItem,
   Select,
   Spinner,
-  Tab,
-  Tabs,
   IconWrapper,
   Colors,
   Tooltip,
@@ -82,17 +79,17 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     typeof value === 'string' ? (value as LogType) : LogType.stdout,
   );
 
-  const activeItems = React.useMemo(
-    () => new Set([logType === LogType.structured ? logType : LogType.stdout]),
-    [logType],
-  );
-
   const setComputeLogType = React.useCallback(
     (logType: LogType) => {
       setInitialComputeLogType(logType);
       onSetLogType(logType);
     },
     [onSetLogType, setInitialComputeLogType],
+  );
+
+  const activeItems = React.useMemo(
+    () => new Set([logType === LogType.structured ? logType : initialComputeLogType]),
+    [logType, initialComputeLogType],
   );
 
   return (
@@ -151,7 +148,7 @@ const resolveState = (metadata: IRunMetadataDict, logCapture: ILogCaptureInfo) =
   return IStepState.FAILED;
 };
 
-const ComputeLogToolbar = ({
+export const ComputeLogToolbar = ({
   steps,
   metadata,
   computeLogFileKey,
@@ -160,8 +157,8 @@ const ComputeLogToolbar = ({
   onSetLogType,
   computeLogUrl,
 }: {
-  steps: string[];
   metadata: IRunMetadataDict;
+  steps?: string[];
   computeLogFileKey?: string;
   onSetComputeLogKey: (step: string) => void;
   logType: LogType;
@@ -170,7 +167,9 @@ const ComputeLogToolbar = ({
 }) => {
   const logCaptureSteps =
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
-  const isValidStepSelection = computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey];
+
+  const logCaptureInfo = computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey];
+  const isValidStepSelection = !!logCaptureInfo;
 
   const fileKeyText = (fileKey?: string) => {
     if (!fileKey || !(logCaptureSteps as any)[fileKey]) {
@@ -194,58 +193,63 @@ const ComputeLogToolbar = ({
       flex={{justifyContent: 'space-between', alignItems: 'center', direction: 'row'}}
       style={{flex: 1}}
     >
-      <Group direction="row" spacing={24} alignItems="center">
-        <Select
-          disabled={!steps.length}
-          items={Object.keys(logCaptureSteps)}
-          itemPredicate={(query, item) =>
-            item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
-          }
-          itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItem
-              key={item}
-              onClick={options.handleClick}
-              text={fileKeyText(item)}
-              active={options.modifiers.active}
-            />
-          )}
-          activeItem={computeLogFileKey}
-          onItemSelect={(fileKey) => {
-            onSetComputeLogKey(fileKey);
-          }}
-        >
-          <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
-            {fileKeyText(computeLogFileKey) || 'Select a step...'}
-          </Button>
-        </Select>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+        {steps ? (
+          <Select
+            disabled={!steps.length}
+            items={Object.keys(logCaptureSteps)}
+            itemPredicate={(query, item) =>
+              item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+            }
+            itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
+              <MenuItem
+                key={item}
+                onClick={options.handleClick}
+                text={fileKeyText(item)}
+                active={options.modifiers.active}
+              />
+            )}
+            activeItem={computeLogFileKey}
+            onItemSelect={(fileKey) => {
+              onSetComputeLogKey(fileKey);
+            }}
+          >
+            <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
+              {fileKeyText(computeLogFileKey) || 'Select a step...'}
+            </Button>
+          </Select>
+        ) : undefined}
+
         {isValidStepSelection ? (
-          <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
-            <Tab id={LogType.stdout} title="stdout" />
-            <Tab id={LogType.stderr} title="stderr" />
-          </Tabs>
+          <ButtonGroup<LogType>
+            activeItems={new Set([logType])}
+            onClick={onSetLogType}
+            buttons={[
+              {id: LogType.stdout, label: 'stdout'},
+              {id: LogType.stderr, label: 'stderr'},
+            ]}
+          />
         ) : null}
-      </Group>
+
+        {!steps ? <Box>Step: {(logCaptureInfo?.stepKeys || []).join(', ')}</Box> : undefined}
+      </Box>
       {isValidStepSelection ? (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey] ? (
-            resolveState(metadata, (logCaptureSteps as any)[computeLogFileKey]) ===
-            IStepState.RUNNING ? (
-              <Spinner purpose="body-text" />
-            ) : (
-              <ExecutionStateDot
-                state={resolveState(metadata, (logCaptureSteps as any)[computeLogFileKey])}
-              />
-            )
+          {logCaptureInfo ? (
+            <Tooltip placement="top-end" content="Status of this log capture group">
+              {resolveState(metadata, logCaptureInfo) === IStepState.RUNNING ? (
+                <Spinner purpose="body-text" />
+              ) : (
+                <ExecutionStateDot state={resolveState(metadata, logCaptureInfo)} />
+              )}
+            </Tooltip>
           ) : null}
           {computeLogUrl ? (
             <Tooltip
               placement="top-end"
               content={
-                computeLogFileKey &&
-                (logCaptureSteps as any)[computeLogFileKey]?.stepKeys.length === 1
-                  ? `Download ${
-                      (logCaptureSteps as any)[computeLogFileKey]?.stepKeys[0]
-                    } compute logs`
+                logCaptureInfo?.stepKeys.length === 1
+                  ? `Download ${logCaptureInfo?.stepKeys[0]} compute logs`
                   : `Download compute logs`
               }
             >

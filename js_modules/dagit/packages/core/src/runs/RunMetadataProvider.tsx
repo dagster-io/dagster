@@ -100,6 +100,15 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
   return logCaptureSteps;
 };
 
+export const matchingComputeLogKeyFromStepKey = (
+  logCaptureSteps: {[fileKey: string]: ILogCaptureInfo} | undefined,
+  stepKey: string,
+) => {
+  const stepsInfo = logCaptureSteps ? Object.values(logCaptureSteps) : [];
+  const matching = stepsInfo.find((info) => info.stepKeys.includes(stepKey));
+  return matching && matching?.fileKey;
+};
+
 const fromTimestamp = (ts: number | null) => (ts ? Math.floor(ts * 1000) : undefined);
 function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {

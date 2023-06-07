@@ -27,7 +27,12 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
-import {ILogCaptureInfo, IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
+import {
+  ILogCaptureInfo,
+  IRunMetadataDict,
+  RunMetadataProvider,
+  matchingComputeLogKeyFromStepKey,
+} from './RunMetadataProvider';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
@@ -136,15 +141,6 @@ const logTypeFromQuery = (queryLogType: string) => {
   }
 };
 
-const matchingComputeLogKeyFromStepKey = (
-  logCaptureSteps: {[fileKey: string]: ILogCaptureInfo} | undefined,
-  stepKey: string,
-) => {
-  const stepsInfo = logCaptureSteps ? Object.values(logCaptureSteps) : [];
-  const matching = stepsInfo.find((info) => info.stepKeys.includes(stepKey));
-  return matching && matching?.fileKey;
-};
-
 /**
  * Note: There are two places we keep a "step query string" in the Run view:
  * selectionQuery and logsFilter.logsQuery.
@@ -231,10 +227,6 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     metadata.logCaptureSteps,
     setComputeLogFileKey,
   ]);
-
-  const onSetComputeLogKey = (logFileKey: string) => {
-    setComputeLogFileKey(logFileKey);
-  };
 
   const logsFilterStepKeys = runtimeGraph
     ? logsFilter.logQuery
@@ -346,7 +338,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
                 steps={stepKeys}
                 metadata={metadata}
                 computeLogFileKey={computeLogFileKey}
-                onSetComputeLogKey={onSetComputeLogKey}
+                onSetComputeLogKey={setComputeLogFileKey}
                 computeLogUrl={computeLogUrl}
                 counts={logs.counts}
               />
@@ -361,8 +353,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
                 ) : (
                   <ComputeLogPanel
                     runId={runId}
-                    stepKeys={stepKeys}
-                    computeLogFileKey={computeLogFileKey}
+                    computeLogFileKey={stepKeys.length ? computeLogFileKey : undefined}
                     ioType={LogType[logType]}
                     setComputeLogUrl={setComputeLogUrl}
                   />
