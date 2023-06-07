@@ -301,24 +301,24 @@ class TimeWindowPartitionsDefinition(
         return partition_def_str
 
     def __eq__(self, other):
-    return (
-        isinstance(other, TimeWindowPartitionsDefinition)
-        and pendulum.instance(self.start, tz=self.timezone).timestamp()
-        == pendulum.instance(other.start, tz=other.timezone).timestamp()
-        and self.timezone == other.timezone
-        and self.fmt == other.fmt
-        and self.end_offset == other.end_offset
-        and self.cron_schedule == other.cron_schedule
-        and (
-            (self.end is None and other.end is None)
-            or (
-                self.end is not None
-                and other.end is not None
-                and pendulum.instance(self.end, tz=self.timezone).timestamp()
-                == pendulum.instance(other.end, tz=other.timezone).timestamp()
+        return (
+            isinstance(other, TimeWindowPartitionsDefinition)
+            and pendulum.instance(self.start, tz=self.timezone).timestamp()
+            == pendulum.instance(other.start, tz=other.timezone).timestamp()
+            and self.timezone == other.timezone
+            and self.fmt == other.fmt
+            and self.end_offset == other.end_offset
+            and self.cron_schedule == other.cron_schedule
+            and (
+                (self.end is None and other.end is None)
+                or (
+                    self.end is not None
+                    and other.end is not None
+                    and pendulum.instance(self.end, tz=self.timezone).timestamp()
+                    == pendulum.instance(other.end, tz=other.timezone).timestamp()
+                )
             )
         )
-    )
 
     def __repr__(self):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
