@@ -8,7 +8,6 @@ import {
   Icon,
   NonIdealState,
   Spinner,
-  Mono,
   Subheading,
   Tag,
 } from '@dagster-io/ui';
@@ -95,6 +94,21 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
     return {evaluations: [], currentEvaluationId: null};
   }, [queryResult.data?.autoMaterializeAssetEvaluationsOrError]);
 
+  const isFirstPage = !paginationProps.hasPrevCursor;
+  const isLastPage = !paginationProps.hasNextCursor;
+  const isLoading = queryResult.loading && !queryResult.data;
+  const evaluationsIncludingEmpty = React.useMemo(
+    () =>
+      getEvaluationsWithEmptyAdded({
+        currentEvaluationId,
+        evaluations,
+        isFirstPage,
+        isLastPage,
+        isLoading,
+      }),
+    [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
+  );
+
   const [selectedEvaluationId, setSelectedEvaluationId] = useQueryPersistedState<
     number | undefined
   >({
@@ -105,12 +119,14 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
     },
   });
 
-  const selectedEvaluation: EvaluationType | undefined = React.useMemo(() => {
+  const selectedEvaluation = React.useMemo(() => {
     if (selectedEvaluationId) {
-      return evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId);
+      return evaluationsIncludingEmpty.find(
+        (evaluation) => evaluation.evaluationId === selectedEvaluationId,
+      );
     }
-    return evaluations[0];
-  }, [selectedEvaluationId, evaluations]);
+    return evaluationsIncludingEmpty[0];
+  }, [selectedEvaluationId, evaluationsIncludingEmpty]);
 
   const [maxMaterializationsPerMinute, setMaxMaterializationsPerMinute] = React.useState(1);
 
@@ -138,15 +154,12 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
           >
             <LeftPanel
               evaluations={evaluations}
+              evaluationsIncludingEmpty={evaluationsIncludingEmpty}
               paginationProps={paginationProps}
               onSelectEvaluation={(evaluation) => {
                 setSelectedEvaluationId(evaluation.evaluationId);
               }}
               selectedEvaluation={selectedEvaluation}
-              currentEvaluationId={currentEvaluationId}
-              isFirstPage={!paginationProps.hasPrevCursor}
-              isLastPage={!paginationProps.hasNextCursor}
-              isLoading={queryResult.loading && !queryResult.data}
             />
           </Box>
           <Box flex={{grow: 1}} style={{minHeight: 0}}>
@@ -154,7 +167,7 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
               assetKey={assetKey}
               key={selectedEvaluation?.evaluationId || ''}
               maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-              selectedEvaluationId={selectedEvaluationId}
+              selectedEvaluation={selectedEvaluation}
             />
           </Box>
         </Box>
@@ -169,7 +182,20 @@ export const AssetAutomaterializePolicyPage = ({assetKey}: {assetKey: AssetKey})
   );
 };
 
-export function getEvaluationsWithSkips({
+type NoConditionsMetEvaluation = {
+  __typename: 'no_conditions_met';
+  evaluationId: number;
+  amount: number;
+  endTimestamp: number | 'now';
+  startTimestamp: number;
+  numSkipped?: undefined;
+  numRequested?: undefined;
+  numDiscarded?: undefined;
+  numRequests?: undefined;
+  conditions?: undefined;
+};
+
+export function getEvaluationsWithEmptyAdded({
   isLoading,
   currentEvaluationId,
   evaluations,
@@ -193,6 +219,7 @@ export function getEvaluationsWithSkips({
     if (evaluation.evaluationId !== current) {
       evalsWithSkips.push({
         __typename: 'no_conditions_met' as const,
+        evaluationId: current,
         amount: current - evaluation.evaluationId,
         endTimestamp: prevEvaluation?.timestamp ? prevEvaluation?.timestamp - 60 : ('now' as const),
         startTimestamp: evaluation.timestamp + 60,
@@ -205,6 +232,7 @@ export function getEvaluationsWithSkips({
     const lastEvaluation = evaluations[evaluations.length - 1];
     evalsWithSkips.push({
       __typename: 'no_conditions_met' as const,
+      evaluationId: current,
       amount: current - 0,
       endTimestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : ('now' as const),
       startTimestamp: 0,
@@ -216,45 +244,31 @@ export function getEvaluationsWithSkips({
 export const PAGE_SIZE = 30;
 function LeftPanel({
   evaluations,
+  evaluationsIncludingEmpty,
   paginationProps,
   onSelectEvaluation,
   selectedEvaluation,
-  currentEvaluationId,
-  isFirstPage,
-  isLastPage,
-  isLoading,
 }: {
   evaluations: EvaluationType[];
+  evaluationsIncludingEmpty: Array<NoConditionsMetEvaluation | EvaluationType>;
   paginationProps: ReturnType<typeof useEvaluationsQueryResult>['paginationProps'];
-  onSelectEvaluation: (evaluation: EvaluationType) => void;
-  selectedEvaluation?: EvaluationType;
-  currentEvaluationId: number | null;
-  isFirstPage: boolean;
-  isLastPage: boolean;
-  isLoading: boolean;
+  onSelectEvaluation: (evaluation: EvaluationType | NoConditionsMetEvaluation) => void;
+  selectedEvaluation?: NoConditionsMetEvaluation | EvaluationType;
 }) {
-  const evaluationsWithSkips = React.useMemo(
-    () =>
-      getEvaluationsWithSkips({
-        currentEvaluationId,
-        evaluations,
-        isFirstPage,
-        isLastPage,
-        isLoading,
-      }),
-    [currentEvaluationId, evaluations, isFirstPage, isLastPage, isLoading],
-  );
-
   return (
     <Box flex={{direction: 'column', grow: 1}} style={{overflowY: 'auto'}}>
       <Box style={{flex: 1, minHeight: 0, overflowY: 'auto'}} flex={{grow: 1, direction: 'column'}}>
-        {evaluationsWithSkips.map((evaluation) => {
+        {evaluationsIncludingEmpty.map((evaluation) => {
+          const isSelected = selectedEvaluation?.evaluationId === evaluation.evaluationId;
           if (evaluation.__typename === 'no_conditions_met') {
             return (
               <EvaluationRow
-                style={{cursor: 'default'}}
                 key={`skip-${evaluation.endTimestamp}`}
                 flex={{direction: 'column'}}
+                onClick={() => {
+                  onSelectEvaluation(evaluation);
+                }}
+                $selected={isSelected}
               >
                 <Box
                   padding={{left: 16}}
@@ -283,11 +297,9 @@ function LeftPanel({
               </EvaluationRow>
             );
           }
-          const isSelected = selectedEvaluation === evaluation;
           if (evaluation.numSkipped) {
             return (
               <EvaluationRow
-                style={{cursor: 'default'}}
                 key={`skip-${evaluation.timestamp}`}
                 onClick={() => {
                   onSelectEvaluation(evaluation);
@@ -512,11 +524,11 @@ const RightPanelDetail = ({
 
 const MiddlePanel = ({
   assetKey,
-  selectedEvaluationId,
+  selectedEvaluation,
   maxMaterializationsPerMinute,
 }: {
   assetKey: Omit<AssetKey, '__typename'>;
-  selectedEvaluationId?: number;
+  selectedEvaluation?: EvaluationType | NoConditionsMetEvaluation;
   maxMaterializationsPerMinute: number;
 }) => {
   const {data, loading, error} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
@@ -524,21 +536,13 @@ const MiddlePanel = ({
     {
       variables: {
         assetKey,
-        cursor: selectedEvaluationId ? (selectedEvaluationId + 1).toString() : undefined,
+        cursor: selectedEvaluation?.evaluationId
+          ? (selectedEvaluation.evaluationId + 1).toString()
+          : undefined,
         limit: 2,
       },
     },
   );
-
-  const evaluationData = React.useMemo(() => {
-    if (
-      data?.autoMaterializeAssetEvaluationsOrError?.__typename ===
-      'AutoMaterializeAssetEvaluationRecords'
-    ) {
-      return data?.autoMaterializeAssetEvaluationsOrError.records[0];
-    }
-    return null;
-  }, [data?.autoMaterializeAssetEvaluationsOrError]);
 
   const conditionResults = React.useMemo(() => {
     const results: Partial<{
@@ -553,7 +557,7 @@ const MiddlePanel = ({
       waitingOnUpstreamData: boolean;
       exceedsMaxMaterializationsPerMinute: boolean;
     }> = {};
-    evaluationData?.conditions.forEach((cond) => {
+    selectedEvaluation?.conditions?.forEach((cond: any) => {
       switch (cond.__typename) {
         case 'DownstreamFreshnessAutoMaterializeCondition':
           results.requiredToMeetADownstreamFreshnessPolicy = true;
@@ -579,7 +583,7 @@ const MiddlePanel = ({
       }
     });
     return results;
-  }, [evaluationData]);
+  }, [selectedEvaluation]);
 
   if (loading) {
     return (
@@ -617,53 +621,6 @@ const MiddlePanel = ({
     );
   }
 
-  if (!evaluationData) {
-    if (selectedEvaluationId) {
-      return (
-        <Box flex={{direction: 'column', grow: 1}}>
-          <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
-            <NonIdealState
-              icon="auto_materialize_policy"
-              title="Evaluation not found"
-              description={
-                <>
-                  No evaluation with ID <Mono>{selectedEvaluationId}</Mono> found
-                </>
-              }
-            />
-          </Box>
-        </Box>
-      );
-    } else {
-      return (
-        <Box flex={{direction: 'column', grow: 1}}>
-          <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{vertical: 24}}>
-            <NonIdealState
-              icon="auto_materialize_policy"
-              title="No evaluations found"
-              description={
-                <Box flex={{direction: 'column', gap: 8}}>
-                  <div>
-                    You can set up Dagster to automatically materialize assets when criteria are
-                    met.
-                  </div>
-                  <div>
-                    <ExternalAnchorButton
-                      icon={<Icon name="open_in_new" />}
-                      href="https://docs.dagster.io/concepts/assets/asset-auto-execution"
-                    >
-                      View documentation
-                    </ExternalAnchorButton>
-                  </div>
-                </Box>
-              }
-            />
-          </Box>
-        </Box>
-      );
-    }
-  }
-
   return (
     <Box flex={{direction: 'column', grow: 1}}>
       <Box
@@ -673,13 +630,19 @@ const MiddlePanel = ({
       >
         <Subheading>Result</Subheading>
         <Box>
-          {evaluationData.numRequested > 0 ? (
-            <Tag intent="primary">
-              {evaluationData.numRequested} run{evaluationData.numRequested === 1 ? '' : 's'}{' '}
-              requested
-            </Tag>
-          ) : (
+          {selectedEvaluation?.numSkipped || selectedEvaluation?.numDiscarded ? (
             <Tag intent="warning">Skipped</Tag>
+          ) : (
+            <>
+              {selectedEvaluation?.numRequested ? (
+                <Tag intent="primary">
+                  {selectedEvaluation?.numRequested} run
+                  {selectedEvaluation?.numRequested === 1 ? '' : 's'} requested
+                </Tag>
+              ) : (
+                <Tag intent="none">No materialization conditions met</Tag>
+              )}
+            </>
           )}
         </Box>
       </Box>
