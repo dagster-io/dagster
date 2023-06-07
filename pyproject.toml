@@ -178,9 +178,9 @@ ignore = [
 
   # (assorted docstring rules) There are too many violations of these to enable
   # right now, but we should enable after fixing the violations.
-  "D200",  # (one-line docstring should fit)
-  "D205",  # (blank line after summary)
-  "D417",  # (missing arg in docstring)
+  "D200", # (one-line docstring should fit)
+  "D205", # (blank line after summary)
+  "D417", # (missing arg in docstring)
 
   # (assorted perf rules) We have a lot of violations, enable when autofix is available
   "PERF401",  # (manual-list-comprehension)
