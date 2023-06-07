@@ -1706,8 +1706,7 @@ def _element_check_error(
 ) -> ElementCheckError:
     additional_message = " " + additional_message if additional_message else ""
     return ElementCheckError(
-        f"Value {value!r} from key {key} is not a {ttype!r}. Dict: {ddict!r}."
-        f"{additional_message}"
+        f"Value {value!r} from key {key} is not a {ttype!r}. Dict: {ddict!r}.{additional_message}"
     )
 
 
