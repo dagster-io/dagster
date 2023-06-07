@@ -1,0 +1,39 @@
+---
+title: "Deltalake + Dagster"
+description: Store your Dagster assets in Deltalake
+---
+
+# Deltalake + Dagster
+
+Using Dagster's [Software-defined Assets](/concepts/assets/software-defined-assets) and Deltalake I/O manager,
+you can easily interact with DuckDB tables alongside other Dagster assets.
+
+Managing your Delta tables with Dagster enables you to:
+
+- Use Python to analyze your data stored in Delta without writing custom SQL queries to fetch the data
+- Visualize the data dependencies between tables
+- Selectively update the contents of your tables
+- Integrate your Delta tables with other tools in your data stack
+
+---
+
+## Deltalake and Dagster tutorial
+
+In this tutorial, you'll learn how to store and load Dagster's [Software-defined Assets](/concepts/assets/software-defined-assets) in a Deltalake. [Click here to get started](/integrations/deltalake/using-deltalake-with-dagster).
+
+By the end of the tutorial, you will have a connection to your Deltalake and a handful of assets that create tables in a Deltalake or read existing tables from Deltalake.
+
+---
+
+## References
+
+<ArticleList>
+  <ArticleListItem
+    title="Additional Deltalake features"
+    href="/integrations/deltalake/reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deltalake API reference"
+    href="/\_apidocs/libraries/dagster-deltalake"
+  ></ArticleListItem>
+</ArticleList>
