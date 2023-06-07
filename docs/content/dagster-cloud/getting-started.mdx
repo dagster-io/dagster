@@ -354,7 +354,7 @@ To configure the workflow, follow these steps:
 
 2. In your [dagster-cloud-deploy.yml](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster Cloud organization name.
 
-2. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster Cloud organization name.
+3. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster Cloud organization name.
 
 After making the above changes and commiting the workflow file, the CI process should be triggered to deploy your GitHub repository to Dagster Cloud. During the deployment, the agent will attempt to load your code and update the metadata in Dagster Cloud. Once finished, you should see the GitHub Action complete successfully and also be able to see the code location under the "Deployment" tag in Dagster Cloud.
 
