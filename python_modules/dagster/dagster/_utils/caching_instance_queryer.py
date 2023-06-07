@@ -139,7 +139,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         from dagster._core.storage.partition_status_cache import _get_fresh_asset_status_cache_value
 
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
-        # print("asset record", asset_record)
         return _get_fresh_asset_status_cache_value(
             self.instance,
             asset_key,
@@ -204,8 +203,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if asset_status_value is None:
                 return False
             # first do the quick check to see if this asset partition has been materialized at all
-            # asset_status_value.deserialize_materialized_partition_subsets(partitions_def)
-            # print("z", z)
             if (
                 asset_partition
                 not in asset_status_value.deserialize_materialized_partition_subsets(
@@ -216,13 +213,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # if no after_cursor, then we're done
             elif after_cursor is None:
                 return True
-            # in theroy, partition_key should never be None here, but just in case...
+            # in theory, partition_key should never be None here, but just in case...
             elif asset_partition.partition_key is not None:
                 partition_counts = self.get_materialized_partition_counts(
                     asset_partition.asset_key, after_cursor=after_cursor
                 )
                 return partition_counts.get(asset_partition.partition_key, 0) > 0
-        # catchall case, do the full query
+        # catchall case, do the explicit query
         return (
             self.get_latest_materialization_record(asset_partition, after_cursor=after_cursor)
             is not None
