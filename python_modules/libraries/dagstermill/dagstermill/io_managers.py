@@ -13,7 +13,7 @@ from dagster import (
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import io_manager
+from dagster._core.storage.io_manager import dagster_maintained_io_manager, io_manager
 from dagster._utils import mkdir_p
 from pydantic import Field
 
@@ -100,6 +100,10 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
         ),
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def create_io_manager(self, context: InitResourceContext) -> "LocalOutputNotebookIOManager":
         return LocalOutputNotebookIOManager(
             base_dir=self.base_dir or check.not_none(context.instance).storage_directory(),
@@ -107,6 +111,7 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
         )
 
 
+@dagster_maintained_io_manager
 @io_manager(config_schema=ConfigurableLocalOutputNotebookIOManager.to_config_schema())
 def local_output_notebook_io_manager(init_context) -> LocalOutputNotebookIOManager:
     """Built-in IO Manager that handles output notebooks."""

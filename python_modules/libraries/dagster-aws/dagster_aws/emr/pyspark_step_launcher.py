@@ -12,6 +12,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.execution.plan.external_step import (
@@ -31,6 +32,7 @@ EMR_SPARK_HOME = "/usr/lib/spark/"
 CODE_ZIP_NAME = "code.zip"
 
 
+@dagster_maintained_resource
 @resource(
     {
         "spark_config": get_spark_config(),

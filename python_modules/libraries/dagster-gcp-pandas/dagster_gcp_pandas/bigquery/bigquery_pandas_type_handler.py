@@ -225,6 +225,10 @@ class BigQueryPandasIOManager(BigQueryIOManager):
 
     """
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
         return [BigQueryPandasTypeHandler()]

@@ -34,6 +34,10 @@ class DuckDBResource(ConfigurableResource):
         )
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @contextmanager
     def get_connection(self):
         conn = backoff(

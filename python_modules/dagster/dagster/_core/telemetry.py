@@ -54,7 +54,11 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
+    from dagster._core.host_representation.external import (
+        ExternalJob,
+        ExternalRepository,
+        ExternalResource,
+    )
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -465,6 +469,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_sensors_in_repo = len(external_repo.get_external_sensors())
     external_asset_nodes = external_repo.get_external_asset_nodes()
     num_assets_in_repo = len(external_asset_nodes)
+    external_resources = external_repo.get_external_resources()
 
     num_partitioned_assets_in_repo = 0
     num_multi_partitioned_assets_in_repo = 0
@@ -476,6 +481,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_observable_source_assets_in_repo = 0
     num_dbt_assets_in_repo = 0
     num_assets_with_code_versions_in_repo = 0
+
     for asset in external_asset_nodes:
         if asset.partitions_def_data:
             num_partitioned_assets_in_repo += 1
@@ -514,6 +520,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     )
 
     return {
+        **get_resource_stats(external_resources=list(external_resources)),
         "num_pipelines_in_repo": str(num_pipelines_in_repo),
         "num_schedules_in_repo": str(num_schedules_in_repo),
         "num_sensors_in_repo": str(num_sensors_in_repo),
@@ -535,6 +542,27 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
         "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
         "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+    }
+
+
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
+    used_dagster_resources = []
+    used_custom_resources = False
+
+    for resource in external_resources:
+        resource_type = resource.resource_type
+        split_resource_type = resource_type.split(".")
+        module_name = split_resource_type[0]
+        class_name = split_resource_type[-1]
+
+        if resource.is_dagster_maintained:
+            used_dagster_resources.append({"module_name": module_name, "class_name": class_name})
+        else:
+            used_custom_resources = True
+
+    return {
+        "dagster_resources": str(used_dagster_resources),
+        "has_custom_resources": str(used_custom_resources),
     }
 
 

@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from dagster import InitResourceContext, resource
 from dagster._config.pythonic_config import Config, ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from datahub.emitter.kafka_emitter import (
     DEFAULT_MCE_KAFKA_TOPIC,
     DEFAULT_MCP_KAFKA_TOPIC,
@@ -27,6 +28,10 @@ class DatahubRESTEmitterResource(ConfigurableResource):
     server_telemetry_id: Optional[str] = None
     disable_ssl_verification: bool = False
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_emitter(self) -> DatahubRestEmitter:
         return DatahubRestEmitter(
             gms_server=self.connection,
@@ -43,6 +48,7 @@ class DatahubRESTEmitterResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(config_schema=DatahubRESTEmitterResource.to_config_schema())
 def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitter:
     emitter = DatahubRestEmitter(
@@ -81,12 +87,17 @@ class DatahubKafkaEmitterResource(ConfigurableResource):
         }
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_emitter(self) -> DatahubKafkaEmitter:
         return DatahubKafkaEmitter(
             KafkaEmitterConfig.parse_obj(self._convert_to_config_dictionary())
         )
 
 
+@dagster_maintained_resource
 @resource(config_schema=DatahubKafkaEmitterResource.to_config_schema())
 def datahub_kafka_emitter(init_context: InitResourceContext) -> DatahubKafkaEmitter:
     return DatahubKafkaEmitter(KafkaEmitterConfig.parse_obj(init_context.resource_config))

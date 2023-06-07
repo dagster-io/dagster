@@ -11,6 +11,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils import mkdir_p
 from dagster._utils.merger import merge_dicts
 from paramiko.config import SSH_PORT
@@ -212,6 +213,7 @@ class SSHResource:
         return local_filepath
 
 
+@dagster_maintained_resource
 @resource(
     config_schema={
         "remote_host": Field(

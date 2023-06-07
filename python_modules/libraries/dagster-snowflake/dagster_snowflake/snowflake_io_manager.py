@@ -14,6 +14,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
@@ -93,6 +94,7 @@ def build_snowflake_io_manager(
 
     """
 
+    @dagster_maintained_io_manager
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
         return DbIOManager(

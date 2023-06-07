@@ -4,6 +4,7 @@ import pypd
 from dagster import ConfigurableResource, resource
 from dagster._annotations import quiet_experimental_warnings
 from dagster._config.pythonic_config import infer_schema_from_config_class
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field as PyField
 
 
@@ -29,6 +30,10 @@ class PagerDutyService(ConfigurableResource):
             "routing_key in the event payload."
         ),
     )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def EventV2_create(
         self,
@@ -160,6 +165,7 @@ class PagerDutyService(ConfigurableResource):
         return pypd.EventV2.create(data=data)
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=infer_schema_from_config_class(PagerDutyService),
     description="""This resource is for posting events to PagerDuty.""",
