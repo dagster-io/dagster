@@ -334,7 +334,7 @@ const RunRow: React.FC<{
         </Link>
       </td>
       <td>
-        <Box flex={{direction: 'column', gap: 8}}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <RunTime run={run} />
           {isReexecution ? (
             <div>

@@ -73,7 +73,7 @@ export const RunRoot = () => {
               <>
                 <RunStatusTag status={run.status} />
                 {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} clickableTags />
+                  <AssetKeyTagCollection assetKeys={assetKeysForRun(run)} useTags />
                 ) : (
                   <>
                     <Tag icon="run">
@@ -86,7 +86,7 @@ export const RunRoot = () => {
                         isJob={isJob}
                       />
                     </Tag>
-                    <AssetKeyTagCollection assetKeys={run.assets.map((a) => a.key)} clickableTags />
+                    <AssetKeyTagCollection assetKeys={run.assets.map((a) => a.key)} useTags />
                   </>
                 )}
                 <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
