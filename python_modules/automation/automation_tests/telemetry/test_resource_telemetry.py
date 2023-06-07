@@ -28,7 +28,7 @@ def test_resource_telemetry():
     libraries.append("dagster")
 
     # TODO - add back in once airflow dependency gets figured out
-    libraries.remove("dagster_airflow")
+    # libraries.remove("dagster_airflow")
     # dagster-ge is out of date and is not installed in the dev environment
     libraries.remove("dagster_ge")
 
