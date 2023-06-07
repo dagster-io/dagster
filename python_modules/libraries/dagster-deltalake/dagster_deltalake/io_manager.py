@@ -1,0 +1,185 @@
+import sys
+from abc import abstractmethod
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Dict, Iterator, List, Optional, Sequence, Tuple, Type, Union, cast
+
+from dagster import OutputContext
+from dagster._config.pythonic_config import ConfigurableIOManagerFactory
+from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.storage.db_io_manager import (
+    DbClient,
+    DbIOManager,
+    DbTypeHandler,
+    TablePartitionDimension,
+    TableSlice,
+)
+from deltalake.schema import (
+    Field as DeltaField,
+    Schema,
+)
+from pydantic import Field
+
+from .config import AzureConfig, LocalConfig, S3Config
+
+if sys.version_info >= (3, 8):
+    from typing import NotRequired, TypedDict
+else:
+    from typing_extensions import NotRequired, TypedDict
+
+DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DELTA_DATE_FORMAT = "%Y-%m-%d"
+
+
+@dataclass(frozen=True)
+class TableConnection:
+    root_uri: str
+    storage_options: Dict[str, str]
+    table_config: Optional[Dict[str, str]]
+
+
+class _StorageOptionsConfig(TypedDict, total=False):
+    local: Dict[str, str]
+    s3: Dict[str, str]
+    azure: Dict[str, str]
+
+
+class _DeltaTableIOManagerResourceConfig(TypedDict):
+    root_uri: str
+    storage_options: _StorageOptionsConfig
+    table_config: NotRequired[Dict[str, str]]
+
+
+class DeltaTableIOManager(ConfigurableIOManagerFactory):
+    root_uri: str
+    storage_options: Union[AzureConfig, S3Config, LocalConfig] = Field(discriminator="provider")
+    table_config: Optional[Dict[str, str]] = Field(
+        default=None, description="Additional config and metadata added to table on creation."
+    )
+
+    @staticmethod
+    @abstractmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        ...
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        return None
+
+    def create_io_manager(self, context) -> DbIOManager:
+        self.storage_options.dict()
+        return DbIOManager(
+            db_client=DeltaTableDbClient(),
+            database="deltalake",
+            schema="deltalake",
+            type_handlers=self.type_handlers(),
+            default_load_type=self.default_load_type(),
+            io_manager_name="DeltaTableIOManager",
+        )
+
+
+class DeltaTableDbClient(DbClient):
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        # deleting the table slice here is a no-op, since we use deltalakes internal mechanism
+        # to overwrite table partitions.
+        pass
+
+    @staticmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        # for individual Delta tables, Schemas are not tracked.
+        pass
+
+    @staticmethod
+    def get_select_statement(table_slice: TableSlice) -> str:
+        # The select statement here is just for illustrative purposes, and is never actually executed.
+        # It does however logically correspond the the operation being executed.
+        col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
+
+        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+            query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
+            return query + _partition_where_clause(table_slice.partition_dimensions)
+        else:
+            return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
+
+    @staticmethod
+    @contextmanager
+    def connect(context, table_slice: TableSlice) -> Iterator[TableConnection]:
+        resource_config = cast(_DeltaTableIOManagerResourceConfig, context.resource_config)
+        root_uri = resource_config["root_uri"]
+        storage_options = resource_config["storage_options"]
+
+        if "local" in storage_options:
+            storage_options = storage_options["local"]
+        elif "s3" in storage_options:
+            storage_options = storage_options["s3"]
+        elif "azure" in storage_options:
+            storage_options = storage_options["azure"]
+        else:
+            storage_options = {}
+
+        table_config = resource_config.get("table_config")
+
+        conn = TableConnection(
+            root_uri=root_uri, storage_options=storage_options, table_config=table_config
+        )
+
+        yield conn
+
+
+def _partition_dnf(
+    partition_dimensions: Sequence[TablePartitionDimension], table_schema: Schema
+) -> List[Tuple[str, str, str]]:
+    _parts = []
+    for partition_dimension in partition_dimensions:
+        field = _field_from_schema(partition_dimension.partition_expr, table_schema)
+        field.data_type()
+        pass
+    return []
+
+
+def _time_window_partition_dnf(table_partition: TablePartitionDimension) -> Tuple[str, str, str]:
+    partition = cast(TimeWindow, table_partition.partitions)
+    start_dt, _ = partition
+    start_dt_str = start_dt.strftime(DELTA_DATETIME_FORMAT)
+    return (table_partition.partition_expr, "=", start_dt_str)
+
+
+def _get_cleanup_statement(table_slice: TableSlice) -> str:
+    """Returns a SQL statement that deletes data in the given table to make way for the output data
+    being written.
+    """
+    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
+        return query + _partition_where_clause(table_slice.partition_dimensions)
+    else:
+        return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
+
+
+def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
+    return " AND\n".join(
+        _time_window_where_clause(partition_dimension)
+        if isinstance(partition_dimension.partitions, TimeWindow)
+        else _static_where_clause(partition_dimension)
+        for partition_dimension in partition_dimensions
+    )
+
+
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
+    partition = cast(TimeWindow, table_partition.partitions)
+    start_dt, end_dt = partition
+    start_dt_str = start_dt.strftime(DELTA_DATETIME_FORMAT)
+    end_dt_str = end_dt.strftime(DELTA_DATETIME_FORMAT)
+    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+
+
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
+    partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
+    return f"""{table_partition.partition_expr} in ({partitions})"""
+
+
+def _field_from_schema(field_name: str, schema: Schema) -> DeltaField:
+    for field in schema.fields:
+        if field.name == field_name:
+            return field
+    return None
