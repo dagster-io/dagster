@@ -216,6 +216,27 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     partitions in the downstream asset to the same partition in the upstream asset.
     """
 
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        if downstream_partitions_subset is None:
+            check.failed("downstream asset is not partitioned")
+        return downstream_partitions_subset
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        return upstream_partitions_subset
+
+
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],

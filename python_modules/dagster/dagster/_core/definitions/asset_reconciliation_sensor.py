@@ -526,7 +526,9 @@ def find_parent_materialized_asset_partitions(
                     asset_key, after_cursor=latest_storage_id
                 )
                 if partitions_def.has_partition_key(
-                    partition_key, dynamic_partitions_store=instance_queryer
+                    partition_key,
+                    dynamic_partitions_store=instance_queryer,
+                    current_time=instance_queryer.evaluation_time,
                 )
             ]
 
@@ -557,22 +559,36 @@ def find_parent_materialized_asset_partitions(
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs or
-                        # different partition keys
+                        # cannot materialize in the same run if different partitions defs
                         elif (
                             child_partitions_def != partitions_def
                             or child_partition not in materialized_partitions
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
-                            latest_partition_record = check.not_none(
-                                instance_queryer.get_latest_materialization_record(
-                                    AssetKeyPartitionKey(asset_key, child_partition),
-                                    after_cursor=latest_storage_id,
-                                )
+                            asset_status_cache_value = (
+                                instance_queryer.get_asset_status_cache_value(asset_key=child)
                             )
-                            if not instance_queryer.is_asset_planned_for_run(
-                                latest_partition_record.run_id, child
+                            """
+                            if asset_status_cache_value is not None:
+                                x = asset_status_cache_value.deserialize_in_progress_partition_subsets(
+                                    child_partitions_def
+                                )
+                                print("x", x)
+                                y = asset_status_cache_value.deserialize_failed_partition_subsets(
+                                    child_partitions_def
+                                )
+                                print("y", y)
+                            """
+                            if asset_status_cache_value is None or (
+                                child_partition
+                                not in asset_status_cache_value.deserialize_in_progress_partition_subsets(
+                                    partitions_def=child_partitions_def
+                                )
+                                and child_partition
+                                not in asset_status_cache_value.deserialize_failed_partition_subsets(
+                                    partitions_def=child_partitions_def
+                                )
                             ):
                                 result_asset_partitions.add(child_asset_partition)
 
@@ -1083,7 +1099,9 @@ def reconcile(
 
     current_time = pendulum.now("UTC")
 
-    instance_queryer = CachingInstanceQueryer(instance=instance, evaluation_time=current_time)
+    instance_queryer = CachingInstanceQueryer(
+        instance=instance, asset_graph=asset_graph, evaluation_time=current_time
+    )
 
     target_parent_asset_keys = {
         parent
