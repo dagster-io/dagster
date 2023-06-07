@@ -109,9 +109,9 @@ filterwarnings = [
 # ########################
 
 # [Docs root]
-#   https://github.com/charliermarsh/ruff#ruff
+#   https://beta.ruff.rs/docs/
 # [Config option reference]
-#   https://github.com/charliermarsh/ruff#reference
+#   https://beta.ruff.rs/docs/configuration/
 #
 # As of 2022-12-05, the entire documentation of Ruff is in its very long
 # README.
@@ -163,6 +163,10 @@ ignore = [
 
   # (no concatenation) Existing codebase has many concatentations, no reason to disallow them.
   "RUF005",
+
+  # (use ClassVar for attr declarations with defaults) This is a good rule for vanilla Python, but
+  # triggers false positives for many libs that have DSLs that make use of attr defaults.
+  "RUF012",
 
   ##### TEMPORARY DISABLES
 
@@ -218,6 +222,10 @@ select = [
   # methods on `NamedTuple` are ignored (e.g. `_replace`).
   "SLF001",
 
+  # (flake8-type-checking) Auto-sort imports into TYPE_CHECKING blocks depending on whether
+  # they are runtime or type-only imports.
+  "TCH",
+
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
 
@@ -229,7 +237,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.255"
+required-version = "0.0.276"
 
 [tool.ruff.flake8-builtins]
 
