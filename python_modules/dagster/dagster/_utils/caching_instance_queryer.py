@@ -34,6 +34,7 @@ from dagster._utils.cached_method import cached_method
 if TYPE_CHECKING:
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 class CachingInstanceQueryer(DynamicPartitionsStore):
@@ -45,8 +46,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance (DagsterInstance): The instance to query.
     """
 
-    def __init__(self, instance: DagsterInstance, evaluation_time: Optional[datetime] = None):
+    def __init__(
+        self,
+        instance: DagsterInstance,
+        asset_graph: AssetGraph,
+        evaluation_time: Optional[datetime] = None,
+    ):
         self._instance = instance
+        self._asset_graph = asset_graph
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
         self._latest_materialization_record_cache: Dict[
@@ -65,6 +72,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def instance(self) -> DagsterInstance:
         return self._instance
 
+    @property
+    def asset_graph(self) -> AssetGraph:
+        return self._asset_graph
+
     ####################
     # QUERY BATCHING
     ####################
@@ -73,12 +84,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]
     ):
         """For performance, batches together queries for selected assets."""
+        """
         self._asset_partition_count_cache[None] = dict(
             self.instance.get_materialization_count_by_partition(
                 asset_keys=asset_keys,
                 after_cursor=None,
             )
-        )
+        )"""
         if after_cursor is not None:
             self._asset_partition_count_cache[after_cursor] = dict(
                 self.instance.get_materialization_count_by_partition(
@@ -117,6 +129,26 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         partition_key=latest_materialization_record.partition_key,
                     )
                 ] = latest_materialization_record
+
+    @cached_method
+    def get_asset_status_cache_value(
+        self, *, asset_key: AssetKey
+    ) -> Optional["AssetStatusCacheValue"]:
+        asset_record = self.get_asset_record(asset_key)
+        # return asset_record.asset_entry.cached_status if asset_record is not None else None
+        from dagster._core.storage.partition_status_cache import _get_fresh_asset_status_cache_value
+
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
+        # print("asset record", asset_record)
+        return _get_fresh_asset_status_cache_value(
+            self.instance,
+            asset_key,
+            self,
+            partitions_def,
+            cached_status_data=asset_record.asset_entry.cached_status
+            if asset_record is not None
+            else None,
+        )
 
     ####################
     # MATERIALIZATION / ASSET RECORDS
@@ -163,16 +195,38 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
                 greater than this value will be considered.
         """
-        if asset_partition.partition_key is not None:
-            partition_counts = self.get_materialized_partition_counts(
-                asset_partition.asset_key, after_cursor=after_cursor
+        partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
+        # for partitioned assets...
+        if partitions_def is not None:
+            asset_status_value = self.get_asset_status_cache_value(
+                asset_key=asset_partition.asset_key
             )
-            return partition_counts.get(asset_partition.partition_key, 0) > 0
-        else:
-            return (
-                self.get_latest_materialization_record(asset_partition, after_cursor=after_cursor)
-                is not None
-            )
+            if asset_status_value is None:
+                return False
+            # first do the quick check to see if this asset partition has been materialized at all
+            # asset_status_value.deserialize_materialized_partition_subsets(partitions_def)
+            # print("z", z)
+            if (
+                asset_partition
+                not in asset_status_value.deserialize_materialized_partition_subsets(
+                    partitions_def=partitions_def
+                )
+            ):
+                return False
+            # if no after_cursor, then we're done
+            elif after_cursor is None:
+                return True
+            # in theroy, partition_key should never be None here, but just in case...
+            elif asset_partition.partition_key is not None:
+                partition_counts = self.get_materialized_partition_counts(
+                    asset_partition.asset_key, after_cursor=after_cursor
+                )
+                return partition_counts.get(asset_partition.partition_key, 0) > 0
+        # catchall case, do the full query
+        return (
+            self.get_latest_materialization_record(asset_partition, after_cursor=after_cursor)
+            is not None
+        )
 
     def _materialization_of_a_exists_after_b(
         self,
