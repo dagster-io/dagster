@@ -771,6 +771,7 @@ export const LAUNCH_ASSET_WARNINGS_QUERY = gql`
   query LaunchAssetWarningsQuery($upstreamAssetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $upstreamAssetKeys) {
       id
+      isSource
       assetKey {
         path
       }
@@ -819,6 +820,7 @@ const Warnings: React.FC<{
       (upstreamAssets || [])
         .filter(
           (a) =>
+            !a.isSource &&
             a.partitionDefinition &&
             displayedPartitionDefinition &&
             partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition),
