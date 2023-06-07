@@ -27,9 +27,7 @@ def test_resource_telemetry():
     libraries = [library.name.replace("-", "_") for library in os.scandir(libraries_dir)]
     libraries.append("dagster")
 
-    # TODO - might need to add dagster-census to the dev install script - figure out why it's not there already
-
-    # TODO - add back in one airflow dependency gets figured out
+    # TODO - add back in once airflow dependency gets figured out
     libraries.remove("dagster_airflow")
     # dagster-ge is out of date and is not installed in the dev environment
     libraries.remove("dagster_ge")
@@ -86,7 +84,7 @@ def test_resource_telemetry():
                 # the klass is purposely set to dagster_maintained=False
                 continue
             try:
-                if not klass._dagster_maintained:  # noqa: SLF001
+                if not klass._is_dagster_maintained:  # noqa: SLF001
                     resources_without_telemetry.append(klass)
             except Exception:
                 resources_without_telemetry.append(klass)
