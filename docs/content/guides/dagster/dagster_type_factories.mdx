@@ -30,7 +30,7 @@ set_containing_1 = DagsterType(
     type_check_fn=lambda _context, obj: isinstance(obj, set) and 1 in obj,
 )
 
-check_dagster_type(set_containing_1, {1, 2}).success  # => True
+assert check_dagster_type(set_containing_1, {1, 2}).success  # => True
 ```
 
 Sometimes, we may even need to define an entire suite of related types. Factory functions are an efficient solution to this problem. Here is a factory function that generalizes the set-membership-check pattern for arbitrary values:
@@ -45,7 +45,7 @@ def set_has_element_type_factory(x):
 
 
 set_containing_2 = set_has_element_type_factory(2)
-check_dagster_type(set_containing_2, {1, 2}).success  # => True
+assert check_dagster_type(set_containing_2, {1, 2}).success  # => True
 ```
 
 Factories are particularly powerful when interfacing with external data validation libraries. Below, we'll see how a small factory function allows us to integrate the [Pandera](https://github.com/pandera-dev/pandera) dataframe validation library into our Dagster jobs. Pandera provides an API for defining dataframe schemas. Schemas encode data type, boundaries, nullability, and other constraints at both the dataframe and individual column level. They can be used to validate dataframes from [Pandas](https://pandas.pydata.org/), [Dask](https://dask.org/), or several other popular Python libraries.
