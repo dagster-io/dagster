@@ -1,7 +1,7 @@
 import {buildAutoMaterializeAssetEvaluationRecord} from '../../../graphql/types';
-import {getEvaluationsWithSkips} from '../AssetAutomaterializePolicyPage';
+import {getEvaluationsWithEmptyAdded} from '../AssetAutomaterializePolicyPage';
 
-describe('getEvaluationsWithSkips', () => {
+describe('getEvaluationsWithEmptyAdded', () => {
   it('should return an empty array if isLoading is true', () => {
     const evaluations = [
       buildAutoMaterializeAssetEvaluationRecord({
@@ -24,7 +24,7 @@ describe('getEvaluationsWithSkips', () => {
       }),
     ];
 
-    const actual = getEvaluationsWithSkips({
+    const actual = getEvaluationsWithEmptyAdded({
       evaluations,
       currentEvaluationId: 3,
       isFirstPage: false,
@@ -60,7 +60,7 @@ describe('getEvaluationsWithSkips', () => {
         }),
       ];
 
-      const actual = getEvaluationsWithSkips({
+      const actual = getEvaluationsWithEmptyAdded({
         evaluations,
         currentEvaluationId: 10,
         isFirstPage: true,
@@ -71,6 +71,7 @@ describe('getEvaluationsWithSkips', () => {
       expect(actual).toEqual([
         {
           __typename: 'no_conditions_met',
+          evaluationId: 10,
           amount: 7,
           startTimestamp: evaluations[0].timestamp + 60,
           endTimestamp: 'now',
@@ -78,6 +79,7 @@ describe('getEvaluationsWithSkips', () => {
         ...evaluations,
         {
           __typename: 'no_conditions_met',
+          evaluationId: 1,
           amount: 1,
           endTimestamp: evaluations[1].timestamp - 60,
           startTimestamp: 0,
@@ -108,7 +110,7 @@ describe('getEvaluationsWithSkips', () => {
       }),
     ];
 
-    const actual = getEvaluationsWithSkips({
+    const actual = getEvaluationsWithEmptyAdded({
       evaluations,
       currentEvaluationId: 3,
       isFirstPage: true,
@@ -120,6 +122,7 @@ describe('getEvaluationsWithSkips', () => {
       evaluations[0],
       {
         __typename: 'no_conditions_met',
+        evaluationId: 2,
         amount: 1,
         endTimestamp: evaluations[0].timestamp - 60,
         startTimestamp: evaluations[1].timestamp + 60,
