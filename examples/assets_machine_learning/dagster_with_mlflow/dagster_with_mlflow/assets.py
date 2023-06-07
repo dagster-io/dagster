@@ -1,6 +1,6 @@
 import requests
 from dagster import asset, Output, MetadataValue, load_assets_from_modules
-import pandas as pd
+import pandas as pd 
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import mlflow
