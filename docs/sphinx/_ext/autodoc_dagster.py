@@ -103,7 +103,7 @@ def config_field_to_lines(field, name=None) -> List[str]:
                     lines.append(" " * 12 + ln)
             else:
                 lines.append("")
-                lines.append(f"    **Default Value:** {repr(val)}")
+                lines.append(f"    **Default Value:** {val!r}")
 
     # if field has subfields, recurse
     if hasattr(field.config_type, "fields") and len(field.config_type.fields) > 0:

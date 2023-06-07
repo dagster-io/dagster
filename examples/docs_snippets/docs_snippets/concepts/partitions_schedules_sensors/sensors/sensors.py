@@ -140,7 +140,7 @@ def my_directory_sensor_cursor(context):
                 continue
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{str(file_mtime)}"
+            run_key = f"{filename}:{file_mtime}"
             run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)

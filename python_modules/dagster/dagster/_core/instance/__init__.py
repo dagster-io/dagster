@@ -204,7 +204,7 @@ class _EventListenerLogHandler(logging.Handler):
         try:
             self._instance.handle_new_event(event)
         except Exception as e:
-            sys.stderr.write(f"Exception while writing logger call to event log: {str(e)}\n")
+            sys.stderr.write(f"Exception while writing logger call to event log: {e}\n")
             if event.dagster_event:
                 # Swallow user-generated log failures so that the entire step/run doesn't fail, but
                 # raise failures writing system-generated log events since they are the source of

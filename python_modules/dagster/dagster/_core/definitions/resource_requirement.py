@@ -224,9 +224,9 @@ def ensure_requirements_satisfied(
         if not requirement.resources_contain_key(resource_defs):
             raise DagsterInvalidDefinitionError(
                 f"{requirement.describe_requirement()} was not provided. Please"
-                f" provide a {str(requirement.expected_type)} to key '{requirement.key}', or change"
+                f" provide a {requirement.expected_type} to key '{requirement.key}', or change"
                 " the required key to one of the following keys which points to an"
-                f" {str(requirement.expected_type)}:"
+                f" {requirement.expected_type}:"
                 f" {requirement.keys_of_expected_type(resource_defs)}"
             )
 

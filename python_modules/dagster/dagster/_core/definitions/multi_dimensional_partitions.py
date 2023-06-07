@@ -339,8 +339,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         dimension_2 = self._partitions_defs[1]
         partition_str = (
             "Multi-partitioned, with dimensions: \n"
-            f"{dimension_1.name.capitalize()}: {str(dimension_1.partitions_def)} \n"
-            f"{dimension_2.name.capitalize()}: {str(dimension_2.partitions_def)}"
+            f"{dimension_1.name.capitalize()}: {dimension_1.partitions_def} \n"
+            f"{dimension_2.name.capitalize()}: {dimension_2.partitions_def}"
         )
         return partition_str
 

@@ -9,8 +9,8 @@ if __name__ == "__main__":
     stdout_pids_file, stderr_pids_file = (sys.argv[1], sys.argv[2])
     with mirror_stream_to_file(sys.stdout, stdout_pids_file) as stdout_pids:
         with mirror_stream_to_file(sys.stderr, stderr_pids_file) as stderr_pids:
-            sys.stdout.write(f"stdout pids: {str(stdout_pids)}")
+            sys.stdout.write(f"stdout pids: {stdout_pids}")
             sys.stdout.flush()
-            sys.stderr.write(f"stderr pids: {str(stderr_pids)}")
+            sys.stderr.write(f"stderr pids: {stderr_pids}")
             sys.stderr.flush()
             segfault()

@@ -602,7 +602,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
     ):
         raise DagsterInvariantViolationError(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-            f"or RepositoryDefinition. Got {repr(definition)}."
+            f"or RepositoryDefinition. Got {definition!r}."
         )
     return definition
 

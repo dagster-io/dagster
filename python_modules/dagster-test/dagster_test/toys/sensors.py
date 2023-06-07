@@ -64,7 +64,7 @@ def get_toys_sensors():
 
         for filename, mtime in directory_files:
             yield RunRequest(
-                run_key=f"{filename}:{str(mtime)}",
+                run_key=f"{filename}:{mtime}",
                 run_config={
                     "ops": {
                         "read_file": {"config": {"directory": directory_name, "filename": filename}}

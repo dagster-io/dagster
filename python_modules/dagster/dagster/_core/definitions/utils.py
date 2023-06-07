@@ -82,7 +82,7 @@ def is_valid_name(name: str) -> bool:
 
 
 def _kv_str(key: object, value: object) -> str:
-    return f'{key}="{repr(value)}"'
+    return f'{key}="{value!r}"'
 
 
 def struct_to_string(name: str, **kwargs: object) -> str:

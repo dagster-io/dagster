@@ -169,7 +169,7 @@ def launch_run_over_graphql(
 
     result = _execute_query_over_graphql(dagit_url, LAUNCH_PIPELINE_MUTATION, variables)
 
-    print(f"Launch pipeline result: {str(result)}")
+    print(f"Launch pipeline result: {result}")
 
     assert (
         "data" in result
@@ -185,7 +185,7 @@ def can_terminate_run_over_graphql(
 ) -> bool:
     variables = json.dumps({"runId": run_id})
     result = _execute_query_over_graphql(dagit_url, CAN_TERMINATE_RUN_QUERY, variables)
-    print(f"Can terminate result: {str(result)}")
+    print(f"Can terminate result: {result}")
     assert "data" in result and result["data"]["runOrError"]["__typename"] == "Run"
     return result["data"]["runOrError"]["canTerminate"]
 
@@ -193,7 +193,7 @@ def can_terminate_run_over_graphql(
 def terminate_run_over_graphql(dagit_url, run_id):
     variables = json.dumps({"runId": run_id})
     result = _execute_query_over_graphql(dagit_url, TERMINATE_RUN_MUTATION, variables)
-    print(f"Terminate result: {str(result)}")
+    print(f"Terminate result: {result}")
     assert (
         "data" in result and result["data"]["terminateRun"]["__typename"] == "TerminateRunSuccess"
     )

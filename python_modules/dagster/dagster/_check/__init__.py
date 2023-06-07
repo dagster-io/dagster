@@ -1584,7 +1584,7 @@ def _check_tuple_items(
                     additional_message = ""
                 raise CheckError(
                     f"Member of tuple mismatches type at index {i}. Expected {of_shape_i}. Got "
-                    f"{repr(obj)} of type {type(obj)}.{additional_message}"
+                    f"{obj!r} of type {type(obj)}.{additional_message}"
                 )
 
     elif of_type is not None:
@@ -1706,7 +1706,7 @@ def _element_check_error(
 ) -> ElementCheckError:
     additional_message = " " + additional_message if additional_message else ""
     return ElementCheckError(
-        f"Value {repr(value)} from key {key} is not a {repr(ttype)}. Dict: {repr(ddict)}."
+        f"Value {value!r} from key {key} is not a {ttype!r}. Dict: {ddict!r}."
         f"{additional_message}"
     )
 
@@ -1721,12 +1721,12 @@ def _param_type_mismatch_exception(
     if isinstance(ttype, tuple):
         type_names = sorted([t.__name__ for t in ttype])
         return ParameterCheckError(
-            f'Param "{param_name}" is not one of {type_names}. Got {repr(obj)} which is type'
+            f'Param "{param_name}" is not one of {type_names}. Got {obj!r} which is type'
             f" {type(obj)}.{additional_message}"
         )
     else:
         return ParameterCheckError(
-            f'Param "{param_name}" is not a {ttype.__name__}. Got {repr(obj)} which is type'
+            f'Param "{param_name}" is not a {ttype.__name__}. Got {obj!r} which is type'
             f" {type(obj)}.{additional_message}"
         )
 
@@ -1742,7 +1742,7 @@ def _param_class_mismatch_exception(
     opt_clause = optional and "be None or" or ""
     subclass_clause = superclass and f"that inherits from {superclass.__name__}" or ""
     return ParameterCheckError(
-        f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {repr(obj)} of'
+        f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {obj!r} of'
         f" type {type(obj)}.{additional_message}"
     )
 
@@ -1768,7 +1768,7 @@ def _param_not_callable_exception(
 ) -> ParameterCheckError:
     additional_message = " " + additional_message if additional_message else ""
     return ParameterCheckError(
-        f'Param "{param_name}" is not callable. Got {repr(obj)} with type {type(obj)}.'
+        f'Param "{param_name}" is not callable. Got {obj!r} with type {type(obj)}.'
         f"{additional_message}"
     )
 
@@ -1795,7 +1795,7 @@ def _check_iterable_items(
                 additional_message = ""
             raise CheckError(
                 f"Member of {collection_name} mismatches type. Expected {of_type}. Got"
-                f" {repr(obj)} of type {type(obj)}.{additional_message}"
+                f" {obj!r} of type {type(obj)}.{additional_message}"
             )
 
     return obj_iter
@@ -1817,14 +1817,14 @@ def _check_mapping_entries(
     for key, value in obj.items():
         if key_type and not key_check(key, key_type):
             raise CheckError(
-                f"Key in {mapping_type.__name__} mismatches type. Expected {repr(key_type)}. Got"
-                f" {repr(key)}"
+                f"Key in {mapping_type.__name__} mismatches type. Expected {key_type!r}. Got"
+                f" {key!r}"
             )
 
         if value_type and not value_check(value, value_type):
             raise CheckError(
                 f"Value in {mapping_type.__name__} mismatches expected type for key {key}. Expected"
-                f" value of type {repr(value_type)}. Got value {value} of type {type(value)}."
+                f" value of type {value_type!r}. Got value {value} of type {type(value)}."
             )
 
     return obj

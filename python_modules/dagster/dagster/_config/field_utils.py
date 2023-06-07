@@ -401,7 +401,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            f"Map dict must have a scalar type as its only key. Got key {repr(key)}",
+            f"Map dict must have a scalar type as its only key. Got key {key!r}",
         )
 
     inner_type = _convert_potential_type(original_root, the_dict[key], stack)

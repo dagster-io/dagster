@@ -88,7 +88,7 @@ def _check_node_defs_arg(
                 )
             )
         else:
-            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {repr(node_def)}")
+            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")
 
     return node_defs
 

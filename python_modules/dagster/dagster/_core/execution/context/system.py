@@ -563,7 +563,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.job_def.get_retry_policy_for_handle(self.node_handle)
 
     def describe_op(self) -> str:
-        return f'op "{str(self.node_handle)}"'
+        return f'op "{self.node_handle}"'
 
     def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)

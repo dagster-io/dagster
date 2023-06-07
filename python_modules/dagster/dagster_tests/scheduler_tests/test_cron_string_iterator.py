@@ -87,4 +87,4 @@ def test_dst_spring_forward_transition_advances(execution_timezone, cron_string,
 
             assert (
                 next_time.timestamp() == times[j].timestamp()
-            ), f"Expected {times[i]} to advance to {times[j]}, got {str(next_time)}"
+            ), f"Expected {times[i]} to advance to {times[j]}, got {next_time}"
