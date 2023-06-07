@@ -1,5 +1,5 @@
 # pyright: reportMissingImports=false
-# isort: off
+# ruff: isort: off
 
 from dagster import (
     load_assets_from_package_module,

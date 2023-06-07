@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 from dagster_aws.s3.sensor import get_s3_keys
 from dagster import sensor, op, job, build_sensor_context, RunRequest, SkipReason

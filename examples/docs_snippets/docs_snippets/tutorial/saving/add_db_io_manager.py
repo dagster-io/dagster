@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 all_assets = None
 hackernews_schedule = None
 

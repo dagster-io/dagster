@@ -1,4 +1,4 @@
-# isort: split
+# ruff: isort: split
 from_failure_result = None
 result = None
 # start_initial_execution_marker
@@ -19,7 +19,7 @@ if not initial_result.success:
 
 
 # end_initial_execution_marker
-# isort: split
+# ruff: isort: split
 
 # start_partial_execution_marker
 

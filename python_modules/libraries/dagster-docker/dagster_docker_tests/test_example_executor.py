@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 # fmt: off
 # start_marker
 from dagster_docker import docker_executor

@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 # ruff: noqa: T201
 
 from typing import TYPE_CHECKING

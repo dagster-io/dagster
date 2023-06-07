@@ -40,7 +40,7 @@ from .ops import (
 from .types import DbtOutput as DbtOutput
 from .version import __version__ as __version__
 
-# isort: split
+# ruff: isort: split
 
 # ########################
 # ##### EXPERIMENTAL IMPORTS
