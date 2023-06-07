@@ -14,7 +14,6 @@ from .io_manager import (
 )
 from .resources import (
     ADLS2DefaultAzureCredential as ADLS2DefaultAzureCredential,
-    ADLS2FileManager as ADLS2FileManager,
     ADLS2Key as ADLS2Key,
     ADLS2Resource as ADLS2Resource,
     ADLS2SASToken as ADLS2SASToken,
