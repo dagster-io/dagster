@@ -1,10 +1,11 @@
+from dagster import AssetSelection, define_asset_job, with_resources
+
 from assets_pandas_type_metadata.assets.bollinger_analysis import (
     sp500_anomalous_events,
     sp500_bollinger_bands,
     sp500_prices,
 )
 from assets_pandas_type_metadata.resources.csv_io_manager import LocalCsvIOManager
-from dagster import AssetSelection, define_asset_job, with_resources
 
 
 def test_bollinger_analysis():
