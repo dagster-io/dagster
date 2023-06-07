@@ -1,0 +1,5 @@
+load_from:
+  - python_package:
+      package_name: basic_machine_learning_example
+  - python_package:
+      package_name: machine_learning_with_mlflow

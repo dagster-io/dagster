@@ -8,7 +8,7 @@ import mlflow.xgboost
 import mlflow.pyfunc
 import os
 
-from ...machine_learning_example.machine_learning_example import assets 
+from ...machine_learning_example.basic_machine_learning_example import assets 
 
 mlflow_assets = load_assets_from_modules([assets])
 
