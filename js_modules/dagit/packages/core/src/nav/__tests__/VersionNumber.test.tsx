@@ -1,22 +1,30 @@
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {screen} from '@testing-library/dom';
 import {render} from '@testing-library/react';
 import * as React from 'react';
 
-import {TestProvider} from '../../testing/TestProvider';
-import {VersionNumber} from '../VersionNumber';
+import {VERSION_NUMBER_QUERY, VersionNumber} from '../VersionNumber';
+import {VersionNumberQuery} from '../types/VersionNumber.types';
 
 describe('VersionNumber', () => {
   it('renders the version number', async () => {
-    const mocks = {
-      DagitQuery: () => ({
-        version: '1.2.34',
-      }),
+    const mock: MockedResponse<VersionNumberQuery> = {
+      request: {
+        query: VERSION_NUMBER_QUERY,
+        variables: {},
+      },
+      result: {
+        data: {
+          __typename: 'DagitQuery',
+          version: '1.2.34',
+        },
+      },
     };
 
     render(
-      <TestProvider apolloProps={{mocks}}>
+      <MockedProvider mocks={[mock]}>
         <VersionNumber />
-      </TestProvider>,
+      </MockedProvider>,
     );
 
     expect(await screen.findByText(/1\.2\.34/)).toBeVisible();

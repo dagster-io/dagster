@@ -13,7 +13,7 @@ const Version = styled.div`
   font-size: 11px;
 `;
 
-const VERSION_NUMBER_QUERY = gql`
+export const VERSION_NUMBER_QUERY = gql`
   query VersionNumberQuery {
     version
   }

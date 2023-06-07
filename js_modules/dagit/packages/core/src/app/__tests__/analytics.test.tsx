@@ -1,9 +1,8 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
-import {Route, Switch} from 'react-router-dom';
+import {MemoryRouter, Route, Switch} from 'react-router-dom';
 
-import {TestProvider} from '../../testing/TestProvider';
 import {AnalyticsContext, GenericAnalytics, useTrackEvent, useTrackPageView} from '../analytics';
 
 describe('Analytics', () => {
@@ -30,7 +29,7 @@ describe('Analytics', () => {
       const mockAnalytics = createMockAnalytics();
 
       render(
-        <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
+        <MemoryRouter initialEntries={['/foo/hello']}>
           <Test mockAnalytics={mockAnalytics}>
             <Switch>
               <Route path="/foo/:bar?">
@@ -38,7 +37,7 @@ describe('Analytics', () => {
               </Route>
             </Switch>
           </Test>
-        </TestProvider>,
+        </MemoryRouter>,
       );
 
       jest.advanceTimersByTime(400);
@@ -66,7 +65,7 @@ describe('Analytics', () => {
       const mockAnalytics = createMockAnalytics();
 
       render(
-        <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
+        <MemoryRouter initialEntries={['/foo/hello']}>
           <Test mockAnalytics={mockAnalytics}>
             <Switch>
               <Route path="/foo/:bar?">
@@ -74,7 +73,7 @@ describe('Analytics', () => {
               </Route>
             </Switch>
           </Test>
-        </TestProvider>,
+        </MemoryRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -101,7 +100,7 @@ describe('Analytics', () => {
       const overrideAnalytics = createMockAnalytics();
 
       render(
-        <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
+        <MemoryRouter initialEntries={['/foo/hello']}>
           <Test mockAnalytics={mockAnalytics}>
             <Test mockAnalytics={overrideAnalytics}>
               <Switch>
@@ -111,7 +110,7 @@ describe('Analytics', () => {
               </Switch>
             </Test>
           </Test>
-        </TestProvider>,
+        </MemoryRouter>,
       );
 
       jest.advanceTimersByTime(400);
