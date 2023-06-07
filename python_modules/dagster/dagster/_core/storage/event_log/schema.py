@@ -74,7 +74,12 @@ AssetEventTagsTable = db.Table(
 DynamicPartitionsTable = db.Table(
     "dynamic_partitions",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("partitions_def_name", db.Text, nullable=False),
     db.Column("partition", db.Text, nullable=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
