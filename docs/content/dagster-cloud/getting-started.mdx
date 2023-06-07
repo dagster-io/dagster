@@ -352,11 +352,9 @@ To configure the workflow, follow these steps:
 
    Refer to the [GitHub docs](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) for more info about GitHub Action secrets.
 
-2. In your [dagster-cloud-deploy.yml](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster Cloud organization name.
+2. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster Cloud organization name.
 
-3. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster Cloud organization name.
-
-After making the above changes and commiting the workflow file, the CI process should be triggered to deploy your GitHub repository to Dagster Cloud. During the deployment, the agent will attempt to load your code and update the metadata in Dagster Cloud. Once finished, you should see the GitHub Action complete successfully and also be able to see the code location under the "Deployment" tag in Dagster Cloud.
+3. In your `dagster-cloud-deploy.yml`, uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, you'd uncomment the `DockerHub` step in these files. Ensure you have set up the relevant secrets for building and uploading your Docker images.
 
 After making the above changes and commiting the workflow file, the CI process should be triggered to deploy your GitHub repository to Dagster Cloud. During the deployment, the agent will attempt to load your code and update the metadata in Dagster Cloud. Once finished, you should see the GitHub Action complete successfully and also be able to see the code location under the **Deployment** tag in Dagster Cloud.
 
@@ -379,6 +377,12 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 
    This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` and connection to Dagster Cloud.
 
+2. Run the configuration check:
+
+   ```shell
+   dagster-cloud ci check --project-dir=.
+   ```
+
 3. Initialize the build session:
 
    ```shell
@@ -395,8 +399,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 
    ```shell
    export IMAGE_TAG=`git log --format=format:%H -n 1`
-   The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our quickstart repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
-
+   ```
    Use this tag to build and upload your Docker image, for example:
 
    ```shell
