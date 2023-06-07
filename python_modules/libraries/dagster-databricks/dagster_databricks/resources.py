@@ -21,9 +21,9 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
     workspace_id: Optional[str] = Field(
         default=None,
         description=(
-            "The Databricks workspace ID, as described in"
+            "DEPRECATED: The Databricks workspace ID, as described in"
             " https://docs.databricks.com/workspace/workspace-details.html#workspace-instance-names-urls-and-ids."
-            " This is used to log a URL for accessing the job in the Databricks UI."
+            " This is no longer used and will be removed in a 0.20."
         ),
     )
 

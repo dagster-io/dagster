@@ -1,14 +1,16 @@
 from enum import Enum
 from typing import NamedTuple, Optional
 
+from databricks.sdk.service import jobs
+
 
 class DatabricksRunResultState(str, Enum):
     """See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#runresultstate."""
 
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    TIMEDOUT = "TIMEDOUT"
     CANCELED = "CANCELED"
+    FAILED = "FAILED"
+    SUCCESS = "SUCCESS"
+    TIMEDOUT = "TIMEDOUT"
 
     def is_successful(self) -> bool:
         return self == DatabricksRunResultState.SUCCESS
@@ -17,12 +19,14 @@ class DatabricksRunResultState(str, Enum):
 class DatabricksRunLifeCycleState(str, Enum):
     """See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#jobsrunlifecyclestate."""
 
+    BLOCKED = "BLOCKED"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
-    TERMINATING = "TERMINATING"
-    TERMINATED = "TERMINATED"
     SKIPPED = "SKIPPED"
-    INTERNAL_ERROR = "INTERNAL_ERROR"
+    TERMINATED = "TERMINATED"
+    TERMINATING = "TERMINATING"
+    WAITING_FOR_RETRY = "WAITING_FOR_RETRY"
 
     def has_terminated(self) -> bool:
         return self in [
@@ -53,3 +57,15 @@ class DatabricksRunState(NamedTuple):
     def is_successful(self) -> bool:
         """Was the job successful?"""
         return bool(self.result_state and self.result_state.is_successful())
+
+    @classmethod
+    def from_databricks(cls, run_state: jobs.RunState) -> "DatabricksRunState":
+        return cls(
+            life_cycle_state=DatabricksRunLifeCycleState(run_state.life_cycle_state.value)
+            if run_state.life_cycle_state
+            else None,
+            result_state=DatabricksRunResultState(run_state.result_state.value)
+            if run_state.result_state
+            else None,
+            state_message=run_state.state_message,
+        )

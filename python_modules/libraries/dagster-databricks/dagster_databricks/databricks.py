@@ -1,22 +1,22 @@
 import base64
 import logging
 import time
-from typing import IO, Any, Mapping, Optional, Tuple
+from typing import IO, Any, Mapping, Optional, Tuple, cast
 
 import dagster
 import dagster._check as check
 import dagster_pyspark
+import databricks_api
+import databricks_cli.sdk
 import requests.exceptions
-from dagster._annotations import public
-from databricks_api import DatabricksAPI
-from databricks_cli.sdk import ApiClient, ClusterService, DbfsService, JobsService
-from typing_extensions import Final
+from dagster._annotations import deprecated, public
+from dagster._utils.backcompat import deprecation_warning
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import compute, jobs
 
 import dagster_databricks
 
 from .types import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
     DatabricksRunState,
 )
 from .version import __version__
@@ -36,23 +36,48 @@ class DatabricksClient:
         self.host = host
         self.workspace_id = workspace_id
 
+        self._workspace_client = WorkspaceClient(
+            host=host,
+            token=token,
+            product="dagster-databricks",
+            product_version=__version__,
+        )
+
         # TODO: This is the old shim client that we were previously using. Arguably this is
         # confusing for users to use since this is an unofficial wrapper around the documented
-        # Databricks REST API. We should consider removing this in the future.
-        self.client = DatabricksAPI(host=host, token=token)
-        self.__setup_user_agent(self.client.client)
+        # Databricks REST API. We should consider removing this in the next minor release.
+        self._client = databricks_api.DatabricksAPI(host=host, token=token)
+        self.__setup_user_agent(self._client.client)
 
-        # Expose an interface directly to the official Databricks API client.
-        self._api_client = ApiClient(host=host, token=token)
+        # TODO: This is the old `databricks_cli` client that was previous recommended by Databricks.
+        # It is no longer supported and should be removed in favour of `databricks-sdk` in the next
+        # minor release.
+        self._api_client = databricks_cli.sdk.ApiClient(host=host, token=token)
         self.__setup_user_agent(self._api_client)
 
-    def __setup_user_agent(self, client: ApiClient) -> None:
+    def __setup_user_agent(self, client: databricks_cli.sdk.ApiClient) -> None:
         """Overrides the user agent for the Databricks API client."""
         client.default_headers["user-agent"] = f"dagster-databricks/{__version__}"
 
+    @deprecated
     @public
     @property
-    def api_client(self) -> ApiClient:
+    def client(self) -> databricks_api.DatabricksAPI:
+        deprecation_warning(
+            "`client` property on DatabricksClient",
+            "0.20",
+            "Use `workspace_client` property instead.",
+        )
+        return self._client
+
+    @client.setter
+    def client(self, value: databricks_api.DatabricksAPI) -> None:
+        self._client = value
+
+    @deprecated
+    @public
+    @property
+    def api_client(self) -> databricks_cli.sdk.ApiClient:
         """Retrieve a reference to the underlying Databricks API client. For more information,
         see the `Databricks Python API <https://docs.databricks.com/dev-tools/python-api.html>`_.
 
@@ -63,29 +88,75 @@ class DatabricksClient:
             from dagster import op
             from databricks_cli.jobs.api import JobsApi
             from databricks_cli.runs.api import RunsApi
+            from databricks.sdk import WorkspaceClient
 
             @op(required_resource_keys={"databricks_client"})
             def op1(context):
                 # Initialize the Databricks Jobs API
                 jobs_client = JobsApi(context.resources.databricks_client.api_client)
                 runs_client = RunsApi(context.resources.databricks_client.api_client)
+                client = context.resources.databricks_client.api_client
 
                 # Example 1: Run a Databricks job with some parameters.
                 jobs_client.run_now(...)
+                client.jobs.run_now(...)
 
                 # Example 2: Trigger a one-time run of a Databricks workload.
                 runs_client.submit_run(...)
+                client.jobs.submit(...)
 
                 # Example 3: Get an existing run.
                 runs_client.get_run(...)
+                client.jobs.get_run(...)
 
                 # Example 4: Cancel a run.
                 runs_client.cancel_run(...)
+                client.jobs.cancel_run(...)
 
         Returns:
             ApiClient: The authenticated Databricks API client.
         """
+        deprecation_warning(
+            "`api_client` property on DatabricksClient",
+            "0.20",
+            "Use `workspace_client` property instead.",
+        )
         return self._api_client
+
+    @public
+    @property
+    def workspace_client(self) -> WorkspaceClient:
+        """Retrieve a reference to the underlying Databricks Workspace client. For more information,
+        see the `Databricks SDK for Python <https://docs.databricks.com/dev-tools/sdk-python.html>`_.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import op
+            from databricks.sdk import WorkspaceClient
+
+            @op(required_resource_keys={"databricks_client"})
+            def op1(context):
+                # Initialize the Databricks Jobs API
+                client = context.resources.databricks_client.api_client
+
+                # Example 1: Run a Databricks job with some parameters.
+                client.jobs.run_now(...)
+
+                # Example 2: Trigger a one-time run of a Databricks workload.
+                client.jobs.submit(...)
+
+                # Example 3: Get an existing run.
+                client.jobs.get_run(...)
+
+                # Example 4: Cancel a run.
+                client.jobs.cancel_run(...)
+
+        Returns:
+            WorkspaceClient: The authenticated Databricks SDK Workspace Client.
+        """
+        return self._workspace_client
 
     def read_file(self, dbfs_path: str, block_size: int = 1024**2) -> bytes:
         """Read a file from DBFS to a **byte string**."""
@@ -94,14 +165,14 @@ class DatabricksClient:
 
         data = b""
         bytes_read = 0
-        dbfs_service = DbfsService(self.api_client)
+        dbfs_service = self.workspace_client.dbfs
 
         jdoc = dbfs_service.read(path=dbfs_path, length=block_size)
-        data += base64.b64decode(jdoc["data"])
-        while jdoc["bytes_read"] == block_size:
-            bytes_read += jdoc["bytes_read"]
+        data += base64.b64decode(jdoc.data)
+        while jdoc.bytes_read == block_size:
+            bytes_read += jdoc.bytes_read
             jdoc = dbfs_service.read(path=dbfs_path, offset=bytes_read, length=block_size)
-            data += base64.b64decode(jdoc["data"])
+            data += base64.b64decode(jdoc.data)
 
         return data
 
@@ -115,10 +186,10 @@ class DatabricksClient:
         if dbfs_path.startswith("dbfs://"):
             dbfs_path = dbfs_path[7:]
 
-        dbfs_service = DbfsService(self.api_client)
+        dbfs_service = self.workspace_client.dbfs
 
         create_response = dbfs_service.create(path=dbfs_path, overwrite=overwrite)
-        handle = create_response["handle"]
+        handle = create_response.handle
 
         block = file_obj.read(block_size)
         while block:
@@ -134,19 +205,8 @@ class DatabricksClient:
         Return a `DatabricksRunState` object. Note that the `result_state`
         attribute may be `None` if the run hasn't yet terminated.
         """
-        run = JobsService(self.api_client).get_run(databricks_run_id)
-        state = run["state"]
-        result_state = (
-            DatabricksRunResultState(state.get("result_state"))
-            if state.get("result_state")
-            else None
-        )
-
-        return DatabricksRunState(
-            life_cycle_state=DatabricksRunLifeCycleState(state["life_cycle_state"]),
-            result_state=result_state,
-            state_message=state["state_message"],
-        )
+        run = self.workspace_client.jobs.get_run(databricks_run_id)
+        return DatabricksRunState.from_databricks(run.state)
 
     def poll_run_state(
         self,
@@ -262,8 +322,10 @@ class DatabricksJobRunner:
             else:
                 new_cluster["autoscale"] = cluster_size["autoscale"]
 
-            tags = new_cluster.get("custom_tags", [])
-            tags.append({"key": "__dagster_version", "value": dagster.__version__})
+            tags = new_cluster.get("custom_tags", {})
+            if isinstance(tags, list):
+                tags = {x["key"]: x["value"] for x in tags}
+            tags["__dagster_version"] = dagster.__version__
             new_cluster["custom_tags"] = tags
 
         check.invariant(
@@ -308,39 +370,42 @@ class DatabricksJobRunner:
             "Multiple tasks specified in Databricks run",
         )
 
-        config = {
-            "run_name": run_config.get("run_name"),
-            "new_cluster": new_cluster,
-            "existing_cluster_id": existing_cluster_id,
-            "libraries": libraries,
-            **task,
-        }
-        return JobsService(self.client.api_client).submit_run(**config)["run_id"]
+        return self.client.workspace_client.jobs.submit(
+            run_name=run_config.get("run_name"),
+            tasks=[
+                jobs.RunSubmitTaskSettings.from_dict(
+                    {
+                        "new_cluster": new_cluster,
+                        "existing_cluster_id": existing_cluster_id,
+                        "libraries": [jobs.Library.from_dict(lib) for lib in libraries],
+                        **task,
+                    },
+                )
+            ],
+        ).bind()["run_id"]
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
     ) -> Optional[Tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
-        api_client = self.client.api_client
-
-        run = JobsService(api_client).get_run(databricks_run_id)
-        cluster = ClusterService(api_client).get_cluster(run["cluster_instance"]["cluster_id"])
-        log_config = cluster.get("cluster_log_conf")
+        run = self.client.workspace_client.jobs.get_run(databricks_run_id)
+        cluster = self.client.workspace_client.clusters.get(run.cluster_instance.cluster_id)
+        log_config = cluster.cluster_log_conf
         if log_config is None:
             log.warn(
                 "Logs not configured for cluster {cluster} used for run {run}".format(
-                    cluster=cluster["cluster_id"], run=databricks_run_id
+                    cluster=cluster.cluster_id, run=databricks_run_id
                 )
             )
             return None
-        if "s3" in log_config:
-            logs_prefix = log_config["s3"]["destination"]
+        if cast(Optional[compute.S3StorageInfo], log_config.s3) is not None:
+            logs_prefix = log_config.s3.destination
             log.warn("Retrieving S3 logs not yet implemented")
             return None
-        elif "dbfs" in log_config:
-            logs_prefix = log_config["dbfs"]["destination"]
-            stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster["cluster_id"], "stdout")
-            stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster["cluster_id"], "stderr")
+        elif cast(Optional[compute.DbfsStorageInfo], log_config.dbfs) is not None:
+            logs_prefix = log_config.dbfs.destination
+            stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster.cluster_id, "stdout")
+            stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster.cluster_id, "stderr")
             return stdout, stderr
 
     def wait_for_dbfs_logs(
