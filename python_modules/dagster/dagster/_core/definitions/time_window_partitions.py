@@ -291,6 +291,8 @@ class TimeWindowPartitionsDefinition(
         partition_def_str = (
             f"{schedule_str}, starting {self.start.strftime(self.fmt)} {self.timezone}."
         )
+        if self.end is not None:
+            partition_def_str += f" Ending {self.end.strftime(self.fmt)} {self.timezone}."
         if self.end_offset != 0:
             partition_def_str += (
                 " End offsetted by"
@@ -299,23 +301,34 @@ class TimeWindowPartitionsDefinition(
         return partition_def_str
 
     def __eq__(self, other):
-        return (
-            isinstance(other, TimeWindowPartitionsDefinition)
-            and pendulum.instance(self.start, tz=self.timezone).timestamp()
-            == pendulum.instance(other.start, tz=other.timezone).timestamp()
-            and self.timezone == other.timezone
-            and self.fmt == other.fmt
-            and self.end_offset == other.end_offset
-            and self.cron_schedule == other.cron_schedule
+    return (
+        isinstance(other, TimeWindowPartitionsDefinition)
+        and pendulum.instance(self.start, tz=self.timezone).timestamp()
+        == pendulum.instance(other.start, tz=other.timezone).timestamp()
+        and self.timezone == other.timezone
+        and self.fmt == other.fmt
+        and self.end_offset == other.end_offset
+        and self.cron_schedule == other.cron_schedule
+        and (
+            (self.end is None and other.end is None)
+            or (
+                self.end is not None
+                and other.end is not None
+                and pendulum.instance(self.end, tz=self.timezone).timestamp()
+                == pendulum.instance(other.end, tz=other.timezone).timestamp()
+            )
         )
+    )
 
     def __repr__(self):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
         # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
+        start_timestamp = self.start.timestamp()
+        end_timestamp = self.end.timestamp() if self.end is not None else None
         return (
-            f"TimeWindowPartitionsDefinition(start={self.start.timestamp()},"
-            f" timezone='{self.timezone}', fmt='{self.fmt}', end_offset={self.end_offset},"
-            f" cron_schedule='{self.cron_schedule}')"
+            f"TimeWindowPartitionsDefinition(start={start_timestamp},"
+            f" end={end_timestamp}, timezone='{self.timezone}', fmt='{self.fmt}',"
+            f" end_offset={self.end_offset}, cron_schedule='{self.cron_schedule}')"
         )
 
     def __hash__(self):
