@@ -570,17 +570,8 @@ def find_parent_materialized_asset_partitions(
                             asset_status_cache_value = (
                                 instance_queryer.get_asset_status_cache_value(asset_key=child)
                             )
-                            """
-                            if asset_status_cache_value is not None:
-                                x = asset_status_cache_value.deserialize_in_progress_partition_subsets(
-                                    child_partitions_def
-                                )
-                                print("x", x)
-                                y = asset_status_cache_value.deserialize_failed_partition_subsets(
-                                    child_partitions_def
-                                )
-                                print("y", y)
-                            """
+                            # if the child is currently in progress, or its most recent run failed,
+                            # it is not added to the candidate set
                             if asset_status_cache_value is None or (
                                 child_partition
                                 not in asset_status_cache_value.deserialize_in_progress_partition_subsets(
