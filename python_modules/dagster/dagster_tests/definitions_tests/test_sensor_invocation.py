@@ -494,7 +494,7 @@ def test_instance_access_built_sensor():
         DagsterInvariantViolationError,
         match="Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
-        build_sensor_context().instance
+        build_sensor_context().instance  # noqa: B018
 
     with instance_for_test() as instance:
         assert isinstance(build_sensor_context(instance).instance, DagsterInstance)

@@ -46,7 +46,7 @@ def test_build_with_cm_resource():
 
     context = build_init_resource_context(resources={"foo": foo})
     with pytest.raises(DagsterInvariantViolationError):
-        context.resources
+        context.resources  # noqa: B018
 
     del context
     assert entered == ["true"]
