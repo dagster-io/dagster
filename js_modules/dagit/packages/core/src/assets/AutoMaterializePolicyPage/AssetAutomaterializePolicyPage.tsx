@@ -266,16 +266,17 @@ function LeftPanel({
                   <div>
                     {evaluation.startTimestamp ? (
                       <>
-                        <TimestampDisplay timestamp={evaluation.startTimestamp} />
-                        {' - '}
+                        {evaluation.amount} evaluation{evaluation.amount === 1 ? '' : 's'}
                       </>
                     ) : (
-                      'Before '
-                    )}
-                    {evaluation.endTimestamp === 'now' ? (
-                      'now'
-                    ) : (
-                      <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                      <>
+                        {'Before'}{' '}
+                        {evaluation.endTimestamp === 'now' ? (
+                          'now'
+                        ) : (
+                          <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                        )}
+                      </>
                     )}
                   </div>
                 </Box>
@@ -550,7 +551,7 @@ const MiddlePanel = ({
 
       // skip conditions
       waitingOnUpstreamData: boolean;
-      exceedsXMaterializationsPerHour: boolean;
+      exceedsMaxMaterializationsPerMinute: boolean;
     }> = {};
     evaluationData?.conditions.forEach((cond) => {
       switch (cond.__typename) {
@@ -570,7 +571,7 @@ const MiddlePanel = ({
           results.waitingOnUpstreamData = true;
           break;
         case 'MaxMaterializationsExceededAutoMaterializeCondition':
-          results.exceedsXMaterializationsPerHour = true;
+          results.exceedsMaxMaterializationsPerMinute = true;
           break;
         default:
           console.error('Unexpected condition', (cond as any).__typename);
@@ -711,7 +712,7 @@ const MiddlePanel = ({
           />
           <Condition
             text={`Exceeds ${maxMaterializationsPerMinute} materializations per minute`}
-            met={!!conditionResults.exceedsXMaterializationsPerHour}
+            met={!!conditionResults.exceedsMaxMaterializationsPerMinute}
             skip={true}
           />
         </Box>
