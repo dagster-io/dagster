@@ -526,7 +526,7 @@ def test_different_start_time_partitions_defs():
         ).get_partition_keys()
 
     assert (
-        TimeWindowPartitionMapping(raise_error_on_nonexistent_upstream_partition=False)
+        TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)
         .get_upstream_partitions_for_partitions(
             downstream_partitions_subset=subset_with_keys(jan_start, ["2023-01-15"]),
             upstream_partitions_def=feb_start,
@@ -562,7 +562,7 @@ def test_different_end_time_partitions_defs():
         ).get_partition_keys()
 
     assert (
-        TimeWindowPartitionMapping(raise_error_on_nonexistent_upstream_partition=False)
+        TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)
         .get_upstream_partitions_for_partitions(
             downstream_partitions_subset=subset_with_keys(jan_feb_partitions_def, ["2023-02-15"]),
             upstream_partitions_def=jan_partitions_def,

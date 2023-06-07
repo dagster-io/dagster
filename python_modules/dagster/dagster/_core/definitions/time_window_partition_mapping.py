@@ -24,7 +24,7 @@ class TimeWindowPartitionMapping(
         [
             ("start_offset", PublicAttr[int]),
             ("end_offset", PublicAttr[int]),
-            ("raise_error_on_nonexistent_upstream_partition", PublicAttr[bool]),
+            ("allow_nonexistent_upstream_partitions", PublicAttr[bool]),
         ],
     ),
 ):
@@ -58,11 +58,12 @@ class TimeWindowPartitionMapping(
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
             upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
-        raise_error_on_nonexistent_upstream_partition (bool): Defaults to true. If false, does not
+        allow_nonexistent_upstream_partitions (bool): Defaults to false. If true, does not
             raise an error when mapped upstream partitions fall outside the start-end time window of the
             partitions def. For example, if the upstream partitions def starts on "2023-01-01" but
-            the downstream starts on "2022-01-01", setting this bool to False would return no
+            the downstream starts on "2022-01-01", setting this bool to true would return no
             partition keys when get_upstream_partitions_for_partitions is called with "2022-06-01".
+            When set to false, would raise an error.
 
     Examples:
         .. code-block:: python
@@ -91,15 +92,15 @@ class TimeWindowPartitionMapping(
         cls,
         start_offset: int = 0,
         end_offset: int = 0,
-        raise_error_on_nonexistent_upstream_partition: bool = True,
+        allow_nonexistent_upstream_partitions: bool = False,
     ):
         return super(TimeWindowPartitionMapping, cls).__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
             end_offset=check.int_param(end_offset, "end_offset"),
-            raise_error_on_nonexistent_upstream_partition=check.bool_param(
-                raise_error_on_nonexistent_upstream_partition,
-                "raise_error_on_nonexistent_upstream_partition",
+            allow_nonexistent_upstream_partitions=check.bool_param(
+                allow_nonexistent_upstream_partitions,
+                "allow_nonexistent_upstream_partitions",
             ),
         )
 
@@ -267,7 +268,7 @@ class TimeWindowPartitionMapping(
                 and future_windows_exist
             ):
                 # In situations where the upstream mapped partition will exist in the future
-                # but does not exist at the current time, we disregard raise_error_on_nonexistent_upstream_partition
+                # but does not exist at the current time, we disregard allow_nonexistent_upstream_partitions
                 # and raise an error regardless
                 raise DagsterInvalidInvocationError(
                     f"Mapped to invalid time window {time_window} which does not exist yet at"
@@ -277,7 +278,7 @@ class TimeWindowPartitionMapping(
         if (
             called_from_get_upstream
             and filtered_time_windows != time_windows
-            and self.raise_error_on_nonexistent_upstream_partition
+            and not self.allow_nonexistent_upstream_partitions
         ):
             raise DagsterInvalidInvocationError(
                 f"Provided time windows {time_windows} contain nonexistent time windows for"
