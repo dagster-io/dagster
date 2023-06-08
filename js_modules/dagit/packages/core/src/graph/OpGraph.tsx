@@ -114,7 +114,7 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
       ))}
       <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
         {ops
-          .filter((op) => !isNodeOffscreen(layout.nodes[op.name].bounds, viewportRect))
+          .filter((op) => !isNodeOffscreen(layout.nodes[op.name]!.bounds, viewportRect))
           .map((op) => (
             <OpNode
               key={op.name}
@@ -125,7 +125,7 @@ const OpGraphContents: React.FC<OpGraphContentsProps> = React.memo((props) => {
               onDoubleClick={() => onDoubleClickOp({name: op.name})}
               onEnterComposite={() => onEnterSubgraph({name: op.name})}
               onHighlightEdges={setHighlighted}
-              layout={layout.nodes[op.name]}
+              layout={layout.nodes[op.name]!}
               selected={selectedOp === op}
               focused={focusOps.includes(op)}
               highlightedEdges={
@@ -149,7 +149,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   argToOpLayout = (arg: OpNameOrPath) => {
-    const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
+    const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
     return this.props.layout.nodes[lastName];
   };
 

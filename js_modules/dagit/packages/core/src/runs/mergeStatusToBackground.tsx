@@ -49,7 +49,7 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
 
   if (statusArr.length === 1) {
     const [element] = statusArr;
-    return statusToColor(element);
+    return statusToColor(element!);
   }
 
   // const colorList = statusArr.map(statusToColor);

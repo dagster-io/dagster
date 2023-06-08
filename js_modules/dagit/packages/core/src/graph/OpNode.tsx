@@ -193,7 +193,7 @@ const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({node
   return (
     <div className="assets">
       <Icon name="asset" size={16} />
-      {withMiddleTruncation(displayNameForAssetKey(nodes[0].assetKey), {
+      {withMiddleTruncation(displayNameForAssetKey(nodes[0]!.assetKey), {
         maxLength: 48 - more.length,
       })}
       {more}

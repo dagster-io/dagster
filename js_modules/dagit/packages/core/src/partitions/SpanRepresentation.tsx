@@ -23,7 +23,7 @@ export function stringForSpan(
   {startIdx, endIdx}: {startIdx: number; endIdx: number},
   all: string[],
 ) {
-  return startIdx === endIdx ? all[startIdx] : `[${all[startIdx]}...${all[endIdx]}]`;
+  return startIdx === endIdx ? all[startIdx]! : `[${all[startIdx]!}...${all[endIdx]!}]`;
 }
 
 export function allPartitionsSpan({partitionKeys}: {partitionKeys: string[]}) {

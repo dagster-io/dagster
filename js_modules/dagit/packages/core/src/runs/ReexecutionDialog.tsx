@@ -160,8 +160,7 @@ export const ReexecutionDialog = (props: Props) => {
     dispatch({type: 'start'});
 
     const runList = Object.keys(state.frozenRuns);
-    for (let ii = 0; ii < runList.length; ii++) {
-      const runId = runList[ii];
+    for (const runId of runList) {
       const {data} = await reexecute({
         variables: {
           reexecutionParams: {

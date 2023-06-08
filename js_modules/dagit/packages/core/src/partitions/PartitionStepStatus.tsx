@@ -128,7 +128,7 @@ export const PartitionPerAssetStatus: React.FC<
         name: box.node.name,
         unix: 0,
         color: assetPartitionStatusToSquareColor(
-          partitionStatusAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
+          partitionStatusAtIndex(rangesByAssetKey[box.node.name]!, partitionKeyIdx),
         ),
       })),
     })),
@@ -440,7 +440,7 @@ const PartitionSquare: React.FC<{
   } else if (runs.length === 0) {
     squareStatus = 'empty';
   } else {
-    const runStatus = runs[runs.length - 1].status;
+    const runStatus = runs[runs.length - 1]!.status;
     squareStatus = runStatus === RunStatus.CANCELED ? 'failure' : runStatus.toLowerCase();
   }
 
@@ -474,7 +474,7 @@ const PartitionSquare: React.FC<{
           <MenuLink
             icon="open_in_new"
             text="Show logs from last run"
-            to={linkToRunEvent(runs[runs.length - 1], {stepKey: step ? step.name : null})}
+            to={linkToRunEvent(runs[runs.length - 1]!, {stepKey: step ? step.name : null})}
           />
           <MenuItem
             icon="settings_backup_restore"

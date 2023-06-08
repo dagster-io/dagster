@@ -53,7 +53,7 @@ export const RowWithOverlappingRuns = () => {
         jobType: 'job',
         path: `/${jobKey}`,
         repoAddress,
-        runs: [{...first}, {...first}, {...second}, {...second}, {...second}, third],
+        runs: [{...first!}, {...first!}, {...second!}, {...second!}, {...second!}, third!],
       },
     ];
   }, [sixHoursAgo, now]);

@@ -337,7 +337,7 @@ const NextTickDialog: React.FC<{
       evaluationResult.runRequests &&
       evaluationResult.runRequests.length === 1
     ) {
-      setSelectedRunRequest(evaluationResult.runRequests[0]);
+      setSelectedRunRequest(evaluationResult.runRequests[0]!);
     }
   }, [evaluationResult]);
 

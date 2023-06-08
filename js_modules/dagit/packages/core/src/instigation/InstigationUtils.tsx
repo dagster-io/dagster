@@ -17,7 +17,7 @@ export const InstigatedRunStatus: React.FC<{
   if (!instigationState.runs.length) {
     return <span style={{color: Colors.Gray300}}>None</span>;
   }
-  return <LastRunSummary run={instigationState.runs[0]} name={instigationState.name} />;
+  return <LastRunSummary run={instigationState.runs[0]!} name={instigationState.name} />;
 };
 
 export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (

@@ -169,7 +169,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
       const queuedLogs = [...queue.current];
       queue.current = [];
       const queuedMessages = queuedLogs.flatMap((log) => log.messages);
-      const lastLog = queuedLogs[queuedLogs.length - 1];
+      const lastLog = queuedLogs[queuedLogs.length - 1]!;
       const hasMore = lastLog.hasMorePastEvents;
       const cursor = lastLog.cursor;
 

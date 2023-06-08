@@ -107,7 +107,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
       await confirm({
         title: 'Remove tab?',
         description: `The configuration for ${
-          keyToRemove ? `"${sessions[keyToRemove].name}"` : 'this tab'
+          keyToRemove && sessions[keyToRemove] ? `"${sessions[keyToRemove]!.name}"` : 'this tab'
         } will be discarded.`,
       });
       onApply(applyRemoveSession, keyToRemove);

@@ -127,7 +127,7 @@ const ConcurrencyLimits: React.FC<{
     setAction({actionType: 'add'});
   };
   const onEdit = (concurrencyKey: string) => {
-    setAction({actionType: 'edit', concurrencyKey, concurrencyLimit: limitsByKey[concurrencyKey]});
+    setAction({actionType: 'edit', concurrencyKey, concurrencyLimit: limitsByKey[concurrencyKey]!});
   };
   const onDelete = (concurrencyKey: string) => {
     setAction({actionType: 'delete', concurrencyKey});

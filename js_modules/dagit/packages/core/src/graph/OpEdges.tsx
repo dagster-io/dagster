@@ -21,12 +21,12 @@ type Path = {
 const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
   edges
     .map(({from, to}) => {
-      const source = nodes[from.opName];
+      const source = nodes[from.opName]!;
       const sourceOutput =
         source.outputs[from.edgeName] ||
         Object.values(source.outputs).find((o) => o.collapsed.includes(from.edgeName));
 
-      const target = nodes[to.opName];
+      const target = nodes[to.opName]!;
       const targetInput =
         target.inputs[to.edgeName] ||
         Object.values(target.inputs).find((o) => o.collapsed.includes(to.edgeName));

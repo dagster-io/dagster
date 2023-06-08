@@ -26,11 +26,11 @@ function removeLeadingSpaces(input: string) {
   }
 
   const lines = input.split('\n');
-  if (!lines.every((l) => l.substr(0, leadingSpaces[1].length).trim() === '')) {
+  if (!lines.every((l) => l.substr(0, leadingSpaces[1]!.length).trim() === '')) {
     return input;
   }
 
-  return lines.map((l) => l.substr(leadingSpaces[1].length)).join('\n');
+  return lines.map((l) => l.substr(leadingSpaces[1]!.length)).join('\n');
 }
 
 export class Description extends React.Component<IDescriptionProps, IDescriptionState> {

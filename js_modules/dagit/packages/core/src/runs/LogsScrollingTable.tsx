@@ -73,7 +73,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
     return true;
   });
 
-  const hasTextFilter = !!(filter.logQuery.length && filter.logQuery[0].value !== '');
+  const hasTextFilter = !!(filter.logQuery.length && filter.logQuery[0]!.value !== '');
 
   const textMatchNodes = hasTextFilter
     ? filteredNodes.filter((node) => {
@@ -154,7 +154,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     defaultHeight: 30,
     fixedWidth: true,
     keyMapper: (rowIndex) =>
-      this.props.filteredNodes ? this.props.filteredNodes[rowIndex].clientsideKey : '',
+      this.props.filteredNodes ? this.props.filteredNodes[rowIndex]!.clientsideKey : '',
   });
 
   isAtBottomOrZero = true;
@@ -279,10 +279,10 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
   };
 
   rowRenderer = ({parent, index, style}: ListRowProps) => {
-    if (!this.props.filteredNodes) {
+    if (!this.props.filteredNodes.length) {
       return;
     }
-    const node = this.props.filteredNodes[index];
+    const node = this.props.filteredNodes[index]!;
     const focusedTimeMatch = Number(node.timestamp) === this.props.focusedTime;
     const textMatch = !!this.props.textMatchNodes?.includes(node);
 

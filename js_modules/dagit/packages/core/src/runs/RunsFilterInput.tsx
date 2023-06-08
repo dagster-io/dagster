@@ -138,9 +138,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'tag') {
       const [key, value = ''] = item.value.split('=');
       if (obj.tags) {
-        obj.tags.push({key, value});
+        obj.tags.push({key: key!, value});
       } else {
-        obj.tags = [{key, value}];
+        obj.tags = [{key: key!, value}];
       }
     }
   }
@@ -380,10 +380,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="job" />
-        <TruncatedTextWithFullTextOnHover text={value.value} />
+        <TruncatedTextWithFullTextOnHover text={value.value!} />
       </Box>
     ),
-    getStringValue: ({value}) => value,
+    getStringValue: ({value}) => value!,
     onStateChanged: (values) => {
       onChange([
         ...tokens.filter(({token, value}) => {
@@ -415,7 +415,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           } else if (value.type === DagsterTag.ScheduleName) {
             icon = <Icon name="schedule" />;
           } else if (value.type === DagsterTag.User) {
-            return <UserDisplay email={value.value} isFilter />;
+            return <UserDisplay email={value.value!} isFilter />;
           } else if (value.type === DagsterTag.Automaterialize) {
             icon = <Icon name="auto_materialize_policy" />;
             labelValue = 'Auto-materialize policy';
@@ -423,7 +423,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           return (
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
               {icon}
-              <TruncatedTextWithFullTextOnHover text={labelValue} />
+              <TruncatedTextWithFullTextOnHover text={labelValue!} />
             </Box>
           );
         },
@@ -431,7 +431,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           if (x.type === DagsterTag.Automaterialize) {
             return 'Auto-materialize policy';
           }
-          return x.value;
+          return x.value!;
         },
         initialState: React.useMemo(() => {
           return new Set(
@@ -503,7 +503,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
             }[],
           ) => {
             return {
-              ...tagSuggestionValueObject(path.length ? path[0].value : '', query),
+              ...tagSuggestionValueObject(path.length ? path[0]!.value : '', query),
               final: !!path.length,
             };
           },
@@ -520,7 +520,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
             })
             .map((token) => {
               const [key, value] = token.value.split('=');
-              return tagSuggestionValueObject(key, value).value;
+              return tagSuggestionValueObject(key!, value!).value;
             });
         }, [tokens]),
 

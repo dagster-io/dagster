@@ -110,7 +110,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
     window.requestAnimationFrame(() => {
       handleAdjustPath((opNames) => {
-        const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
+        const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
         opNames[opNames.length - 1] = last;
         opNames.push('');
       });

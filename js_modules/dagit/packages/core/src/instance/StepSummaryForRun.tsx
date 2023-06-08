@@ -53,7 +53,7 @@ export const StepSummaryForRun = (props: Props) => {
 
   if (failedStatuses.has(status)) {
     if (stepCount === 1) {
-      const step = relevantSteps[0];
+      const step = relevantSteps[0]!;
       const query = step.endTime
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
@@ -72,7 +72,7 @@ export const StepSummaryForRun = (props: Props) => {
 
   if (inProgressStatuses.has(status)) {
     if (stepCount === 1) {
-      const step = relevantSteps[0];
+      const step = relevantSteps[0]!;
       const query = step.endTime
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
