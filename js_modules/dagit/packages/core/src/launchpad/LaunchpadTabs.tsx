@@ -136,7 +136,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
             canRemove={sessionCount > 1}
             key={key}
             active={key === data.current}
-            title={sessions[key].name || 'Unnamed'}
+            title={sessions[key]!.name || 'Unnamed'}
             onClick={() => onApply(applySelectSession, key)}
             onChange={(name) => onApply(applyChangesToSession, key, {name})}
             onRemove={() => onRemove(key)}

@@ -46,7 +46,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
     onSave(applyChangesToSession(data, data.current, changes));
   };
 
-  const currentSession = data.sessions[data.current];
+  const currentSession = data.sessions[data.current]!;
 
   return (
     <>

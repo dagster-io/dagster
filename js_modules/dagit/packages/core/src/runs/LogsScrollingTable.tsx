@@ -73,7 +73,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
     return true;
   });
 
-  const hasTextFilter = !!(filter.logQuery.length && filter.logQuery[0]!.value !== '');
+  const hasTextFilter = !!(filter.logQuery[0] && filter.logQuery[0].value !== '');
 
   const textMatchNodes = hasTextFilter
     ? filteredNodes.filter((node) => {

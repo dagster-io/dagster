@@ -54,12 +54,18 @@ export const ScheduleOrSensorTag: React.FC<{
 
   if (scheduleCount) {
     return (
-      <MatchingSchedule schedule={schedules[0]} repoAddress={repoAddress} showSwitch={showSwitch} />
+      <MatchingSchedule
+        schedule={schedules[0]!}
+        repoAddress={repoAddress}
+        showSwitch={showSwitch}
+      />
     );
   }
 
   if (sensorCount) {
-    return <MatchingSensor sensor={sensors[0]} repoAddress={repoAddress} showSwitch={showSwitch} />;
+    return (
+      <MatchingSensor sensor={sensors[0]!} repoAddress={repoAddress} showSwitch={showSwitch} />
+    );
   }
 
   return null;

@@ -119,7 +119,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           <VirtualHeaderRow />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const group = groupedAssets[index];
+              const group = groupedAssets[index]!;
               return <VirtualRow key={key} start={start} height={size} group={group} />;
             })}
           </Inner>
@@ -160,7 +160,7 @@ function groupAssets(assets: Assets) {
   const groups: Record<
     string,
     {
-      groupName?: string;
+      groupName: string | null;
       repositoryName: string;
       assets: Assets;
     }
@@ -173,12 +173,13 @@ function groupAssets(assets: Assets) {
     const groupName = asset.definition.groupName;
     const repositoryName = asset.definition.repository.name;
     const key = `${groupName}||${repositoryName}`;
-    groups[key] = groups[key] || {
+    const target = groups[key] || {
       groupName,
       repositoryName,
-      assets: [],
+      assets: [] as Assets,
     };
-    groups[key].assets.push(asset);
+    target.assets.push(asset);
+    groups[key] = target;
   });
   return Object.values(groups);
 }

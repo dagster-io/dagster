@@ -309,8 +309,8 @@ export function useLiveDataOrLatestMaterializationDebounced(
       ...MISSING_LIVE_DATA,
       lastMaterialization:
         nonSDAData?.assetOrError.__typename === 'Asset' &&
-        nonSDAData.assetOrError.assetMaterializations.length > 0
-          ? nonSDAData.assetOrError.assetMaterializations[0]!
+        nonSDAData.assetOrError.assetMaterializations[0]
+          ? nonSDAData.assetOrError.assetMaterializations[0]
           : null,
     };
   }

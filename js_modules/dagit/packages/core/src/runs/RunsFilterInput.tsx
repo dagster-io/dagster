@@ -503,7 +503,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
             }[],
           ) => {
             return {
-              ...tagSuggestionValueObject(path.length ? path[0]!.value : '', query),
+              ...tagSuggestionValueObject(path[0] ? path[0].value : '', query),
               final: !!path.length,
             };
           },

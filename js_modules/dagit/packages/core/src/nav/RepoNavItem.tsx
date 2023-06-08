@@ -42,10 +42,10 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       return <span style={{color: Colors.Gray700}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
-      return <SingleRepoSummary repo={allRepos[0]} onlyRepo />;
+      return <SingleRepoSummary repo={allRepos[0]!} onlyRepo />;
     }
     if (selected.length === 1) {
-      const selectedRepo = Array.from(selected)[0];
+      const selectedRepo = selected[0]!;
       return <SingleRepoSummary repo={selectedRepo} onlyRepo={false} />;
     }
     return <span>{`${selected.length} of ${allRepos.length} shown`}</span>;

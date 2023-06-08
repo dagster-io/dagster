@@ -684,5 +684,5 @@ function pathExistsInObject(path: string[], object: any): boolean {
     return true;
   }
   const [first, ...rest] = path;
-  return pathExistsInObject(rest, object[first]);
+  return pathExistsInObject(rest, object[first!]);
 }

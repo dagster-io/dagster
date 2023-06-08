@@ -80,7 +80,7 @@ export const OverviewResourcesTable: React.FC<Props> = ({repos}) => {
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: RowType = flattened[index];
+              const row: RowType = flattened[index]!;
               const type = row!.type;
               return type === 'header' ? (
                 <RepoRow
