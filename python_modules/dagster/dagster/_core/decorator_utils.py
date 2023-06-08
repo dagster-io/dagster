@@ -1,8 +1,23 @@
+import functools
 import textwrap
 from inspect import Parameter, signature
-from typing import Any, Callable, Optional, Sequence, Set, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
-from typing_extensions import Concatenate, ParamSpec, TypeGuard
+from typing_extensions import (
+    Concatenate,
+    ParamSpec,
+    TypeGuard,
+    get_type_hints as typing_get_type_hints,
+)
 
 R = TypeVar("R")
 T = TypeVar("T")
@@ -34,6 +49,11 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
 
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
     return list(signature(fn).parameters.values())
+
+
+def get_type_hints(fn: Callable) -> Mapping[str, Any]:
+    target = fn.func if isinstance(fn, functools.partial) else fn
+    return typing_get_type_hints(target, include_extras=True)
 
 
 def validate_expected_params(

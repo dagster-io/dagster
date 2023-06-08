@@ -111,6 +111,20 @@ def test_single_typed_input_and_output_lambda():
     assert add_one.output_defs[0].dagster_type.unique_name == "Int"
 
 
+def test_string_typed_input_and_output():
+    @op
+    def add_one(_context, num: "Optional[int]") -> "int":
+        return num + 1 if num else 1
+
+    assert add_one
+    assert len(add_one.input_defs) == 1
+    assert add_one.input_defs[0].name == "num"
+    assert add_one.input_defs[0].dagster_type.display_name == "Int?"
+
+    assert len(add_one.output_defs) == 1
+    assert add_one.output_defs[0].dagster_type.unique_name == "Int"
+
+
 def test_wrapped_input_and_output_lambda():
     @op
     def add_one(nums: List[int]) -> Optional[List[int]]:
