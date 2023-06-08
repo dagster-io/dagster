@@ -295,11 +295,6 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        if bucket_by:
-            if limit or cursor:
-                check.failed("cannot specify bucket_by and limit/cursor at the same time")
-            return self._bucketed_runs_query(bucket_by, filters, columns, order_by, ascending)
-
         if filters.tags:
             table = self._apply_tags_table_joins(RunsTable, filters.tags)
         else:
@@ -310,101 +305,6 @@ class SqlRunStorage(RunStorage):
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
-
-    def _bucket_rank_column(
-        self, bucket_by: Union[JobBucket, TagBucket], order_by: Optional[str], ascending: bool
-    ):
-        check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
-        check.invariant(
-            self.supports_bucket_queries, "Bucket queries are not supported by this storage layer"
-        )
-        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
-        direction = db.asc if ascending else db.desc
-        bucket_column = (
-            RunsTable.c.pipeline_name if isinstance(bucket_by, JobBucket) else RunTagsTable.c.value
-        )
-        return (
-            db.func.rank()
-            .over(order_by=direction(sorting_column), partition_by=bucket_column)
-            .label("rank")
-        )
-
-    def _bucketed_runs_query(
-        self,
-        bucket_by: Union[JobBucket, TagBucket],
-        filters: RunsFilter,
-        columns: Sequence[str],
-        order_by: Optional[str] = None,
-        ascending: bool = False,
-    ) -> SqlAlchemyQuery:
-        bucket_rank = self._bucket_rank_column(bucket_by, order_by, ascending)
-        query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
-
-        if isinstance(bucket_by, JobBucket):
-            if filters.tags:
-                table = self._apply_tags_table_joins(RunsTable, filters.tags)
-            else:
-                table = RunsTable
-            base_query = db_select(query_columns).select_from(table)
-            base_query = base_query.where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
-            base_query = self._add_filters_to_query(base_query, filters)
-
-        elif not filters.tags:
-            # bucketing by tag, no tag filters
-            if self.supports_intersect:
-                table = RunsTable.join(
-                    RunTagsTable,
-                    db.and_(
-                        RunsTable.c.run_id == RunTagsTable.c.run_id,
-                        RunTagsTable.c.key == bucket_by.tag_key,
-                        RunTagsTable.c.value.in_(bucket_by.tag_values),
-                    ),
-                )
-            else:
-                table = self._apply_tags_table_joins(
-                    RunsTable,
-                    {bucket_by.tag_key: bucket_by.tag_values},
-                )
-
-            base_query = db_select(query_columns).select_from(table)
-            base_query = self._add_filters_to_query(base_query, filters)
-        else:
-            # there are tag filters as well as tag buckets, so we have to apply the tag filters in
-            # a separate join
-            filtered_query = db_select([RunsTable.c.run_id]).select_from(
-                self._apply_tags_table_joins(RunsTable, filters.tags)
-            )
-            filtered_query = db_subquery(
-                self._add_filters_to_query(filtered_query, filters), "filtered_query"
-            )
-            if self.supports_intersect:
-                table = RunsTable.join(
-                    RunTagsTable,
-                    db.and_(
-                        RunsTable.c.run_id == RunTagsTable.c.run_id,
-                        RunTagsTable.c.key == bucket_by.tag_key,
-                        RunTagsTable.c.value.in_(bucket_by.tag_values),
-                    ),
-                )
-            else:
-                table = self._apply_tags_table_joins(
-                    RunsTable, {bucket_by.tag_key: bucket_by.tag_values}
-                )
-
-            base_query = db_select(query_columns).select_from(
-                table.join(filtered_query, RunsTable.c.run_id == filtered_query.c.run_id)
-            )
-
-        subquery = db_subquery(base_query, "runs_subquery")
-
-        # select all the columns, but skip the bucket_rank column, which is only used for applying
-        # the limit / order
-        subquery_columns = [getattr(subquery.c, column) for column in columns]
-        query = db_select(subquery_columns).order_by(subquery.c.rank.asc())
-        if bucket_by.bucket_limit:
-            query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
-
-        return query
 
     def _apply_tags_table_joins(
         self,

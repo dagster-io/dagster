@@ -159,18 +159,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             del self._index_migration_cache[migration_name]
 
     @property
-    def supports_bucket_queries(self) -> bool:
-        if not super().supports_bucket_queries:
-            return False
-
-        if not self._mysql_version:
-            return False
-
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
-            MINIMUM_MYSQL_BUCKET_VERSION
-        )
-
-    @property
     def supports_intersect(self) -> bool:
         return parse_mysql_version(self._mysql_version) >= parse_mysql_version(  # type: ignore
             MINIMUM_MYSQL_INTERSECT_VERSION
