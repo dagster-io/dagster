@@ -100,6 +100,7 @@ def asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
     """Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
     function.
@@ -198,6 +199,7 @@ def asset_sensor(
             job=job,
             jobs=jobs,
             default_status=default_status,
+            required_resource_keys=required_resource_keys,
         )
 
     return inner
@@ -215,6 +217,7 @@ def multi_asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """Creates an asset sensor that can monitor multiple assets.
 
@@ -273,6 +276,7 @@ def multi_asset_sensor(
             jobs=jobs,
             default_status=default_status,
             request_assets=request_assets,
+            required_resource_keys=required_resource_keys,
         )
         update_wrapper(sensor_def, wrapped=fn)
         return sensor_def
