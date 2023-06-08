@@ -92,7 +92,7 @@ function buildMatrixData(
         return blankState;
       }
 
-      const lastRun = partition.runs[partition.runs.length - 1];
+      const lastRun = partition.runs[partition.runs.length - 1]!;
       const lastRunStepStatus = lastRun.stepStats.find((stats) =>
         isStepKeyForNode(node.name, stats.stepKey),
       )?.status;
@@ -104,7 +104,7 @@ function buildMatrixData(
       ) {
         let idx = partition.runs.length - 2;
         while (idx >= 0 && !previousRunStatus) {
-          const currRun = partition.runs[idx];
+          const currRun = partition.runs[idx]!;
           const currRunStatus = currRun.stepStats.find((stats) =>
             isStepKeyForNode(node.name, stats.stepKey),
           )?.status;
@@ -140,8 +140,8 @@ function buildMatrixData(
   const partitionsWithARun = partitionColumns.filter((p) => p.runs.length > 0).length;
 
   const stepRows = layout.boxes.map((box, idx) => {
-    const totalFailures = partitionColumns.filter((p) => p.steps[idx].color.includes('FAILURE'));
-    const finalFailures = partitionColumns.filter((p) => p.steps[idx].color.endsWith('FAILURE'));
+    const totalFailures = partitionColumns.filter((p) => p.steps[idx]!.color.includes('FAILURE'));
+    const finalFailures = partitionColumns.filter((p) => p.steps[idx]!.color.endsWith('FAILURE'));
     return {
       x: box.x,
       name: box.node.name,
@@ -156,15 +156,15 @@ function buildMatrixData(
 
   if (options?.showFailuresAndGapsOnly) {
     for (let ii = stepRows.length - 1; ii >= 0; ii--) {
-      if (stepRows[ii].finalFailurePercent === 0) {
+      if (stepRows[ii]!.finalFailurePercent === 0) {
         stepRows.splice(ii, 1);
         partitionColumns.forEach((p) => p.steps.splice(ii, 1));
       }
     }
     for (let ii = partitionColumns.length - 1; ii >= 0; ii--) {
       if (
-        partitionColumns[ii].runs.length === 0 ||
-        partitionColumns[ii].steps.every((step) => step.color.includes('SUCCESS'))
+        partitionColumns[ii]!.runs.length === 0 ||
+        partitionColumns[ii]!.steps.every((step) => step.color.includes('SUCCESS'))
       ) {
         partitionColumns.splice(ii, 1);
       }

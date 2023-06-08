@@ -59,7 +59,7 @@ async function makeAttributeValuePortable(attrValue: string) {
   if (attrValue.startsWith('url(')) {
     const match = attrValue.match(/url\(['"]?(http[^'"]+)['"]?\)/);
     if (match) {
-      const url = match[1];
+      const url = match[1]!;
       const data = await convertURLToBase64Data(url);
       attrValue = attrValue.replace(url, data);
     }

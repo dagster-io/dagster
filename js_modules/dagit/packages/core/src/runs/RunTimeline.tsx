@@ -134,7 +134,7 @@ export const RunTimeline = (props: Props) => {
 
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
   const expandedJobCount = expandedRepos.reduce(
-    (accum, repoKey) => accum + buckets[repoKey].length,
+    (accum, repoKey) => accum + buckets[repoKey]!.length,
     0,
   );
   const height = repoOrder.length * SECTION_HEADER_HEIGHT + ROW_HEIGHT * expandedJobCount;
@@ -162,7 +162,7 @@ export const RunTimeline = (props: Props) => {
           <Container ref={parentRef}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
-                const row: RowType = flattened[index];
+                const row: RowType = flattened[index]!;
                 const type = row!.type;
                 if (type === 'header') {
                   const repoKey = repoAddressAsURLString(row.repoAddress);
@@ -175,7 +175,7 @@ export const RunTimeline = (props: Props) => {
                       top={start}
                       repoAddress={row.repoAddress}
                       isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
-                      jobs={buckets[repoKey]}
+                      jobs={buckets[repoKey]!}
                       onToggle={onToggle}
                       onToggleAll={onToggleAll}
                     />
@@ -573,7 +573,7 @@ const RunTimelineRow = ({
           const runCount = runs.length;
           return (
             <RunChunk
-              key={batch.runs[0].id}
+              key={batch.runs[0]!.id}
               $background={mergeStatusToBackground(batch.runs)}
               $multiple={runCount > 1}
               style={{

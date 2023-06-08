@@ -304,10 +304,10 @@ const ResourceConfig: React.FC<{
               resourceDetails.configFields.map((field) => {
                 const defaultValue = field.defaultValueAsJson;
                 const type = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name].type
+                  ? configuredValues[field.name]!.type
                   : null;
                 const actualValue = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name].value
+                  ? configuredValues[field.name]!.value
                   : defaultValue;
 
                 const isDefault = type === 'VALUE' && defaultValue === actualValue;

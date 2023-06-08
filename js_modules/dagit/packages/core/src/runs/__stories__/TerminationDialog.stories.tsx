@@ -30,9 +30,9 @@ ForceTerminationCheckbox.args = {
     console.log('Close!');
   },
   selectedRuns: {
-    [runIDs[0]]: true,
-    [runIDs[1]]: false,
-    [runIDs[2]]: true,
+    [runIDs[0]!]: true,
+    [runIDs[1]!]: false,
+    [runIDs[2]!]: true,
   },
 };
 
@@ -43,8 +43,8 @@ ForceTerminationNoCheckbox.args = {
     console.log('Close!');
   },
   selectedRuns: {
-    [runIDs[0]]: false,
-    [runIDs[1]]: false,
-    [runIDs[2]]: false,
+    [runIDs[0]!]: false,
+    [runIDs[1]!]: false,
+    [runIDs[2]!]: false,
   },
 };

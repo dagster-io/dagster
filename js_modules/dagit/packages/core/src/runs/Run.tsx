@@ -207,10 +207,10 @@ const RunWithData: React.FC<RunWithDataProps> = ({
         return selectionStepKeys.every(
           (stepKey) =>
             metadata.logCaptureSteps &&
-            metadata.logCaptureSteps[logFileKey].stepKeys.includes(stepKey),
+            metadata.logCaptureSteps[logFileKey]!.stepKeys.includes(stepKey),
         );
       });
-      setComputeLogFileKey(selectedLogKey || logFileKeys[0]);
+      setComputeLogFileKey(selectedLogKey || logFileKeys[0]!);
     } else if (!stepKeys.includes(computeLogFileKey)) {
       const matching = matchingComputeLogKeyFromStepKey(
         metadata.logCaptureSteps,
@@ -220,7 +220,7 @@ const RunWithData: React.FC<RunWithDataProps> = ({
     } else if (selectionStepKeys.length === 1 && computeLogFileKey !== selectionStepKeys[0]) {
       const matching = matchingComputeLogKeyFromStepKey(
         metadata.logCaptureSteps,
-        selectionStepKeys[0],
+        selectionStepKeys[0]!,
       );
       matching && setComputeLogFileKey(matching);
     }

@@ -32,7 +32,7 @@ export const VirtualizedResourceTable: React.FC<Props> = ({repoAddress, resource
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: ResourceEntryFragment = resources[index];
+              const row: ResourceEntryFragment = resources[index]!;
               return (
                 <VirtualizedResourceRow
                   key={key}

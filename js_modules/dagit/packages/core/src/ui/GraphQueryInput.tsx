@@ -190,7 +190,7 @@ export const GraphQueryInput = React.memo(
       if (!suggestions[nextIdx]) {
         return;
       }
-      const nextText = suggestions[nextIdx].name;
+      const nextText = suggestions[nextIdx]!.name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {
         setActive({text: nextText, idx: nextIdx});
@@ -224,7 +224,7 @@ export const GraphQueryInput = React.memo(
         e.preventDefault();
         let idx = (active ? active.idx : -1) + shift;
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
-        setActive({text: suggestions[idx].name, idx});
+        setActive({text: suggestions[idx]!.name, idx});
       }
 
       props.onKeyDown?.(e);

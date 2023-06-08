@@ -33,9 +33,9 @@ const reducer = (state: State, action: Action): State => {
       }
 
       const [start, end] = [indexOfLast, indexOfChecked].sort();
-      for (let ii = start; ii <= end; ii++) {
-        checked ? copy.add(allIds[ii]) : copy.delete(allIds[ii]);
-      }
+      allIds.slice(start, end! + 1).forEach((id) => {
+        checked ? copy.add(id) : copy.delete(id);
+      });
 
       return {
         lastCheckedId: id,

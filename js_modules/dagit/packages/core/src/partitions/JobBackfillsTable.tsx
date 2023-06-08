@@ -78,7 +78,7 @@ export const JobBackfillsTable = ({
             if (cursor) {
               setCursorStack((current) => [...current, cursor]);
             }
-            const nextCursor = backfills && backfills[backfills.length - 1].id;
+            const nextCursor = backfills && backfills[backfills.length - 1]!.id;
             if (!nextCursor) {
               return;
             }

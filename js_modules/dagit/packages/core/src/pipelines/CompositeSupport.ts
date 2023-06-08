@@ -156,7 +156,7 @@ export function explodeCompositesInHandleGraph(handles: GraphExplorerSolidHandle
     if (idx === -1) {
       break;
     }
-    results.splice(idx, 1, ...explodeComposite(handles, results[idx]));
+    results.splice(idx, 1, ...explodeComposite(handles, results[idx]!));
   }
 
   return results;

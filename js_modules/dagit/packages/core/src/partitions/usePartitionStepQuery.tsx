@@ -223,7 +223,7 @@ function assemblePartitions(data: DataState, partitionTagName: string) {
       runsLoaded: idx >= data.loadingCursorIdx,
       runs: [],
     };
-    results.push(byName[name]);
+    results.push(byName[name]!);
   });
 
   data.runs.forEach((r) => {

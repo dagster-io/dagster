@@ -480,7 +480,7 @@ export const PartitionSelection = ({
     }
   } else {
     if (rootAssetTargetedRanges?.length === 1) {
-      const {start, end} = rootAssetTargetedRanges[0];
+      const {start, end} = rootAssetTargetedRanges[0]!;
       content = (
         <div>
           {start}...{end}

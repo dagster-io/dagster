@@ -103,6 +103,15 @@ export const BackfillRow = ({
     return {counts, statuses};
   }, [data]);
 
+  const canCancelRuns = React.useMemo(() => {
+    if (counts) {
+      const queuedCount = counts[RunStatus.QUEUED] || 0;
+      const startedCount = counts[RunStatus.STARTED] || 0;
+      return queuedCount > 0 || startedCount > 0;
+    }
+    return false;
+  }, [counts]);
+
   return (
     <tr>
       <td style={{width: 120}}>
@@ -162,9 +171,7 @@ export const BackfillRow = ({
           onResumeBackfill={onResumeBackfill}
           onTerminateBackfill={onTerminateBackfill}
           onShowStepStatus={onShowStepStatus}
-          canCancelRuns={
-            counts ? counts[RunStatus.QUEUED] > 0 || counts[RunStatus.STARTED] > 0 : false
-          }
+          canCancelRuns={canCancelRuns}
         />
       </td>
     </tr>
@@ -288,9 +295,9 @@ const BackfillRunStatus = ({
     />
   ) : (
     <RunStatusTagsWithCounts
-      succeededCount={partitionCounts[RunStatus.SUCCESS]}
-      inProgressCount={partitionCounts[RunStatus.STARTED]}
-      failedCount={partitionCounts[RunStatus.FAILURE]}
+      succeededCount={partitionCounts[RunStatus.SUCCESS] || 0}
+      inProgressCount={partitionCounts[RunStatus.STARTED] || 0}
+      failedCount={partitionCounts[RunStatus.FAILURE] || 0}
     />
   );
 };
