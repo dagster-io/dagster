@@ -133,7 +133,7 @@ class AssetStatusCacheValue(
 
     @cached_method
     def deserialize_materialized_partition_subsets(
-        self, partitions_def: PartitionsDefinition
+        self, *, partitions_def: PartitionsDefinition
     ) -> PartitionsSubset:
         if not self.serialized_materialized_partition_subset:
             return partitions_def.empty_subset()
@@ -142,7 +142,7 @@ class AssetStatusCacheValue(
 
     @cached_method
     def deserialize_failed_partition_subsets(
-        self, partitions_def: PartitionsDefinition
+        self, *, partitions_def: PartitionsDefinition
     ) -> PartitionsSubset:
         if not self.serialized_failed_partition_subset:
             return partitions_def.empty_subset()
@@ -151,7 +151,7 @@ class AssetStatusCacheValue(
 
     @cached_method
     def deserialize_in_progress_partition_subsets(
-        self, partitions_def: PartitionsDefinition
+        self, *, partitions_def: PartitionsDefinition
     ) -> PartitionsSubset:
         if not self.serialized_in_progress_partition_subset:
             return partitions_def.empty_subset()
