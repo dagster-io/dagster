@@ -994,7 +994,7 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
         return result
 
     def with_partition_keys(
-        self, partition_keys: Iterable[str]
+        self, partition_keys: Iterable[T_str]
     ) -> "DefaultPartitionsSubset[T_str]":
         return DefaultPartitionsSubset(
             self._partitions_def,

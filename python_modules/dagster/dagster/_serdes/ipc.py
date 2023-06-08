@@ -197,7 +197,7 @@ def ipc_read_event_stream(
 # https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 
 
-def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
+def open_ipc_subprocess(parts: Sequence[str], **kwargs: Any) -> Popen[bytes]:
     """Sets the correct flags to support graceful termination."""
     check.list_param(parts, "parts", str)
 
@@ -205,7 +205,7 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
     if sys.platform == "win32":
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
 
-    return subprocess.Popen(
+    return subprocess.Popen(  # type: ignore  # (unclear whether this is actually guaranteed to return Popen[bytes])
         parts,
         creationflags=creationflags,
         **kwargs,

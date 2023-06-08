@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
 from pydantic import Field
@@ -6,7 +6,7 @@ from pydantic import Field
 from .types import DbtOutput
 from .utils import generate_events, generate_materializations
 
-_DEFAULT_OP_PROPS = dict(
+_DEFAULT_OP_PROPS: Dict[str, Any] = dict(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),

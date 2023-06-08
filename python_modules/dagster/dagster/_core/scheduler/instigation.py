@@ -269,7 +269,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             check.inst_param(tick_data, "tick_data", TickData),
         )
 
-    def with_status(self, status: TickStatus, **kwargs: object):
+    def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
         return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 

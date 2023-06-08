@@ -444,7 +444,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         run_id: str,
         callback: EventHandlerFn,
         cursor: Optional[str],
-        **kwargs: object,
+        **kwargs: Any,
     ):
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", SqliteEventLogStorage
