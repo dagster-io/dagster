@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_pandera_tests*"]),
     include_package_data=True,
-    install_requires=["dagster==1.3.9rc0", "pandas", "pandera>=0.14.2"],
+    install_requires=["dagster==1.3.9", "pandas", "pandera>=0.14.2"],
     extras_require={
         "test": [
             "pytest",
