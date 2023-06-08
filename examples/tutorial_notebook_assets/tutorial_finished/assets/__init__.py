@@ -7,7 +7,7 @@ from dagstermill import define_dagstermill_asset
 @asset(group_name="finished_tutorial")
 def iris_dataset_finished():
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "Sepal length (cm)",
             "Sepal width (cm)",
