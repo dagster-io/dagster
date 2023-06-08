@@ -181,10 +181,10 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           )}
         </RowCell>
         <RowCell>
-          {sensorData?.sensorState.ticks.length ? (
+          {sensorData?.sensorState.ticks[0] ? (
             <div>
               <TickTag
-                tick={sensorData.sensorState.ticks[0]!}
+                tick={sensorData.sensorState.ticks[0]}
                 instigationType={InstigationType.SENSOR}
               />
             </div>
@@ -193,9 +193,9 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           )}
         </RowCell>
         <RowCell>
-          {sensorData?.sensorState && sensorData?.sensorState.runs.length > 0 ? (
+          {sensorData?.sensorState && sensorData?.sensorState.runs[0] ? (
             <LastRunSummary
-              run={sensorData.sensorState.runs[0]!}
+              run={sensorData.sensorState.runs[0]}
               name={name}
               showButton={false}
               showHover

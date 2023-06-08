@@ -302,8 +302,8 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
     [events],
   );
   const title = () => {
-    if (hasPartitions && events.length) {
-      const partition = events[0]!.partition;
+    if (hasPartitions && events[0]) {
+      const partition = events[0].partition;
       if (partition) {
         return `Materialization and observation events for ${partition}`;
       }

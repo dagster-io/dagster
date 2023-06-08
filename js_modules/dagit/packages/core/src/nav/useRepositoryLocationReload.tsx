@@ -121,8 +121,11 @@ export const useRepositoryLocationReload = ({
           return;
         }
 
+        type LocationEntryType = typeof workspace.locationEntries[number];
         const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
-        const matches = state.pollLocationIds.map((id) => locationMap[id]).filter(Boolean);
+        const matches = state.pollLocationIds
+          .map((id) => locationMap[id])
+          .filter((location): location is LocationEntryType => !!location);
         const missingId = state.pollLocationIds.find((id) => !locationMap[id]);
 
         if (missingId) {

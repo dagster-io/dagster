@@ -50,9 +50,9 @@ const currentOrder = ['overview', 'playground', 'runs', 'partitions'];
 function tabForPipelinePathComponent(component?: string): TabConfig {
   const tabList = Object.keys(pipelineTabs);
   const match =
-    tabList.find((t) => pipelineTabs[t].pathComponent === component) ||
-    tabList.find((t) => pipelineTabs[t].pathComponent === '')!;
-  return pipelineTabs[match];
+    tabList.find((t) => pipelineTabs[t]!.pathComponent === component) ||
+    tabList.find((t) => pipelineTabs[t]!.pathComponent === '')!;
+  return pipelineTabs[match]!;
 }
 
 const tabForKey = (repoAddress: RepoAddress, isJob: boolean, explorerPath: ExplorerPath) => {
@@ -64,7 +64,7 @@ const tabForKey = (repoAddress: RepoAddress, isJob: boolean, explorerPath: Explo
   // When you click one of the top tabs, it resets the snapshot you may be looking at
   // in the Definition tab and also clears solids from the path
   return (key: string) => {
-    const tab = pipelineTabs[key];
+    const tab = pipelineTabs[key]!;
     return {
       text: tab.title,
       href: workspacePathFromAddress(

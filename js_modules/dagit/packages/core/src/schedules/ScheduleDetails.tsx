@@ -86,11 +86,11 @@ export const ScheduleDetails: React.FC<{
             <Tag icon="schedule">
               Schedule in <RepositoryLink repoAddress={repoAddress} />
             </Tag>
-            {futureTicks.results.length && running ? (
+            {futureTicks.results[0] && running ? (
               <Tag icon="timer">
                 Next tick:{' '}
                 <TimestampDisplay
-                  timestamp={futureTicks.results[0]!.timestamp!}
+                  timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />

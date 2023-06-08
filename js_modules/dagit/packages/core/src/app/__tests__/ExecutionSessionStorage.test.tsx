@@ -23,7 +23,7 @@ describe('ExecutionSessionStorage', () => {
     return (
       <>
         <div>Current: {data.current}</div>
-        <div>{`YAML: "${data.sessions[data.current].runConfigYaml}"`}</div>
+        <div>{`YAML: "${data.sessions[data.current]!.runConfigYaml}"`}</div>
       </>
     );
   };
@@ -61,7 +61,7 @@ describe('ExecutionSessionStorage', () => {
       return (
         <>
           <div>Current: {data.current}</div>
-          <div>{`YAML: "${data.sessions[data.current].runConfigYaml}"`}</div>
+          <div>{`YAML: "${data.sessions[data.current]!.runConfigYaml}"`}</div>
         </>
       );
     };

@@ -51,7 +51,7 @@ export const LeftNavItem = React.forwardRef(
 
         if (scheduleCount) {
           if (scheduleCount === 1) {
-            const schedule = schedules[0];
+            const schedule = schedules[0]!;
             const {cronSchedule, executionTimezone} = schedule;
             return (
               <div>
@@ -66,7 +66,7 @@ export const LeftNavItem = React.forwardRef(
 
         return sensorCount === 1 ? (
           <div>
-            Sensor: <strong>{sensors[0].name}</strong>
+            Sensor: <strong>{sensors[0]!.name}</strong>
           </div>
         ) : (
           `${sensorCount} sensors`
@@ -90,9 +90,12 @@ export const LeftNavItem = React.forwardRef(
         }
 
         const path = scheduleCount
-          ? `/schedules/${schedules[0].name}`
-          : `/sensors/${sensors[0].name}`;
-        return <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link>;
+          ? `/schedules/${schedules[0]!.name}`
+          : sensorCount
+          ? `/sensors/${sensors[0]!.name}`
+          : null;
+
+        return path ? <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link> : null;
       };
 
       return (

@@ -140,12 +140,12 @@ export const useRepositoryForRunWithParentSnapshot = (
     return {match: repoMatch, type: 'origin-only'};
   }
 
-  if (snapshotMatches && snapshotMatches.length) {
-    return {match: snapshotMatches[0]!, type: 'snapshot-only'};
+  if (snapshotMatches && snapshotMatches[0]) {
+    return {match: snapshotMatches[0], type: 'snapshot-only'};
   }
 
-  if (jobNameMatches && jobNameMatches.length) {
-    return {match: jobNameMatches[0]!, type: 'pipeline-name-only'};
+  if (jobNameMatches && jobNameMatches[0]) {
+    return {match: jobNameMatches[0], type: 'pipeline-name-only'};
   }
 
   return null;

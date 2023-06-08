@@ -14,10 +14,11 @@ import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUt
 export const InstigatedRunStatus: React.FC<{
   instigationState: InstigationStateFragment;
 }> = ({instigationState}) => {
-  if (!instigationState.runs.length) {
+  const [instigationRun] = instigationState.runs;
+  if (!instigationRun) {
     return <span style={{color: Colors.Gray300}}>None</span>;
   }
-  return <LastRunSummary run={instigationState.runs[0]!} name={instigationState.name} />;
+  return <LastRunSummary run={instigationRun} name={instigationState.name} />;
 };
 
 export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
