@@ -19,15 +19,16 @@ const countMissing = (partitionStats: LiveDataForNode['partitionStats'] | null |
       partitionStats.numMaterialized
     : undefined;
 
-export const StyleForAssetPartitionStatus: {
-  [state: string]: {
+export const StyleForAssetPartitionStatus: Record<
+  AssetPartitionStatus,
+  {
     background: string;
     foreground: string;
     border: string;
     icon: IconName;
     adjective: string;
-  };
-} = {
+  }
+> = {
   [AssetPartitionStatus.FAILED]: {
     background: Colors.Red50,
     foreground: Colors.Red700,

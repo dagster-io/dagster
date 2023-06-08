@@ -146,12 +146,12 @@ export const GanttChartTimescale = ({
             key="highlight-duration"
             className="tick duration"
             style={{
-              left: (highlightedMs[0] - startMs) * pxPerMs + 2,
-              width: (highlightedMs[1] - highlightedMs[0]) * pxPerMs - 2,
+              left: (highlightedMs[0]! - startMs) * pxPerMs + 2,
+              width: (highlightedMs[1]! - highlightedMs[0]!) * pxPerMs - 2,
               transform,
             }}
           >
-            {formatElapsedTime(highlightedMs[1] - highlightedMs[0])}
+            {formatElapsedTime(highlightedMs[1]! - highlightedMs[0]!)}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {

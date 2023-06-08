@@ -117,7 +117,7 @@ const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}
         },
       }),
     }));
-    selectedTimestampRef.current = _selectedTimestamp || timestamps[0];
+    selectedTimestampRef.current = _selectedTimestamp || timestamps[0] || null;
     return (
       <SelectWrapper>
         <ScheduleDescriptor>Select a mock evaluation time</ScheduleDescriptor>
@@ -147,7 +147,7 @@ const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}
               onClick={() => setIsTickSelectionOpen((isOpen) => !isOpen)}
               data-testid={testId('tick-selection')}
             >
-              {selectedTimestampRef.current.label}
+              {selectedTimestampRef.current?.label}
             </Button>
           </div>
         </Popover>

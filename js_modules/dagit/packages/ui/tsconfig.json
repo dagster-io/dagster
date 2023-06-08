@@ -3,6 +3,7 @@
     "module": "es2022",
     "target": "es2022",
     "rootDir": "src",
+    "strict": true,
     "noEmit": true,
     "sourceMap": true,
     "allowJs": true,
@@ -10,29 +11,15 @@
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "allowSyntheticDefaultImports": true,
-    "types": [
-      "jest",
-      "node"
-    ],
+    "types": ["jest", "node"],
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "strict": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noFallthroughCasesInSwitch": true
   },
-  "exclude": [
-    "node_modules",
-    "lib",
-  ],
-  "include": [
-    "src",
-    "types"
-  ]
+  "exclude": ["node_modules", "lib"],
+  "include": ["src", "types"]
 }
-  

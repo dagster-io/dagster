@@ -36,16 +36,14 @@ export const TypeList: React.FC<ITypeListProps> = (props) => {
       <Box padding={{vertical: 16, horizontal: 24}}>
         <SidebarTitle>{props.isGraph ? 'Graph types' : 'Pipeline types'}</SidebarTitle>
       </Box>
-      {Object.keys(groups).map((title, idx) => {
-        const typesForSection = groups[title];
-        const collapsedByDefault = idx !== 0 || groups[title].length === 0;
-
+      {Object.entries(groups).map(([title, typesForSection], idx) => {
+        const collapsedByDefault = idx !== 0 || typesForSection.length === 0;
         return (
           <SidebarSection key={idx} title={title} collapsedByDefault={collapsedByDefault}>
             <Box padding={{vertical: 16, horizontal: 24}}>
               {typesForSection.length ? (
                 <StyledUL>
-                  {groups[title].map((type, i) => (
+                  {typesForSection.map((type, i) => (
                     <TypeLI key={i}>
                       <TypeWithTooltip type={type} />
                     </TypeLI>

@@ -28,7 +28,7 @@ const PartitionHealthSummaryWithData: React.FC<{
   const selections =
     data[0] && ranges
       ? ranges.map((range, idx) => {
-          const dim = data[0].dimensions[idx]!;
+          const dim = data[0]!.dimensions[idx]!;
           const idx0 = dim.partitionKeys.indexOf(range[0]);
           const idx1 = dim.partitionKeys.indexOf(range[1]);
           return {

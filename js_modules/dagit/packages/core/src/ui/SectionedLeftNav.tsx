@@ -197,7 +197,7 @@ export const SectionedLeftNav = () => {
     count: flattened.length,
     getScrollElement: () => parentRef.current,
     estimateSize: (index: number) => {
-      const item = flattened[index];
+      const item = flattened[index]!;
       switch (item.type) {
         case 'code-location':
           return 48;
@@ -231,7 +231,7 @@ export const SectionedLeftNav = () => {
     <Container ref={parentRef}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
-          const row: RowType = flattened[index];
+          const row: RowType = flattened[index]!;
           const type = row!.type;
 
           if (type === 'code-location') {

@@ -103,7 +103,7 @@ export const useRepositoryForRunWithoutSnapshot = (
   }
   const jobNameMatches = jobNameMatchesForRun(options, run);
   if (jobNameMatches && jobNameMatches.length) {
-    return {match: jobNameMatches[0], type: 'pipeline-name-only'};
+    return {match: jobNameMatches[0]!, type: 'pipeline-name-only'};
   }
   return null;
 };
@@ -141,11 +141,11 @@ export const useRepositoryForRunWithParentSnapshot = (
   }
 
   if (snapshotMatches && snapshotMatches.length) {
-    return {match: snapshotMatches[0], type: 'snapshot-only'};
+    return {match: snapshotMatches[0]!, type: 'snapshot-only'};
   }
 
   if (jobNameMatches && jobNameMatches.length) {
-    return {match: jobNameMatches[0], type: 'pipeline-name-only'};
+    return {match: jobNameMatches[0]!, type: 'pipeline-name-only'};
   }
 
   return null;

@@ -213,7 +213,7 @@ export const usePermissionsForLocation = (
   const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
   let permissionsForLocation = unscopedPermissions;
   if (locationName && locationPermissions.hasOwnProperty(locationName)) {
-    permissionsForLocation = locationPermissions[locationName];
+    permissionsForLocation = locationPermissions[locationName]!;
   }
 
   const unpacked = unpackPermissions(permissionsForLocation);

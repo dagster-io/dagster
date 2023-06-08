@@ -213,8 +213,7 @@ export function getEvaluationsWithEmptyAdded({
   }
   const evalsWithSkips = [];
   let current = isFirstPage ? currentEvaluationId : evaluations[0]?.evaluationId || 1;
-  for (let i = 0; i < evaluations.length; i++) {
-    const evaluation = evaluations[i];
+  evaluations.forEach((evaluation, i) => {
     const prevEvaluation = evaluations[i - 1];
     if (evaluation.evaluationId !== current) {
       evalsWithSkips.push({
@@ -227,7 +226,7 @@ export function getEvaluationsWithEmptyAdded({
     }
     evalsWithSkips.push(evaluation);
     current = evaluation.evaluationId - 1;
-  }
+  });
   if (isLastPage && current > 0) {
     const lastEvaluation = evaluations[evaluations.length - 1];
     evalsWithSkips.push({

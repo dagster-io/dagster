@@ -51,7 +51,7 @@ const FinalRedirectOrLoadingRoot = () => {
           to={workspacePath(
             repoWithAssetGroup.repository.name,
             repoWithAssetGroup.repositoryLocation.name,
-            `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0].groupName}`,
+            `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0]!.groupName}`,
           )}
         />
       );
@@ -59,19 +59,22 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have exactly one repo with one job, route to the job overview
-  if (reposWithVisibleJobs.length === 1 && getVisibleJobs(reposWithVisibleJobs[0]).length === 1) {
-    const repo = reposWithVisibleJobs[0];
-    const job = getVisibleJobs(repo)[0];
-    return (
-      <Redirect
-        to={workspacePipelinePath({
-          repoName: repo.repository.name,
-          repoLocation: repo.repositoryLocation.name,
-          pipelineName: job.name,
-          isJob: job.isJob,
-        })}
-      />
-    );
+  if (reposWithVisibleJobs.length === 1) {
+    const repo = reposWithVisibleJobs[0]!;
+    const visibleJobs = getVisibleJobs(repo);
+    if (visibleJobs.length === 1) {
+      const job = visibleJobs[0]!;
+      return (
+        <Redirect
+          to={workspacePipelinePath({
+            repoName: repo.repository.name,
+            repoLocation: repo.repositoryLocation.name,
+            pipelineName: job.name,
+            isJob: job.isJob,
+          })}
+        />
+      );
+    }
   }
 
   // If we have more than one repo with a job, route to the instance overview

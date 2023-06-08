@@ -23,7 +23,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
-    getItemKey: (idx) => partitions[idx],
+    getItemKey: (idx) => partitions[idx]!,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 10,
@@ -59,7 +59,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
     >
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
-          const dimensionKey = partitions[index];
+          const dimensionKey = partitions[index]!;
           const state = statusForPartition(dimensionKey);
           return (
             <AssetListRow

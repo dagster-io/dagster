@@ -50,7 +50,7 @@ export const VirtualizedGraphTable: React.FC<Props> = ({repoAddress, graphs}) =>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: Graph = graphs[index];
+              const row: Graph = graphs[index]!;
               return (
                 <GraphRow
                   key={key}

@@ -105,7 +105,7 @@ export const AssetValueGraph: React.FC<{
         props.onHoverX(null);
         return;
       }
-      props.onHoverX(props.data.values[itemIdx].x);
+      props.onHoverX(props.data.values[itemIdx]!.x);
     },
   };
 

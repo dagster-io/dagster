@@ -30,7 +30,7 @@ describe('AssetNode', () => {
 
       await waitFor(() => {
         const assetKey = scenario.definition.assetKey;
-        const displayName = assetKey.path[assetKey.path.length - 1];
+        const displayName = assetKey.path[assetKey.path.length - 1]!;
         expect(screen.getByText(displayName)).toBeVisible();
         for (const text of scenario.expectedText) {
           expect(screen.getByText(new RegExp(text))).toBeVisible();

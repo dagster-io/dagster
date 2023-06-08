@@ -98,7 +98,7 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
         <RowCell>
           {latestRuns.length ? (
             <LastRunSummary
-              run={latestRuns[0]}
+              run={latestRuns[0]!}
               showButton={false}
               showHover
               showSummary={false}

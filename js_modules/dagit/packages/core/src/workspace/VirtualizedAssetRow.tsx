@@ -278,14 +278,15 @@ export function useLiveDataOrLatestMaterializationDebounced(
   type: 'folder' | 'asset' | 'asset_non_sda',
 ) {
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
+  const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
   const {liveDataByNode} = useLiveDataForAssetKeys(type === 'asset' ? debouncedKeys : []);
 
   const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
     {
-      skip: type !== 'asset_non_sda' || debouncedKeys.length === 0,
-      variables: {input: debouncedKeys[0]},
+      skip: type !== 'asset_non_sda' || !debouncedKey,
+      variables: {input: debouncedKey},
     },
   );
 
@@ -300,17 +301,20 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
-    return liveDataByNode[toGraphId({path})];
+    return liveDataByNode[toGraphId({path})]!;
   }
+
   if (type === 'asset_non_sda') {
     return {
       ...MISSING_LIVE_DATA,
       lastMaterialization:
-        nonSDAData?.assetOrError.__typename === 'Asset'
-          ? nonSDAData.assetOrError.assetMaterializations[0]
+        nonSDAData?.assetOrError.__typename === 'Asset' &&
+        nonSDAData.assetOrError.assetMaterializations.length > 0
+          ? nonSDAData.assetOrError.assetMaterializations[0]!
           : null,
     };
   }
+
   return null;
 }
 

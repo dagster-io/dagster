@@ -42,14 +42,19 @@ export const DefaultQuerystring: {[key: string]: string} = {
  *   - Scrolls directly to log with specified time, if no `logs` filter
  */
 export const decodeRunPageFilters = (qs: {[key: string]: string}) => {
-  const logValues = qs['logs'].split(DELIMITER);
-  const focusedTime = qs['focusedTime'] && !qs['logs'] ? Number(qs['focusedTime']) : null;
-  const hideNonMatches = qs['hideNonMatches'] === 'true' ? true : false;
+  const logsQuery = qs['logs'] || '';
+  const focusedTimeQuery = qs['focusedTime'] || '';
+  const hideNonMatchesQuery = qs['hideNonMatches'] || '';
+  const levelsQuery = qs['levels'] || '';
+
+  const logValues = logsQuery.split(DELIMITER);
+  const focusedTime = focusedTimeQuery && !logsQuery ? Number(focusedTimeQuery) : null;
+  const hideNonMatches = hideNonMatchesQuery === 'true';
 
   const providers = getRunFilterProviders();
   const logQuery = logValues.map((token) => tokenizedValueFromString(token, providers));
 
-  const levelsValues = qs['levels'].split(DELIMITER);
+  const levelsValues = levelsQuery.split(DELIMITER);
 
   return {
     sinceTime: 0,

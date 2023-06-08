@@ -212,7 +212,11 @@ const TestContainer: React.FC<{
   <MockedProvider
     cache={createAppCache()}
     mocks={
-      mocks || [EventsMock, buildPartitionHealthMock(MockAssetKey.path[0]), buildSidebarQueryMock()]
+      mocks || [
+        EventsMock,
+        buildPartitionHealthMock(MockAssetKey.path[0]!),
+        buildSidebarQueryMock(),
+      ]
     }
   >
     <WorkspaceProvider>
@@ -234,7 +238,7 @@ export const AssetWithPolicies = () => {
     <TestContainer
       mocks={[
         EventsMock,
-        buildPartitionHealthMock(MockAssetKey.path[0]),
+        buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock({
           autoMaterializePolicy: buildAutoMaterializePolicy({
             policyType: AutoMaterializePolicyType.EAGER,

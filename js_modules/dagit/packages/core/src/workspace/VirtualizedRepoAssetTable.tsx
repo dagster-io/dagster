@@ -49,8 +49,7 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
 
   const flattened: RowType[] = React.useMemo(() => {
     const flat: RowType[] = [];
-    Object.keys(grouped).forEach((groupName) => {
-      const assetsForGroup = grouped[groupName];
+    Object.entries(grouped).forEach(([groupName, assetsForGroup]) => {
       flat.push({type: 'group', name: groupName, assetCount: assetsForGroup.length});
       if (expandedKeys.includes(groupName)) {
         assetsForGroup.forEach((asset) => {
@@ -81,7 +80,7 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: RowType = flattened[index];
+              const row: RowType = flattened[index]!;
               const type = row!.type;
               return type === 'group' ? (
                 <GroupNameRow

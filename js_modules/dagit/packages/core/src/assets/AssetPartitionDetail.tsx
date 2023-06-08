@@ -74,7 +74,9 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     };
   }, [result.data]);
 
-  if (result.loading || !result.data) {
+  const latest = materializations[0];
+
+  if (result.loading || !result.data || !latest) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
 
@@ -84,8 +86,8 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
       latestRunForPartition={latestRunForPartition}
       hasLineage={hasLineage}
       group={{
-        latest: materializations[0],
-        timestamp: materializations[0]?.timestamp,
+        latest,
+        timestamp: latest.timestamp,
         partition: props.partitionKey,
         all: [...materializations, ...observations].sort(
           (a, b) => Number(b.timestamp) - Number(a.timestamp),
