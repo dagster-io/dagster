@@ -312,6 +312,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         version: Optional[str],
         source: Optional[object],
         read_only: bool,
+        read_only_locations: Optional[Mapping[str, bool]] = None,
     ):
         self._instance = instance
         self._workspace_snapshot = workspace_snapshot
@@ -319,6 +320,9 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._version = version
         self._source = source
         self._read_only = read_only
+        self._read_only_locations = check.opt_mapping_param(
+            read_only_locations, "read_only_locations"
+        )
         self._checked_permissions: Set[str] = set()
 
     @property
@@ -354,6 +358,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return get_user_permissions(self._read_only)
 
     def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
+        if location_name in self._read_only_locations:
+            return get_location_scoped_user_permissions(self._read_only_locations[location_name])
         return get_location_scoped_user_permissions(self._read_only)
 
     def has_permission(self, permission: str) -> bool:

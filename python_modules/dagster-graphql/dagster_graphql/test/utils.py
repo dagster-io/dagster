@@ -102,14 +102,26 @@ def execute_dagster_graphql_and_finish_runs(
 
 @contextmanager
 def define_out_of_process_context(
-    python_file: str, fn_name: str, instance: DagsterInstance, read_only: bool = False
+    python_file: str,
+    fn_name: str,
+    instance: DagsterInstance,
+    read_only: bool = False,
+    read_only_locations: Optional[Mapping[str, bool]] = None,
 ) -> Iterator[WorkspaceRequestContext]:
     check.inst_param(instance, "instance", DagsterInstance)
 
     with define_out_of_process_workspace(
         python_file, fn_name, instance, read_only=read_only
     ) as workspace_process_context:
-        yield workspace_process_context.create_request_context()
+        yield WorkspaceRequestContext(
+            instance=instance,
+            workspace_snapshot=workspace_process_context.create_snapshot(),
+            process_context=workspace_process_context,
+            version=workspace_process_context.version,
+            source=None,
+            read_only=read_only,
+            read_only_locations=read_only_locations,
+        )
 
 
 def define_out_of_process_workspace(
