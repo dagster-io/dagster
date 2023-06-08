@@ -1,7 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Union
-
-from upath import UPath
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
 from dagster import (
     InputContext,
@@ -11,6 +9,9 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 
 class UPathIOManager(MemoizableIOManager):
@@ -30,17 +31,19 @@ class UPathIOManager(MemoizableIOManager):
 
     def __init__(
         self,
-        base_path: Optional[UPath] = None,
+        base_path: Optional["UPath"] = None,
     ):
+        from upath import UPath
+
         assert not self.extension or "." in self.extension
         self._base_path = base_path or UPath(".")
 
     @abstractmethod
-    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+    def dump_to_path(self, context: OutputContext, obj: Any, path: "UPath"):
         """Child classes should override this method to write the object to the filesystem."""
 
     @abstractmethod
-    def load_from_path(self, context: InputContext, path: UPath) -> Any:
+    def load_from_path(self, context: InputContext, path: "UPath") -> Any:
         """Child classes should override this method to load the object from the filesystem."""
 
     def get_metadata(
@@ -56,15 +59,15 @@ class UPathIOManager(MemoizableIOManager):
     # always possible. Override these path_* methods to provide custom
     # implementations for targeting backends that require authentication.
 
-    def unlink(self, path: UPath) -> None:
+    def unlink(self, path: "UPath") -> None:
         """Remove the file or object at the provided path."""
         path.unlink()
 
-    def path_exists(self, path: UPath) -> bool:
+    def path_exists(self, path: "UPath") -> bool:
         """Check if a file or object exists at the provided path."""
         return path.exists()
 
-    def make_directory(self, path: UPath):
+    def make_directory(self, path: "UPath"):
         """Create a directory at the provided path.
 
         Override as a no-op if the target backend doesn't use directories.
@@ -74,10 +77,12 @@ class UPathIOManager(MemoizableIOManager):
     def has_output(self, context: OutputContext) -> bool:
         return self.path_exists(self._get_path(context))
 
-    def _with_extension(self, path: UPath) -> UPath:
+    def _with_extension(self, path: "UPath") -> "UPath":
+        from upath import UPath
+
         return UPath(f"{path}{self.extension}") if self.extension else path
 
-    def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> "UPath":
         if context.has_asset_key:
             context_path = self.get_asset_relative_path(context)
         else:
@@ -86,20 +91,24 @@ class UPathIOManager(MemoizableIOManager):
 
         return self._base_path.joinpath(context_path)
 
-    def get_asset_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def get_asset_relative_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
+        from upath import UPath
+
         # we are not using context.get_asset_identifier() because it already includes the partition_key
         return UPath(*context.asset_key.path)
 
-    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def get_op_output_relative_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
+        from upath import UPath
+
         return UPath(*context.get_identifier())
 
-    def get_loading_input_log_message(self, path: UPath) -> str:
+    def get_loading_input_log_message(self, path: "UPath") -> str:
         return f"Loading file from: {path}"
 
-    def get_writing_output_log_message(self, path: UPath) -> str:
+    def get_writing_output_log_message(self, path: "UPath") -> str:
         return f"Writing file at: {path}"
 
-    def _get_path(self, context: Union[InputContext, OutputContext]) -> UPath:
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
         """Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
         """
@@ -108,7 +117,7 @@ class UPathIOManager(MemoizableIOManager):
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
-    ) -> Dict[str, UPath]:
+    ) -> Dict[str, "UPath"]:
         """Returns a dict of partition_keys into I/O paths for a given context."""
         if not context.has_asset_partitions:
             raise TypeError(
@@ -136,7 +145,7 @@ class UPathIOManager(MemoizableIOManager):
 
     def _get_multipartition_backcompat_paths(
         self, context: Union[InputContext, OutputContext]
-    ) -> Mapping[str, UPath]:
+    ) -> Mapping[str, "UPath"]:
         if not context.has_asset_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "
@@ -153,7 +162,7 @@ class UPathIOManager(MemoizableIOManager):
         }
 
     def _load_single_input(
-        self, path: UPath, context: InputContext, backcompat_path: Optional[UPath] = None
+        self, path: "UPath", context: InputContext, backcompat_path: Optional["UPath"] = None
     ) -> Any:
         context.log.debug(self.get_loading_input_log_message(path))
         try:
