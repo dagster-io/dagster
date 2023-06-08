@@ -800,7 +800,7 @@ def test_future_ticks_until(graphql_context):
 
 def test_repository_batching(graphql_context):
     instance = graphql_context.instance
-    if not instance.supports_batch_tick_queries or not instance.supports_bucket_queries:
+    if not instance.supports_batch_tick_queries:
         pytest.skip("storage cannot batch fetch")
 
     traced_counter.set(Counter())
@@ -818,14 +818,12 @@ def test_repository_batching(graphql_context):
     assert counts
     assert len(counts) == 3
 
-    # We should have a single batch call to fetch run records (to fetch schedule runs) and a single
-    # batch call to fetch instigator state, instead of separate calls for each schedule (~18
-    # distinct schedules in the repo)
-    # 1) `get_run_records` is fetched to instantiate GrapheneRun
+    # We should have a single batch call to fetch instigator state, instead of separate calls for
+    # each schedule (~18 distinct schedules in the repo)
+    # 1) `get_batch_ticks` is fetched to grab ticks
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
-    assert counts.get("DagsterInstance.get_run_records") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
     assert counts.get("DagsterInstance.get_batch_ticks") == 1
+    assert counts.get("DagsterInstance.all_instigator_state") == 1
 
 
 def test_start_schedule_with_default_status(graphql_context):
