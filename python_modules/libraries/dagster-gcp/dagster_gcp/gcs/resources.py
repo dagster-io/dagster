@@ -9,9 +9,25 @@ from .file_manager import GCSFileManager
 
 
 class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """Resource for interacting with Google Cloud Storage.
+
+    Example:
+        .. code-block::
+
+            @asset
+            def my_asset(gcs: GCSResource):
+                with gcs.get_client() as client:
+                    # client is a google.cloud.storage.Client
+                    ...
+    """
+
     project: Optional[str] = Field(default=None, description="Project name")
 
     def get_client(self) -> storage.Client:
+        """Creates a GCS Client.
+
+        Returns: google.cloud.storage.Client
+        """
         return _gcs_client_from_config(project=self.project)
 
     def get_object_to_set_on_execution_context(self) -> Any:
@@ -28,11 +44,18 @@ def gcs_resource(init_context) -> storage.Client:
 
 
 class GCSFileManagerResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """FileManager that provides abstract access to GCS."""
+
     project: Optional[str] = Field(default=None, description="Project name")
     gcs_bucket: str = Field(description="GCS bucket to store files")
     gcs_prefix: str = Field(default="dagster", description="Prefix to add to all file paths")
 
     def get_client(self) -> GCSFileManager:
+        """Creates a :py:class:`~dagster_gcp.GCSFileManager` object that implements the
+        :py:class:`~dagster._core.storage.file_manager.FileManager` API .
+
+        Returns: GCSFileManager
+        """
         gcs_client = _gcs_client_from_config(project=self.project)
         return GCSFileManager(
             client=gcs_client,

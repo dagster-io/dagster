@@ -83,14 +83,14 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     as each execution node has network connectivity and credentials for GCS and the backing bucket.
 
     Assigns each op output to a unique filepath containing run ID, step key, and output name.
-    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    Assigns each asset to a single filesystem path, at ``<base_dir>/<asset_key>``. If the asset key
     has multiple components, the final component is used as the name of the file, and the preceding
     components as parent directories under the base_dir.
 
     Subsequent materializations of an asset will overwrite previous materializations of that asset.
-    With a base directory of "/my/base/path", an asset with key
-    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
-    with path "/my/base/path/one/two/".
+    With a base directory of ``/my/base/path``, an asset with key
+    ``AssetKey(["one", "two", "three"])`` would be stored in a file called ``three`` in a directory
+    with path ``/my/base/path/one/two/``.
 
     Example usage:
 
@@ -132,10 +132,10 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
         @job(
             resource_defs={
                 "io_manager": ConfigurablePickledObjectGCSIOManager(
+                    gcs=GCSResource(project="my-cool-project")
                     gcs_bucket="my-cool-bucket",
                     gcs_prefix="my-cool-prefix"
                 ),
-                "gcs": GCSResource(project="my-cool-project")
             }
         )
         def my_job():
@@ -176,14 +176,14 @@ def gcs_pickle_io_manager(init_context):
     as each execution node has network connectivity and credentials for GCS and the backing bucket.
 
     Assigns each op output to a unique filepath containing run ID, step key, and output name.
-    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    Assigns each asset to a single filesystem path, at ``<base_dir>/<asset_key>``. If the asset key
     has multiple components, the final component is used as the name of the file, and the preceding
     components as parent directories under the base_dir.
 
     Subsequent materializations of an asset will overwrite previous materializations of that asset.
-    With a base directory of "/my/base/path", an asset with key
-    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
-    with path "/my/base/path/one/two/".
+    With a base directory of ``/my/base/path``, an asset with key
+    ``AssetKey(["one", "two", "three"])`` would be stored in a file called ``three`` in a directory
+    with path ``/my/base/path/one/two/``.
 
     Example usage:
 

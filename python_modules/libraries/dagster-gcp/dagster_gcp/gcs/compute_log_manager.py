@@ -50,7 +50,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         json_credentials_envvar (Optional[str]): Environment variable that contains the JSON with a private key
-            and other credentials information. If this is set, GOOGLE_APPLICATION_CREDENTIALS will be ignored.
+            and other credentials information. If this is set, ``GOOGLE_APPLICATION_CREDENTIALS`` will be ignored.
             Can be used when the private key cannot be used as a file.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files to GCS. By default, will only upload when the capture is complete.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute

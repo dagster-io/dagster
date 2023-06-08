@@ -49,10 +49,10 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         default=None,
         description=(
             "GCP authentication credentials. If provided, a temporary file will be created"
-            " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
+            " with the credentials and ``GOOGLE_APPLICATION_CREDENTIALS`` will be set to the"
             " temporary file. To avoid issues with newlines in the keys, you must base64"
             " encode the key. You can retrieve the base64 encoded key with this shell"
-            " command: cat $GOOGLE_AUTH_CREDENTIALS | base64"
+            " command: ``cat $GOOGLE_AUTH_CREDENTIALS | base64``"
         ),
     )
 

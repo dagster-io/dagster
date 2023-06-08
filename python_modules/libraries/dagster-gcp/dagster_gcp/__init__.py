@@ -28,8 +28,14 @@ from .dataproc.resources import (
 )
 from .gcs import (
     GCSFileHandle as GCSFileHandle,
+    GCSFileManagerResource as GCSFileManagerResource,
+    GCSResource as GCSResource,
     gcs_file_manager as gcs_file_manager,
     gcs_resource as gcs_resource,
+)
+from .gcs.io_manager import (
+    ConfigurablePickledObjectGCSIOManager as ConfigurablePickledObjectGCSIOManager,
+    gcs_pickle_io_manager as gcs_pickle_io_manager,
 )
 from .version import __version__
 
