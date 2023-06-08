@@ -28,13 +28,16 @@ class CachingDataTimeResolver:
     _instance_queryer: CachingInstanceQueryer
     _asset_graph: AssetGraph
 
-    def __init__(self, instance_queryer: CachingInstanceQueryer, asset_graph: AssetGraph):
+    def __init__(self, instance_queryer: CachingInstanceQueryer):
         self._instance_queryer = instance_queryer
-        self._asset_graph = asset_graph
 
     @property
     def instance_queryer(self) -> CachingInstanceQueryer:
         return self._instance_queryer
+
+    @property
+    def asset_graph(self) -> AssetGraph:
+        return self.instance_queryer.asset_graph
 
     ####################
     # PARTITIONED DATA TIME
@@ -142,7 +145,7 @@ class CachingDataTimeResolver:
             partitions_def=partitions_def,
         )
 
-        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(self._asset_graph)
+        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(self.asset_graph)
         return {key: partition_data_time for key in root_keys}
 
     ####################
@@ -154,10 +157,10 @@ class CachingDataTimeResolver:
     ) -> Mapping[AssetKey, "EventLogRecord"]:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
-        for parent_key in self._asset_graph.get_parents(asset_key):
+        for parent_key in self.asset_graph.get_parents(asset_key):
             if (
-                parent_key in self._asset_graph.source_asset_keys
-                and not self._asset_graph.is_observable(parent_key)
+                parent_key in self.asset_graph.source_asset_keys
+                and not self.asset_graph.is_observable(parent_key)
             ):
                 continue
 
@@ -173,7 +176,7 @@ class CachingDataTimeResolver:
                 before_cursor = None
 
             if before_cursor is not None:
-                if parent_key in self._asset_graph.source_asset_keys:
+                if parent_key in self.asset_graph.source_asset_keys:
                     parent_record = self.instance_queryer.get_observation_record(
                         asset_key=parent_key, before_cursor=before_cursor
                     )
@@ -203,7 +206,7 @@ class CachingDataTimeResolver:
             asset_key, record_id, record_tags_dict
         )
         if not upstream_records_by_key:
-            if not self._asset_graph.has_non_source_parents(asset_key):
+            if not self.asset_graph.has_non_source_parents(asset_key):
                 return {
                     asset_key: datetime.datetime.fromtimestamp(
                         record_timestamp, tz=datetime.timezone.utc
@@ -290,17 +293,17 @@ class CachingDataTimeResolver:
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:
-            return {key: None for key in self._asset_graph.get_non_source_roots(asset_key)}
+            return {key: None for key in self.asset_graph.get_non_source_roots(asset_key)}
         record_timestamp = check.not_none(record_timestamp)
 
-        partitions_def = self._asset_graph.get_partitions_def(asset_key)
+        partitions_def = self.asset_graph.get_partitions_def(asset_key)
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
             return self._calculate_data_time_by_key_time_partitioned(
                 asset_key=asset_key,
                 cursor=record_id,
                 partitions_def=partitions_def,
             )
-        elif self._asset_graph.is_observable(asset_key):
+        elif self.asset_graph.is_observable(asset_key):
             return self._calculate_data_time_by_key_observable_source(
                 asset_key=asset_key,
                 record_id=record_id,
@@ -355,11 +358,11 @@ class CachingDataTimeResolver:
 
         # if you're here, then this asset is planned, but not materialized. in the worst case, this
         # asset's data time will be equal to the current time once it finishes materializing
-        if not self._asset_graph.has_non_source_parents(asset_key):
+        if not self.asset_graph.has_non_source_parents(asset_key):
             return current_time
 
         data_time = current_time
-        for parent_key in self._asset_graph.get_parents(asset_key):
+        for parent_key in self.asset_graph.get_parents(asset_key):
             parent_data_time = self._get_in_progress_data_time_in_run(
                 run_id=run_id, asset_key=parent_key, current_time=current_time
             )
@@ -485,7 +488,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         evaluation_time: datetime.datetime,
     ) -> Optional[float]:
-        freshness_policy = self._asset_graph.freshness_policies_by_key.get(asset_key)
+        freshness_policy = self.asset_graph.freshness_policies_by_key.get(asset_key)
         if freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"

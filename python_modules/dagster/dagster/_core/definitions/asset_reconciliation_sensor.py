@@ -624,14 +624,14 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.get_latest_materialization_record(asset_partition, None):
+                if instance_queryer.materialization_exists(asset_partition, None):
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)
         else:
             if not cursor.was_previously_materialized_or_requested(asset_key):
                 asset = AssetKeyPartitionKey(asset_key)
-                if instance_queryer.get_latest_materialization_record(asset, None):
+                if instance_queryer.materialization_exists(asset, None):
                     newly_materialized_root_asset_keys.add(asset_key)
                 else:
                     never_materialized_or_requested.add(asset)
@@ -1110,9 +1110,7 @@ def reconcile(
 
     conditions_by_asset_partition_for_freshness = (
         determine_asset_partitions_to_auto_materialize_for_freshness(
-            data_time_resolver=CachingDataTimeResolver(
-                instance_queryer=instance_queryer, asset_graph=asset_graph
-            ),
+            data_time_resolver=CachingDataTimeResolver(instance_queryer=instance_queryer),
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             target_asset_keys_and_parents=target_asset_keys_and_parents,

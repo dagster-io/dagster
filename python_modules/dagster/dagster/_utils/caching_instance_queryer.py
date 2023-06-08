@@ -84,13 +84,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]
     ):
         """For performance, batches together queries for selected assets."""
-        """
-        self._asset_partition_count_cache[None] = dict(
-            self.instance.get_materialization_count_by_partition(
-                asset_keys=asset_keys,
-                after_cursor=None,
-            )
-        )"""
         if after_cursor is not None:
             self._asset_partition_count_cache[after_cursor] = dict(
                 self.instance.get_materialization_count_by_partition(

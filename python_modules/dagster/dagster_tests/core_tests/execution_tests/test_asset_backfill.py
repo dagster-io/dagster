@@ -390,7 +390,9 @@ def execute_asset_backfill_iteration_consume_generator(
     for result in execute_asset_backfill_iteration_inner(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
-        instance_queryer=CachingInstanceQueryer(instance, asset_backfill_data.backfill_start_time),
+        instance_queryer=CachingInstanceQueryer(
+            instance, asset_graph, asset_backfill_data.backfill_start_time
+        ),
         asset_graph=asset_graph,
         run_tags={},
         backfill_start_time=asset_backfill_data.backfill_start_time,
@@ -789,7 +791,7 @@ def test_asset_backfill_cancellation():
 
     assert len(instance.get_runs()) == 1
 
-    instance_queryer = CachingInstanceQueryer(instance, backfill_start_time)
+    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_time)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(

@@ -442,7 +442,7 @@ def execute_asset_backfill_iteration(
     backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
 
     instance_queryer = CachingInstanceQueryer(
-        instance=instance, evaluation_time=backfill_start_time
+        instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_time
     )
 
     if backfill.status == BulkActionStatus.REQUESTED:
