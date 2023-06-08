@@ -561,7 +561,13 @@ def new_io_manager() -> None:
 def raw_github_resource_factory() -> None:
     # start_raw_github_resource_factory
 
-    from dagster import ConfigurableResourceFactory, Resource, asset, EnvVar
+    from dagster import (
+        ConfigurableResourceFactory,
+        Resource,
+        asset,
+        Definitions,
+        EnvVar,
+    )
 
     class GitHubResource(ConfigurableResourceFactory[GitHub]):
         access_token: str
