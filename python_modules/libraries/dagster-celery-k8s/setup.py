@@ -32,9 +32,9 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_celery_k8s_tests*"]),
     install_requires=[
-        "dagster==1.3.8",
-        "dagster-k8s==0.19.8",
-        "dagster-celery==0.19.8",
+        "dagster==1.3.9rc0",
+        "dagster-k8s==0.19.9rc0",
+        "dagster-celery==0.19.9rc0",
     ],
     zip_safe=False,
 )

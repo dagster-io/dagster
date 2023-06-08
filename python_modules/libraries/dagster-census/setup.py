@@ -33,6 +33,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_census_tests*"]),
-    install_requires=["dagster==1.3.8"],
+    install_requires=["dagster==1.3.9rc0"],
     zip_safe=False,
 )
