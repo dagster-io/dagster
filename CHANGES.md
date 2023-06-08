@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.3.9 (core) / 0.19.9 (libraries)
+
+### Dagster Cloud
+
+- Fixed bug hit by some run launchers and `1.3.8`.
+
 # 1.3.8 (core) / 0.19.8 (libraries)
 
 ### New
