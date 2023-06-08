@@ -48,12 +48,12 @@ In your `__init__.py`, import the class, create an instance of it, and add it to
 
 Verify that your code looks similar to the code below:
 
-```python
+```python file=/tutorial/connecting/connecting.py startafter=start_add_resource endbefore=end_add_resource
 from .resources import DataGeneratorResource
 
 # ...
 
-datagen = DataGeneratorResource() # Make the resource
+datagen = DataGeneratorResource()  # Make the resource
 
 defs = Definitions(
     assets=[*hackernews_assets],
@@ -61,8 +61,8 @@ defs = Definitions(
     resources={
         "io_manager": io_manager,
         "database_io_manager": duckdb_io_manager,
-        "hackernews_api": datagen # Add the newly-made resource here
-    }
+        "hackernews_api": datagen,  # Add the newly-made resource here
+    },
 )
 ```
 
@@ -78,6 +78,7 @@ To confirm that this worked:
 <Image
 alt="The Resources overview page in the Dagster UI"
 src="/images/tutorial/resources-overview.png"
+width={1152}
 height={610}
 />
 
@@ -91,24 +92,25 @@ In your `assets.py`, make a new asset called `signups`. In this asset, you'll us
 
 Copy and paste the code below into the appropriate sections of your `asset.py`.
 
-```python
+```python file=/tutorial/connecting/assets/assets.py startafter=start_add_signsup_asset endbefore=end_add_signsup_asset
 from ..resources import DataGeneratorResource
 
 # ...
+
 
 @asset
 def signups(hackernews_api: DataGeneratorResource):
     signups = pd.DataFrame(hackernews_api.get_signups())
 
     return Output(
-				value=signups,
-				metadata={
-				  	"Record Count": len(signups),
-					"Preview": MetadataValue.md(signups.head().to_markdown()),
-		        "Earliest Signup": signups["registered_at"].min(),
-		        "Latest Signup": signups["registered_at"].max(),
-		}
-	)
+        value=signups,
+        metadata={
+            "Record Count": len(signups),
+            "Preview": MetadataValue.md(signups.head().to_markdown()),
+            "Earliest Signup": signups["registered_at"].min(),
+            "Latest Signup": signups["registered_at"].max(),
+        },
+    )
 ```
 
 Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `2`: one for the asset using it and another for the job using this asset. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.
@@ -128,12 +130,12 @@ Looking at the resulting `signups` asset, you’ll see that it only contains the
 
 Resources can take arguments to configure them. However, this resource lets you define how many days of data should be fetched. Let’s say you want to get a year’s worth of data. Update your instantiation of the `DataGeneratorResource` to match the change below:
 
-```python
+```python file=/tutorial/connecting/connecting_with_config.py startafter=start_add_config_to_resource endbefore=end_add_config_to_resource
+datagen = DataGeneratorResource(num_days=365)
+
 defs = Definitions(
-	#...
-	resources={
-		"hackernews_api": DataGeneratorResource(num_days=365)
-	}
+    # ...
+    resources={"hackernews_api": datagen}
 )
 ```
 
@@ -160,18 +162,14 @@ HACKERNEWS_NUM_DAYS_WINDOW=30
 
 Afterward, you'll use Dagster's `EnvVar` class to access the environment variable. Update your `__init__.py` with the changes featured below:
 
-```python
-from dagster import EnvVar
-
-# ...
+```python file=/tutorial/connecting/connecting_with_envvar.py startafter=start_add_config_to_resource endbefore=end_add_config_to_resource
+datagen = DataGeneratorResource(
+    num_days=EnvVar.int("HACKERNEWS_NUM_DAYS_WINDOW"),
+)
 
 defs = Definitions(
-	#...
-	resources={
-		"hackernews_api": DataGeneratorResource(
-			num_days=EnvVar.int("HACKERNEWS_NUM_DAYS_WINDOW"),
-		)
-	}
+    # ...
+    resources={"hackernews_api": datagen}
 )
 ```
 
@@ -179,7 +177,7 @@ Restart your Dagster instance, materialize your signups asset, and observe how t
 
 ---
 
-# Next Steps
+## Next Steps
 
 Congratulations! 🎉 You've written your first pipeline in Dagster!
 
