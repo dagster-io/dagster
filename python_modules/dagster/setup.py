@@ -79,7 +79,7 @@ setup(
         "PyYAML>=5.1",
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
-        "alembic>=1.2.1,!=1.6.3,!=1.7.0,<1.11.0",
+        "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         "croniter>=0.3.34",
         f"grpcio>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
         f"grpcio>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
