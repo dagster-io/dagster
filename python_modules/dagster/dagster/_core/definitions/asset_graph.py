@@ -277,6 +277,72 @@ class AssetGraph:
 
         return list(child_partitions_subset.get_partition_keys())
 
+    def partition_maps_to_valid_parents(
+        self,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+        candidate: AssetKeyPartitionKey,
+    ) -> bool:
+        """Returns a bool representing whether the given asset partition maps to valid parents upstream.
+        """
+        for parent_asset_key in self.get_parents(candidate.asset_key):
+            if self.is_partitioned(parent_asset_key):
+                child_partitions_def = self.get_partitions_def(candidate.asset_key)
+                parent_partitions_def = self.get_partitions_def(parent_asset_key)
+
+                partition_mapping = self.get_partition_mapping(
+                    candidate.asset_key, parent_asset_key
+                )
+
+                if not candidate.partition_key:
+                    pass
+                elif not partition_mapping.downstream_partition_has_valid_upstream_partitions(
+                    cast(PartitionsDefinition, child_partitions_def),
+                    candidate.partition_key,
+                    cast(PartitionsDefinition, parent_partitions_def),
+                    current_time,
+                    dynamic_partitions_store,
+                ):
+                    return False
+
+        return True
+
+    def get_valid_parent_partitions(
+        self,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        current_time: datetime,
+        candidate: AssetKeyPartitionKey,
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        result: Set[AssetKeyPartitionKey] = set()
+        for parent_asset_key in self.get_parents(candidate.asset_key):
+            if self.is_partitioned(parent_asset_key):
+                child_partitions_def = self.get_partitions_def(candidate.asset_key)
+                parent_partitions_def = self.get_partitions_def(parent_asset_key)
+
+                partition_mapping = self.get_partition_mapping(
+                    candidate.asset_key, parent_asset_key
+                )
+
+                if not candidate.partition_key:
+                    pass
+                else:
+                    parent_materializable_subset = (
+                        partition_mapping.get_valid_upstream_partitions_for_partitions(
+                            cast(PartitionsDefinition, child_partitions_def)
+                            .empty_subset()
+                            .with_partition_keys([candidate.partition_key]),
+                            cast(PartitionsDefinition, parent_partitions_def),
+                            current_time,
+                            dynamic_partitions_store,
+                        )
+                    )
+                    for parent_partition_key in parent_materializable_subset.get_partition_keys():
+                        result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))
+            else:
+                result.add(AssetKeyPartitionKey(parent_asset_key))
+
+        return result
+
     def get_parents_partitions(
         self,
         dynamic_partitions_store: DynamicPartitionsStore,

@@ -593,3 +593,45 @@ def test_daily_upstream_of_yearly():
         "2023-01-03",
         "2023-01-04",
     ]
+
+
+def test_downstream_partition_has_valid_upstream_partitions():
+    may_partitions_def = DailyPartitionsDefinition("2023-05-01")
+    june_partitions_def = DailyPartitionsDefinition("2023-06-01")
+
+    assert (
+        TimeWindowPartitionMapping().downstream_partition_has_valid_upstream_partitions(
+            downstream_partitions_def=may_partitions_def,
+            downstream_partition_key="2023-05-10",
+            upstream_partitions_def=june_partitions_def,
+        )
+        is False
+    )
+
+    assert (
+        TimeWindowPartitionMapping(
+            allow_nonexistent_upstream_partitions=True
+        ).downstream_partition_has_valid_upstream_partitions(
+            downstream_partitions_def=may_partitions_def,
+            downstream_partition_key="2023-05-10",
+            upstream_partitions_def=june_partitions_def,
+        )
+        is True
+    )
+
+    assert (
+        TimeWindowPartitionMapping()
+        .get_valid_upstream_partitions_for_partitions(
+            downstream_partitions_subset=subset_with_keys(may_partitions_def, ["2023-05-10"]),
+            upstream_partitions_def=june_partitions_def,
+        )
+        .get_partition_keys()
+        == []
+    )
+
+    assert TimeWindowPartitionMapping().get_valid_upstream_partitions_for_partitions(
+        downstream_partitions_subset=subset_with_keys(
+            may_partitions_def, ["2023-05-10", "2023-06-05"]
+        ),
+        upstream_partitions_def=june_partitions_def,
+    ).get_partition_keys() == ["2023-06-05"]

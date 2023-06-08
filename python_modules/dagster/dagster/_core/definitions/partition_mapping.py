@@ -167,6 +167,41 @@ class PartitionMapping(ABC):
             )
         )
 
+    def downstream_partition_has_valid_upstream_partitions(
+        self,
+        downstream_partitions_def: PartitionsDefinition,
+        downstream_partition_key: str,
+        upstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        """Returns a bool representing whether the mapped upstream partition key exists for
+        the provided downstream partition key.
+        """
+        return True
+
+    def get_valid_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        """Returns the subset of partition keys in the upstream asset that are existent. The existent
+        partitions are not necessarily the full set of parent partitions that the downstream subset
+        depends on.
+
+        For example, if an upstream asset is time-partitioned and starts in June 2023, and the
+        downstream asset is time-partitioned and starts in May 2023, this function would return
+        an empty subset when the downstream subset contains a May partition.
+        """
+        return self.get_upstream_partitions_for_partitions(
+            downstream_partitions_subset,
+            upstream_partitions_def,
+            current_time,
+            dynamic_partitions_store,
+        )
+
 
 @whitelist_for_serdes
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
