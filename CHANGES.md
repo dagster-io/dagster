@@ -1,5 +1,12 @@
 # Changelog
 
+# 1.3.9 (core) / 0.19.9 (libraries)
+
+### Dagster Cloud
+
+- Fixed an issue in the `1.3.8` release where the Dagster Cloud agent would sometimes fail to start up with an import error.
+
+
 # 1.3.8 (core) / 0.19.8 (libraries)
 
 ### New
