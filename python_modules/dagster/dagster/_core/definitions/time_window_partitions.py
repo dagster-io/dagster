@@ -298,17 +298,6 @@ class TimeWindowPartitionsDefinition(
             )
         return partition_def_str
 
-    def __eq__(self, other):
-        return (
-            isinstance(other, TimeWindowPartitionsDefinition)
-            and pendulum.instance(self.start, tz=self.timezone).timestamp()
-            == pendulum.instance(other.start, tz=other.timezone).timestamp()
-            and self.timezone == other.timezone
-            and self.fmt == other.fmt
-            and self.end_offset == other.end_offset
-            and self.cron_schedule == other.cron_schedule
-        )
-
     def __repr__(self):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
         # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
