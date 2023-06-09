@@ -42,7 +42,8 @@ from .tasks import (
 )
 from .utils import get_task_logs, sanitize_family, task_definitions_match
 
-import asyncio
+import time
+import ast
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -61,9 +62,9 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
-class SpotInstanceException(Exception):
-    def __init__(self, message='No spot instance available'):
-        super(SpotInstanceException, self).__init__(message)
+class CapacityFailureException(Exception):
+    def __init__(self, message='Capacity is unavailable at this time. Please try again later or in a different availability zone'):
+        super(CapacityFailureException, self).__init__(message)
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
@@ -80,6 +81,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
+        capacity_failure_strategy: Optional[Dict[str, Any]] = None,  # TODO
+        fallback_capacity_provider_strategy: Optional[List[Dict[str, Any]]] = None,  # TODO
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -174,6 +177,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 )
 
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
+        self.capacity_failure_strategy = check.opt_mapping_param(capacity_failure_strategy, "capacity_failure_strategy")  #TODO
+        self.fallback_capacity_provider_strategy = check.opt_list_param(fallback_capacity_provider_strategy, "fallback_capacity_provider_strategy") #TODO
 
         self._current_task_metadata = None
         self._current_task = None
@@ -311,6 +316,46 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
+            "capacity_failure_strategy": Field(  # TODO
+                Permissive(
+                    {
+                        "maxRetries": Field(
+                            int,
+                            is_required=False,
+                            default_value=5,
+                            description="Number of retries in case a capacity failure takes place"
+                        ),
+                        "retryInterval": Field(
+                            int,
+                            is_required=False,
+                            default_value=5,
+                            description="Interval between retries in case a capacity failure takes place (in seconds)"
+                        )
+                    }
+                ),
+                is_required=False,
+                description=(
+                    "Capacity failure strategy that allows you to set the number of retries"
+                    "and the interval between these retries (in seconds)"
+                ),
+            ),
+            "fallback_capacity_provider_strategy": Field(
+                Array(
+                    Permissive(
+                        {
+                            "capacityProvider": Field(
+                                str,
+                                is_required=True,
+                                description="Fallback capacity provider"
+                            )
+                        }
+                    ),
+                ),
+                is_required=False,
+                description=(
+                    "An array of the fallback capacity provider strategy (List[Dict[str, Any]])"
+                ),
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -339,6 +384,62 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         memory = tags.get("ecs/memory")
 
         return Tags(arn, cluster, cpu, memory)
+
+    def _run_task(self, run_task_kwargs, capacity_failure_strategy: dict, fallback_capacity_provider_strategy: list):
+
+        # initialize parameters
+        default_iteration = 1
+        retry_iterations = int(capacity_failure_strategy["maxRetries"]) if capacity_failure_strategy else 0
+        fallback_iteration = 1 if fallback_capacity_provider_strategy else 0
+        retry_interval = int(capacity_failure_strategy["retryInterval"]) if capacity_failure_strategy else 0
+
+        # fire off runs
+        total_iterations = default_iteration + retry_iterations + fallback_iteration
+        for i in range(total_iterations):
+
+            if fallback_capacity_provider_strategy and i == (total_iterations - 1):
+                run_task_kwargs["capacityProviderStrategy"] = fallback_capacity_provider_strategy
+
+            try:
+                response = self.ecs.run_task(**run_task_kwargs)
+                tasks = response["tasks"]
+                if not tasks:
+                    failures = response["failures"]
+                    if any(failure.get("reason") == "Capacity is unavailable at this time. Please try again later or in a different availability zone" for failure in failures):
+                        raise CapacityFailureException()
+                    else:
+                        exceptions = []
+                        for failure in failures:
+                            arn = failure.get("arn")
+                            reason = failure.get("reason")
+                            detail = failure.get("detail")
+                            exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
+                        raise Exception(exceptions)
+
+                return tasks
+            
+            except CapacityFailureException:
+                if (i+1) == total_iterations:
+                    raise CapacityFailureException()
+                else:
+                    time.sleep(retry_interval)
+
+    def _get_fallback_capacity_provider_strategy(self):
+        return self.fallback_capacity_provider_strategy
+    
+    def _get_capacity_failure_strategy(self, run):
+        capacity_failure_strategy = {}
+
+        capacity_failure_strategy_from_instance = self.capacity_failure_strategy
+        capacity_failure_strategy_from_tag = run.tags.get("ecs/capacity_failure_strategy")
+
+        # tag has highest priority
+        if capacity_failure_strategy_from_tag:
+            capacity_failure_strategy = ast.literal_eval(capacity_failure_strategy_from_tag)
+        elif capacity_failure_strategy_from_instance:
+            capacity_failure_strategy = capacity_failure_strategy_from_instance
+
+        return capacity_failure_strategy
 
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
@@ -401,59 +502,19 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
         if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
-            del run_task_kwargs["launchType"]            
+            del run_task_kwargs["launchType"]
 
-        # function to reduce duplicate code and reduce nesting
-        def run_task():
-            response = self.ecs.run_task(**run_task_kwargs)
-            tasks = response["tasks"]
-            if not tasks:
-                failures = response["failures"]
-                exceptions = []
-                for failure in failures:
-                    arn = failure.get("arn")
-                    reason = failure.get("reason")
-                    detail = failure.get("detail")
-                    exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
-                    if reason == "Capacity is unavailable at this time. Please try again later or in a different availability zone":
-                        raise SpotInstanceException()
-                # Raise regular error if error not due to spot integration
-                raise Exception(exceptions)
-            else:
-                return tasks
+        # get capacity failure strategy from dagster instance or tag
+        capacity_failure_strategy = self._get_capacity_failure_strategy(run)
+        
+        # get fallback capacity provider from dagster instance
+        fallback_capacity_provider_strategy = self._get_fallback_capacity_provider_strategy()
 
-        # FARGATE_SPOT safety feature 
-        if run_task_kwargs.get("capacityProviderStrategy") == [{'capacityProvider': 'FARGATE_SPOT'}]:
-            # if capacityProviderStrategy is FARGATE_SPOT 
-            #   try to execute 'spot_retries' times to use spot instance 
-            #   else switch to on demand instance
-
-            spot_retries = run.tags.get("ecs/spot_retries", container_context.run_resources.get("spot_retries"))
-            if spot_retries:
-                try:
-                    # ensure value is an integer, else raise error
-                    spot_retries = int(spot_retries)
-                except Exception as e:
-                    raise e
-            else:
-                spot_retries = 0
-
-            for i in range(spot_retries + 2):  # if spot_retries = 0, first try spot [i = 0] and then use on demand [i = 1]
-                if i < (spot_retries + 1):  # if spot_retries = 0, first evaluation is True [i=0 < 1] and second evaluation is False [i=1 !< 1]
-                    try:
-                        tasks = run_task()
-                        break
-                    except SpotInstanceException:
-                        asyncio.sleep(5)
-                        continue
-                else:
-                    # Set capacityProviderStrategy to FARGATE
-                    run_task_kwargs["capacityProviderStrategy"] = [{'capacityProvider': 'FARGATE'}]
-                    tasks = run_task()
-        else:
-            # if capacityProviderStrategy is not FARGATE_SPOT
-            #   normal flow
-            tasks = run_task()
+        tasks = self._run_task(
+            run_task_kwargs=run_task_kwargs, 
+            capacity_failure_strategy=capacity_failure_strategy, 
+            fallback_capacity_provider_strategy=fallback_capacity_provider_strategy
+        )
 
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
