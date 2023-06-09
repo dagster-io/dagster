@@ -80,16 +80,6 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     num_discarded: int
     run_ids: Set[str] = set()
 
-    def with_run_ids(self, run_ids: Set[str]) -> "AutoMaterializeAssetEvaluation":
-        return AutoMaterializeAssetEvaluation(
-            self.asset_key,
-            self.partition_subsets_by_condition,
-            self.num_requested,
-            self.num_skipped,
-            self.num_discarded,
-            run_ids,
-        )
-
     @staticmethod
     def from_conditions(
         asset_graph: AssetGraph,

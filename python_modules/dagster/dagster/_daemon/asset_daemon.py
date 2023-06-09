@@ -172,8 +172,8 @@ class AssetDaemon(IntervalDaemon):
             # add run id to evaluations
             for asset_key in asset_keys:
                 evaluation = evaluations_by_asset_key[asset_key]
-                evaluations_by_asset_key[asset_key] = evaluation.with_run_ids(
-                    evaluation.run_ids | {run.run_id}
+                evaluations_by_asset_key[asset_key] = evaluation._replace(
+                    run_ids=evaluation.run_ids | {run.run_id}
                 )
 
         instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})

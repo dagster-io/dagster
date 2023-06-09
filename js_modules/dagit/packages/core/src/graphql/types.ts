@@ -318,6 +318,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
   numDiscarded: Scalars['Int'];
   numRequested: Scalars['Int'];
   numSkipped: Scalars['Int'];
+  runIds: Array<Scalars['String']>;
   timestamp: Scalars['Float'];
 };
 
@@ -4744,6 +4745,7 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2522,
     numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 6444,
+    runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 0.19,
   };
 };
