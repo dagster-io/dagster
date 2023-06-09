@@ -7,7 +7,6 @@ from typing import Any, Callable, List, Mapping, Optional
 import mock
 import pytest
 from dagster import (
-    AssetExecutionContext,
     Config,
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
@@ -19,6 +18,7 @@ from dagster import (
     InitResourceContext,
     IOManager,
     IOManagerDefinition,
+    OpExecutionContext,
     ResourceDependency,
     ResourceParam,
     RunConfig,
@@ -322,7 +322,7 @@ def test_io_manager_adapter():
     executed = {}
 
     @asset
-    def an_asset(context: AssetExecutionContext):
+    def an_asset(context: OpExecutionContext):
         assert context.resources.io_manager.a_config_value == "passed-in-configured"
         executed["yes"] = True
 
@@ -347,7 +347,7 @@ def test_io_manager_factory_class():
     executed = {}
 
     @asset
-    def another_asset(context: AssetExecutionContext):
+    def another_asset(context: OpExecutionContext):
         assert context.resources.io_manager.a_config_value == "passed-in-factory"
         executed["yes"] = True
 

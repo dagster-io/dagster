@@ -16,7 +16,7 @@ class IAttachDifferentObjectToOpContext:
             return context.resource_config["inner_string"]
 
         @asset(required_resource_keys={"my_string"})
-        def my_unconverted_asset(context: AssetExecutionContext) -> str:
+        def my_unconverted_asset(context: OpExecutionContext) -> str:
             return context.resources.my_string
 
     Adapted to a class-style resource, we can ensure our new ConfigurableResource is compatible
@@ -31,7 +31,7 @@ class IAttachDifferentObjectToOpContext:
                 return self.inner_string
 
         @asset(required_resource_keys={"my_string"})
-        def my_unconverted_asset(context: AssetExecutionContext) -> str:
+        def my_unconverted_asset(context: OpExecutionContext) -> str:
             return context.resources.my_string
 
         @asset

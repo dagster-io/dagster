@@ -12,7 +12,6 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
-    AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -40,6 +39,7 @@ from dagster import (
     Map,
     Noneable,
     Nothing,
+    OpExecutionContext,
     Out,
     Output,
     PythonObjectDagsterType,
@@ -729,7 +729,7 @@ def eventually_successful():
     @op(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: AssetExecutionContext, depth: int) -> int:
+    def fail(context: OpExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
@@ -1604,31 +1604,31 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context: AssetExecutionContext):
+def foo(context: OpExecutionContext):
     assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context: AssetExecutionContext):
+def bar(context: OpExecutionContext):
     assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context: AssetExecutionContext, foo, bar):
+def foo_bar(context: OpExecutionContext, foo, bar):
     assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context: AssetExecutionContext, foo_bar):
+def baz(context: OpExecutionContext, foo_bar):
     assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context: AssetExecutionContext):
+def unconnected(context: OpExecutionContext):
     assert context.job_def.asset_selection_data is not None
 
 
