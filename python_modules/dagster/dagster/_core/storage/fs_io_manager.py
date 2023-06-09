@@ -1,9 +1,8 @@
 import os
 import pickle
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field
-from upath import UPath
 
 import dagster._check as check
 from dagster import (
@@ -21,6 +20,9 @@ from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 
 class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemIOManager"]):
@@ -245,11 +247,13 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
     extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
     def __init__(self, base_dir=None, **kwargs):
+        from upath import UPath
+
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
 
         super().__init__(base_path=UPath(base_dir, **kwargs))
 
-    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+    def dump_to_path(self, context: OutputContext, obj: Any, path: "UPath"):
         try:
             with path.open("wb") as file:
                 pickle.dump(obj, file, PICKLE_PROTOCOL)
@@ -274,7 +278,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
                 "https://docs.dagster.io/deployment/executors#overview"
             ) from e
 
-    def load_from_path(self, context: InputContext, path: UPath) -> Any:
+    def load_from_path(self, context: InputContext, path: "UPath") -> Any:
         with path.open("rb") as file:
             return pickle.load(file)
 
