@@ -14,6 +14,7 @@ from typing import (
 
 import pendulum
 
+import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -127,9 +128,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def get_asset_status_cache_value(
         self, *, asset_key: AssetKey
     ) -> Optional["AssetStatusCacheValue"]:
+        from dagster._core.storage.partition_status_cache import _get_fresh_asset_status_cache_value
+
         asset_record = self.get_asset_record(asset_key)
         # return asset_record.asset_entry.cached_status if asset_record is not None else None
-        from dagster._core.storage.partition_status_cache import _get_fresh_asset_status_cache_value
 
         partitions_def = self.asset_graph.get_partitions_def(asset_key)
         return _get_fresh_asset_status_cache_value(
@@ -187,17 +189,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
                 greater than this value will be considered.
         """
-        partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
-        # for partitioned assets...
-        if partitions_def is not None:
+        # for partitioned assets
+        if asset_partition.partition_key is not None:
+            partitions_def = check.not_none(
+                self.asset_graph.get_partitions_def(asset_partition.asset_key)
+            )
             asset_status_value = self.get_asset_status_cache_value(
                 asset_key=asset_partition.asset_key
             )
-            if asset_status_value is None:
-                return False
             # first do the quick check to see if this asset partition has been materialized at all
-            if (
-                asset_partition
+            if asset_status_value is None or (
+                asset_partition.partition_key
                 not in asset_status_value.deserialize_materialized_partition_subsets(
                     partitions_def=partitions_def
                 )
@@ -206,12 +208,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # if no after_cursor, then we're done
             elif after_cursor is None:
                 return True
-            # in theory, partition_key should never be None here, but just in case...
-            elif asset_partition.partition_key is not None:
-                partition_counts = self.get_materialized_partition_counts(
-                    asset_partition.asset_key, after_cursor=after_cursor
-                )
-                return partition_counts.get(asset_partition.partition_key, 0) > 0
         # catchall case, do the explicit query
         return (
             self.get_latest_materialization_record(asset_partition, after_cursor=after_cursor)

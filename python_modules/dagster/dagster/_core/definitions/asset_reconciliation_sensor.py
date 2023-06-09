@@ -570,8 +570,8 @@ def find_parent_materialized_asset_partitions(
                             asset_status_cache_value = (
                                 instance_queryer.get_asset_status_cache_value(asset_key=child)
                             )
-                            # if the child is currently in progress, or its most recent run failed,
-                            # it is not added to the candidate set
+                            # if the child is not currently in progress, and its most recent run
+                            # succeeded, then we can immediately add it to the candidate set
                             if asset_status_cache_value is None or (
                                 child_partition
                                 not in asset_status_cache_value.deserialize_in_progress_partition_subsets(
@@ -581,6 +581,19 @@ def find_parent_materialized_asset_partitions(
                                 not in asset_status_cache_value.deserialize_failed_partition_subsets(
                                     partitions_def=child_partitions_def
                                 )
+                            ):
+                                result_asset_partitions.add(child_asset_partition)
+                            # more expensive check -- if the the child is in progress or failed, we
+                            # need to see if that happened in a run that was kicked off by the
+                            # daemon
+                            elif not instance_queryer.is_asset_planned_for_run(
+                                check.not_none(
+                                    instance_queryer.get_latest_materialization_record(
+                                        AssetKeyPartitionKey(asset_key, child_partition),
+                                        after_cursor=latest_storage_id,
+                                    )
+                                ).run_id,
+                                child,
                             ):
                                 result_asset_partitions.add(child_asset_partition)
 
