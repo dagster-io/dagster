@@ -81,8 +81,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
-        capacity_failure_strategy: Optional[Dict[str, Any]] = None,  # TODO
-        fallback_capacity_provider_strategy: Optional[List[Dict[str, Any]]] = None,  # TODO
+        capacity_failure_strategy: Optional[Dict[str, Any]] = None,
+        fallback_capacity_provider_strategy: Optional[List[Dict[str, Any]]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -177,8 +177,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 )
 
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
-        self.capacity_failure_strategy = check.opt_mapping_param(capacity_failure_strategy, "capacity_failure_strategy")  #TODO
-        self.fallback_capacity_provider_strategy = check.opt_list_param(fallback_capacity_provider_strategy, "fallback_capacity_provider_strategy") #TODO
+        self.capacity_failure_strategy = check.opt_mapping_param(capacity_failure_strategy, "capacity_failure_strategy")
+        self.fallback_capacity_provider_strategy = check.opt_list_param(fallback_capacity_provider_strategy, "fallback_capacity_provider_strategy")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -316,7 +316,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
-            "capacity_failure_strategy": Field(  # TODO
+            "capacity_failure_strategy": Field(
                 Permissive(
                     {
                         "maxRetries": Field(
