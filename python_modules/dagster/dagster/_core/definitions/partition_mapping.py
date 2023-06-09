@@ -236,7 +236,6 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     ) -> PartitionsSubset:
         return upstream_partitions_subset
 
-
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
