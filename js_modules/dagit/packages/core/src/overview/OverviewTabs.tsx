@@ -15,16 +15,10 @@ interface Props<TData> {
 export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
-  const {flagOverviewAssetsTab} = useFeatureFlags();
-
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        {flagOverviewAssetsTab ? (
-          <TabLink id="activity" title="Activity" to="/overview/activity" />
-        ) : (
-          <TabLink id="timeline" title="Timeline" to="/overview/timeline" />
-        )}
+        <TabLink id="activity" title="Activity" to="/overview/activity" />
         <TabLink id="jobs" title="Jobs" to="/overview/jobs" />
         <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         <TabLink id="sensors" title="Sensors" to="/overview/sensors" />

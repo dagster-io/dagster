@@ -160,7 +160,7 @@ function groupAssets(assets: Assets) {
   const groups: Record<
     string,
     {
-      groupName: string | null;
+      groupName?: string | null;
       repositoryName: string;
       assets: Assets;
     }
