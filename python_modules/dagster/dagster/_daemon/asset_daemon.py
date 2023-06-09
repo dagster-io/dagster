@@ -105,6 +105,8 @@ class AssetDaemon(IntervalDaemon):
             run_tags=None,
         )
 
+        evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
+
         for run_request in run_requests:
             yield
 
@@ -167,13 +169,20 @@ class AssetDaemon(IntervalDaemon):
             )
             instance.submit_run(run.run_id, workspace)
 
+            # add run id to evaluations
+            for asset_key in asset_keys:
+                evaluation = evaluations_by_asset_key[asset_key]
+                evaluations_by_asset_key[asset_key] = evaluation.with_run_ids(
+                    evaluation.run_ids | {run.run_id}
+                )
+
         instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
 
         # We enforce uniqueness per (asset key, evaluation id). Store the evaluations after the cursor,
         # so that if the daemon crashes and doesn't update the cursor we don't try to write duplicates.
         if schedule_storage.supports_auto_materialize_asset_evaluations:
             schedule_storage.add_auto_materialize_asset_evaluations(
-                new_cursor.evaluation_id, evaluations
+                new_cursor.evaluation_id, list(evaluations_by_asset_key.values())
             )
             schedule_storage.purge_asset_evaluations(
                 before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),

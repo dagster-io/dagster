@@ -160,6 +160,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     numDiscarded = graphene.NonNull(graphene.Int)
     conditions = non_null_list(GrapheneAutoMaterializeCondition)
     timestamp = graphene.NonNull(graphene.Float)
+    runIds = non_null_list(graphene.String)
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
@@ -180,6 +181,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
                 for c in record.evaluation.partition_subsets_by_condition
             ],
             timestamp=record.timestamp,
+            runIds=record.evaluation.run_ids,
         )
 
 
