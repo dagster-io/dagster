@@ -1,5 +1,5 @@
 import wandb
-from dagster import AssetIn, OpExecutionContext, asset
+from dagster import AssetExecutionContext, AssetIn, asset
 
 MODEL_NAME = "my_model"
 
@@ -29,7 +29,7 @@ def write_model() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
     config_schema={"model_registry": str},
 )
 def promote_best_model_to_production(
-    context: OpExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
+    context: AssetExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
 ):
     """Example that links a model stored in a W&B Artifact to the Model Registry.
 
