@@ -87,6 +87,14 @@ const RUN_PROVIDERS_EMPTY = [
     token: 'snapshotId',
     values: () => [],
   },
+  {
+    token: 'created_date_before',
+    values: () => [],
+  },
+  {
+    token: 'created_date_after',
+    values: () => [],
+  },
 ];
 
 /**

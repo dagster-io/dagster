@@ -31,7 +31,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   return (
     <Dialog icon={title ? icon ?? 'info' : icon} onClose={onClose} title={title} isOpen={open}>
       <DialogBody>{description}</DialogBody>
-      <DialogFooter>
+      <DialogFooter topBorder>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={onSubmit} intent={intent}>
           {buttonText}
