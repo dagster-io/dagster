@@ -56,10 +56,10 @@ export const assetPartitionStatusesToStyle = (status: AssetPartitionStatus[]): C
     return {background: Colors.Gray200};
   }
   if (status.length === 1) {
-    return {background: assetPartitionStatusToColor(status[0])};
+    return {background: assetPartitionStatusToColor(status[0]!)};
   }
-  const a = assetPartitionStatusToColor(status[0]);
-  const b = assetPartitionStatusToColor(status[1]);
+  const a = assetPartitionStatusToColor(status[0]!);
+  const b = assetPartitionStatusToColor(status[1]!);
 
   return {
     backgroundImage: `linear-gradient(135deg, ${a} 25%, ${b} 25%, ${b} 50%, ${a} 50%, ${a} 75%, ${b} 75%, ${b} 100%)`,

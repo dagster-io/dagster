@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Mapping, Optional
 import mock
 import pytest
 from dagster import (
+    AssetExecutionContext,
     Config,
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
@@ -18,7 +19,6 @@ from dagster import (
     InitResourceContext,
     IOManager,
     IOManagerDefinition,
-    OpExecutionContext,
     ResourceDependency,
     ResourceParam,
     RunConfig,
@@ -322,7 +322,7 @@ def test_io_manager_adapter():
     executed = {}
 
     @asset
-    def an_asset(context: OpExecutionContext):
+    def an_asset(context: AssetExecutionContext):
         assert context.resources.io_manager.a_config_value == "passed-in-configured"
         executed["yes"] = True
 
@@ -347,7 +347,7 @@ def test_io_manager_factory_class():
     executed = {}
 
     @asset
-    def another_asset(context: OpExecutionContext):
+    def another_asset(context: AssetExecutionContext):
         assert context.resources.io_manager.a_config_value == "passed-in-factory"
         executed["yes"] = True
 
@@ -1389,7 +1389,9 @@ def test_context_on_resource_basic() -> None:
         ContextUsingResource().access_context()
 
     # Can access context after binding one
-    ContextUsingResource().with_resource_context(build_init_resource_context()).access_context()
+    ContextUsingResource().with_replaced_resource_context(
+        build_init_resource_context()
+    ).access_context()
 
     @asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -1432,7 +1434,7 @@ def test_context_on_resource_use_instance() -> None:
         with DagsterInstance.ephemeral() as instance:
             assert (
                 OutputDirResource(output_dir=None)
-                .with_resource_context(build_init_resource_context(instance=instance))
+                .with_replaced_resource_context(build_init_resource_context(instance=instance))
                 .get_effective_output_dir()
                 == "/tmp"
             )
@@ -1531,3 +1533,25 @@ def test_context_on_resource_nested() -> None:
 
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_telemetry_custom_resource():
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+        @classmethod
+        def _is_dagster_maintained(cls) -> bool:
+            return False
+
+    assert not MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_dagster_resource():
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+        @classmethod
+        def _is_dagster_maintained(cls) -> bool:
+            return True
+
+    assert MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001

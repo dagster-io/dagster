@@ -86,8 +86,8 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
       }
 
       const [token, value] = queryString.split(':');
-      if (token in perProvider) {
-        const {fuse, all} = perProvider[token];
+      if (token && token in perProvider) {
+        const {fuse, all} = perProvider[token]!;
         const results = value
           ? fuse.search(value).map((result) => `${token}:${result.item}`)
           : all.map((value) => `${token}:${value}`);

@@ -22,7 +22,6 @@ from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_selection import get_graph_subset
@@ -30,7 +29,6 @@ from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.types.dagster_type import Nothing
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
     ExperimentalWarning,
@@ -786,6 +784,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -807,6 +806,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
         group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
+        )
+        descriptions_by_key = check.opt_mapping_param(
+            descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
         )
 
         if group_names_by_key:
@@ -881,7 +883,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
-            for key, description in self._descriptions_by_key.items()
+            for key, description in descriptions_by_key.items()
         }
 
         return __class__.dagster_internal_init(
@@ -926,75 +928,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
-        )
-
-    def _subset_op_backed_asset(
-        self, asset_subselection: AbstractSet[AssetKey], selected_asset_keys: AbstractSet[AssetKey]
-    ) -> "AssetsDefinition":
-        """Creates a new AssetsDefinition which will only materialize the given asset keys. In some
-        cases, this subset will have a new set of root assets, which were previously produced within
-        the subset itself. In this case, we will create new inputs for those assets, and generate a
-        new copy of the op with the new inputs.
-
-        Args:
-            asset_subselection (AbstractSet[AssetKey]): The set of asset keys that should be selected
-                from this AssetsDefinition.
-            selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys that have been
-                selected from the broader asset graph.
-        """
-        # the set of keys that are not selected but are upstream of the selected keys
-        input_keys = {
-            dep_key for key in asset_subselection for dep_key in self.asset_deps[key]
-        }.difference(asset_subselection)
-        ins = {}
-
-        input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
-        op_valid = True
-        input_index = 0
-        for input_key in input_keys:
-            input_name = input_names_by_key.get(input_key)
-            if input_name is not None:
-                # just copy over existing input
-                ins[input_name] = self.op.ins[input_name]
-            elif input_key in selected_asset_keys:
-                # There is no input existing for this key, meaning this is something that is produced
-                # within the op if it is not subsetted. If this input is part of the larger
-                # selection that we want to make a job out of, then this would require us to create
-                # a new input such that the dependency would be respected, and therefore a new copy
-                # of the underlying op.
-                op_valid = False
-                # create a new input for this key
-                input_name = f"artificial_input_{input_index}"
-                input_index += 1
-                ins[input_name] = In(Nothing)
-                input_names_by_key[input_key] = input_name
-
-        # must create a new copy of the op
-        if op_valid:
-            op_def = self.op
-        else:
-            # create a hash of the selected keys to generate a unique name for this subsetted op
-            suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
-            op_def = self.op.with_replaced_properties(
-                name=f"{self.op.name}_subset_{suffix}", ins=ins
-            )
-
-        return AssetsDefinition.dagster_internal_init(
-            keys_by_input_name={**{v: k for k, v in input_names_by_key.items()}},
-            # keep track of the original mapping
-            keys_by_output_name=self.node_keys_by_output_name,
-            node_def=op_def,
-            partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
-            can_subset=self.can_subset,
-            selected_asset_keys=asset_subselection,
-            resource_defs=self.resource_defs,
-            group_names_by_key=self.group_names_by_key,
-            metadata_by_key=self.metadata_by_key,
-            freshness_policies_by_key=self.freshness_policies_by_key,
-            auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-            descriptions_by_key=self.descriptions_by_key,
         )
 
     def _subset_graph_backed_asset(
@@ -1095,7 +1028,23 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
         else:
             # multi_asset subsetting
-            return self._subset_op_backed_asset(asset_subselection, selected_asset_keys)
+            return AssetsDefinition.dagster_internal_init(
+                # keep track of the original mapping
+                keys_by_input_name=self._keys_by_input_name,
+                keys_by_output_name=self._keys_by_output_name,
+                node_def=self.node_def,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+                asset_deps=self._asset_deps,
+                can_subset=self.can_subset,
+                selected_asset_keys=asset_subselection,
+                resource_defs=self.resource_defs,
+                group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
+                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
+                descriptions_by_key=self.descriptions_by_key,
+            )
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:

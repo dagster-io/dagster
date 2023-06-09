@@ -85,7 +85,7 @@ export const BackfillPartitionSelector: React.FC<{
   ]);
 
   const selected = React.useMemo(() => {
-    return range.filter((r) => stateFilters.includes(runStatusData[r]));
+    return range.filter((r) => stateFilters.includes(runStatusData[r]!));
   }, [range, stateFilters, runStatusData]);
 
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
@@ -170,7 +170,7 @@ export const BackfillPartitionSelector: React.FC<{
   const counts = countsByState(
     range.map((key) => ({
       partitionKey: key,
-      state: runStatusData[key],
+      state: runStatusData[key]!,
     })),
   );
 

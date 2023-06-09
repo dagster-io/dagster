@@ -14,6 +14,9 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.backcompat import (
+    experimental_arg_warning,
+)
 
 
 @whitelist_for_serdes
@@ -21,7 +24,11 @@ class TimeWindowPartitionMapping(
     PartitionMapping,
     NamedTuple(
         "_TimeWindowPartitionMapping",
-        [("start_offset", PublicAttr[int]), ("end_offset", PublicAttr[int])],
+        [
+            ("start_offset", PublicAttr[int]),
+            ("end_offset", PublicAttr[int]),
+            ("allow_nonexistent_upstream_partitions", PublicAttr[bool]),
+        ],
     ),
 ):
     """The default mapping between two TimeWindowPartitionsDefinitions.
@@ -54,6 +61,12 @@ class TimeWindowPartitionMapping(
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
             upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+        allow_nonexistent_upstream_partitions (bool): Defaults to false. If true, does not
+            raise an error when mapped upstream partitions fall outside the start-end time window of the
+            partitions def. For example, if the upstream partitions def starts on "2023-01-01" but
+            the downstream starts on "2022-01-01", setting this bool to true would return no
+            partition keys when get_upstream_partitions_for_partitions is called with "2022-06-01".
+            When set to false, would raise an error.
 
     Examples:
         .. code-block:: python
@@ -78,11 +91,25 @@ class TimeWindowPartitionMapping(
                 ...
     """
 
-    def __new__(cls, start_offset: int = 0, end_offset: int = 0):
+    def __new__(
+        cls,
+        start_offset: int = 0,
+        end_offset: int = 0,
+        allow_nonexistent_upstream_partitions: bool = False,
+    ):
+        if allow_nonexistent_upstream_partitions:
+            experimental_arg_warning(
+                "allow_nonexistent_upstream_partitions", "TimeWindowPartitionMapping.__init__"
+            )
+
         return super(TimeWindowPartitionMapping, cls).__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
             end_offset=check.int_param(end_offset, "end_offset"),
+            allow_nonexistent_upstream_partitions=check.bool_param(
+                allow_nonexistent_upstream_partitions,
+                "allow_nonexistent_upstream_partitions",
+            ),
         )
 
     def get_upstream_partitions_for_partition_range(
@@ -117,7 +144,7 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
-            raise_on_non_existent_partition=True,
+            called_from_get_upstream=True,
             current_time=current_time,
         )
 
@@ -153,7 +180,7 @@ class TimeWindowPartitionMapping(
             upstream_partitions_subset,
             -self.start_offset,
             -self.end_offset,
-            raise_on_non_existent_partition=False,
+            called_from_get_upstream=False,
             current_time=current_time,
         )
 
@@ -164,7 +191,7 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
-        raise_on_non_existent_partition: bool,
+        called_from_get_upstream: bool,
         current_time: Optional[datetime] = None,
     ) -> TimeWindowPartitionsSubset:
         if (start_offset != 0 or end_offset != 0) and (
@@ -227,7 +254,6 @@ class TimeWindowPartitionMapping(
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
 
         filtered_time_windows = []
-
         for time_window in time_windows:
             if (
                 first_window
@@ -239,12 +265,15 @@ class TimeWindowPartitionMapping(
                 window_start = max(time_window.start, first_window.start)
                 filtered_time_windows.append(TimeWindow(window_start, window_end))
 
-        if raise_on_non_existent_partition:
-            if filtered_time_windows != time_windows:
-                raise DagsterInvalidInvocationError(
-                    f"Provided time windows {time_windows} contain invalid time windows for"
-                    f" partitions definition {to_partitions_def}"
-                )
+        if (
+            called_from_get_upstream
+            and filtered_time_windows != time_windows
+            and not self.allow_nonexistent_upstream_partitions
+        ):
+            raise DagsterInvalidInvocationError(
+                f"Provided time windows {time_windows} contain nonexistent time windows for"
+                f" partitions definition {to_partitions_def}"
+            )
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,

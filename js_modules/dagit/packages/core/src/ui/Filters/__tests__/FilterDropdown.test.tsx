@@ -63,8 +63,8 @@ describe('FilterDropdown', () => {
     await userEvent.type(searchInput, 'type');
     await waitFor(() => expect(screen.getByText('Type 1')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('Type 2')).toBeInTheDocument());
-    await waitFor(() => expect(mockFilters[0].getResults).toHaveBeenCalledWith('type'));
-    await waitFor(() => expect(mockFilters[1].getResults).toHaveBeenCalledWith('type'));
+    await waitFor(() => expect(mockFilters[0]!.getResults).toHaveBeenCalledWith('type'));
+    await waitFor(() => expect(mockFilters[1]!.getResults).toHaveBeenCalledWith('type'));
   });
 
   test('displays no results when no filters match', async () => {
@@ -165,7 +165,7 @@ describe('FilterDropdown Accessibility', () => {
     await userEvent.keyboard(enterKey);
 
     await waitFor(() => {
-      expect(mockFilters[1].onSelect).toHaveBeenCalled();
+      expect(mockFilters[1]!.onSelect).toHaveBeenCalled();
     });
   };
 

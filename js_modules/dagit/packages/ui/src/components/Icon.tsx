@@ -68,6 +68,7 @@ import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
+import infinity from '../icon-svgs/infinity.svg';
 import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
 import layers from '../icon-svgs/layers.svg';
@@ -246,6 +247,7 @@ export const Icons = {
   filter_alt,
   folder_open,
   forum,
+  infinity,
   info,
   history,
   history_toggle_off,

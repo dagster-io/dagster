@@ -78,10 +78,9 @@ const RemoveExtraConfigButton = ({
     // these in `knownKeyExtraPaths` just so we can display them with an extra description.
     if (parts.length === 2) {
       const [type, name] = parts;
-      if (!knownKeyExtraPaths[type]) {
-        knownKeyExtraPaths[type] = [];
-      }
-      knownKeyExtraPaths[type].push(name);
+      const target = knownKeyExtraPaths[type!] || [];
+      target.push(name!);
+      knownKeyExtraPaths[type!] = target;
     } else {
       otherPaths.push(path);
     }
@@ -383,13 +382,13 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
         return (
           <Tooltip
             position="bottom"
-            content={stateToHint[state].title}
-            intent={stateToHint[state].intent}
+            content={stateToHint[state]!.title}
+            intent={stateToHint[state]!.intent}
             key={item.name}
           >
             <Tag
               key={item.name}
-              intent={stateToHint[state].intent}
+              intent={stateToHint[state]!.intent}
               onClick={() => {
                 const first = pathErrors.find(isValidationError);
                 onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
@@ -685,5 +684,5 @@ function pathExistsInObject(path: string[], object: any): boolean {
     return true;
   }
   const [first, ...rest] = path;
-  return pathExistsInObject(rest, object[first]);
+  return pathExistsInObject(rest, object[first!]);
 }

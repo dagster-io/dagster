@@ -15,15 +15,15 @@ import {
 import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {DagsterTag} from '../RunTag';
-import {RunsFilterInputProps} from '../RunsFilterInput';
 import {
+  RunsFilterInputProps,
   RUN_TAG_KEYS_QUERY,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
   RunFilterToken,
   useTagDataFilterValues,
-} from '../RunsFilterInputNew';
+} from '../RunsFilterInput';
 import {
   buildRunTagValuesQueryMockedResponse,
   buildWorkspaceContextMockedResponse,

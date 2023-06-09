@@ -364,9 +364,9 @@ const LOGS: RunMetadataProviderMessageFragment[] = [
   },
 ];
 
-for (let ii = 0; ii < LOGS.length; ii++) {
-  LOGS[ii].timestamp = `${R2_START * 1000 + ii * 3000000}`;
-}
+LOGS.forEach((log, ii) => {
+  log.timestamp = `${R2_START * 1000 + ii * 3000000}`;
+});
 
 // eslint-disable-next-line import/no-default-export
 export default {

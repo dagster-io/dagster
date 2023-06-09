@@ -11,6 +11,7 @@ const AssetsGroupsGlobalGraphRoot = React.lazy(
 );
 const CodeLocationsPage = React.lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = React.lazy(() => import('../instance/InstanceConfig'));
+const InstanceConcurrencyPage = React.lazy(() => import('../instance/InstanceConcurrency'));
 const InstanceHealthPage = React.lazy(() => import('../instance/InstanceHealthPage'));
 const RunRoot = React.lazy(() => import('../runs/RunRoot'));
 const RunsRoot = React.lazy(() => import('../runs/RunsRoot'));
@@ -63,6 +64,11 @@ export const ContentRoot = React.memo(() => {
           <Route path="/health">
             <React.Suspense fallback={<div />}>
               <InstanceHealthPage />
+            </React.Suspense>
+          </Route>
+          <Route path="/concurrency">
+            <React.Suspense fallback={<div />}>
+              <InstanceConcurrencyPage />
             </React.Suspense>
           </Route>
           <Route path="/config">

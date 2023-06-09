@@ -14,7 +14,7 @@ export const SensorInfo: React.FC<Props> = ({daemonHealth, ...boxProps}) => {
     const sensorHealths = daemonHealth.allDaemonStatuses.filter(
       (daemon) => daemon.daemonType === 'SENSOR',
     );
-    if (sensorHealths) {
+    if (sensorHealths[0]) {
       const sensorHealth = sensorHealths[0];
       healthy = !!(sensorHealth.required && sensorHealth.healthy);
     }

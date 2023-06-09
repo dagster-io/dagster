@@ -51,7 +51,7 @@ export const toGraphQueryItems = (
   // Step 2: Create a graph node for each resolved step without any inputs or outputs.
   const nodeTable: {[key: string]: GraphQueryItem} = {};
   for (const step of plan.steps) {
-    const stepRuntimeKeys = keyExpansionMap[step.key] ? keyExpansionMap[step.key] : [step.key];
+    const stepRuntimeKeys = keyExpansionMap[step.key] || [step.key];
     for (const key of stepRuntimeKeys) {
       nodeTable[key] = {
         name: key,
@@ -64,12 +64,12 @@ export const toGraphQueryItems = (
   // Step 3: For each step in the original plan, visit each input and create inputs/outputs
   // in our Gantt Node result set.
   for (const step of plan.steps) {
-    const stepRuntimeKeys = keyExpansionMap[step.key] ? keyExpansionMap[step.key] : [step.key];
+    const stepRuntimeKeys = keyExpansionMap[step.key] || [step.key];
     for (const key of stepRuntimeKeys) {
       for (const input of step.inputs) {
         // Add the input to our node in the result set
         const nodeInput: GraphQueryItem['inputs'][0] = {dependsOn: []};
-        nodeTable[key].inputs.push(nodeInput);
+        nodeTable[key]!.inputs.push(nodeInput);
 
         // For each upstream step in the plan, map it to upstream nodes in the runtime graph
         // and attach inputs / outputs to our result graph.
@@ -94,10 +94,10 @@ export const toGraphQueryItems = (
               continue;
             }
             nodeInput.dependsOn.push({solid: {name: upstreamKey}});
-            let upstreamOutput: GraphQueryItem['outputs'][0] = nodeTable[upstreamKey].outputs[0];
+            let upstreamOutput: GraphQueryItem['outputs'][0] = nodeTable[upstreamKey]!.outputs[0]!;
             if (!upstreamOutput) {
               upstreamOutput = {dependedBy: []};
-              nodeTable[upstreamKey].outputs.push(upstreamOutput);
+              nodeTable[upstreamKey]!.outputs.push(upstreamOutput);
             }
             upstreamOutput.dependedBy.push({
               solid: {name: key},

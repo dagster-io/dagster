@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Optional, Sequence
 
 import sqlalchemy as db
 
@@ -11,6 +11,14 @@ def db_select(items: Iterable):
         return db.select(*items)
 
     return db.select(items)
+
+
+def db_case(items: Iterable, else_: Optional[Any] = None):
+    """Utility class that allows compatability between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
+    if not IS_SQLALCHEMY_VERSION_1:
+        return db.case(*items, else_=else_)
+
+    return db.case(items, else_=else_)
 
 
 def db_subquery(query, name: str = "subquery"):
@@ -27,3 +35,11 @@ def db_fetch_mappings(conn, query: Any) -> Sequence[Any]:
         return conn.execute(query).mappings().all()
 
     return conn.execute(query).fetchall()
+
+
+def db_scalar_subquery(query):
+    """Utility class that allows compatability between SqlAlchemy 1.3.x, 1.4.x, and 2.x."""
+    if not IS_SQLALCHEMY_VERSION_1:
+        return query.scalar_subquery()
+
+    return query.as_scalar()

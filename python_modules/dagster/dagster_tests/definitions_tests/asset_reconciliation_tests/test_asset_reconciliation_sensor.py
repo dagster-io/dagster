@@ -49,7 +49,7 @@ def test_reconciliation(scenario):
             key=lambda x: x.asset_key,
         ) == sorted(evaluations, key=lambda x: x.asset_key)
 
-    assert len(run_requests) == len(scenario.expected_run_requests)
+    assert len(run_requests) == len(scenario.expected_run_requests), run_requests
 
     def sort_run_request_key_fn(run_request):
         return (min(run_request.asset_selection), run_request.partition_key)

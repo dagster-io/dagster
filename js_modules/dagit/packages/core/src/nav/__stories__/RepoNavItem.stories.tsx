@@ -159,7 +159,7 @@ export const ManyRepos = () => {
   );
 };
 
-const ONE_REPO = [OPTIONS[0]];
+const ONE_REPO = [OPTIONS[0]!];
 
 export const OneRepo = () => {
   const [selected, setSelected] = React.useState<RepoSelectorOption[]>(ONE_REPO);

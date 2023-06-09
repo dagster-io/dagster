@@ -14,6 +14,7 @@ from dagster import (
     resource,
 )
 from dagster._annotations import deprecated
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
 
@@ -264,6 +265,10 @@ class AthenaClientResource(ResourceWithAthenaConfig):
 
     """
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> AthenaClient:
         """Returns an Athena client object."""
         client = boto3.client(
@@ -279,6 +284,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
         )
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=ResourceWithAthenaConfig.to_config_schema(),
     description="Resource for connecting to AWS Athena",
@@ -303,6 +309,7 @@ def athena_resource(context: InitResourceContext) -> AthenaClient:
     return AthenaClientResource.from_resource_context(context).get_client()
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=ResourceWithAthenaConfig.to_config_schema(),
     description="Fake resource for connecting to AWS Athena",

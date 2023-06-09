@@ -906,6 +906,21 @@ def test_launcher_run_resources(
     assert task.get("overrides").get("cpu") == "1024"
 
 
+def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job):
+    with instance_cm(
+        {
+            "run_ecs_tags": [{"key": "dagster/run_id", "value": "NOPE"}],
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        with pytest.raises(Exception, match="Cannot override system ECS tag: dagster/run_id"):
+            instance.launch_run(run.run_id, workspace)
+
+
 def test_launch_run_with_container_context(
     ecs,
     instance,
@@ -919,6 +934,12 @@ def test_launch_run_with_container_context(
     tasks = ecs.list_tasks()["taskArns"]
     task_arn = list(set(tasks).difference(existing_tasks))[0]
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert any(tag == {"key": "HAS_VALUE", "value": "SEE"} for tag in task["tags"])
+    assert any(tag == {"key": "DOES_NOT_HAVE_VALUE"} for tag in task["tags"])
+    assert any(
+        tag == {"key": "ABC", "value": "DEF"} for tag in task["tags"]
+    )  # from container context
 
     assert (
         task.get("overrides").get("memory")

@@ -51,7 +51,7 @@ export const GuessJobLocationRoot = () => {
   }
 
   if (reposWithMatch.length === 1) {
-    const match = reposWithMatch[0];
+    const match = reposWithMatch[0]!;
     const repoAddress = optionToRepoAddress(match);
     const isJob = isThisThingAJob(match, pipelineName);
     const to = workspacePathFromAddress(

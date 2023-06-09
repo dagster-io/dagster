@@ -102,6 +102,10 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def is_persistent(self) -> bool:
         return False
 
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
+
     def dispose(self):
         self._held_conn.close()
         self._engine.dispose()

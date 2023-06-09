@@ -22,7 +22,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(70);
       expect(batch.left).toBe(10);
@@ -42,7 +42,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(50);
       expect(batch.left).toBe(10);
@@ -64,7 +64,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(90);
       expect(batch.left).toBe(10);
@@ -87,7 +87,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(90);
       expect(batch.left).toBe(10);
@@ -108,7 +108,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(100);
       expect(batch.left).toBe(10);
@@ -128,7 +128,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(70);
       expect(batch.left).toBe(10);
@@ -152,7 +152,8 @@ describe('batchRunsForTimeline', () => {
       expect(batched.length).toBe(2);
 
       // Batch A contains the later run due to sorting.
-      const [batchB, batchA] = batched;
+      const batchB = batched[0]!;
+      const batchA = batched[1]!;
 
       expect(batchA.startTime).toBe(10);
       expect(batchA.endTime).toBe(30);
@@ -182,7 +183,9 @@ describe('batchRunsForTimeline', () => {
       expect(batched.length).toBe(3);
 
       // Sorting results in later runs being in the first batch.
-      const [batchC, batchB, batchA] = batched;
+      const batchC = batched[0]!;
+      const batchB = batched[1]!;
+      const batchA = batched[2]!;
 
       expect(batchA.startTime).toBe(10);
       expect(batchA.endTime).toBe(30);
@@ -209,7 +212,7 @@ describe('batchRunsForTimeline', () => {
       const tinyRun = {startTime: 10, endTime: 11};
       const batched = getBatch([tinyRun]);
 
-      const [batch] = batched;
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(11);
       expect(batch.left).toBe(10);
@@ -222,7 +225,7 @@ describe('batchRunsForTimeline', () => {
       const tinyRunB = {startTime: 10, endTime: 12};
       const batched = getBatch([tinyRunA, tinyRunB]);
 
-      const [batch] = batched;
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(12);
       expect(batch.left).toBe(10);
@@ -255,7 +258,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
-      const batch = batched[0];
+      const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(70);
       expect(batch.left).toBe(10);
@@ -277,7 +280,9 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(2);
-      const [batchB, batchA] = batched;
+
+      const batchB = batched[0]!;
+      const batchA = batched[1]!;
 
       expect(batchA.startTime).toBe(10);
       expect(batchA.endTime).toBe(40);

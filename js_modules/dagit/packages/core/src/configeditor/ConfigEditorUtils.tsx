@@ -133,7 +133,7 @@ export function responseToYamlValidationResult(
   const parsed = yaml.parse(configYaml);
   const topLevelKey = Object.keys(parsed);
   errors.forEach((error) => {
-    if (error.path.length === 0 && topLevelKey.length) {
+    if (error.path.length === 0 && topLevelKey[0]) {
       error.path = [topLevelKey[0]];
     }
   });

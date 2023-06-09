@@ -2,16 +2,59 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunsRootNewQueryVariables = Types.Exact<{
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  filter: Types.RunsFilter;
+export type ConcurrencyLimitFragment = {
+  __typename: 'ConcurrencyKeyInfo';
+  concurrencyKey: string;
+  slotCount: number;
+  activeRunIds: Array<string>;
+  activeSlotCount: number;
+};
+
+export type InstanceConcurrencyLimitsQueryVariables = Types.Exact<{[key: string]: never}>;
+
+export type InstanceConcurrencyLimitsQuery = {
+  __typename: 'DagitQuery';
+  instance: {
+    __typename: 'Instance';
+    id: string;
+    concurrencyLimits: Array<{
+      __typename: 'ConcurrencyKeyInfo';
+      concurrencyKey: string;
+      slotCount: number;
+      activeRunIds: Array<string>;
+      activeSlotCount: number;
+    }>;
+  };
+};
+
+export type SetConcurrencyLimitMutationVariables = Types.Exact<{
+  concurrencyKey: Types.Scalars['String'];
+  limit: Types.Scalars['Int'];
 }>;
 
-export type RunsRootNewQuery = {
+export type SetConcurrencyLimitMutation = {
+  __typename: 'DagitMutation';
+  setConcurrencyLimit: boolean;
+};
+
+export type FreeConcurrencySlotsForRunMutationVariables = Types.Exact<{
+  runId: Types.Scalars['String'];
+}>;
+
+export type FreeConcurrencySlotsForRunMutation = {
+  __typename: 'DagitMutation';
+  freeConcurrencySlotsForRun: boolean;
+};
+
+export type RunsForConcurrencyKeyQueryVariables = Types.Exact<{
+  filter?: Types.InputMaybe<Types.RunsFilter>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+}>;
+
+export type RunsForConcurrencyKeyQuery = {
   __typename: 'DagitQuery';
   pipelineRunsOrError:
-    | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
+    | {__typename: 'InvalidPipelineRunsFilterError'}
     | {
         __typename: 'PythonError';
         message: string;
@@ -52,25 +95,4 @@ export type RunsRootNewQuery = {
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       };
-};
-
-export type QueueDaemonStatusNewQueryVariables = Types.Exact<{[key: string]: never}>;
-
-export type QueueDaemonStatusNewQuery = {
-  __typename: 'DagitQuery';
-  instance: {
-    __typename: 'Instance';
-    id: string;
-    daemonHealth: {
-      __typename: 'DaemonHealth';
-      id: string;
-      daemonStatus: {
-        __typename: 'DaemonStatus';
-        id: string;
-        daemonType: string;
-        healthy: boolean | null;
-        required: boolean;
-      };
-    };
-  };
 };

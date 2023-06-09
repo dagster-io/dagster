@@ -57,7 +57,7 @@ export const AssetPartitions: React.FC<Props> = ({
   setParams,
   dataRefreshHint,
 }) => {
-  const [assetHealth] = usePartitionHealthData([assetKey], dataRefreshHint);
+  const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
     modifyQueryString: true,
@@ -83,7 +83,7 @@ export const AssetPartitions: React.FC<Props> = ({
     params,
     setParams,
     dimensionCount: selections.length,
-    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0],
+    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0]!,
   });
 
   // Get asset health on all dimensions, with the non-time dimensions scoped
@@ -97,9 +97,9 @@ export const AssetPartitions: React.FC<Props> = ({
       assetHealth.rangesForSingleDimension(
         idx,
         idx === 1 && focusedDimensionKeys[0]
-          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0].dimension)]
+          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
           : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-          ? selections[timeDimensionIdx].selectedRanges
+          ? selections[timeDimensionIdx]!.selectedRanges
           : undefined,
       ),
     );
@@ -116,13 +116,13 @@ export const AssetPartitions: React.FC<Props> = ({
     }
     // Special case: If you have cleared the time selection in the top bar, we
     // clear all dimension columns, (even though you still have a dimension 2 selection)
-    if (timeDimensionIdx !== -1 && selections[timeDimensionIdx].selectedRanges.length === 0) {
+    if (timeDimensionIdx !== -1 && selections[timeDimensionIdx]!.selectedRanges.length === 0) {
       return [];
     }
 
-    const {dimension, selectedRanges} = selections[idx];
+    const {dimension, selectedRanges} = selections[idx]!;
     const allKeys = dimension.partitionKeys;
-    const sort = selectionSorts[idx] || defaultSort(selections[idx].dimension.type);
+    const sort = selectionSorts[idx] || defaultSort(selections[idx]!.dimension.type);
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
@@ -133,7 +133,7 @@ export const AssetPartitions: React.FC<Props> = ({
     }
 
     const healthRangesInSelection = rangesClippedToSelection(
-      rangesForEachDimension[idx],
+      rangesForEachDimension[idx]!,
       selectedRanges,
     );
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
@@ -178,15 +178,15 @@ export const AssetPartitions: React.FC<Props> = ({
           border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
           <DimensionRangeWizard
-            partitionKeys={selections[timeDimensionIdx].dimension.partitionKeys}
-            health={{ranges: rangesForEachDimension[timeDimensionIdx]}}
-            selected={selections[timeDimensionIdx].selectedKeys}
+            partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
+            health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
+            selected={selections[timeDimensionIdx]!.selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
-            dimensionType={selections[timeDimensionIdx].dimension.type}
+            dimensionType={selections[timeDimensionIdx]!.dimension.type}
           />
         </Box>
       )}
@@ -239,7 +239,7 @@ export const AssetPartitions: React.FC<Props> = ({
                     if (copy[idx]) {
                       copy[idx] = copy[idx] === -1 ? 1 : -1;
                     } else {
-                      copy[idx] = (defaultSort(selections[idx].dimension.type) * -1) as -1 | 1;
+                      copy[idx] = (defaultSort(selections[idx]!.dimension.type) * -1) as -1 | 1;
                     }
                     return copy;
                   });
@@ -262,7 +262,7 @@ export const AssetPartitions: React.FC<Props> = ({
                   }
                   const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
                   return partitionStatusAtIndex(
-                    rangesForEachDimension[idx],
+                    rangesForEachDimension[idx]!,
                     dimensionKeyIdx,
                   ).filter((s) => statusFilters.includes(s));
                 }}

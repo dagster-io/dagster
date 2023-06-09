@@ -32,7 +32,7 @@ describe('toGraphQueryItems', () => {
       x: 16,
       y: 0,
     });
-    expect(result.boxes[0].children.length).toEqual(1);
+    expect(result.boxes[0]!.children.length).toEqual(1);
     expect(result.boxes[1]).toMatchObject({
       key: 'depends_on_yesterday',
       root: false,

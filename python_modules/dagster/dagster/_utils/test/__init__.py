@@ -12,6 +12,8 @@ from dagster import (
     NodeInvocation,
     _check as check,
 )
+from dagster._config import Field, StringSource
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions import (
     GraphDefinition,
     InputMapping,
@@ -37,8 +39,12 @@ from dagster._core.execution.execute_in_process_result import ExecuteInProcessRe
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.sqlite_storage import SqliteStorageConfig
 from dagster._core.utility_ops import create_stub_op
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
+from dagster._utils.concurrency import ConcurrencyClaimStatus
 
 # re-export
 from ..temp_file import (
@@ -276,3 +282,53 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
 
     def wipe(self, instance: DagsterInstance) -> None:
         pass
+
+
+class TestStorageConfig(SqliteStorageConfig):
+    # interval to sleep between claim checks
+    sleep_interval: int
+
+
+class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, ConfigurableClass):
+    """Sqlite is sorta supported for concurrency, as long as the rate of concurrent writes is tolerably
+    low.  Officially, we should not support, but in the spirit of getting code coverage in the core
+    dagster package, let's mark it as that.
+    """
+
+    __test__ = False
+
+    def __init__(
+        self,
+        base_dir: str,
+        sleep_interval: Optional[float] = None,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
+        self._sleep_interval = sleep_interval
+        self._check_calls = defaultdict(int)
+        super().__init__(base_dir, inst_data)
+
+    @classmethod
+    def config_type(cls) -> UserConfigSchema:
+        return {"base_dir": StringSource, "sleep_interval": Field(float, is_required=False)}
+
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value: TestStorageConfig
+    ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
+        return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return True
+
+    def get_check_calls(self, step_key: str) -> int:
+        return self._check_calls[step_key]
+
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        self._check_calls[step_key] += 1
+        claim_status = super().check_concurrency_claim(concurrency_key, run_id, step_key)
+        if not self._sleep_interval:
+            return claim_status
+        return claim_status.with_sleep_interval(float(self._sleep_interval))

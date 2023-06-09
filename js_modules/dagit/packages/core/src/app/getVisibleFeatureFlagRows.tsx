@@ -21,15 +21,11 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
   {
-    key: 'Experimental runs table view with filtering',
-    flagType: FeatureFlag.flagRunsTableFiltering,
-  },
-  {
-    key: 'Experimental overview assets tab',
-    flagType: FeatureFlag.flagOverviewAssetsTab,
-  },
-  {
     key: 'Automatically load default config in launchpad',
     flagType: FeatureFlag.flagAutoLoadDefaults,
+  },
+  {
+    key: 'Experimental instance-level concurrency limits',
+    flagType: FeatureFlag.flagInstanceConcurrencyLimits,
   },
 ];

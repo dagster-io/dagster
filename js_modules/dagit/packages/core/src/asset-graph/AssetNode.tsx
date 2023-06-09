@@ -46,7 +46,7 @@ export const AssetNode: React.FC<{
   liveData?: LiveDataForNode;
   selected: boolean;
 }> = React.memo(({definition, selected, liveData}) => {
-  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
   const isSource = definition.isSource;
 
   return (
@@ -442,7 +442,7 @@ export const AssetNodeMinimal: React.FC<{
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
-  const displayName = assetKey.path[assetKey.path.length - 1];
+  const displayName = assetKey.path[assetKey.path.length - 1]!;
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>

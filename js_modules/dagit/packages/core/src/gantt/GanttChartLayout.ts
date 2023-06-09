@@ -73,14 +73,16 @@ export const buildLayout = (params: BuildLayoutParams) => {
   boxes.forEach((box, idx) => {
     box.y = idx;
     box.children.forEach((child) => {
-      parents[child.node.name] = parents[child.node.name] || [];
-      parents[child.node.name].push(box);
+      const target = parents[child.node.name] || [];
+      target.push(box);
+      parents[child.node.name] = target;
     });
   });
 
   boxes.forEach((box) => {
-    boxesByY[`${box.y}`] = boxesByY[`${box.y}`] || [];
-    boxesByY[`${box.y}`].push(box);
+    const target = boxesByY[`${box.y}`] || [];
+    target.push(box);
+    boxesByY[`${box.y}`] = target;
   });
 
   // Next, start at the bottom of the viz and "collapse" boxes up on to the previous line
@@ -92,8 +94,8 @@ export const buildLayout = (params: BuildLayoutParams) => {
   let changed = true;
   while (changed) {
     changed = false;
-    for (let idx = boxes.length - 1; idx > 0; idx--) {
-      const box = boxes[idx];
+    const boxesReversed = [...boxes].reverse();
+    for (const box of boxesReversed) {
       const boxParents = parents[box.node.name] || [];
       const highestYParent = boxParents.sort((a, b) => b.y - a.y)[0];
       if (!highestYParent) {
@@ -104,7 +106,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
         continue;
       }
-      const onTargetY = boxesByY[`${highestYParent.y}`];
+      const onTargetY = boxesByY[`${highestYParent.y}`]!;
       const taken = onTargetY.find((r) => r.x === box.x);
       if (taken) {
         continue;
@@ -119,9 +121,9 @@ export const buildLayout = (params: BuildLayoutParams) => {
         continue;
       }
 
-      boxesByY[`${box.y}`] = boxesByY[`${box.y}`].filter((b) => b !== box);
+      boxesByY[`${box.y}`] = boxesByY[`${box.y}`]!.filter((b) => b !== box);
       box.y = highestYParent.y;
-      boxesByY[`${box.y}`].push(box);
+      boxesByY[`${box.y}`]!.push(box);
 
       changed = true;
       break;
@@ -134,11 +136,13 @@ export const buildLayout = (params: BuildLayoutParams) => {
     // resulting tree rather than placed randomly before their mutual dependents.
     let bottomY = 0;
     for (const y of Object.keys(boxesByY)) {
-      const row = boxesByY[y];
+      const row = boxesByY[y]!;
       if (!row.length) {
         continue;
       }
-      let x = row[0].root ? LEFT_INSET : parents[row[0].node.name][0].x + FLAT_INSET_FROM_PARENT;
+      let x = row[0]!.root
+        ? LEFT_INSET
+        : parents[row[0]!.node.name]![0]!.x + FLAT_INSET_FROM_PARENT;
       for (const box of row) {
         box.x = x;
         box.y = bottomY;
@@ -233,7 +237,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
         boxes.push(depBox);
         added.push(depBox);
       } else {
-        depBox = boxes[depBoxIdx];
+        depBox = boxes[depBoxIdx]!;
         ensureSubtreeAfterParentInArray(boxes, box, depBox);
       }
 
@@ -311,9 +315,10 @@ const cloneLayout = ({boxes, markers}: GanttChartLayout): GanttChartLayout => {
     nextBoxes.push(next);
     map.set(box, next);
   }
-  for (let ii = 0; ii < boxes.length; ii++) {
-    nextBoxes[ii].children = boxes[ii].children.map((c) => map.get(c));
-  }
+
+  boxes.forEach((box, ii) => {
+    nextBoxes[ii]!.children = box.children.map((c) => map.get(c));
+  });
 
   return {boxes: nextBoxes, markers: nextMarkers};
 };
@@ -330,7 +335,7 @@ const positionAndSplitBoxes = (
   // Apply X values + widths to boxes, and break apart retries into their own boxes by looking
   // at the transitions recorded for each step.
   for (let ii = boxes.length - 1; ii >= 0; ii--) {
-    const box = boxes[ii];
+    const box = boxes[ii]!;
     const meta = metadata.steps[box.node.name];
     if (!meta) {
       Object.assign(box, positionFor(box));
@@ -353,10 +358,10 @@ const positionAndSplitBoxes = (
     });
 
     // Move the children (used to draw outbound lines) to the last box
-    for (let ii = 0; ii < runBoxes.length - 1; ii++) {
-      runBoxes[ii].children = [runBoxes[ii + 1]];
+    for (let jj = 0; jj < runBoxes.length - 1; jj++) {
+      runBoxes[jj]!.children = [runBoxes[jj + 1]!];
     }
-    runBoxes[runBoxes.length - 1].children = box.children;
+    runBoxes[runBoxes.length - 1]!.children = box.children;
 
     Object.assign(box, runBoxes[0]);
     // Add additional boxes we created for retries
@@ -490,7 +495,7 @@ export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GanttC
   const results: {name: string; value: string}[] = [];
 
   const errorsQuery = Object.keys(metadata.steps)
-    .filter((k) => metadata.steps[k].state === IStepState.FAILED)
+    .filter((k) => metadata.steps[k]!.state === IStepState.FAILED)
     .map((k) => `+${k}`)
     .join(', ');
   if (errorsQuery) {

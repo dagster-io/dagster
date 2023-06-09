@@ -102,7 +102,8 @@ scenarios = {
         non_partitioned_after_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
     ),
     "partitioned_after_non_partitioned": scenario(
-        partitioned_after_non_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+        partitioned_after_non_partitioned,
+        create_pendulum_time(year=2020, month=1, day=7, hour=4),
     ),
     "unpartitioned_after_dynamic_asset": scenario(unpartitioned_after_dynamic_asset),
     "two_dynamic_assets": scenario(two_dynamic_assets),

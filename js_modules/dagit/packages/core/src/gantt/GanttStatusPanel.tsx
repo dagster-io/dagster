@@ -43,7 +43,7 @@ export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
     const succeeded = [];
     const notExecuted = [];
     for (const key of keys) {
-      const state = metadata.steps[key].state;
+      const state = metadata.steps[key]!.state;
       switch (state) {
         case IStepState.PREPARING:
           preparing.push(key);

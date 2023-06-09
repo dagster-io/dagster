@@ -95,7 +95,7 @@ observable_source_asset_scenarios = {
         + [
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-02:00")
             )
         ]
         + [
@@ -109,11 +109,8 @@ observable_source_asset_scenarios = {
             )
         ],
         expected_run_requests=[
-            # only execute the non-updated ones
-            run_request(asset_keys=["asset1"], partition_key=partition_key)
-            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-18:00", end="2013-01-07-03:00")
-            )
+            # only execute the missing one
+            run_request(asset_keys=["asset1"], partition_key="2013-01-07-03:00")
         ],
     ),
     "multiple_observable": AssetReconciliationScenario(

@@ -80,7 +80,7 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -252,7 +252,7 @@ daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -290,7 +290,7 @@ from dagster import Definitions, asset
 @asset(io_manager_key="warehouse_io_manager")
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
@@ -397,10 +397,10 @@ def iris_dataset(context) -> DataFrame:
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = "https://docs.dagster.io/assets/iris.csv"
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(
@@ -449,10 +449,10 @@ def iris_dataset() -> DataFrame:
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = "https://docs.dagster.io/assets/iris.csv"
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(

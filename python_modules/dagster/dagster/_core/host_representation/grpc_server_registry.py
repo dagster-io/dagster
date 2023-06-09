@@ -148,6 +148,12 @@ class GrpcServerRegistry(AbstractContextManager):
     def supports_reload(self) -> bool:
         return True
 
+    def clear_all_grpc_endpoints(self):
+        # Free the map entry for all origins so that subsequent calls to _get_grpc_endpoint wil
+        # create a new process
+        with self._lock:
+            self._active_entries.clear()
+
     def reload_grpc_endpoint(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:

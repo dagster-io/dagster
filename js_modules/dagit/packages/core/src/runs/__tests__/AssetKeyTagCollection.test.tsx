@@ -15,7 +15,7 @@ describe('AssetKeyTagCollection', () => {
   it('renders individual tags if <= 3', async () => {
     render(
       <MemoryRouter>
-        <AssetKeyTagCollection assetKeys={makeKeys(3)} clickableTags />
+        <AssetKeyTagCollection assetKeys={makeKeys(3)} useTags />
       </MemoryRouter>,
     );
 
@@ -30,7 +30,7 @@ describe('AssetKeyTagCollection', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <AssetKeyTagCollection assetKeys={makeKeys(5)} clickableTags />
+          <AssetKeyTagCollection assetKeys={makeKeys(5)} useTags />
         </MemoryRouter>,
       );
     });

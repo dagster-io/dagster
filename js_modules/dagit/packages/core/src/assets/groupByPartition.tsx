@@ -13,7 +13,7 @@ type Event = AssetMaterializationFragment | AssetObservationFragment;
 export type AssetEventGroup = {
   latest: Event | null;
   all: Event[];
-  timestamp: string;
+  timestamp?: string;
   partition?: string;
 };
 

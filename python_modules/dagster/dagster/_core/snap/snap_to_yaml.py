@@ -25,8 +25,10 @@ def default_values_from_type_snap(type_snap: ConfigTypeSnap, snapshot: ConfigSch
     snap, recursively assembling a default if the type snap does not have a default value
     explicitly set.
     """
-    defaults_by_field = {}
+    if not type_snap.fields:
+        return {}
 
+    defaults_by_field = {}
     for field_name in type_snap.field_names:
         field = type_snap.get_field(field_name)
 

@@ -141,7 +141,7 @@ const buildSuggestions = (
       : [];
 
   // No need to show a match if our string exactly matches the one suggestion.
-  if (matching.length === 1 && matching[0].name.toLowerCase() === lastElementLower) {
+  if (matching.length === 1 && matching[0]!.name.toLowerCase() === lastElementLower) {
     return [];
   }
 
@@ -167,7 +167,7 @@ export const GraphQueryInput = React.memo(
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(
-      () => buildSuggestions(lastElementName, props.items, suffix),
+      () => buildSuggestions(lastElementName!, props.items, suffix!),
       [lastElementName, props.items, suffix],
     );
 
@@ -190,7 +190,7 @@ export const GraphQueryInput = React.memo(
       if (!suggestions[nextIdx]) {
         return;
       }
-      const nextText = suggestions[nextIdx].name;
+      const nextText = suggestions[nextIdx]!.name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {
         setActive({text: nextText, idx: nextIdx});
@@ -224,7 +224,7 @@ export const GraphQueryInput = React.memo(
         e.preventDefault();
         let idx = (active ? active.idx : -1) + shift;
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
-        setActive({text: suggestions[idx].name, idx});
+        setActive({text: suggestions[idx]!.name, idx});
       }
 
       props.onKeyDown?.(e);

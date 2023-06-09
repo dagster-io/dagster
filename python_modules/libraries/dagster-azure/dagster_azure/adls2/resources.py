@@ -11,6 +11,7 @@ from dagster import (
     StringSource,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -72,6 +73,10 @@ class ADLS2Resource(ADLS2BaseResource):
     of each.
     """
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     @property
     @cached_method
     def _raw_credential(self) -> Any:
@@ -100,6 +105,7 @@ class ADLS2Resource(ADLS2BaseResource):
 # Due to a limitation of the discriminated union type, we can't directly mirror these old
 # config fields in the new resource config. Instead, we'll just use the old config fields
 # to construct the new config and then use that to construct the resource.
+@dagster_maintained_resource
 @resource(ADLS2_CLIENT_CONFIG)
 def adls2_resource(context):
     """Resource that gives ops access to Azure Data Lake Storage Gen2.
@@ -153,6 +159,7 @@ def adls2_resource(context):
     return _adls2_resource_from_config(context.resource_config)
 
 
+@dagster_maintained_resource
 @resource(
     merge_dicts(
         ADLS2_CLIENT_CONFIG,

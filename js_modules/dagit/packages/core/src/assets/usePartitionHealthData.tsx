@@ -92,9 +92,9 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   const isRangeDataInverted =
     __dims.length === 2 &&
     assetPartitionStatuses.__typename === 'MultiPartitionStatuses' &&
-    assetPartitionStatuses.primaryDimensionName !== __dims[0].name;
+    assetPartitionStatuses.primaryDimensionName !== __dims[0]!.name;
 
-  const dimensions = isRangeDataInverted ? [__dims[1], __dims[0]] : __dims;
+  const dimensions = isRangeDataInverted ? [__dims[1]!, __dims[0]!] : __dims;
   const ranges = addKeyIndexesToMaterializedRanges(dimensions, assetPartitionStatuses);
   const stateForKey = (dimensionKeys: string[]): AssetPartitionStatus => {
     return stateForKeyWithRangeOrdering(
@@ -112,19 +112,19 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return AssetPartitionStatus.MISSING;
     }
 
-    const dIndexes = dimensionKeys.map((key, idx) => dimensions[idx].partitionKeys.indexOf(key));
-    const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0] && r.end.idx >= dIndexes[0]);
+    const dIndexes = dimensionKeys.map((key, idx) => dimensions[idx]!.partitionKeys.indexOf(key));
+    const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0]! && r.end.idx >= dIndexes[0]!);
 
     if (!d0Range) {
       return AssetPartitionStatus.MISSING;
     }
     if (!d0Range.subranges || dIndexes.length === 1) {
-      return d0Range.value[0]; // 1D case
+      return d0Range.value[0]!; // 1D case
     }
     const d1Range = d0Range.subranges.find(
-      (r) => r.start.idx <= dIndexes[1] && r.end.idx >= dIndexes[1],
+      (r) => r.start.idx <= dIndexes[1]! && r.end.idx >= dIndexes[1]!,
     );
-    return d1Range ? d1Range.value[0] : AssetPartitionStatus.MISSING;
+    return d1Range ? d1Range.value[0]! : AssetPartitionStatus.MISSING;
   };
 
   const rangesForSingleDimension = (
@@ -167,10 +167,10 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return removeSubrangesAndJoin(clipped);
     } else {
       const [d0, d1] = dimensions;
-      const allKeys = d1.partitionKeys;
+      const allKeys = d1!.partitionKeys;
       const d0KeyCount = otherDimensionSelectedRanges
         ? keyCountInRanges(otherDimensionSelectedRanges)
-        : d0.partitionKeys.length;
+        : d0!.partitionKeys.length;
       if (d0KeyCount === 0) {
         return [];
       }
@@ -342,11 +342,11 @@ export function keyCountByStateInSelection(
 
   const rangesInSelection = rangesClippedToSelection(
     assetHealth?.ranges || [],
-    selections[0].selectedRanges,
+    selections[0]!.selectedRanges,
   );
 
   const secondDimensionKeyCount =
-    selections.length > 1 ? keyCountInRanges(selections[1].selectedRanges) : 1;
+    selections.length > 1 ? keyCountInRanges(selections[1]!.selectedRanges) : 1;
 
   const sumWithStatus = (status: AssetPartitionStatus) => {
     return rangesInSelection.reduce(
@@ -355,7 +355,7 @@ export function keyCountByStateInSelection(
         (b.end.idx - b.start.idx + 1) *
           (b.subranges
             ? keyCountInRanges(
-                rangesClippedToSelection(b.subranges, selections[1].selectedRanges).filter((b) =>
+                rangesClippedToSelection(b.subranges, selections[1]!.selectedRanges).filter((b) =>
                   b.value.includes(status),
                 ),
               )
@@ -398,7 +398,7 @@ function addKeyIndexesToMaterializedRanges(
     return result;
   }
   if (partitions.__typename === 'DefaultPartitionStatuses') {
-    const dim = dimensions[0];
+    const dim = dimensions[0]!;
     const spans = assembleIntoSpans(dim.partitionKeys, (key) =>
       partitions.materializedPartitions.includes(key)
         ? AssetPartitionStatus.MATERIALIZED
@@ -421,8 +421,8 @@ function addKeyIndexesToMaterializedRanges(
   for (const range of partitions.ranges) {
     if (range.__typename === 'TimePartitionRangeStatus') {
       result.push({
-        start: {key: range.startKey, idx: dimensions[0].partitionKeys.indexOf(range.startKey)},
-        end: {key: range.endKey, idx: dimensions[0].partitionKeys.indexOf(range.endKey)},
+        start: {key: range.startKey, idx: dimensions[0]!.partitionKeys.indexOf(range.startKey)},
+        end: {key: range.endKey, idx: dimensions[0]!.partitionKeys.indexOf(range.endKey)},
         value: [rangeStatusToState(range.status)],
       });
     } else if (range.__typename === 'MaterializedPartitionRangeStatuses2D') {
@@ -431,8 +431,8 @@ function addKeyIndexesToMaterializedRanges(
         return result;
       }
       const [dim0, dim1] = dimensions;
-      const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1], range.secondaryDim);
-      const value = partitionStatusGivenRanges(subranges, dim1.partitionKeys.length);
+      const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1!], range.secondaryDim);
+      const value = partitionStatusGivenRanges(subranges, dim1!.partitionKeys.length);
       if (isEqual(value, [AssetPartitionStatus.MISSING])) {
         continue; // should not happen, just for Typescript correctness
       }
@@ -441,11 +441,11 @@ function addKeyIndexesToMaterializedRanges(
         subranges,
         start: {
           key: range.primaryDimStartKey,
-          idx: dim0.partitionKeys.indexOf(range.primaryDimStartKey),
+          idx: dim0!.partitionKeys.indexOf(range.primaryDimStartKey),
         },
         end: {
           key: range.primaryDimEndKey,
-          idx: dim0.partitionKeys.indexOf(range.primaryDimEndKey),
+          idx: dim0!.partitionKeys.indexOf(range.primaryDimEndKey),
         },
       });
     } else {
@@ -465,8 +465,8 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   if (keys.length === allKeys.length) {
     return [
       {
-        start: {key: allKeys[0], idx: 0},
-        end: {key: allKeys[allKeys.length - 1], idx: allKeys.length - 1},
+        start: {key: allKeys[0]!, idx: 0},
+        end: {key: allKeys[allKeys.length - 1]!, idx: allKeys.length - 1},
         value: [AssetPartitionStatus.MATERIALIZED],
       },
     ];
@@ -480,12 +480,12 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   const ranges: Range[] = [];
 
   for (const idx of keysIdxs) {
-    if (ranges.length && idx === ranges[ranges.length - 1].end.idx + 1) {
-      ranges[ranges.length - 1].end = {idx, key: allKeys[idx]};
+    if (ranges.length && idx === ranges[ranges.length - 1]!.end.idx + 1) {
+      ranges[ranges.length - 1]!.end = {idx, key: allKeys[idx]!};
     } else {
       ranges.push({
-        start: {idx, key: allKeys[idx]},
-        end: {idx, key: allKeys[idx]},
+        start: {idx, key: allKeys[idx]!},
+        end: {idx, key: allKeys[idx]!},
         value: [AssetPartitionStatus.MATERIALIZED],
       });
     }

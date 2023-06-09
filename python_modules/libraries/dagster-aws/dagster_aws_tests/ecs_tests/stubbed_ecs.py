@@ -424,6 +424,9 @@ class StubbedEcs:
                         "capacityProvider"
                     ]
 
+                if tags:
+                    task["tags"] = tags
+
                 if vpc_configuration:
                     for subnet_name in vpc_configuration["subnets"]:
                         ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)

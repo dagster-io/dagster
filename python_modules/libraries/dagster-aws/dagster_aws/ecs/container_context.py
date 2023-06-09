@@ -53,6 +53,16 @@ SHARED_ECS_SCHEMA = {
             }
         )
     ),
+    "run_ecs_tags": Field(
+        Array(
+            {
+                "key": Field(StringSource, is_required=True),
+                "value": Field(StringSource, is_required=False),
+            }
+        ),
+        is_required=False,
+        description="Additional tags to apply to the launched ECS task.",
+    ),
 }
 
 SHARED_TASK_DEFINITION_FIELDS = {
@@ -175,6 +185,16 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
         is_required=False,
         description="Additional sidecar containers to include in code server task definitions.",
     ),
+    "server_ecs_tags": Field(
+        Array(
+            {
+                "key": Field(StringSource, is_required=True),
+                "value": Field(StringSource, is_required=False),
+            }
+        ),
+        is_required=False,
+        description="Additional tags to apply to the launched ECS task for a code server.",
+    ),
     "run_sidecar_containers": Field(
         Array(Permissive({})),
         is_required=False,
@@ -203,6 +223,8 @@ class EcsContainerContext(
             ("volumes", Sequence[Mapping[str, Any]]),
             ("server_sidecar_containers", Sequence[Mapping[str, Any]]),
             ("run_sidecar_containers", Sequence[Mapping[str, Any]]),
+            ("server_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
+            ("run_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
         ],
     )
 ):
@@ -224,6 +246,8 @@ class EcsContainerContext(
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
         server_sidecar_containers: Optional[Sequence[Mapping[str, Any]]] = None,
         run_sidecar_containers: Optional[Sequence[Mapping[str, Any]]] = None,
+        server_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
+        run_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -247,6 +271,8 @@ class EcsContainerContext(
             run_sidecar_containers=check.opt_sequence_param(
                 run_sidecar_containers, "run_sidecar_containers"
             ),
+            server_ecs_tags=check.opt_sequence_param(server_ecs_tags, "server_ecs_tags"),
+            run_ecs_tags=check.opt_sequence_param(run_ecs_tags, "run_tags"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -268,6 +294,8 @@ class EcsContainerContext(
                 *self.server_sidecar_containers,
             ],
             run_sidecar_containers=[*other.run_sidecar_containers, *self.run_sidecar_containers],
+            server_ecs_tags=[*other.server_ecs_tags, *self.server_ecs_tags],
+            run_ecs_tags=[*other.run_ecs_tags, *self.run_ecs_tags],
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -297,6 +325,7 @@ class EcsContainerContext(
                     mount_points=run_launcher.mount_points,
                     volumes=run_launcher.volumes,
                     run_sidecar_containers=run_launcher.run_sidecar_containers,
+                    run_ecs_tags=run_launcher.run_ecs_tags,
                 )
             )
 
@@ -356,5 +385,7 @@ class EcsContainerContext(
                 volumes=processed_context_value.get("volumes"),
                 server_sidecar_containers=processed_context_value.get("server_sidecar_containers"),
                 run_sidecar_containers=processed_context_value.get("run_sidecar_containers"),
+                server_ecs_tags=processed_context_value.get("server_ecs_tags"),
+                run_ecs_tags=processed_context_value.get("run_ecs_tags"),
             )
         )

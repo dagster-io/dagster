@@ -181,7 +181,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
   React.useEffect(() => {
     // If the user has typed in a search that brings us to a single result, autoselect it
     if (filtered.length === 1 && (!selected || filtered[0] !== selected)) {
-      onClickOp(filtered[0].definition.name);
+      onClickOp(filtered[0]!.definition.name);
     }
 
     // If the user has clicked a type, translate it into a search
@@ -296,7 +296,7 @@ const OpList: React.FC<OpListProps> = (props) => {
         scrollToIndex={selectedIndex}
         className="solids-list"
         rowRenderer={({parent, index, key, style}: any) => {
-          const solid = props.items[index];
+          const solid = props.items[index]!;
           return (
             <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
               <OpListItem

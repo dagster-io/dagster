@@ -2,8 +2,8 @@ import {MockedProvider} from '@apollo/client/testing';
 import {Box, ButtonGroup, Checkbox, JoinedButtons} from '@dagster-io/ui';
 import React from 'react';
 
-import {AutoMaterializePolicyType} from '../../graphql/types';
-import {AssetAutomaterializePolicyPage} from '../AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+import {AutoMaterializePolicyType} from '../../../graphql/types';
+import {AssetAutomaterializePolicyPage} from '../AssetAutomaterializePolicyPage';
 import {Evaluations, Policies} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
 
 // eslint-disable-next-line import/no-default-export

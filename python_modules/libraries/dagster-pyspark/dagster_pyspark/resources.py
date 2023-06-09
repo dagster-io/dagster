@@ -2,6 +2,7 @@ from typing import Any, Dict
 
 import dagster._check as check
 from dagster import ConfigurableResource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
@@ -47,6 +48,10 @@ class PySparkResource(ConfigurableResource):
     spark_config: Dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._spark_session = spark_session_from_config(self.spark_config)
 
@@ -59,6 +64,7 @@ class PySparkResource(ConfigurableResource):
         return self.spark_session.sparkContext
 
 
+@dagster_maintained_resource
 @resource({"spark_conf": spark_config()})
 def pyspark_resource(init_context) -> PySparkResource:
     """This resource provides access to a PySpark SparkSession for executing PySpark code within Dagster.
@@ -115,6 +121,10 @@ class LazyPySparkResource(ConfigurableResource):
     spark_config: Dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def _init_session(self) -> None:
         if self._spark_session is None:
             self._spark_session = spark_session_from_config(self.spark_config)
@@ -130,6 +140,7 @@ class LazyPySparkResource(ConfigurableResource):
         return self._spark_session.sparkContext
 
 
+@dagster_maintained_resource
 @resource({"spark_conf": spark_config()})
 def lazy_pyspark_resource(init_context: InitResourceContext) -> LazyPySparkResource:
     """This resource provides access to a lazily-created  PySpark SparkSession for executing PySpark

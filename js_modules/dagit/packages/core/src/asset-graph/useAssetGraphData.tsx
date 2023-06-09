@@ -127,19 +127,19 @@ const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: AssetNode[]) 
   const notSourceAsset = (id: string) => !!allNodesById[id];
 
   for (const node of Object.keys(graphData.upstream)) {
-    for (const edge of Object.keys(graphData.upstream[node])) {
+    for (const edge of Object.keys(graphData.upstream[node]!)) {
       if (!graphData.nodes[edge] && notSourceAsset(node)) {
-        delete graphData.upstream[node][edge];
-        delete graphData.downstream[edge][node];
+        delete graphData.upstream[node]![edge];
+        delete graphData.downstream[edge]![node];
       }
     }
   }
 
   for (const node of Object.keys(graphData.downstream)) {
-    for (const edge of Object.keys(graphData.downstream[node])) {
+    for (const edge of Object.keys(graphData.downstream[node]!)) {
       if (!graphData.nodes[edge] && notSourceAsset(node)) {
-        delete graphData.upstream[edge][node];
-        delete graphData.downstream[node][edge];
+        delete graphData.upstream[edge]![node];
+        delete graphData.downstream[node]![edge];
       }
     }
   }
@@ -153,16 +153,16 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
   }
 
   const dfsUpstream = (name: string, depth: number): number => {
-    const next = map[name].inputs
-      .flatMap((i) => i.dependsOn.map((d) => d.solid.name))
-      .filter((dname) => dname !== name);
+    const next = map[name]!.inputs.flatMap((i) => i.dependsOn.map((d) => d.solid.name)).filter(
+      (dname) => dname !== name,
+    );
 
     return Math.max(depth, ...next.map((dname) => dfsUpstream(dname, depth + 1)));
   };
   const dfsDownstream = (name: string, depth: number): number => {
-    const next = map[name].outputs
-      .flatMap((i) => i.dependedBy.map((d) => d.solid.name))
-      .filter((dname) => dname !== name);
+    const next = map[name]!.outputs.flatMap((i) => i.dependedBy.map((d) => d.solid.name)).filter(
+      (dname) => dname !== name,
+    );
 
     return Math.max(depth, ...next.map((dname) => dfsDownstream(dname, depth + 1)));
   };

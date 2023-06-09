@@ -23,7 +23,16 @@ def test_dbt_cli(global_config: List[str], command: str) -> None:
     list(dbt_cli_task.stream())
 
     assert dbt_cli_task.process.args == ["dbt", *global_config, command]
+    assert dbt_cli_task.is_successful()
     assert dbt_cli_task.process.returncode == 0
+
+
+def test_dbt_cli_failure() -> None:
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt_cli_task = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
+
+    assert not dbt_cli_task.is_successful()
+    assert dbt_cli_task.process.returncode == 2
 
 
 def test_dbt_cli_get_artifact() -> None:

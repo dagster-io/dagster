@@ -65,11 +65,14 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
     repo.usedSolids.forEach((s) => {
       if (s.definition.__typename === 'CompositeSolidDefinition') {
-        items.push({
-          name: s.definition.name,
-          path: `/graphs/${s.invocations[0].pipeline.name}/${s.invocations[0].solidHandle.handleID}/`,
-          description: s.definition.description,
-        });
+        const invocation = s.invocations[0];
+        if (invocation) {
+          items.push({
+            name: s.definition.name,
+            path: `/graphs/${invocation.pipeline.name}/${invocation.solidHandle.handleID}/`,
+            description: s.definition.description,
+          });
+        }
       }
     });
 

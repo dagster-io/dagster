@@ -1,3 +1,7 @@
+from typing import Optional
+
+import pendulum
+
 import dagster._check as check
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
@@ -14,6 +18,8 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 
+EVALUATIONS_TTL_DAYS = 7
+
 
 def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
     return (
@@ -27,6 +33,19 @@ def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
 def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
     instance.daemon_cursor_storage.set_cursor_values(
         {ASSET_DAEMON_PAUSED_KEY: "true" if paused else "false"}
+    )
+
+
+def _get_raw_cursor(instance: DagsterInstance) -> Optional[str]:
+    return instance.daemon_cursor_storage.get_cursor_values({CURSOR_KEY}).get(CURSOR_KEY)
+
+
+def get_current_evaluation_id(instance: DagsterInstance) -> Optional[int]:
+    raw_cursor = _get_raw_cursor(instance)
+    return (
+        AssetReconciliationCursor.get_evaluation_id_from_serialized(raw_cursor)
+        if raw_cursor
+        else None
     )
 
 
@@ -71,10 +90,7 @@ class AssetDaemon(IntervalDaemon):
             yield
             return
 
-        persisted_info = instance.daemon_cursor_storage.get_cursor_values(
-            {CURSOR_KEY, ASSET_DAEMON_PAUSED_KEY}
-        )
-        raw_cursor = persisted_info.get(CURSOR_KEY)
+        raw_cursor = _get_raw_cursor(instance)
         cursor = (
             AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
@@ -157,5 +173,8 @@ class AssetDaemon(IntervalDaemon):
         # so that if the daemon crashes and doesn't update the cursor we don't try to write duplicates.
         if schedule_storage.supports_auto_materialize_asset_evaluations:
             schedule_storage.add_auto_materialize_asset_evaluations(
-                check.not_none(new_cursor.evaluation_id), evaluations
+                new_cursor.evaluation_id, evaluations
+            )
+            schedule_storage.purge_asset_evaluations(
+                before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
             )

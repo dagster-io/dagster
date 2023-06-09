@@ -147,14 +147,14 @@ const MetadataEntriesRow: React.FC<{
                 </React.Fragment>
               ))}
 
-              {hasLineage && (
+              {hasLineage && timestamp ? (
                 <tr>
                   <td>Parent Materializations</td>
                   <td>
                     <AssetLineageElements elements={assetLineage} timestamp={timestamp} />
                   </td>
                 </tr>
-              )}
+              ) : null}
             </tbody>
           </DetailsTable>
         ) : (
@@ -302,7 +302,7 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
     [events],
   );
   const title = () => {
-    if (hasPartitions) {
+    if (hasPartitions && events[0]) {
       const partition = events[0].partition;
       if (partition) {
         return `Materialization and observation events for ${partition}`;

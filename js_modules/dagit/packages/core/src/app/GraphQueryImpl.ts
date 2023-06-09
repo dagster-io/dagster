@@ -108,25 +108,29 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
     }
     const [, parentsClause, itemName, descendentsClause] = parts;
 
-    const itemsMatching = items.filter((s) => {
-      if (isPlannedDynamicStep(itemName.replace(/\"/g, ''))) {
-        // When unresolved dynamic step (i.e ends with `[?]`) is selected, match all dynamic steps
-        return s.name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
-      } else {
-        return /\".*\"/.test(itemName)
-          ? s.name === itemName.replace(/\"/g, '')
-          : s.name.includes(itemName);
+    const itemsMatching = itemName
+      ? items.filter((s) => {
+          if (isPlannedDynamicStep(itemName.replace(/\"/g, ''))) {
+            // When unresolved dynamic step (i.e ends with `[?]`) is selected, match all dynamic steps
+            return s.name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
+          } else {
+            return /\".*\"/.test(itemName)
+              ? s.name === itemName.replace(/\"/g, '')
+              : s.name.includes(itemName);
+          }
+        })
+      : [];
+
+    if (parentsClause && descendentsClause) {
+      for (const item of itemsMatching) {
+        const upDepth = expansionDepthForClause(parentsClause);
+        const downDepth = expansionDepthForClause(descendentsClause);
+
+        focus.add(item);
+        results.add(item);
+        traverser.fetchUpstream(item, upDepth).forEach((other) => results.add(other));
+        traverser.fetchDownstream(item, downDepth).forEach((other) => results.add(other));
       }
-    });
-
-    for (const item of itemsMatching) {
-      const upDepth = expansionDepthForClause(parentsClause);
-      const downDepth = expansionDepthForClause(descendentsClause);
-
-      focus.add(item);
-      results.add(item);
-      traverser.fetchUpstream(item, upDepth).forEach((other) => results.add(other));
-      traverser.fetchDownstream(item, downDepth).forEach((other) => results.add(other));
     }
   }
 

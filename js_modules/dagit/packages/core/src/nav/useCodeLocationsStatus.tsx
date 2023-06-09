@@ -158,7 +158,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
 
       const toastContent = () => {
         if (addedEntries.length === 1) {
-          const entryId = addedEntries[0];
+          const entryId = addedEntries[0]!;
           const locationName = currEntriesById[entryId]?.name;
           // The entry should be in the entry map, but guard against errors just in case.
           return (
@@ -199,7 +199,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {currentlyLoading.length === 1 ? (
               <span>
-                Updating <strong>{currentlyLoading[0].name}</strong>
+                Updating <strong>{currentlyLoading[0]!.name}</strong>
               </span>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>

@@ -138,7 +138,7 @@ export const usePartitionDimensionSelections = (opts: {
         name: r.dimension.name,
         rangeText: rangeText !== allPartitionsSpan(r.dimension) ? rangeText : undefined,
         isFromPartitionQueryStringParam:
-          saved?.rangeText === rangeText ? saved.isFromPartitionQueryStringParam : false,
+          saved && saved?.rangeText === rangeText ? saved.isFromPartitionQueryStringParam : false,
       };
     });
     if (modifyQueryString) {

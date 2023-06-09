@@ -160,7 +160,7 @@ def monitor_started_run(
     check_run_timeout(instance, run_record, logger)
 
 
-def execute_monitoring_iteration(
+def execute_run_monitoring_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     _debug_crash_flags: Optional[DebugCrashFlags] = None,

@@ -148,7 +148,7 @@ When materialized, the `iris_kmeans_jupyter` asset will execute the notebook (`/
 
 ## Step 3: Add a Dagster Definitions object and supply an I/O manager
 
-We want to execute our Dagster asset and save the resulting notebook to a persistent location. This is called materializing the asset and to do this, we need to add the asset to a Dagster <PyObject module="dagster" object="Definitions"> object.
+We want to execute our Dagster asset and save the resulting notebook to a persistent location. This is called materializing the asset and to do this, we need to add the asset to a Dagster <PyObject module="dagster" object="Definitions" /> object.
 
 Additionally, we need to provide a [resource](/concepts/resources) to the notebook to tell Dagster how to store the resulting `.ipynb` file. We'll use an [I/O manager](/concepts/io-management/io-managers) to accomplish this.
 

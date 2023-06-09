@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
 import pendulum
@@ -31,11 +31,20 @@ if TYPE_CHECKING:
 
 
 def _assert_permission_for_asset_graph(
-    graphene_info: "ResolveInfo", asset_graph: ExternalAssetGraph, permission: str
+    graphene_info: "ResolveInfo",
+    asset_graph: ExternalAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
 ) -> None:
+    if asset_selection:
+        repo_handles = [
+            asset_graph.get_repository_handle(asset_key) for asset_key in asset_selection
+        ]
+    else:
+        repo_handles = asset_graph.repository_handles_by_key.values()
+
     location_names = set(
-        repo_handle.code_location_origin.location_name
-        for repo_handle in asset_graph.repository_handles_by_key.values()
+        repo_handle.code_location_origin.location_name for repo_handle in repo_handles
     )
 
     if not location_names:
@@ -154,8 +163,9 @@ def create_and_launch_partition_backfill(
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+
         _assert_permission_for_asset_graph(
-            graphene_info, asset_graph, Permissions.LAUNCH_PARTITION_BACKFILL
+            graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
         )
 
         backfill = PartitionBackfill.from_asset_partitions(
@@ -191,7 +201,10 @@ def cancel_partition_backfill(
     if backfill.serialized_asset_backfill_data:
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
         _assert_permission_for_asset_graph(
-            graphene_info, asset_graph, Permissions.CANCEL_PARTITION_BACKFILL
+            graphene_info,
+            asset_graph,
+            backfill.asset_selection,
+            Permissions.CANCEL_PARTITION_BACKFILL,
         )
         graphene_info.context.instance.update_backfill(
             backfill.with_status(BulkActionStatus.CANCELING)

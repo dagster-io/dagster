@@ -9,6 +9,6 @@ export const timezoneAbbreviation = memoize((timeZone: string) => {
     timeZoneName: 'short',
   });
   const [_, abbreviation] = dateString.split(', ');
-  return abbreviation;
+  return abbreviation!;
 });
 export const automaticLabel = memoize(() => `Automatic (${browserTimezoneAbbreviation()})`);

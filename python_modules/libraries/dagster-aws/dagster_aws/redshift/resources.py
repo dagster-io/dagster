@@ -12,6 +12,7 @@ from dagster import (
     resource,
 )
 from dagster._annotations import deprecated
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
 
@@ -334,6 +335,10 @@ class RedshiftClientResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> RedshiftClient:
         conn_args = {
             k: getattr(self, k, None)
@@ -357,6 +362,7 @@ class FakeRedshiftClientResource(RedshiftClientResource):
         return FakeRedshiftClient(get_dagster_logger())
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=RedshiftClientResource.to_config_schema(),
     description="Resource for connecting to the Redshift data warehouse",
@@ -389,6 +395,7 @@ def redshift_resource(context) -> RedshiftClient:
     return RedshiftClientResource.from_resource_context(context).get_client()
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=FakeRedshiftClientResource.to_config_schema(),
     description=(

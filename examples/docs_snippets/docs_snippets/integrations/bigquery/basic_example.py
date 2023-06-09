@@ -6,7 +6,7 @@ from dagster import asset
 @asset
 def iris_data() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
             "sepal_length_cm",
             "sepal_width_cm",
