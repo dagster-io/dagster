@@ -9,10 +9,10 @@ def upstream_asset() -> int:
 def old_config() -> None:
     # begin_old_config
 
-    from dagster import AssetExecutionContext, Definitions, asset
+    from dagster import Definitions, OpExecutionContext, asset
 
     @asset(config_schema={"conn_string": str, "port": int})
-    def an_asset(context: AssetExecutionContext, upstream_asset):
+    def an_asset(context: OpExecutionContext, upstream_asset):
         assert context.op_config["conn_string"]
         assert context.op_config["port"]
 
