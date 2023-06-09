@@ -701,6 +701,10 @@ def determine_asset_partitions_to_auto_materialize(
             candidate
         ):
             return False
+        elif not asset_graph.partition_maps_to_valid_parents(
+            instance_queryer, evaluation_time, candidate
+        ):
+            return False
 
         return True
 
@@ -736,7 +740,6 @@ def determine_asset_partitions_to_auto_materialize(
             if instance_queryer.is_reconciled(
                 asset_partition=parent,
                 asset_graph=asset_graph,
-                dynamic_partitions_store=instance_queryer,
             ):
                 continue
 
@@ -782,7 +785,6 @@ def determine_asset_partitions_to_auto_materialize(
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
             asset_partition=candidate,
             asset_graph=asset_graph,
-            dynamic_partitions_store=instance_queryer,
         ):
             conditions.add(ParentMaterializedAutoMaterializeCondition())
 
@@ -821,13 +823,8 @@ def determine_asset_partitions_to_auto_materialize(
             return False
 
         if all(
-            asset_graph.partition_maps_to_valid_parents(
-                instance_queryer, evaluation_time, candidate
-            )
-            and (
-                will_be_materialized_for_freshness(candidate)
-                or parents_will_be_reconciled(asset_graph, candidate)
-            )
+            will_be_materialized_for_freshness(candidate)
+            or parents_will_be_reconciled(asset_graph, candidate)
             for candidate in candidates_unit
         ):
             unit_conditions = set().union(

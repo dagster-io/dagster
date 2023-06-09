@@ -571,7 +571,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         *,
         asset_partition: AssetKeyPartitionKey,
         asset_graph: AssetGraph,
-        dynamic_partitions_store: DynamicPartitionsStore,
     ) -> bool:
         """Returns a boolean representing if the given `asset_partition` is currently reconciled.
         An asset (partition) is considered unreconciled if any of:
@@ -592,7 +591,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
 
         for parent in asset_graph.get_valid_parent_partitions(
-            dynamic_partitions_store, self._evaluation_time, asset_partition
+            dynamic_partitions_store=self,
+            current_time=self._evaluation_time,
+            candidate=asset_partition,
         ):
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
             # for existence of upstream materialization, do not worry about timestamps
@@ -615,11 +616,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     continue
             elif self._materialization_of_a_exists_after_b(a=parent, b=asset_partition):
                 return False
-            elif not self.is_reconciled(
-                asset_partition=parent,
-                asset_graph=asset_graph,
-                dynamic_partitions_store=dynamic_partitions_store,
-            ):
+            elif not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
                 return False
 
         return True

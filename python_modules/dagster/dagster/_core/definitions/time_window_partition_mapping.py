@@ -19,15 +19,7 @@ from dagster._utils.backcompat import (
 )
 
 
-class MappedTimeWindowPartitionsResult(
-    NamedTuple(
-        "_MappedTimeWindowPartitionsResult",
-        [
-            ("partitions_subset", TimeWindowPartitionsSubset),
-            ("mapped_to_invalid_time_windows", bool),
-        ],
-    )
-):
+class MappedTimeWindowPartitionsResult(NamedTuple):
     """Represents the result of mapping a TimeWindowPartitionsSubset to the corresponding
     partitions in another TimeWindowPartitionsDefinition.
 
@@ -36,6 +28,9 @@ class MappedTimeWindowPartitionsResult(
     mapped_to_invalid_time_windows (bool): A bool representing whether from_partitions_subset was mapped to
         nonexistent time windows in to_partitions_def.
     """
+
+    partitions_subset: TimeWindowPartitionsSubset
+    mapped_to_invalid_time_windows: bool
 
 
 @whitelist_for_serdes
@@ -147,12 +142,6 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
-
-        if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("upstream_partitions_def must be a TimeWindowPartitionsDefinition")
-
         return not self._map_partitions(
             downstream_partitions_def,
             upstream_partitions_def,
@@ -178,11 +167,8 @@ class TimeWindowPartitionMapping(
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
-        if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("upstream_partitions_def must be a TimeWindowPartitionsDefinition")
-
         return self._map_partitions(
-            cast(TimeWindowPartitionsDefinition, downstream_partitions_subset.partitions_def),
+            downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
             self.start_offset,
@@ -206,11 +192,8 @@ class TimeWindowPartitionMapping(
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
-        if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("upstream_partitions_def must be a TimeWindowPartitionsDefinition")
-
         return self._map_partitions(
-            cast(TimeWindowPartitionsDefinition, downstream_partitions_subset.partitions_def),
+            downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
             self.start_offset,
@@ -239,14 +222,8 @@ class TimeWindowPartitionMapping(
         Filters for partitions that exist at the given current_time, fetching the current time
         if not provided.
         """
-        if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")
-
-        if not isinstance(upstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("upstream_partitions_subset must be a TimeWindowPartitionsSubset")
-
         return self._map_partitions(
-            cast(TimeWindowPartitionsDefinition, upstream_partitions_subset.partitions_def),
+            upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
             -self.start_offset,
@@ -257,9 +234,9 @@ class TimeWindowPartitionMapping(
 
     def _map_partitions(
         self,
-        from_partitions_def: TimeWindowPartitionsDefinition,
-        to_partitions_def: TimeWindowPartitionsDefinition,
-        from_partitions_subset: TimeWindowPartitionsSubset,
+        from_partitions_def: PartitionsDefinition,
+        to_partitions_def: Optional[PartitionsDefinition],
+        from_partitions_subset: PartitionsSubset,
         start_offset: int,
         end_offset: int,
         raise_error_on_invalid_mapped_partition: bool,
@@ -273,6 +250,15 @@ class TimeWindowPartitionMapping(
         the filtered subset, also returning a bool indicating whether there were mapped time windows
         that did not exist in to_partitions_def.
         """
+        if not isinstance(from_partitions_subset, TimeWindowPartitionsSubset):
+            check.failed("from_partitions_subset must be a TimeWindowPartitionsSubset")
+
+        if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
+
+        if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("to_partitions_def must be a TimeWindowPartitionsDefinition")
+
         if (start_offset != 0 or end_offset != 0) and (
             from_partitions_def.cron_schedule != to_partitions_def.cron_schedule
         ):
