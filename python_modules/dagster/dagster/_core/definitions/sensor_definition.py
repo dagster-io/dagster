@@ -494,7 +494,7 @@ class SensorDefinition(IHasInternalInit):
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
-            required_resource_keys=self.required_resource_keys,
+            required_resource_keys=self._raw_required_resource_keys,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -596,10 +596,10 @@ class SensorDefinition(IHasInternalInit):
                 " the decorated function"
             ),
         )
-        self._required_resource_keys = (
-            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            or resource_arg_names
+        self._raw_required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
         )
+        self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
 
     @staticmethod
     def dagster_internal_init(

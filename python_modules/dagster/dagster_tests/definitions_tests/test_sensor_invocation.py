@@ -206,6 +206,26 @@ def test_sensor_invocation_resources_direct() -> None:
     ).run_config == {"foo": "foo"}
 
 
+def test_recreating_sensor_with_resource_arg() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @sensor(job_name="foo_job")
+    def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    @job
+    def junk_job():
+        pass
+
+    updated_sensor = basic_sensor_with_context_resource_req.with_updated_job(junk_job)
+
+    assert cast(
+        RunRequest,
+        updated_sensor(build_sensor_context(), my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+
 def test_sensor_invocation_resources_direct_many() -> None:
     class MyResource(ConfigurableResource):
         a_str: str
