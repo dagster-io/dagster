@@ -315,7 +315,7 @@ def test_get_downstream_with_current_time(
 
 
 @pytest.mark.parametrize(
-    "upstream_partitions_def,downstream_partitions_def,expected_upstream_keys,downstream_keys,current_time,expected_error_substring",
+    "upstream_partitions_def,downstream_partitions_def,expected_upstream_keys,downstream_keys,current_time,error_expected",
     [
         (
             DailyPartitionsDefinition(start_date="2021-05-05"),
@@ -323,7 +323,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-06-01-00:00"],
             datetime(2021, 6, 1, 1),
-            "does not exist yet at the current time",
+            True,
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05"),
@@ -331,7 +331,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
             datetime(2021, 5, 6, 1),
-            "does not exist yet at the current time",
+            True,
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05"),
@@ -355,7 +355,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-05-05-23:00"],
             datetime(2021, 5, 6, 4, tzinfo=timezone.utc),  # 2021-05-05-23:00 in US/Central
-            "does not exist yet at the current time",
+            True,
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05", end_offset=1),
@@ -371,7 +371,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-06-06"],
             datetime(2022, 1, 6, 1),
-            "nonexistent time windows",
+            True,
         ),
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -387,7 +387,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-12-31"],
             datetime(2022, 1, 6, 1),
-            "nonexistent time windows",
+            True,
         ),
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -395,7 +395,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-12-30"],
             datetime(2021, 12, 31, 1),
-            "does not exist yet at the current time",
+            True,
         ),
     ],
 )
@@ -405,12 +405,12 @@ def test_get_upstream_with_current_time(
     expected_upstream_keys: Sequence[str],
     downstream_keys: Sequence[str],
     current_time: Optional[datetime],
-    expected_error_substring: Optional[str],
+    error_expected: Optional[bool],
 ):
     mapping = TimeWindowPartitionMapping()
 
-    if expected_error_substring:
-        with pytest.raises(DagsterInvalidInvocationError, match=expected_error_substring):
+    if error_expected:
+        with pytest.raises(DagsterInvalidInvocationError, match="contain nonexistent time windows"):
             mapping.get_upstream_partitions_for_partitions(
                 subset_with_keys(downstream_partitions_def, downstream_keys),
                 upstream_partitions_def,
@@ -570,3 +570,26 @@ def test_different_end_time_partitions_defs():
         .get_partition_keys()
         == []
     )
+
+
+def test_daily_upstream_of_yearly():
+    daily = DailyPartitionsDefinition("2023-01-01")
+    yearly = TimeWindowPartitionsDefinition(
+        cron_schedule="0 0 1 1 *",
+        fmt="%Y-%m-%d",
+        start="2023-01-01",
+        end_offset=1,
+    )  # Partition exists for current year
+
+    assert TimeWindowPartitionMapping(
+        allow_nonexistent_upstream_partitions=True
+    ).get_upstream_partitions_for_partitions(
+        downstream_partitions_subset=subset_with_keys(yearly, ["2023-01-01"]),
+        upstream_partitions_def=daily,
+        current_time=datetime(2023, 1, 5, 0),
+    ).get_partition_keys() == [
+        "2023-01-01",
+        "2023-01-02",
+        "2023-01-03",
+        "2023-01-04",
+    ]

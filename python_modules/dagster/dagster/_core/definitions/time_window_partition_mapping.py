@@ -14,6 +14,9 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.backcompat import (
+    experimental_arg_warning,
+)
 
 
 @whitelist_for_serdes
@@ -94,6 +97,11 @@ class TimeWindowPartitionMapping(
         end_offset: int = 0,
         allow_nonexistent_upstream_partitions: bool = False,
     ):
+        if allow_nonexistent_upstream_partitions:
+            experimental_arg_warning(
+                "allow_nonexistent_upstream_partitions", "TimeWindowPartitionMapping.__init__"
+            )
+
         return super(TimeWindowPartitionMapping, cls).__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
@@ -244,13 +252,8 @@ class TimeWindowPartitionMapping(
 
         first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
-        future_windows_exist = (
-            not to_partitions_def.end
-            or to_partitions_def.get_last_partition_window(to_partitions_def.end) != last_window
-        )
 
         filtered_time_windows = []
-
         for time_window in time_windows:
             if (
                 first_window
@@ -261,19 +264,6 @@ class TimeWindowPartitionMapping(
                 window_end = min(time_window.end, last_window.end)
                 window_start = max(time_window.start, first_window.start)
                 filtered_time_windows.append(TimeWindow(window_start, window_end))
-
-            if (
-                called_from_get_upstream
-                and (not last_window or (last_window and time_window.end > last_window.end))
-                and future_windows_exist
-            ):
-                # In situations where the upstream mapped partition will exist in the future
-                # but does not exist at the current time, we disregard allow_nonexistent_upstream_partitions
-                # and raise an error regardless
-                raise DagsterInvalidInvocationError(
-                    f"Mapped to invalid time window {time_window} which does not exist yet at"
-                    f" the current time in upstream partitions definition {to_partitions_def}"
-                )
 
         if (
             called_from_get_upstream

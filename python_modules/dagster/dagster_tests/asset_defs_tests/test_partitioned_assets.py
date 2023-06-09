@@ -683,7 +683,7 @@ def test_error_on_nonexistent_upstream_partition():
         return upstream_asset + 1
 
     with pendulum.test(create_pendulum_time(2020, 1, 2, 10, 0)):
-        with pytest.raises(DagsterInvalidInvocationError, match="invalid time window"):
+        with pytest.raises(DagsterInvalidInvocationError, match="nonexistent time windows"):
             materialize(
                 [downstream_asset, upstream_asset.to_source_asset()],
                 partition_key="2020-01-02-05:00",
