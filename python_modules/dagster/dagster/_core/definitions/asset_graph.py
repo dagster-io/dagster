@@ -296,12 +296,18 @@ class AssetGraph:
 
                 if not candidate.partition_key:
                     pass
-                elif not partition_mapping.downstream_partition_has_valid_upstream_partitions(
-                    cast(PartitionsDefinition, child_partitions_def),
-                    candidate.partition_key,
-                    cast(PartitionsDefinition, parent_partitions_def),
-                    current_time,
-                    dynamic_partitions_store,
+                elif (
+                    len(
+                        partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                            cast(PartitionsDefinition, child_partitions_def)
+                            .empty_subset()
+                            .with_partition_keys([candidate.partition_key]),
+                            cast(PartitionsDefinition, parent_partitions_def),
+                            current_time,
+                            dynamic_partitions_store,
+                        ).invalid_partitions_mapped_to
+                    )
+                    > 0
                 ):
                     return False
 
@@ -327,14 +333,14 @@ class AssetGraph:
                     pass
                 else:
                     parent_materializable_subset = (
-                        partition_mapping.get_valid_upstream_partitions_for_partitions(
+                        partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
                             cast(PartitionsDefinition, child_partitions_def)
                             .empty_subset()
                             .with_partition_keys([candidate.partition_key]),
                             cast(PartitionsDefinition, parent_partitions_def),
                             current_time,
                             dynamic_partitions_store,
-                        )
+                        ).partitions_subset
                     )
                     for parent_partition_key in parent_materializable_subset.get_partition_keys():
                         result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))

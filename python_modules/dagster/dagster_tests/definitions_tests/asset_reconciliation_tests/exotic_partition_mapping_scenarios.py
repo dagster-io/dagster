@@ -133,6 +133,24 @@ one_parent_starts_later_and_nonexistent_upstream_partitions_allowed = [
     ),
 ]
 
+hourly_with_daily_downstream_nonexistent_upstream_partitions_allowed = [
+    asset_def("asset1", partitions_def=HourlyPartitionsDefinition("2023-01-01-00:00")),
+    asset_def(
+        "asset2",
+        partitions_def=DailyPartitionsDefinition("2023-01-01", end_offset=1),
+        deps={"asset1": TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)},
+    ),
+]
+
+hourly_with_daily_downstream_nonexistent_upstream_partitions_not_allowed = [
+    asset_def("asset1", partitions_def=HourlyPartitionsDefinition("2023-01-01-00:00")),
+    asset_def(
+        "asset2",
+        partitions_def=DailyPartitionsDefinition("2023-01-01", end_offset=1),
+        deps={"asset1": TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=False)},
+    ),
+]
+
 
 exotic_partition_mapping_scenarios = {
     "fan_in_partitions_none_materialized": AssetReconciliationScenario(
@@ -354,5 +372,27 @@ exotic_partition_mapping_scenarios = {
             run_request(asset_keys=["asset3"], partition_key="2023-01-01-03:00"),
             run_request(asset_keys=["asset3"], partition_key="2023-01-01-04:00"),
         ],
+    ),
+    "hourly_with_daily_downstream_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
+        assets=hourly_with_daily_downstream_nonexistent_upstream_partitions_allowed,
+        unevaluated_runs=[
+            single_asset_run("asset1", f"2023-01-01-{str(x).zfill(2)}:00")
+            for x in range(0, 9)
+            # partitions 2023-01-01-00:00 to 2023-01-01-08:00 materialized
+        ],
+        current_time=create_pendulum_time(2023, 1, 1, 9),
+        expected_run_requests=[
+            run_request(asset_keys=["asset2"], partition_key="2023-01-01"),
+        ],
+    ),
+    "hourly_with_daily_downstream_nonexistent_upstream_partitions_not_allowed": AssetReconciliationScenario(
+        assets=hourly_with_daily_downstream_nonexistent_upstream_partitions_not_allowed,
+        unevaluated_runs=[
+            single_asset_run("asset1", f"2023-01-01-{str(x).zfill(2)}:00")
+            for x in range(0, 9)
+            # partitions 2023-01-01-00:00 to 2023-01-01-08:00 materialized
+        ],
+        current_time=create_pendulum_time(2023, 1, 1, 9),
+        expected_run_requests=[],
     ),
 }

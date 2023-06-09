@@ -13,6 +13,7 @@ from dagster import (
     WeeklyPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvalidInvocationError
 
 
@@ -595,43 +596,65 @@ def test_daily_upstream_of_yearly():
     ]
 
 
-def test_downstream_partition_has_valid_upstream_partitions():
-    may_partitions_def = DailyPartitionsDefinition("2023-05-01")
-    june_partitions_def = DailyPartitionsDefinition("2023-06-01")
-
-    assert (
-        TimeWindowPartitionMapping().downstream_partition_has_valid_upstream_partitions(
-            downstream_partitions_def=may_partitions_def,
-            downstream_partition_key="2023-05-10",
-            upstream_partitions_def=june_partitions_def,
-        )
-        is False
-    )
-
-    assert (
-        TimeWindowPartitionMapping(
-            allow_nonexistent_upstream_partitions=True
-        ).downstream_partition_has_valid_upstream_partitions(
-            downstream_partitions_def=may_partitions_def,
-            downstream_partition_key="2023-05-10",
-            upstream_partitions_def=june_partitions_def,
-        )
-        is True
-    )
-
-    assert (
-        TimeWindowPartitionMapping()
-        .get_valid_upstream_partitions_for_partitions(
-            downstream_partitions_subset=subset_with_keys(may_partitions_def, ["2023-05-10"]),
-            upstream_partitions_def=june_partitions_def,
-        )
-        .get_partition_keys()
-        == []
-    )
-
-    assert TimeWindowPartitionMapping().get_valid_upstream_partitions_for_partitions(
-        downstream_partitions_subset=subset_with_keys(
-            may_partitions_def, ["2023-05-10", "2023-06-05"]
+@pytest.mark.parametrize(
+    "downstream_partitions_subset,upstream_partitions_def,allow_nonexistent_upstream_partitions,current_time,valid_partitions_mapped_to,invalid_partitions_mapped_to",
+    [
+        (
+            DailyPartitionsDefinition(start_date="2023-05-01")
+            .empty_subset()
+            .with_partition_keys(["2023-05-10", "2023-05-30", "2023-06-01"]),
+            DailyPartitionsDefinition("2023-06-01"),
+            False,
+            datetime(2023, 6, 5, 0),
+            ["2023-06-01"],
+            ["2023-05-10", "2023-05-30"],
         ),
-        upstream_partitions_def=june_partitions_def,
-    ).get_partition_keys() == ["2023-06-05"]
+        (
+            DailyPartitionsDefinition(start_date="2023-05-01")
+            .empty_subset()
+            .with_partition_keys(["2023-05-09", "2023-05-10"]),
+            DailyPartitionsDefinition("2023-05-01", end_date="2023-05-10"),
+            False,
+            datetime(2023, 5, 12, 0),
+            ["2023-05-09"],
+            ["2023-05-10"],
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2023-05-01")
+            .empty_subset()
+            .with_partition_keys(["2023-05-10", "2023-05-30", "2023-06-01"]),
+            DailyPartitionsDefinition("2023-06-01"),
+            True,
+            datetime(2023, 6, 5, 0),
+            ["2023-06-01"],
+            [],
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2023-05-01")
+            .empty_subset()
+            .with_partition_keys(["2023-05-09", "2023-05-10"]),
+            DailyPartitionsDefinition("2023-05-01", end_date="2023-05-10"),
+            True,
+            datetime(2023, 5, 12, 0),
+            ["2023-05-09"],
+            [],
+        ),
+    ],
+)
+def test_downstream_partition_has_valid_upstream_partitions(
+    downstream_partitions_subset: TimeWindowPartitionsSubset,
+    upstream_partitions_def: TimeWindowPartitionsDefinition,
+    allow_nonexistent_upstream_partitions: bool,
+    current_time: datetime,
+    valid_partitions_mapped_to: Sequence[str],
+    invalid_partitions_mapped_to: Sequence[str],
+):
+    result = TimeWindowPartitionMapping(
+        allow_nonexistent_upstream_partitions=allow_nonexistent_upstream_partitions
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_partitions_subset,
+        upstream_partitions_def=upstream_partitions_def,
+        current_time=current_time,
+    )
+    assert result.partitions_subset.get_partition_keys() == valid_partitions_mapped_to
+    assert result.invalid_partitions_mapped_to == invalid_partitions_mapped_to
