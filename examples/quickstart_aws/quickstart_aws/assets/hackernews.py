@@ -51,7 +51,7 @@ def hackernews_topstories(
     return df
 
 
-@asset(group_name="hackernews", compute_kind="Plot", required_resource_keys={"s3"})
+@asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(
     context: OpExecutionContext,
     s3_resource: S3Resource,
