@@ -321,7 +321,7 @@ class DbtCli(ConfigurableResource):
         ...,
         description=(
             "The path to your dbt project directory. This directory should contain a"
-            " `dbt_project.yml`. https://docs.getdbt.com/reference/dbt_project.yml for more"
+            " `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more"
             " information."
         ),
     )
@@ -330,6 +330,22 @@ class DbtCli(ConfigurableResource):
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
             " https://docs.getdbt.com/reference/global-configs for a full list of configuration."
+        ),
+    )
+    profile: Optional[str] = Field(
+        default=None,
+        description=(
+            "The profile from your dbt `profiles.yml` to use for execution. See"
+            " https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more"
+            " information."
+        ),
+    )
+    target: Optional[str] = Field(
+        default=None,
+        description=(
+            "The target from your dbt `profiles.yml` to use for execution. See"
+            " https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more"
+            " information."
         ),
     )
 
@@ -407,7 +423,14 @@ class DbtCli(ConfigurableResource):
                 exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
 
-        args = ["dbt"] + self.global_config + args + selection_args
+        profile_args: List[str] = []
+        if self.profile:
+            profile_args = ["--profile", self.profile]
+
+        if self.target:
+            profile_args += ["--target", self.target]
+
+        args = ["dbt"] + self.global_config + args + profile_args + selection_args
         logger.info(f"Running dbt command: `{' '.join(args)}`.")
 
         # Create a subprocess that runs the dbt CLI command.

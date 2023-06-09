@@ -64,6 +64,16 @@ def test_dbt_cli_get_artifact() -> None:
     assert manifest_json_1 != manifest_json_2
 
 
+def test_dbt_profile_configuration(monkeypatch) -> None:
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
+
+    dbt_cli_task = dbt.cli(["parse"], manifest=manifest)
+    dbt_cli_task.wait()
+
+    assert dbt_cli_task.process.args == ["dbt", "parse", "--profile", "duckdb", "--target", "dev"]
+    assert dbt_cli_task.is_successful()
+
+
 def test_dbt_cli_subsetted_execution(mocker: MockerFixture) -> None:
     mock_context = mocker.MagicMock()
     mock_selected_output_names = ["least_caloric", "sort_by_calories"]
