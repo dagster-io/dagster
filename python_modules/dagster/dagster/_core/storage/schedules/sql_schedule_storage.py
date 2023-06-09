@@ -511,6 +511,17 @@ class SqlScheduleStorage(ScheduleStorage):
             rows = db_fetch_mappings(conn, query)
             return [AutoMaterializeAssetEvaluationRecord.from_db_row(row) for row in rows]
 
+    def purge_asset_evaluations(self, before: float):
+        check.float_param(before, "before")
+
+        utc_before = utc_datetime_from_timestamp(before)
+        query = AssetDaemonAssetEvaluationsTable.delete().where(
+            AssetDaemonAssetEvaluationsTable.c.create_timestamp < utc_before
+        )
+
+        with self.connect() as conn:
+            conn.execute(query)
+
     def wipe(self) -> None:
         """Clears the schedule storage."""
         with self.connect() as conn:
