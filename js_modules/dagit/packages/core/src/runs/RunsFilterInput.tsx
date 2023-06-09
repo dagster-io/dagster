@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery, useApolloClient} from '@apollo/client';
 import {
   TokenizingFieldValue,
   tokensAsStringArray,
@@ -17,9 +17,9 @@ import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/Filters';
 import {FilterObject} from '../ui/Filters/useFilter';
-import {useStaticSetFilter, capitalizeFirstLetter} from '../ui/Filters/useStaticSetFilter';
+import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {SuggestionFilterSuggestion, useSuggestionFilter} from '../ui/Filters/useSuggestionFilter';
-import {useTimeRangeFilter, TimeRangeState} from '../ui/Filters/useTimeRangeFilter';
+import {TimeRangeState, useTimeRangeFilter} from '../ui/Filters/useTimeRangeFilter';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {DagsterTag} from './RunTag';
@@ -133,7 +133,11 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
   const obj: RunsFilter = {};
 
   for (const item of search) {
-    if (item.token === 'pipeline' || item.token === 'job') {
+    if (item.token === 'created_date_before') {
+      obj.createdBefore = parseInt(item.value);
+    } else if (item.token === 'created_date_after') {
+      obj.updatedAfter = parseInt(item.value);
+    } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
       obj.runIds = obj.runIds || [];
@@ -154,13 +158,6 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
   }
 
   return obj;
-}
-
-export interface RunsFilterInputProps {
-  loading?: boolean;
-  tokens: RunFilterToken[];
-  onChange: (tokens: RunFilterToken[]) => void;
-  enabledFilters?: RunFilterTokenType[];
 }
 
 const StatusFilterValues = Object.keys(RunStatus).map((x) => ({
@@ -574,7 +571,6 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   return {button: <span onClick={onFocus}>{button}</span>, activeFiltersJsx};
 };
-
 export function useTagDataFilterValues(tagKey?: DagsterTag) {
   const [fetch, {data}] = useLazyQuery<RunTagValuesQuery, RunTagValuesQueryVariables>(
     RUN_TAG_VALUES_QUERY,
