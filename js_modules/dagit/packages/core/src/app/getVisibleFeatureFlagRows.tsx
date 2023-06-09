@@ -21,10 +21,6 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
   {
-    key: 'Experimental overview assets tab',
-    flagType: FeatureFlag.flagOverviewAssetsTab,
-  },
-  {
     key: 'Automatically load default config in launchpad',
     flagType: FeatureFlag.flagAutoLoadDefaults,
   },
