@@ -408,17 +408,29 @@ class AssetGraph:
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
-        parent_partition_key_subset = partition_mapping.get_upstream_partitions_for_partitions(
-            cast(PartitionsDefinition, child_partitions_def)
-            .empty_subset()
-            .with_partition_keys([partition_key])
-            if partition_key
-            else None,
-            upstream_partitions_def=parent_partitions_def,
-            dynamic_partitions_store=dynamic_partitions_store,
-            current_time=current_time,
+
+        parent_partitions_result = (
+            partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                cast(PartitionsDefinition, child_partitions_def)
+                .empty_subset()
+                .with_partition_keys([partition_key])
+                if partition_key
+                else None,
+                upstream_partitions_def=parent_partitions_def,
+                dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
+            )
         )
-        return list(parent_partition_key_subset.get_partition_keys())
+
+        if parent_partitions_result.invalid_partitions_mapped_to:
+            raise DagsterInvariantViolationError(
+                f"Partition {partition_key} in downstream asset"
+                f" keys {child_asset_key} depends on invalid partition keys"
+                f" {parent_partitions_result.invalid_partitions_mapped_to} in upstream"
+                f" asset {parent_asset_key}"
+            )
+
+        return list(parent_partitions_result.partitions_subset.get_partition_keys())
 
     def is_source(self, asset_key: AssetKey) -> bool:
         return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys

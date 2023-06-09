@@ -181,6 +181,7 @@ class PartitionMapping(ABC):
             )
         )
 
+    @public
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
