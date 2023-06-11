@@ -61,6 +61,9 @@ class DeltaTableIOManager(ConfigurableIOManagerFactory):
     table_config: Optional[Dict[str, str]] = Field(
         default=None, description="Additional config and metadata added to table on creation."
     )
+    schema_: Optional[str] = Field(
+        default=None, alias="schema", description="Name of the schema to use."
+    )  # schema is a reserved word for pydantic
 
     @staticmethod
     @abstractmethod
@@ -76,7 +79,7 @@ class DeltaTableIOManager(ConfigurableIOManagerFactory):
         return DbIOManager(
             db_client=DeltaTableDbClient(),
             database="deltalake",
-            schema=context.resource_config.get("schema"),
+            schema=self.schema_,
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
             io_manager_name="DeltaTableIOManager",

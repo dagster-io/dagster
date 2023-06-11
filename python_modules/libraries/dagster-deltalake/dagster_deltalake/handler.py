@@ -52,6 +52,7 @@ class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
                         ]
                     )
                 ),
+                "table_uri": connection.table_uri,
                 **extra_info,
             }
         )
