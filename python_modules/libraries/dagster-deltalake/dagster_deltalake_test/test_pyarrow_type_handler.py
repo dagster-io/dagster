@@ -2,7 +2,8 @@ import os
 
 import pyarrow as pa
 import pytest
-from dagster import Out, asset, graph, materialize, op
+from dagster import AssetIn, Out, asset, graph, materialize, op
+from dagster._check import CheckError
 from dagster_deltalake import DeltaTablePyarrowIOManager, LocalConfig
 from deltalake import DeltaTable
 
@@ -101,3 +102,49 @@ def test_deltalake_io_manager_with_schema(tmp_path):
         dt = DeltaTable(os.path.join(tmp_path, "custom_schema/my_df_plus_one"))
         out_df = dt.to_pyarrow_table()
         assert out_df["a"].to_pylist() == [2, 3, 4]
+
+
+@asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
+def b_plus_one_columns(b_df: pa.Table) -> pa.Table:
+    return b_df.set_column(0, "a", pa.array([2, 3, 4]))
+
+
+def test_loading_columns(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    # materialize asset twice to ensure that tables get properly deleted
+    for _ in range(2):
+        res = materialize([b_df, b_plus_one_columns], resources=resource_defs)
+        assert res.success
+
+        dt = DeltaTable(os.path.join(tmp_path, "my_schema/b_df"))
+        out_df = dt.to_pyarrow_table()
+        assert out_df["a"].to_pylist() == [1, 2, 3]
+
+        dt = DeltaTable(os.path.join(tmp_path, "my_schema/b_plus_one_columns"))
+        out_df = dt.to_pyarrow_table()
+        assert out_df["a"].to_pylist() == [2, 3, 4]
+
+        assert out_df.shape[1] == 1
+
+
+@op
+def non_supported_type() -> int:
+    return 1
+
+
+@graph
+def not_supported():
+    non_supported_type()
+
+
+def test_not_supported_type(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    job = not_supported.to_job(resource_defs=resource_defs)
+
+    with pytest.raises(
+        CheckError,
+        match="DeltaLakeIOManager does not have a handler for type '<class 'int'>'",
+    ):
+        job.execute_in_process()
