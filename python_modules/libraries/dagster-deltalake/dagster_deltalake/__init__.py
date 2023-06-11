@@ -10,10 +10,7 @@ from .config import (
     StorageLocation as StorageLocation,
     StorageOptions as StorageOptions,
 )
-from .handler import (
-    DeltalakeArrowTypeHandler as DeltalakeArrowTypeHandler,
-    DeltalakePandasTypeHandler as DeltalakePandasTypeHandler,
-)
+from .handler import DeltalakeArrowTypeHandler as DeltalakeArrowTypeHandler
 from .io_manager import DeltaTableIOManager as DeltaTableIOManager
 from .resource import DeltaTableResource as DeltaTableResource
 from .version import __version__
@@ -23,12 +20,6 @@ class DeltaTablePyarrowIOManager(DeltaTableIOManager):
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
         return [DeltalakeArrowTypeHandler()]
-
-
-class DeltaTablePandasIOManager(DeltaTableIOManager):
-    @staticmethod
-    def type_handlers() -> Sequence[DbTypeHandler]:
-        return [DeltalakePandasTypeHandler()]
 
 
 DagsterLibraryRegistry.register("dagster-deltalake", __version__)

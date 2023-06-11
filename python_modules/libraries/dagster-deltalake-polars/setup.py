@@ -37,7 +37,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-deltalake{pin}",
-        "polars<2",  # See: https://github.com/dagster-io/dagster/issues/13339
+        "polars[pyarrow]",
     ],
     zip_safe=False,
 )
