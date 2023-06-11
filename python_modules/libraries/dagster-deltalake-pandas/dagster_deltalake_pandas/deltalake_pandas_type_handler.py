@@ -32,7 +32,7 @@ class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         context.add_output_metadata(
             {
                 "row_count": obj.shape[0],
-                "dataframe_columns": MetadataValue.table_schema(
+                "table_columns": MetadataValue.table_schema(
                     TableSchema(
                         columns=[
                             TableColumn(name=str(name), type=str(dtype))
@@ -40,6 +40,7 @@ class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                         ]
                     )
                 ),
+                "table_uri": connection.table_uri,
             }
         )
 
