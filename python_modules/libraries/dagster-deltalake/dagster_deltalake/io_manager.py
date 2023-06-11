@@ -82,7 +82,7 @@ class DeltaTableIOManager(ConfigurableIOManagerFactory):
             schema=self.schema_,
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
-            io_manager_name="DeltaTableIOManager",
+            io_manager_name="DeltaLakeIOManager",
         )
 
 
@@ -95,7 +95,7 @@ class DeltaTableDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        # for individual Delta tables, Schemas are not tracked.
+        # schemas are just folders and automatically created on write.
         pass
 
     @staticmethod
