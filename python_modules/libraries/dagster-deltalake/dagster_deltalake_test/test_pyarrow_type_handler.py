@@ -1,10 +1,11 @@
 import os
+from datetime import datetime
 
 import pyarrow as pa
 import pytest
-from dagster import AssetIn, Out, asset, graph, materialize, op
+from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
-from dagster_deltalake import DeltaTablePyarrowIOManager, LocalConfig
+from dagster_deltalake import DELTA_DATE_FORMAT, DeltaTablePyarrowIOManager, LocalConfig
 from deltalake import DeltaTable
 
 
@@ -148,3 +149,61 @@ def test_not_supported_type(tmp_path, io_manager):
         match="DeltaLakeIOManager does not have a handler for type '<class 'int'>'",
     ):
         job.execute_in_process()
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "time"},
+    config_schema={"value": str},
+)
+def daily_partitioned(context) -> pa.Table:
+    partition = datetime.strptime(
+        context.asset_partition_key_for_output(), DELTA_DATE_FORMAT
+    ).date()
+    value = context.op_config["value"]
+
+    return pa.Table.from_pydict(
+        {
+            "time": [partition, partition, partition],
+            "a": [value, value, value],
+            "b": [4, 5, 6],
+        }
+    )
+
+
+def test_time_window_partitioned_asset(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    materialize(
+        [daily_partitioned],
+        partition_key="2022-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    dt = DeltaTable(os.path.join(tmp_path, "my_schema/daily_partitioned"))
+    out_df = dt.to_pyarrow_table()
+    assert out_df["a"].to_pylist() == ["1", "1", "1"]
+
+    materialize(
+        [daily_partitioned],
+        partition_key="2022-01-02",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["1", "1", "1", "2", "2", "2"]
+
+    materialize(
+        [daily_partitioned],
+        partition_key="2022-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["2", "2", "2", "3", "3", "3"]

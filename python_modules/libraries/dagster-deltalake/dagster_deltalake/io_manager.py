@@ -2,7 +2,7 @@ import sys
 from abc import abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -13,10 +13,6 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
-)
-from deltalake.schema import (
-    Field as DeltaField,
-    Schema,
 )
 from pydantic import Field
 
@@ -136,29 +132,6 @@ class DeltaTableDbClient(DbClient):
         yield conn
 
 
-def _partition_dnf(
-    partition_dimensions: Sequence[TablePartitionDimension], table_schema: Schema
-) -> List[Tuple[str, str, str]]:
-    _parts = []
-    for partition_dimension in partition_dimensions:
-        field = _field_from_schema(partition_dimension.partition_expr, table_schema)
-        if field is None:
-            raise ValueError(
-                f"Field {partition_dimension.partition_expr} is not part of table schema.",
-                "currently only column names are allowed as partition expressions",
-            )
-        field.type
-        pass
-    return []
-
-
-def _time_window_partition_dnf(table_partition: TablePartitionDimension) -> Tuple[str, str, str]:
-    partition = cast(TimeWindow, table_partition.partitions)
-    start_dt, _ = partition
-    start_dt_str = start_dt.strftime(DELTA_DATETIME_FORMAT)
-    return (table_partition.partition_expr, "=", start_dt_str)
-
-
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
@@ -190,10 +163,3 @@ def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
 def _static_where_clause(table_partition: TablePartitionDimension) -> str:
     partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
     return f"""{table_partition.partition_expr} in ({partitions})"""
-
-
-def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
-    for field in schema.fields:
-        if field.name == field_name:
-            return field
-    return None
