@@ -207,3 +207,38 @@ def test_time_window_partitioned_asset(tmp_path, io_manager):
     dt.update_incremental()
     out_df = dt.to_pyarrow_table()
     assert sorted(out_df["a"].to_pylist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "time"},
+)
+def load_partitioned(context, daily_partitioned: pa.Table) -> pa.Table:
+    return daily_partitioned
+
+
+def test_load_partitioned_asset(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    res = materialize(
+        [daily_partitioned, load_partitioned],
+        partition_key="2022-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    assert res.success
+    table = res.asset_value(["my_schema", "load_partitioned"])
+    assert table.shape[0] == 3
+
+    res = materialize(
+        [daily_partitioned, load_partitioned],
+        partition_key="2022-01-02",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    assert res.success
+    table = res.asset_value(["my_schema", "load_partitioned"])
+    assert table.shape[0] == 3

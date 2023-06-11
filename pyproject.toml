@@ -39,7 +39,7 @@ exclude = [
 # environment is defined in the `pyright` tox environment in the tox section below-- that
 # environment must be built before pyright can run correctly.
 venv = ".venv"
-venvPath = "."
+venvPath = "pyright/master"
 
 # Set to false to help us during the transition from mypy to pyright. Mypy does
 # not analyze unannotated functions by default, and so as of 2023-02 the codebase contains a large

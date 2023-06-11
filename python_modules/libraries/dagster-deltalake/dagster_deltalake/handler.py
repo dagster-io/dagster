@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import List, Optional, Sequence, Type, Union, cast
 
 import pyarrow as pa
 import pyarrow.dataset as ds
@@ -17,7 +17,7 @@ from deltalake.schema import (
     PrimitiveType,
     Schema,
 )
-from deltalake.table import FilterLiteralType
+from deltalake.table import FilterLiteralType, _filters_to_expression
 from deltalake.writer import write_deltalake
 
 from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
@@ -43,7 +43,7 @@ class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
         partition_columns = None
         if table_slice.partition_dimensions is not None:
             partition_filters = partition_dimensions_to_dnf(
-                partition_dimensions=table_slice.partition_dimensions, table_schema=delta_schema
+                partition_dimensions=table_slice.partition_dimensions, table_schema=delta_schema, str_values=True
             )
 
             # TODO make robust and move to function
@@ -85,8 +85,16 @@ class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
         table = DeltaTable(
             table_uri=connection.table_uri, storage_options=connection.storage_options
         )
-        # TODO add predicates from select statement / table slicing ...
-        scanner = table.to_pyarrow_dataset().scanner(columns=table_slice.columns)
+
+        _partition_expr = None
+        if table_slice.partition_dimensions is not None:
+            partition_filters = partition_dimensions_to_dnf(
+                partition_dimensions=table_slice.partition_dimensions, table_schema=table.schema()
+            )
+            if partition_filters is not None:
+                _partition_expr = _filters_to_expression([partition_filters])
+        scanner = table.to_pyarrow_dataset().scanner(columns=table_slice.columns, filter=_partition_expr)
+    
         if context.dagster_type.typing_type == ds.Scanner:
             return scanner
         if context.dagster_type.typing_type == pa.Table:
@@ -101,7 +109,7 @@ class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
 
 
 def partition_dimensions_to_dnf(
-    partition_dimensions: Sequence[TablePartitionDimension], table_schema: Schema
+    partition_dimensions: Sequence[TablePartitionDimension], table_schema: Schema, str_values: bool = False
 ) -> Optional[List[FilterLiteralType]]:
     parts = []
     for partition_dimension in partition_dimensions:
@@ -113,28 +121,31 @@ def partition_dimensions_to_dnf(
             )
         if isinstance(field.type, PrimitiveType):
             if field.type.type in ["timestamp", "date"]:
-                parts.append(_time_window_partition_dnf(partition_dimension, field.type.type))
+                filter_ = _time_window_partition_dnf(partition_dimension, field.type.type, str_values)
+                parts.append(filter_)
             else:
                 raise ValueError(f"Unsupported partition type {field.type.type}")
         else:
             raise ValueError(f"Unsupported partition type {field.type}")
 
-    return parts
+    return parts if len(parts) > 0 else None
 
 
 def _time_window_partition_dnf(
-    table_partition: TablePartitionDimension, data_type: str
-) -> Tuple[str, str, str]:
+    table_partition: TablePartitionDimension, data_type: str, str_values
+) -> FilterLiteralType:
     partition = cast(TimeWindow, table_partition.partitions)
     start_dt, _ = partition
-    if data_type == "timestamp":
-        start_dt_str = start_dt.strftime(DELTA_DATETIME_FORMAT)
-    elif data_type == "date":
-        start_dt_str = start_dt.strftime(DELTA_DATE_FORMAT)
-    else:
-        raise ValueError(f"Unknown primitive type: {data_type}")
+    start_dt = start_dt.replace(tzinfo=None)
+    if str_values:
+        if data_type == "timestamp":
+            start_dt = start_dt.strftime(DELTA_DATETIME_FORMAT)
+        elif data_type == "date":
+            start_dt = start_dt.strftime(DELTA_DATE_FORMAT)
+        else:
+            raise ValueError(f"Unknown primitive type: {data_type}")
 
-    return (table_partition.partition_expr, "=", start_dt_str)
+    return (table_partition.partition_expr, "=", start_dt)
 
 
 def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
