@@ -29,7 +29,7 @@ def test_partition_dimensions_to_dnf(test_schema) -> None:
             partition_expr="timestamp_col",
         )
     ]
-    dnf = partition_dimensions_to_dnf(parts, test_schema)
+    dnf = partition_dimensions_to_dnf(parts, test_schema, True)
     assert dnf == [("timestamp_col", "=", "2020-01-02 00:00:00")]
 
     parts = [
@@ -38,5 +38,5 @@ def test_partition_dimensions_to_dnf(test_schema) -> None:
             partition_expr="date_col",
         )
     ]
-    dnf = partition_dimensions_to_dnf(parts, test_schema)
+    dnf = partition_dimensions_to_dnf(parts, test_schema, True)
     assert dnf == [("date_col", "=", "2020-01-02")]
