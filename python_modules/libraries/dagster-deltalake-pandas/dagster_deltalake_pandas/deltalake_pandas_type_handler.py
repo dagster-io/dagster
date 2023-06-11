@@ -1,7 +1,6 @@
-from typing import Sequence, Type, Optional
+from typing import Optional, Sequence, Type
 
 import pandas as pd
-import pyarrow.dataset as ds
 from dagster import (
     InputContext,
     MetadataValue,
@@ -13,10 +12,9 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TableSlice,
 )
+from dagster_deltalake.io_manager import DeltaTableIOManager, TableConnection
 from deltalake import DeltaTable
 from deltalake.writer import write_deltalake
-
-from dagster_deltalake.io_manager import DeltaTableIOManager, TableConnection
 
 
 class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -27,9 +25,8 @@ class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         obj: pd.DataFrame,
         connection: TableConnection,
     ):
-        table_uri = f"{connection.root_uri}/{table_slice.schema}/{table_slice.table}"
         write_deltalake(
-            table_uri, obj, storage_options=connection.storage_options, mode="overwrite"
+            connection.table_uri, obj, storage_options=connection.storage_options, mode="overwrite"
         )
 
         context.add_output_metadata(
@@ -50,8 +47,9 @@ class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection: TableConnection
     ) -> pd.DataFrame:
         """Loads the input as a pandas Datafrom."""
-        table_uri = f"{connection.root_uri}/{table_slice.schema}/{table_slice.table}"
-        table = DeltaTable(table_uri=table_uri, storage_options=connection.storage_options)
+        table = DeltaTable(
+            table_uri=connection.table_uri, storage_options=connection.storage_options
+        )
         # TODO add predicates from select statement / table slicing ...
         scanner = table.to_pyarrow_dataset().scanner(columns=table_slice.columns)
         return scanner.to_table().to_pandas()

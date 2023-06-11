@@ -20,12 +20,17 @@ from deltalake.schema import (
 )
 from pydantic import Field
 
-from .config import AzureConfig, LocalConfig, S3Config
-
 if sys.version_info >= (3, 8):
-    from typing import NotRequired, TypedDict
+    from typing import TypedDict
 else:
-    from typing_extensions import NotRequired, TypedDict
+    from typing_extensions import TypedDict
+
+if sys.version_info >= (3, 11):
+    from typing import NotRequired
+else:
+    from typing_extensions import NotRequired
+
+from .config import AzureConfig, LocalConfig, S3Config
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"
@@ -33,7 +38,7 @@ DELTA_DATE_FORMAT = "%Y-%m-%d"
 
 @dataclass(frozen=True)
 class TableConnection:
-    root_uri: str
+    table_uri: str
     storage_options: Dict[str, str]
     table_config: Optional[Dict[str, str]]
 
@@ -71,7 +76,7 @@ class DeltaTableIOManager(ConfigurableIOManagerFactory):
         return DbIOManager(
             db_client=DeltaTableDbClient(),
             database="deltalake",
-            schema="deltalake",
+            schema=context.resource_config.get("schema"),
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
             io_manager_name="DeltaTableIOManager",
@@ -106,7 +111,7 @@ class DeltaTableDbClient(DbClient):
     @contextmanager
     def connect(context, table_slice: TableSlice) -> Iterator[TableConnection]:
         resource_config = cast(_DeltaTableIOManagerResourceConfig, context.resource_config)
-        root_uri = resource_config["root_uri"]
+        root_uri = resource_config["root_uri"].rstrip("/")
         storage_options = resource_config["storage_options"]
 
         if "local" in storage_options:
@@ -119,9 +124,10 @@ class DeltaTableDbClient(DbClient):
             storage_options = {}
 
         table_config = resource_config.get("table_config")
+        table_uri = f"{root_uri}/{table_slice.schema}/{table_slice.table}"
 
         conn = TableConnection(
-            root_uri=root_uri, storage_options=storage_options, table_config=table_config
+            table_uri=table_uri, storage_options=storage_options, table_config=table_config
         )
 
         yield conn
@@ -133,7 +139,12 @@ def _partition_dnf(
     _parts = []
     for partition_dimension in partition_dimensions:
         field = _field_from_schema(partition_dimension.partition_expr, table_schema)
-        field.data_type()
+        if field is None:
+            raise ValueError(
+                f"Field {partition_dimension.partition_expr} is not part of table schema.",
+                "currently only column names are allowed as partition expressions",
+            )
+        field.type
         pass
     return []
 
@@ -178,7 +189,7 @@ def _static_where_clause(table_partition: TablePartitionDimension) -> str:
     return f"""{table_partition.partition_expr} in ({partitions})"""
 
 
-def _field_from_schema(field_name: str, schema: Schema) -> DeltaField:
+def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
     for field in schema.fields:
         if field.name == field_name:
             return field
