@@ -299,34 +299,29 @@ class TimeWindowPartitionMapping(
                 # If allowed to have nonexistent upstream partitions, do not consider
                 # out of range partitions to be invalid
                 continue
-            elif not (first_window and last_window) or (
-                time_window.start < first_window.start and time_window.end > last_window.end
-            ):
-                invalid_partitions_mapped_to.update(
-                    set(
-                        to_partitions_def.get_partition_keys_in_time_window(time_window=time_window)
+            else:
+                invalid_time_window = None
+                if not (first_window and last_window) or (
+                    time_window.start < first_window.start and time_window.end > last_window.end
+                ):
+                    invalid_time_window = time_window
+                elif time_window.start < first_window.start:
+                    invalid_time_window = TimeWindow(
+                        time_window.start, min(time_window.end, first_window.start)
                     )
-                )
-            elif time_window.start < first_window.start:
-                invalid_partitions_mapped_to.update(
-                    set(
-                        to_partitions_def.get_partition_keys_in_time_window(
-                            time_window=TimeWindow(
-                                time_window.start, min(time_window.end, first_window.start)
+                elif time_window.end > last_window.end:
+                    invalid_time_window = TimeWindow(
+                        max(time_window.start, last_window.end), time_window.end
+                    )
+
+                if invalid_time_window:
+                    invalid_partitions_mapped_to.update(
+                        set(
+                            to_partitions_def.get_partition_keys_in_time_window(
+                                time_window=invalid_time_window
                             )
                         )
                     )
-                )
-            elif time_window.end > last_window.end:
-                invalid_partitions_mapped_to.update(
-                    set(
-                        to_partitions_def.get_partition_keys_in_time_window(
-                            time_window=TimeWindow(
-                                max(time_window.start, last_window.end), time_window.end
-                            )
-                        )
-                    )
-                )
 
         if (
             filtered_time_windows != time_windows
