@@ -47,7 +47,8 @@
       },
       {
         "title": "Part 4: Building an asset graph",
-        "path": "/tutorial/building-an-asset-graph"
+        "path": "/tutorial/building-an-asset-graph",
+        "nonMdx": true
       },
       {
         "title": "Part 5: Scheduling your pipeline",
