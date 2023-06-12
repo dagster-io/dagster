@@ -10,7 +10,7 @@ from dagster._cli.project import (
     scaffold_repository_command,
 )
 from dagster._core.workspace.load_target import get_origins_from_toml
-from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE
+from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE, _get_url_for_version
 from dagster._generate.generate import _should_skip_file
 
 
@@ -137,3 +137,8 @@ def test_scaffold_repository_command_succeeds():
         assert os.path.exists("my_dagster_repo/my_dagster_repo")
         assert os.path.exists("my_dagster_repo/my_dagster_repo_tests")
         assert not os.path.exists("my_dagster_repo/workspace.yaml")
+
+
+def test_versioned_download():
+    assert _get_url_for_version("1.3.3").endswith("1.3.3")
+    assert _get_url_for_version("1!0+dev").endswith("master")

@@ -6,10 +6,10 @@ from io import BytesIO
 import click
 import requests
 
+from dagster.version import __version__ as dagster_version
+
 from .generate import _should_skip_file
 
-# Currently we only download from 'master' branch
-DEFAULT_GITHUB_URL = "https://codeload.github.com/dagster-io/dagster/tar.gz/master"
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = ["docs_snippets", "experimental"]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
@@ -43,6 +43,14 @@ AVAILABLE_EXAMPLES = [
 ]
 
 
+def _get_url_for_version(version: str) -> str:
+    if version == "1!0+dev":
+        target = "master"
+    else:
+        target = version
+    return f"https://codeload.github.com/dagster-io/dagster/tar.gz/{target}"
+
+
 def download_example_from_github(path: str, example: str):
     if example not in AVAILABLE_EXAMPLES:
         click.echo(
@@ -59,7 +67,7 @@ def download_example_from_github(path: str, example: str):
 
     click.echo(f"Downloading example '{example}'. This may take a while.")
 
-    response = requests.get(DEFAULT_GITHUB_URL, stream=True)
+    response = requests.get(_get_url_for_version(dagster_version), stream=True)
     with tarfile.open(fileobj=BytesIO(response.raw.read()), mode="r:gz") as tar_file:
         # Extract the selected example folder to destination
         subdir_and_files = [
