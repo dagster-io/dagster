@@ -1,9 +1,11 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 from dagster import (
@@ -23,6 +25,9 @@ from typing_extensions import Literal
 from ..asset_utils import default_asset_key_fn, default_description_fn, output_name_fn
 
 logger = get_dagster_logger()
+
+
+PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 
 
 @dataclass
@@ -243,6 +248,50 @@ class DbtCliTask:
     project_dir: str
     target_path: str
 
+    @classmethod
+    def run(
+        cls,
+        args: List[str],
+        env: Dict[str, str],
+        manifest: DbtManifest,
+        project_dir: str,
+        target_path: str,
+    ) -> "DbtCliTask":
+        # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
+        # in the target folder, then copy it to the dynamic target path.
+        #
+        # This effectively allows us to skip the parsing of the manifest, which can be expensive.
+        # See https://docs.getdbt.com/reference/programmatic-invocations#reusing-objects for more
+        # details.
+        partial_parse_file_path = Path(project_dir, "target", PARTIAL_PARSE_FILE_NAME)
+        full_target_path = Path(project_dir, target_path, PARTIAL_PARSE_FILE_NAME)
+
+        if partial_parse_file_path.exists():
+            logger.info(
+                f"Copying `{partial_parse_file_path}` to `{full_target_path}` to take advantage of"
+                " partial parsing."
+            )
+
+            full_target_path.parent.mkdir(parents=True)
+            shutil.copy(partial_parse_file_path, full_target_path)
+
+        # Create a subprocess that runs the dbt CLI command.
+        logger.info(f"Running dbt command: `{' '.join(args)}`.")
+        process = subprocess.Popen(
+            args=args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+            cwd=project_dir,
+        )
+
+        return cls(
+            process=process,
+            manifest=manifest,
+            project_dir=project_dir,
+            target_path=target_path,
+        )
+
     def wait(self) -> Sequence[DbtCliEventMessage]:
         """Wait for the dbt CLI process to complete and return the events.
 
@@ -431,19 +480,10 @@ class DbtCli(ConfigurableResource):
             profile_args += ["--target", self.target]
 
         args = ["dbt"] + self.global_config + args + profile_args + selection_args
-        logger.info(f"Running dbt command: `{' '.join(args)}`.")
 
-        # Create a subprocess that runs the dbt CLI command.
-        process = subprocess.Popen(
+        return DbtCliTask.run(
             args=args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
             env=env,
-            cwd=self.project_dir,
-        )
-
-        return DbtCliTask(
-            process=process,
             manifest=manifest,
             project_dir=self.project_dir,
             target_path=target_path,
