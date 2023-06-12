@@ -1,6 +1,8 @@
 from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._config.pythonic_config import ConfigurableIOManager
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.event_api import EventRecordsFilter
@@ -31,7 +33,7 @@ def latest_materialization_log_entry(
     return event_records[0].event_log_entry if event_records else None
 
 
-class BranchingIOManager(IOManager):
+class BranchingIOManager(ConfigurableIOManager):
     """A branching I/O manager composes two I/O managers.
 
     1) The parent I/O manager, typically your production environment.
@@ -101,3 +103,8 @@ class BranchingIOManager(IOManager):
             f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
             f' "{self.branch_name}"'
         )
+
+    def setup_for_execution(self, context: InitResourceContext):
+        self.parent_io_manager.setup_for_execution(context)
+        self.branch_io_manager.setup_for_execution(context)
+
