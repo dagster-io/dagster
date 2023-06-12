@@ -1,3 +1,26 @@
+## 1.0.9 (June 12, 2023)
+
+- Upgrade to Storybook 7
+- Move stories and tests into folders
+- Support React 18
+  - Update props interfaces to explicitly include `children`
+  - Make `Toaster` creation async
+- Upgrade to React 18
+- Upgrade to Blueprint 4
+- New components
+  - `ErrorBoundary` wrapper component
+  - `RadioContainer`
+  - `SubwayDot`
+  - `TagSelector`
+  - `VirtualizedTable` cell and row components
+- Add `useViewport` hook
+- Remove `Markdown` component to eliminate dependency
+- Add a bunch of new icons
+- Add icon-less state to `NonIdealState`
+- Fix a few bugs with `MiddleTruncate`
+- Fix `Countdown` to show minutes/hours, not just total seconds
+- Change default `Table` font to no longer be monospace
+
 ## 1.0.8 (January 9, 2023)
 
 - Added ProductTour component
