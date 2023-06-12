@@ -25,7 +25,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
 
     example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
 
-    # [HERE] TODO: these tests were failing to install due to using editable install dagster and published
+    # TODO: these tests were failing to install due to using editable install dagster and published
     # dagster-cloud.
     example_packages_filtered = [
         pkg

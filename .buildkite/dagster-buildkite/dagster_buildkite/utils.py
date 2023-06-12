@@ -238,7 +238,7 @@ def skip_if_no_docs_changes():
         return None
 
     # If anything changes in the examples directory. This is where our docs snippets live.
-    if any(Path("examples/docs_snippets") in path.parents for path in ChangedFiles.all):
+    if any(Path("examples") in path.parents for path in ChangedFiles.all):
         logging.info("Run docs steps because files in the examples directory changed")
         return None
 
