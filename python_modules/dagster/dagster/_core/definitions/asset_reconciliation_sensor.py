@@ -204,6 +204,7 @@ def can_reconcile_time_window_partition(
     time_window_partition_scope: Optional[datetime.timedelta],
     current_time: datetime.datetime,
 ) -> bool:
+    # return True
     if partition_key is None:
         return False
     if time_window_partition_scope is None:
