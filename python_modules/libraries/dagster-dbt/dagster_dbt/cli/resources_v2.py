@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
+import dateutil.parser
 from dagster import (
     AssetKey,
     AssetObservation,
@@ -211,11 +212,16 @@ class DbtCliEventMessage:
         is_node_successful = node_status == NodeStatus.Success
         is_node_finished = bool(event_node_info.get("node_finished_at"))
         if node_resource_type in NodeType.refable() and is_node_successful:
+            started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
+            finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
+            duration_seconds = (finished_at - started_at).total_seconds()
+
             yield Output(
                 value=None,
                 output_name=output_name_fn(event_node_info),
                 metadata={
                     "unique_id": unique_id,
+                    "Execution Duration": duration_seconds,
                 },
             )
         elif node_resource_type == NodeType.Test and is_node_finished:

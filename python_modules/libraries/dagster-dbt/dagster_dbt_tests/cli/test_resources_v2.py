@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import pytest
-from dagster import AssetObservation, Output
+from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue
 from dagster_dbt.cli import DbtCli, DbtCliEventMessage, DbtManifest
 from pytest_mock import MockerFixture
 
@@ -191,7 +191,8 @@ def test_to_default_asset_output_events() -> None:
                 "unique_id": "a.b.c",
                 "resource_type": "model",
                 "node_status": "success",
-                "node_finished_at": "2024-01-01T00:00:00Z",
+                "node_started_at": "2024-01-01T00:00:00Z",
+                "node_finished_at": "2024-01-01T00:01:00Z",
             }
         }
     }
@@ -199,6 +200,10 @@ def test_to_default_asset_output_events() -> None:
 
     assert len(asset_events) == 1
     assert all(isinstance(e, Output) for e in asset_events)
+    assert asset_events[0].metadata == {
+        "unique_id": TextMetadataValue("a.b.c"),
+        "Execution Duration": FloatMetadataValue(60.0),
+    }
 
 
 def test_to_default_asset_observation_events() -> None:
