@@ -213,7 +213,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     );
   };
 
-  const renderAutomaterializePolicyTab = () => {
+  const renderAutomaterializeHistoryTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
@@ -310,7 +310,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : selectedTab === 'plots' ? (
           renderPlotsTab()
         ) : selectedTab === 'auto-materialize-history' ? (
-          renderAutomaterializePolicyTab()
+          renderAutomaterializeHistoryTab()
         ) : (
           <span />
         )}
