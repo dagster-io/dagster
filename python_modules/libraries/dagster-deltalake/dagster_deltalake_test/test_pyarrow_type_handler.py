@@ -3,7 +3,18 @@ from datetime import datetime
 
 import pyarrow as pa
 import pytest
-from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
+from dagster import (
+    AssetIn,
+    DailyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    Out,
+    StaticPartitionsDefinition,
+    asset,
+    graph,
+    materialize,
+    op,
+)
 from dagster._check import CheckError
 from dagster_deltalake import DELTA_DATE_FORMAT, DeltaTablePyarrowIOManager, LocalConfig
 from deltalake import DeltaTable
@@ -242,3 +253,131 @@ def test_load_partitioned_asset(tmp_path, io_manager):
     assert res.success
     table = res.asset_value(["my_schema", "load_partitioned"])
     assert table.shape[0] == 3
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "color"},
+    config_schema={"value": str},
+)
+def static_partitioned(context) -> pa.Table:
+    partition = context.asset_partition_key_for_output()
+    value = context.op_config["value"]
+
+    return pa.Table.from_pydict(
+        {
+            "color": [partition, partition, partition],
+            "a": [value, value, value],
+            "b": [4, 5, 6],
+        }
+    )
+
+
+def test_static_partitioned_asset(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    materialize(
+        [static_partitioned],
+        partition_key="red",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    dt = DeltaTable(os.path.join(tmp_path, "my_schema/static_partitioned"))
+    out_df = dt.to_pyarrow_table()
+    assert out_df["a"].to_pylist() == ["1", "1", "1"]
+
+    materialize(
+        [static_partitioned],
+        partition_key="blue",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["1", "1", "1", "2", "2", "2"]
+
+    materialize(
+        [static_partitioned],
+        partition_key="red",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    ),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": {"time": "time", "color": "color"}},
+    config_schema={"value": str},
+)
+def multi_partitioned(context) -> pa.Table:
+    partition = context.partition_key.keys_by_dimension
+    time_partition = datetime.strptime(partition["time"], DELTA_DATE_FORMAT).date()
+    value = context.op_config["value"]
+    return pa.Table.from_pydict(
+        {
+            "color": [partition["color"], partition["color"], partition["color"]],
+            "time": [time_partition, time_partition, time_partition],
+            "a": [value, value, value],
+        }
+    )
+
+
+def test_multi_partitioned_asset(tmp_path, io_manager):
+    resource_defs = {"io_manager": io_manager}
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    dt = DeltaTable(os.path.join(tmp_path, "my_schema/multi_partitioned"))
+    out_df = dt.to_pyarrow_table()
+    assert out_df["a"].to_pylist() == ["1", "1", "1"]
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["1", "1", "1", "2", "2", "2"]
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
+    )
+
+    dt.update_incremental()
+    out_df = dt.to_pyarrow_table()
+    assert sorted(out_df["a"].to_pylist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
