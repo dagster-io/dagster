@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._config.pythonic_config import ConfigurableIOManager
+from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.event_api import EventRecordsFilter
@@ -105,6 +105,13 @@ class BranchingIOManager(ConfigurableIOManager):
         )
 
     def setup_for_execution(self, context: InitResourceContext):
-        self.parent_io_manager.setup_for_execution(context)
-        self.branch_io_manager.setup_for_execution(context)
+        if isinstance(self.parent_io_manager, ConfigurableResourceFactory):
+            self.parent_io_manager.setup_for_execution(context)
+        if isinstance(self.branch_io_manager, ConfigurableResourceFactory):
+            self.branch_io_manager.setup_for_execution(context)
 
+    def teardown_after_execution(self, context: InitResourceContext) -> None:
+        if isinstance(self.parent_io_manager, ConfigurableResourceFactory):
+            self.parent_io_manager.teardown_after_execution(context)
+        if isinstance(self.branch_io_manager, ConfigurableResourceFactory):
+            self.branch_io_manager.teardown_after_execution(context)
