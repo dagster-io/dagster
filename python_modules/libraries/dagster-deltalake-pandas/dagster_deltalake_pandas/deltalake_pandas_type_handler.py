@@ -12,7 +12,7 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TableSlice,
 )
-from dagster_deltalake.io_manager import DeltaTableIOManager, TableConnection
+from dagster_deltalake.io_manager import DeltaLakeIOManager, TableConnection
 from deltalake import DeltaTable
 from deltalake.writer import write_deltalake
 
@@ -60,7 +60,7 @@ class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         return [pd.DataFrame]
 
 
-class DeltaTablePandasIOManager(DeltaTableIOManager):
+class DeltaTablePandasIOManager(DeltaLakeIOManager):
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return True

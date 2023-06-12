@@ -1,7 +1,7 @@
-from typing import List, Optional, Sequence, Type, Union, cast
+from abc import abstractmethod
+from typing import Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
 
 import pyarrow as pa
-import pyarrow.dataset as ds
 from dagster import (
     InputContext,
     MetadataValue,
@@ -22,28 +22,36 @@ from deltalake.writer import write_deltalake
 
 from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
+T = TypeVar("T")
 
-class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
+
+class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
+    @abstractmethod
+    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type) -> T:
+        pass
+
+    @abstractmethod
+    def to_arrow(self, obj: T) -> pa.RecordBatchReader:
+        pass
+
     def handle_output(
         self,
         context: OutputContext,
         table_slice: TableSlice,
-        obj: Union[ds.Scanner, pa.Table, pa.RecordBatchReader],
+        obj: T,
         connection: TableConnection,
     ):
         """Stores pyarrow types in Delta table."""
-        # TODO handle partition overwrites
-
-        if isinstance(obj, ds.Scanner):
-            obj = obj.to_reader()
-
-        delta_schema = Schema.from_pyarrow(obj.schema)
+        reader = self.to_arrow(obj=obj)
+        delta_schema = Schema.from_pyarrow(reader.schema)
 
         partition_filters = None
         partition_columns = None
         if table_slice.partition_dimensions is not None:
             partition_filters = partition_dimensions_to_dnf(
-                partition_dimensions=table_slice.partition_dimensions, table_schema=delta_schema, str_values=True
+                partition_dimensions=table_slice.partition_dimensions,
+                table_schema=delta_schema,
+                str_values=True,
             )
 
             # TODO make robust and move to function
@@ -51,17 +59,12 @@ class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
 
         write_deltalake(
             connection.table_uri,
-            obj,
+            reader,
             storage_options=connection.storage_options,
             mode="overwrite",
             partition_filters=partition_filters,
             partition_by=partition_columns,
         )
-
-        if isinstance(obj, pa.Table):
-            extra_info = {"row_count": obj.shape[0]}
-        else:
-            extra_info = {}
 
         context.add_output_metadata(
             {
@@ -69,47 +72,59 @@ class DeltalakeArrowTypeHandler(DbTypeHandler[pa.Table]):
                     TableSchema(
                         columns=[
                             TableColumn(name=name, type=str(dtype))
-                            for name, dtype in zip(obj.schema.names, obj.schema.types)
+                            for name, dtype in zip(reader.schema.names, reader.schema.types)
                         ]
                     )
                 ),
                 "table_uri": connection.table_uri,
-                **extra_info,
             }
         )
 
     def load_input(
         self, context: InputContext, table_slice: TableSlice, connection: TableConnection
-    ) -> Union[ds.Scanner, pa.Table, pa.RecordBatchReader]:
-        """Loads the input as a pyarrow Scanner, Table, or RecordBatchReader."""
+    ) -> T:
+        """Loads the input as a pyarrow Table or RecordBatchReader."""
         table = DeltaTable(
             table_uri=connection.table_uri, storage_options=connection.storage_options
         )
 
-        _partition_expr = None
+        partition_expr = None
         if table_slice.partition_dimensions is not None:
             partition_filters = partition_dimensions_to_dnf(
                 partition_dimensions=table_slice.partition_dimensions, table_schema=table.schema()
             )
             if partition_filters is not None:
-                _partition_expr = _filters_to_expression([partition_filters])
-        scanner = table.to_pyarrow_dataset().scanner(columns=table_slice.columns, filter=_partition_expr)
-    
-        if context.dagster_type.typing_type == ds.Scanner:
-            return scanner
-        if context.dagster_type.typing_type == pa.Table:
-            return scanner.to_table()
-        if context.dagster_type.typing_type == pa.RecordBatchReader:
-            return scanner.to_reader()
-        return scanner
+                partition_expr = _filters_to_expression([partition_filters])
+        scanner = table.to_pyarrow_dataset().scanner(
+            columns=table_slice.columns, filter=partition_expr
+        )
+
+        return self.from_arrow(scanner.to_reader(), context.dagster_type.typing_type)
+
+
+ArrowTypes = Union[pa.Table, pa.RecordBatchReader]
+
+
+class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
+    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[ArrowTypes]) -> ArrowTypes:
+        if target_type == pa.Table:
+            return obj.read_all()
+        return obj
+
+    def to_arrow(self, obj: ArrowTypes) -> pa.RecordBatchReader:
+        if isinstance(obj, pa.Table):
+            return obj.to_reader()
+        return obj
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:
-        return [pa.Table, ds.Scanner, pa.RecordBatchReader]
+        return [pa.Table, pa.RecordBatchReader]
 
 
 def partition_dimensions_to_dnf(
-    partition_dimensions: Sequence[TablePartitionDimension], table_schema: Schema, str_values: bool = False
+    partition_dimensions: Sequence[TablePartitionDimension],
+    table_schema: Schema,
+    str_values: bool = False,
 ) -> Optional[List[FilterLiteralType]]:
     parts = []
     for partition_dimension in partition_dimensions:
@@ -121,7 +136,9 @@ def partition_dimensions_to_dnf(
             )
         if isinstance(field.type, PrimitiveType):
             if field.type.type in ["timestamp", "date"]:
-                filter_ = _time_window_partition_dnf(partition_dimension, field.type.type, str_values)
+                filter_ = _time_window_partition_dnf(
+                    partition_dimension, field.type.type, str_values
+                )
                 parts.append(filter_)
             else:
                 raise ValueError(f"Unsupported partition type {field.type.type}")
