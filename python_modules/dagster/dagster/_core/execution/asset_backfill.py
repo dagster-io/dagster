@@ -24,6 +24,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     build_run_requests,
     find_parent_materialized_asset_partitions,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -854,9 +855,18 @@ def should_backfill_atomic_asset_partitions_unit(
         ):
             return False
 
-        for parent in asset_graph.get_parents_partitions(
+        parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
-        ):
+        )
+
+        if parent_partitions_result.invalid_parent_partitions:
+            raise DagsterInvariantViolationError(
+                f"Asset partition {candidate}"
+                " depends on invalid partition keys"
+                f" {parent_partitions_result.invalid_parent_partitions}"
+            )
+
+        for parent in parent_partitions_result.valid_parent_partitions:
             can_run_with_parent = (
                 parent in asset_partitions_to_request
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)

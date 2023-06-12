@@ -590,11 +590,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
         )
 
-        for parent in asset_graph.get_valid_parent_partitions(
+        for parent in asset_graph.get_parents_partitions(
             dynamic_partitions_store=self,
             current_time=self._evaluation_time,
-            candidate=asset_partition,
-        ):
+            asset_key=asset_partition.asset_key,
+            partition_key=asset_partition.partition_key,
+        ).valid_parent_partitions:
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
             # for existence of upstream materialization, do not worry about timestamps
             if time_or_dynamic_partitioned and parent.partition_key is None:

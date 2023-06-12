@@ -37,7 +37,8 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
-from .asset_selection import AssetGraph, AssetSelection
+from .asset_graph import AssetGraph, ParentPartitionsResult
+from .asset_selection import AssetSelection
 from .auto_materialize_condition import (
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
@@ -674,7 +675,10 @@ def determine_asset_partitions_to_auto_materialize(
     ] = defaultdict(set, conditions_by_asset_partition_for_freshness)
 
     # a filter for eliminating candidates
-    def can_reconcile_candidate(candidate: AssetKeyPartitionKey) -> bool:
+    def can_reconcile_candidate(
+        candidate: AssetKeyPartitionKey,
+        # parent_partitions_by_candidate: Mapping[AssetKeyPartitionKey, ParentPartitionsResult],
+    ) -> bool:
         auto_materialize_policy = get_implicit_auto_materialize_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
         )
@@ -700,10 +704,6 @@ def determine_asset_partitions_to_auto_materialize(
         # the policy does not allow for materializing missing partitions and it's missing
         elif not auto_materialize_policy.on_missing and not instance_queryer.materialization_exists(
             candidate
-        ):
-            return False
-        elif not asset_graph.partition_maps_to_valid_parents(
-            instance_queryer, evaluation_time, candidate
         ):
             return False
 
@@ -732,12 +732,11 @@ def determine_asset_partitions_to_auto_materialize(
     def parents_will_be_reconciled(
         asset_graph: AssetGraph,
         candidate: AssetKeyPartitionKey,
+        parent_partitions_result: ParentPartitionsResult,
     ) -> bool:
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-        for parent in asset_graph.get_parents_partitions(
-            instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
-        ):
+        for parent in parent_partitions_result.valid_parent_partitions:
             if instance_queryer.is_reconciled(
                 asset_partition=parent,
                 asset_graph=asset_graph,
@@ -823,9 +822,23 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             return False
 
+        parent_partitions_by_candidate = {
+            candidate: asset_graph.get_parents_partitions(
+                instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
+            )
+            for candidate in candidates_unit
+        }
+        if not all(
+            len(parent_partitions_result.invalid_parent_partitions) == 0
+            for parent_partitions_result in parent_partitions_by_candidate.values()
+        ):
+            return False
+
         if all(
             will_be_materialized_for_freshness(candidate)
-            or parents_will_be_reconciled(asset_graph, candidate)
+            or parents_will_be_reconciled(
+                asset_graph, candidate, parent_partitions_by_candidate[candidate]
+            )
             for candidate in candidates_unit
         ):
             unit_conditions = set().union(
