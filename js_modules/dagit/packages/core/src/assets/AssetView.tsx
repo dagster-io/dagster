@@ -71,7 +71,7 @@ export interface AssetViewParams {
     | 'overview'
     | 'plots'
     | 'partitions'
-    | 'auto-materialize-policy';
+    | 'auto-materialize-history';
 
   lineageScope?: AssetLineageScope;
   lineageDepth?: number;
@@ -264,9 +264,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               />
               {definition?.autoMaterializePolicy ? (
                 <Tab
-                  id="auto-materialize-policy"
-                  title="Auto-materialize policy"
-                  onClick={() => setParams({...params, view: 'auto-materialize-policy'})}
+                  id="auto-materialize-history"
+                  title="Auto-materialize history"
+                  onClick={() => setParams({...params, view: 'auto-materialize-history'})}
                   disabled={!definition}
                 />
               ) : null}
@@ -309,7 +309,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           renderEventsTab()
         ) : selectedTab === 'plots' ? (
           renderPlotsTab()
-        ) : selectedTab === 'auto-materialize-policy' ? (
+        ) : selectedTab === 'auto-materialize-history' ? (
           renderAutomaterializePolicyTab()
         ) : (
           <span />
