@@ -567,7 +567,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     @cached_method
     def is_reconciled(
-        self, *, asset_partition: AssetKeyPartitionKey, asset_graph: AssetGraph
+        self,
+        *,
+        asset_partition: AssetKeyPartitionKey,
+        asset_graph: AssetGraph,
     ) -> bool:
         """Returns a boolean representing if the given `asset_partition` is currently reconciled.
         An asset (partition) is considered unreconciled if any of:
@@ -586,11 +589,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_graph.get_partitions_def(asset_partition.asset_key),
             (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
         )
-        for parent in asset_graph.get_parents_partitions(
-            self,
-            self._evaluation_time,
-            asset_partition.asset_key,
-            asset_partition.partition_key,
+
+        for parent in asset_graph.get_valid_parent_partitions(
+            dynamic_partitions_store=self,
+            current_time=self._evaluation_time,
+            candidate=asset_partition,
         ):
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
             # for existence of upstream materialization, do not worry about timestamps

@@ -701,6 +701,10 @@ def determine_asset_partitions_to_auto_materialize(
             candidate
         ):
             return False
+        elif not asset_graph.partition_maps_to_valid_parents(
+            instance_queryer, evaluation_time, candidate
+        ):
+            return False
 
         return True
 
@@ -733,7 +737,10 @@ def determine_asset_partitions_to_auto_materialize(
         for parent in asset_graph.get_parents_partitions(
             instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
         ):
-            if instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
+            if instance_queryer.is_reconciled(
+                asset_partition=parent,
+                asset_graph=asset_graph,
+            ):
                 continue
 
             if not (
@@ -776,7 +783,8 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             conditions.add(MissingAutoMaterializeCondition())
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
-            asset_partition=candidate, asset_graph=asset_graph
+            asset_partition=candidate,
+            asset_graph=asset_graph,
         ):
             conditions.add(ParentMaterializedAutoMaterializeCondition())
 
