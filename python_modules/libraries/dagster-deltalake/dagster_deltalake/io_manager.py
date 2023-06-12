@@ -51,7 +51,7 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
     table_config: NotRequired[Dict[str, str]]
 
 
-class DeltaTableIOManager(ConfigurableIOManagerFactory):
+class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     root_uri: str
     storage_options: Union[AzureConfig, S3Config, LocalConfig] = Field(discriminator="provider")
     table_config: Optional[Dict[str, str]] = Field(
@@ -73,7 +73,7 @@ class DeltaTableIOManager(ConfigurableIOManagerFactory):
     def create_io_manager(self, context) -> DbIOManager:
         self.storage_options.dict()
         return DbIOManager(
-            db_client=DeltaTableDbClient(),
+            db_client=DeltaLakeDbClient(),
             database="deltalake",
             schema=self.schema_,
             type_handlers=self.type_handlers(),
@@ -82,15 +82,19 @@ class DeltaTableIOManager(ConfigurableIOManagerFactory):
         )
 
 
-class DeltaTableDbClient(DbClient):
+class DeltaLakeDbClient(DbClient):
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+    def delete_table_slice(
+        context: OutputContext, table_slice: TableSlice, connection: TableConnection
+    ) -> None:
         # deleting the table slice here is a no-op, since we use deltalakes internal mechanism
         # to overwrite table partitions.
         pass
 
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+    def ensure_schema_exists(
+        context: OutputContext, table_slice: TableSlice, connection: TableConnection
+    ) -> None:
         # schemas are just folders and automatically created on write.
         pass
 
