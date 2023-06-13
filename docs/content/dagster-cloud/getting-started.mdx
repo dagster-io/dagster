@@ -398,6 +398,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
    ```shell
    export IMAGE_TAG=`git log --format=format:%H -n 1`
    ```
+
    Use this tag to build and upload your Docker image, for example:
 
    ```shell
@@ -426,9 +427,6 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
 **Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
-
-   This command updates the code locations in Dagster Cloud. Once this finishes successfully, you should be able to see the code locations under the **Deployments** tab in Dagster Cloud.
-</TabGroup>
 
 </TabItem>
 </TabGroup>
