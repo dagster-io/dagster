@@ -176,7 +176,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 
     # Create a mapping of job id to a version of the job with the resource defs bound
     unsatisfied_job_to_resource_bound_job = {
-        id(job): job.with_top_level_resources(resource_defs)
+        id(job): job.with_top_level_resources({**job.resource_defs, **resource_defs})
         for job in jobs
         if job in unsatisfied_jobs
     }
