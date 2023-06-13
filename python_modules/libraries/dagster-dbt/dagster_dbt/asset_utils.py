@@ -71,7 +71,22 @@ def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
 
 
 def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-    freshness_policy_config = node_info["config"].get("dagster_freshness_policy")
+    dagster_metadata = node_info["config"].get("meta", {}).get("dagster", {})
+    freshness_policy_config = dagster_metadata.get("freshness_policy", {})
+
+    freshness_policy = _legacy_freshness_policy_fn(freshness_policy_config)
+    if freshness_policy:
+        return freshness_policy
+
+    # TODO: Remove this legacy configuration in 0.20.0
+    legacy_freshness_policy_config = node_info["config"].get("dagster_freshness_policy", {})
+
+    return _legacy_freshness_policy_fn(legacy_freshness_policy_config)
+
+
+def _legacy_freshness_policy_fn(
+    freshness_policy_config: Mapping[str, Any]
+) -> Optional[FreshnessPolicy]:
     if freshness_policy_config:
         return FreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
@@ -84,10 +99,27 @@ def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[Freshn
 def default_auto_materialize_policy_fn(
     node_info: Mapping[str, Any]
 ) -> Optional[AutoMaterializePolicy]:
-    auto_materialize_policy = node_info["config"].get("dagster_auto_materialize_policy", {})
-    if auto_materialize_policy.get("type") == "eager":
+    dagster_metadata = node_info["config"].get("meta", {}).get("dagster", {})
+    auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
+
+    auto_materialize_policy = _auto_materialize_policy_fn(auto_materialize_policy_config)
+    if auto_materialize_policy:
+        return auto_materialize_policy
+
+    # TODO: Remove this legacy configuration in 0.20.0
+    legacy_auto_materialize_policy_config = node_info["config"].get(
+        "dagster_auto_materialize_policy", {}
+    )
+
+    return _auto_materialize_policy_fn(legacy_auto_materialize_policy_config)
+
+
+def _auto_materialize_policy_fn(
+    auto_materialize_policy_config: Mapping[str, Any]
+) -> Optional[AutoMaterializePolicy]:
+    if auto_materialize_policy_config.get("type") == "eager":
         return AutoMaterializePolicy.eager()
-    elif auto_materialize_policy.get("type") == "lazy":
+    elif auto_materialize_policy_config.get("type") == "lazy":
         return AutoMaterializePolicy.lazy()
     return None
 
