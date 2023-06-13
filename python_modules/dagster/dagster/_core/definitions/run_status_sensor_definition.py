@@ -1,3 +1,4 @@
+import functools
 import logging
 from contextlib import ExitStack
 from datetime import datetime
@@ -43,7 +44,6 @@ from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.mirror_signature import mirror_signature_of
 
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
@@ -468,7 +468,7 @@ def run_failure_sensor(
             request_job=request_job,
             request_jobs=request_jobs,
         )
-        @mirror_signature_of(fn)
+        @functools.wraps(fn)
         def _run_failure_sensor(*args, **kwargs) -> Any:
             args_modified = [
                 arg.for_run_failure() if isinstance(arg, RunStatusSensorContext) else arg
