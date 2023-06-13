@@ -11,7 +11,9 @@ from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.tags import RUN_WORKER_ID_TAG
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import (
     DEFAULT_LINUX_RESOURCES,
@@ -20,6 +22,7 @@ from dagster_aws.ecs.launcher import (
     STOPPED_STATUSES,
 )
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
+from dagster_aws.ecs.utils import get_task_definition_family
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -51,9 +54,7 @@ def test_default_launcher(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
-    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
-    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
-    assert task_definition["family"] == "in_process"
+    assert task_definition["family"] == get_task_definition_family("run", run.external_job_origin)
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
@@ -87,7 +88,7 @@ def test_default_launcher(
         )
         assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
-    # We set pipeline-specific overides
+    # We set job-specific overides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
     override = overrides[0]
@@ -108,22 +109,257 @@ def test_default_launcher(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
     ecs.stop_task(task=task_arn)
 
+def test_fallback_strategy(ecs, instance_cm, workspace, job, external_job):
+    fallback_capacity_provider = [{'capacityProvider': 'FARGATE'}]
+    default_capacity_provider = [{'capacityProvider': 'FARGATE_SPOT'}]
+    
+    with instance_cm(
+        {
+            "fallback_capacity_provider_strategy": fallback_capacity_provider,
+            "run_task_kwargs": {
+                    "capacityProviderStrategy": default_capacity_provider,
+            }
+        },
+    ) as instance:
+        
+        ### DEFAULT PROVIDER ###
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        # Test 1
+        instance.launch_run(run.run_id, workspace)
+
+        default_tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(default_tasks) == len(initial_tasks) + 1
+        task_arn = list(set(default_tasks).difference(initial_tasks))[0]
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        assert task["capacityProviderName"] == "FARGATE_SPOT"
+
+        ### FALLBACK PROVIDER ###
+        def run_task(self=ecs, **kwargs):
+            # test 2: fallback, succeeded       [none,1]       Test 1 failure
+            # test 3: fallback, failure         [2,3]          Test 2 failures
+            # test 4: failure                   [4]         Test other failure
+
+            if not hasattr(run_task, 'counter') or run_task.counter in [2,3]:
+                if not hasattr(run_task, 'counter'):
+                    run_task.counter = 1
+                else:
+                    run_task.counter += 1
+
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                        },
+                    ],
+                }
+            elif run_task.counter == 1:
+                run_task.counter += 1
+                service_response = {
+                    "tasks": [
+                        {
+                            "taskArn": "task-arn-1",
+                            "clusterArn": "cluster-arn-1",
+                            "capacityProviderStrategy": kwargs.get("capacityProviderStrategy")
+                        }
+                    ],
+                    "failures": [],
+                }
+            elif run_task.counter == 4:
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Not capacity related failure"
+                        },
+                    ],
+                }
+            
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        instance.run_launcher.ecs.run_task = run_task
+        
+        # Test 2
+        instance.launch_run(run.run_id, workspace)
+
+        fallback_tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(fallback_tasks) == len(default_tasks) + 1
+        task_arn = list(set(fallback_tasks).difference(default_tasks))[0]
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        assert task["capacityProviderStrategy"] == fallback_capacity_provider
+
+        # Test 3
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+
+        assert ex.match("Task failed. Failure reason: Capacity is unavailable at this time. Please try again later or in a different availability zone")
+
+        # Test 4
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+
+        assert ex.match("Task failed. Failure reason: Not capacity related failure")
+
+def test_capacity_failure_strategy(ecs, instance_cm, workspace, job, external_job):
+    capacity_failure_strategy= {
+        "max_retries": 1,
+        "retry_interval": 5
+    }
+    
+    with instance_cm(
+        {
+            "capacity_failure_strategy": capacity_failure_strategy
+        },
+    ) as instance:
+
+        def run_task(self=ecs, **kwargs):
+            # test 1: retry, succeeded          [none,1]        Test 1 failure      (max_retries = 1)
+            # test 2: retry, failure            [2,3]           Test 2 failures     (max_retries = 1)
+            # test 3: retry, retry, succeeded   [4,5,6]         Test 2 failures     (max_retries = 2)
+            # test 4: retry, retry, failure     [7,8,9]         Test 2 failures     (max_retries = 2)
+            # test 5: failure                   [10]            Test other failure
+
+            if not hasattr(run_task, 'counter') or run_task.counter in [2,3,4,5,7,8,9]:
+                if not hasattr(run_task, 'counter'):
+                    run_task.counter = 1
+                else:
+                    run_task.counter += 1
+
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                        },
+                    ],
+                }
+            elif run_task.counter in [1,6]:
+                run_task.counter += 1
+                service_response={
+                    "tasks": [
+                        {
+                            "taskArn": "task-arn-1",
+                            "clusterArn": "cluster-arn-1",
+                        }
+                    ],
+                    "failures": [],
+                }
+            elif run_task.counter == 10:
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Not capacity related failure"
+                        },
+                    ],
+                }
+
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        # Capacity failure strategy from instance
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.run_launcher.ecs.run_task = run_task
+
+        # Test 1
+        instance.launch_run(run.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(tasks) == len(initial_tasks) + 1
+
+        # Test 2
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+
+        assert ex.match("Task failed. Failure reason: Capacity is unavailable at this time. Please try again later or in a different availability zone")
+
+
+        # Override capacity failure strategy with tags
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        instance.add_run_tags(
+            run.run_id,
+            {
+                "ecs/capacity_failure_strategy": json.dumps(
+                    {
+                        "max_retries": 2,
+                        "retry_interval": 5
+                    }
+                )
+            },
+        )
+
+        # Test 3
+        instance.launch_run(run.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(tasks) == len(initial_tasks) + 2
+
+        # Test 4
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+
+        assert ex.match("Task failed. Failure reason: Capacity is unavailable at this time. Please try again later or in a different availability zone")
+
+        # Test 5
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+
+        assert ex.match("Task failed. Failure reason: Not capacity related failure")
 
 def test_launcher_fargate_spot(
     ecs,
     instance_fargate_spot,
     workspace,
-    external_pipeline,
-    pipeline,
+    external_job,
+    job,
     subnet,
     image,
     environment,
 ):
     instance = instance_fargate_spot
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -147,10 +383,10 @@ def test_launcher_fargate_spot(
     assert task["capacityProviderName"] == "FARGATE_SPOT"
 
     # Override capacity provider strategy with tags
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     instance.add_run_tags(
         run.run_id,
@@ -189,17 +425,17 @@ def test_launcher_dont_use_current_task(
     ecs,
     instance_dont_use_current_task,
     workspace,
-    external_pipeline,
-    pipeline,
+    external_job,
+    job,
     subnet,
     image,
     environment,
 ):
     instance = instance_dont_use_current_task
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     cluster = instance.run_launcher.run_task_kwargs["cluster"]
@@ -222,9 +458,7 @@ def test_launcher_dont_use_current_task(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
-    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
-    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
-    assert task_definition["family"] == "in_process"
+    assert task_definition["family"] == get_task_definition_family("run", run.external_job_origin)
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
@@ -253,7 +487,7 @@ def test_launcher_dont_use_current_task(
     assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
     assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
-    # We set pipeline-specific overides
+    # We set job-specific overides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
     override = overrides[0]
@@ -551,9 +785,7 @@ def test_reuse_task_definition(instance, ecs):
     )
 
 
-def test_default_task_definition_resources(
-    ecs, instance_cm, run, workspace, pipeline, external_pipeline
-):
+def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job, external_job):
     task_role_arn = "fake-task-role"
     execution_role_arn = "fake-execution-role"
     with instance_cm(
@@ -564,10 +796,10 @@ def test_default_task_definition_resources(
             },
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -598,10 +830,10 @@ def test_default_task_definition_resources(
             },
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -632,10 +864,10 @@ def test_default_task_definition_resources(
             "run_resources": {"cpu": "2048", "memory": "4096", "ephemeral_storage": 36},
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -657,9 +889,7 @@ def test_default_task_definition_resources(
         assert task_definition["ephemeralStorage"]["sizeInGiB"] == 36
 
 
-def test_launching_with_task_definition_dict(
-    ecs, instance_cm, run, workspace, pipeline, external_pipeline
-):
+def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, job, external_job):
     container_name = "dagster"
 
     task_role_arn = "fake-task-role"
@@ -706,10 +936,10 @@ def test_launching_with_task_definition_dict(
             "container_name": container_name,
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -748,7 +978,7 @@ def test_launching_with_task_definition_dict(
             sidecar["name"],
         ]
 
-        # We set pipeline-specific overides
+        # We set job-specific overides
         overrides = task["overrides"]["containerOverrides"]
         assert len(overrides) == 1
         override = overrides[0]
@@ -756,10 +986,10 @@ def test_launching_with_task_definition_dict(
         assert "execute_run" in override["command"]
         assert run.run_id in str(override["command"])
 
-        second_run = run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        second_run = run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
         instance.launch_run(second_run.run_id, workspace)
@@ -768,9 +998,7 @@ def test_launching_with_task_definition_dict(
         assert ecs.list_task_definitions()["taskDefinitionArns"] == new_task_definitions
 
 
-def test_launching_custom_task_definition(
-    ecs, instance_cm, run, workspace, pipeline, external_pipeline
-):
+def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job, external_job):
     container_name = "override_container"
 
     task_definition = ecs.register_task_definition(
@@ -801,10 +1029,10 @@ def test_launching_custom_task_definition(
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -822,7 +1050,7 @@ def test_launching_custom_task_definition(
         task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
         assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
 
-        # We set pipeline-specific overides
+        # We set job-specific overides
         overrides = task["overrides"]["containerOverrides"]
         assert len(overrides) == 1
         override = overrides[0]
@@ -891,14 +1119,14 @@ def test_launcher_run_resources(
     ecs,
     instance_with_resources,
     workspace,
-    external_pipeline,
-    pipeline,
+    external_job,
+    job,
 ):
     instance = instance_with_resources
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     existing_tasks = ecs.list_tasks()["taskArns"]
@@ -911,6 +1139,21 @@ def test_launcher_run_resources(
 
     assert task.get("overrides").get("memory") == "2048"
     assert task.get("overrides").get("cpu") == "1024"
+
+
+def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job):
+    with instance_cm(
+        {
+            "run_ecs_tags": [{"key": "dagster/run_id", "value": "NOPE"}],
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        with pytest.raises(Exception, match="Cannot override system ECS tag: dagster/run_id"):
+            instance.launch_run(run.run_id, workspace)
 
 
 def test_launch_run_with_container_context(
@@ -926,6 +1169,12 @@ def test_launch_run_with_container_context(
     tasks = ecs.list_tasks()["taskArns"]
     task_arn = list(set(tasks).difference(existing_tasks))[0]
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert any(tag == {"key": "HAS_VALUE", "value": "SEE"} for tag in task["tags"])
+    assert any(tag == {"key": "DOES_NOT_HAVE_VALUE"} for tag in task["tags"])
+    assert any(
+        tag == {"key": "ABC", "value": "DEF"} for tag in task["tags"]
+    )  # from container context
 
     assert (
         task.get("overrides").get("memory")
@@ -961,6 +1210,10 @@ def test_launch_run_with_container_context(
     assert task_definition["volumes"] == container_context_config["ecs"]["volumes"]
 
     assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
+
+    sidecar_container = task_definition["containerDefinitions"][1]
+    assert sidecar_container["name"] == "busyrun"
+    assert sidecar_container["image"] == "busybox:latest"
 
 
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
@@ -1023,17 +1276,18 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
 def test_status(
     ecs,
     instance_with_log_group,
-    pipeline,
-    external_pipeline,
+    job,
+    external_job,
     cloudwatch_client,
     log_group,
 ):
     instance = instance_with_log_group
 
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
+        tags={RUN_WORKER_ID_TAG: "abcdef"},
     )
 
     instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
@@ -1052,7 +1306,8 @@ def test_status(
 
     for status in RUNNING_STATUSES:
         task["lastStatus"] = status
-        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+        running_health_check = instance.run_launcher.check_run_worker_health(run)
+        assert running_health_check.status == WorkerStatus.RUNNING
 
     for status in STOPPED_STATUSES:
         task["lastStatus"] = status
@@ -1067,9 +1322,12 @@ def test_status(
         assert failure_health_check.status == WorkerStatus.FAILED
         assert (
             failure_health_check.msg
-            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed. Check the logs for the failed task for details."
+            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed."
         )
+
+        assert not failure_health_check.transient
+        assert failure_health_check.run_worker_id == "abcdef"
 
         # with logs, the failure includes the run worker logs
 
@@ -1090,27 +1348,53 @@ def test_status(
 
         assert (
             failure_health_check.msg
-            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
-            " failed. Task logs:\nOops something bad happened"
+            == f"Task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed.\n\nRun worker logs:\nOops something bad happened"
         )
 
-        # Failure includes logs
-        assert "Task logs:\nOops something bad happened" in failure_health_check.msg
-
     task["lastStatus"] = "foo"
-    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN
+    unknown_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert unknown_health_check.status == WorkerStatus.UNKNOWN
+    assert unknown_health_check.run_worker_id == "abcdef"
+
+    task["lastStatus"] = "STOPPED"
+    task["stoppedReason"] = "Timeout waiting for network interface provisioning to complete."
+
+    started_health_check = instance.run_launcher.check_run_worker_health(run)
+    assert started_health_check.status == WorkerStatus.FAILED
+    assert not started_health_check.transient
+    assert started_health_check.run_worker_id == "abcdef"
+
+    # STARTING runs with these errors are considered a transient failure that can be retried
+    starting_run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
+        status=DagsterRunStatus.STARTING,
+        tags={RUN_WORKER_ID_TAG: "efghi"},
+    )
+    instance.run_launcher.launch_run(LaunchRunContext(dagster_run=starting_run, workspace=None))
+    task_arn = instance.get_run_by_id(starting_run.run_id).tags["ecs/task_arn"]
+    task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
+    task["lastStatus"] = "STOPPED"
+    task["stoppedReason"] = "Timeout waiting for network interface provisioning to complete."
+
+    starting_health_check = instance.run_launcher.check_run_worker_health(starting_run)
+    assert starting_health_check.status == WorkerStatus.FAILED
+    assert starting_health_check.transient
+    assert starting_health_check.run_worker_id == "efghi"
 
 
 def test_overrides_too_long(
     instance,
     workspace,
-    pipeline,
-    external_pipeline,
+    job,
+    external_job,
 ):
     large_container_context = {i: "boom" for i in range(10000)}
 
-    mock_pipeline_code_origin = PipelinePythonOrigin(
-        pipeline_name="test",
+    mock_job_code_origin = JobPythonOrigin(
+        job_name="test",
         repository_origin=RepositoryPythonOrigin(
             executable_path="/",
             code_pointer=FileCodePointer(
@@ -1122,10 +1406,10 @@ def test_overrides_too_long(
         ),
     )
 
-    run = instance.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=mock_pipeline_code_origin,
+    run = instance.create_run_for_job(
+        job,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=mock_job_code_origin,
     )
 
     instance.launch_run(run.run_id, workspace)
