@@ -31,7 +31,7 @@ const Admonition = ({style, children}) => {
             {icon && icon}
           </svg>
         </div>
-        <div className="ml-3">
+        <div className="ml-3 py-3">
           <span className={`text-sm text-${colors.text}`}>{children}</span>
         </div>
       </div>
