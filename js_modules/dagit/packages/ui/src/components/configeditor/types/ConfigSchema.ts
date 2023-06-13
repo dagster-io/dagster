@@ -14,7 +14,7 @@ interface ConfigSchema_rootConfigType {
   key: string;
 }
 
-interface ConfigSchema_allConfigTypes_ArrayConfigType {
+export interface ConfigSchema_allConfigTypes_ArrayConfigType {
   __typename: 'ArrayConfigType';
   key: string;
   description: string | null;
@@ -23,7 +23,7 @@ interface ConfigSchema_allConfigTypes_ArrayConfigType {
 }
 
 // Separated from `ArrayConfigType` manually to improve refinement.
-interface ConfigSchema_allConfigTypes_NullableConfigType {
+export interface ConfigSchema_allConfigTypes_NullableConfigType {
   __typename: 'NullableConfigType';
   key: string;
   description: string | null;
@@ -31,7 +31,7 @@ interface ConfigSchema_allConfigTypes_NullableConfigType {
   typeParamKeys: string[];
 }
 
-interface ConfigSchema_allConfigTypes_RegularConfigType {
+export interface ConfigSchema_allConfigTypes_RegularConfigType {
   __typename: 'RegularConfigType';
   key: string;
   description: string | null;
@@ -55,7 +55,7 @@ interface ConfigSchema_allConfigTypes_EnumConfigType_values {
   description: string | null;
 }
 
-interface ConfigSchema_allConfigTypes_EnumConfigType {
+export interface ConfigSchema_allConfigTypes_EnumConfigType {
   __typename: 'EnumConfigType';
   key: string;
   description: string | null;
@@ -65,7 +65,7 @@ interface ConfigSchema_allConfigTypes_EnumConfigType {
   values: ConfigSchema_allConfigTypes_EnumConfigType_values[];
 }
 
-interface ConfigSchema_allConfigTypes_CompositeConfigType_fields {
+export interface ConfigSchema_allConfigTypes_CompositeConfigType_fields {
   __typename: 'ConfigTypeField';
   name: string;
   description: string | null;
@@ -83,7 +83,7 @@ export interface ConfigSchema_allConfigTypes_CompositeConfigType {
   fields: ConfigSchema_allConfigTypes_CompositeConfigType_fields[];
 }
 
-interface ConfigSchema_allConfigTypes_ScalarUnionConfigType {
+export interface ConfigSchema_allConfigTypes_ScalarUnionConfigType {
   __typename: 'ScalarUnionConfigType';
   key: string;
   description: string | null;
