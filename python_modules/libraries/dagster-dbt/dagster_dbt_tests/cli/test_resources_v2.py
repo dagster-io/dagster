@@ -1,8 +1,11 @@
+import shutil
+from pathlib import Path
 from typing import List, Optional
 
 import pytest
 from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue
 from dagster_dbt.cli import DbtCli, DbtCliEventMessage, DbtManifest
+from dagster_dbt.cli.resources_v2 import PARTIAL_PARSE_FILE_NAME
 from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
@@ -72,6 +75,49 @@ def test_dbt_profile_configuration(monkeypatch) -> None:
 
     assert dbt_cli_task.process.args == ["dbt", "parse", "--profile", "duckdb", "--target", "dev"]
     assert dbt_cli_task.is_successful()
+
+
+def test_dbt_without_partial_parse() -> None:
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+
+    dbt.cli(["clean"], manifest=manifest).wait()
+
+    dbt_cli_compile_without_partial_parse_task = dbt.cli(["compile"], manifest=manifest)
+
+    assert dbt_cli_compile_without_partial_parse_task.is_successful()
+    assert any(
+        "Unable to do partial parsing" in event.event["info"]["msg"]
+        for event in dbt_cli_compile_without_partial_parse_task.stream_raw_events()
+    )
+
+
+def test_dbt_with_partial_parse() -> None:
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+
+    dbt.cli(["clean"], manifest=manifest).wait()
+
+    # Run `dbt compile` to generate the partial parse file
+    dbt_cli_compile_task = dbt.cli(["compile"], manifest=manifest)
+    dbt_cli_compile_task.wait()
+
+    # Copy the partial parse file to the target directory
+    partial_parse_file_path = Path(
+        TEST_PROJECT_DIR, dbt_cli_compile_task.target_path, PARTIAL_PARSE_FILE_NAME
+    )
+    original_target_path = Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME)
+
+    original_target_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
+
+    # Assert that partial parsing was used.
+    dbt_cli_compile_with_partial_parse_task = dbt.cli(["compile"], manifest=manifest)
+    dbt_cli_compile_with_partial_parse_task.wait()
+
+    assert dbt_cli_compile_with_partial_parse_task.is_successful()
+    assert not any(
+        "Unable to do partial parsing" in event.event["info"]["msg"]
+        for event in dbt_cli_compile_with_partial_parse_task.stream_raw_events()
+    )
 
 
 def test_dbt_cli_subsetted_execution(mocker: MockerFixture) -> None:
