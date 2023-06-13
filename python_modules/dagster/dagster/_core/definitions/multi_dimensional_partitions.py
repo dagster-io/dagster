@@ -3,6 +3,7 @@ import itertools
 from datetime import datetime
 from functools import reduce
 from typing import (
+    TYPE_CHECKING,
     Dict,
     Iterable,
     List,
@@ -39,6 +40,8 @@ from .partition import (
 )
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
+if TYPE_CHECKING:
+    from dagster import MultiPartitionsDefinition
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
 MULTIPARTITION_KEY_DELIMITER = "|"
@@ -93,6 +96,30 @@ class MultiPartitionKey(str):
         # When this instance is pickled, replace the argument to __new__ with the
         # dimension key mapping instead of the string representation.
         return ({dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys},)
+
+    @classmethod
+    def from_str(
+        cls, partition_key_str: str, partition_def: "MultiPartitionsDefinition"
+    ) -> "MultiPartitionKey":
+        """Parses a string representation of a partition key into a MultiPartitionKey object."""
+        split_str = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)
+        if len(split_str) != len(partition_def.partition_dimension_names):
+            raise DagsterInvalidDefinitionError(
+                f"Invalid partition key '{partition_key_str}'. The partition key must be a"
+                f" {MULTIPARTITION_KEY_DELIMITER}-delimited string with"
+                f" {len(partition_def.partition_dimension_names)} dimensions."
+            )
+
+        return cls.__new__(
+            cls,
+            keys_by_dimension={
+                k: v
+                for k, v in zip(
+                    partition_def.partition_dimension_names,
+                    partition_key_str.split(MULTIPARTITION_KEY_DELIMITER),
+                )
+            },
+        )
 
     @property
     def keys_by_dimension(self) -> Mapping[str, str]:

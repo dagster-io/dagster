@@ -214,6 +214,31 @@ def test_multipartitions_subset_serialization():
     ).get_partition_keys() == set(partition_keys)
 
 
+def test_parse_multi_partition_key() -> None:
+    partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+
+    assert MultiPartitionKey.from_str("a|x", composite) == MultiPartitionKey(
+        {"abc": "a", "xyz": "x"}
+    )
+    assert MultiPartitionKey.from_str("c|z", composite) == MultiPartitionKey(
+        {"abc": "c", "xyz": "z"}
+    )
+
+
+def test_parse_multi_partition_key_errs() -> None:
+    partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        MultiPartitionKey.from_str("a", composite)
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        MultiPartitionKey.from_str("a|b|z", composite)
+
+
 def test_multipartitions_subset_equality():
     assert multipartitions_def.empty_subset().with_partition_keys(
         [

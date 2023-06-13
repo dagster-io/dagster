@@ -31,6 +31,10 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
@@ -242,6 +246,55 @@ def test_suffix():
 
     my_job = get_two.to_job(name="get_two_prod")
     assert my_job.name == "get_two_prod"
+
+
+def test_multi_partitions() -> None:
+    @op(config_schema={"date": str})
+    def my_op(_):
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+
+    multi_partition_def = MultiPartitionsDefinition(
+        partitions_defs={
+            "time": StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
+            "client": StaticPartitionsDefinition(["foo", "bar"]),
+        }
+    )
+
+    def config_fn(partition_key: str):
+        mpk = MultiPartitionKey.from_str(partition_key, multi_partition_def)
+        print(mpk.keys_by_dimension)
+        return {
+            "ops": {
+                "my_op": {
+                    "config": {
+                        "date": mpk.keys_by_dimension.get("time"),
+                        "client": mpk.keys_by_dimension.get("client"),
+                    }
+                }
+            }
+        }
+
+    job_def = my_graph.to_job(
+        config=PartitionedConfig(
+            partitions_def=multi_partition_def,
+            run_config_for_partition_key_fn=config_fn,
+        ),
+    )
+    assert job_def.partitions_def
+    assert job_def.partitioned_config
+    partition_keys = job_def.partitions_def.get_partition_keys()
+    assert len(partition_keys) == 4
+    assert partition_keys[0] == "foo|2020-02-25"
+    assert job_def.partitioned_config.get_run_config_for_partition_key(str(partition_keys[0])) == {
+        "ops": {"my_op": {"config": {"date": "2020-02-25", "client": "foo"}}}
+    }
+    # assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1]) == {
+    #     "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
+    # }
 
 
 def test_partitions():
