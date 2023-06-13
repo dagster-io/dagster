@@ -193,6 +193,24 @@ def test_with_description_replacements() -> None:
         assert description == expected_description
 
 
+def test_with_metadata_replacements() -> None:
+    expected_metadata = {"customized": "metadata"}
+
+    class CustomizedDbtManifest(DbtManifest):
+        @classmethod
+        def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+            return expected_metadata
+
+    manifest = CustomizedDbtManifest.read(path=manifest_path)
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    for metadata in my_dbt_assets.metadata_by_key.values():
+        assert metadata["customized"] == "metadata"
+
+
 def test_auto_materialize_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
     def my_dbt_assets():
