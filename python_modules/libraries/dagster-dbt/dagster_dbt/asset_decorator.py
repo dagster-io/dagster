@@ -74,6 +74,7 @@ def dbt_assets(
             input_asset_key_replacements=manifest.asset_key_replacements,
             output_asset_key_replacements=manifest.asset_key_replacements,
             descriptions_by_key=manifest.descriptions_by_asset_key,
+            metadata_by_key=manifest.metadata_by_asset_key,
         )
 
     return inner

@@ -23,7 +23,12 @@ from dbt.node_types import NodeType
 from pydantic import Field
 from typing_extensions import Literal
 
-from ..asset_utils import default_asset_key_fn, default_description_fn, output_name_fn
+from ..asset_utils import (
+    default_asset_key_fn,
+    default_description_fn,
+    default_metadata_fn,
+    output_name_fn,
+)
 
 logger = get_dagster_logger()
 
@@ -71,6 +76,10 @@ class DbtManifest:
     def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
         return default_description_fn(node_info)
 
+    @classmethod
+    def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+        return default_metadata_fn(node_info)
+
     @property
     def node_info_by_asset_key(self) -> Mapping[AssetKey, Mapping[str, Any]]:
         """A mapping of the default asset key for a dbt node to the node's dictionary representation in the manifest.
@@ -101,6 +110,15 @@ class DbtManifest:
         """
         return {
             self.node_info_to_asset_key(node): self.node_info_to_description(node)
+            for node in self.node_info_by_dbt_unique_id.values()
+        }
+
+    @property
+    def metadata_by_asset_key(self) -> Mapping[AssetKey, Mapping[Any, str]]:
+        """A mapping of the default asset key for a dbt node to the node's metadata in the manifest.
+        """
+        return {
+            self.node_info_to_asset_key(node): self.node_info_to_metadata(node)
             for node in self.node_info_by_dbt_unique_id.values()
         }
 
