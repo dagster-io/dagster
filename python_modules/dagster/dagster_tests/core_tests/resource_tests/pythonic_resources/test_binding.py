@@ -614,12 +614,10 @@ def test_bind_with_string_annotation():
     )
 
 
-def test_bind_io_to_job_() -> None:
-    CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
-
+def test_late_binding_with_resource_defs() -> None:
     class DummyDB:
         def execute_query(self, query):
-            print("executing query: ", query)
+            pass
 
     @resource
     def dummy_database_resource(init_context):
@@ -627,7 +625,7 @@ def test_bind_io_to_job_() -> None:
 
     @op(required_resource_keys={"database"})
     def op_requires_resources(context):
-        context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+        context.resources.database.execute_query("foo")
 
     @job(resource_defs={"database": dummy_database_resource})
     def do_database_stuff():
@@ -641,9 +639,9 @@ def test_bind_io_to_job_() -> None:
     def simple_job():
         simple_op()
 
-    resources = {"io_manager": FilesystemIOManager()}
-
+    # io_manager here will be bound to both jobs
+    # we need to make sure this doesn't invalidate the database resource
     Definitions(
         jobs=[do_database_stuff, simple_job],
-        resources=resources,
+        resources={"io_manager": FilesystemIOManager()},
     )
