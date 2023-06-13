@@ -629,6 +629,29 @@ class SingleThreadPoolExecutor(ThreadPoolExecutor):
         super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
 
 
+class SynchronousThreadPoolExecutor:
+    """Utility class for testing threadpool executor logic which executes functions synchronously for
+    easier unit testing.
+    """
+
+    def __init__(self, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        future = Future()
+        future.set_result(fn(*args, **kwargs))
+        return future
+
+    def shutdown(self, wait=True):
+        pass
+
+
 def ignore_warning(message_substr: str):
     """Ignores warnings within the decorated function that contain the given string."""
 
