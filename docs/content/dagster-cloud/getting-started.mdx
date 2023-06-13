@@ -340,7 +340,7 @@ To set up continuous integration using GitHub Actions, you can use your own Dags
 
 Configure the GitHub workflow YAML file as described below. The GitHub workflow deploys your code to Dagster Cloud using these steps:
 
-1. Initializate - check out your code and validate `dagster_cloud.yaml`.
+1. Initialize - check out your code and validate `dagster_cloud.yaml`.
 
 2. Docker image push - build a Docker image from your code and upload it to your container registry.
 
@@ -372,16 +372,14 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
    - `DAGSTER_CLOUD_ORGANIZATION` - The name of your organization in Dagster Cloud.
    - `DAGSTER_CLOUD_API_TOKEN` - A Dagster Cloud API token. **Note**: This is a sensitive value and should be stored as a CI/CD secret, if possible.
    - `DAGSTER_BUILD_STATEDIR` - A path to a blank or non-existent temporary directory on the build machine. This directory is used to store local state during the build.
-   dagster-cloud ci check --project-dir=.
-   ```
-
-   This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` and connection to Dagster Cloud.
 
 2. Run the configuration check:
 
    ```shell
    dagster-cloud ci check --project-dir=.
    ```
+
+   This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` and connection to Dagster Cloud.
 
 3. Initialize the build session:
 
@@ -423,7 +421,7 @@ Ensure that you have created a `dagster_cloud.yaml` file as described in [the qu
    dagster-cloud ci deploy
    ```
 
-   This command updates the code locations in Dagster Cloud. Once this finishes successfully, you should be able to see the code locations under the "Deployments" tab in Dagster Cloud.
+   This command updates the code locations in Dagster Cloud. Once this finishes successfully, you should be able to see the code locations under the **Deployments** tab in Dagster Cloud.
 
 **Note**: Creating Branch Deployments using the CLI requires some additional steps. Refer to the [Branch Deployments with the dagster-cloud CLI guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments) for more info.
 
