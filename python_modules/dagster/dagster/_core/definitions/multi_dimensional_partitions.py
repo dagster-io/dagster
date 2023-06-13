@@ -3,7 +3,6 @@ import itertools
 from datetime import datetime
 from functools import reduce
 from typing import (
-    TYPE_CHECKING,
     Dict,
     Iterable,
     List,
@@ -40,8 +39,6 @@ from .partition import (
 )
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
-if TYPE_CHECKING:
-    from dagster import MultiPartitionsDefinition
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
 MULTIPARTITION_KEY_DELIMITER = "|"
