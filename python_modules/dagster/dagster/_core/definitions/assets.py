@@ -785,6 +785,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
+        metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -809,6 +810,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
         descriptions_by_key = check.opt_mapping_param(
             descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
+        )
+        metadata_by_key = check.opt_mapping_param(
+            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
         )
 
         if group_names_by_key:
@@ -886,6 +890,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, description in descriptions_by_key.items()
         }
 
+        if not metadata_by_key:
+            metadata_by_key = self.metadata_by_key
+
+        replaced_metadata_by_key = {
+            output_asset_key_replacements.get(key, key): metadata
+            for key, metadata in metadata_by_key.items()
+        }
+
         return __class__.dagster_internal_init(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -921,10 +933,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
-            metadata_by_key={
-                output_asset_key_replacements.get(key, key): value
-                for key, value in self.metadata_by_key.items()
-            },
+            metadata_by_key=replaced_metadata_by_key,
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
