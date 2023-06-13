@@ -21,10 +21,9 @@ By the end of the previous section, you ingested the top Hacker News story IDs i
 
 Copy and paste the completed asset code below into `assets.py`:
 
-<Note>
-  Add new imports, such as <code>import pandas as pd</code>, to the top of{" "}
-  <code>assets.py</code>
-</Note>
+{% note %}
+Add new imports, such as `import pandas as pd`, to the top of `assets.py`
+{% /note %}
 
 ```python file=/tutorial/building_an_asset_graph/assets_initial_state.py startafter=start_topstories_asset endbefore=end_topstories_asset
 import pandas as pd  # Add new imports to the top of `assets.py`
@@ -258,11 +257,9 @@ width={1279}
 height={943}
 />
 
-<Note>
-  If your data is sensitive, such as PHI or PII, be careful and follow your
-  organization's policies for surfacing data. You should practice due diligence
-  before showing your data in metadata or logs.
-</Note>
+{% note %}
+If your data is sensitive, such as PHI or PII, be careful and follow your organization's policies for surfacing data. You should practice due diligence before showing your data in metadata or logs.
+{% /note %}
 
 ---
 
