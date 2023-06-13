@@ -156,6 +156,40 @@ def test_with_replaced_description() -> None:
     }
 
 
+def test_with_replaced_metadata() -> None:
+    @multi_asset(
+        outs={
+            "foo": AssetOut(metadata={"foo": "foo"}),
+            "bar": AssetOut(metadata={"bar": "bar"}),
+            "baz": AssetOut(metadata={"baz": "baz"}),
+        }
+    )
+    def abc():
+        ...
+
+    assert abc.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+    # If there's no replacement metadata for the asset key, the original metadata is retained.
+    replaced = abc.with_attributes(metadata_by_key={})
+    assert replaced.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+    # Otherwise, use the replaced description.
+    replaced = abc.with_attributes(metadata_by_key={AssetKey(["bar"]): {"bar": "bar_prime"}})
+    assert replaced.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar_prime"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+
 def test_retain_freshness_policy():
     fp = FreshnessPolicy(maximum_lag_minutes=24.5)
 
