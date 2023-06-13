@@ -1903,7 +1903,7 @@ def define_asset_jobs():
     ]
 
 
-@repository
+@repository(default_executor_def=in_process_executor)
 def test_repo():
     return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
 

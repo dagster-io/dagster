@@ -531,6 +531,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def sqlite_with_in_memory_run_launcher_managed_grpc_env(target=None, location_name="test"):
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_sync_run_launcher(),
+            EnvironmentManagers.managed_grpc(target, location_name),
+            test_id="sqlite_with_in_memory_run_launcher_managed_grpc_env",
+        )
+
+    @staticmethod
     def sqlite_read_only_with_default_run_launcher_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
@@ -548,11 +556,27 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def sqlite_with_in_memory_run_launcher_deployed_grpc_env(target=None, location_name="test"):
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_sync_run_launcher(),
+            EnvironmentManagers.deployed_grpc(target, location_name),
+            test_id="sqlite_with_in_memory_run_launcher_deployed_grpc_env",
+        )
+
+    @staticmethod
     def sqlite_with_default_run_launcher_code_server_cli_env(target=None, location_name="test"):
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.code_server_cli_grpc(target, location_name),
             test_id="sqlite_with_default_run_launcher_code_server_cli_env",
+        )
+
+    @staticmethod
+    def sqlite_with_in_memory_run_launcher_code_server_cli_env(target=None, location_name="test"):
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_sync_run_launcher(),
+            EnvironmentManagers.code_server_cli_grpc(target, location_name),
+            test_id="sqlite_with_in_memory_run_launcher_code_server_cli_env",
         )
 
     @staticmethod
@@ -675,6 +699,20 @@ class GraphQLContextVariant:
                 target, location_name
             ),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(
+                target, location_name
+            ),
+        ]
+
+    @staticmethod
+    def all_in_memory_executing_variants(target=None, location_name="test"):
+        return [
+            GraphQLContextVariant.sqlite_with_in_memory_run_launcher_managed_grpc_env(
+                target, location_name
+            ),
+            GraphQLContextVariant.sqlite_with_in_memory_run_launcher_deployed_grpc_env(
+                target, location_name
+            ),
+            GraphQLContextVariant.sqlite_with_in_memory_run_launcher_code_server_cli_env(
                 target, location_name
             ),
         ]
@@ -818,6 +856,10 @@ NonLaunchableGraphQLContextTestMatrix = make_graphql_context_test_suite(
 
 ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
     context_variants=GraphQLContextVariant.all_executing_variants()
+)
+
+InMemoryExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_in_memory_executing_variants()
 )
 
 

@@ -39,6 +39,7 @@ from dagster_graphql.test.utils import (
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     AllRepositoryGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
+    InMemoryExecutingGraphQLContextTestMatrix,
 )
 
 GET_ASSET_KEY_QUERY = """
@@ -568,6 +569,7 @@ def _create_run(
             graphql_context,
             pipeline_name,
         )
+
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -648,7 +650,7 @@ def _get_sorted_materialization_events(
     )
 
 
-class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
+class TestAssetAwareEventLog(InMemoryExecutingGraphQLContextTestMatrix):
     def test_all_asset_keys(self, graphql_context: WorkspaceRequestContext, snapshot):
         _create_run(graphql_context, "multi_asset_job")
         result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
