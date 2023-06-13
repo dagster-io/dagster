@@ -1,3 +1,4 @@
+import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -275,11 +276,13 @@ class AssetSelection(ABC):
             return cls._selection_from_string(selection)
         elif isinstance(selection, AssetSelection):
             return selection
-        elif isinstance(selection, list) and all(isinstance(el, str) for el in selection):
+        elif isinstance(selection, collections.abc.Sequence) and all(
+            isinstance(el, str) for el in selection
+        ):
             return reduce(
                 operator.or_, [cls._selection_from_string(cast(str, s)) for s in selection]
             )
-        elif isinstance(selection, list) and all(
+        elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
             return AssetSelection.keys(
@@ -291,7 +294,9 @@ class AssetSelection(ABC):
                     )
                 )
             )
-        elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
+        elif isinstance(selection, collections.abc.Sequence) and all(
+            isinstance(el, AssetKey) for el in selection
+        ):
             return cls.keys(*cast(Sequence[AssetKey], selection))
         else:
             check.failed(
