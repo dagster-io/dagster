@@ -266,7 +266,6 @@ def test_multi_partitions() -> None:
 
     def config_fn(partition_key: str):
         mpk = MultiPartitionKey.from_str(partition_key, multi_partition_def)
-        print(mpk.keys_by_dimension)
         return {
             "ops": {
                 "my_op": {
@@ -292,9 +291,6 @@ def test_multi_partitions() -> None:
     assert job_def.partitioned_config.get_run_config_for_partition_key(str(partition_keys[0])) == {
         "ops": {"my_op": {"config": {"date": "2020-02-25", "client": "foo"}}}
     }
-    # assert job_def.partitioned_config.get_run_config_for_partition_key(partition_keys[1]) == {
-    #     "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
-    # }
 
 
 def test_partitions():
