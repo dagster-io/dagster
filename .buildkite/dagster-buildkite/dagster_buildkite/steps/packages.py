@@ -408,6 +408,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                 else []
             )
         ),
+        timeout_in_minutes=30,
     ),
     PackageSpec(
         "python_modules/dagster-test",
