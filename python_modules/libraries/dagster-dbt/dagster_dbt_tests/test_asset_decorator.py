@@ -1,13 +1,25 @@
 from typing import AbstractSet, Any, Mapping, Optional
 
 import pytest
-from dagster import AssetKey, DailyPartitionsDefinition, PartitionsDefinition, file_relative_path
+from dagster import (
+    AssetKey,
+    AutoMaterializePolicy,
+    DailyPartitionsDefinition,
+    FreshnessPolicy,
+    PartitionsDefinition,
+    file_relative_path,
+)
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtManifest
 
 manifest_path = file_relative_path(__file__, "sample_manifest.json")
 manifest = DbtManifest.read(path=manifest_path)
+
+test_dagster_metadata_manifest_path = file_relative_path(
+    __file__, "dbt_projects/test_dagster_metadata/manifest.json"
+)
+test_dagster_metadata_manifest = DbtManifest.read(path=test_dagster_metadata_manifest_path)
 
 
 @pytest.mark.parametrize(
@@ -179,3 +191,29 @@ def test_with_description_replacements() -> None:
 
     for description in my_dbt_assets.descriptions_by_key.values():
         assert description == expected_description
+
+
+def test_auto_materialize_policy() -> None:
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    auto_materialize_policies = my_dbt_assets.auto_materialize_policies_by_key.values()
+    assert auto_materialize_policies
+
+    for auto_materialize_policy in auto_materialize_policies:
+        assert auto_materialize_policy == AutoMaterializePolicy.eager()
+
+
+def test_freshness_policy() -> None:
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    freshness_policies = my_dbt_assets.freshness_policies_by_key.values()
+    assert freshness_policies
+
+    for freshness_policy in freshness_policies:
+        assert freshness_policy == FreshnessPolicy(
+            maximum_lag_minutes=60.0, cron_schedule="* * * * *"
+        )
