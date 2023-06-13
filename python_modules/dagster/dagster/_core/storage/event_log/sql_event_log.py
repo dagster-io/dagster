@@ -652,6 +652,9 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("pending_steps"):
                 conn.execute(PendingStepsTable.delete())
 
+        self._wipe_index()
+
+    def _wipe_index(self):
         with self.index_connection() as conn:
             conn.execute(SqlEventLogStorageTable.delete())
             conn.execute(AssetKeyTable.delete())
