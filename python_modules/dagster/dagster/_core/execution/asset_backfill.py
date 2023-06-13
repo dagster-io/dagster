@@ -24,7 +24,6 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     build_run_requests,
     find_parent_materialized_asset_partitions,
 )
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -32,7 +31,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import (
     ExternalExecutionPlan,

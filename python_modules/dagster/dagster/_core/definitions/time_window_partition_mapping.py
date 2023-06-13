@@ -11,7 +11,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.backcompat import (
@@ -136,7 +136,6 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
-            # raise_error_on_invalid_mapped_partition=False,
             current_time=current_time,
         )
 
@@ -161,7 +160,6 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
-            # raise_error_on_invalid_mapped_partition=True,
             current_time=current_time,
         ).partitions_subset
 
@@ -191,7 +189,6 @@ class TimeWindowPartitionMapping(
             upstream_partitions_subset,
             -self.start_offset,
             -self.end_offset,
-            # raise_error_on_invalid_mapped_partition=False,
             current_time=current_time,
         ).partitions_subset
 
@@ -202,7 +199,6 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: PartitionsSubset,
         start_offset: int,
         end_offset: int,
-        # raise_error_on_invalid_mapped_partition: bool,
         current_time: Optional[datetime] = None,
     ) -> MappedPartitionsResult:
         """Maps the partitions in from_partitions_subset to partitions in to_partitions_def.
@@ -322,16 +318,6 @@ class TimeWindowPartitionMapping(
                             )
                         )
                     )
-
-        # if (
-        #     filtered_time_windows != time_windows
-        #     and not self.allow_nonexistent_upstream_partitions
-        #     and raise_error_on_invalid_mapped_partition
-        # ):
-        #     raise DagsterInvalidInvocationError(
-        #         f"Provided time windows {time_windows} contain nonexistent time windows for"
-        #         f" partitions definition {to_partitions_def}"
-        #     )
 
         return MappedPartitionsResult(
             TimeWindowPartitionsSubset(

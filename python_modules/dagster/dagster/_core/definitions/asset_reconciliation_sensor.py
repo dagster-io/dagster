@@ -677,7 +677,6 @@ def determine_asset_partitions_to_auto_materialize(
     # a filter for eliminating candidates
     def can_reconcile_candidate(
         candidate: AssetKeyPartitionKey,
-        # parent_partitions_by_candidate: Mapping[AssetKeyPartitionKey, ParentPartitionsResult],
     ) -> bool:
         auto_materialize_policy = get_implicit_auto_materialize_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
@@ -806,11 +805,23 @@ def determine_asset_partitions_to_auto_materialize(
 
         return conditions
 
+    def can_materialize_candidate(
+        candidate: AssetKeyPartitionKey, parent_partitions_result: ParentPartitionsResult
+    ) -> bool:
+        return len(parent_partitions_result.invalid_parent_partitions) == 0
+
     def should_reconcile(
         asset_graph: AssetGraph,
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
+        parent_partitions_by_candidate = {
+            candidate: asset_graph.get_parents_partitions(
+                instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
+            )
+            for candidate in candidates_unit
+        }
+
         if any(
             # do not reconcile assets if they are not reconcilable
             not can_reconcile_candidate(candidate)
@@ -818,19 +829,9 @@ def determine_asset_partitions_to_auto_materialize(
             or candidate in backfill_target_asset_graph_subset
             # do not reconcile assets if they are not in the target selection
             or candidate.asset_key not in target_asset_keys
+            # do not reconcile candidate if have invalid parents
+            or not can_materialize_candidate(candidate, parent_partitions_by_candidate[candidate])
             for candidate in candidates_unit
-        ):
-            return False
-
-        parent_partitions_by_candidate = {
-            candidate: asset_graph.get_parents_partitions(
-                instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
-            )
-            for candidate in candidates_unit
-        }
-        if not all(
-            len(parent_partitions_result.invalid_parent_partitions) == 0
-            for parent_partitions_result in parent_partitions_by_candidate.values()
         ):
             return False
 

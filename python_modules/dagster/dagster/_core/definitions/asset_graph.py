@@ -33,7 +33,7 @@ from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
-from .partition_mapping import PartitionMapping, infer_partition_mapping, MappedPartitionsResult
+from .partition_mapping import MappedPartitionsResult, PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
 from .time_window_partitions import (
     TimeWindowPartitionsDefinition,
@@ -303,16 +303,19 @@ class AssetGraph:
                     dynamic_partitions_store=dynamic_partitions_store,
                     current_time=current_time,
                 )
-                for (
-                    valid_partition
-                ) in mapped_partitions_result.partitions_subset.get_partition_keys():
-                    valid_parent_partitions.add(
+
+                valid_parent_partitions.update(
+                    {
                         AssetKeyPartitionKey(parent_asset_key, valid_partition)
-                    )
-                for invalid_partition in mapped_partitions_result.invalid_partitions_mapped_to:
-                    invalid_parent_partitions.add(
+                        for valid_partition in mapped_partitions_result.partitions_subset.get_partition_keys()
+                    }
+                )
+                invalid_parent_partitions.update(
+                    {
                         AssetKeyPartitionKey(parent_asset_key, invalid_partition)
-                    )
+                        for invalid_partition in mapped_partitions_result.invalid_partitions_mapped_to
+                    }
+                )
             else:
                 valid_parent_partitions.add(AssetKeyPartitionKey(parent_asset_key))
 

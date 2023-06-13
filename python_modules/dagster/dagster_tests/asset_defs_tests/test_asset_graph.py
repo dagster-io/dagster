@@ -122,10 +122,15 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent():
 
         assert internal_asset_graph.get_parents_partitions(
             instance, current_time, child.key
-        ) == set([AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")])
+        ).valid_parent_partitions == set(
+            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
+        )
+
         assert external_asset_graph.get_parents_partitions(
             instance, current_time, child.key
-        ) == set([AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")])
+        ).valid_parent_partitions == set(
+            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
+        )
 
 
 def test_get_children_partitions_fan_out():
@@ -177,15 +182,16 @@ def test_get_parent_partitions_fan_in():
 
         assert internal_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2022-01-03"
-        ) == set(
+        ).valid_parent_partitions == set(
             [
                 AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
                 for hour in range(24)
             ]
         )
+
         assert external_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2022-01-03"
-        ) == set(
+        ).valid_parent_partitions == set(
             [
                 AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
                 for hour in range(24)
@@ -209,12 +215,21 @@ def test_get_parent_partitions_non_default_partition_mapping():
         with instance_for_test() as instance:
             current_time = pendulum.now("UTC")
 
-            assert internal_asset_graph.get_parents_partitions(
+            mapped_partitions_result = internal_asset_graph.get_parents_partitions(
                 instance, current_time, child.key
-            ) == {AssetKeyPartitionKey(parent.key, "2022-01-02")}
-            assert external_asset_graph.get_parents_partitions(
+            )
+            mapped_partitions_result.valid_parent_partitions == {
+                AssetKeyPartitionKey(parent.key, "2022-01-02")
+            }
+            mapped_partitions_result.invalid_parent_partitions == {}
+
+            mapped_partitions_result = external_asset_graph.get_parents_partitions(
                 instance, current_time, child.key
-            ) == {AssetKeyPartitionKey(parent.key, "2022-01-02")}
+            )
+            mapped_partitions_result.valid_parent_partitions == {
+                AssetKeyPartitionKey(parent.key, "2022-01-02")
+            }
+            mapped_partitions_result.invalid_parent_partitions == {}
 
 
 def test_custom_unsupported_partition_mapping():
@@ -262,14 +277,15 @@ def test_custom_unsupported_partition_mapping():
 
         assert internal_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2"
-        ) == {
+        ).valid_parent_partitions == {
             AssetKeyPartitionKey(parent.key, "1"),
             AssetKeyPartitionKey(parent.key, "2"),
         }
+
         # external falls back to default PartitionMapping
         assert external_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2"
-        ) == {AssetKeyPartitionKey(parent.key, "2")}
+        ).valid_parent_partitions == {AssetKeyPartitionKey(parent.key, "2")}
 
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset():

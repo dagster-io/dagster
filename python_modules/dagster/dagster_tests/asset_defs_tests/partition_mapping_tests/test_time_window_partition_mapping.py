@@ -14,7 +14,6 @@ from dagster import (
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
-from dagster._core.errors import DagsterInvalidInvocationError
 
 
 def subset_with_keys(partitions_def: TimeWindowPartitionsDefinition, keys: Sequence[str]):
@@ -316,7 +315,7 @@ def test_get_downstream_with_current_time(
 
 
 @pytest.mark.parametrize(
-    "upstream_partitions_def,downstream_partitions_def,expected_upstream_keys,downstream_keys,current_time,error_expected",
+    "upstream_partitions_def,downstream_partitions_def,expected_upstream_keys,downstream_keys,current_time,invalid_upstream_keys",
     [
         (
             DailyPartitionsDefinition(start_date="2021-05-05"),
@@ -324,15 +323,15 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-06-01-00:00"],
             datetime(2021, 6, 1, 1),
-            True,
+            ["2021-06-01"],
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05"),
             HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
-            [],
+            ["2021-05-05"],
             ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
             datetime(2021, 5, 6, 1),
-            True,
+            ["2021-05-06"],
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05"),
@@ -340,7 +339,7 @@ def test_get_downstream_with_current_time(
             ["2021-05-05"],
             ["2021-05-05-23:00"],
             datetime(2021, 5, 6, 1),
-            None,
+            [],
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
@@ -348,7 +347,7 @@ def test_get_downstream_with_current_time(
             ["2021-05-05"],
             ["2021-05-05-23:00"],
             datetime(2021, 5, 6, 5, tzinfo=timezone.utc),  # 2021-05-06-00:00 in US/Central
-            None,
+            [],
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05", timezone="US/Central"),
@@ -356,7 +355,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-05-05-23:00"],
             datetime(2021, 5, 6, 4, tzinfo=timezone.utc),  # 2021-05-05-23:00 in US/Central
-            True,
+            ["2021-05-05"],
         ),
         (
             DailyPartitionsDefinition(start_date="2021-05-05", end_offset=1),
@@ -364,7 +363,7 @@ def test_get_downstream_with_current_time(
             ["2021-05-05", "2021-05-06"],
             ["2021-05-05-23:00", "2021-05-06-00:00", "2021-05-06-01:00"],
             datetime(2021, 5, 6, 1),
-            None,
+            [],
         ),
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -372,7 +371,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-06-06"],
             datetime(2022, 1, 6, 1),
-            True,
+            ["2021-06-06"],
         ),
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -380,7 +379,7 @@ def test_get_downstream_with_current_time(
             ["2022-01-01"],
             ["2022-01-01"],
             datetime(2022, 1, 6, 1),
-            None,
+            [],
         ),
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -388,7 +387,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-12-31"],
             datetime(2022, 1, 6, 1),
-            True,
+            ["2021-12-31"],
         ),
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -396,7 +395,7 @@ def test_get_downstream_with_current_time(
             [],
             ["2021-12-30"],
             datetime(2021, 12, 31, 1),
-            True,
+            ["2021-12-30"],
         ),
     ],
 )
@@ -406,27 +405,28 @@ def test_get_upstream_with_current_time(
     expected_upstream_keys: Sequence[str],
     downstream_keys: Sequence[str],
     current_time: Optional[datetime],
-    error_expected: Optional[bool],
+    invalid_upstream_keys: Sequence[str],
 ):
     mapping = TimeWindowPartitionMapping()
 
-    if error_expected:
-        with pytest.raises(DagsterInvalidInvocationError, match="contain nonexistent time windows"):
-            mapping.get_upstream_partitions_for_partitions(
-                subset_with_keys(downstream_partitions_def, downstream_keys),
-                upstream_partitions_def,
-                current_time=current_time,
-            )
+    assert (
+        mapping.get_upstream_partitions_for_partitions(
+            subset_with_keys(downstream_partitions_def, downstream_keys),
+            upstream_partitions_def,
+            current_time=current_time,
+        ).get_partition_keys()
+        == expected_upstream_keys
+    )
 
-    else:
-        assert (
-            mapping.get_upstream_partitions_for_partitions(
-                subset_with_keys(downstream_partitions_def, downstream_keys),
-                upstream_partitions_def,
-                current_time=current_time,
-            ).get_partition_keys()
-            == expected_upstream_keys
-        )
+    upstream_partitions_result = mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, downstream_keys),
+        upstream_partitions_def,
+        current_time=current_time,
+    )
+    assert (
+        upstream_partitions_result.partitions_subset.get_partition_keys() == expected_upstream_keys
+    )
+    assert upstream_partitions_result.invalid_partitions_mapped_to == invalid_upstream_keys
 
 
 @pytest.mark.parametrize(
@@ -520,11 +520,14 @@ def test_different_start_time_partitions_defs():
         == []
     )
 
-    with pytest.raises(DagsterInvalidInvocationError, match="contain nonexistent time windows"):
-        TimeWindowPartitionMapping().get_upstream_partitions_for_partitions(
+    upstream_partitions_result = (
+        TimeWindowPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset=subset_with_keys(jan_start, ["2023-01-15"]),
             upstream_partitions_def=feb_start,
-        ).get_partition_keys()
+        )
+    )
+    assert upstream_partitions_result.partitions_subset.get_partition_keys() == []
+    assert upstream_partitions_result.invalid_partitions_mapped_to == ["2023-01-15"]
 
     assert (
         TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)
@@ -556,11 +559,14 @@ def test_different_end_time_partitions_defs():
         == []
     )
 
-    with pytest.raises(DagsterInvalidInvocationError, match="contain nonexistent time windows"):
-        TimeWindowPartitionMapping().get_upstream_partitions_for_partitions(
+    upstream_partitions_result = (
+        TimeWindowPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset=subset_with_keys(jan_feb_partitions_def, ["2023-02-15"]),
             upstream_partitions_def=jan_partitions_def,
-        ).get_partition_keys()
+        )
+    )
+    assert upstream_partitions_result.partitions_subset.get_partition_keys() == []
+    assert upstream_partitions_result.invalid_partitions_mapped_to == ["2023-02-15"]
 
     assert (
         TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)

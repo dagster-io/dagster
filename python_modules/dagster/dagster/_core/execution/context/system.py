@@ -949,11 +949,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
             if upstream_asset_partitions_def is not None:
-                if assets_def is None:
-                    check.failed(
-                        "Attempted to fetch asset_partitions_subset_for_input for a non-asset node"
-                    )
-
                 partitions_def = assets_def.partitions_def if assets_def else None
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
@@ -979,8 +974,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
                 if mapped_partitions_result.invalid_partitions_mapped_to:
                     raise DagsterInvariantViolationError(
-                        f"Partition key range {self.asset_partition_key_range} in downstream asset"
-                        f" keys {assets_def.keys} depends on invalid partition keys"
+                        f"Partition key range {self.asset_partition_key_range} in"
+                        f" {self.node_handle.name} depends on invalid partition keys"
                         f" {mapped_partitions_result.invalid_partitions_mapped_to} in upstream"
                         f" asset {upstream_asset_key}"
                     )
