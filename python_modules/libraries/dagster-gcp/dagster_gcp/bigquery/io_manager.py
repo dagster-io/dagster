@@ -21,7 +21,6 @@ from google.cloud import bigquery
 from pydantic import Field
 
 from ..auth.resources import GoogleAuthResource
-from .utils import setup_gcp_creds
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -119,19 +118,19 @@ def build_bigquery_io_manager(
         * dataset -> schema
         * table -> table
         """
-        mgr = DbIOManager(
+        if init_context.gcp_credentials is not None:
+            auth_resource = GoogleAuthResource(service_account_info=init_context.gcp_credentials)
+        else:
+            auth_resource = GoogleAuthResource()
+
+        return DbIOManager(
             type_handlers=type_handlers,
-            db_client=BigQueryClient(),
+            db_client=BigQueryClient(auth_resource=auth_resource),
             io_manager_name="BigQueryIOManager",
             database=init_context.resource_config["project"],
             schema=init_context.resource_config.get("dataset"),
             default_load_type=default_load_type,
         )
-        if init_context.resource_config.get("gcp_credentials"):
-            with setup_gcp_creds(init_context.resource_config.get("gcp_credentials")):
-                yield mgr
-        else:
-            yield mgr
 
     return bigquery_io_manager
 
