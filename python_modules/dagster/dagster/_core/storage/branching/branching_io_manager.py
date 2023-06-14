@@ -65,42 +65,48 @@ class BranchingIOManager(ConfigurableIOManager):
     branch_metadata_key: str = "io_manager_branch"
 
     def load_input(self, context: InputContext) -> Any:
-        # what is the analog of step_key for input?
-        input_key = context.asset_key.to_user_string() if context.has_asset_key else None
-
-        event_log_entry = latest_materialization_log_entry(
-            instance=context.instance,
-            asset_key=context.asset_key,
-            partition_key=context.partition_key if context.has_partition_key else None,
-        )
-        if (
-            event_log_entry
-            and event_log_entry.asset_materialization
-            and get_text_metadata_value(
-                event_log_entry.asset_materialization, self.branch_metadata_key
-            )
-            == self.branch_name
-        ):
-            context.log.info(f'Branching Manager: Loading "{input_key}" from "{self.branch_name}"')
+        if not context.has_asset_key:
+            # we are dealing with an op input
+            # just load it with the branch manager
             return self.branch_io_manager.load_input(context)
+        else:
+            # we are dealing with an asset input
+            event_log_entry = latest_materialization_log_entry(
+                instance=context.instance,
+                asset_key=context.asset_key,
+                partition_key=context.partition_key if context.has_partition_key else None,
+            )
+            if (
+                event_log_entry
+                and event_log_entry.asset_materialization
+                and get_text_metadata_value(
+                    event_log_entry.asset_materialization, self.branch_metadata_key
+                )
+                == self.branch_name
+            ):
+                context.log.info(
+                    f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
+                    f' "{self.branch_name}"'
+                )
+                return self.branch_io_manager.load_input(context)
 
-        context.log.info(f'Branching Manager Loading "{input_key}" from parent')
-        return self.parent_io_manager.load_input(context)
+            context.log.info(
+                f'Branching Manager Loading "{context.asset_key.to_user_string()}" from parent'
+            )
+            return self.parent_io_manager.load_input(context)
 
     def handle_output(self, context: OutputContext, obj: Any) -> None:
-        output_key = (
-            context.asset_key.to_user_string() if context.has_asset_key else context.step_key
-        )
-
         # always write to the branch manager
         self.branch_io_manager.handle_output(context, obj)
 
-        # mark the asset materialization with the branch name
-        context.add_output_metadata({self.branch_metadata_key: self.branch_name})
-
-        context.log.info(
-            f'Branching Manager: Writing "{output_key}" to branch "{self.branch_name}"'
-        )
+        if context.has_asset_key:
+            # we are dealing with an asset output (not an op output)
+            # mark the asset materialization with the branch name
+            context.add_output_metadata({self.branch_metadata_key: self.branch_name})
+            context.log.info(
+                f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
+                f' "{self.branch_name}"'
+            )
 
     def setup_for_execution(self, context: InitResourceContext):
         if isinstance(self.parent_io_manager, ConfigurableResourceFactory):
