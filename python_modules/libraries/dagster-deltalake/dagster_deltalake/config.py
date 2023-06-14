@@ -12,10 +12,14 @@ else:
 
 
 class LocalConfig(Config):
+    """Storage configuration for local objet store."""
+
     provider: Literal["local"] = "local"
 
 
 class AzureConfig(Config):
+    """Storage configuration for Azure Blob or ADLS Gen 2 objet store."""
+
     provider: Literal["azure"] = "azure"
 
     account_name: str
