@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-import pyarrow as pa
+import pandas as pd
 import pytest
 from dagster import (
     AssetIn,
@@ -20,23 +20,24 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
-from dagster_deltalake import DELTA_DATE_FORMAT, DeltaLakePyarrowIOManager, LocalConfig
+from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
+from dagster_deltalake_pandas import DeltaLakePandasIOManager
 from deltalake import DeltaTable
 
 
 @pytest.fixture
-def io_manager(tmp_path) -> DeltaLakePyarrowIOManager:
-    return DeltaLakePyarrowIOManager(root_uri=str(tmp_path), storage_options=LocalConfig())
+def io_manager(tmp_path) -> DeltaLakePandasIOManager:
+    return DeltaLakePandasIOManager(root_uri=str(tmp_path), storage_options=LocalConfig())
 
 
 @op(out=Out(metadata={"schema": "a_df"}))
-def a_df() -> pa.Table:
-    return pa.Table.from_pydict({"a": [1, 2, 3], "b": [4, 5, 6]})
+def a_df() -> pd.DataFrame:
+    return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
 
 @op(out=Out(metadata={"schema": "add_one"}))
-def add_one(df: pa.Table):
-    return df.set_column(0, "a", pa.array([2, 3, 4]))
+def add_one(df: pd.DataFrame):
+    return df + 1
 
 
 @graph
@@ -44,7 +45,7 @@ def add_one_to_dataframe():
     add_one(a_df())
 
 
-def test_deltalake_io_manager_with_ops(tmp_path, io_manager: DeltaLakePyarrowIOManager):
+def test_deltalake_io_manager_with_ops(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager}
 
     job = add_one_to_dataframe.to_job(resource_defs=resource_defs)
@@ -65,16 +66,16 @@ def test_deltalake_io_manager_with_ops(tmp_path, io_manager: DeltaLakePyarrowIOM
 
 
 @asset(key_prefix=["my_schema"])
-def b_df() -> pa.Table:
-    return pa.Table.from_pydict({"a": [1, 2, 3], "b": [4, 5, 6]})
+def b_df() -> pd.DataFrame:
+    return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
 
 @asset(key_prefix=["my_schema"])
-def b_plus_one(b_df: pa.Table) -> pa.Table:
-    return b_df.set_column(0, "a", pa.array([2, 3, 4]))
+def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
+    return b_df + 1
 
 
-def test_deltalake_io_manager_with_assets(tmp_path, io_manager: DeltaLakePyarrowIOManager):
+def test_deltalake_io_manager_with_assets(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager}
 
     # materialize asset twice to ensure that tables get properly deleted
@@ -93,14 +94,14 @@ def test_deltalake_io_manager_with_assets(tmp_path, io_manager: DeltaLakePyarrow
 
 def test_deltalake_io_manager_with_schema(tmp_path):
     @asset
-    def my_df() -> pa.Table:
-        return pa.Table.from_pydict({"a": [1, 2, 3], "b": [4, 5, 6]})
+    def my_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
     @asset
-    def my_df_plus_one(my_df: pa.Table) -> pa.Table:
-        return my_df.set_column(0, "a", pa.array([2, 3, 4]))
+    def my_df_plus_one(my_df: pd.DataFrame) -> pd.DataFrame:
+        return my_df + 1
 
-    io_manager = DeltaLakePyarrowIOManager(
+    io_manager = DeltaLakePandasIOManager(
         root_uri=str(tmp_path), storage_options=LocalConfig(), schema="custom_schema"
     )
 
@@ -121,8 +122,8 @@ def test_deltalake_io_manager_with_schema(tmp_path):
 
 
 @asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
-def b_plus_one_columns(b_df: pa.Table) -> pa.Table:
-    return b_df.set_column(0, "a", pa.array([2, 3, 4]))
+def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
+    return b_df + 1
 
 
 def test_loading_columns(tmp_path, io_manager):
@@ -172,13 +173,13 @@ def test_not_supported_type(tmp_path, io_manager):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context) -> pa.Table:
+def daily_partitioned(context) -> pd.DataFrame:
     partition = datetime.strptime(
         context.asset_partition_key_for_output(), DELTA_DATE_FORMAT
     ).date()
     value = context.op_config["value"]
 
-    return pa.Table.from_pydict(
+    return pd.DataFrame(
         {
             "time": [partition, partition, partition],
             "a": [value, value, value],
@@ -229,7 +230,7 @@ def test_time_window_partitioned_asset(tmp_path, io_manager):
     key_prefix=["my_schema"],
     metadata={"partition_expr": "time"},
 )
-def load_partitioned(context, daily_partitioned: pa.Table) -> pa.Table:
+def load_partitioned(context, daily_partitioned: pd.DataFrame) -> pd.DataFrame:
     return daily_partitioned
 
 
@@ -265,11 +266,11 @@ def test_load_partitioned_asset(tmp_path, io_manager):
     metadata={"partition_expr": "color"},
     config_schema={"value": str},
 )
-def static_partitioned(context) -> pa.Table:
+def static_partitioned(context) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
     value = context.op_config["value"]
 
-    return pa.Table.from_pydict(
+    return pd.DataFrame(
         {
             "color": [partition, partition, partition],
             "a": [value, value, value],
@@ -326,11 +327,11 @@ def test_static_partitioned_asset(tmp_path, io_manager):
     metadata={"partition_expr": {"time": "time", "color": "color"}},
     config_schema={"value": str},
 )
-def multi_partitioned(context) -> pa.Table:
+def multi_partitioned(context) -> pd.DataFrame:
     partition = context.partition_key.keys_by_dimension
     time_partition = datetime.strptime(partition["time"], DELTA_DATE_FORMAT).date()
     value = context.op_config["value"]
-    return pa.Table.from_pydict(
+    return pd.DataFrame(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
             "time": [time_partition, time_partition, time_partition],
@@ -396,10 +397,10 @@ dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
     metadata={"partition_expr": "fruit"},
     config_schema={"value": str},
 )
-def dynamic_partitioned(context) -> pa.Table:
+def dynamic_partitioned(context) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
     value = context.op_config["value"]
-    return pa.Table.from_pydict(
+    return pd.DataFrame(
         {
             "fruit": [partition, partition, partition],
             "a": [value, value, value],
@@ -470,7 +471,7 @@ def test_self_dependent_asset(tmp_path, io_manager):
         },
         config_schema={"value": str, "last_partition_key": str},
     )
-    def self_dependent_asset(context, self_dependent_asset: pa.Table) -> pa.Table:
+    def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
         key = datetime.strptime(context.asset_partition_key_for_output(), DELTA_DATE_FORMAT).date()
 
         if self_dependent_asset.num_rows > 0:
@@ -479,7 +480,7 @@ def test_self_dependent_asset(tmp_path, io_manager):
         else:
             assert context.op_config["last_partition_key"] == "NA"
         value = context.op_config["value"]
-        pd_df = pa.Table.from_pydict(
+        pd_df = pd.DataFrame(
             {
                 "key": [key, key, key],
                 "a": [value, value, value],
