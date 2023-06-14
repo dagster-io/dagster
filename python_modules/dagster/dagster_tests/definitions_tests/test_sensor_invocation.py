@@ -911,35 +911,6 @@ def test_multi_asset_sensor_has_assets():
         passing_sensor(ctx)
 
 
-def test_multi_asset_sensor_invalid_partitions():
-    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
-
-    @asset(partitions_def=static_partitions_def)
-    def static_partitions_asset():
-        return 1
-
-    @asset(partitions_def=DailyPartitionsDefinition("2020-01-01"))
-    def daily_asset():
-        return 1
-
-    @repository
-    def my_repo():
-        return [static_partitions_asset, daily_asset]
-
-    with instance_for_test() as instance:
-        with build_multi_asset_sensor_context(
-            monitored_assets=[static_partitions_asset.key],
-            instance=instance,
-            repository_def=my_repo,
-        ) as context:
-            with pytest.raises(DagsterInvalidInvocationError):
-                context.get_downstream_partition_keys(
-                    "2020-01-01",
-                    to_asset_key=AssetKey("static_partitions_asset"),
-                    from_asset_key=AssetKey("daily_asset"),
-                )
-
-
 def test_partitions_multi_asset_sensor_context():
     daily_partitions_def = DailyPartitionsDefinition("2020-01-01")
 

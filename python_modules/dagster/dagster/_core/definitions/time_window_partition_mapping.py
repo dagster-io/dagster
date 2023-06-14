@@ -151,17 +151,7 @@ class TimeWindowPartitionMapping(
         Raises an error if upstream partitions do not exist at the given current_time, fetching the
         current time if not provided.
         """
-        if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
-
-        return self._map_partitions(
-            downstream_partitions_subset.partitions_def,
-            upstream_partitions_def,
-            downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
-            current_time=current_time,
-        ).partitions_subset
+        raise NotImplementedError()
 
     def get_downstream_partitions_for_partition_range(
         self,

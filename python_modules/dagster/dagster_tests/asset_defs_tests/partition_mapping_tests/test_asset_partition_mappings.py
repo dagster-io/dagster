@@ -761,3 +761,19 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="a",
     )
+
+
+def test_identity_partition_mapping():
+    xy = StaticPartitionsDefinition(["x", "y"])
+    zx = StaticPartitionsDefinition(["z", "x"])
+
+    result = IdentityPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+        zx.empty_subset().with_partition_keys(["z", "x"]), xy
+    )
+    assert result.partitions_subset.get_partition_keys() == set(["x"])
+    assert result.required_but_nonexistent_partition_keys == ["z"]
+
+    result = IdentityPartitionMapping().get_downstream_partitions_for_partitions(
+        zx.empty_subset().with_partition_keys(["z", "x"]), xy
+    )
+    assert result.get_partition_keys() == set(["x"])
