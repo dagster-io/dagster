@@ -1,73 +1,34 @@
 from typing import Optional, Sequence, Type
 
 import pandas as pd
-from dagster import (
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-)
+import pyarrow as pa
 from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
-    TableSlice,
 )
-from dagster_deltalake.io_manager import DeltaLakeIOManager, TableConnection
-from deltalake import DeltaTable
-from deltalake.writer import write_deltalake
+from dagster_deltalake.handler import DeltalakeBaseArrowTypeHandler
+from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
-class DeltalakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
-    def handle_output(
-        self,
-        context: OutputContext,
-        table_slice: TableSlice,
-        obj: pd.DataFrame,
-        connection: TableConnection,
-    ):
-        write_deltalake(
-            connection.table_uri, obj, storage_options=connection.storage_options, mode="overwrite"
-        )
+class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
+    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[pd.DataFrame]) -> pd.DataFrame:
+        return obj.read_pandas()
 
-        context.add_output_metadata(
-            {
-                "row_count": obj.shape[0],
-                "table_columns": MetadataValue.table_schema(
-                    TableSchema(
-                        columns=[
-                            TableColumn(name=str(name), type=str(dtype))
-                            for name, dtype in obj.dtypes.items()
-                        ]
-                    )
-                ),
-                "table_uri": connection.table_uri,
-            }
-        )
-
-    def load_input(
-        self, context: InputContext, table_slice: TableSlice, connection: TableConnection
-    ) -> pd.DataFrame:
-        """Loads the input as a pandas Datafrom."""
-        table = DeltaTable(
-            table_uri=connection.table_uri, storage_options=connection.storage_options
-        )
-        # TODO add predicates from select statement / table slicing ...
-        scanner = table.to_pyarrow_dataset().scanner(columns=table_slice.columns)
-        return scanner.to_table().to_pandas()
+    def to_arrow(self, obj: pd.DataFrame) -> pa.RecordBatchReader:
+        return pa.Table.from_pandas(obj).to_reader()
 
     @property
     def supported_types(self) -> Sequence[Type[object]]:
         return [pd.DataFrame]
 
 
-class DeltaTablePandasIOManager(DeltaLakeIOManager):
+class DeltaLakePandasIOManager(DeltaLakeIOManager):
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return True
 
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
-        return [DeltalakePandasTypeHandler()]
+        return [DeltaLakePandasTypeHandler()]
 
     @staticmethod
     def default_load_type() -> Optional[Type]:

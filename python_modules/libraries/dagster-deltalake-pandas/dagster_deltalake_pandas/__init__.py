@@ -1,8 +1,8 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from .deltalake_pandas_type_handler import (
-    DeltalakePandasTypeHandler as DeltalakePandasTypeHandler,
-    DeltaTablePandasIOManager as DeltaTablePandasIOManager,
+    DeltaLakePandasIOManager as DeltaLakePandasIOManager,
+    DeltaLakePandasTypeHandler as DeltaLakePandasTypeHandler,
 )
 from .version import __version__
 
