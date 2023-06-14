@@ -12,7 +12,7 @@ def long_description():
 
 def get_version():
     version = {}
-    with open(Path(__file__).parent / "dagit/version.py", encoding="utf8") as fp:
+    with open(Path(__file__).parent / "dagster_webserver/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
     return version["__version__"]
@@ -22,7 +22,7 @@ ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
-    name="dagit",
+    name="dagster_webserver",
     version=ver,
     author="Elementl",
     author_email="hello@elementl.com",
@@ -40,13 +40,15 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagit_tests*"]),
+    packages=find_packages(exclude=["dagster_webserver_tests*"]),
     include_package_data=True,
     install_requires=[
         # cli
+        "click>=7.0,<9.0",
         f"dagster{pin}",
-        f"dagster-webserver{pin}",
         f"dagster-graphql{pin}",
+        "starlette",
+        "uvicorn[standard]",
     ],
     extras_require={
         "notebook": ["nbconvert"],  # notebooks support
@@ -54,8 +56,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "dagit = dagster_webserver.cli:main",
-            "dagit-debug = dagster_webserver.debug:main",
+            "dagster-webserver = dagster_webserver.cli:main",
+            "dagster-webserver-debug = dagster_webserver.debug:main",
         ]
     },
 )

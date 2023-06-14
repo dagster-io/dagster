@@ -118,8 +118,9 @@ dagit_run_logs
 
 python_modules/libraries/dagster-aws/dagster_aws/ecs/config.yaml
 
-python_modules/dagit/node_modules/
-python_modules/dagit/yarn.lock
+python_modules/dagster-webserver/node_modules/
+python_modules/dagster-webserver/yarn.lock
+
 
 # Gatsby stuff
 docs/gatsby/**/node_modules/

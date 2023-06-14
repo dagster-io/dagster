@@ -70,7 +70,7 @@ graphql:
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
 	@echo Checking for prod installs - if any are listed below reinstall with 'pip -e'
-	@! (pip list --exclude-editable | grep -e dagster -e dagit)
+	@! (pip list --exclude-editable | grep -e dagster -e dagster-webserver)
 
 rebuild_dagit: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build

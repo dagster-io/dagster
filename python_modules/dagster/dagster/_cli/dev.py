@@ -41,12 +41,12 @@ def dev_command_options(f):
 @click.command(
     name="dev",
     help=(
-        "Start a local deployment of Dagster, including dagit running on localhost and the"
-        " dagster-daemon running in the background"
+        "Start a local deployment of Dagster, including dagster-webserver running on localhost and"
+        " the dagster-daemon running in the background"
     ),
     context_settings=dict(
         max_content_width=120,
-        help_option_names=["--help"],  # Don't show '-h' since that's the dagit host
+        help_option_names=["--help"],  # Don't show '-h' since that's the webserver host
     ),
 )
 @dev_command_options
@@ -57,22 +57,34 @@ def dev_command_options(f):
     default="warning",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
-@click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
-@click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)
+@click.option(
+    "--webserver-port",
+    "--dagit-port",
+    "-p",
+    help="Port to use for the Dagster webserver.",
+    required=False,
+)
+@click.option(
+    "--webserver-host",
+    "--dagit-host",
+    "-h",
+    help="Host to use for the Dagster webserver.",
+    required=False,
+)
 def dev_command(
     code_server_log_level: str,
-    dagit_port: Optional[str],
-    dagit_host: Optional[str],
+    webserver_port: Optional[str],
+    webserver_host: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
-    # check if dagit installed, crash if not
+    # check if dagster-webserver installed, crash if not
     try:
-        import dagit  #  # noqa: F401
+        import dagster_webserver  #  # noqa: F401
     except ImportError:
         raise click.UsageError(
-            "The dagit Python package must be installed in order to use the dagster dev command. If"
-            ' you\'re using pip, you can install the dagit package by running "pip install dagit"'
-            " in your Python environment."
+            "The dagster-webserver Python package must be installed in order to use the dagster dev"
+            " command. If you're using pip, you can install the dagster-webserver package by"
+            ' running "pip install dagster-webserver" in your Python environment.'
         )
 
     configure_loggers()
@@ -120,10 +132,10 @@ def dev_command(
         if kwargs.get("working_directory"):
             args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
 
-        dagit_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagit"]
-            + (["--port", dagit_port] if dagit_port else [])
-            + (["--host", dagit_host] if dagit_host else [])
+        webserver_process = open_ipc_subprocess(
+            [sys.executable, "-m", "dagster-webserver"]
+            + (["--port", webserver_port] if webserver_port else [])
+            + (["--host", webserver_host] if webserver_host else [])
             + args
         )
         daemon_process = open_ipc_subprocess(
@@ -133,10 +145,10 @@ def dev_command(
             while True:
                 time.sleep(_CHECK_SUBPROCESS_INTERVAL)
 
-                if dagit_process.poll() is not None:
+                if webserver_process.poll() is not None:
                     raise Exception(
-                        "Dagit process shut down unexpectedly with return code"
-                        f" {dagit_process.returncode}"
+                        "dagster-webserver process shut down unexpectedly with return code"
+                        f" {webserver_process.returncode}"
                     )
 
                 if daemon_process.poll() is not None:
@@ -148,13 +160,15 @@ def dev_command(
         except:
             logger.info("Shutting down Dagster services...")
             interrupt_ipc_subprocess(daemon_process)
-            interrupt_ipc_subprocess(dagit_process)
+            interrupt_ipc_subprocess(webserver_process)
 
             try:
-                dagit_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                webserver_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
             except subprocess.TimeoutExpired:
-                logger.warning("dagit process did not terminate cleanly, killing the process")
-                dagit_process.kill()
+                logger.warning(
+                    "dagster-webserver process did not terminate cleanly, killing the process"
+                )
+                webserver_process.kill()
 
             try:
                 daemon_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)

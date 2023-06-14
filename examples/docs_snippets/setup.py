@@ -16,8 +16,8 @@ setup(
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=[
-        "dagit",
         "dagster",
+        "dagster-webserver",
         "dagstermill",
         "dagster-airbyte",
         "dagster-airflow",

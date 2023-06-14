@@ -109,6 +109,7 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
         "python_modules/dagit",
         "python_modules/dagster",
         "python_modules/dagster-graphql",
+        "python_modules/dagster-webserver",
         *(
             os.path.relpath(p, GIT_REPO_ROOT)
             for p in glob(f"{GIT_REPO_ROOT}/python_modules/libraries/*")

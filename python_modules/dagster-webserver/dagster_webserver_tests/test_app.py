@@ -4,14 +4,18 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app_from_workspace_process_context
-from dagit.cli import DEFAULT_DAGIT_PORT, dagit, host_dagit_ui_with_workspace_process_context
 from dagster import _seven
 from dagster._core.instance import DagsterInstance
-from dagster._core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
+from dagster._core.telemetry import START_DAGSTER_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path
+from dagster_webserver.app import create_app_from_workspace_process_context
+from dagster_webserver.cli import (
+    DEFAULT_WEBSERVER_PORT,
+    dagster_webserver,
+    host_dagster_ui_with_workspace_process_context,
+)
 from starlette.testclient import TestClient
 
 
@@ -58,7 +62,8 @@ def test_create_app_with_workspace_and_scheduler():
                 assert create_app_from_workspace_process_context(workspace_process_context)
 
 
-def test_notebook_view():
+@pytest.mark.parametrize("leading_path_segment", ["dagster-webserver", "dagit"])
+def test_notebook_view(leading_path_segment):
     notebook_path = file_relative_path(__file__, "render_uuid_notebook.ipynb")
 
     with instance_for_test() as instance:
@@ -70,7 +75,9 @@ def test_notebook_view():
                     workspace_process_context,
                 )
             )
-            res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
+            res = client.get(
+                f"/{leading_path_segment}/notebook?path={notebook_path}&repoLocName=load_from_file"
+            )
 
             assert res.status_code == 200
             # This magic guid is hardcoded in the notebook
@@ -132,14 +139,14 @@ def test_graphql_view_at_path_prefix(instance):
         assert b"No GraphQL query found in the request" in res.content
 
 
-def test_successful_host_dagit_ui_from_workspace():
+def test_successful_host_dagster_ui_from_workspace():
     with mock.patch("uvicorn.run") as server_call, tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=2343,
@@ -152,18 +159,18 @@ def test_successful_host_dagit_ui_from_workspace():
 
 @pytest.fixture
 def mock_is_port_in_use():
-    with mock.patch("dagit.cli.is_port_in_use") as mock_is_port_in_use:
+    with mock.patch("dagster_webserver.cli.is_port_in_use") as mock_is_port_in_use:
         yield mock_is_port_in_use
 
 
 @pytest.fixture
 def mock_find_free_port():
-    with mock.patch("dagit.cli.find_free_port") as mock_find_free_port:
+    with mock.patch("dagster_webserver.cli.find_free_port") as mock_find_free_port:
         mock_find_free_port.return_value = 1234
         yield mock_find_free_port
 
 
-def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
+def test_host_dagster_webserver_choose_port(mock_is_port_in_use, mock_find_free_port):
     with mock.patch("uvicorn.run") as server_call, tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
@@ -172,7 +179,7 @@ def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=None,
@@ -181,14 +188,14 @@ def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
             )
 
         assert server_call.called_with(
-            mock.ANY, host="127.0.0.1", port=DEFAULT_DAGIT_PORT, log_level="warning"
+            mock.ANY, host="127.0.0.1", port=DEFAULT_WEBSERVER_PORT, log_level="warning"
         )
 
         mock_is_port_in_use.return_value = True
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=None,
@@ -199,7 +206,7 @@ def test_host_dagit_ui_choose_port(mock_is_port_in_use, mock_find_free_port):
         assert server_call.called_with(mock.ANY, host="127.0.0.1", port=1234, log_level="warning")
 
 
-def test_successful_host_dagit_ui_from_multiple_workspace_files():
+def test_successful_host_dagster_ui_from_multiple_workspace_files():
     with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
@@ -210,7 +217,7 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
                 file_relative_path(__file__, "./override.yaml"),
             ],
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=2343,
@@ -219,13 +226,13 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
             )
 
 
-def test_successful_host_dagit_ui_from_legacy_repository():
+def test_successful_host_dagster_ui_from_legacy_repository():
     with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=2343,
@@ -242,7 +249,7 @@ def test_invalid_path_prefix():
             instance, [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace_process_context:
             with pytest.raises(Exception) as exc_info:
-                host_dagit_ui_with_workspace_process_context(
+                host_dagster_ui_with_workspace_process_context(
                     workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
@@ -252,7 +259,7 @@ def test_invalid_path_prefix():
             assert "path prefix should begin with a leading" in str(exc_info.value)
 
             with pytest.raises(Exception) as exc_info:
-                host_dagit_ui_with_workspace_process_context(
+                host_dagster_ui_with_workspace_process_context(
                     workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
@@ -269,7 +276,7 @@ def test_valid_path_prefix():
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=2343,
@@ -279,13 +286,13 @@ def test_valid_path_prefix():
 
 
 @mock.patch("uvicorn.run")
-def test_dagit_logs(_, caplog):
+def test_dagster_webserver_logs(_, caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
             result = runner.invoke(
-                dagit,
+                dagster_webserver,
                 ["-w", workspace_path],
             )
             assert result.exit_code == 0, str(result.exception)
@@ -331,5 +338,5 @@ def test_dagit_logs(_, caplog):
                     ]
                 )
 
-            assert actions == set([START_DAGIT_WEBSERVER, UPDATE_REPO_STATS])
+            assert actions == set([START_DAGSTER_WEBSERVER, UPDATE_REPO_STATS])
             assert len(records) == 3

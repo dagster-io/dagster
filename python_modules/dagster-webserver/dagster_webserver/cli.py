@@ -13,7 +13,7 @@ from dagster._cli.workspace import (
 )
 from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArgValue
 from dagster._core.instance import InstanceRef
-from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
+from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import (
     IWorkspaceProcessContext,
@@ -26,35 +26,32 @@ from .app import create_app_from_workspace_process_context
 from .version import __version__
 
 
-def create_dagit_cli():
-    return dagit
+def create_dagster_webserver_cli():
+    return dagster_webserver
 
 
-DEFAULT_DAGIT_HOST = "127.0.0.1"
-DEFAULT_DAGIT_PORT = 3000
+DEFAULT_WEBSERVER_HOST = "127.0.0.1"
+DEFAULT_WEBSERVER_PORT = 3000
 
 DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
 DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 
 @click.command(
-    name="dagit",
+    name="dagster-webserver",
     help=(
-        "Run dagit. Loads a repository or pipeline/job.\n\n{warning}".format(
+        "Run dagster-webserver. Loads a repository or pipeline/job.\n\n{warning}".format(
             warning=WORKSPACE_TARGET_WARNING
         )
         + (
-            "\n\nExamples:"
-            "\n\n1. dagit (works if .{default_filename} exists)"
-            "\n\n2. dagit -w path/to/{default_filename}"
-            "\n\n3. dagit -f path/to/file.py"
-            "\n\n4. dagit -f path/to/file.py -d path/to/working_directory"
-            "\n\n5. dagit -m some_module"
-            "\n\n6. dagit -f path/to/file.py -a define_repo"
-            "\n\n7. dagit -m some_module -a define_repo"
-            "\n\n8. dagit -p 3333"
-            "\n\nOptions can also provide arguments via environment variables prefixed with DAGIT"
-            "\n\nFor example, DAGIT_PORT=3333 dagit"
+            "\n\nExamples:\n\n1. dagster-webserver (works if .{default_filename} exists)\n\n2."
+            " dagster-webserver -w path/to/{default_filename}\n\n3. dagster-webserver -f"
+            " path/to/file.py\n\n4. dagster-webserver -f path/to/file.py -d"
+            " path/to/working_directory\n\n5. dagster-webserver -m some_module\n\n6."
+            " dagster-webserver -f path/to/file.py -a define_repo\n\n7. dagster-webserver -m"
+            " some_module -a define_repo\n\n8. dagster-webserver -p 3333\n\nOptions can also"
+            " provide arguments via environment variables prefixed with DAGSTER_WEBSERVER\n\nFor"
+            " example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver"
         ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
     ),
 )
@@ -63,7 +60,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "--host",
     "-h",
     type=click.STRING,
-    default=DEFAULT_DAGIT_HOST,
+    default=DEFAULT_WEBSERVER_HOST,
     help="Host to run server on",
     show_default=True,
 )
@@ -71,7 +68,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "--port",
     "-p",
     type=click.INT,
-    help=f"Port to run server on - defaults to {DEFAULT_DAGIT_PORT}",
+    help=f"Port to run server on - defaults to {DEFAULT_WEBSERVER_PORT}",
     default=None,
     show_default=True,
 )
@@ -80,7 +77,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "-l",
     type=click.STRING,
     default="",
-    help="The path prefix where Dagit will be hosted (eg: /dagit)",
+    help="The path prefix where webserver will be hosted (eg: /dagster-webserver)",
     show_default=True,
 )
 @click.option(
@@ -106,14 +103,14 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 @click.option(
     "--read-only",
     help=(
-        "Start Dagit in read-only mode, where all mutations such as launching runs and "
+        "Start webserver in read-only mode, where all mutations such as launching runs and "
         "turning schedules on/off are turned off."
     ),
     is_flag=True,
 )
 @click.option(
     "--suppress-warnings",
-    help="Filter all warnings when hosting Dagit.",
+    help="Filter all warnings when hosting webserver.",
     is_flag=True,
 )
 @click.option(
@@ -127,7 +124,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 )
 @click.option(
     "--code-server-log-level",
-    help="Set the log level for any code servers spun up by dagit.",
+    help="Set the log level for any code servers spun up by the webserver.",
     show_default=True,
     default="info",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
@@ -138,8 +135,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     required=False,
     hidden=True,
 )
-@click.version_option(version=__version__, prog_name="dagit")
-def dagit(
+@click.version_option(version=__version__, prog_name="dagster-webserver")
+def dagster_webserver(
     host: str,
     port: int,
     path_prefix: str,
@@ -156,10 +153,10 @@ def dagit(
         os.environ["PYTHONWARNINGS"] = "ignore"
 
     configure_loggers()
-    logger = logging.getLogger("dagit")
+    logger = logging.getLogger("dagster-webserver")
 
     with get_possibly_temporary_instance_for_cli(
-        cli_command="dagit",
+        cli_command="dagster-webserver",
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         logger=logger,
     ) as instance:
@@ -173,7 +170,7 @@ def dagit(
             kwargs=kwargs,
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
-            host_dagit_ui_with_workspace_process_context(
+            host_dagster_ui_with_workspace_process_context(
                 workspace_process_context, host, port, path_prefix, log_level
             )
 
@@ -183,12 +180,12 @@ async def _lifespan(app):
     try:
         yield
     except asyncio.exceptions.CancelledError:
-        logging.getLogger("dagit").info("Server for dagit was shut down.")
-        # Expected error when dagit is terminated by CTRL-C, suppress
+        logging.getLogger("dagster-webserver").info("Server for dagster-webserver was shut down.")
+        # Expected error when dagster-webserver is terminated by CTRL-C, suppress
         pass
 
 
-def host_dagit_ui_with_workspace_process_context(
+def host_dagster_ui_with_workspace_process_context(
     workspace_process_context: IWorkspaceProcessContext,
     host: Optional[str],
     port: Optional[int],
@@ -202,25 +199,25 @@ def host_dagit_ui_with_workspace_process_context(
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
 
-    logger = logging.getLogger("dagit")
+    logger = logging.getLogger("dagster-webserver")
 
     app = create_app_from_workspace_process_context(
         workspace_process_context, path_prefix, lifespan=_lifespan
     )
 
     if not port:
-        if is_port_in_use(host, DEFAULT_DAGIT_PORT):
+        if is_port_in_use(host, DEFAULT_WEBSERVER_PORT):
             port = find_free_port()
-            logger.warning(f"Port {DEFAULT_DAGIT_PORT} is in use - using port {port} instead")
+            logger.warning(f"Port {DEFAULT_WEBSERVER_PORT} is in use - using port {port} instead")
         else:
-            port = DEFAULT_DAGIT_PORT
+            port = DEFAULT_WEBSERVER_PORT
 
     logger.info(
-        "Serving dagit on http://{host}:{port}{path_prefix} in process {pid}".format(
+        "Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {pid}".format(
             host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
         )
     )
-    log_action(workspace_process_context.instance, START_DAGIT_WEBSERVER)
+    log_action(workspace_process_context.instance, START_DAGSTER_WEBSERVER)
     with uploading_logging_thread():
         uvicorn.run(
             app,
@@ -230,9 +227,9 @@ def host_dagit_ui_with_workspace_process_context(
         )
 
 
-cli = create_dagit_cli()
+cli = create_dagster_webserver_cli()
 
 
 def main():
     # click magic
-    cli(auto_envvar_prefix="DAGIT")  # pylint:disable=E1120
+    cli(auto_envvar_prefix="DAGSTER_WEBSERVER")  # pylint:disable=E1120

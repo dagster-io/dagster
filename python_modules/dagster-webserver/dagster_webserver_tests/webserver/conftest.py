@@ -1,7 +1,7 @@
 import pytest
-from dagit.webserver import DagitWebserver
 from dagster import DagsterInstance, __version__
 from dagster._cli.workspace.cli_target import get_workspace_process_context_from_kwargs
+from dagster_webserver.webserver import DagsterWebserver
 from starlette.testclient import TestClient
 
 
@@ -18,5 +18,5 @@ def test_client(instance):
         read_only=False,
         kwargs={"empty_workspace": True},
     )
-    app = DagitWebserver(process_context).create_asgi_app(debug=True)
+    app = DagsterWebserver(process_context).create_asgi_app(debug=True)
     return TestClient(app)

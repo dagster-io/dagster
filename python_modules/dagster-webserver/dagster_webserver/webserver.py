@@ -51,7 +51,7 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
-class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
+class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
 
     def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
@@ -91,16 +91,16 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             raise Exception(
                 """
                 CSP configuration file could not be found.
-                If you are using dagit, then probably it's a corrupted installation or a bug.
-                However, if you are developing dagit locally, your problem can be fixed by running
-                "make rebuild_dagit" in the project root.
+                If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
+                However, if you are developing dagster-webserver locally, your problem can be fixed by running
+                "make rebuild_dagster_ui" in the project root.
                 """
             )
 
-    async def dagit_info_endpoint(self, _request: Request):
+    async def webserver_info_endpoint(self, _request: Request):
         return JSONResponse(
             {
-                "dagit_version": __version__,
+                "dagster_webserver_version": __version__,
                 "dagster_version": dagster_version,
                 "dagster_graphql_version": dagster_graphql_version,
             }
@@ -128,8 +128,8 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         except ImportError:
             return HTMLResponse(
                 "Notebook support requires nbconvert, which is not installed. You can install "
-                "nbconvert using Dagit's 'notebook' extra via "
-                "<code>pip install dagit[notebook]</code>"
+                "nbconvert using dagster-webserver's 'notebook' extra via "
+                "<code>pip install dagster-webserver[notebook]</code>"
             )
 
         context = self.make_request_context(request)
@@ -231,9 +231,9 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             raise Exception(
                 """
                 Can't find webapp files.
-                If you are using dagit, then probably it's a corrupted installation or a bug.
-                However, if you are developing dagit locally, your problem can be fixed by running
-                "make rebuild_dagit" in the project root.
+                If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
+                However, if you are developing dagster-webserver locally, your problem can be fixed by running
+                "make rebuild_dagster_webserver" in the project root.
                 """
             )
 
@@ -274,7 +274,9 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     def build_routes(self):
         routes = (
             [
-                Route("/dagit_info", self.dagit_info_endpoint),
+                Route("/dagster-webserver-info", self.webserver_info_endpoint),
+                # Remove /dagit_info redirect with 2.0
+                Route("/dagit_info", RedirectResponse(url="/dagster-webserver-info")),
                 Route(
                     "/graphql",
                     self.graphql_http_endpoint,
@@ -298,6 +300,11 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     "/logs/{path:path}",
                     self.download_captured_logs_endpoint,
                 ),
+                Route(
+                    "/dagster-webserver/notebook",
+                    self.download_notebook,
+                ),
+                # Remove /dagit/notebook with 2.0
                 Route(
                     "/dagit/notebook",
                     self.download_notebook,

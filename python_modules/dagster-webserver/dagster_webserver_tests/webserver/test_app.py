@@ -1,9 +1,7 @@
 import gc
 
 import objgraph
-from dagit.graphql import GraphQLWS
-from dagit.version import __version__ as dagit_version
-from dagit.webserver import ROOT_ADDRESS_STATIC_RESOURCES
+import pytest
 from dagster import (
     __version__ as dagster_version,
     job,
@@ -14,6 +12,9 @@ from dagster._serdes import unpack_value
 from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.version import __version__ as dagster_graphql_version
+from dagster_webserver.graphql import GraphQLWS
+from dagster_webserver.version import __version__ as dagster_webserver_version
+from dagster_webserver.webserver import ROOT_ADDRESS_STATIC_RESOURCES
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -53,11 +54,12 @@ def _add_run(instance):
     return result.run_id
 
 
-def test_dagit_info(test_client: TestClient):
-    response = test_client.get("/dagit_info")
+@pytest.mark.parametrize("path", ["/dagster-webserver-info", "/dagit_info"])
+def test_dagster_webserver_info(path: str, test_client: TestClient):
+    response = test_client.get(path)
     assert response.status_code == 200
     assert response.json() == {
-        "dagit_version": dagit_version,
+        "dagster_webserver_version": dagster_webserver_version,
         "dagster_version": dagster_version,
         "dagster_graphql_version": dagster_graphql_version,
     }
@@ -86,7 +88,7 @@ def test_graphql_get(instance, test_client: TestClient):
         params={"query": "{__typename}"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "DagitQuery"}}
+    assert response.json() == {"data": {"__typename": "WebserverQuery"}}
 
     # missing
     response = test_client.get("/graphql")
@@ -131,7 +133,7 @@ def test_graphql_post(test_client: TestClient):
         params={"query": "{__typename}"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "DagitQuery"}}
+    assert response.json() == {"data": {"__typename": "WebserverQuery"}}
 
     # missing
     response = test_client.post("/graphql")
@@ -171,7 +173,7 @@ def test_graphql_post(test_client: TestClient):
         headers={"Content-type": "application/graphql"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "DagitQuery"}}
+    assert response.json() == {"data": {"__typename": "WebserverQuery"}}
 
     # non existent field
     response = test_client.post(

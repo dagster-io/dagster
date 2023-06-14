@@ -1,7 +1,7 @@
 import pytest
-from dagit import app
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
+from dagster_webserver import app
 from starlette.testclient import TestClient
 
 SMOKE_TEST_QUERY = """
@@ -33,7 +33,7 @@ def test_smoke_app(gen_instance):
             instance,
             version="",
             read_only=False,
-            kwargs=dict(module_name=("dagit_tests.toy.bar_repo",), definition="bar"),
+            kwargs=dict(module_name=("dagster_webserver_tests.toy.bar_repo",), definition="bar"),
         ) as workspace_process_context:
             asgi_app = app.create_app_from_workspace_process_context(workspace_process_context)
             client = TestClient(asgi_app)
@@ -55,7 +55,7 @@ def test_smoke_app(gen_instance):
             assert result.status_code == 400
             assert result.content == b"No GraphQL query found in the request"
 
-            result = client.get("/dagit/notebook?path=foo.bar&repoLocName=foo_repo")
+            result = client.get("/dagster-webserver/notebook?path=foo.bar&repoLocName=foo_repo")
             assert result.status_code == 400
             assert result.content.decode("utf-8") == "Invalid Path"
 
@@ -65,7 +65,7 @@ def test_smoke_app(gen_instance):
             assert len(data["errors"]) == 1
             assert "must not have a selection" in data["errors"][0]["message"]
 
-            # Missing routes redirect to the index.html file of the Dagit react app, so the user
+            # Missing routes redirect to the index.html file of the Dagster UI react app, so the user
             # gets our UI when they navigate to "synthetic" react router URLs.
             result = client.get("foo/bar")
             assert result.status_code == 200, result.content
