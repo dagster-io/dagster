@@ -634,7 +634,7 @@ def test_late_binding_with_resource_defs() -> None:
     @op
     def simple_op():
         pass
-    
+
     @job()
     def simple_job():
         simple_op()
