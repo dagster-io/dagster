@@ -1,9 +1,7 @@
 import sys
-from typing import Optional, Union
+from typing import Optional
 
 from dagster import Config
-from pydantic import Field
-from typing_extensions import Annotated
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -72,31 +70,3 @@ class S3Config(Config):
     """Instance metadata endpoint url for fetching credentials"""
 
     profile: Optional[str]
-
-
-class StorageOptions(Config):
-    storage_options: Annotated[
-        Optional[Union[AzureConfig, S3Config]], Field(discriminator="provider")
-    ]
-    """Configuration options for accessing storage location"""
-
-
-class StorageLocation(Config):
-    """A Storage location combines a URL with the parameters required to access it.
-
-    Several local and remote object stores are supported. The specific technology is
-    identified via the scheme of the URL.
-
-    - local: `file:///<path>` or a relative path
-    - s3: s3://<bucket>/<path>
-    - azure blob / adls: az://<container>/<path>
-    - google: gs://<bucket>/<path>
-    """
-
-    url: str
-    """A fully qualified path to a storage location"""
-
-    storage_options: Annotated[
-        Union[AzureConfig, S3Config, LocalConfig], Field(discriminator="provider")
-    ]
-    """Configuration options for accessing storage location"""

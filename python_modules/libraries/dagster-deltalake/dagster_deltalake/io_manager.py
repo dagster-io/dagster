@@ -52,11 +52,67 @@ class _DeltaTableIOManagerResourceConfig(TypedDict):
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
-    root_uri: str
-    storage_options: Union[AzureConfig, S3Config, LocalConfig] = Field(discriminator="provider")
+    """Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_deltalake import DeltaLakeIOManager
+            from dagster_duckdb_pandas import DeltaLakePandasTypeHandler
+
+            class MyDeltaLakeIOManager(DeltaLakeIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [DeltaLakePandasTypeHandler()]
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema (parent folder) in Delta Lake.
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={"io_manager": MyDeltaLakeIOManager(database="my_db.duckdb")}
+            )
+
+    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+    the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+    For ops, the schema can be specified by including a "schema" entry in output metadata. If none
+    of these is provided, the schema will default to "public".
+
+    .. code-block:: python
+
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+    In or AssetIn.
+
+    .. code-block:: python
+
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
+
+    """
+
+    root_uri: str = Field(description="Storage location where Delta tables are stored.")
+
+    storage_options: Union[AzureConfig, S3Config, LocalConfig] = Field(
+        discriminator="provider", description="Configuration for accessing storage location."
+    )
+
     table_config: Optional[Dict[str, str]] = Field(
         default=None, description="Additional config and metadata added to table on creation."
     )
+
     schema_: Optional[str] = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic

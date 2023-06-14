@@ -7,8 +7,6 @@ from .config import (
     AzureConfig as AzureConfig,
     LocalConfig as LocalConfig,
     S3Config as S3Config,
-    StorageLocation as StorageLocation,
-    StorageOptions as StorageOptions,
 )
 from .handler import (
     DeltalakeBaseArrowTypeHandler as DeltalakeBaseArrowTypeHandler,
