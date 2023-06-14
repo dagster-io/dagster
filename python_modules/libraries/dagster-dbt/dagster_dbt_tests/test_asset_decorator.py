@@ -290,9 +290,12 @@ def test_dbt_config_group() -> None:
 
     assert my_dbt_assets.group_names_by_key == {
         AssetKey(["customers"]): "default",
+        # If a model has a Dagster group name specified under `meta`, use that.
         AssetKey(["customized", "staging", "customers"]): "customized_dagster_group",
-        AssetKey(["customized", "staging", "orders"]): "staging",
-        AssetKey(["customized", "staging", "payments"]): "staging",
+        # If a model has a dbt group name specified under `group`, use that.
+        AssetKey(["customized", "staging", "orders"]): "customized_dbt_group",
+        # If a model has both a Dagster group and dbt group, use the Dagster group.
+        AssetKey(["customized", "staging", "payments"]): "customized_dagster_group",
         AssetKey(["orders"]): "default",
         AssetKey(["raw_customers"]): "default",
         AssetKey(["raw_orders"]): "default",
