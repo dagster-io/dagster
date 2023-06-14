@@ -339,3 +339,18 @@ def test_from_coercible_multi_asset():
         AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
         == my_multi_asset.keys
     )
+
+
+def test_from_coercible_tuple():
+    @asset
+    def foo():
+        ...
+
+    @asset
+    def bar():
+        ...
+
+    assert AssetSelection.from_coercible((foo, bar)).resolve([foo, bar]) == {
+        AssetKey("foo"),
+        AssetKey("bar"),
+    }
