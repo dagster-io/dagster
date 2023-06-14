@@ -3063,6 +3063,7 @@ type AutoMaterializeAssetEvaluationRecord {
   numDiscarded: Int!
   conditions: [AutoMaterializeCondition!]!
   timestamp: Float!
+  runIds: [String!]!
 }
 
 union AutoMaterializeCondition =

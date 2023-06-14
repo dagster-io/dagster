@@ -78,6 +78,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     num_requested: int
     num_skipped: int
     num_discarded: int
+    run_ids: Set[str] = set()
 
     @staticmethod
     def from_conditions(
