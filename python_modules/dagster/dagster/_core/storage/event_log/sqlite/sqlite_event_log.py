@@ -368,15 +368,21 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.delete_events_for_run(conn, run_id)
 
     def wipe(self) -> None:
-        # should delete all the run-sharded dbs as well as the index db
+        # should delete all the run-sharded db files and drop the contents of the index
         for filename in (
             glob.glob(os.path.join(self._base_dir, "*.db"))
             + glob.glob(os.path.join(self._base_dir, "*.db-wal"))
             + glob.glob(os.path.join(self._base_dir, "*.db-shm"))
         ):
-            os.unlink(filename)
+            if (
+                not filename.endswith(f"{INDEX_SHARD_NAME}.db")
+                and not filename.endswith(f"{INDEX_SHARD_NAME}.db-wal")
+                and not filename.endswith(f"{INDEX_SHARD_NAME}.db-shm")
+            ):
+                os.unlink(filename)
 
         self._initialized_dbs = set()
+        self._wipe_index()
 
     def _delete_mirrored_events_for_asset_key(self, asset_key: AssetKey) -> None:
         with self.index_connection() as conn:
