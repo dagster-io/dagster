@@ -25,11 +25,20 @@ from .utils import input_name_fn, output_name_fn
 
 def default_asset_key_fn(node_info: Mapping[str, Any]) -> AssetKey:
     """Get the asset key for a dbt node.
-    By default:
+
+    By default, if the dbt node has a Dagster asset key configured in its metadata, then that is
+    parsed and used.
+
+    Otherwise:
         dbt sources: a dbt source's key is the union of its source name and its table name
         dbt models: a dbt model's key is the union of its model name and any schema configured on
-    the model itself.
+            the model itself.
     """
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    asset_key_config = dagster_metadata.get("asset_key", [])
+    if asset_key_config:
+        return AssetKey(asset_key_config)
+
     if node_info["resource_type"] == "source":
         components = [node_info["source_name"], node_info["name"]]
     else:
@@ -71,7 +80,7 @@ def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
 
 
 def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-    dagster_metadata = node_info["config"].get("meta", {}).get("dagster", {})
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
     freshness_policy = _legacy_freshness_policy_fn(freshness_policy_config)
@@ -99,7 +108,7 @@ def _legacy_freshness_policy_fn(
 def default_auto_materialize_policy_fn(
     node_info: Mapping[str, Any]
 ) -> Optional[AutoMaterializePolicy]:
-    dagster_metadata = node_info["config"].get("meta", {}).get("dagster", {})
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
     auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
 
     auto_materialize_policy = _auto_materialize_policy_fn(auto_materialize_policy_config)

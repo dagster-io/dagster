@@ -211,7 +211,7 @@ def test_with_metadata_replacements() -> None:
         assert metadata["customized"] == "metadata"
 
 
-def test_auto_materialize_policy() -> None:
+def test_dbt_meta_auto_materialize_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
     def my_dbt_assets():
         ...
@@ -223,7 +223,7 @@ def test_auto_materialize_policy() -> None:
         assert auto_materialize_policy == AutoMaterializePolicy.eager()
 
 
-def test_freshness_policy() -> None:
+def test_dbt_meta_freshness_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
     def my_dbt_assets():
         ...
@@ -235,3 +235,21 @@ def test_freshness_policy() -> None:
         assert freshness_policy == FreshnessPolicy(
             maximum_lag_minutes=60.0, cron_schedule="* * * * *"
         )
+
+
+def test_dbt_meta_asset_key() -> None:
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    # Assert that source asset keys are set properly.
+    assert set(my_dbt_assets.keys_by_input_name.values()) == {
+        AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"])
+    }
+
+    # Assert that models asset keys are set properly.
+    assert {
+        AssetKey(["customized", "staging", "customers"]),
+        AssetKey(["customized", "staging", "orders"]),
+        AssetKey(["customized", "staging", "payments"]),
+    }.issubset(my_dbt_assets.keys)
