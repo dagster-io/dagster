@@ -25,15 +25,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
 
     example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
 
-    # TODO: these tests were failing to install due to using editable install dagster and published
-    # dagster-cloud.
-    example_packages_filtered = [
-        pkg
-        for pkg in example_packages
-        if pkg.directory not in ["examples/assets_dbt_python", "examples/assets_modern_data_stack"]
-    ]
-
-    return _build_steps_from_package_specs(example_packages_filtered)
+    return _build_steps_from_package_specs(example_packages)
 
 
 def build_library_packages_steps() -> List[BuildkiteStep]:
@@ -276,9 +268,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/assets_dbt_python",
-    ),
-    PackageSpec(
         "examples/assets_smoke_test",
     ),
     PackageSpec(
@@ -329,6 +318,31 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             # wandb not yet 3.11 compatible
             AvailablePythonVersion.V3_11,
         ],
+    ),
+    # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
+    PackageSpec(
+        "examples/assets_modern_data_stack",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/assets_dbt_python",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_aws",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_etl",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_gcp",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_snowflake",
+        pytest_tox_factors=["pypi"],
     ),
 ]
 
