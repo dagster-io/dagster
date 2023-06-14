@@ -47,7 +47,7 @@ def training_test_data(hackernews_stories):
     outs={"tfidf_vectorizer": AssetOut(), "transformed_training_data": AssetOut()}
 )
 def transformed_train_data(training_data):
-    X_train, y_train = training_data
+    X_train, y_train = training_data 
 
     # Initiate and fit the tokenizer on the training data and transform the training dataset
     vectorizer = TfidfVectorizer()
