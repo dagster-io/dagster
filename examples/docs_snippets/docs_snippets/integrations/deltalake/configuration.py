@@ -18,7 +18,7 @@ defs = Definitions(
     resources={
         "io_manager": DeltaLakePandasIOManager(
             root_uri="path/to/deltalake",  # required
-            storage_options=LocalConfig(), #required
+            storage_options=LocalConfig(),  # required
             schema="iris",  # optional, defaults to "public"
         )
     },

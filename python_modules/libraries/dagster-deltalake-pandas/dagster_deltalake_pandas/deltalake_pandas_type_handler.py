@@ -10,7 +10,9 @@ from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
 class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
-    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[pd.DataFrame]) -> pd.DataFrame:
+    def from_arrow(
+        self, obj: pa.RecordBatchReader, target_type: Type[pd.DataFrame]
+    ) -> pd.DataFrame:
         return obj.read_pandas()
 
     def to_arrow(self, obj: pd.DataFrame) -> pa.RecordBatchReader:

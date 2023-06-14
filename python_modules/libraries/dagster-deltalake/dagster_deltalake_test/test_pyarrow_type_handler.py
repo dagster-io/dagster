@@ -408,7 +408,6 @@ def dynamic_partitioned(context) -> pa.Table:
 
 
 def test_dynamic_partition(tmp_path, io_manager):
-
     with instance_for_test() as instance:
         resource_defs = {"io_manager": io_manager}
 
@@ -489,7 +488,6 @@ def test_self_dependent_asset(tmp_path, io_manager):
 
         return pd_df
 
-
     resource_defs = {"io_manager": io_manager}
 
     materialize(
@@ -507,4 +505,4 @@ def test_self_dependent_asset(tmp_path, io_manager):
 
     dt = DeltaTable(os.path.join(tmp_path, "my_schema/self_dependent_asset"))
     out_df = dt.to_pyarrow_table()
-    assert out_df["a"].to_pylist() ==  ["1", "1", "1"]
+    assert out_df["a"].to_pylist() == ["1", "1", "1"]

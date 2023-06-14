@@ -10,9 +10,11 @@ from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
 class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[pl.DataFrame]):
-    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[pl.DataFrame]) -> pl.DataFrame:
+    def from_arrow(
+        self, obj: pa.RecordBatchReader, target_type: Type[pl.DataFrame]
+    ) -> pl.DataFrame:
         table = pl.from_arrow(obj.read_all())
-        assert isinstance(table, pl.DataFrame) # making sure for pyright's sake
+        assert isinstance(table, pl.DataFrame)  # making sure for pyright's sake
         return table
 
     def to_arrow(self, obj: pl.DataFrame) -> pa.RecordBatchReader:
