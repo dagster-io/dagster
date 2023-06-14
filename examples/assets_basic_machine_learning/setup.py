@@ -6,11 +6,10 @@ setup(
     install_requires=[
         "dagster",
         "dagster-cloud",
-        "xgboost", 
+        "xgboost",
         "sklearn",
         "numpy",
-        "pandas", 
-        
+        "pandas",
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )

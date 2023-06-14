@@ -7,21 +7,17 @@ import numpy as np
 import xgboost as xg
 from sklearn.metrics import mean_absolute_error
 
+
 @asset
 def hackernews_stories():
-
     # Get the max ID number from hacker news
-    latest_item = requests.get(
-        "https://hacker-news.firebaseio.com/v0/maxitem.json"
-    ).json()
+    latest_item = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json").json()
 
     # Get items based on story ids from the HackerNews items endpoint
     results = []
     scope = range(latest_item - 1000, latest_item)
     for item_id in scope:
-        item = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        ).json()
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
     # Store the results in a dataframe and filter on stories with valid titles
@@ -43,11 +39,10 @@ def training_test_data(hackernews_stories):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     return (X_train, y_train), (X_test, y_test)
 
-@multi_asset(
-    outs={"tfidf_vectorizer": AssetOut(), "transformed_training_data": AssetOut()}
-)
+
+@multi_asset(outs={"tfidf_vectorizer": AssetOut(), "transformed_training_data": AssetOut()})
 def transformed_train_data(training_data):
-    X_train, y_train = training_data 
+    X_train, y_train = training_data
 
     # Initiate and fit the tokenizer on the training data and transform the training dataset
     vectorizer = TfidfVectorizer()
@@ -56,6 +51,7 @@ def transformed_train_data(training_data):
     y_train = y_train.fillna(0)
     transformed_y_train = np.array(y_train)
     return vectorizer, (transformed_X_train, transformed_y_train)
+
 
 @asset
 def transformed_test_data(test_data, tfidf_vectorizer):
@@ -67,6 +63,7 @@ def transformed_test_data(test_data, tfidf_vectorizer):
     y_test = y_test.fillna(0)
     transformed_y_test = np.array(y_test)
     return transformed_X_test, transformed_y_test
+
 
 import seaborn
 import matplotlib.pyplot as plt
@@ -83,18 +80,26 @@ def xgboost_comments_model(transformed_training_data, transformed_test_data):
     xgb_r = xg.XGBRegressor(
         objective="reg:squarederror", eval_metric=mean_absolute_error, n_estimators=20
     )
-    xgb_r.fit(transformed_X_train, transformed_y_train, eval_set=[(transformed_X_test, transformed_y_test)])
-
+    xgb_r.fit(
+        transformed_X_train,
+        transformed_y_train,
+        eval_set=[(transformed_X_test, transformed_y_test)],
+    )
 
     ## plot the mean absolute error values as the training progressed
     metadata = {}
-    for eval_metric in xgb_r.evals_result()['validation_0'].keys():
-        metadata[f'{eval_metric} plot'] = make_plot(xgb_r.evals_result_['validation_0'][eval_metric])
-    # keep track of the score 
+    for eval_metric in xgb_r.evals_result()["validation_0"].keys():
+        metadata[f"{eval_metric} plot"] = make_plot(
+            xgb_r.evals_result_["validation_0"][eval_metric]
+        )
+    # keep track of the score
 
-    metadata['score (mean_absolute_error)'] = xgb_r.evals_result_['validation_0']['mean_absolute_error'][-1]
+    metadata["score (mean_absolute_error)"] = xgb_r.evals_result_["validation_0"][
+        "mean_absolute_error"
+    ][-1]
 
     return Output(xgb_r, metadata=metadata)
+
 
 def make_plot(eval_metric):
     plt.clf()
@@ -108,19 +113,14 @@ def make_plot(eval_metric):
 
 @asset
 def latest_story_comment_predictions(xgboost_comments_model, tfidf_vectorizer):
-
     # Get the max ID number from hacker news
-    latest_item = requests.get(
-        "https://hacker-news.firebaseio.com/v0/maxitem.json"
-    ).json()
+    latest_item = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json").json()
 
     # Get items based on story ids from the HackerNews items endpoint
     results = []
     scope = range(latest_item - 100, latest_item)
     for item_id in scope:
-        item = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        ).json()
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
     df = pd.DataFrame(results)
@@ -128,9 +128,7 @@ def latest_story_comment_predictions(xgboost_comments_model, tfidf_vectorizer):
         df = df[df.type == "story"]
         df = df[~df.title.isna()]
     inference_x = df.title
-    
+
     # Transform the new story titles using the existing vectorizer
     inference_x = tfidf_vectorizer.transform(inference_x)
     return xgboost_comments_model.predict(inference_x)
-
-
