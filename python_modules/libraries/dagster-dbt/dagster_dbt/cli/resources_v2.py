@@ -126,9 +126,9 @@ class DbtManifest:
         """Get a dbt node's dictionary representation in the manifest by its Dagster output name."""
         return self.node_info_by_output_name[output_name]
 
-    def get_node_info_by_asset_key(self, asset_key: AssetKey) -> Mapping[str, Any]:
-        """Get a dbt node's dictionary representation in the manifest by its Dagster output name."""
-        return self.node_info_by_asset_key[asset_key]
+    def get_asset_key_by_output_name(self, output_name: str) -> AssetKey:
+        """Get a dbt node's default asset key by its Dagster output name."""
+        return self.node_info_to_asset_key(self.get_node_info_by_output_name(output_name))
 
     def get_subset_selection_for_context(
         self,
