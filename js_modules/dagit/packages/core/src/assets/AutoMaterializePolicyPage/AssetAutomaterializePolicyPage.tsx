@@ -296,7 +296,8 @@ function LeftPanel({
               </EvaluationRow>
             );
           }
-          if (evaluation.numSkipped) {
+          if (evaluation.numSkipped || evaluation.numDiscarded) {
+            const numSkipped = evaluation.numSkipped + evaluation.numDiscarded;
             return (
               <EvaluationRow
                 key={`skip-${evaluation.timestamp}`}
@@ -312,8 +313,7 @@ function LeftPanel({
                   style={{width: '100%'}}
                 >
                   <div style={{color: Colors.Yellow700}}>
-                    {evaluation.numSkipped} materialization{evaluation.numSkipped === 1 ? '' : 's'}{' '}
-                    skipped{' '}
+                    {numSkipped} materialization{numSkipped === 1 ? '' : 's'} skipped{' '}
                   </div>
                   <TimestampDisplay timestamp={evaluation.timestamp} />
                 </Box>
