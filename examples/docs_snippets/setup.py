@@ -25,6 +25,8 @@ setup(
         "dagster-celery",
         "dagster-dbt",
         "dagster-dask",
+        "dagster-deltalake",
+        "dagster-deltalake-pandas",
         "dagster-duckdb",
         "dagster-duckdb-pandas",
         "dagster-fivetran",
