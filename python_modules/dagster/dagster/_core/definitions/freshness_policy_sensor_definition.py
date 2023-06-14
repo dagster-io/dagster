@@ -196,7 +196,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def __init__(
@@ -366,7 +366,7 @@ def freshness_policy_sensor(
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def inner(fn: Callable[..., None]) -> FreshnessPolicySensorDefinition:

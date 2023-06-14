@@ -891,15 +891,15 @@ class DagsterInstance(DynamicPartitionsStore):
             self._schedule_storage.upgrade()  # type: ignore  # (possible none)
             self._schedule_storage.migrate(print_fn)  # type: ignore  # (possible none)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_dagster_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         if self._schedule_storage:
-            self._schedule_storage.optimize_for_dagit(
+            self._schedule_storage.optimize_for_webserver(
                 statement_timeout=statement_timeout, pool_recycle=pool_recycle
             )
-        self._run_storage.optimize_for_dagit(
+        self._run_storage.optimize_for_webserver(
             statement_timeout=statement_timeout, pool_recycle=pool_recycle
         )
-        self._event_storage.optimize_for_dagit(
+        self._event_storage.optimize_for_webserver(
             statement_timeout=statement_timeout, pool_recycle=pool_recycle
         )
 

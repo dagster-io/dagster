@@ -79,7 +79,7 @@ if TYPE_CHECKING:
 
 class ExternalRepository:
     """ExternalRepository is a object that represents a loaded repository definition that
-    is resident in another process or container. Host processes such as dagit use
+    is resident in another process or container. Host processes such as dagster-webserver use
     objects such as these to interact with user-defined artifacts.
     """
 
@@ -288,7 +288,7 @@ class ExternalRepository:
 
 class ExternalJob(RepresentedJob):
     """ExternalJob is a object that represents a loaded job definition that
-    is resident in another process or container. Host processes such as dagit use
+    is resident in another process or container. Host processes such as dagster-webserver use
     objects such as these to interact with user-defined artifacts.
     """
 

@@ -33,7 +33,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
     why no runs were requested.
 
     Attributes:
-        skip_message (Optional[str]): A message displayed in dagit for why this evaluation resulted
+        skip_message (Optional[str]): A message displayed in the Dagster UI for why this evaluation resulted
             in no requested runs.
     """
 

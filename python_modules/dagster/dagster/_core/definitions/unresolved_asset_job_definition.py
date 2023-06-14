@@ -294,7 +294,7 @@ def define_asset_job(
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
-            The values provided will be viewable and editable in the Dagit playground, so be
+            The values provided will be viewable and editable in the Dagster UI, so be
             careful with secrets.
 
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is

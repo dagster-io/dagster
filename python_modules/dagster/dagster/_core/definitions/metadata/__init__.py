@@ -140,7 +140,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
 
 class MetadataValue(ABC, Generic[T_Packable]):
     """Utility class to wrap metadata values passed into Dagster events so that they can be
-    displayed in Dagit and other tooling.
+    displayed in the Dagster UI and other tooling.
 
     .. code-block:: python
 
@@ -974,7 +974,7 @@ class MetadataEntry(
     .. note:: This class is no longer usable in any Dagster API, and will be completely removed in 2.0.
 
     Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
-    in Dagit and other tooling.
+    in the Dagster UI and other tooling.
 
     Should be yielded from within an IO manager to append metadata for a given input/output event.
     For other event types, passing a dict with `MetadataValue` values to the `metadata` argument
@@ -984,7 +984,7 @@ class MetadataEntry(
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
         value (MetadataValue): Typed metadata entry data. The different types allow
-            for customized display in tools like dagit.
+            for customized display in tools like the Dagster UI.
     """
 
     def __new__(

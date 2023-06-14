@@ -145,7 +145,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     :py:class:`~dagster._core.storage.event_log.SqlEventLogStorage`.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
-    by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
+    by internal machinery when ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the
     ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
     should be done by setting values in that file.
     """
@@ -256,8 +256,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def dispose(self) -> None:
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived dagit process.
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        """Allows for optimizing database connection / use in the context of a long lived webserver process.
         """
 
     @abstractmethod

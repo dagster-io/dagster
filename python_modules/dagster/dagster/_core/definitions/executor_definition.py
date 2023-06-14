@@ -162,7 +162,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -445,8 +445,8 @@ def _check_intra_process_job(job: IJob) -> None:
             f' "{job.get_definition().name}" that is not reconstructable. Job must be loaded in a'
             " way that allows dagster to reconstruct them in a new process. This means: \n  *"
             " using the file, module, or repository.yaml arguments of"
-            " dagit/dagster-graphql/dagster\n  * loading the job through the reconstructable()"
-            " function\n"
+            " dagster-webserver/dagster-graphql/dagster\n  * loading the job through the"
+            " reconstructable() function\n"
         )
 
 

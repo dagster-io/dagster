@@ -472,7 +472,7 @@ class SensorDefinition(IHasInternalInit):
         job (Optional[GraphDefinition, JobDefinition, UnresolvedAssetJob]): The job to execute when this sensor fires.
         jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
             the sensor condition is met. This can be provided instead of specifying a job.
     """

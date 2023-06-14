@@ -1011,8 +1011,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             # materialize the unselected asset.
             #
             # Thus, we include unselected assets that may be accidentally materialized in
-            # keys_by_output_name and asset_deps so that Dagit can populate an warning when this
-            # occurs. This is the same behavior as multi-asset subsetting.
+            # keys_by_output_name and asset_deps so that tee webserver can populate an warning when
+            # this occurs. This is the same behavior as multi-asset subsetting.
 
             subsetted_asset_deps = {
                 out_asset_key: set(self._keys_by_input_name.values())

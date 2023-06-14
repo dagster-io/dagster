@@ -467,7 +467,7 @@ class ExternalTargetData(
 class ExternalSensorMetadata(
     NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[Sequence[AssetKey]])])
 ):
-    """Stores additional sensor metadata which is available on the Dagit frontend."""
+    """Stores additional sensor metadata which is available in the Dagster UI."""
 
     def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
@@ -1743,7 +1743,7 @@ def external_dynamic_partitions_definition_from_def(
     check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
     if partitions_def.name is None:
         raise DagsterInvalidDefinitionError(
-            "Dagit does not support dynamic partitions definitions without a name parameter."
+            "Dagster does not support dynamic partitions definitions without a name parameter."
         )
     return ExternalDynamicPartitionsDefinitionData(name=partitions_def.name)
 

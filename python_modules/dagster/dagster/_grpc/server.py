@@ -255,7 +255,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._container_context = check.opt_dict_param(container_context, "container_context")
 
         # When will this be set in a gRPC server?
-        #  - When running `dagster dev` (or `dagit`) in the gRPC server subprocesses that are spun up
+        #  - When running `dagster dev` (or `dagster-webserver`) in the gRPC server subprocesses that are spun up
         #  - When running code in Dagster Cloud on 1.1 or later
         # When will it not be set?
         #  - When running your own grpc server with `dagster api grpc`

@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 45
+WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
 
 class BaseWorkspaceRequestContext(IWorkspace):
@@ -380,13 +380,13 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def source(self) -> Optional[object]:
         """The source of the request this WorkspaceRequestContext originated from.
-        For example in Dagit this object represents the web request.
+        For example in the webserver this object represents the web request.
         """
         return self._source
 
 
 class IWorkspaceProcessContext(ABC):
-    """Class that stores process-scoped information about a dagit session.
+    """Class that stores process-scoped information about a webserver session.
     In most cases, you will want to create a `BaseWorkspaceRequestContext` to create a request-scoped
     object.
     """
@@ -488,7 +488,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 GrpcServerRegistry(
                     instance_ref=self._instance.get_ref(),
                     reload_interval=0,
-                    heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+                    heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
                     wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
@@ -735,7 +735,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             self.refresh_code_location(event.location_name)
 
     def refresh_code_location(self, name: str) -> None:
-        # This method reloads Dagit's copy of the code from the remote gRPC server without
+        # This method reloads the webserver's copy of the code from the remote gRPC server without
         # restarting it, and returns a new request context created from the updated process context
         new = self._load_location(self._location_entry_dict[name].origin, reload=False)
         with self._lock:

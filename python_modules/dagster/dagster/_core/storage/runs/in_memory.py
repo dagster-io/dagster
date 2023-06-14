@@ -17,7 +17,7 @@ from .sql_run_storage import SqlRunStorage
 class InMemoryRunStorage(SqlRunStorage):
     """In memory only run storage. Used by ephemeral DagsterInstance or for testing purposes.
 
-    WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
+    WARNING: The Dagster UI and other core functionality will not work if this is used on a real DagsterInstance
     """
 
     def __init__(self, preload: Optional[Sequence[DebugRunPayload]] = None):

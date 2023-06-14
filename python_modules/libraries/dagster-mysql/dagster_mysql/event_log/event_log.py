@@ -91,7 +91,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             SqlEventLogStorageMetadata.create_all(conn)
             stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
