@@ -3,7 +3,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtCli, DbtManifest
 from dateutil import parser
 
-from . import MANIFEST_PATH
+from ..constants import MANIFEST_PATH
 
 manifest = DbtManifest.read(path=MANIFEST_PATH)
 
