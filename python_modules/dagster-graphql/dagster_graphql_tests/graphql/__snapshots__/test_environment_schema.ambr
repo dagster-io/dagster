@@ -1,0 +1,65 @@
+# name: TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[0]
+  dict({
+    'runConfigSchemaOrError': dict({
+      'isRunConfigValid': dict({
+        '__typename': 'RunConfigValidationInvalid',
+        'errors': list([
+          dict({
+            '__typename': 'FieldNotDefinedConfigError',
+            'fieldName': 'nope',
+            'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } ops: { sum_op: { config?: Any inputs: { num: String } } sum_sq_op?: { config?: Any } } resources?: { io_manager?: { config?: Any } } }".',
+            'reason': 'FIELD_NOT_DEFINED',
+            'stack': dict({
+              'entries': list([
+              ]),
+            }),
+          }),
+          dict({
+            '__typename': 'MissingFieldConfigError',
+            'field': dict({
+              'name': 'ops',
+            }),
+            'message': 'Missing required config entry "ops" at the root. Sample config for missing entry: {\'ops\': {\'sum_op\': {\'inputs\': {\'num\': \'...\'}}}}',
+            'reason': 'MISSING_REQUIRED_FIELD',
+            'stack': dict({
+              'entries': list([
+              ]),
+            }),
+          }),
+        ]),
+        'pipelineName': 'csv_hello_world',
+      }),
+    }),
+  })
+# ---
+# name: TestEnvironmentSchema.test_basic_valid_config_on_run_config_schema[0]
+  dict({
+    'runConfigSchemaOrError': dict({
+      'isRunConfigValid': dict({
+        '__typename': 'PipelineConfigValidationValid',
+        'pipelineName': 'csv_hello_world',
+      }),
+    }),
+  })
+# ---
+# name: TestEnvironmentSchema.test_full_yaml[0]
+  dict({
+    'runConfigSchemaOrError': dict({
+      '__typename': 'RunConfigSchema',
+      'rootDefaultYaml': '''
+        execution:
+          config:
+            retries:
+              enabled: {}
+        loggers: {}
+        ops:
+          sum_op:
+            inputs: {}
+          sum_sq_op: {}
+        resources:
+          io_manager: {}
+  
+      ''',
+    }),
+  })
+# ---

@@ -55,7 +55,7 @@ setup(
             "seaborn",
             "scikit-learn",
             "slack_sdk",
-            "snapshottest",
+            "syrupy<4",  # 3.7 compatible,
             "dbt-duckdb",
             "xgboost",
             "dagster-webserver[test]",
