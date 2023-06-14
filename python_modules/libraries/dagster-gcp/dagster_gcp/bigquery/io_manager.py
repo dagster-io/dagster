@@ -118,8 +118,10 @@ def build_bigquery_io_manager(
         * dataset -> schema
         * table -> table
         """
-        if init_context.gcp_credentials is not None:
-            auth_resource = GoogleAuthResource(service_account_info=init_context.gcp_credentials)
+        if init_context.resource_config.get("gcp_credentials") is not None:
+            auth_resource = GoogleAuthResource(
+                service_account_info=init_context.resource_config["gcp_credentials"]
+            )
         else:
             auth_resource = GoogleAuthResource()
 
