@@ -17,7 +17,7 @@ def hackernews_stories():
 
     # Get items based on story ids from the HackerNews items endpoint
     results = []
-    scope = range(latest_item - 10000, latest_item)
+    scope = range(latest_item - 1000, latest_item)
     for item_id in scope:
         item = requests.get(
             f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
