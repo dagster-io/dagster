@@ -1,7 +1,11 @@
 from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
-from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
+from dagster._config.pythonic_config import (
+    ConfigurableIOManager,
+    ConfigurableResourceFactory,
+    ResourceDependency,
+)
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.event_api import EventRecordsFilter
@@ -54,20 +58,16 @@ class BranchingIOManager(ConfigurableIOManager):
     in more flexible software layer over arbitrary storage systems.
     """
 
-    def __init__(
-        self,
-        *,
-        parent_io_manager: IOManager,
-        branch_io_manager: IOManager,
-        branch_name: str = "dev",
-        branch_metadata_key: str = "io_manager_branch",
-    ):
-        self.parent_io_manager = parent_io_manager
-        self.branch_io_manager = branch_io_manager
-        self.branch_name = branch_name
-        self.branch_metadata_key = branch_metadata_key
+    parent_io_manager: ResourceDependency[IOManager]
+    branch_io_manager: ResourceDependency[IOManager]
+
+    branch_name: str = "dev"
+    branch_metadata_key: str = "io_manager_branch"
 
     def load_input(self, context: InputContext) -> Any:
+        # what is the analog of step_key for input?
+        input_key = context.asset_key.to_user_string() if context.has_asset_key else None
+
         event_log_entry = latest_materialization_log_entry(
             instance=context.instance,
             asset_key=context.asset_key,
@@ -81,18 +81,17 @@ class BranchingIOManager(ConfigurableIOManager):
             )
             == self.branch_name
         ):
-            context.log.info(
-                f'Branching Manager: Loading "{context.asset_key.to_user_string()}" from'
-                f' "{self.branch_name}"'
-            )
+            context.log.info(f'Branching Manager: Loading "{input_key}" from "{self.branch_name}"')
             return self.branch_io_manager.load_input(context)
 
-        context.log.info(
-            f'Branching Manager Loading "{context.asset_key.to_user_string()}" from parent'
-        )
+        context.log.info(f'Branching Manager Loading "{input_key}" from parent')
         return self.parent_io_manager.load_input(context)
 
     def handle_output(self, context: OutputContext, obj: Any) -> None:
+        output_key = (
+            context.asset_key.to_user_string() if context.has_asset_key else context.step_key
+        )
+
         # always write to the branch manager
         self.branch_io_manager.handle_output(context, obj)
 
@@ -100,8 +99,7 @@ class BranchingIOManager(ConfigurableIOManager):
         context.add_output_metadata({self.branch_metadata_key: self.branch_name})
 
         context.log.info(
-            f'Branching Manager: Writing "{context.asset_key.to_user_string()}" to branch'
-            f' "{self.branch_name}"'
+            f'Branching Manager: Writing "{output_key}" to branch "{self.branch_name}"'
         )
 
     def setup_for_execution(self, context: InitResourceContext):
