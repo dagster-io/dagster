@@ -52,8 +52,7 @@ defs = Definitions(
 )
 ```
 
-With this configuration, if you materialized an asset called `iris_dataset`, the Delta Lake I/O manager would store the data
-within a folder `iris/iris_dataset` under the provided root directory `path/to/deltalake`.
+With this configuration, if you materialized an asset called `iris_dataset`, the Delta Lake I/O manager would store the data within a folder `iris/iris_dataset` under the provided root directory `path/to/deltalake`.
 
 Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_deltalake_pandas" object="DeltaLakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
@@ -61,17 +60,15 @@ Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObjec
 
 ## Step 2: Create tables your Delta Lake
 
-The Delta Lake I/O manager can create and update tables for your Dagster-defined assets, but you can also make existing Delta Lake
-tables available to Dagster.
+The Delta Lake I/O manager can create and update tables for your Dagster-defined assets, but you can also make existing Delta Lake tables available to Dagster.
 
 <TabGroup>
 
-<TabItem name="Create tables Delta Lake from Dagster assets">
+<TabItem name="Create Delta tables from Dagster assets">
 
 ### Store a Dagster asset as a table in Delta Lake
 
-To store data in Delta Lake using the Delta Lake I/O manager, the definitions of your assets don't need to change.
-You can tell Dagster to use the Delta Lake I/O manager, like in [Step 1: Configure the Delta Lake I/O manager](#step-1-configure-the-delta-lake-io-manager), and Dagster will handle storing and loading your assets in Delta Lake.
+To store data in Delta Lake using the Delta Lake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Delta Lake I/O manager, like in [Step 1: Configure the Delta Lake I/O manager](#step-1-configure-the-delta-lake-io-manager), and Dagster will handle storing and loading your assets in Delta Lake.
 
 ```python file=/integrations/deltalake/basic_example.py
 import pandas as pd
@@ -117,3 +114,85 @@ Because we already supplied the database and schema in the I/O manager configura
 
 </TabItem>
 </TabGroup>
+
+---
+
+## Step 3: Load Delta Lake tables in downstream assets
+
+Once you have created an asset or source asset that represents a table in your Delta Lake, you will likely want to create additional assets that work with the data. Dagster and the Delta Lake I/O manager allow you to load the data stored in Delta tables into downstream assets.
+
+```python file=/integrations/deltalake/load_downstream.py startafter=start_example endbefore=end_example
+import pandas as pd
+
+from dagster import asset
+
+# this example uses the iris_dataset asset from Step 2
+
+
+@asset
+def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
+    return iris_dataset.dropna().drop_duplicates()
+```
+
+In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Delta Lake](#store-a-dagster-asset-as-a-table-in-delta-lake) example to the `iris_cleaned` asset.
+
+In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
+
+When materializing these assets, Dagster will use the `DeltaLakeBPandasIOManager` to fetch the `iris/iris_dataset` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `DeltaLakePandasIOManager` to store the DataFrame as the `iris/iris_cleaned` table in your Delta Lake.
+
+---
+
+## Completed code example
+
+When finished, your code should look like the following:
+
+```python file=/integrations/deltalake/full_example.py
+import pandas as pd
+from dagster_deltalake import LocalConfig
+from dagster_deltalake_pandas import DeltaLakePandasIOManager
+
+from dagster import Definitions, SourceAsset, asset
+
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
+
+
+@asset
+def iris_dataset() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+
+@asset
+def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
+    return iris_dataset.dropna().drop_duplicates()
+
+
+defs = Definitions(
+    assets=[iris_dataset, iris_harvest_data, iris_cleaned],
+    resources={
+        "io_manager": DeltaLakePandasIOManager(
+            root_uri="path/to/deltalake",
+            storage_options=LocalConfig(),
+            schema="IRIS",
+        )
+    },
+)
+```
+
+---
+
+## Related
+
+For more Delta Lake features, refer to the [Delta Lake reference](/integrations/deltalake/reference).
+
+For more information on Software-defined Assets, refer to the [tutorial](/tutorial) or the [Assets documentation](/concepts/assets/software-defined-assets).
+
+For more information on I/O managers, refer to the [I/O manager documentation](/concepts/io-management/io-managers).

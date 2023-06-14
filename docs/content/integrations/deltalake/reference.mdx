@@ -5,4 +5,445 @@ description: Store your Dagster assets in a Delta Lake
 
 # dagster-deltalake integration reference
 
-This reference page provides information for working with [`dagster-deltalake`](/\_apidocs/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with DuckDB tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/\_apidocs/libraries/dagster-deltalake) features that are not covered as part of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+
+- [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
+- [Storing partitioned assets](#storing-partitioned-assets)
+- [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
+- [Using the Delta Lake I/O manager with other I/O managers](#using-the-delta-lake-io-manager-with-other-io-managers)
+- [Storing and loading PyArrow Tables or Polars DataFrames in Delta Lake](#storing-and-loading-pyarrow-tables-or-polars-dataframes-in-deltal-lake)
+- [Storing multiple DataFrame types in Delta Lake](#storing-multiple-dataframe-types-in-delta-lake)
+- [Executing custom SQL commands with the DuckDB resource](#executing-custom-sql-commands-with-the-duckdb-resource)
+
+---
+
+## Selecting specific columns in a downstream asset
+
+Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the Delta Lake I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
+
+```python file=/integrations/deltalake/downstream_columns.py
+import pandas as pd
+
+from dagster import AssetIn, asset
+
+
+# this example uses the iris_dataset asset from Step 2 of the Using Dagster with DuckDB tutorial
+
+
+@asset(
+    ins={
+        "iris_sepal": AssetIn(
+            key="iris_dataset",
+            metadata={"columns": ["sepal_length_cm", "sepal_width_cm"]},
+        )
+    }
+)
+def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
+    iris_sepal["sepal_area_cm2"] = (
+        iris_sepal["sepal_length_cm"] * iris_sepal["sepal_width_cm"]
+    )
+    return iris_sepal
+```
+
+In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2: Create tables in Delta Lake](/integrations/deltalake/using-deltalake-with-dagster#store-a-dagster-asset-as-a-table-in-delta-lake) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+
+When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Delta Lake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `iris/iris_dataset` table and pass them to `sepal_data` as a Pandas DataFrame.
+
+---
+
+## Storing partitioned assets
+
+The Delta Lake I/O manager supports storing and loading partitioned data. To correctly store and load data from the Delta table, the Delta Lake I/O manager needs to know which column contains the data defining the partition bounds. The Delta Lake I/O manager uses this information to construct the correct queries to select or replace the data.
+
+In the following sections, we describe how the I/O manager constructs these queries for different types of partitions.
+
+<Note>
+  For partitioning to work, the partition dimension needs to be one of the
+  partition columns defined on the Delta table. Tables created via the I/O
+  manager will be configured accordingly.
+</Note>
+
+<TabGroup>
+<TabItem name="Static partitioned assets">
+
+### Storing static partitioned assets
+
+To store static partitioned assets in your Delta Lake, specify `partition_expr` metadata on the asset to tell the Delta Lake I/O manager which column contains the partition data:
+
+```python file=/integrations/deltalake/static_partition.py startafter=start_example endbefore=end_example
+import pandas as pd
+
+from dagster import StaticPartitionsDefinition, asset
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(
+        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
+    ),
+    metadata={"partition_expr": "species"},
+)
+def iris_dataset_partitioned(context) -> pd.DataFrame:
+    species = context.asset_partition_key_for_output()
+
+    full_df = pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+    return full_df[full_df["species"] == species]
+
+
+@asset
+def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
+    return iris_dataset_partitioned.dropna().drop_duplicates()
+```
+
+Dagster uses the `partition_expr` metadata to generate appropriate function parameters when loading the partition in the downstream asset. When loading a static partition this roughly corresponds to the following SQL statement:
+
+```sql
+SELECT *
+ WHERE [partition_expr] in ([selected partitions])
+```
+
+A partition must be selected when materializing the above assets, as described in the [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets) documentation. In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+
+```sql
+SELECT *
+ WHERE species = 'Iris-setosa'
+```
+
+</TabItem>
+<TabItem name="Time partitioned assets">
+
+### Storing time partitioned assets
+
+Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Delta Lake I/O manager which column contains the partition data:
+
+```python file=/integrations/deltalake/time_partition.py startafter=start_example endbefore=end_example
+import pandas as pd
+
+from dagster import DailyPartitionsDefinition, asset
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+    metadata={"partition_expr": "time"},
+)
+def iris_data_per_day(context) -> pd.DataFrame:
+    partition = context.asset_partition_key_for_output()
+
+    # get_iris_data_for_date fetches all of the iris data for a given date,
+    # the returned dataframe contains a column named 'time' with that stores
+    # the time of the row as an integer of seconds since epoch
+    return get_iris_data_for_date(partition)
+
+
+@asset
+def iris_cleaned(iris_data_per_day: pd.DataFrame):
+    return iris_data_per_day.dropna().drop_duplicates()
+```
+
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in the downstream asset. When loading a dynamic partition, the following statement is used:
+
+```sql
+SELECT *
+ WHERE [partition_expr] = [partition_start]
+```
+
+A partition must be selected when materializing the above assets, as described in the [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets) documentation. The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+
+```sql
+SELECT *
+ WHERE time = '2023-01-02 00:00:00'
+```
+
+</TabItem>
+<TabItem name="Multi-partitioned assets">
+
+### Storing multi-partitioned assets
+
+The Delta Lake I/O manager can also store data partitioned on multiple dimensions. To do this, specify the column for each partition as a dictionary of `partition_expr` metadata:
+
+```python file=/integrations/deltalake/multi_partition.py startafter=start_example endbefore=end_example
+import pandas as pd
+
+from dagster import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionDefinition,
+    asset,
+)
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2023-01-01"),
+            "species": StaticPartitionDefinition(
+                ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
+            ),
+        }
+    ),
+    metadata={"partition_expr": {"date": "time", "species": "species"}},
+)
+def iris_dataset_partitioned(context) -> pd.DataFrame:
+    partition = partition = context.partition_key.keys_by_dimension
+    species = partition["species"]
+    date = partition["date"]
+
+    # get_iris_data_for_date fetches all of the iris data for a given date,
+    # the returned dataframe contains a column named 'time' with that stores
+    # the time of the row as an integer of seconds since epoch
+    full_df = get_iris_data_for_date(date)
+
+    return full_df[full_df["species"] == species]
+
+
+@asset
+def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
+    return iris_dataset_partitioned.dropna().drop_duplicates()
+```
+
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
+
+A partition must be selected when materializing the above assets, as described in the [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets) documentation. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+
+```sql
+SELECT *
+ WHERE species = 'Iris-setosa'
+   AND time = '2023-01-02 00:00:00'
+```
+
+</TabItem>
+<TabItem name="Dynamic-partitioned assets">
+</TabItem>
+</TabGroup>
+
+---
+
+## Storing tables in multiple schemas
+
+You may want to have different assets stored in different Delta Lake schemas. The Delta Lake I/O manager allows you to specify the schema in several ways.
+
+If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, as we did in [Step 1: Configure the Delta Lake I/O manager](/integrations/duckdb/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalalke-with-dagster).
+
+If you want to store assets in different schemas, you can specify the schema as part of the asset's asset key:
+
+- **For `SourceAsset`**, use the `key` parameter. The schema should be the second-to-last value in the parameter. In the following example, this would be `daffodil`.
+- **For Software-defined Assets**, use the `key_prefix` parameter. This value will be prepended to the asset name to create the full asset key. In the following example, this would be `iris`.
+
+```python file=/integrations/deltalake/schema.py startafter=start_asset_key endbefore=end_asset_key
+import pandas as pd
+
+from dagster import SourceAsset, asset
+
+daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+
+
+@asset(key_prefix=["iris"])
+def iris_dataset() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+```
+
+In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
+
+<Note>
+  The two options for specifying schema are mutually exclusive. If you provide{" "}
+  <code>schema</code> configuration to the I/O manager, you cannot also provide
+  it via the asset key and vice versa. If no <code>schema</code> is provided,
+  either from configuration or asset keys, the default schema{" "}
+  <code>public</code> will be used.
+</Note>
+
+---
+
+## Using the Delta Lake I/O manager with other I/O managers
+
+You may have assets that you don't want to store in Delta Lake. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the <PyObject object="asset" decorator /> decorator:
+
+```python file=/integrations/deltalake/multiple_io_managers.py startafter=start_example endbefore=end_example
+import pandas as pd
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_deltalake import LocalConfig
+from dagster_deltalake_pandas import DeltaLakePandasIOManager
+
+from dagster import Definitions, asset
+
+
+@asset(io_manager_key="warehouse_io_manager")
+def iris_dataset() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+
+@asset(io_manager_key="blob_io_manager")
+def iris_plots(iris_dataset):
+    # plot_data is a function we've defined somewhere else
+    # that plots the data in a DataFrame
+    return plot_data(iris_dataset)
+
+
+defs = Definitions(
+    assets=[iris_dataset, iris_plots],
+    resources={
+        "warehouse_io_manager": DeltaLakePandasIOManager(
+            root_uri="path/to/deltalalke",
+            storage_options=LocalConfig(),
+            schema="iris",
+        ),
+        "blob_io_manager": s3_pickle_io_manager,
+    },
+)
+```
+
+In this example:
+
+- The `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` uses the I/O manager bound to the key `blob_io_manager`
+- In the <PyObject object="Definitions" /> object, we supply the I/O managers for those keys
+- When the assets are materialized, the `iris_dataset` will be stored in Delta Lake, and `iris_plots` will be saved in Amazon S3
+
+---
+
+## Storing and loading PyArrow Tables or Polars DataFrames in Delta Lake
+
+The DuckDB I/O manager also supports storing and loading PySpark and Polars DataFrames.
+
+<TabGroup>
+<TabItem name="PyArrow Tables">
+
+### Storing and loading PyArrow Tables with Delta Lake
+
+The `deltalake` package relies heavily an Apache Arrow for efficient data transfer, so pyarrow is antively supported.
+
+You can use the `DeltaLakePyArrowIOManager` in your <PyObject object="Definitions" /> as in [Step 1: Configure the Dalta Lake I/O manager](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lae-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+
+```python file=/integrations/deltalake/pyarrow_configuration.py startafter=start_configuration endbefore=end_configuration
+from dagster_deltalake import DeltaLakePyarrowIOManager, LocalConfig
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": DeltaLakePyarrowIOManager(
+            root_uri="path/to/deltalake",  # required
+            storage_options=LocalConfig(),  # required
+            schema="iris",  # optional, defaults to PUBLIC
+        )
+    },
+)
+```
+
+</TabItem>
+<TabItem name="Polars DataFrames">
+
+### Storing and loading Polars DataFrames in Delta Lake
+
+To use the <PyObject module="dagster_deltalake_polars" object="DeltaLakePolarsIOManager" />, first install the package:
+
+```shell
+pip install dagster-deltalake-polars
+```
+
+Then you can use the `DeltaLakePolarsIOManager` in your <PyObject object="Definitions" /> as in [Step 1: Configure the Dalta Lake I/O manager](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lae-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+
+```python file=/integrations/deltalake/polars_configuration.py startafter=start_configuration endbefore=end_configuration
+from dagster_deltalake import LocalConfig
+from dagster_deltalake_polars import DeltaLakePolarsIOManager
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": DeltaLakePolarsIOManager(
+            root_uri="path/to/deltalake",  # required
+            storage_options=LocalConfig(),  # required
+            schema="iris",  # optional, defaults to PUBLIC
+        )
+    },
+)
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Storing multiple DataFrame types in Delta Lake
+
+If you work with several DataFrame libraries and want a single I/O manager to handle storing and loading these DataFrames in Delta Lake, you can write a new I/O manager that handles the DataFrame types.
+
+To do this, inherit from the <PyObject module="dagster_deltalake" object="DeltaLakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
+
+```python file=/integrations/deltalake/multiple_dataframe_types.py startafter=start_example endbefore=end_example
+from typing import Optional, Type
+
+import pandas as pd
+from dagster_deltalake import (
+    DeltaLakeIOManager,
+    DeltaLakePyArrowTypeHandler,
+    LocalConfig,
+)
+from dagster_deltalake_pandas import DeltaLakePandasTypeHandler
+from dagster_deltalake_polars import DeltaLakePolarsTypeHandler
+
+from dagster import Definitions
+
+
+class DeltaLakePandasPySparkPolarsIOManager(DeltaLakeIOManager):
+    @staticmethod
+    def type_handlers():
+        """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
+        Here we return the DeltaLakePandasTypeHandler, DeltaLakePyArrowTypeHandler, and DeltaLakePolarsTypeHandler
+        so that the I/O manager can store Pandas DataFrames, PyArrow Tables, and Polars DataFrames.
+        """
+        return [
+            DeltaLakePandasTypeHandler(),
+            DeltaLakePyArrowTypeHandler(),
+            DeltaLakePolarsTypeHandler(),
+        ]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        """If an asset is not annotated with an return type, default_load_type will be used to
+        determine which TypeHandler to use to store and load the output.
+        In this case, unannotated assets will be stored and loaded as Pandas DataFrames.
+        """
+        return pd.DataFrame
+
+
+defs = Definitions(
+    assets=[iris_dataset, rose_dataset],
+    resources={
+        "io_manager": DeltaLakePandasPySparkPolarsIOManager(
+            root_uri="path/todeltalake",
+            storage_options=LocalConfig(),
+            schema="iris",
+        )
+    },
+)
+```
