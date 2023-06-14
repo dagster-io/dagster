@@ -608,5 +608,4 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
 
 
-SourceAssetObserveContext: TypeAlias = OpExecutionContext
 AssetExecutionContext: TypeAlias = OpExecutionContext
