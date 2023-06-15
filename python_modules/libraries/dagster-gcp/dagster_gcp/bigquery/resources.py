@@ -8,7 +8,6 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-
 from google.cloud import bigquery
 from pydantic import Field
 
