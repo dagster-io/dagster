@@ -4,7 +4,6 @@ from typing import NamedTuple, Optional, cast
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -112,14 +111,6 @@ class TimeWindowPartitionMapping(
             ),
         )
 
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
@@ -138,28 +129,6 @@ class TimeWindowPartitionMapping(
             self.end_offset,
             current_time=current_time,
         )
-
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        """Returns the partitions in the upstream asset that map to the given downstream partitions.
-
-        Raises an error if upstream partitions do not exist at the given current_time, fetching the
-        current time if not provided.
-        """
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_downstream_partitions_for_partitions(
         self,

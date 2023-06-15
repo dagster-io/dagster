@@ -62,89 +62,6 @@ class PartitionMapping(ABC):
 
     @public
     @abstractmethod
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        """Returns the range of partition keys in the upstream asset that include data necessary
-        to compute the contents of the given partition key range in the downstream asset.
-
-        Args:
-            downstream_partition_key_range (PartitionKeyRange): The range of partition keys in the
-                downstream asset.
-            downstream_partitions_def (PartitionsDefinition): The partitions definition for the
-                downstream asset.
-            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
-                upstream asset.
-        """
-
-    @public
-    @abstractmethod
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        """Returns the range of partition keys in the downstream asset that use the data in the given
-        partition key range of the upstream asset.
-
-        Args:
-            upstream_partition_key_range (PartitionKeyRange): The range of partition keys in the
-                upstream asset.
-            downstream_partitions_def (PartitionsDefinition): The partitions definition for the
-                downstream asset.
-            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
-                upstream asset.
-        """
-
-    @public
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        """Returns the subset of partition keys in the upstream asset that include data necessary
-        to compute the contents of the given partition key subset in the downstream asset.
-
-        Args:
-            downstream_partitions_subset (Optional[PartitionsSubset]):
-                The subset of partition keys in the downstream asset.
-            upstream_partitions_def (PartitionsDefinition): The partitions definition for the
-                upstream asset.
-        """
-        upstream_key_ranges = []
-        if downstream_partitions_subset is None:
-            upstream_key_ranges.append(
-                self.get_upstream_partitions_for_partition_range(
-                    None, None, upstream_partitions_def
-                )
-            )
-        else:
-            for key_range in downstream_partitions_subset.get_partition_key_ranges(
-                dynamic_partitions_store=dynamic_partitions_store
-            ):
-                upstream_key_ranges.append(
-                    self.get_upstream_partitions_for_partition_range(
-                        key_range,
-                        downstream_partitions_subset.partitions_def,
-                        upstream_partitions_def,
-                    )
-                )
-
-        return upstream_partitions_def.empty_subset().with_partition_keys(
-            pk
-            for upstream_key_range in upstream_key_ranges
-            for pk in upstream_partitions_def.get_partition_keys_in_range(
-                upstream_key_range, dynamic_partitions_store=dynamic_partitions_store
-            )
-        )
-
-    @public
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
@@ -161,27 +78,9 @@ class PartitionMapping(ABC):
             downstream_partitions_def (PartitionsDefinition): The partitions definition for the
                 downstream asset.
         """
-        downstream_key_ranges = []
-        for key_range in upstream_partitions_subset.get_partition_key_ranges(
-            dynamic_partitions_store=dynamic_partitions_store
-        ):
-            downstream_key_ranges.append(
-                self.get_downstream_partitions_for_partition_range(
-                    key_range,
-                    downstream_partitions_def,
-                    upstream_partitions_subset.partitions_def,
-                )
-            )
-
-        return downstream_partitions_def.empty_subset().with_partition_keys(
-            pk
-            for upstream_key_range in downstream_key_ranges
-            for pk in downstream_partitions_def.get_partition_keys_in_range(
-                upstream_key_range, dynamic_partitions_store=dynamic_partitions_store
-            )
-        )
 
     @public
+    @abstractmethod
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
@@ -200,15 +99,6 @@ class PartitionMapping(ABC):
         UpstreamPartitionsResult(PartitionsSubset("2023-06-01"), required_but_nonexistent_partition_keys=["2023-05-01"])
         when downstream_partitions_subset contains 2023-05-01 and 2023-06-01.
         """
-        return UpstreamPartitionsResult(
-            self.get_upstream_partitions_for_partitions(
-                downstream_partitions_subset,
-                upstream_partitions_def,
-                current_time,
-                dynamic_partitions_store,
-            ),
-            [],
-        )
 
 
 @whitelist_for_serdes
@@ -216,14 +106,6 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     """Expects that the upstream and downstream assets are partitioned in the same way, and maps
     partitions in the downstream asset to the same partition in the upstream asset.
     """
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -236,28 +118,21 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             check.failed("downstream asset is not partitioned")
 
         if downstream_partitions_subset.partitions_def == upstream_partitions_def:
-            return UpstreamPartitionsResult(
-                downstream_partitions_subset,
-                [],
-            )
+            return UpstreamPartitionsResult(downstream_partitions_subset, [])
 
-        upstream_partition_keys = set(upstream_partitions_def.get_partition_keys())
+        upstream_partition_keys = set(
+            upstream_partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
         downstream_partition_keys = set(downstream_partitions_subset.get_partition_keys())
 
         return UpstreamPartitionsResult(
-            upstream_partitions_def.empty_subset().with_partition_keys(
+            upstream_partitions_def.subset_with_partition_keys(
                 list(upstream_partition_keys & downstream_partition_keys)
             ),
             list(downstream_partition_keys - upstream_partition_keys),
         )
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -273,7 +148,11 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             return upstream_partitions_subset
 
         upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
-        downstream_partition_keys = set(downstream_partitions_def.get_partition_keys())
+        downstream_partition_keys = set(
+            downstream_partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
 
         return downstream_partitions_def.empty_subset().with_partition_keys(
             list(downstream_partition_keys & upstream_partition_keys)
@@ -311,29 +190,13 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
 
         return UpstreamPartitionsResult(upstream_subset, [])
 
-    def get_upstream_partitions_for_partitions(
+    def get_downstream_partitions_for_partitions(
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
         raise NotImplementedError()
 
 
@@ -362,29 +225,13 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
         return UpstreamPartitionsResult(upstream_subset, [])
 
-    def get_upstream_partitions_for_partitions(
+    def get_downstream_partitions_for_partitions(
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
         raise NotImplementedError()
 
 
@@ -426,29 +273,13 @@ class SpecificPartitionsPartitionMapping(
             upstream_partitions_def.subset_with_partition_keys(self.partition_keys), []
         )
 
-    def get_upstream_partitions_for_partitions(
+    def get_downstream_partitions_for_partitions(
         self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
         raise NotImplementedError()
 
 
@@ -554,22 +385,6 @@ class MultiToSingleDimensionPartitionMapping(
 
         return (upstream_partitions_def, downstream_partitions_def, partition_dimension_name)
 
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
     def _get_matching_multipartition_keys_for_single_dim_subset(
         self,
         partitions_subset: PartitionsSubset,
@@ -644,15 +459,6 @@ class MultiToSingleDimensionPartitionMapping(
                 ),
                 [],
             )
-
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        raise NotImplementedError()
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -822,22 +628,6 @@ class MultiPartitionMapping(
                 value_type=DimensionPartitionMapping,
             ),
         )
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def _check_all_dimensions_accounted_for(
         self,
@@ -1062,15 +852,6 @@ class MultiPartitionMapping(
 
         return result
 
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        raise NotImplementedError()
-
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
@@ -1096,7 +877,7 @@ class MultiPartitionMapping(
             dynamic_partitions_store=dynamic_partitions_store,
         )
 
-        if not isinstance(result, PartitionsSubset):
+        if isinstance(result, UpstreamPartitionsResult):
             check.failed("Expected PartitionsSubset")
 
         return result
@@ -1215,31 +996,6 @@ class StaticPartitionMapping(
             upstream_keys.update(self._inverse_mapping[key])
 
         return UpstreamPartitionsResult(upstream_subset.with_partition_keys(upstream_keys), [])
-
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        raise NotImplementedError()
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
 
 def _can_infer_single_to_multi_partition_mapping(
