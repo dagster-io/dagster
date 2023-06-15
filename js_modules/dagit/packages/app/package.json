@@ -4,6 +4,14 @@
   "private": true,
   "description": "Dagit Application Shell",
   "license": "Apache-2.0",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
+    "test": "react-scripts test",
+    "ts": "tsc -p .",
+    "analyze": "webpack-bundle-analyzer 'build/bundle-stats.json'"
+  },
   "dependencies": {
     "@apollo/client": "3.7.13",
     "@blueprintjs/core": "^4.17.8",
@@ -42,13 +50,8 @@
     "webpack": "^5.0.0",
     "webpack-bundle-analyzer": "^4.7.0"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
-    "test": "react-scripts test",
-    "ts": "tsc -p .",
-    "analyze": "webpack-bundle-analyzer 'build/bundle-stats.json'"
+  "engines": {
+    "node": ">=18.0.0"
   },
   "browserslist": {
     "production": [
