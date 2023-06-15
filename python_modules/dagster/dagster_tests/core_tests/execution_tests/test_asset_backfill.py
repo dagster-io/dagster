@@ -457,7 +457,7 @@ def run_backfill_to_completion(
                 *asset_partition,
             )
 
-            for parent_asset_partition in parent_partitions_result.valid_parent_partitions:
+            for parent_asset_partition in parent_partitions_result.parent_partitions:
                 if (
                     parent_asset_partition in backfill_data.target_subset
                     and parent_asset_partition not in backfill_data.materialized_subset

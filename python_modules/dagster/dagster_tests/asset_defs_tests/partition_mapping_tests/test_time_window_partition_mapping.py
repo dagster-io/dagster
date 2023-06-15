@@ -426,7 +426,9 @@ def test_get_upstream_with_current_time(
     assert (
         upstream_partitions_result.partitions_subset.get_partition_keys() == expected_upstream_keys
     )
-    assert upstream_partitions_result.invalid_partitions_mapped_to == invalid_upstream_keys
+    assert (
+        upstream_partitions_result.required_but_nonexistent_partition_keys == invalid_upstream_keys
+    )
 
 
 @pytest.mark.parametrize(
@@ -527,7 +529,7 @@ def test_different_start_time_partitions_defs():
         )
     )
     assert upstream_partitions_result.partitions_subset.get_partition_keys() == []
-    assert upstream_partitions_result.invalid_partitions_mapped_to == ["2023-01-15"]
+    assert upstream_partitions_result.required_but_nonexistent_partition_keys == ["2023-01-15"]
 
     assert (
         TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)
@@ -566,7 +568,7 @@ def test_different_end_time_partitions_defs():
         )
     )
     assert upstream_partitions_result.partitions_subset.get_partition_keys() == []
-    assert upstream_partitions_result.invalid_partitions_mapped_to == ["2023-02-15"]
+    assert upstream_partitions_result.required_but_nonexistent_partition_keys == ["2023-02-15"]
 
     assert (
         TimeWindowPartitionMapping(allow_nonexistent_upstream_partitions=True)
@@ -603,7 +605,7 @@ def test_daily_upstream_of_yearly():
 
 
 @pytest.mark.parametrize(
-    "downstream_partitions_subset,upstream_partitions_def,allow_nonexistent_upstream_partitions,current_time,valid_partitions_mapped_to,invalid_partitions_mapped_to",
+    "downstream_partitions_subset,upstream_partitions_def,allow_nonexistent_upstream_partitions,current_time,valid_partitions_mapped_to,required_but_nonexistent_partition_keys",
     [
         (
             DailyPartitionsDefinition(start_date="2023-05-01")
@@ -653,7 +655,7 @@ def test_downstream_partition_has_valid_upstream_partitions(
     allow_nonexistent_upstream_partitions: bool,
     current_time: datetime,
     valid_partitions_mapped_to: Sequence[str],
-    invalid_partitions_mapped_to: Sequence[str],
+    required_but_nonexistent_partition_keys: Sequence[str],
 ):
     result = TimeWindowPartitionMapping(
         allow_nonexistent_upstream_partitions=allow_nonexistent_upstream_partitions
@@ -663,4 +665,4 @@ def test_downstream_partition_has_valid_upstream_partitions(
         current_time=current_time,
     )
     assert result.partitions_subset.get_partition_keys() == valid_partitions_mapped_to
-    assert result.invalid_partitions_mapped_to == invalid_partitions_mapped_to
+    assert result.required_but_nonexistent_partition_keys == required_but_nonexistent_partition_keys

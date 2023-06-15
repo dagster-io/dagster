@@ -972,12 +972,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     )
                 )
 
-                if mapped_partitions_result.invalid_partitions_mapped_to:
+                if mapped_partitions_result.required_but_nonexistent_partition_keys:
                     raise DagsterInvariantViolationError(
                         f"Partition key range {self.asset_partition_key_range} in"
                         f" {self.node_handle.name} depends on invalid partition keys"
-                        f" {mapped_partitions_result.invalid_partitions_mapped_to} in upstream"
-                        f" asset {upstream_asset_key}"
+                        f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
+                        f" upstream asset {upstream_asset_key}"
                     )
 
                 return mapped_partitions_result.partitions_subset

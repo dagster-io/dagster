@@ -33,7 +33,7 @@ from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
-from .partition_mapping import MappedPartitionsResult, PartitionMapping, infer_partition_mapping
+from .partition_mapping import PartitionMapping, UpstreamPartitionsResult, infer_partition_mapping
 from .source_asset import SourceAsset
 from .time_window_partitions import (
     TimeWindowPartitionsDefinition,
@@ -46,9 +46,17 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 
-class ParentPartitionsResult(NamedTuple):
-    valid_parent_partitions: Set[AssetKeyPartitionKey]
-    invalid_parent_partitions: Set[AssetKeyPartitionKey]
+class ParentsPartitionsResult(NamedTuple):
+    """Represents the result of mapping an asset partition to its upstream parent partitions.
+
+    parent_partitions (AbstractSet[AssetKeyPartitionKey]): The existent parent partitions that are
+        upstream of the asset partition. Filters out nonexistent partitions.
+    required_but_nonexistent_parents_partitions (AbstractSet[AssetKeyPartitionKey]): The required
+        upstream asset partitions that were mapped to but do not exist.
+    """
+
+    parent_partitions: AbstractSet[AssetKeyPartitionKey]
+    required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
 class AssetGraph:
@@ -288,12 +296,12 @@ class AssetGraph:
         current_time: datetime,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
-    ) -> ParentPartitionsResult:
+    ) -> ParentsPartitionsResult:
         """Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
         """
         valid_parent_partitions: Set[AssetKeyPartitionKey] = set()
-        invalid_parent_partitions: Set[AssetKeyPartitionKey] = set()
+        required_but_nonexistent_parent_partitions: Set[AssetKeyPartitionKey] = set()
         for parent_asset_key in self.get_parents(asset_key):
             if self.is_partitioned(parent_asset_key):
                 mapped_partitions_result = self.get_parent_partition_keys_for_child(
@@ -310,16 +318,18 @@ class AssetGraph:
                         for valid_partition in mapped_partitions_result.partitions_subset.get_partition_keys()
                     }
                 )
-                invalid_parent_partitions.update(
+                required_but_nonexistent_parent_partitions.update(
                     {
                         AssetKeyPartitionKey(parent_asset_key, invalid_partition)
-                        for invalid_partition in mapped_partitions_result.invalid_partitions_mapped_to
+                        for invalid_partition in mapped_partitions_result.required_but_nonexistent_partition_keys
                     }
                 )
             else:
                 valid_parent_partitions.add(AssetKeyPartitionKey(parent_asset_key))
 
-        return ParentPartitionsResult(valid_parent_partitions, invalid_parent_partitions)
+        return ParentsPartitionsResult(
+            valid_parent_partitions, required_but_nonexistent_parent_partitions
+        )
 
     def get_parent_partition_keys_for_child(
         self,
@@ -328,7 +338,7 @@ class AssetGraph:
         child_asset_key: AssetKey,
         dynamic_partitions_store: DynamicPartitionsStore,
         current_time: datetime,
-    ) -> MappedPartitionsResult:
+    ) -> UpstreamPartitionsResult:
         """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
@@ -356,20 +366,16 @@ class AssetGraph:
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
 
-        parent_partitions_result = (
-            partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                cast(PartitionsDefinition, child_partitions_def)
-                .empty_subset()
-                .with_partition_keys([partition_key])
-                if partition_key
-                else None,
-                upstream_partitions_def=parent_partitions_def,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
+        return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+            cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
+                [partition_key]
             )
+            if partition_key
+            else None,
+            upstream_partitions_def=parent_partitions_def,
+            dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
         )
-
-        return parent_partitions_result
 
     def is_source(self, asset_key: AssetKey) -> bool:
         return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys

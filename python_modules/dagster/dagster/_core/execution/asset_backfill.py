@@ -858,14 +858,14 @@ def should_backfill_atomic_asset_partitions_unit(
             dynamic_partitions_store, current_time, *candidate
         )
 
-        if parent_partitions_result.invalid_parent_partitions:
+        if parent_partitions_result.required_but_nonexistent_parents_partitions:
             raise DagsterInvariantViolationError(
                 f"Asset partition {candidate}"
                 " depends on invalid partition keys"
-                f" {parent_partitions_result.invalid_parent_partitions}"
+                f" {parent_partitions_result.required_but_nonexistent_parents_partitions}"
             )
 
-        for parent in parent_partitions_result.valid_parent_partitions:
+        for parent in parent_partitions_result.parent_partitions:
             can_run_with_parent = (
                 parent in asset_partitions_to_request
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
