@@ -29,7 +29,6 @@ from dagster._core.storage.tags import (
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils.cached_method import cached_method
 
 CACHEABLE_PARTITION_TYPES = (
     TimeWindowPartitionsDefinition,
@@ -131,27 +130,24 @@ class AssetStatusCacheValue(
 
         return cached_data
 
-    @cached_method
     def deserialize_materialized_partition_subsets(
-        self, *, partitions_def: PartitionsDefinition
+        self, partitions_def: PartitionsDefinition
     ) -> PartitionsSubset:
         if not self.serialized_materialized_partition_subset:
             return partitions_def.empty_subset()
 
         return partitions_def.deserialize_subset(self.serialized_materialized_partition_subset)
 
-    @cached_method
     def deserialize_failed_partition_subsets(
-        self, *, partitions_def: PartitionsDefinition
+        self, partitions_def: PartitionsDefinition
     ) -> PartitionsSubset:
         if not self.serialized_failed_partition_subset:
             return partitions_def.empty_subset()
 
         return partitions_def.deserialize_subset(self.serialized_failed_partition_subset)
 
-    @cached_method
     def deserialize_in_progress_partition_subsets(
-        self, *, partitions_def: PartitionsDefinition
+        self, partitions_def: PartitionsDefinition
     ) -> PartitionsSubset:
         if not self.serialized_in_progress_partition_subset:
             return partitions_def.empty_subset()
