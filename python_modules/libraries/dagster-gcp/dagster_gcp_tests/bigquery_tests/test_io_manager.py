@@ -211,6 +211,10 @@ def test_authenticate_via_config():
             context.resources.io_manager._db_client.auth_resource.service_account_info  # noqa: SLF001
             is not None
         )
+        assert (
+            context.resources.io_manager._db_client.auth_resource.service_account_file  # noqa: SLF001
+            is None
+        )
         return 1
 
     old_gcp_creds_file = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
@@ -257,7 +261,15 @@ def test_authenticate_via_google_auth_resource():
             return int
 
     @asset
-    def test_asset() -> int:
+    def test_asset(context) -> int:
+        assert (
+            context.resources.io_manager._db_client.auth_resource.service_account_info  # noqa: SLF001
+            is None
+        )
+        assert (
+            context.resources.io_manager._db_client.auth_resource.service_account_file  # noqa: SLF001
+            is None
+        )
         return 1
 
     resource_defs = {
