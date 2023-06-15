@@ -23,6 +23,7 @@ setup(
         "dagster-duckdb-pandas",
         # packaging v22 has build compatibility issues with dbt as of 2022-12-07
         "packaging<22.0",
+        "croniter<1.4.0",  # https://github.com/dagster-io/dagster/pull/14811
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
