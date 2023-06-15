@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import pytest
 from dagster import (
@@ -13,7 +13,11 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster._config.pythonic_config import ConfigurableResourceFactory
+from dagster._config.pythonic_config import (
+    ConfigurableIOManager,
+    ConfigurableResourceFactory,
+)
+from dagster._core.storage.io_manager import IOManager
 
 
 def test_nested_resources():
@@ -456,3 +460,69 @@ def test_nested_resource_raw_value() -> None:
     )
     assert defs.get_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
+
+
+def test_nested_resource_raw_value_io_manager() -> None:
+    class MyMultiwriteIOManager(ConfigurableIOManager):
+        base_io_manager: ResourceDependency[IOManager]
+        mirror_io_manager: ResourceDependency[IOManager]
+
+        def handle_output(self, context, obj) -> None:
+            self.base_io_manager.handle_output(context, obj)
+            self.mirror_io_manager.handle_output(context, obj)
+
+        def load_input(self, context) -> Any:
+            return self.base_io_manager.load_input(context)
+
+    log = []
+
+    class ConfigIOManager(ConfigurableIOManager):
+        path_prefix: List[str]
+
+        def handle_output(self, context, obj) -> None:
+            log.append(
+                "ConfigIOManager handle_output "
+                + "/".join(self.path_prefix + list(context.asset_key.path))
+            )
+
+        def load_input(self, context) -> Any:
+            log.append(
+                "ConfigIOManager load_input "
+                + "/".join(self.path_prefix + list(context.asset_key.path))
+            )
+            return "foo"
+
+    class RawIOManager(IOManager):
+        def handle_output(self, context, obj) -> None:
+            log.append("RawIOManager handle_output " + "/".join(list(context.asset_key.path)))
+
+        def load_input(self, context) -> Any:
+            log.append("RawIOManager load_input " + "/".join(list(context.asset_key.path)))
+            return "foo"
+
+    @asset
+    def my_asset() -> str:
+        return "foo"
+
+    @asset
+    def my_downstream_asset(my_asset: str) -> str:
+        return my_asset + "bar"
+
+    defs = Definitions(
+        assets=[my_asset, my_downstream_asset],
+        resources={
+            "io_manager": MyMultiwriteIOManager(
+                base_io_manager=ConfigIOManager(path_prefix=["base"]),
+                mirror_io_manager=RawIOManager(),
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "ConfigIOManager handle_output base/my_asset",
+        "RawIOManager handle_output my_asset",
+        "ConfigIOManager load_input base/my_asset",
+        "ConfigIOManager handle_output base/my_downstream_asset",
+        "RawIOManager handle_output my_downstream_asset",
+    ]
