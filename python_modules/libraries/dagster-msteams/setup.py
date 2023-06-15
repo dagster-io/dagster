@@ -11,6 +11,9 @@ def get_version():
     return version["__version__"]
 
 
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-msteams",
     version=get_version(),
@@ -32,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_msteams_tests*"]),
     install_requires=[
-        "dagster",
+        f"dagster{pin}",
         "requests>=2,<3",
     ],
     zip_safe=False,
