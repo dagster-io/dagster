@@ -1,6 +1,6 @@
 # Changelog
 
-# # 1.3.10 (core) / 0.19.10 (libraries)
+# 1.3.10 (core) / 0.19.10 (libraries)
 
 ### New
 
