@@ -16,6 +16,7 @@ setup(
         "wordcloud",
         "pandas_gbq",
         "google-auth",
+        "croniter<1.4.0",  # https://github.com/dagster-io/dagster/pull/14811
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
