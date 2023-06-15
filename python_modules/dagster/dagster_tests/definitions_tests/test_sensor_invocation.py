@@ -46,6 +46,7 @@ from dagster import (
     sensor,
     static_partitioned_config,
 )
+from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
@@ -932,7 +933,10 @@ def test_multi_asset_sensor_invalid_partitions():
             instance=instance,
             repository_def=my_repo,
         ) as context:
-            with pytest.raises(DagsterInvalidInvocationError):
+            with pytest.raises(
+                CheckError,
+                match="Partition key 2020-01-01 is not valid in downstream partitions def",
+            ):
                 context.get_downstream_partition_keys(
                     "2020-01-01",
                     to_asset_key=AssetKey("static_partitions_asset"),

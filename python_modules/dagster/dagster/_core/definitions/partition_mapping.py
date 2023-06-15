@@ -225,6 +225,19 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     ) -> PartitionsSubset:
         if downstream_partitions_subset is None:
             check.failed("downstream asset is not partitioned")
+        # if the partitions definitions are different, we need to validate that the downstream
+        # keys are valid in the upstream partitions def
+        if downstream_partitions_subset.partitions_def != upstream_partitions_def:
+            for key in downstream_partitions_subset.get_partition_keys():
+                check.invariant(
+                    upstream_partitions_def.has_partition_key(
+                        key, current_time, dynamic_partitions_store
+                    ),
+                    (
+                        f"Partition key {key} is not valid in upstream partitions def"
+                        f" {upstream_partitions_def}"
+                    ),
+                )
         return downstream_partitions_subset
 
     def get_downstream_partitions_for_partitions(
@@ -234,6 +247,19 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
+        # if the partitions definitions are different, we need to validate that the downstream
+        # keys are valid in the upstream partitions def
+        if upstream_partitions_subset.partitions_def != downstream_partitions_def:
+            for key in upstream_partitions_subset.get_partition_keys():
+                check.invariant(
+                    downstream_partitions_def.has_partition_key(
+                        key, current_time, dynamic_partitions_store
+                    ),
+                    (
+                        f"Partition key {key} is not valid in downstream partitions def"
+                        f" {downstream_partitions_def}"
+                    ),
+                )
         return upstream_partitions_subset
 
     def get_upstream_partitions_for_partition_range(

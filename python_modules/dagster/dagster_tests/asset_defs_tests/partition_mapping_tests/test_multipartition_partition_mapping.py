@@ -677,7 +677,7 @@ def test_error_multipartitions_mapping():
             }
         ).get_upstream_partitions_for_partitions(weekly_abc.empty_subset(), daily_123)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(CheckError, match="not valid in upstream partitions def"):
         MultiPartitionMapping(
             {
                 "123": DimensionPartitionMapping(
