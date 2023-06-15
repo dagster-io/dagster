@@ -32,7 +32,9 @@ def _exact_match(cron_expression: str, dt: datetime.datetime) -> bool:
 def is_valid_cron_string(cron_string: str) -> bool:
     if not CroniterShim.is_valid(cron_string):
         return False
-    expanded, _ = CroniterShim.expand(cron_string)
+    # Croniter < 1.4 returns 2 items
+    # Croniter >= 1.4 returns 3 items
+    expanded, *_ = CroniterShim.expand(cron_string)
     # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
     return len(expanded) == 5
 
@@ -58,7 +60,9 @@ def cron_string_iterator(
     utc_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp))
     start_datetime = utc_datetime.astimezone(pytz.timezone(timezone_str))
 
-    cron_parts, nth_weekday_of_month = CroniterShim.expand(cron_string)
+    # Croniter < 1.4 returns 2 items
+    # Croniter >= 1.4 returns 3 items
+    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
@@ -176,7 +180,9 @@ def reverse_cron_string_iterator(
     # and matches the cron schedule
     next_date = date_iter.get_next(datetime.datetime)
 
-    cron_parts, _ = CroniterShim.expand(cron_string)
+    # Croniter < 1.4 returns 2 items
+    # Croniter >= 1.4 returns 3 items
+    cron_parts, *_ = CroniterShim.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
