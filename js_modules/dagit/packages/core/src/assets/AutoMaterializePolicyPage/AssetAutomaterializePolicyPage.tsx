@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Body,
   Box,
+  Caption,
   Colors,
   CursorPaginationControls,
   ExternalAnchorButton,
@@ -23,6 +24,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {compactNumber} from '../../ui/formatters';
 import {
   AutomaterializePolicyTag,
   automaterializePolicyDescription,
@@ -276,22 +278,25 @@ function LeftPanel({
                   style={{width: '100%'}}
                 >
                   <div>No materialization conditions met </div>
-                  <div>
+                  <Caption>
                     {evaluation.startTimestamp ? (
-                      <>
-                        {evaluation.amount} evaluation{evaluation.amount === 1 ? '' : 's'}
-                      </>
+                      evaluation.amount === 1 ? (
+                        '1 evaluation'
+                      ) : (
+                        `${compactNumber(evaluation.amount)} evaluations`
+                      )
                     ) : (
                       <>
-                        {'Before'}{' '}
                         {evaluation.endTimestamp === 'now' ? (
-                          'now'
+                          'Before now'
                         ) : (
-                          <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                          <>
+                            Before <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                          </>
                         )}
                       </>
                     )}
-                  </div>
+                  </Caption>
                 </Box>
               </EvaluationRow>
             );
@@ -312,10 +317,11 @@ function LeftPanel({
                   style={{width: '100%'}}
                 >
                   <div style={{color: Colors.Yellow700}}>
-                    {evaluation.numSkipped} materialization{evaluation.numSkipped === 1 ? '' : 's'}{' '}
-                    skipped{' '}
+                    {compactNumber(evaluation.numSkipped)} skipped
                   </div>
-                  <TimestampDisplay timestamp={evaluation.timestamp} />
+                  <Caption>
+                    <TimestampDisplay timestamp={evaluation.timestamp} />
+                  </Caption>
                 </Box>
               </EvaluationRow>
             );
@@ -334,11 +340,10 @@ function LeftPanel({
               >
                 <Icon name="done" color={Colors.Blue700} />
                 <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
-                  <div>
-                    {evaluation.numRequested} run{evaluation.numRequested === 1 ? '' : 's'}{' '}
-                    requested
-                  </div>
-                  <TimestampDisplay timestamp={evaluation.timestamp} />
+                  <div>{compactNumber(evaluation.numRequested)} requested</div>
+                  <Caption>
+                    <TimestampDisplay timestamp={evaluation.timestamp} />
+                  </Caption>
                 </Box>
               </Box>
             </EvaluationRow>
@@ -718,7 +723,7 @@ const CollapsibleSection = ({
         >
           <Icon
             name="arrow_drop_down"
-            style={{transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)'}}
+            style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
           />
           <Subheading>{header}</Subheading>
         </CenterAlignedRow>
