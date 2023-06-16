@@ -40,6 +40,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -973,11 +974,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 )
 
                 if mapped_partitions_result.required_but_nonexistent_partition_keys:
+                    time_window_mapping_error_msg = (
+                        f"If these partitions are not required dependencies, you can define"
+                        f" TimeWindowPartitionMapping.allow_nonexistent_upstream_partitions to"
+                        f" be True."
+                    ) if isinstance(partition_mapping, TimeWindowPartitionMapping) else ""
                     raise DagsterInvariantViolationError(
                         f"Partition key range {self.asset_partition_key_range} in"
-                        f" {self.node_handle.name} depends on invalid partition keys"
+                        f" {self.node_handle.name} depends on nonexistent partition keys"
                         f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
-                        f" upstream asset {upstream_asset_key}"
+                        f" upstream asset {upstream_asset_key}.  {time_window_mapping_error_msg}"
                     )
 
                 return mapped_partitions_result.partitions_subset

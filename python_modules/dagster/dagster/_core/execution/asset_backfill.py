@@ -862,7 +862,10 @@ def should_backfill_atomic_asset_partitions_unit(
             raise DagsterInvariantViolationError(
                 f"Asset partition {candidate}"
                 " depends on invalid partition keys"
-                f" {parent_partitions_result.required_but_nonexistent_parents_partitions}"
+                f" {parent_partitions_result.required_but_nonexistent_parents_partitions}."
+                " If the assets are time-partitioned and"
+                " the nonexistent partitions are not required dependencies, you can define"
+                " TimeWindowPartitionMapping.allow_nonexistent_upstream_partitions to be True."
             )
 
         for parent in parent_partitions_result.parent_partitions:
