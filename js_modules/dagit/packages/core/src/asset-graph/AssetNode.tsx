@@ -1,9 +1,9 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, Spinner, Tooltip, Body} from '@dagster-io/ui';
+import {Body, Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled, {CSSObject} from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
 import {
@@ -58,7 +58,11 @@ export const AssetNode: React.FC<{
             <span style={{marginTop: 1}}>
               <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
-            <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+            <div
+              data-tooltip={displayName}
+              data-tooltip-style={isSource ? NameTooltipStyleSource : NameTooltipStyle}
+              style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
+            >
               {withMiddleTruncation(displayName, {
                 maxLength: ASSET_NODE_NAME_MAX_LENGTH,
               })}
@@ -597,16 +601,39 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
     }
   }
 `;
+
+/** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
+const NameCSS: CSSObject = {
+  padding: '3px 6px',
+  color: Colors.Gray800,
+  fontFamily: FontFamily.monospace,
+  fontWeight: 600,
+};
+
+const NameTooltipCSS: CSSObject = {
+  ...NameCSS,
+  top: -9,
+  left: -12,
+  fontSize: 16.8,
+};
+
+const NameTooltipStyle = JSON.stringify({
+  ...NameTooltipCSS,
+  background: Colors.Blue50,
+  border: `1px solid ${Colors.Blue100}`,
+});
+
+const NameTooltipStyleSource = JSON.stringify({
+  ...NameTooltipCSS,
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+});
+
 const Name = styled.div<{$isSource: boolean}>`
-  /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
+  ${NameCSS};
   display: flex;
-  padding: 3px 6px;
-  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
-  font-family: ${FontFamily.monospace};
-  border-top-left-radius: 7px;
-  border-top-right-radius: 7px;
-  font-weight: 600;
   gap: 4px;
+  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
