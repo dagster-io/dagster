@@ -5,7 +5,7 @@ description: Store your Dagster assets in a Delta Lake
 
 # dagster-deltalake integration reference
 
-This reference page provides information for working with [`dagster-deltalake`](/\_apidocs/libraries/dagster-deltalake) features that are not covered as part of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/_apidocs/libraries/dagster-deltalake) features that are not covered as part of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
@@ -349,37 +349,6 @@ defs = Definitions(
     assets=[iris_dataset],
     resources={
         "io_manager": DeltaLakePyarrowIOManager(
-            root_uri="path/to/deltalake",  # required
-            storage_options=LocalConfig(),  # required
-            schema="iris",  # optional, defaults to PUBLIC
-        )
-    },
-)
-```
-
-</TabItem>
-<TabItem name="Polars DataFrames">
-
-### Storing and loading Polars DataFrames in Delta Lake
-
-To use the <PyObject module="dagster_deltalake_polars" object="DeltaLakePolarsIOManager" />, first install the package:
-
-```shell
-pip install dagster-deltalake-polars
-```
-
-Then you can use the `DeltaLakePolarsIOManager` in your <PyObject object="Definitions" /> as in [Step 1: Configure the Dalta Lake I/O manager](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lae-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
-
-```python file=/integrations/deltalake/polars_configuration.py startafter=start_configuration endbefore=end_configuration
-from dagster_deltalake import LocalConfig
-from dagster_deltalake_polars import DeltaLakePolarsIOManager
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": DeltaLakePolarsIOManager(
             root_uri="path/to/deltalake",  # required
             storage_options=LocalConfig(),  # required
             schema="iris",  # optional, defaults to PUBLIC
