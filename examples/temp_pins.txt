@@ -3,8 +3,8 @@
 # Dagster aims to take a minimalist approach to pinning. Occassionally,
 # dependencies will release breaking changes. When this happens, we
 # typically don't patch previously released versions of Dagster to
-# introduce a pin. Instead, introduce a pin or a backward compatible fix
-# in the next release of Dagster.
+# introduce a pin. Instead, we aim to introduce a pin or a backward
+# compatible fix in the next release of Dagster.
 
 # We run automated tests to install the latest version Dagster from PyPI
 # and verify that these example projects work. We use this file to
