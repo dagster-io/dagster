@@ -33,7 +33,7 @@ def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _, evaluations = scenario.do_sensor_scenario(instance)
 
-    if scenario.expected_conditions:
+    if scenario.expected_conditions is not None:
         reasons = {
             (
                 AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])

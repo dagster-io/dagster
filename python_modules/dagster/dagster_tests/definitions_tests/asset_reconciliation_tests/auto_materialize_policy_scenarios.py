@@ -9,8 +9,10 @@ from dagster._core.definitions.auto_materialize_condition import (
     MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -154,6 +156,28 @@ auto_materialize_policy_scenarios = {
                 PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
             )
         ],
+        expected_conditions={
+            **{
+                ("hourly", p): {MissingAutoMaterializeCondition()}
+                for p in hourly_partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                )
+            },
+            ("daily", "2013-01-05"): {
+                ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_key=AssetKey("hourly"),
+                    parent_will_materialize=True,
+                    different_partitions=True,
+                )
+            },
+            ("daily", "2013-01-06"): {
+                ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_key=AssetKey("hourly"),
+                    parent_will_materialize=True,
+                    different_partitions=True,
+                )
+            },
+        },
     ),
     "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(

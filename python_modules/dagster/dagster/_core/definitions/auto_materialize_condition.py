@@ -1,7 +1,10 @@
 from enum import Enum
-from typing import NamedTuple, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Set, Union
 
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster import AssetKey
 
 
 @whitelist_for_serdes
@@ -56,9 +59,12 @@ class MissingAutoMaterializeCondition(NamedTuple):
 @whitelist_for_serdes
 class ParentOutdatedAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be skipped because one or more of its parents are outdated.
+    This could be because the parent isn't going to run, or it could be that the parent is going to be materialized
+    but in a separate run due to different partitions or repositories.
     """
 
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
+    asset_keys: Optional[Set["AssetKey"]] = None
 
 
 @whitelist_for_serdes

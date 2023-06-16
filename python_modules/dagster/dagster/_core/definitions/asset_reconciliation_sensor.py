@@ -729,7 +729,7 @@ def determine_asset_partitions_to_auto_materialize(
         asset_graph: AssetGraph,
         candidate: AssetKeyPartitionKey,
         parent_partitions_result: ParentsPartitionsResult,
-    ) -> bool:
+    ) -> Tuple[bool, Optional[ParentOutdatedAutoMaterializeCondition]]:
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
         for parent in parent_partitions_result.parent_partitions:
@@ -740,20 +740,28 @@ def determine_asset_partitions_to_auto_materialize(
                 continue
 
             if not (
-                (
-                    parent in conditions_by_asset_partition
-                    and all(
-                        condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-                        for condition in conditions_by_asset_partition[parent]
-                    )
+                parent in conditions_by_asset_partition
+                and all(
+                    condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+                    for condition in conditions_by_asset_partition[parent]
                 )
-                # if they don't have the same partitioning, then we can't launch a run that
-                # targets both, so we need to wait until the parent is reconciled before
-                # launching a run for the child
-                and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+            ):
+                return False, ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_key=parent.asset_key, parent_will_materialize=False
+                )
+
+            # if they don't have the same partitioning, then we can't launch a run that
+            # targets both, so we need to wait until the parent is reconciled before
+            # launching a run for the child
+            if not (
+                asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
                 and parent.partition_key == candidate.partition_key
             ):
-                return False
+                return False, ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_key=parent.asset_key,
+                    parent_will_materialize=True,
+                    different_partitions=True,
+                )
 
             if isinstance(asset_graph, ExternalAssetGraph):
                 # if the parent is in a different repository, we can't launch a run that targets both,
@@ -761,9 +769,13 @@ def determine_asset_partitions_to_auto_materialize(
                 if asset_graph.get_repository_handle(
                     candidate.asset_key
                 ) is not asset_graph.get_repository_handle(parent.asset_key):
-                    return False
+                    return False, ParentOutdatedAutoMaterializeCondition(
+                        parent_asset_key=parent.asset_key,
+                        parent_will_materialize=True,
+                        different_repositories=True,
+                    )
 
-        return True
+        return True, None
 
     def conditions_for_candidate(
         candidate: AssetKeyPartitionKey,
@@ -850,12 +862,6 @@ def determine_asset_partitions_to_auto_materialize(
                 return all(
                     condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
                     for condition in unit_conditions
-                )
-            return False
-        else:
-            for candidate in candidates_unit:
-                conditions_by_asset_partition[candidate].add(
-                    ParentOutdatedAutoMaterializeCondition()
                 )
         return False
 
