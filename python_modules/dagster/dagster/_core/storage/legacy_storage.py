@@ -485,10 +485,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         )
 
     def get_latest_storage_id_by_partition(
-        self, asset_key: "AssetKey", event_type: "DagsterEventType"
+        self, asset_key: "AssetKey", dagster_event_type: "DagsterEventType"
     ) -> Mapping[str, int]:
         return self._storage.event_log_storage.get_latest_storage_id_by_partition(
-            asset_key, event_type
+            asset_key, dagster_event_type
         )
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
