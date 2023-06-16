@@ -1,10 +1,24 @@
-import {Colors, Box, BaseTag, Tooltip, Icon, Body, ButtonLink, CaptionMono} from '@dagster-io/ui';
+import {
+  BaseTag,
+  Body,
+  Box,
+  ButtonLink,
+  Caption,
+  CaptionMono,
+  Colors,
+  Icon,
+  Popover,
+  Tooltip,
+} from '@dagster-io/ui';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
+import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
+
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const isAssetMissing = (liveData?: LiveDataForNode) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
@@ -58,7 +72,13 @@ export const StaleReasonsTags: React.FC<{
   return (
     <>
       {Object.entries(groupedCauses(assetKey, include, liveData)).map(([label, causes]) => (
-        <Tooltip key={label} position="top" content={<StaleCausesSummary causes={causes} />}>
+        <Popover
+          key={label}
+          content={<StaleCausesSummary causes={causes} />}
+          position="top"
+          interactionKind="hover"
+          className="chunk-popover-target"
+        >
           <BaseTag
             fillColor={Colors.Yellow50}
             textColor={Colors.Yellow700}
@@ -74,13 +94,11 @@ export const StaleReasonsTags: React.FC<{
               )
             }
           />
-        </Tooltip>
+        </Popover>
       ))}
     </>
   );
 };
-
-const MAX_DISPLAYED_REASONS = 4;
 
 function groupedCauses(
   assetKey: AssetKeyInput,
@@ -100,31 +118,48 @@ function groupedCauses(
 export const StaleCausesInfoDot: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({
   causes,
 }) => (
-  <Tooltip
-    position="top"
+  <Popover
     content={causes && causes.length > 0 ? <StaleCausesSummary causes={causes} /> : NO_CAUSES}
+    position="top"
+    interactionKind="hover"
+    className="chunk-popover-target"
   >
     <Icon name="info" size={12} color={Colors.Yellow700} />
-  </Tooltip>
+  </Popover>
 );
 
 const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({causes}) => (
-  <Box>
-    <strong>Changes since last materialization:</strong>
-    <ul style={{margin: 0, padding: '4px 12px'}}>
-      {causes.slice(0, MAX_DISPLAYED_REASONS).map((cause, idx) => (
-        <li key={idx}>
-          <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono> {cause.reason}{' '}
-          {cause.dependency ? `(${displayNameForAssetKey(cause.dependency)})` : ''}
-        </li>
+  <Box style={{width: '300px'}}>
+    <Box
+      padding={12}
+      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      style={{fontWeight: 600}}
+    >
+      Changes since last materialization:
+    </Box>
+    <Box style={{maxHeight: '240px', overflowY: 'auto'}} onClick={(e) => e.stopPropagation()}>
+      {causes.map((cause, idx) => (
+        <Box
+          key={idx}
+          border={idx > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
+          padding={{vertical: 8, horizontal: 12}}
+        >
+          <Link to={assetDetailsPathForKey(cause.key)}>
+            <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono>
+          </Link>
+          {cause.dependency ? (
+            <Caption>
+              {` ${cause.reason} (`}
+              <Link to={assetDetailsPathForKey(cause.dependency)}>
+                {displayNameForAssetKey(cause.dependency)}
+              </Link>
+              )
+            </Caption>
+          ) : (
+            <Caption>{` ${cause.reason}`}</Caption>
+          )}
+        </Box>
       ))}
-      {causes.length > MAX_DISPLAYED_REASONS ? (
-        <span style={{color: Colors.Gray400}}>{`and ${
-          causes.length - MAX_DISPLAYED_REASONS
-        } more...`}</span>
-      ) : (
-        ''
-      )}
-    </ul>
+    </Box>
   </Box>
 );
