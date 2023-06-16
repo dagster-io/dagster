@@ -27,13 +27,12 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
-import {
-  ILogCaptureInfo,
-  IRunMetadataDict,
-  RunMetadataProvider,
-  matchingComputeLogKeyFromStepKey,
-} from './RunMetadataProvider';
+import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {
+  useComputeLogFileKeyForSelection,
+  matchingComputeLogKeyFromStepKey,
+} from './useComputeLogFileKeyForSelection';
 import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
@@ -166,15 +165,10 @@ const RunWithData: React.FC<RunWithDataProps> = ({
 }) => {
   const onLaunch = useJobReExecution(run);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const supportsCapturedLogs = useSupportsCapturedLogs();
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: 'structured'},
-  });
-
-  const [computeLogFileKey, setComputeLogFileKey] = useQueryPersistedState<string>({
-    queryKey: 'logFileKey',
   });
 
   const logType = logTypeFromQuery(queryLogType);
@@ -192,41 +186,16 @@ const RunWithData: React.FC<RunWithDataProps> = ({
       : [];
   }, [runtimeGraph, selectionQuery]);
 
-  React.useEffect(() => {
-    if (!stepKeys?.length || computeLogFileKey) {
-      return;
-    }
-
-    if (metadata.logCaptureSteps) {
-      const logFileKeys = Object.keys(metadata.logCaptureSteps);
-      const selectedLogKey = logFileKeys.find((logFileKey) => {
-        return selectionStepKeys.every(
-          (stepKey) =>
-            metadata.logCaptureSteps &&
-            metadata.logCaptureSteps[logFileKey]!.stepKeys.includes(stepKey),
-        );
-      });
-      setComputeLogFileKey(selectedLogKey || logFileKeys[0]!);
-    } else if (!stepKeys.includes(computeLogFileKey)) {
-      const matching = matchingComputeLogKeyFromStepKey(
-        metadata.logCaptureSteps,
-        selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0],
-      );
-      matching && setComputeLogFileKey(matching);
-    } else if (selectionStepKeys.length === 1 && computeLogFileKey !== selectionStepKeys[0]) {
-      const matching = matchingComputeLogKeyFromStepKey(
-        metadata.logCaptureSteps,
-        selectionStepKeys[0]!,
-      );
-      matching && setComputeLogFileKey(matching);
-    }
-  }, [
-    stepKeys,
+  const supportsCapturedLogs = useSupportsCapturedLogs();
+  const {
+    logCaptureInfo,
     computeLogFileKey,
-    selectionStepKeys,
-    metadata.logCaptureSteps,
     setComputeLogFileKey,
-  ]);
+  } = useComputeLogFileKeyForSelection({
+    stepKeys,
+    selectionStepKeys,
+    metadata,
+  });
 
   const logsFilterStepKeys = runtimeGraph
     ? logsFilter.logQuery
@@ -312,11 +281,6 @@ const RunWithData: React.FC<RunWithDataProps> = ({
 
     return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
-
-  const logCaptureInfo: ILogCaptureInfo | undefined =
-    metadata.logCaptureSteps && computeLogFileKey in metadata.logCaptureSteps
-      ? metadata.logCaptureSteps[computeLogFileKey]
-      : undefined;
 
   return (
     <>

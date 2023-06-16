@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Dialog, DialogBody, DialogFooter, Icon, Mono} from '@dagster-io/ui';
+import {Box, Button, Colors, Dialog, DialogFooter, Icon, Mono} from '@dagster-io/ui';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,15 +7,13 @@ import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
-import {LogsProvider} from './LogsProvider';
-import {ComputeLogToolbar, LogType} from './LogsToolbar';
-import {
-  ILogCaptureInfo,
-  IRunMetadataDict,
-  RunMetadataProvider,
-  matchingComputeLogKeyFromStepKey,
-} from './RunMetadataProvider';
+import {DefaultLogLevels} from './LogLevel';
+import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
+import {LogsScrollingTable} from './LogsScrollingTable';
+import {LogType, LogsToolbar} from './LogsToolbar';
+import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
+import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 
 export const StepComputeLogsDialog: React.FC<{
   runId: string;
@@ -31,30 +29,31 @@ export const StepComputeLogsDialog: React.FC<{
       canEscapeKeyClose
       onClose={onClose}
     >
-      <DialogBody>
-        {isOpen ? (
-          <LogsProvider key={runId} runId={runId}>
-            {(logs) => (
-              <RunMetadataProvider logs={logs}>
-                {(metadata) => (
-                  <StepComputeLogsModalContent
-                    runId={runId}
-                    metadata={metadata}
-                    stepKeys={stepKeys}
-                  />
-                )}
-              </RunMetadataProvider>
-            )}
-          </LogsProvider>
-        ) : (
-          ''
-        )}
-      </DialogBody>
-      <DialogFooter topBorder>
-        <Button intent="primary" onClick={onClose}>
-          Done
-        </Button>
-      </DialogFooter>
+      {isOpen ? (
+        <LogsProvider key={runId} runId={runId}>
+          {(logs) => (
+            <RunMetadataProvider logs={logs}>
+              {(metadata) => (
+                <StepComputeLogsModalContent
+                  runId={runId}
+                  metadata={metadata}
+                  stepKeys={stepKeys}
+                  logs={logs}
+                />
+              )}
+            </RunMetadataProvider>
+          )}
+        </LogsProvider>
+      ) : (
+        ''
+      )}
+      <div style={{zIndex: 2, background: Colors.White}}>
+        <DialogFooter topBorder>
+          <Button intent="primary" onClick={onClose}>
+            Done
+          </Button>
+        </DialogFooter>
+      </div>
     </Dialog>
   );
 };
@@ -63,72 +62,85 @@ export const StepComputeLogsModalContent: React.FC<{
   runId: string;
   stepKeys: string[];
   metadata: IRunMetadataDict;
-}> = ({runId, stepKeys, metadata}) => {
+  logs: LogsProviderLogs;
+}> = ({runId, stepKeys, metadata, logs}) => {
   const supportsCapturedLogs = useSupportsCapturedLogs();
-  const [logType, setComputeLogType] = useState<LogType>(LogType.stdout);
+  const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
-  const [computeLogFileKey, setComputeLogFileKey] = React.useState<string>('');
+  const [filter, setFilter] = useState<LogFilter>({
+    hideNonMatches: true,
+    focusedTime: 0,
+    levels: Object.fromEntries(DefaultLogLevels.map((l) => [l, true])),
+    logQuery: [],
+    sinceTime: 0,
+  });
 
-  const logCaptureInfo: ILogCaptureInfo | undefined =
-    metadata.logCaptureSteps && computeLogFileKey in metadata.logCaptureSteps
-      ? metadata.logCaptureSteps[computeLogFileKey]
-      : undefined;
+  const {
+    computeLogFileKey,
+    setComputeLogFileKey,
+    logCaptureInfo,
+  } = useComputeLogFileKeyForSelection({
+    metadata,
+    stepKeys,
+    selectionStepKeys: stepKeys,
+  });
 
-  React.useEffect(() => {
-    if (!stepKeys?.length || computeLogFileKey) {
-      return;
-    }
-
-    if (metadata.logCaptureSteps) {
-      const logFileKeys = Object.keys(metadata.logCaptureSteps);
-      const selectedLogKey = logFileKeys.find((logFileKey) => {
-        return stepKeys.every(
-          (stepKey) =>
-            metadata.logCaptureSteps &&
-            metadata.logCaptureSteps[logFileKey].stepKeys.includes(stepKey),
-        );
-      });
-      setComputeLogFileKey(selectedLogKey || logFileKeys[0]);
-    } else if (!stepKeys.includes(computeLogFileKey)) {
-      const matching = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKeys[0]);
-      matching && setComputeLogFileKey(matching);
-    } else if (stepKeys.length === 1 && computeLogFileKey !== stepKeys[0]) {
-      const matching = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKeys[0]);
-      matching && setComputeLogFileKey(matching);
-    }
-  }, [stepKeys, computeLogFileKey, metadata.logCaptureSteps, setComputeLogFileKey]);
+  // The user can add MORE filters in the filter input, but we truncate the logs
+  // to just the ones for the modal's step keys so it's not possible to un-hide them by
+  // clearing the filter input. This also makes them appear white by default, rather than
+  // being highlighted as "filter matches".
+  const logsFilteredToSteps = React.useMemo(() => {
+    return {
+      ...logs,
+      allNodes: logs.allNodes.filter((node) => node.stepKey && stepKeys.includes(node.stepKey)),
+    };
+  }, [logs, stepKeys]);
 
   return (
     <LogsContainer>
-      <Box flex={{direction: 'row', alignItems: 'baseline', gap: 16}}>
-        <ComputeLogToolbar
-          metadata={metadata}
-          logType={logType}
-          onSetLogType={setComputeLogType}
-          computeLogFileKey={computeLogFileKey}
-          onSetComputeLogKey={setComputeLogFileKey}
-          computeLogUrl={computeLogUrl}
-        />
+      <LogsToolbar
+        metadata={metadata}
+        logType={logType}
+        onSetLogType={setComputeLogType}
+        computeLogFileKey={computeLogFileKey}
+        onSetComputeLogKey={setComputeLogFileKey}
+        computeLogUrl={computeLogUrl}
+        steps={[]}
+        counts={logs.counts}
+        filter={filter}
+        onSetFilter={setFilter}
+      >
         <Link to={`/runs/${runId}?stepKeys=${stepKeys}`}>
           <Box flex={{gap: 4, alignItems: 'center'}}>
             View Run <Mono>{titleForRun({id: runId})}</Mono>
             <Icon name="open_in_new" color={Colors.Link} />
           </Box>
         </Link>
-      </Box>
-      {supportsCapturedLogs ? (
-        <CapturedOrExternalLogPanel
-          logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
-          logCaptureInfo={logCaptureInfo}
-          visibleIOType={LogType[logType]}
-          onSetDownloadUrl={setComputeLogUrl}
-        />
+      </LogsToolbar>
+
+      {logType !== LogType.structured ? (
+        supportsCapturedLogs ? (
+          <CapturedOrExternalLogPanel
+            logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
+            logCaptureInfo={logCaptureInfo}
+            visibleIOType={LogType[logType]}
+            onSetDownloadUrl={setComputeLogUrl}
+          />
+        ) : (
+          <ComputeLogPanel
+            runId={runId}
+            computeLogFileKey={computeLogFileKey}
+            ioType={LogType[logType]}
+            setComputeLogUrl={setComputeLogUrl}
+          />
+        )
       ) : (
-        <ComputeLogPanel
-          runId={runId}
-          computeLogFileKey={computeLogFileKey}
-          ioType={LogType[logType]}
-          setComputeLogUrl={setComputeLogUrl}
+        <LogsScrollingTable
+          logs={logsFilteredToSteps}
+          filter={filter}
+          filterStepKeys={stepKeys}
+          filterKey={`${JSON.stringify(filter)}`}
+          metadata={metadata}
         />
       )}
     </LogsContainer>

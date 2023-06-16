@@ -51,6 +51,8 @@ interface ILogsToolbarProps {
   computeLogFileKey?: string;
   onSetComputeLogKey: (key: string) => void;
   computeLogUrl: string | null;
+
+  children?: React.ReactNode;
 }
 
 const logQueryToString = (logQuery: LogFilterValue[]) =>
@@ -70,6 +72,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogFileKey,
     onSetComputeLogKey,
     computeLogUrl,
+    children,
   } = props;
 
   const [
@@ -109,6 +112,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           counts={counts}
           filter={filter}
           onSetFilter={onSetFilter}
+          showCopyURL={!children}
           steps={steps}
         />
       ) : (
@@ -122,6 +126,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           computeLogUrl={computeLogUrl}
         />
       )}
+      {children}
     </OptionsContainer>
   );
 };
@@ -293,11 +298,13 @@ const StructuredLogToolbar = ({
   counts,
   onSetFilter,
   steps,
+  showCopyURL,
 }: {
   filter: LogFilter;
   counts: LogLevelCounts;
   onSetFilter: (filter: LogFilter) => void;
   steps: string[];
+  showCopyURL: boolean;
 }) => {
   const [copyIcon, setCopyIcon] = React.useState<IconName>('assignment');
   const logQueryString = logQueryToString(filter.logQuery);
@@ -404,15 +411,17 @@ const StructuredLogToolbar = ({
       </Box>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <Button
-        icon={<Icon name={copyIcon} />}
-        onClick={() => {
-          copyToClipboard(window.location.href);
-          setCopyIcon('assignment_turned_in');
-        }}
-      >
-        Copy URL
-      </Button>
+      {showCopyURL && (
+        <Button
+          icon={<Icon name={copyIcon} />}
+          onClick={() => {
+            copyToClipboard(window.location.href);
+            setCopyIcon('assignment_turned_in');
+          }}
+        >
+          Copy URL
+        </Button>
+      )}
     </>
   );
 };
