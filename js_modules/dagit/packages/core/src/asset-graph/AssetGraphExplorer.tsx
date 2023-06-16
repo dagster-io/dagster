@@ -175,15 +175,20 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       let nextOpsNameSelection = token;
 
       if (e.shiftKey || e.metaKey) {
+        // Meta key adds the node you clicked to your existing selection
         let tokensToAdd = [token];
-        if (e.shiftKey && lastSelectedNode && node) {
-          const tokensInRange = opsInRange({
-            graph: assetGraphData,
-            from: lastSelectedNode,
-            to: node,
-          });
-          if (tokensInRange.length) {
-            tokensToAdd = tokensInRange;
+
+        // Shift key adds the nodes between the node you clicked and your existing selection.
+        // To better support clicking a bunch of leaves and extending selection, we try to reach
+        // the new node from each node in your current selection until we find a path.
+        if (e.shiftKey && selectedGraphNodes.length && node) {
+          for (let ii = selectedGraphNodes.length - 1; ii >= 0; ii--) {
+            const from = selectedGraphNodes[ii]!;
+            const tokensInRange = assetKeyTokensInRange({from, to: node, graph: assetGraphData});
+            if (tokensInRange.length) {
+              tokensToAdd = tokensInRange;
+              break;
+            }
           }
         }
 
@@ -490,7 +495,7 @@ const graphDirectionOf = ({
   return 'upstream';
 };
 
-const opsInRange = (
+const assetKeyTokensInRange = (
   {graph, from, to}: {graph: GraphData; from: GraphNode; to: GraphNode},
   seen: string[] = [],
 ) => {
@@ -498,7 +503,7 @@ const opsInRange = (
     return [];
   }
   if (from.id === to.id) {
-    return [...to.definition.opNames];
+    return [tokenForAssetKey(to.definition.assetKey)];
   }
 
   if (seen.length === 0 && graphDirectionOf({graph, from, to}) === 'upstream') {
@@ -515,10 +520,11 @@ const opsInRange = (
     if (seen.includes(node.id)) {
       continue;
     }
-    const result: string[] = opsInRange({graph, from: node, to}, [...seen, from.id]);
+    const result: string[] = assetKeyTokensInRange({graph, from: node, to}, [...seen, from.id]);
     if (result.length) {
-      ledToTarget.push(...from.definition.opNames, ...result);
+      ledToTarget.push(tokenForAssetKey(from.definition.assetKey), ...result);
     }
   }
+
   return uniq(ledToTarget);
 };
