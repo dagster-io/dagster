@@ -23,11 +23,6 @@ def lazy_downstream_1(lazy_upstream):
     return lazy_upstream + 1
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def lazy_downstream_2(lazy_upstream):
-    return lazy_upstream + 1
-
-
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def eager_downstream_2_skipper(eager_downstream_1):
     random.seed(5438790)
@@ -43,6 +38,5 @@ def auto_materialize_repo_1():
         eager_downstream_1,
         lazy_upstream,
         lazy_downstream_1,
-        lazy_downstream_2,
         eager_downstream_2_skipper,
     ]
