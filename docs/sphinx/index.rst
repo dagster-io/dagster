@@ -42,7 +42,6 @@
    sections/api/apidocs/libraries/dagster-dbt
    sections/api/apidocs/libraries/dagster-deltalake
    sections/api/apidocs/libraries/dagster-deltalake-pandas
-   sections/api/apidocs/libraries/dagster-deltalake-polars
    sections/api/apidocs/libraries/dagster-duckdb
    sections/api/apidocs/libraries/dagster-duckdb-pandas
    sections/api/apidocs/libraries/dagster-duckdb-pyspark
