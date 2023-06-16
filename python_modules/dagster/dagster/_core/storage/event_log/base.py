@@ -379,7 +379,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, event_type: DagsterEventType
+        self, asset_key: AssetKey, dagster_event_type: DagsterEventType
     ) -> Mapping[str, int]:
         pass
 
