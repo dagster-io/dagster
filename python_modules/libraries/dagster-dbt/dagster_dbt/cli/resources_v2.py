@@ -18,6 +18,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvalidInvocationError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
 from pydantic import Field
@@ -129,6 +130,46 @@ class DbtManifest:
     def get_asset_key_by_output_name(self, output_name: str) -> AssetKey:
         """Get a dbt node's default asset key by its Dagster output name."""
         return self.node_info_to_asset_key(self.get_node_info_by_output_name(output_name))
+
+    def get_asset_key_for_dbt_unique_id(self, unique_id: str) -> AssetKey:
+        node_info = self.node_info_by_dbt_unique_id.get(unique_id)
+
+        if not node_info:
+            raise DagsterInvalidInvocationError(
+                f"Could not find a dbt node with unique_id: {unique_id}. A unique ID consists of"
+                " the node type (model, source, seed, etc.), project name, and node name in a"
+                " dot-separated string. For example: model.my_project.my_model"
+            )
+
+        return self.node_info_to_asset_key(node_info)
+
+    def get_asset_keys_for_dbt_source(self, source_name: str) -> Sequence[AssetKey]:
+        sources = {
+            key
+            for key, value in self.raw_manifest["sources"].items()
+            if value["source_name"] == source_name
+        }
+
+        if len(sources) == 0:
+            raise DagsterInvalidInvocationError(
+                f"Could not find a dbt source with name: {source_name}"
+            )
+
+        return sorted([self.get_asset_key_for_dbt_unique_id(key) for key in sources])
+
+    def get_asset_key_for_dbt_model(self, model_name: str) -> AssetKey:
+        models = {
+            key
+            for key, value in self.raw_manifest["nodes"].items()
+            if value["name"] == model_name and value["resource_type"] == "model"
+        }
+
+        if len(models) == 0:
+            raise DagsterInvalidInvocationError(
+                f"Could not find a dbt model with name: {model_name}"
+            )
+
+        return self.get_asset_key_for_dbt_unique_id(next(iter(models)))
 
     def get_subset_selection_for_context(
         self,
