@@ -964,11 +964,23 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     partitions_def,
                     upstream_asset_partitions_def,
                 )
-                return partition_mapping.get_upstream_partitions_for_partitions(
-                    partitions_subset,
-                    upstream_asset_partitions_def,
-                    dynamic_partitions_store=self.instance,
+                mapped_partitions_result = (
+                    partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                        partitions_subset,
+                        upstream_asset_partitions_def,
+                        dynamic_partitions_store=self.instance,
+                    )
                 )
+
+                if mapped_partitions_result.required_but_nonexistent_partition_keys:
+                    raise DagsterInvariantViolationError(
+                        f"Partition key range {self.asset_partition_key_range} in"
+                        f" {self.node_handle.name} depends on invalid partition keys"
+                        f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
+                        f" upstream asset {upstream_asset_key}"
+                    )
+
+                return mapped_partitions_result.partitions_subset
 
         check.failed("The input has no asset partitions")
 

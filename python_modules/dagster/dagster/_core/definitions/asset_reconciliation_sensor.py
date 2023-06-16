@@ -37,7 +37,8 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.schedules import cron_string_iterator
 
-from .asset_selection import AssetGraph, AssetSelection
+from .asset_graph import AssetGraph, ParentsPartitionsResult
+from .asset_selection import AssetSelection
 from .auto_materialize_condition import (
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
@@ -702,10 +703,6 @@ def determine_asset_partitions_to_auto_materialize(
             candidate
         ):
             return False
-        elif not asset_graph.partition_maps_to_valid_parents(
-            instance_queryer, evaluation_time, candidate
-        ):
-            return False
 
         return True
 
@@ -732,12 +729,11 @@ def determine_asset_partitions_to_auto_materialize(
     def parents_will_be_reconciled(
         asset_graph: AssetGraph,
         candidate: AssetKeyPartitionKey,
+        parent_partitions_result: ParentsPartitionsResult,
     ) -> bool:
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-        for parent in asset_graph.get_parents_partitions(
-            instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
-        ):
+        for parent in parent_partitions_result.parent_partitions:
             if instance_queryer.is_reconciled(
                 asset_partition=parent,
                 asset_graph=asset_graph,
@@ -812,6 +808,13 @@ def determine_asset_partitions_to_auto_materialize(
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
+        parent_partitions_by_candidate = {
+            candidate: asset_graph.get_parents_partitions(
+                instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
+            )
+            for candidate in candidates_unit
+        }
+
         if any(
             # do not reconcile assets if they are not reconcilable
             not can_reconcile_candidate(candidate)
@@ -819,13 +822,22 @@ def determine_asset_partitions_to_auto_materialize(
             or candidate in backfill_target_asset_graph_subset
             # do not reconcile assets if they are not in the target selection
             or candidate.asset_key not in target_asset_keys
+            # do not reconcile candidate if have invalid parents
+            or not len(
+                parent_partitions_by_candidate[
+                    candidate
+                ].required_but_nonexistent_parents_partitions
+            )
+            == 0
             for candidate in candidates_unit
         ):
             return False
 
         if all(
             will_be_materialized_for_freshness(candidate)
-            or parents_will_be_reconciled(asset_graph, candidate)
+            or parents_will_be_reconciled(
+                asset_graph, candidate, parent_partitions_by_candidate[candidate]
+            )
             for candidate in candidates_unit
         ):
             unit_conditions = set().union(
