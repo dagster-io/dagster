@@ -16,6 +16,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, LiveDataForNode} from '../asset-graph/Utils';
+import {AssetNodeKeyFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -147,19 +148,36 @@ const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = (
           <Link to={assetDetailsPathForKey(cause.key)}>
             <CaptionMono>{displayNameForAssetKey(cause.key)}</CaptionMono>
           </Link>
-          {cause.dependency ? (
-            <Caption>
-              {` ${cause.reason} (`}
-              <Link to={assetDetailsPathForKey(cause.dependency)}>
-                {displayNameForAssetKey(cause.dependency)}
-              </Link>
-              )
-            </Caption>
-          ) : (
-            <Caption>{` ${cause.reason}`}</Caption>
-          )}
+          <StaleReason reason={cause.reason} dependency={cause.dependency} />
         </Box>
       ))}
     </Box>
   </Box>
 );
+
+const StaleReason: React.FC<{reason: string; dependency: AssetNodeKeyFragment | null}> = ({
+  reason,
+  dependency,
+}) => {
+  if (!dependency) {
+    return <Caption>{` ${reason}`}</Caption>;
+  }
+
+  const dependencyName = displayNameForAssetKey(dependency);
+  const dependencyPythonName = dependencyName.replace(/ /g, '');
+  if (reason.endsWith(`${dependencyPythonName}`)) {
+    const reasonUpToDep = reason.slice(0, -dependencyPythonName.length);
+    return (
+      <Caption>
+        {` ${reasonUpToDep}`}
+        <Link to={assetDetailsPathForKey(dependency)}>{dependencyName}</Link>
+      </Caption>
+    );
+  }
+
+  return (
+    <Caption>
+      {` ${reason} `}(<Link to={assetDetailsPathForKey(dependency)}>{dependencyName}</Link>)
+    </Caption>
+  );
+};
