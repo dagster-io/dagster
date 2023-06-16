@@ -15,7 +15,7 @@ import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 
-export const StepComputeLogsDialog: React.FC<{
+export const StepLogsDialog: React.FC<{
   runId: string;
   stepKeys: string[];
   isOpen: boolean;
@@ -34,7 +34,7 @@ export const StepComputeLogsDialog: React.FC<{
           {(logs) => (
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
-                <StepComputeLogsModalContent
+                <StepLogsModalContent
                   runId={runId}
                   metadata={metadata}
                   stepKeys={stepKeys}
@@ -58,7 +58,7 @@ export const StepComputeLogsDialog: React.FC<{
   );
 };
 
-export const StepComputeLogsModalContent: React.FC<{
+export const StepLogsModalContent: React.FC<{
   runId: string;
   stepKeys: string[];
   metadata: IRunMetadataDict;

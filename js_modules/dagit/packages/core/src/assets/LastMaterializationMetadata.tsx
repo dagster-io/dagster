@@ -9,7 +9,7 @@ import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
-import {StepComputeLogsDialog} from '../runs/StepComputeLogsDialog';
+import {StepLogsDialog} from '../runs/StepLogsDialog';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -25,7 +25,7 @@ export const LatestMaterializationMetadata: React.FC<{
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
   liveData: LiveDataForNode | undefined;
 }> = ({assetKey, latest, liveData}) => {
-  const [showingComputeLogs, setShowingComputeLogs] = React.useState(false);
+  const [showingLogs, setShowingLogs] = React.useState(false);
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -66,18 +66,18 @@ export const LatestMaterializationMetadata: React.FC<{
                   </Box>
                   {latestEvent.stepKey && (
                     <>
-                      <StepComputeLogsDialog
+                      <StepLogsDialog
                         runId={latestEvent.runId}
                         stepKeys={[latestEvent.stepKey]}
-                        isOpen={showingComputeLogs}
-                        onClose={() => setShowingComputeLogs(false)}
+                        isOpen={showingLogs}
+                        onClose={() => setShowingLogs(false)}
                       />
                       <Button
                         small
                         icon={<Icon name="wysiwyg" />}
-                        onClick={() => setShowingComputeLogs(true)}
+                        onClick={() => setShowingLogs(true)}
                       >
-                        Compute Logs
+                        View step logs
                       </Button>
                     </>
                   )}
