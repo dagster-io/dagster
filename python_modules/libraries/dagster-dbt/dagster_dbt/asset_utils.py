@@ -85,8 +85,6 @@ def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
     If a Dagster group is configured in the metadata for the node, use that.
 
     Otherwise, if a dbt group is configured for the node, use that.
-
-    By default, a node's group name is subdirectory that it resides in.
     """
     dagster_metadata = node_info.get("meta", {}).get("dagster", {})
 
@@ -98,11 +96,7 @@ def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
     if dbt_group:
         return dbt_group
 
-    fqn = node_info.get("fqn", [])
-    # the first component is the package name, and the last component is the model name
-    if len(fqn) < 3:
-        return None
-    return fqn[1]
+    return None
 
 
 def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
