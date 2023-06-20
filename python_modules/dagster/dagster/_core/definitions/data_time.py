@@ -1,3 +1,17 @@
+"""The "data time" of an asset materialization is the timestamp on its earliest ancestor
+materialization.
+
+An asset materialization is parent of another asset materialization if both:
+- The child asset depends on the parent asset.
+- The parent materialization is the latest materialization of the parent asset that occurred before
+    the child materialization.
+
+The idea of data time is: if an asset is downstream of another asset, then the freshness of the data
+in the downstream asset depends on the freshness of the data in the upstream asset. No matter how
+recently you've materialized the downstream asset, it can't be fresher than the upstream
+materialization it was derived from.
+"""
+
 import datetime
 from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
 
