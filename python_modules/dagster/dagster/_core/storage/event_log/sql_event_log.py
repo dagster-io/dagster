@@ -1724,18 +1724,12 @@ class SqlEventLogStorage(EventLogStorage):
 
         return materialization_count_by_partition
 
-    def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: AssetKey
-    ) -> Mapping[str, Tuple[str, int]]:
-        """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
-        Return the partitions that have a materialization planned event but no matching (same run) materialization event.
-        These materializations could be in progress, or they could have failed. A separate query checking the run status
-        is required to know.
-
-        Returns a mapping of partition to [run id, event id].
+    def _latest_event_ids_by_partition_subquery(
+        self, asset_key: AssetKey, dagster_event_types: Sequence[DagsterEventType]
+    ):
+        """Subquery for locating the latest event ids by partition for a given asset key and set
+        of event types.
         """
-        check.inst_param(asset_key, "asset_key", AssetKey)
-
         latest_event_ids_subquery = (
             db_select(
                 [
@@ -1748,6 +1742,9 @@ class SqlEventLogStorage(EventLogStorage):
                 db.and_(
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                    SqlEventLogStorageTable.c.dagster_event_type.in_(
+                        [dagster_event_type.value for dagster_event_type in dagster_event_types]
+                    ),
                 )
             )
             .group_by(
@@ -1756,11 +1753,58 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
         assets_details = self._get_assets_details([asset_key])
-        latest_event_ids_subquery = db_subquery(
+        return db_subquery(
             self._add_assets_wipe_filter_to_query(
                 latest_event_ids_subquery, assets_details, [asset_key]
             ),
-            "latest_event_ids_subquery",
+            "latest_event_ids_by_partition_subquery",
+        )
+
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, dagster_event_type: DagsterEventType
+    ) -> Mapping[str, int]:
+        """Fetch the latest materialzation storage id for each partition for a given asset key.
+
+        Returns a mapping of partition to storage id.
+        """
+        check.inst_param(asset_key, "asset_key", AssetKey)
+
+        latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
+            asset_key, [dagster_event_type]
+        )
+        latest_event_ids_by_partition = db_select(
+            [
+                latest_event_ids_by_partition_subquery.c.partition,
+                latest_event_ids_by_partition_subquery.c.id,
+            ]
+        )
+
+        with self.index_connection() as conn:
+            rows = conn.execute(latest_event_ids_by_partition).fetchall()
+
+        latest_materialization_storage_id_by_partition: Dict[str, int] = {}
+        for row in rows:
+            latest_materialization_storage_id_by_partition[cast(str, row[0])] = cast(int, row[1])
+        return latest_materialization_storage_id_by_partition
+
+    def get_latest_asset_partition_materialization_attempts_without_materializations(
+        self, asset_key: AssetKey
+    ) -> Mapping[str, Tuple[str, int]]:
+        """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
+        Return the partitions that have a materialization planned event but no matching (same run) materialization event.
+        These materializations could be in progress, or they could have failed. A separate query checking the run status
+        is required to know.
+
+        Returns a mapping of partition to [run id, event id].
+        """
+        check.inst_param(asset_key, "asset_key", AssetKey)
+
+        latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
+            asset_key,
+            [
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            ],
         )
 
         latest_events_subquery = db_subquery(

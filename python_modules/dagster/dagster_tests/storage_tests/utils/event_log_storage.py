@@ -2027,6 +2027,77 @@ class TestEventLogStorage:
                     )
                     assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
+    def test_get_latest_storage_ids_by_partition(self, storage, instance):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id = make_new_run_id()
+
+        def _assert_storage_matches(expected):
+            assert (
+                storage.get_latest_storage_id_by_partition(
+                    a, DagsterEventType.ASSET_MATERIALIZATION
+                )
+                == expected
+            )
+
+        def _materialize_partition(asset_key, partition) -> int:
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=asset_key, partition=partition)
+                        ),
+                    ),
+                )
+            )
+            # get the storage id of the materialization we just stored
+            return storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION),
+                limit=1,
+                ascending=False,
+            )[0].storage_id
+
+        with create_and_delete_test_runs(instance, [run_id]):
+            latest_storage_ids = {}
+            # no events
+            _assert_storage_matches(latest_storage_ids)
+
+            # p1 materialized
+            latest_storage_ids["p1"] = _materialize_partition(a, "p1")
+            _assert_storage_matches(latest_storage_ids)
+
+            # p2 materialized
+            latest_storage_ids["p2"] = _materialize_partition(a, "p2")
+            _assert_storage_matches(latest_storage_ids)
+
+            # unrelated asset materialized
+            _materialize_partition(b, "p1")
+            _materialize_partition(b, "p2")
+            _assert_storage_matches(latest_storage_ids)
+
+            # p1 re materialized
+            latest_storage_ids["p1"] = _materialize_partition(a, "p1")
+            _assert_storage_matches(latest_storage_ids)
+
+            # p2 materialized
+            latest_storage_ids["p3"] = _materialize_partition(a, "p3")
+            _assert_storage_matches(latest_storage_ids)
+
+            if self.can_wipe():
+                storage.wipe_asset(a)
+                latest_storage_ids = {}
+                _assert_storage_matches(latest_storage_ids)
+
+                latest_storage_ids["p1"] = _materialize_partition(a, "p1")
+                _assert_storage_matches(latest_storage_ids)
+
     def test_get_latest_asset_partition_materialization_attempts_without_materializations(
         self, storage, instance
     ):
