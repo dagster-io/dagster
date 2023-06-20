@@ -52,7 +52,7 @@ export const ScheduledRunListRoot = () => {
         {tabs}
         <QueryRefreshCountdown refreshState={combinedRefreshState} />
       </Box>
-      <Loading queryResult={queryResult}>
+      <Loading queryResult={queryResult} allowStaleData>
         {(result) => {
           const {repositoriesOrError, instance} = result;
           if (repositoriesOrError.__typename === 'PythonError') {
