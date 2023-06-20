@@ -32,6 +32,11 @@ downstream_of_multiple_observable_source_assets = [
     asset_def("asset3", ["asset1", "asset2"]),
 ]
 
+downstream_of_unchanging_observable_source = [
+    observable_source_asset_def("source_asset1", changes=False),
+    asset_def("asset1", ["source_asset1"]),
+]
+
 observable_source_asset_scenarios = {
     "observable_to_unpartitioned0": AssetReconciliationScenario(
         assets=unpartitioned_downstream_of_observable_source,
@@ -123,5 +128,30 @@ observable_source_asset_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset1", "asset3"]),
         ],
+    ),
+    "unchanging_observable": AssetReconciliationScenario(
+        assets=downstream_of_unchanging_observable_source,
+        unevaluated_runs=[
+            run(["source_asset1"], is_observation=True),
+            run(["asset1"]),
+            run(["source_asset1"], is_observation=True),
+        ],
+        expected_run_requests=[],
+    ),
+    "unchanging_observable_many_observations": AssetReconciliationScenario(
+        assets=downstream_of_unchanging_observable_source,
+        cursor_from=AssetReconciliationScenario(
+            assets=downstream_of_unchanging_observable_source,
+            unevaluated_runs=[
+                run(["source_asset1"], is_observation=True),
+                run(["source_asset1"], is_observation=True),
+                run(["source_asset1"], is_observation=True),
+                run(["source_asset1"], is_observation=True),
+                run(["source_asset1"], is_observation=True),
+            ],
+            expected_run_requests=[run_request(["asset1"])],
+        ),
+        unevaluated_runs=[],
+        expected_run_requests=[],
     ),
 }
