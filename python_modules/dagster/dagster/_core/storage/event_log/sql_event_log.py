@@ -1729,9 +1729,9 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         event_types: Sequence[DagsterEventType],
-        asset_partitions: Optional[Sequence[str]] = None,
+        asset_partitions: Optional[AbstractSet[str]] = None,
         before_cursor: Optional[int] = None,
-        after_cusror: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ):
         """Subquery for locating the latest event ids by partition for a given asset key and set
         of event types.
@@ -1755,8 +1755,8 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(SqlEventLogStorageTable.c.partition.in_(asset_partitions))
         if before_cursor is not None:
             query = query.where(SqlEventLogStorageTable.c.id < before_cursor)
-        if after_cusror is not None:
-            query = query.where(SqlEventLogStorageTable.c.id > after_cusror)
+        if after_cursor is not None:
+            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
 
         latest_event_ids_subquery = query.group_by(
             SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
@@ -1800,25 +1800,25 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_tags_by_partition(
         self,
         asset_key: AssetKey,
-        tag_keys: AbstractSet[str],
         event_type: DagsterEventType,
-        asset_partitions: Optional[Sequence[str]] = None,
+        tag_keys: AbstractSet[str],
+        asset_partitions: Optional[AbstractSet[str]] = None,
         before_cursor: Optional[int] = None,
-        after_cusror: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Mapping[str, Mapping[str, str]]:
         check.inst_param(asset_key, "asset_key", AssetKey)
-        check.set_param(tag_keys, "tag_keys", of_type=str)
         check.inst_param(event_type, "event_type", DagsterEventType)
-        check.opt_nullable_sequence_param(asset_partitions, "asset_partitions", of_type=str)
+        check.set_param(tag_keys, "tag_keys", of_type=str)
+        check.opt_nullable_set_param(asset_partitions, "asset_partitions", of_type=str)
         check.opt_int_param(before_cursor, "before_cursor")
-        check.opt_int_param(after_cusror, "after_cusror")
+        check.opt_int_param(after_cursor, "after_cursor")
 
         latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
             asset_key=asset_key,
             event_types=[event_type],
             asset_partitions=asset_partitions,
             before_cursor=before_cursor,
-            after_cusror=after_cusror,
+            after_cursor=after_cursor,
         )
 
         latest_tags_by_partition_query = (
@@ -1832,10 +1832,7 @@ class SqlEventLogStorage(EventLogStorage):
             .select_from(
                 latest_event_ids_subquery.join(
                     AssetEventTagsTable,
-                    db.and_(
-                        AssetEventTagsTable.c.asset_key == latest_event_ids_subquery.c.asset_key,
-                        AssetEventTagsTable.c.id == latest_event_ids_subquery.c.id,
-                    ),
+                    AssetEventTagsTable.c.event_id == latest_event_ids_subquery.c.id,
                 )
             )
             .where(AssetEventTagsTable.c.key.in_(tag_keys))
@@ -1848,7 +1845,8 @@ class SqlEventLogStorage(EventLogStorage):
         for row in rows:
             latest_tags_by_partition[cast(str, row[0])][cast(str, row[1])] = cast(str, row[2])
 
-        return latest_tags_by_partition
+        # convert defaultdict to dict
+        return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey

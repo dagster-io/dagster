@@ -388,11 +388,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_latest_tags_by_partition(
         self,
         asset_key: AssetKey,
-        tag_keys: AbstractSet[str],
         event_type: DagsterEventType,
-        asset_partitions: Optional[Sequence[str]] = None,
+        tag_keys: AbstractSet[str],
+        asset_partitions: Optional[AbstractSet[str]] = None,
         before_cursor: Optional[int] = None,
-        after_cusror: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ) -> Mapping[str, Mapping[str, str]]:
         pass
 
