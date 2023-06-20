@@ -204,7 +204,6 @@ def can_reconcile_time_window_partition(
     time_window_partition_scope: Optional[datetime.timedelta],
     current_time: datetime.datetime,
 ) -> bool:
-    # return True
     if partition_key is None:
         return False
     if time_window_partition_scope is None:
@@ -528,9 +527,7 @@ def find_parent_materialized_asset_partitions(
                     asset_key, after_cursor=latest_storage_id
                 )
                 if partitions_def.has_partition_key(
-                    partition_key,
-                    dynamic_partitions_store=instance_queryer,
-                    current_time=instance_queryer.evaluation_time,
+                    partition_key, dynamic_partitions_store=instance_queryer
                 )
             ]
 
@@ -561,40 +558,22 @@ def find_parent_materialized_asset_partitions(
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs
+                        # cannot materialize in the same run if different partitions defs or
+                        # different partition keys
                         elif (
                             child_partitions_def != partitions_def
                             or child_partition not in materialized_partitions
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
-                            asset_status_cache_value = (
-                                instance_queryer.get_asset_status_cache_value(asset_key=child)
+                            latest_partition_record = check.not_none(
+                                instance_queryer.get_latest_materialization_record(
+                                    AssetKeyPartitionKey(asset_key, child_partition),
+                                    after_cursor=latest_storage_id,
+                                )
                             )
-                            # if the child is not currently in progress, and its most recent run
-                            # succeeded, then we can immediately add it to the candidate set
-                            if asset_status_cache_value is None or (
-                                child_partition
-                                not in asset_status_cache_value.deserialize_in_progress_partition_subsets(
-                                    partitions_def=child_partitions_def
-                                )
-                                and child_partition
-                                not in asset_status_cache_value.deserialize_failed_partition_subsets(
-                                    partitions_def=child_partitions_def
-                                )
-                            ):
-                                result_asset_partitions.add(child_asset_partition)
-                            # more expensive check -- if the the child is in progress or failed, we
-                            # need to see if that happened in a run that was kicked off by the
-                            # daemon
-                            elif not instance_queryer.is_asset_planned_for_run(
-                                check.not_none(
-                                    instance_queryer.get_latest_materialization_record(
-                                        AssetKeyPartitionKey(asset_key, child_partition),
-                                        after_cursor=latest_storage_id,
-                                    )
-                                ).run_id,
-                                child,
+                            if not instance_queryer.is_asset_planned_for_run(
+                                latest_partition_record.run_id, child
                             ):
                                 result_asset_partitions.add(child_asset_partition)
 
@@ -639,14 +618,14 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.materialization_exists(asset_partition, None):
+                if instance_queryer.get_latest_materialization_record(asset_partition, None):
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)
         else:
             if not cursor.was_previously_materialized_or_requested(asset_key):
                 asset = AssetKeyPartitionKey(asset_key)
-                if instance_queryer.materialization_exists(asset, None):
+                if instance_queryer.get_latest_materialization_record(asset, None):
                     newly_materialized_root_asset_keys.add(asset_key)
                 else:
                     never_materialized_or_requested.add(asset)
