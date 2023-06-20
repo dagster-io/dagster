@@ -389,7 +389,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self,
         asset_key: AssetKey,
         tag_keys: AbstractSet[str],
-        dagster_event_type: DagsterEventType,
+        event_type: DagsterEventType,
         asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cusror: Optional[int] = None,

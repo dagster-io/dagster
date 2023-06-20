@@ -1728,7 +1728,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _latest_event_ids_by_partition_subquery(
         self,
         asset_key: AssetKey,
-        dagster_event_types: Sequence[DagsterEventType],
+        event_types: Sequence[DagsterEventType],
         asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cusror: Optional[int] = None,
@@ -1747,7 +1747,7 @@ class SqlEventLogStorage(EventLogStorage):
                 SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                 SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
-                    [dagster_event_type.value for dagster_event_type in dagster_event_types]
+                    [event_type.value for event_type in event_types]
                 ),
             )
         )
@@ -1801,21 +1801,21 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         tag_keys: AbstractSet[str],
-        dagster_event_type: DagsterEventType,
+        event_type: DagsterEventType,
         asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cusror: Optional[int] = None,
     ) -> Mapping[str, Mapping[str, str]]:
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.set_param(tag_keys, "tag_keys", of_type=str)
-        check.inst_param(dagster_event_type, "dagster_event_type", DagsterEventType)
+        check.inst_param(event_type, "event_type", DagsterEventType)
         check.opt_nullable_sequence_param(asset_partitions, "asset_partitions", of_type=str)
         check.opt_int_param(before_cursor, "before_cursor")
         check.opt_int_param(after_cusror, "after_cusror")
 
         latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
             asset_key=asset_key,
-            dagster_event_types=[dagster_event_type],
+            event_types=[event_type],
             asset_partitions=asset_partitions,
             before_cursor=before_cursor,
             after_cusror=after_cusror,
