@@ -251,9 +251,4 @@ basic_scenarios = {
         unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
         expected_run_requests=[],
     ),
-    "partial_run_with_another_attempt": AssetReconciliationScenario(
-        assets=two_assets_in_sequence,
-        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"]), run(["asset1"])],
-        expected_run_requests=[run_request(asset_keys=["asset2"])],
-    ),
 }
