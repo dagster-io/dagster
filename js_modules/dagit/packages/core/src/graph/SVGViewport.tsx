@@ -161,7 +161,15 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 
   render(viewport: SVGViewport) {
     return (
-      <ZoomSliderContainer id="zoom-slider-container">
+      <ZoomSliderContainer
+        id="zoom-slider-container"
+        onClick={(e: React.MouseEvent) => {
+          // Disallow click event from being handled by SVGViewport container, to avoid
+          // zoom button/slider mouse events from being treated as "background" clicks
+          // on the SVG display.
+          e.stopPropagation();
+        }}
+      >
         <WheelInstructionTooltip />
         <Box flex={{direction: 'column', alignItems: 'center'}}>
           <IconButton
