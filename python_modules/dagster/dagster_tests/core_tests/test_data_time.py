@@ -128,8 +128,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
             # rebuild the data time queryer after each run
             data_time_queryer = CachingDataTimeResolver(
-                instance_queryer=CachingInstanceQueryer(instance),
-                asset_graph=asset_graph,
+                instance_queryer=CachingInstanceQueryer(instance, asset_graph)
             )
 
             # build mapping of expected timestamps
@@ -280,8 +279,7 @@ def test_partitioned_data_time(scenario):
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
         data_time_queryer = CachingDataTimeResolver(
-            instance_queryer=CachingInstanceQueryer(instance),
-            asset_graph=partition_repo.asset_graph,
+            instance_queryer=CachingInstanceQueryer(instance, partition_repo.asset_graph),
         )
 
         data_time = data_time_queryer.get_data_time_by_key_for_record(record=record)
@@ -352,8 +350,7 @@ def run_assets(*args):
 def assert_has_current_time(key_str):
     def assert_has_current_time_fn(*, instance, evaluation_time, **kwargs):
         resolver = CachingDataTimeResolver(
-            instance_queryer=CachingInstanceQueryer(instance),
-            asset_graph=versioned_repo.asset_graph,
+            instance_queryer=CachingInstanceQueryer(instance, versioned_repo.asset_graph),
         )
         data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
         assert data_time == evaluation_time
@@ -364,8 +361,7 @@ def assert_has_current_time(key_str):
 def assert_has_index_time(key_str, source_key_str, index):
     def assert_has_index_time_fn(*, instance, times_by_key, evaluation_time, **kwargs):
         resolver = CachingDataTimeResolver(
-            instance_queryer=CachingInstanceQueryer(instance),
-            asset_graph=versioned_repo.asset_graph,
+            instance_queryer=CachingInstanceQueryer(instance, versioned_repo.asset_graph),
         )
         data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
         if index is None:

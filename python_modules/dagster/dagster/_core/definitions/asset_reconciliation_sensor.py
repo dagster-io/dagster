@@ -1095,7 +1095,9 @@ def reconcile(
 
     current_time = pendulum.now("UTC")
 
-    instance_queryer = CachingInstanceQueryer(instance=instance, evaluation_time=current_time)
+    instance_queryer = CachingInstanceQueryer(
+        instance=instance, asset_graph=asset_graph, evaluation_time=current_time
+    )
 
     target_parent_asset_keys = {
         parent
@@ -1113,9 +1115,7 @@ def reconcile(
 
     conditions_by_asset_partition_for_freshness = (
         determine_asset_partitions_to_auto_materialize_for_freshness(
-            data_time_resolver=CachingDataTimeResolver(
-                instance_queryer=instance_queryer, asset_graph=asset_graph
-            ),
+            data_time_resolver=CachingDataTimeResolver(instance_queryer=instance_queryer),
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             target_asset_keys_and_parents=target_asset_keys_and_parents,

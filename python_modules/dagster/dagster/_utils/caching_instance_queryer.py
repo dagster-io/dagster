@@ -45,8 +45,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         instance (DagsterInstance): The instance to query.
     """
 
-    def __init__(self, instance: DagsterInstance, evaluation_time: Optional[datetime] = None):
+    def __init__(
+        self,
+        instance: DagsterInstance,
+        asset_graph: AssetGraph,
+        evaluation_time: Optional[datetime] = None,
+    ):
         self._instance = instance
+        self._asset_graph = asset_graph
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
         self._latest_materialization_record_cache: Dict[
@@ -65,6 +71,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def instance(self) -> DagsterInstance:
         return self._instance
 
+    @property
+    def asset_graph(self) -> AssetGraph:
+        return self._asset_graph
+
     ####################
     # QUERY BATCHING
     ####################
@@ -73,12 +83,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]
     ):
         """For performance, batches together queries for selected assets."""
-        self._asset_partition_count_cache[None] = dict(
-            self.instance.get_materialization_count_by_partition(
-                asset_keys=asset_keys,
-                after_cursor=None,
-            )
-        )
         if after_cursor is not None:
             self._asset_partition_count_cache[after_cursor] = dict(
                 self.instance.get_materialization_count_by_partition(
