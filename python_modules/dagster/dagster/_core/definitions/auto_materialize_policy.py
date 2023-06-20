@@ -44,7 +44,6 @@ class AutoMaterializePolicy(
     For an asset / partition of an asset with a _lazy_ policy to be auto-materialized, at least one
     of the following must be true:
 
-    - it is missing
     - it has a freshness policy that requires more up-to-date data
     - any of its descendants have a freshness policy that require more up-to-date data
 
@@ -128,7 +127,7 @@ class AutoMaterializePolicy(
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
-            on_missing=True,
+            on_missing=False,
             on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
