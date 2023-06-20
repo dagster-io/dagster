@@ -833,15 +833,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return op_config.config if op_config else None
 
     @property
-    def step_materializes_assets(self) -> bool:
-        step_outputs = self.step.step_outputs
-        if len(step_outputs) == 0:
-            return False
-        else:
+    def is_sda_step(self) -> bool:
+        """Whether this step corresponds to a software define asset, inferred by presence of asset info on outputs.
+
+        note: ops can materialize assets as well.
+        """
+        for output in self.step.step_outputs:
             asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.node_handle, step_outputs[0].name
+                self.node_handle, output.name
             )
-            return asset_info is not None
+            if asset_info is not None:
+                return True
+        return False
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         self._data_version_cache[asset_key] = data_version
