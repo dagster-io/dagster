@@ -17,7 +17,6 @@ setup(
         "dbt-core",
         "dbt-postgres",
         "packaging<22.0",  # match dbt-core's requirement to workaround a resolution issue
-        "croniter<1.4.0",  # https://github.com/dagster-io/dagster/pull/14811
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
