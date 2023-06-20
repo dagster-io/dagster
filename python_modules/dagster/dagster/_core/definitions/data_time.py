@@ -111,6 +111,7 @@ class CachingDataTimeResolver:
             partition_key
             for partition_key, new_count in new_partition_counts.items()
             if new_count == total_partition_counts.get(partition_key)
+            and partitions_def.is_valid_partition_key(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions
