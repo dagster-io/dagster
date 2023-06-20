@@ -126,9 +126,9 @@ class DbtManifest:
         """Get a dbt node's dictionary representation in the manifest by its Dagster output name."""
         return self.node_info_by_output_name[output_name]
 
-    def get_node_info_by_asset_key(self, asset_key: AssetKey) -> Mapping[str, Any]:
-        """Get a dbt node's dictionary representation in the manifest by its Dagster output name."""
-        return self.node_info_by_asset_key[asset_key]
+    def get_asset_key_by_output_name(self, output_name: str) -> AssetKey:
+        """Get a dbt node's default asset key by its Dagster output name."""
+        return self.node_info_to_asset_key(self.get_node_info_by_output_name(output_name))
 
     def get_subset_selection_for_context(
         self,
@@ -269,8 +269,8 @@ class DbtCliEventMessage:
 class DbtCliTask:
     process: subprocess.Popen
     manifest: DbtManifest
-    project_dir: str
-    target_path: str
+    project_dir: Path
+    target_path: Path
 
     @classmethod
     def run(
@@ -278,8 +278,8 @@ class DbtCliTask:
         args: List[str],
         env: Dict[str, str],
         manifest: DbtManifest,
-        project_dir: str,
-        target_path: str,
+        project_dir: Path,
+        target_path: Path,
     ) -> "DbtCliTask":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -287,17 +287,17 @@ class DbtCliTask:
         # This effectively allows us to skip the parsing of the manifest, which can be expensive.
         # See https://docs.getdbt.com/reference/programmatic-invocations#reusing-objects for more
         # details.
-        partial_parse_file_path = Path(project_dir, "target", PARTIAL_PARSE_FILE_NAME)
-        full_target_path = Path(project_dir, target_path, PARTIAL_PARSE_FILE_NAME)
+        partial_parse_file_path = project_dir.joinpath("target", PARTIAL_PARSE_FILE_NAME)
+        partial_parse_destination_target_path = target_path.joinpath(PARTIAL_PARSE_FILE_NAME)
 
         if partial_parse_file_path.exists():
             logger.info(
-                f"Copying `{partial_parse_file_path}` to `{full_target_path}` to take advantage of"
-                " partial parsing."
+                f"Copying `{partial_parse_file_path}` to `{partial_parse_destination_target_path}`"
+                " to take advantage of partial parsing."
             )
 
-            full_target_path.parent.mkdir(parents=True)
-            shutil.copy(partial_parse_file_path, full_target_path)
+            partial_parse_destination_target_path.parent.mkdir(parents=True)
+            shutil.copy(partial_parse_file_path, partial_parse_destination_target_path)
 
         # Create a subprocess that runs the dbt CLI command.
         logger.info(f"Running dbt command: `{' '.join(args)}`.")
@@ -351,13 +351,18 @@ class DbtCliTask:
         """
         for raw_line in self.process.stdout or []:
             log: str = raw_line.decode().strip()
-            event = DbtCliEventMessage.from_log(log=log)
+            try:
+                event = DbtCliEventMessage.from_log(log=log)
 
-            # Re-emit the logs from dbt CLI process into stdout.
-            sys.stdout.write(str(event) + "\n")
-            sys.stdout.flush()
+                # Re-emit the logs from dbt CLI process into stdout.
+                sys.stdout.write(str(event) + "\n")
+                sys.stdout.flush()
 
-            yield event
+                yield event
+            except:
+                # If we can't parse the log, then just emit it as a raw log.
+                sys.stdout.write(log + "\n")
+                sys.stdout.flush()
 
         # Ensure that the dbt CLI process has completed.
         self.process.wait()
@@ -504,11 +509,12 @@ class DbtCli(ConfigurableResource):
             profile_args += ["--target", self.target]
 
         args = ["dbt"] + self.global_config + args + profile_args + selection_args
+        project_dir = Path(self.project_dir).resolve(strict=True)
 
         return DbtCliTask.run(
             args=args,
             env=env,
             manifest=manifest,
-            project_dir=self.project_dir,
-            target_path=target_path,
+            project_dir=project_dir,
+            target_path=project_dir.joinpath(target_path),
         )

@@ -1,4 +1,3 @@
-import datetime
 from typing import Sequence
 
 from dagster import (
@@ -33,6 +32,15 @@ from .partition_scenarios import (
     two_assets_in_sequence_one_partition,
     two_partitions_partitions_def,
 )
+
+single_lazy_asset = [asset_def("asset1", auto_materialize_policy=AutoMaterializePolicy.lazy())]
+single_lazy_asset_with_freshness_policy = [
+    asset_def(
+        "asset1",
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+    )
+]
 
 time_partitioned_eager_after_non_partitioned = [
     asset_def("unpartitioned_root_a"),
@@ -74,6 +82,16 @@ def with_auto_materialize_policy(
 
 # auto materialization policies
 auto_materialize_policy_scenarios = {
+    "auto_materialize_policy_lazy_missing": AssetReconciliationScenario(
+        assets=single_lazy_asset,
+        unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
+    "auto_materialize_policy_lazy_freshness_missing": AssetReconciliationScenario(
+        assets=single_lazy_asset_with_freshness_policy,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"])],
+    ),
     "auto_materialize_policy_eager_with_freshness_policies": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             overlapping_freshness_inf, AutoMaterializePolicy.eager()
@@ -253,28 +271,6 @@ auto_materialize_policy_scenarios = {
             "asset3": {ParentMaterializedAutoMaterializeCondition()},
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
-    ),
-    "auto_materialize_policy_lazy_with_manual_source": AssetReconciliationScenario(
-        assets=[
-            asset_def("a"),
-            asset_def("b", ["a"]),
-            asset_def("c", ["b"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
-            asset_def("d", ["c"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
-            asset_def(
-                "e",
-                ["d"],
-                auto_materialize_policy=AutoMaterializePolicy.lazy(),
-                freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-            ),
-        ],
-        unevaluated_runs=[
-            run(["a", "b", "c", "d"]),
-            run(["a", "b"]),
-            run(["a"]),
-        ],
-        asset_selection=AssetSelection.keys("c", "d", "e"),
-        between_runs_delta=datetime.timedelta(minutes=35),
-        expected_run_requests=[run_request(asset_keys=["c", "d", "e"])],
     ),
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,

@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import {
   Box,
   CursorHistoryControls,
+  Icon,
   NonIdealState,
   Page,
   Tag,
@@ -29,11 +30,13 @@ import {
   RunFilterToken,
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {AnchorButton} from '../ui/AnchorButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {
@@ -59,6 +62,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
+  const isAssetJob = isThisThingAnAssetJob(repo, pipelineName);
 
   useJobTitle(explorerPath, isJob);
 
@@ -131,8 +135,57 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
               );
             }
             const runs = pipelineRunsOrError.results;
+
+            if (!runs.length) {
+              const description = () => {
+                if (!repoAddress) {
+                  return <div>You have not launched any runs for this job.</div>;
+                }
+
+                if (isAssetJob) {
+                  return (
+                    <Box flex={{direction: 'column', gap: 12}}>
+                      <div>You have not materialized any assets with this job yet.</div>
+                      <div>
+                        <AnchorButton
+                          icon={<Icon name="materialization" />}
+                          to={workspacePathFromAddress(repoAddress, `/jobs/${pipelinePath}`)}
+                        >
+                          Materialize an asset
+                        </AnchorButton>
+                      </div>
+                    </Box>
+                  );
+                }
+
+                return (
+                  <Box flex={{direction: 'column', gap: 12}}>
+                    <div>You have not launched any runs for this job yet.</div>
+                    <div>
+                      <AnchorButton
+                        icon={<Icon name="add_circle" />}
+                        to={workspacePathFromAddress(
+                          repoAddress,
+                          `/jobs/${pipelinePath}/playground`,
+                        )}
+                      >
+                        Launch a run
+                      </AnchorButton>
+                    </div>
+                  </Box>
+                );
+              };
+
+              return (
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState icon="run" title="No runs found" description={description()} />
+                </Box>
+              );
+            }
+
             const displayed = runs.slice(0, PAGE_SIZE);
             const {hasNextCursor, hasPrevCursor} = paginationProps;
+
             return (
               <>
                 <Box

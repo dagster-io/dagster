@@ -11,7 +11,7 @@ from dagster.version import __version__ as dagster_version
 from .generate import _should_skip_file
 
 # Examples aren't that can't be downloaded from the dagster project CLI
-EXAMPLES_TO_IGNORE = ["docs_snippets", "experimental"]
+EXAMPLES_TO_IGNORE = ["docs_snippets", "experimental", "temp_pins.txt"]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [

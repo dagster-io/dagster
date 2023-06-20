@@ -38,18 +38,18 @@ from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.cached_method import cached_method
 
 
-class MappedPartitionsResult(NamedTuple):
+class UpstreamPartitionsResult(NamedTuple):
     """Represents the result of mapping a PartitionsSubset to the corresponding
     partitions in another PartitionsDefinition.
 
     partitions_subset (PartitionsSubset): The resulting partitions subset that was
         mapped to. Only contains partitions for existent partitions, filtering out nonexistent partitions.
-    invalid_partitions_mapped_to (Sequence[str]): A list containing invalid partition keys in to_partitions_def
+    required_but_nonexistent_partition_keys (Sequence[str]): A list containing invalid partition keys in to_partitions_def
         that partitions in from_partitions_subset were mapped to.
     """
 
     partitions_subset: PartitionsSubset
-    invalid_partitions_mapped_to: Sequence[str]
+    required_but_nonexistent_partition_keys: Sequence[str]
 
 
 class PartitionMapping(ABC):
@@ -181,25 +181,26 @@ class PartitionMapping(ABC):
             )
         )
 
+    @public
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> MappedPartitionsResult:
-        """Returns a MappedPartitionsResult object containing the partition keys the downstream
+    ) -> UpstreamPartitionsResult:
+        """Returns a UpstreamPartitionsResult object containing the partition keys the downstream
         partitions subset was mapped to in the upstream partitions definition.
 
-        Valid upstream partitions will be included in MappedPartitionsResult.partitions_subset.
-        Invalid upstream partitions will be included in MappedPartitionsResult.invalid_partitions_mapped_to.
+        Valid upstream partitions will be included in UpstreamPartitionsResult.partitions_subset.
+        Invalid upstream partitions will be included in UpstreamPartitionsResult.required_but_nonexistent_partition_keys.
 
         For example, if an upstream asset is time-partitioned and starts in June 2023, and the
         downstream asset is time-partitioned and starts in May 2023, this function would return a
-        MappedPartitionsResult(PartitionsSubset("2023-06-01"), invalid_partitions_mapped_to=["2023-05-01"])
+        UpstreamPartitionsResult(PartitionsSubset("2023-06-01"), required_but_nonexistent_partition_keys=["2023-05-01"])
         when downstream_partitions_subset contains 2023-05-01 and 2023-06-01.
         """
-        return MappedPartitionsResult(
+        return UpstreamPartitionsResult(
             self.get_upstream_partitions_for_partitions(
                 downstream_partitions_subset,
                 upstream_partitions_def,
