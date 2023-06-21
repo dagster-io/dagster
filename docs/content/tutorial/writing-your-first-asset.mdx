@@ -47,7 +47,9 @@ import requests
 def topstory_ids(): # turn it into a function
     newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     top_new_story_ids = requests.get(newstories_url).json()[:100]
-    return top_new_story_ids # return the data
+    
+    with open("topstory_ids.txt", "w") as output_file:
+        output_file.write(",".join([str(i) for i in top_new_story_ids]))
 ```
 
 Now, add the <PyObject module="dagster" object="asset" decorator/> decorator from the `dagster` library to the function:
@@ -60,7 +62,9 @@ from dagster import asset # import the `dagster` library
 def topstory_ids():
     newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     top_new_story_ids = requests.get(newstories_url).json()[:100]
-    return top_new_story_ids
+    
+    with open("topstory_ids.txt", "w") as output_file:
+        output_file.write(",".join([str(i) for i in top_new_story_ids]))
 ```
 
 That's all it takes to get started 🎉. Dagster now knows that this is an asset. In future sections, you'll see how you can add metadata, schedule when to refresh the asset, and more.
@@ -94,7 +98,7 @@ Observe that Dagster has detected your `topstory_ids` asset, but it says that th
 
 ## Step 2: Materialize your asset
 
-To **materialize** a Software-defined asset means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration. These assets are stored in places like databases or cloud storage. Many destinations are supported out of the box through another Dagster feature: [I/O managers](/concepts/io-management/io-managers). If an asset doesn't have an I/O manager configured, the asset is saved in your local file system.
+To **materialize** a Software-defined asset means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration. These assets are stored in places like databases or cloud storage.
 
 To manually materialize an asset in the UI, click the **Materialize** button in the upper right corner of the screen. This will create a Dagster run that will materialize your assets.
 

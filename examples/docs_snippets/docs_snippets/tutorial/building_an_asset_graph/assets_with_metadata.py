@@ -2,13 +2,12 @@
 import base64
 from io import BytesIO
 
+import duckdb
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
 from dagster import (
-    AssetKey,
-    DagsterInstance,
     MetadataValue,
     Output,
     asset,
@@ -19,11 +18,14 @@ from dagster import (
 
 
 @asset
-def topstories(topstory_ids):
+def topstories(context, topstory_ids):
     logger = get_dagster_logger()
 
+    with open("topstory_ids.txt", "r") as input_file:
+        ids = input_file.read().split(",")
+
     results = []
-    for item_id in topstory_ids:
+    for item_id in ids:
         item = requests.get(
             f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         ).json()
@@ -34,15 +36,13 @@ def topstories(topstory_ids):
 
     df = pd.DataFrame(results)
 
-    return Output(  # The return value is updated to wrap it in `Output` class
-        value=df,  # The original df is passed in with the `value` parameter
-        metadata={
-            "num_records": len(df),  # Metadata can be any key-value pair
-            "preview": MetadataValue.md(df.head().to_markdown()),
-            # The `MetadataValue` class has useful static methods to build Metadata
-        },
-    )
+    conn = duckdb.connect('analytics.db')
+    conn.execute("create or replace table topstories as select * from df")
 
+    context.add_output_metadata({
+        "preview": MetadataValue.md(df.head().to_markdown()),
+        "num_stories": MetadataValue.int(len(df)),
+    })
 
 # end_topstories_asset_with_metadata
 

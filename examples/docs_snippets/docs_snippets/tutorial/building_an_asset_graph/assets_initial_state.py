@@ -1,5 +1,6 @@
 # start_topstories_asset
 import pandas as pd  # Add new imports to the top of `assets.py`
+import duckdb
 import requests
 
 from dagster import asset
@@ -7,8 +8,11 @@ from dagster import asset
 
 @asset
 def topstories(topstory_ids):  # this asset is dependent on topstory_ids
+    with open("topstory_ids.txt", "r") as input_file:
+        ids = input_file.read().split(",")
+
     results = []
-    for item_id in topstory_ids:
+    for item_id in ids:
         item = requests.get(
             f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         ).json()
@@ -17,9 +21,8 @@ def topstories(topstory_ids):  # this asset is dependent on topstory_ids
         if len(results) % 20 == 0:
             print(f"Got {len(results)} items so far.")  # noqa: T201
 
-    df = pd.DataFrame(results)
-
-    return df
+    conn = duckdb.connect('analytics.db')
+    conn.execute("create or replace table topstories as select * from df")
 
 
 # end_topstories_asset
@@ -45,7 +48,8 @@ def most_frequent_words(topstories):
         for pair in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]
     }
 
-    return top_words
+    with open("most_frequent_words.txt", "w") as f:
+        f.write(str(top_words))
 
 
 # end_most_frequent_words_asset

@@ -53,14 +53,6 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Part 6: Saving your data",
-        "path": "/tutorial/saving-your-data"
-      },
-      {
-        "title": "Part 7: Managing your own I/O",
-        "path": "/tutorial/managing-your-own-io"
-      },
-      {
         "title": "Part 8: Connecting to external services",
         "path": "/tutorial/connecting-to-external-services"
       },

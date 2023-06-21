@@ -26,8 +26,12 @@ Copy and paste the completed asset code below into `assets.py`:
   <code>assets.py</code>
 </Note>
 
+
+TODO: Talk about how you'll use duckdb to store the data
+
 ```python file=/tutorial/building_an_asset_graph/assets_initial_state.py startafter=start_topstories_asset endbefore=end_topstories_asset
 import pandas as pd  # Add new imports to the top of `assets.py`
+import duckdb
 import requests
 
 from dagster import asset
@@ -45,9 +49,8 @@ def topstories(topstory_ids):  # this asset is dependent on topstory_ids
         if len(results) % 20 == 0:
             print(f"Got {len(results)} items so far.")  # noqa: T201
 
-    df = pd.DataFrame(results)
-
-    return df
+    conn = duckdb.connect('analytics.db')
+    conn.execute("create or replace table topstories as select * from df")
 ```
 
 Dependencies between assets are defined by adding the asset name as a parameter to the dependent asset's function. In this case, `topstory_ids` (the list of IDs) is a dependency of `topstories` (the DataFrame).
@@ -57,8 +60,6 @@ In your browser, navigate to Dagster's UI (`localhost:3000`) and look at the ass
 ### Flexibility with asset dependencies
 
 If this syntax is too magical for you, an asset's dependencies can be explicitly defined using a parameter called `ins` in the <PyObject module="dagster" object="asset" displayText="@asset"/> decorator. To learn about this syntax, refer to the [Defining explicit dependencies section of the Assets concept page](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
-
-Other times, it's impossible to contain the business logic in a function or you'll never want to load the data into memory. In situations like these, you can return no data. Dependencies can also be made without loading data in the dependent asset's function. Refer to the guide on [Assets without I/O](/guides/dagster/non-argument-deps) for more information about these patterns.
 
 ### Logging during asset materialization
 
@@ -84,9 +85,8 @@ def topstories(topstory_ids):
         if len(results) % 20 == 0:
             logger.info(f"Got {len(results)} items so far.")
 
-    df = pd.DataFrame(results)
-
-    return df
+        conn = duckdb.connect('analytics.db')
+        conn.execute("create or replace table topstories as select * from df")
 ```
 
 For more information about loggers, such as the different types of logging, refer to the [Logging documentation](/concepts/logging/loggers).
