@@ -77,7 +77,7 @@ export const LatestMaterializationMetadata: React.FC<{
                         icon={<Icon name="wysiwyg" />}
                         onClick={() => setShowingLogs(true)}
                       >
-                        View step logs
+                        View logs
                       </Button>
                     </>
                   )}
