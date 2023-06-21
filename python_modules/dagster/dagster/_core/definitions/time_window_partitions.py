@@ -725,12 +725,12 @@ class TimeWindowPartitionsDefinition(
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
 
-    def is_valid_partition_key(self, partition_key: str) -> bool:
+    def is_valid_time_partition_key_format(self, partition_key: str) -> bool:
         try:
             partition_time = pendulum.instance(
                 datetime.strptime(partition_key, self.fmt), tz=self.timezone
             )
-            return partition_time >= self.start
+            return partition_time >= self.start and self.has_partition_key(partition_key)
         except ValueError:
             return False
 

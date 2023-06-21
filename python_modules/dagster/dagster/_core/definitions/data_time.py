@@ -69,7 +69,7 @@ class CachingDataTimeResolver:
         partition_subset = partitions_def.empty_subset().with_partition_keys(
             partition_key
             for partition_key in self._instance_queryer.get_materialized_partitions(asset_key)
-            if partitions_def.is_valid_partition_key(partition_key)
+            if partitions_def.is_valid_time_partition_key_format(partition_key)
         )
 
         if not isinstance(partition_subset, TimeWindowPartitionsSubset):
@@ -111,7 +111,7 @@ class CachingDataTimeResolver:
             partition_key
             for partition_key, new_count in new_partition_counts.items()
             if new_count == total_partition_counts.get(partition_key)
-            and partitions_def.is_valid_partition_key(partition_key)
+            and partitions_def.is_valid_time_partition_key_format(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions

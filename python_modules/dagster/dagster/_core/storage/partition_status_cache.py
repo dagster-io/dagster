@@ -202,7 +202,7 @@ def get_validated_partition_keys(
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Unexpected partitions definition type {partitions_def}")
         validated_partitions = {
-            pk for pk in partition_keys if partitions_def.is_valid_partition_key(pk)
+            pk for pk in partition_keys if partitions_def.is_valid_time_partition_key_format(pk)
         }
     return validated_partitions
 

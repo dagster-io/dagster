@@ -356,6 +356,34 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
         return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
 
 
+class CachingPartitionLoader(CachingDynamicPartitionsLoader):
+    def __init__(self, instance: DagsterInstance, current_time: datetime):
+        super().__init__(instance)
+        self._current_time = current_time
+        self._partition_keys_by_partitions_def = {}
+
+    def _fetch_partition_keys(self, partitions_def: PartitionsDefinition) -> Sequence[str]:
+        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            return partitions_def.get_partition_keys(
+                self._current_time, dynamic_partitions_store=self._instance
+            )
+
+        elif partitions_def in self._partition_keys_by_partitions_def:
+            self._partition_keys_by_partitions_def[
+                partitions_def
+            ] = partitions_def.get_partition_keys(self._current_time)
+
+        return self._partition_keys_by_partitions_def[partitions_def]
+
+    def get_partition_keys(self, partitions_def: PartitionsDefinition) -> Sequence[str]:
+        return self._fetch_partition_keys(partitions_def)
+
+    def has_partition_key(self, partitions_def: PartitionsDefinition, partition_key: str) -> bool:
+        return partition_key in self._fetch_partition_keys(partitions_def)
+
+
 class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
