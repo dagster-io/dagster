@@ -28,22 +28,22 @@ def lazy_downstream_1(lazy_upstream):
 daily_partitions_def = DailyPartitionsDefinition(start_date="2023-02-01")
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), partitions_def=daily_partitions_def)
 def eager_upstream_partitioned():
     return 3
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), partitions_def=daily_partitions_def)
 def eager_downstream_1_partitioned(eager_upstream_partitioned):
     return eager_upstream_partitioned + 1
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
+@asset(auto_materialize_policy=AutoMaterializePolicy.lazy(), partitions_def=daily_partitions_def)
 def lazy_upstream_partitioned():
     return 1
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
+@asset(auto_materialize_policy=AutoMaterializePolicy.lazy(), partitions_def=daily_partitions_def)
 def lazy_downstream_1_partitioned(lazy_upstream_partitioned):
     return lazy_upstream_partitioned + 1
 
