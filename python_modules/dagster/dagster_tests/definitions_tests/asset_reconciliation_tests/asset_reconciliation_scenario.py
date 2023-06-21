@@ -476,9 +476,9 @@ def multi_asset_def(
     return _assets
 
 
-def observable_source_asset_def(key: str):
+def observable_source_asset_def(key: str, changes: bool = True):
     @observable_source_asset(name=key)
     def _observable():
-        return DataVersion(str(random.random()))
+        return DataVersion(str(random.random())) if changes else DataVersion("the_version")
 
     return _observable

@@ -17,6 +17,7 @@ import pendulum
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     DataVersion,
+    extract_data_provenance_from_entry,
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -345,8 +346,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         observable_source_asset_key: AssetKey,
         after_cursor: Optional[int] = None,
     ) -> Optional[int]:
-        """Returns the storage id of the latest asset observation of the given observable source
-        asset key after the specified cursor, or None if no such observation exists.
+        """Returns the storage id of the latest asset observation if it is a different version
+        from the latest observation before the cursor, or None if no such observation exists.
 
         Args:
             observable_source_asset_key (AssetKeyPartitionKey): The observable source asset to query.
@@ -370,12 +371,21 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             else None
         )
 
-        next_version_record = self.next_version_record(
+        latest_version_record = self.get_observation_record(
             asset_key=observable_source_asset_key,
-            after_cursor=after_cursor,
-            data_version=previous_version,
+            before_cursor=None,
         )
-        return next_version_record.storage_id if next_version_record else None
+        if (
+            latest_version_record is None
+            or extract_data_version_from_entry(latest_version_record.event_log_entry)
+            == previous_version
+        ):
+            return None
+        return (
+            latest_version_record.storage_id
+            if after_cursor is None or latest_version_record.storage_id > after_cursor
+            else None
+        )
 
     def _new_version_of_source_exists_after_asset_partition(
         self,
@@ -392,19 +402,31 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             observable_source_asset_key (AssetKeyPartitionKey): The observable source asset.
             asset_partition (AssetKeyPartitionKey): The downstream asset partition.
         """
-        # TODO: this assumes that each observation record will have a distinct data version, which
-        # is not always the case. In the "next_version_record" implementation, we have the benefit
-        # of having an explicit start cursor, but here the corresponding implementation would require
-        # loading all historical observation records. We'll have to do our own pagination here.
         latest_observation_record = self.get_observation_record(
             asset_key=observable_source_asset_key,
             before_cursor=None,
         )
         if latest_observation_record is None:
             return False
-        return not self.materialization_exists(
+        # fast check filters out cases where we know that the asset partition is newer than its
+        # parent
+        elif self.materialization_exists(
             asset_partition, after_cursor=latest_observation_record.storage_id
+        ):
+            return False
+
+        # explicitly check the data versions
+        latest_materialization_record = self.get_latest_materialization_record(asset_partition)
+        if latest_materialization_record is None:
+            return True
+        data_provenance = extract_data_provenance_from_entry(
+            latest_materialization_record.event_log_entry
         )
+        if data_provenance is None:
+            return True
+        return data_provenance.input_data_versions.get(
+            observable_source_asset_key
+        ) != extract_data_version_from_entry(latest_observation_record.event_log_entry)
 
     ####################
     # RUNS
