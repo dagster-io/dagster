@@ -414,6 +414,7 @@ def multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -442,8 +443,10 @@ def multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are upstream
-            dependencies, but do not pass an input to the multi_asset.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use upstream_assets instead.
+            Set of asset keys that are upstream dependencies, but do not pass an input to the multi_asset.
+        upstream_assets (Optional[Set[Union[AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
+            dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -493,7 +496,7 @@ def multi_asset(
                     "asset1": AssetOut(),
                     "asset2": AssetOut(),
                 },
-                non_argument_deps={"asset0"},
+                upstream_assets={"asset0"},
             )
             def my_function():
                 asset0_value = load(path="asset0")
@@ -534,11 +537,19 @@ def multi_asset(
                 additional_warn_txt="Use AssetOut instead.",
             )
 
+    if non_argument_deps is not None and upstream_assets is not None:
+        raise DagsterInvalidDefinitionError(
+            "Cannot specify both non_argument_deps and upstream_assets. Use only"
+            " upstream_assets instead."
+        )
+
+    upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+    if non_argument_deps is not None:
+        deprecation_warning("non_argument_deps", "X.X.X", "use parameter upstream_assets instead")
+        upstream_asset_deps = {dep for dep in non_argument_deps}
+
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
-        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = (
-            {dep for dep in non_argument_deps} if non_argument_deps is not None else None
-        )
         asset_ins = build_asset_ins(
             fn, ins or {}, upstream_assets=_make_asset_keys(upstream_asset_deps)
         )
