@@ -484,7 +484,7 @@ def test_basic_enum_override_with_resource_configured_at_launch() -> None:
 
     result_two = materialize(
         [asset_with_resource],
-        resources={"my_resource": MyResource.configure_at_launch(my_enum=AnotherEnum.A)},
+        resources={"my_resource": MyResource.partial(my_enum=AnotherEnum.A)},
         run_config={"resources": {"my_resource": {"config": {"my_enum": "B"}}}},
     )
 

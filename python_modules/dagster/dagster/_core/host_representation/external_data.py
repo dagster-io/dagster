@@ -36,7 +36,11 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
-from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
+from dagster._config.snap import (
+    ConfigFieldSnap,
+    ConfigSchemaSnapshot,
+    snap_from_config_type,
+)
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
@@ -48,7 +52,9 @@ from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
+from dagster._core.definitions.definition_config_schema import (
+    ConfiguredDefinitionConfigSchema,
+)
 from dagster._core.definitions.dependency import (
     GraphNode,
     Node,
@@ -64,9 +70,14 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    ScheduleType,
+)
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
@@ -78,7 +89,9 @@ from dagster._core.definitions.sensor_definition import (
     SensorDefinition,
     SensorType,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
@@ -124,7 +137,9 @@ class ExternalRepositoryData(
             cls,
             name=check.str_param(name, "name"),
             external_schedule_datas=check.sequence_param(
-                external_schedule_datas, "external_schedule_datas", of_type=ExternalScheduleData
+                external_schedule_datas,
+                "external_schedule_datas",
+                of_type=ExternalScheduleData,
             ),
             external_partition_set_datas=check.sequence_param(
                 external_partition_set_datas,
@@ -148,7 +163,9 @@ class ExternalRepositoryData(
                 external_job_refs, "external_job_refs", of_type=ExternalJobRef
             ),
             external_resource_data=check.opt_nullable_sequence_param(
-                external_resource_data, "external_resource_data", of_type=ExternalResourceData
+                external_resource_data,
+                "external_resource_data",
+                of_type=ExternalResourceData,
             ),
             utilized_env_vars=check.opt_nullable_mapping_param(
                 utilized_env_vars,
@@ -379,7 +396,10 @@ class ExternalPresetData(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
     skip_when_empty_fields={"default_status"},
 )
 class ExternalScheduleData(
@@ -436,7 +456,10 @@ class ExternalScheduleData(
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionErrorData(
-    NamedTuple("_ExternalScheduleExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalScheduleExecutionErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalScheduleExecutionErrorData, cls).__new__(
@@ -479,7 +502,10 @@ class ExternalSensorMetadata(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
 class ExternalSensorData(
@@ -559,7 +585,10 @@ class ExternalRepositoryErrorData(
 
 @whitelist_for_serdes
 class ExternalSensorExecutionErrorData(
-    NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalSensorExecutionErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalSensorExecutionErrorData, cls).__new__(
@@ -589,7 +618,10 @@ class ExternalExecutionParamsData(
 
 @whitelist_for_serdes
 class ExternalExecutionParamsErrorData(
-    NamedTuple("_ExternalExecutionParamsErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalExecutionParamsErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalExecutionParamsErrorData, cls).__new__(
@@ -686,7 +718,8 @@ class ExternalStaticPartitionsDefinitionData(
 ):
     def __new__(cls, partition_keys: Sequence[str]):
         return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
-            cls, partition_keys=check.sequence_param(partition_keys, "partition_keys", str)
+            cls,
+            partition_keys=check.sequence_param(partition_keys, "partition_keys", str),
         )
 
     def get_partitions_definition(self):
@@ -801,7 +834,8 @@ class ExternalPartitionNamesData(
 @whitelist_for_serdes
 class ExternalPartitionConfigData(
     NamedTuple(
-        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
+        "_ExternalPartitionConfigData",
+        [("name", str), ("run_config", Mapping[str, object])],
     )
 ):
     def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
@@ -828,7 +862,11 @@ class ExternalPartitionTagsData(
 class ExternalPartitionExecutionParamData(
     NamedTuple(
         "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
+        [
+            ("name", str),
+            ("tags", Mapping[str, object]),
+            ("run_config", Mapping[str, object]),
+        ],
     )
 ):
     def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
@@ -851,14 +889,19 @@ class ExternalPartitionSetExecutionParamData(
         return super(ExternalPartitionSetExecutionParamData, cls).__new__(
             cls,
             partition_data=check.sequence_param(
-                partition_data, "partition_data", of_type=ExternalPartitionExecutionParamData
+                partition_data,
+                "partition_data",
+                of_type=ExternalPartitionExecutionParamData,
             ),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionExecutionErrorData(
-    NamedTuple("_ExternalPartitionExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalPartitionExecutionErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
@@ -1013,7 +1056,10 @@ class ExternalResourceData(
             ),
             nested_resources=dict(
                 check.opt_mapping_param(
-                    nested_resources, "nested_resources", key_type=str, value_type=NestedResource
+                    nested_resources,
+                    "nested_resources",
+                    key_type=str,
+                    value_type=NestedResource,
                 )
                 or {}
             ),
@@ -1137,7 +1183,9 @@ class ExternalAssetNode(
             ),
             job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
             partitions_def_data=check.opt_inst_param(
-                partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
+                partitions_def_data,
+                "partitions_def_data",
+                ExternalPartitionsDefinitionData,
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
@@ -1154,7 +1202,9 @@ class ExternalAssetNode(
                 atomic_execution_unit_id, "atomic_execution_unit_id"
             ),
             required_top_level_resources=check.opt_sequence_param(
-                required_top_level_resources, "required_top_level_resources", of_type=str
+                required_top_level_resources,
+                "required_top_level_resources",
+                of_type=str,
             ),
             auto_materialize_policy=check.opt_inst_param(
                 auto_materialize_policy,
@@ -1527,7 +1577,8 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
 
 
 def _get_nested_resources_map(
-    resource_datas: Mapping[str, ResourceDefinition], resource_key_mapping: Mapping[int, str]
+    resource_datas: Mapping[str, ResourceDefinition],
+    resource_key_mapping: Mapping[int, str],
 ) -> Mapping[str, Mapping[str, NestedResource]]:
     out_map: Mapping[str, Mapping[str, NestedResource]] = {}
     for resource_name, resource_def in resource_datas.items():
@@ -1553,7 +1604,8 @@ def _get_nested_resources(
         return {
             k: (
                 NestedResource(
-                    NestedResourceType.TOP_LEVEL, resource_key_mapping[id(nested_resource)]
+                    NestedResourceType.TOP_LEVEL,
+                    resource_key_mapping[id(nested_resource)],
                 )
                 if id(nested_resource) in resource_key_mapping
                 else NestedResource(
@@ -1584,10 +1636,20 @@ def external_resource_data_from_def(
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
+    resource_type_def = resource_def
+    if isinstance(resource_type_def, ResourceWithKeyMapping):
+        resource_type_def = resource_type_def.wrapped_resource
+    resource_type = str(type(resource_type_def))[8:-2]
+
     # Once values on a resource object are bound, the config schema for those fields is no
     # longer visible. We walk up the list of parent schemas to find the base, unconfigured
     # schema so we can display all fields in the UI.
+    from dagster._config.pythonic_config import ConfigurableResourceFactory
+
     unconfigured_config_schema = resource_def.config_schema
+    if isinstance(resource_type_def, ConfigurableResourceFactory):
+        unconfigured_config_schema = resource_type_def.base_config_schema
+
     while (
         isinstance(unconfigured_config_schema, ConfiguredDefinitionConfigSchema)
         and unconfigured_config_schema.parent_def.config_schema
@@ -1596,7 +1658,6 @@ def external_resource_data_from_def(
 
     config_type = check.not_none(unconfigured_config_schema.config_type)
     unconfigured_config_type_snap = snap_from_config_type(config_type)
-
     config_schema_default = cast(
         Mapping[str, Any],
         json.loads(resource_def.config_schema.default_value_as_json_str)
@@ -1660,7 +1721,9 @@ def external_resource_data_from_def(
     )
 
 
-def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ExternalScheduleData:
+def external_schedule_data_from_def(
+    schedule_def: ScheduleDefinition,
+) -> ExternalScheduleData:
     check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
     return ExternalScheduleData(
         name=schedule_def.name,

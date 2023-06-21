@@ -80,6 +80,7 @@ def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True)
                     printer,
                     with_lines=with_lines,
                 )
+                printer.append(field_snap.default_value_as_json_str or "")
                 line_break_fn("")
 
         printer.append("}")

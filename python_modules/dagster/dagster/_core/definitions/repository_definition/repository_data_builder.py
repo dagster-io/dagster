@@ -66,8 +66,6 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
     resource's default config. This is used to extract environment variables from the top-level
     resources in a Definitions object.
     """
-    from dagster._core.execution.build_resources import wrap_resource_for_execution
-
     config_schema_default = cast(
         Mapping[str, Any],
         json.loads(resource_def.config_schema.default_value_as_json_str)
@@ -84,11 +82,14 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
             ConfigurableResourceFactoryResourceDefinition,
         ),
     ):
-        nested_resources = resource_def.inner_resource.nested_resources
-        for nested_resource in nested_resources.values():
-            env_vars = env_vars.union(
-                _env_vars_from_resource_defaults(wrap_resource_for_execution(nested_resource))
-            )
+        pass
+        # nested_resources = resource_def.inner_resource._configurable_resource_cls.separate_resource_params(
+        #     resource_def.inner_resource.__dict__
+        # ).resources
+        # for nested_resource in nested_resources.values():
+        #     env_vars = env_vars.union(
+        #         _env_vars_from_resource_defaults(wrap_resource_for_execution(nested_resource))
+        #     )
 
     return env_vars
 

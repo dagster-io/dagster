@@ -35,8 +35,7 @@ from dagster._config.config_type import (
     ConfigType,
     Noneable,
 )
-from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.post_process import resolve_defaults
+from dagster._config.field_utils import _ConfigHasFields, config_dictionary_from_values
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
 )
@@ -55,7 +54,10 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._core.execution.context.init import (
+    InitResourceContext,
+    build_init_resource_context,
+)
 from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
 
 from .attach_other_object_to_context import (
@@ -98,7 +100,11 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-from .typing_utils import BaseConfigMeta, BaseResourceMeta, LateBoundTypesForResourceTypeChecking
+from .typing_utils import (
+    BaseConfigMeta,
+    BaseResourceMeta,
+    LateBoundTypesForResourceTypeChecking,
+)
 from .utils import safe_is_subclass
 
 Self = TypeVar("Self", bound="ConfigurableResourceFactory")
@@ -376,45 +382,56 @@ class PermissiveConfig(Config):
         extra = "allow"
 
 
-# This is from https://github.com/dagster-io/dagster/pull/11470
-def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any) -> Field:
-    # This work by validating the top-level config and then
-    # just setting it at that top-level field. Config fields
-    # can actually take nested values so we only need to set it
-    # at a single level
+def _apply_defaults_to_schema_field(old_field: Field, additional_default_values: Any) -> Field:
+    """Given a config Field and a set of default values (usually a dictionary or raw default value),
+    return a new Field with the default values applied to it (and recursively to any sub-fields).
+    """
+    # If the field has subfields and the default value is a dictionary, iterate
+    # over the subfields and apply the defaults to them.
+    if isinstance(old_field.config_type, _ConfigHasFields) and isinstance(
+        additional_default_values, dict
+    ):
+        updated_sub_fields = {
+            k: _apply_defaults_to_schema_field(
+                sub_field, additional_default_values.get(k, FIELD_NO_DEFAULT_PROVIDED)
+            )
+            for k, sub_field in old_field.config_type.fields.items()
+        }
 
-    evr = validate_config(field.config_type, additional_default_values)
-
-    if not evr.success:
-        raise DagsterInvalidConfigError(
-            "Incorrect values passed to .configured",
-            evr.errors,
-            additional_default_values,
+        # We also apply a new default value to the field if all of its subfields have defaults
+        new_default = (
+            old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
         )
+        if all(
+            sub_field.default_provided or not sub_field.is_required
+            for sub_field in updated_sub_fields.values()
+        ):
+            new_default = {
+                **additional_default_values,
+                **{k: v.default_value for k, v in updated_sub_fields.items() if v.default_provided},
+            }
 
-    if field.default_provided:
-        # In the case where there is already a default config value
-        # we can apply "additional" defaults by actually invoking
-        # the config machinery. Meaning we pass the new_additional_default_values
-        # and then resolve the existing defaults over them. This preserves the default
-        # values that are not specified in new_additional_default_values and then
-        # applies the new value as the default value of the field in question.
-        defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
-        check.invariant(
-            defaults_processed_evr.success,
-            "Since validation passed, this should always work.",
+        return Field(
+            config=old_field.config_type.__class__(fields=updated_sub_fields),
+            default_value=new_default,
+            is_required=new_default == FIELD_NO_DEFAULT_PROVIDED and old_field.is_required,
+            description=old_field.description,
         )
-        default_to_pass = defaults_processed_evr.value
-        return copy_with_default(field, default_to_pass)
     else:
-        return copy_with_default(field, additional_default_values)
+        return copy_with_default(old_field, additional_default_values)
 
 
 def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
+    """Copies a Field, but replaces the default value with the provided value.
+    Also updates the is_required flag depending on whether the new config value is
+    actually specified.
+    """
     return Field(
         config=old_field.config_type,
-        default_value=new_config_value,
-        is_required=False,
+        default_value=old_field.default_value
+        if new_config_value == FIELD_NO_DEFAULT_PROVIDED and old_field.default_provided
+        else new_config_value,
+        is_required=new_config_value == FIELD_NO_DEFAULT_PROVIDED and old_field.is_required,
         description=old_field.description,
     )
 
@@ -440,6 +457,11 @@ def _resolve_required_resource_keys_for_resource(
     if isinstance(resource, AllowDelayedDependencies):
         return resource._resolve_required_resource_keys(resource_id_to_key_mapping)  # noqa: SLF001
     return resource.required_resource_keys
+
+
+class SeparatedResourceParams(NamedTuple):
+    resources: Dict[str, Any]
+    non_resources: Dict[str, Any]
 
 
 class AllowDelayedDependencies:
@@ -486,6 +508,10 @@ class AllowDelayedDependencies:
             nested_resource_required_keys
         )
         return out
+
+    @abstractmethod
+    def separate_resource_params(self, data: Dict[str, Any]) -> SeparatedResourceParams:
+        raise NotImplementedError()
 
 
 class InitResourceContextWithKeyMapping(InitResourceContext):
@@ -649,6 +675,9 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
     def _is_dagster_maintained(self) -> bool:
         return self._dagster_maintained
 
+    def separate_resource_params(self, data: Dict[str, Any]) -> SeparatedResourceParams:
+        return self.configurable_resource_cls.separate_resource_params(data)
+
 
 class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
     def __init__(
@@ -699,6 +728,9 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         self, resource_mapping: Mapping[int, str]
     ) -> AbstractSet[str]:
         return self._resolve_resource_keys(resource_mapping)
+
+    def separate_resource_params(self, data: Dict[str, Any]) -> SeparatedResourceParams:
+        return self.configurable_resource_cls.separate_resource_params(data)
 
 
 class ConfigurableResourceFactoryState(NamedTuple):
@@ -856,6 +888,9 @@ class ConfigurableResourceFactory(
         """
         raise NotImplementedError()
 
+    def base_config_schema(self) -> DefinitionConfigSchema:
+        return DefinitionConfigSchema(self._state__internal__.schema)
+
     @property
     def nested_resources(
         self,
@@ -868,6 +903,13 @@ class ConfigurableResourceFactory(
         set at runtime.
         """
         return PartialResource(cls, data=kwargs)
+
+    @classmethod
+    def partial(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
+        """Returns a partially initialized copy of the resource, with remaining config fields
+        set at runtime.
+        """
+        return PartialResource(cls, data=kwargs, is_partial=True)
 
     def _with_updated_values(
         self, values: Optional[Mapping[str, Any]]
@@ -1015,7 +1057,8 @@ class ConfigurableResourceFactory(
         return self.from_resource_context(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                    self._config_schema.config_type,
+                    self._convert_to_config_dictionary(),
                 ).value
             )
         )
@@ -1075,6 +1118,28 @@ class ConfigurableResourceFactory(
             context
         ) as value:
             yield value
+
+    @classmethod
+    def separate_resource_params_on_cls(cls, data: Dict[str, Any]) -> SeparatedResourceParams:
+        """Separates out the key/value inputs of fields in a structured config Resource class which
+        are marked as resources (ie, using ResourceDependency) from those which are not.
+        """
+        keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
+        data_with_annotation: List[Tuple[str, Any, Type]] = [
+            (k, v, keys_by_alias[k].annotation) for k, v in data.items() if k in keys_by_alias
+        ]
+        out = SeparatedResourceParams(
+            resources={
+                k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)
+            },
+            non_resources={
+                k: v for k, v, t in data_with_annotation if not _is_annotated_as_resource_type(t)
+            },
+        )
+        return out
+
+    def separate_resource_params(self, data: Dict[str, Any]) -> SeparatedResourceParams:
+        return self.__class__.separate_resource_params_on_cls(data)
 
 
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
@@ -1151,10 +1216,30 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         self,
         resource_cls: Type[ConfigurableResourceFactory[TResValue]],
         data: Dict[str, Any],
+        is_partial: bool = False,
     ):
-        resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
+        (
+            resource_pointers,
+            data_without_resources,
+        ) = resource_cls.separate_resource_params_on_cls(data)
+
+        if not is_partial and data_without_resources:
+            resource_name = resource_cls.__name__
+            parameter_names = list(data_without_resources.keys())
+            raise DagsterInvalidDefinitionError(
+                f"'{resource_name}.configure_at_launch' was called but non-resource parameters"
+                f" were passed: {parameter_names}. Did you mean to call '{resource_name}.partial'"
+                " instead?"
+            )
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
+
+        schema = infer_schema_from_config_class(
+            resource_cls, fields_to_omit=set(resource_pointers.keys())
+        )
+
+        resolved_config_dict = config_dictionary_from_values(data_without_resources, schema)
+        curried_schema = _curry_config_schema(schema, resolved_config_dict)
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(
@@ -1168,10 +1253,11 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
             nested_partial_resources={
                 k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
-            config_schema=infer_schema_from_config_class(
-                resource_cls, fields_to_omit=set(resource_pointers.keys())
-            ),
+            # config_schema=infer_schema_from_config_class(
+            #     resource_cls, fields_to_omit=set(resource_pointers.keys())
+            # ),
             resource_fn=resource_fn,
+            config_schema=curried_schema.as_field(),
             description=resource_cls.__doc__,
             nested_resources={k: v for k, v in resource_pointers.items()},
         )
@@ -1182,6 +1268,9 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         self,
     ) -> Mapping[str, Any]:
         return self._state__internal__.nested_partial_resources
+
+    def separate_resource_params(self, data: Dict[str, Any]) -> SeparatedResourceParams:
+        return self.resource_cls.separate_resource_params_on_cls(data)
 
     @property
     def nested_resources(
@@ -1771,11 +1860,6 @@ def infer_schema_from_config_class(
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
 
     return Field(config=shape_cls(fields), description=description or docstring)
-
-
-class SeparatedResourceParams(NamedTuple):
-    resources: Dict[str, Any]
-    non_resources: Dict[str, Any]
 
 
 def _is_annotated_as_resource_type(annotation: Type) -> bool:
