@@ -31,7 +31,7 @@ raw_data_assets = load_assets_from_package_module(
     raw_data,
     group_name="raw_data",
     # all of these assets live in the duckdb database, under the schema raw_data
-    key_prefix=["duckdb", "raw_data"],
+    key_prefix=["duckdb"],
 )
 
 forecasting_assets = load_assets_from_package_module(

@@ -15,9 +15,14 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
+    _check as check,
     get_dagster_logger,
 )
 from dagster._annotations import experimental
+from dagster._core.definitions.events import (
+    CoercibleToAssetKeyPrefix,
+    check_opt_coercible_to_asset_key_prefix_param,
+)
 from dagster._core.errors import DagsterInvalidInvocationError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
@@ -138,38 +143,59 @@ class DbtManifest:
             raise DagsterInvalidInvocationError(
                 f"Could not find a dbt node with unique_id: {unique_id}. A unique ID consists of"
                 " the node type (model, source, seed, etc.), project name, and node name in a"
-                " dot-separated string. For example: model.my_project.my_model"
+                " dot-separated string. For example: model.my_project.my_model\n For more"
+                " information on the unique ID structure:"
+                " https://docs.getdbt.com/reference/artifacts/manifest-json"
             )
 
         return self.node_info_to_asset_key(node_info)
 
-    def get_asset_keys_for_dbt_source(self, source_name: str) -> Sequence[AssetKey]:
-        sources = {
-            key
-            for key, value in self.raw_manifest["sources"].items()
-            if value["source_name"] == source_name
-        }
+    def get_asset_keys_by_output_name_for_source(self, source_name: str) -> Mapping[str, AssetKey]:
+        """For a dbt source, returns a mapping of output name (stringified from the dbt unique
+        ID) to dagster asset key for each table in the source.
+        """
+        check.str_param(source_name, "source_name")
 
-        if len(sources) == 0:
+        matching_nodes = [
+            value
+            for value in self.raw_manifest["sources"].values()
+            if value["source_name"] == source_name
+        ]
+
+        if len(matching_nodes) == 0:
             raise DagsterInvalidInvocationError(
                 f"Could not find a dbt source with name: {source_name}"
             )
 
-        return sorted([self.get_asset_key_for_dbt_unique_id(key) for key in sources])
-
-    def get_asset_key_for_dbt_model(self, model_name: str) -> AssetKey:
-        models = {
-            key
-            for key, value in self.raw_manifest["nodes"].items()
-            if value["name"] == model_name and value["resource_type"] == "model"
+        return {
+            output_name_fn(value): self.node_info_to_asset_key(value) for value in matching_nodes
         }
 
-        if len(models) == 0:
+    def get_asset_key_for_model(
+        self, model_name: str, key_prefix: Optional[CoercibleToAssetKeyPrefix] = None
+    ) -> AssetKey:
+        """For a dbt model, return the dagster asset key for the model.
+
+        Args:
+            model_name (str): The name of the dbt model.
+            key_prefix (Optional[CoercibleToAssetKeyPrefix]): An optional prefix to prepend to the
+                asset key. If not provided, no asset key prefix will be used.
+        """
+        check.str_param(model_name, "model_name")
+        key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
+
+        matching_models = [
+            value
+            for value in self.raw_manifest["nodes"].values()
+            if value["name"] == model_name and value["resource_type"] == "model"
+        ]
+
+        if len(matching_models) == 0:
             raise DagsterInvalidInvocationError(
                 f"Could not find a dbt model with name: {model_name}"
             )
 
-        return self.get_asset_key_for_dbt_unique_id(next(iter(models)))
+        return self.node_info_to_asset_key(next(iter(matching_models))).with_prefix(key_prefix)
 
     def get_subset_selection_for_context(
         self,

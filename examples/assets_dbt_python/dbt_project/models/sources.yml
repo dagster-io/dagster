@@ -4,6 +4,9 @@ sources:
   - name: raw_data
     tables:
       - name: orders
+        meta:
+          dagster:
+            asset_key: ["dagster", "orders"]
       - name: users
   - name: forecasting
     tables:

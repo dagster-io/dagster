@@ -3,7 +3,12 @@ from typing import Any, Tuple
 import numpy as np
 import pandas as pd
 from dagster import AssetIn, asset
+from dagster_dbt.cli import DbtManifest
 from scipy import optimize
+
+from assets_dbt_python.constants import MANIFEST_PATH
+
+manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 
 def model_func(x, a, b):
@@ -11,7 +16,13 @@ def model_func(x, a, b):
 
 
 @asset(
-    ins={"daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt_schema"])},
+    ins={
+        "daily_order_summary": AssetIn(
+            key=manifest.get_asset_key_for_model(
+                "daily_order_summary", key_prefix=["duckdb", "dbt_schema"]
+            )
+        )
+    },
     compute_kind="ml_tool",
     io_manager_key="model_io_manager",
 )
@@ -27,7 +38,11 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
 
 @asset(
     ins={
-        "daily_order_summary": AssetIn(key_prefix=["duckdb", "dbt_schema"]),
+        "daily_order_summary": AssetIn(
+            key=manifest.get_asset_key_for_model(
+                "daily_order_summary", key_prefix=["duckdb", "dbt_schema"]
+            )
+        ),
         "order_forecast_model": AssetIn(),
     },
     compute_kind="ml_tool",
