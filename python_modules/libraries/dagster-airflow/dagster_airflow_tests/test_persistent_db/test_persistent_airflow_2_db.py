@@ -230,6 +230,7 @@ def get_examples_airflow_repo_params() -> List[ParameterSet]:
         # runs slow
         "example_sensors",
         "example_dynamic_task_mapping",
+        "example_dynamic_task_mapping_with_no_taskflow_operators",
     ]
     for job_name in repo.job_names:
         params.append(
