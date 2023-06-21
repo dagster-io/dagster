@@ -14,5 +14,5 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

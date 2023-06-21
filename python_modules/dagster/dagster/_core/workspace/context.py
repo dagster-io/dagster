@@ -729,7 +729,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # re-attach a subscriber
             # In case of a location error, just reload the handle in order to update the workspace
             # with the correct error messages
-            logging.getLogger("dagit").info(
+            logging.getLogger("dagster-webserver").info(
                 f"Received {event.event_type} event for location {event.location_name}, refreshing"
             )
             self.refresh_code_location(event.location_name)

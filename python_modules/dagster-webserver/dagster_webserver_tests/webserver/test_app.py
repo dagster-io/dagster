@@ -88,7 +88,7 @@ def test_graphql_get(instance, test_client: TestClient):
         params={"query": "{__typename}"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "WebserverQuery"}}
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
 
     # missing
     response = test_client.get("/graphql")
@@ -133,7 +133,7 @@ def test_graphql_post(test_client: TestClient):
         params={"query": "{__typename}"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "WebserverQuery"}}
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
 
     # missing
     response = test_client.post("/graphql")
@@ -173,7 +173,7 @@ def test_graphql_post(test_client: TestClient):
         headers={"Content-type": "application/graphql"},
     )
     assert response.status_code == 200, response.text
-    assert response.json() == {"data": {"__typename": "WebserverQuery"}}
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
 
     # non existent field
     response = test_client.post(

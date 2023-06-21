@@ -245,7 +245,7 @@ def configure_loggers(handler="default", log_level="INFO"):
                 "handlers": [handler],
                 "level": "INFO",
             },
-            "dagit": {
+            "dagster-webserver": {
                 "handlers": [handler],
                 "level": "INFO",
             },

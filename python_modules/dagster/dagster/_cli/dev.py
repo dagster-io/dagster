@@ -133,7 +133,7 @@ def dev_command(
             args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
 
         webserver_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster-webserver"]
+            [sys.executable, "-m", "dagster_webserver"]
             + (["--port", webserver_port] if webserver_port else [])
             + (["--host", webserver_host] if webserver_host else [])
             + args

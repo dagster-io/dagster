@@ -58,7 +58,7 @@ setup(
             "snapshottest",
             "dbt-duckdb",
             "xgboost",
-            "dagit[test]",
+            "dagster-webserver[test]",
         ]
     },
 )

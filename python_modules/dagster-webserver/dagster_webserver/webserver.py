@@ -275,8 +275,8 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         routes = (
             [
                 Route("/dagster-webserver-info", self.webserver_info_endpoint),
-                # Remove /dagit_info redirect with 2.0
-                Route("/dagit_info", RedirectResponse(url="/dagster-webserver-info")),
+                # Remove /dagit_info with 2.0
+                Route("/dagit_info", self.webserver_info_endpoint),
                 Route(
                     "/graphql",
                     self.graphql_http_endpoint,

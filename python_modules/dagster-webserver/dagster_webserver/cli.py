@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 from typing import Optional
 
 import click
@@ -154,6 +155,12 @@ def dagster_webserver(
 
     configure_loggers()
     logger = logging.getLogger("dagster-webserver")
+
+    if sys.argv[0].endswith("dagit"):
+        logger.warning(
+            "The `dagit` CLI command is deprecated and will be removed in dagster 2.0. Please use"
+            " `dagster-webserver` instead."
+        )
 
     with get_possibly_temporary_instance_for_cli(
         cli_command="dagster-webserver",

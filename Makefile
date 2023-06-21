@@ -72,23 +72,23 @@ sanity_check:
 	@echo Checking for prod installs - if any are listed below reinstall with 'pip -e'
 	@! (pip list --exclude-editable | grep -e dagster -e dagster-webserver)
 
-rebuild_dagit: sanity_check
+rebuild_ui: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build
 
-rebuild_dagit_with_profiling: sanity_check
+rebuild_ui_with_profiling: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build-with-profiling
 
-dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_dagit
+dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_ui
 
-dev_install: install_dev_python_modules_verbose rebuild_dagit
+dev_install: install_dev_python_modules_verbose rebuild_ui
 
-dev_install_quiet: install_dev_python_modules rebuild_dagit
+dev_install_quiet: install_dev_python_modules rebuild_ui
 
 graphql_tests:
 	pytest python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
 
 check_manifest:
 	check-manifest python_modules/dagster
-	check-manifest python_modules/dagit
+	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
