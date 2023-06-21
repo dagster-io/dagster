@@ -201,7 +201,7 @@ def asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            non_argument_deps=_make_asset_keys(upstream_asset_deps),
+            upstream_assets=_make_asset_keys(upstream_asset_deps),
             metadata=metadata,
             description=description,
             config_schema=config_schema,
@@ -252,7 +252,7 @@ class _Asset:
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        non_argument_deps: Optional[Set[AssetKey]] = None,
+        upstream_assets: Optional[Set[AssetKey]] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
@@ -277,7 +277,7 @@ class _Asset:
             key_prefix = [key_prefix]
         self.key_prefix = key_prefix
         self.ins = ins or {}
-        self.non_argument_deps = non_argument_deps
+        self.upstream_assets = upstream_assets
         self.metadata = metadata
         self.description = description
         self.required_resource_keys = check.opt_set_param(
@@ -307,7 +307,7 @@ class _Asset:
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
+        asset_ins = build_asset_ins(fn, self.ins or {}, self.upstream_assets)
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
@@ -540,7 +540,7 @@ def multi_asset(
             {dep for dep in non_argument_deps} if non_argument_deps is not None else None
         )
         asset_ins = build_asset_ins(
-            fn, ins or {}, non_argument_deps=_make_asset_keys(upstream_asset_deps)
+            fn, ins or {}, upstream_assets=_make_asset_keys(upstream_asset_deps)
         )
         asset_outs = build_asset_outs(outs)
 
@@ -660,10 +660,10 @@ def multi_asset(
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
-    non_argument_deps: Optional[AbstractSet[AssetKey]],
+    upstream_assets: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
+    upstream_assets = check.opt_set_param(upstream_assets, "upstream_assets", AssetKey)
 
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
@@ -721,7 +721,7 @@ def build_asset_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_key in non_argument_deps:
+    for asset_key in upstream_assets:
         stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         # mypy doesn't realize that Nothing is a valid type here
         ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
