@@ -182,8 +182,8 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
         // To better support clicking a bunch of leaves and extending selection, we try to reach
         // the new node from each node in your current selection until we find a path.
         if (e.shiftKey && selectedGraphNodes.length && node) {
-          for (let ii = selectedGraphNodes.length - 1; ii >= 0; ii--) {
-            const from = selectedGraphNodes[ii]!;
+          const reversed = [...selectedGraphNodes].reverse();
+          for (const from of reversed) {
             const tokensInRange = assetKeyTokensInRange({from, to: node, graph: assetGraphData});
             if (tokensInRange.length) {
               tokensToAdd = tokensInRange;
