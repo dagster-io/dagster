@@ -49,9 +49,16 @@ def migrate_command():
 
         click.echo(f"$DAGSTER_HOME: {home}\n")
 
+        click.echo("\nInstance configuration:\n-----------------------")
+        click.echo(instance.info_str())
+
+        click.echo("\nStorage schema state before migration:\n---------------------")
+        click.echo(instance.schema_str())
+
         instance.upgrade(click.echo)
 
-        click.echo(instance.info_str())
+        click.echo("\nStorage schema state after migration:\n---------------------")
+        click.echo(instance.schema_str())
 
 
 @instance_cli.command(name="reindex", help="Rebuild index over historical runs for performance.")
