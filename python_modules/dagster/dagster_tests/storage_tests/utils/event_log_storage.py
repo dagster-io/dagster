@@ -2217,7 +2217,7 @@ class TestEventLogStorage:
 
             # shouldn't include p2's materialization
             assert storage.get_latest_tags_by_partition(
-                a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys={"a", "b"}, after_cursor=t1
+                a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys={"dagster/a", "dagster/b"}, after_cursor=t1
             ) == {
                 "p1": {"dagster/a": "2", "dagster/b": "2"},
                 "p3": {"dagster/a": "1", "dagster/b": "1"},

@@ -1,6 +1,5 @@
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Iterable,
     Mapping,
     Optional,
@@ -485,24 +484,24 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys, after_cursor
         )
 
+    def get_latest_storage_id_by_partition(
+        self, asset_key: "AssetKey", event_type: "DagsterEventType"
+    ) -> Mapping[str, int]:
+        return self._storage.event_log_storage.get_latest_storage_id_by_partition(
+            asset_key, event_type
+        )
+
     def get_latest_tags_by_partition(
         self,
-        asset_key: AssetKey,
-        event_type: DagsterEventType,
-        tag_keys: AbstractSet[str],
-        asset_partitions: Optional[AbstractSet[str]] = None,
+        asset_key: "AssetKey",
+        event_type: "DagsterEventType",
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Mapping[str, Mapping[str, str]]:
         return self._storage.event_log_storage.get_latest_tags_by_partition(
             asset_key, event_type, tag_keys, asset_partitions, before_cursor, after_cursor
-        )
-
-    def get_latest_storage_id_by_partition(
-        self, asset_key: "AssetKey", dagster_event_type: "DagsterEventType"
-    ) -> Mapping[str, int]:
-        return self._storage.event_log_storage.get_latest_storage_id_by_partition(
-            asset_key, dagster_event_type
         )
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(

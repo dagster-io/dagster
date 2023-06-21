@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Mapping,
     NamedTuple,
     Optional,
@@ -380,7 +379,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, dagster_event_type: DagsterEventType
+        self, asset_key: AssetKey, event_type: DagsterEventType
     ) -> Mapping[str, int]:
         pass
 
@@ -389,8 +388,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self,
         asset_key: AssetKey,
         event_type: DagsterEventType,
-        tag_keys: AbstractSet[str],
-        asset_partitions: Optional[AbstractSet[str]] = None,
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Mapping[str, Mapping[str, str]]:

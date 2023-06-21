@@ -4,7 +4,6 @@ from collections import OrderedDict, defaultdict
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     ContextManager,
     Dict,
@@ -1729,7 +1728,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         event_types: Sequence[DagsterEventType],
-        asset_partitions: Optional[AbstractSet[str]] = None,
+        asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ):
@@ -1771,7 +1770,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, dagster_event_type: DagsterEventType
+        self, asset_key: AssetKey, event_type: DagsterEventType
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
@@ -1780,7 +1779,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [dagster_event_type]
+            asset_key, [event_type]
         )
         latest_event_ids_by_partition = db_select(
             [
@@ -1801,15 +1800,15 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         asset_key: AssetKey,
         event_type: DagsterEventType,
-        tag_keys: AbstractSet[str],
-        asset_partitions: Optional[AbstractSet[str]] = None,
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Mapping[str, Mapping[str, str]]:
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.inst_param(event_type, "event_type", DagsterEventType)
-        check.set_param(tag_keys, "tag_keys", of_type=str)
-        check.opt_nullable_set_param(asset_partitions, "asset_partitions", of_type=str)
+        check.sequence_param(tag_keys, "tag_keys", of_type=str)
+        check.opt_nullable_sequence_param(asset_partitions, "asset_partitions", of_type=str)
         check.opt_int_param(before_cursor, "before_cursor")
         check.opt_int_param(after_cursor, "after_cursor")
 
