@@ -190,12 +190,12 @@ def asset(
                 " upstream_assets instead."
             )
 
-        upstream_asset_deps = upstream_assets
+        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
         if non_argument_deps is not None:
             deprecation_warning(
                 "non_argument_deps", "X.X.X", "use parameter upstream_assets instead"
             )
-            upstream_asset_deps = non_argument_deps
+            upstream_asset_deps = {dep for dep in non_argument_deps}
 
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
