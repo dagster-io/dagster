@@ -71,7 +71,18 @@ def default_metadata_fn(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is subdirectory that it resides in."""
+    """Get the group name for a dbt node.
+
+    By default, if a Dagster group is configured in the metadata for the node, use that.
+
+    Otherwise, a node's group name is subdirectory that it resides in.
+    """
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+
+    dagster_group = dagster_metadata.get("group")
+    if dagster_group:
+        return dagster_group
+
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:
