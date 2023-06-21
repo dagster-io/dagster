@@ -385,7 +385,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             == previous_version
         ):
             return None
-        return latest_version_record.storage_id
+        return (
+            latest_version_record.storage_id
+            if after_cursor is None or latest_version_record.storage_id > after_cursor
+            else None
+        )
 
     def _new_version_of_source_exists_after_asset_partition(
         self,
@@ -413,7 +417,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         elif self.materialization_exists(
             asset_partition, after_cursor=latest_observation_record.storage_id
         ):
-            return True
+            return False
 
         # explicitly check the data versions
         latest_materialization_record = self.get_latest_materialization_record(asset_partition)
