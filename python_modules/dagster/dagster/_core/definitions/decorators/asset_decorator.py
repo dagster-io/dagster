@@ -60,7 +60,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = ...,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, AssetsDefinition]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -89,7 +89,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, AssetsDefinition]]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -190,7 +190,9 @@ def asset(
                 " upstream_assets instead."
             )
 
-        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+        upstream_asset_deps: Optional[
+            Set[Union[CoercibleToAssetKey, AssetsDefinition]]
+        ] = upstream_assets
         if non_argument_deps is not None:
             deprecation_warning(
                 "non_argument_deps", "X.X.X", "use parameter upstream_assets instead"
@@ -414,7 +416,7 @@ def multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, AssetsDefinition]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -543,7 +545,9 @@ def multi_asset(
             " upstream_assets instead."
         )
 
-    upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+    upstream_asset_deps: Optional[
+        Set[Union[CoercibleToAssetKey, AssetsDefinition]]
+    ] = upstream_assets
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "X.X.X", "use parameter upstream_assets instead")
         upstream_asset_deps = {dep for dep in non_argument_deps}
@@ -1008,10 +1012,19 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _make_asset_keys(deps: Optional[Set[CoercibleToAssetKey]]) -> Optional[Set[AssetKey]]:
+def _make_asset_keys(
+    deps: Optional[Set[Union[CoercibleToAssetKey, AssetsDefinition]]]
+) -> Optional[Set[AssetKey]]:
     """Convert all str items to AssetKey in the set."""
     if deps is None:
         return deps
 
-    deps_asset_keys = {AssetKey.from_coercible(dep) for dep in deps}
+    deps_asset_keys: Set[AssetKey] = set()
+    for dep in deps:
+        if isinstance(dep, AssetsDefinition):
+            # this assumes that if you pass a multi-asset that the downstream depends on all assets in the upstream multi-asset
+            deps_asset_keys.update(dep.keys)
+        else:
+            deps_asset_keys.add(AssetKey.from_coercible(dep))
+
     return deps_asset_keys
