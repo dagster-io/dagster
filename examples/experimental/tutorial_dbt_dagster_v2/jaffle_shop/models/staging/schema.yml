@@ -1,5 +1,13 @@
 version: 2
 
+sources:
+  - name: raw_data
+    tables:
+      - name: raw_inventory
+        meta:
+          dagster:
+            asset_key: ["dagster", "raw_inventory"]
+
 models:
   - name: stg_customers
     columns:
