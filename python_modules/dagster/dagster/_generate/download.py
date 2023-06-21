@@ -33,6 +33,7 @@ AVAILABLE_EXAMPLES = [
     "deploy_k8s",
     "development_to_production",
     "feature_graph_backed_assets",
+    "project_dagster_university_start"
     "project_fully_featured",
     "project_analytics",
     "with_airflow",
