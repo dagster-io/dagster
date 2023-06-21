@@ -24,18 +24,18 @@ def observable_same_version():
 non_observable_source = SourceAsset("non_observable_source")
 
 
-@asset(code_version="1", non_argument_deps={"observable_different_version"})
+@asset(code_version="1", upstream_assets={"observable_different_version"})
 def has_code_version1(context):
     ...
 
 
-@asset(code_version="1", non_argument_deps={"observable_same_version"})
+@asset(code_version="1", upstream_assets={"observable_same_version"})
 def has_code_version2():
     ...
 
 
 @asset(
-    non_argument_deps={
+    upstream_assets={
         "observable_different_version",
         "observable_same_version",
         "non_observable_source",
@@ -46,7 +46,7 @@ def has_code_version_multiple_deps():
     ...
 
 
-@asset(code_version="1", non_argument_deps={"has_code_version1"})
+@asset(code_version="1", upstream_assets={"has_code_version1"})
 def downstream_of_code_versioned():
     ...
 
@@ -56,7 +56,7 @@ def root_asset_no_code_version(context):
     return 100
 
 
-@asset(non_argument_deps={"root_asset_no_code_version"})
+@asset(upstream_assets={"root_asset_no_code_version"})
 def downstream_of_no_code_version():
     ...
 
@@ -66,13 +66,13 @@ def downstream_of_no_code_version():
         "code_versioned_multi_asset1": AssetOut(code_version="1"),
         "code_versioned_multi_asset2": AssetOut(code_version="3"),
     },
-    non_argument_deps={"downstream_of_no_code_version"},
+    upstream_assets={"downstream_of_no_code_version"},
 )
 def code_versioned_multi_asset():
     yield Output(None, "code_versioned_multi_asset1")
     yield Output(None, "code_versioned_multi_asset2")
 
 
-@asset(non_argument_deps={"code_versioned_multi_asset2"})
+@asset(upstream_assets={"code_versioned_multi_asset2"})
 def downstream_of_code_versioned_multi_asset():
     ...

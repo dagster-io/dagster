@@ -365,7 +365,7 @@ def test_get_non_source_roots_missing_source():
     def foo():
         pass
 
-    @asset(non_argument_deps={"this_source_is_fake", "source_asset"})
+    @asset(upstream_assets={"this_source_is_fake", "source_asset"})
     def bar(foo):
         pass
 
@@ -383,7 +383,7 @@ def test_partitioned_source_asset():
         partitions_def=partitions_def,
     )
 
-    @asset(partitions_def=partitions_def, non_argument_deps={"partitioned_source"})
+    @asset(partitions_def=partitions_def, upstream_assets={"partitioned_source"})
     def downstream_of_partitioned_source():
         pass
 

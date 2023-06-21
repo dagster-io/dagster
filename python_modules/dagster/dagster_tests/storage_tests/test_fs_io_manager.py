@@ -470,7 +470,7 @@ def test_fs_io_manager_none():
         def asset1() -> None:
             pass
 
-        @asset(non_argument_deps={"asset1"})
+        @asset(upstream_assets={"asset1"})
         def asset2() -> None:
             pass
 

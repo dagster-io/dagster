@@ -5,5 +5,5 @@ from docs_snippets.concepts.assets.non_argument_deps import (
 )
 
 
-def test_non_argument_deps():
+def test_upstream_assets():
     materialize([upstream_asset, downstream_asset])

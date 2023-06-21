@@ -344,7 +344,7 @@ def test_source_op_asset():
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
-def test_non_argument_deps():
+def test_upstream_assets():
     with safe_tempfile_path() as path:
 
         @asset
@@ -352,7 +352,7 @@ def test_non_argument_deps():
             with open(path, "w", encoding="utf8") as ff:
                 ff.write("yup")
 
-        @asset(non_argument_deps={AssetKey("foo")})
+        @asset(upstream_assets={AssetKey("foo")})
         def bar():
             # assert that the foo asset already executed
             assert os.path.exists(path)
@@ -364,19 +364,19 @@ def test_non_argument_deps():
         assert _asset_keys_for_node(result, "bar") == {AssetKey("bar")}
 
 
-def test_non_argument_deps_as_str():
+def test_upstream_assets_as_str():
     @asset
     def foo():
         pass
 
-    @asset(non_argument_deps={"foo"})
+    @asset(upstream_assets={"foo"})
     def bar():
         pass
 
     assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
 
 
-def test_multiple_non_argument_deps():
+def test_multiple_upstream_assets():
     @asset
     def foo():
         pass
@@ -389,7 +389,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["key_prefix", "bar"])})
+    @asset(upstream_assets={AssetKey("foo"), AssetKey(["key_prefix", "bar"])})
     def qux(baz):
         return baz
 

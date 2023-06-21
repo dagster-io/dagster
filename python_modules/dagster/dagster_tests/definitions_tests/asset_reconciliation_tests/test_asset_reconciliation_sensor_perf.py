@@ -89,7 +89,7 @@ class RandomAssets(NamedTuple):
                 )
                 for i in range(self.n_assets)
             },
-            non_argument_deps={
+            upstream_assets={
                 *(f"root_{i}" for i in range(self.n_roots)),
                 *(f"source_{i}" for i in range(self.n_sources)),
             },

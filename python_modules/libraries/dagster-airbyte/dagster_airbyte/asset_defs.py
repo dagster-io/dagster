@@ -150,7 +150,7 @@ def _build_airbyte_assets_from_metadata(
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
-        non_argument_deps=set((assets_defn_meta.keys_by_input_name or {}).values()),
+        upstream_assets=set((assets_defn_meta.keys_by_input_name or {}).values()),
         outs={
             k: AssetOut(
                 key=v,

@@ -232,7 +232,7 @@ def test_nothing(mock_s3_bucket):
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(upstream_assets={"asset1"})
     def asset2() -> None:
         ...
 

@@ -67,7 +67,7 @@ from dagster import DailyPartitionsDefinition, asset
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    non_argument_deps={"raw_events"},
+    upstream_assets={"raw_events"},
 )
 def events(context):
     (
