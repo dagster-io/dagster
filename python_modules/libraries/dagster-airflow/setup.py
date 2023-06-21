@@ -44,8 +44,7 @@ setup(
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
         "test_airflow_2": [
-            # 2.6.2 breaks how dagster-airflow fetches task instance info
-            "apache-airflow>=2.0.0,<2.6.2",
+            "apache-airflow>=2.0.0",
             "boto3>=1.26.7",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
