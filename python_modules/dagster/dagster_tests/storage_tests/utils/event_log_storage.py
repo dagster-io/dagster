@@ -2133,7 +2133,7 @@ class TestEventLogStorage:
             # no events
             assert (
                 storage.get_latest_tags_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys={"dagster/a", "dagster/b"}
+                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["dagster/a", "dagster/b"]
                 )
                 == {}
             )
@@ -2157,14 +2157,14 @@ class TestEventLogStorage:
             # no valid tag keys
             assert (
                 storage.get_latest_tags_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys={"foo"}
+                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["foo"]
                 )
                 == {}
             )
 
             # subset of existing tag keys
             assert storage.get_latest_tags_by_partition(
-                a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys={"dagster/a"}
+                a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["dagster/a"]
             ) == {
                 "p1": {"dagster/a": "2"},
                 "p2": {"dagster/a": "1"},
@@ -2175,7 +2175,7 @@ class TestEventLogStorage:
             assert storage.get_latest_tags_by_partition(
                 a,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                tag_keys={"dagster/a", "dagster/b", "dagster/c"},
+                tag_keys=["dagster/a", "dagster/b", "dagster/c"],
             ) == {
                 "p1": {"dagster/a": "2", "dagster/b": "2"},
                 "p2": {"dagster/a": "1", "dagster/b": "1"},
@@ -2186,8 +2186,8 @@ class TestEventLogStorage:
             assert storage.get_latest_tags_by_partition(
                 a,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                tag_keys={"dagster/a", "dagster/b"},
-                asset_partitions={"p1"},
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1"],
             ) == {
                 "p1": {"dagster/a": "2", "dagster/b": "2"},
             }
@@ -2196,8 +2196,8 @@ class TestEventLogStorage:
             assert storage.get_latest_tags_by_partition(
                 a,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                tag_keys={"dagster/a", "dagster/b"},
-                asset_partitions={"p1", "p2", "p3", "p4"},
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1", "p2", "p3", "p4"],
             ) == {
                 "p1": {"dagster/a": "2", "dagster/b": "2"},
                 "p2": {"dagster/a": "1", "dagster/b": "1"},
@@ -2208,7 +2208,7 @@ class TestEventLogStorage:
             assert storage.get_latest_tags_by_partition(
                 a,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                tag_keys={"dagster/a", "dagster/b"},
+                tag_keys=["dagster/a", "dagster/b"],
                 before_cursor=t1,
             ) == {
                 "p1": {"dagster/a": "1", "dagster/b": "1"},
@@ -2219,7 +2219,7 @@ class TestEventLogStorage:
             assert storage.get_latest_tags_by_partition(
                 a,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                tag_keys={"dagster/a", "dagster/b"},
+                tag_keys=["dagster/a", "dagster/b"],
                 after_cursor=t1,
             ) == {
                 "p1": {"dagster/a": "2", "dagster/b": "2"},
@@ -2232,13 +2232,13 @@ class TestEventLogStorage:
                     storage.get_latest_tags_by_partition(
                         a,
                         DagsterEventType.ASSET_MATERIALIZATION,
-                        tag_keys={"dagster/a", "dagster/b"},
+                        tag_keys=["dagster/a", "dagster/b"],
                     )
                     == {}
                 )
                 _materialize_partition(a, "p1", tags={"dagster/a": "3", "dagster/b": "3"})
                 assert storage.get_latest_tags_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys={"dagster/a", "dagster/b"}
+                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["dagster/a", "dagster/b"]
                 ) == {
                     "p1": {"dagster/a": "3", "dagster/b": "3"},
                 }
