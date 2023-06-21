@@ -1725,31 +1725,40 @@ class SqlEventLogStorage(EventLogStorage):
         return materialization_count_by_partition
 
     def _latest_event_ids_by_partition_subquery(
-        self, asset_key: AssetKey, dagster_event_types: Sequence[DagsterEventType]
+        self,
+        asset_key: AssetKey,
+        event_types: Sequence[DagsterEventType],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ):
         """Subquery for locating the latest event ids by partition for a given asset key and set
         of event types.
         """
-        latest_event_ids_subquery = (
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
-                ]
+        query = db_select(
+            [
+                SqlEventLogStorageTable.c.dagster_event_type,
+                SqlEventLogStorageTable.c.partition,
+                db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+            ]
+        ).where(
+            db.and_(
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                SqlEventLogStorageTable.c.dagster_event_type.in_(
+                    [event_type.value for event_type in event_types]
+                ),
             )
-            .where(
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
-                    SqlEventLogStorageTable.c.dagster_event_type.in_(
-                        [dagster_event_type.value for dagster_event_type in dagster_event_types]
-                    ),
-                )
-            )
-            .group_by(
-                SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
-            )
+        )
+        if asset_partitions is not None:
+            query = query.where(SqlEventLogStorageTable.c.partition.in_(asset_partitions))
+        if before_cursor is not None:
+            query = query.where(SqlEventLogStorageTable.c.id < before_cursor)
+        if after_cursor is not None:
+            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
+
+        latest_event_ids_subquery = query.group_by(
+            SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
         )
 
         assets_details = self._get_assets_details([asset_key])
@@ -1761,7 +1770,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, dagster_event_type: DagsterEventType
+        self, asset_key: AssetKey, event_type: DagsterEventType
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
@@ -1770,7 +1779,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [dagster_event_type]
+            asset_key, [event_type]
         )
         latest_event_ids_by_partition = db_select(
             [
@@ -1786,6 +1795,57 @@ class SqlEventLogStorage(EventLogStorage):
         for row in rows:
             latest_materialization_storage_id_by_partition[cast(str, row[0])] = cast(int, row[1])
         return latest_materialization_storage_id_by_partition
+
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: AssetKey,
+        event_type: DagsterEventType,
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        check.inst_param(event_type, "event_type", DagsterEventType)
+        check.sequence_param(tag_keys, "tag_keys", of_type=str)
+        check.opt_nullable_sequence_param(asset_partitions, "asset_partitions", of_type=str)
+        check.opt_int_param(before_cursor, "before_cursor")
+        check.opt_int_param(after_cursor, "after_cursor")
+
+        latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
+            asset_key=asset_key,
+            event_types=[event_type],
+            asset_partitions=asset_partitions,
+            before_cursor=before_cursor,
+            after_cursor=after_cursor,
+        )
+
+        latest_tags_by_partition_query = (
+            db_select(
+                [
+                    latest_event_ids_subquery.c.partition,
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                ]
+            )
+            .select_from(
+                latest_event_ids_subquery.join(
+                    AssetEventTagsTable,
+                    AssetEventTagsTable.c.event_id == latest_event_ids_subquery.c.id,
+                )
+            )
+            .where(AssetEventTagsTable.c.key.in_(tag_keys))
+        )
+
+        latest_tags_by_partition: Dict[str, Dict[str, str]] = defaultdict(dict)
+        with self.index_connection() as conn:
+            rows = conn.execute(latest_tags_by_partition_query).fetchall()
+
+        for row in rows:
+            latest_tags_by_partition[cast(str, row[0])][cast(str, row[1])] = cast(str, row[2])
+
+        # convert defaultdict to dict
+        return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey

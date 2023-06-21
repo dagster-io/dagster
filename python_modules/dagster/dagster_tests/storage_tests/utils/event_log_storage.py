@@ -2098,6 +2098,151 @@ class TestEventLogStorage:
                 latest_storage_ids["p1"] = _materialize_partition(a, "p1")
                 _assert_storage_matches(latest_storage_ids)
 
+    def test_get_latest_tags_by_partition(self, storage, instance):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id = make_new_run_id()
+
+        def _materialize_partition(asset_key, partition, tags) -> int:
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(
+                                asset_key=asset_key, partition=partition, tags=tags
+                            )
+                        ),
+                    ),
+                )
+            )
+            # get the storage id of the materialization we just stored
+            return storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION),
+                limit=1,
+                ascending=False,
+            )[0].storage_id
+
+        with create_and_delete_test_runs(instance, [run_id]):
+            # no events
+            assert (
+                storage.get_latest_tags_by_partition(
+                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["dagster/a", "dagster/b"]
+                )
+                == {}
+            )
+
+            # p1 materialized
+            _materialize_partition(a, "p1", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # p2 materialized
+            _materialize_partition(a, "p2", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # unrelated asset materialized
+            t1 = _materialize_partition(b, "p1", tags={"dagster/a": "...", "dagster/b": "..."})
+            _materialize_partition(b, "p2", tags={"dagster/a": "...", "dagster/b": "..."})
+
+            # p1 re materialized
+            _materialize_partition(a, "p1", tags={"dagster/a": "2", "dagster/b": "2"})
+
+            # p3 materialized
+            _materialize_partition(a, "p3", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # no valid tag keys
+            assert (
+                storage.get_latest_tags_by_partition(
+                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["foo"]
+                )
+                == {}
+            )
+
+            # subset of existing tag keys
+            assert storage.get_latest_tags_by_partition(
+                a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["dagster/a"]
+            ) == {
+                "p1": {"dagster/a": "2"},
+                "p2": {"dagster/a": "1"},
+                "p3": {"dagster/a": "1"},
+            }
+
+            # superset of existing tag keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                tag_keys=["dagster/a", "dagster/b", "dagster/c"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # subset of existing partition keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+            }
+
+            # superset of existing partition keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1", "p2", "p3", "p4"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # before p1 rematerialized and p3 existed
+            assert storage.get_latest_tags_by_partition(
+                a,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                tag_keys=["dagster/a", "dagster/b"],
+                before_cursor=t1,
+            ) == {
+                "p1": {"dagster/a": "1", "dagster/b": "1"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # shouldn't include p2's materialization
+            assert storage.get_latest_tags_by_partition(
+                a,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                tag_keys=["dagster/a", "dagster/b"],
+                after_cursor=t1,
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            if self.can_wipe():
+                storage.wipe_asset(a)
+                assert (
+                    storage.get_latest_tags_by_partition(
+                        a,
+                        DagsterEventType.ASSET_MATERIALIZATION,
+                        tag_keys=["dagster/a", "dagster/b"],
+                    )
+                    == {}
+                )
+                _materialize_partition(a, "p1", tags={"dagster/a": "3", "dagster/b": "3"})
+                assert storage.get_latest_tags_by_partition(
+                    a, DagsterEventType.ASSET_MATERIALIZATION, tag_keys=["dagster/a", "dagster/b"]
+                ) == {
+                    "p1": {"dagster/a": "3", "dagster/b": "3"},
+                }
+
     def test_get_latest_asset_partition_materialization_attempts_without_materializations(
         self, storage, instance
     ):
