@@ -59,6 +59,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
+    upstream_assets: Optional[Set[CoercibleToAssetKey]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -88,6 +89,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -131,8 +133,10 @@ def asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
-            upstream dependencies, but do not pass an input to the asset.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use upstream_assets instead.
+            Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
+        upstream_assets (Optional[Set[Union[AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
+            dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -181,11 +185,24 @@ def asset(
     """
 
     def create_asset():
+        if non_argument_deps is not None and upstream_assets is not None:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify both non_argument_deps and upstream_assets. Use only"
+                " upstream_assets instead."
+            )
+
+        upstream_asset_deps = upstream_assets
+        if non_argument_deps is not None:
+            deprecation_warning(
+                "non_argument_deps", "X.X.X", "use parameter upstream_assets instead"
+            )
+            upstream_asset_deps = non_argument_deps
+
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            non_argument_deps=_make_asset_keys(non_argument_deps),
+            non_argument_deps=_make_asset_keys(upstream_asset_deps),
             metadata=metadata,
             description=description,
             config_schema=config_schema,
@@ -526,8 +543,11 @@ def multi_asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
+        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = (
+            {dep for dep in non_argument_deps} if non_argument_deps is not None else None
+        )
         asset_ins = build_asset_ins(
-            fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
+            fn, ins or {}, non_argument_deps=_make_asset_keys(upstream_asset_deps)
         )
         asset_outs = build_asset_outs(outs)
 
@@ -989,12 +1009,10 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _make_asset_keys(deps: Optional[Union[Set[AssetKey], Set[str]]]) -> Optional[Set[AssetKey]]:
+def _make_asset_keys(deps: Optional[Set[CoercibleToAssetKey]]) -> Optional[Set[AssetKey]]:
     """Convert all str items to AssetKey in the set."""
     if deps is None:
         return deps
 
-    deps_asset_keys = {
-        AssetKey.from_user_string(dep) if isinstance(dep, str) else dep for dep in deps
-    }
+    deps_asset_keys = {AssetKey.from_coercible(dep) for dep in deps}
     return deps_asset_keys
