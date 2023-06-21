@@ -62,7 +62,6 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-  const isAssetJob = isThisThingAnAssetJob(repo, pipelineName);
 
   useJobTitle(explorerPath, isJob);
 
@@ -134,54 +133,8 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 </Box>
               );
             }
+
             const runs = pipelineRunsOrError.results;
-
-            if (!runs.length) {
-              const description = () => {
-                if (!repoAddress) {
-                  return <div>You have not launched any runs for this job.</div>;
-                }
-
-                if (isAssetJob) {
-                  return (
-                    <Box flex={{direction: 'column', gap: 12}}>
-                      <div>You have not materialized any assets with this job yet.</div>
-                      <div>
-                        <AnchorButton
-                          icon={<Icon name="materialization" />}
-                          to={workspacePathFromAddress(repoAddress, `/jobs/${pipelinePath}`)}
-                        >
-                          Materialize an asset
-                        </AnchorButton>
-                      </div>
-                    </Box>
-                  );
-                }
-
-                return (
-                  <Box flex={{direction: 'column', gap: 12}}>
-                    <div>You have not launched any runs for this job yet.</div>
-                    <div>
-                      <AnchorButton
-                        icon={<Icon name="add_circle" />}
-                        to={workspacePathFromAddress(
-                          repoAddress,
-                          `/jobs/${pipelinePath}/playground`,
-                        )}
-                      >
-                        Launch a run
-                      </AnchorButton>
-                    </div>
-                  </Box>
-                );
-              };
-
-              return (
-                <Box padding={{vertical: 64}}>
-                  <NonIdealState icon="run" title="No runs found" description={description()} />
-                </Box>
-              );
-            }
 
             const displayed = runs.slice(0, PAGE_SIZE);
             const {hasNextCursor, hasPrevCursor} = paginationProps;
@@ -211,6 +164,14 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                         loading={queryResult.loading}
                       />
                     }
+                    emptyState={() => (
+                      <EmptyState
+                        repoAddress={repoAddress}
+                        anyFilter={filterTokens.length > 0}
+                        jobName={pipelineName}
+                        jobPath={pipelinePath}
+                      />
+                    )}
                   />
                 </StickyTableContainer>
                 {hasNextCursor || hasPrevCursor ? (
@@ -224,6 +185,70 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
         </Loading>
       </Page>
     </RunsQueryRefetchContext.Provider>
+  );
+};
+
+interface EmptyStateProps {
+  repoAddress: RepoAddress | null;
+  jobName: string;
+  jobPath: string;
+  anyFilter: boolean;
+}
+
+const EmptyState = (props: EmptyStateProps) => {
+  const {repoAddress, anyFilter, jobName, jobPath} = props;
+
+  const repo = useRepository(repoAddress);
+  const isAssetJob = isThisThingAnAssetJob(repo, jobName);
+
+  const description = () => {
+    if (!repoAddress) {
+      return <div>You have not launched any runs for this job.</div>;
+    }
+
+    if (isAssetJob) {
+      return (
+        <Box flex={{direction: 'column', gap: 12}}>
+          <div>
+            {anyFilter
+              ? 'There are no matching runs for these filters.'
+              : 'You have not materialized any assets with this job yet.'}
+          </div>
+          <div>
+            <AnchorButton
+              icon={<Icon name="materialization" />}
+              to={workspacePathFromAddress(repoAddress, `/jobs/${jobPath}`)}
+            >
+              Materialize an asset
+            </AnchorButton>
+          </div>
+        </Box>
+      );
+    }
+
+    return (
+      <Box flex={{direction: 'column', gap: 12}}>
+        <div>
+          {anyFilter
+            ? 'There are no matching runs for these filters.'
+            : 'You have not launched any runs for this job yet.'}
+        </div>
+        <div>
+          <AnchorButton
+            icon={<Icon name="add_circle" />}
+            to={workspacePathFromAddress(repoAddress, `/jobs/${jobPath}/playground`)}
+          >
+            Launch a run
+          </AnchorButton>
+        </div>
+      </Box>
+    );
+  };
+
+  return (
+    <Box padding={{vertical: 64}}>
+      <NonIdealState icon="run" title="No runs found" description={description()} />
+    </Box>
   );
 };
 

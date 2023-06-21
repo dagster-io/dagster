@@ -55,6 +55,7 @@ interface RunTableProps {
   belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
   additionalActionsForRun?: (run: RunTableRunFragment) => JSX.Element[];
+  emptyState?: () => React.ReactNode;
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -66,6 +67,7 @@ export const RunTable = (props: RunTableProps) => {
     actionBarComponents,
     belowActionBarComponents,
     hideCreatedBy,
+    emptyState,
   } = props;
   const allIds = runs.map((r) => r.id);
 
@@ -77,7 +79,11 @@ export const RunTable = (props: RunTableProps) => {
 
   function content() {
     if (runs.length === 0) {
-      const anyFilter = Object.keys(filter || {}).length;
+      const anyFilter = !!Object.keys(filter || {}).length;
+      if (emptyState) {
+        return <>{emptyState()}</>;
+      }
+
       return (
         <div>
           <Box margin={{vertical: 32}}>
