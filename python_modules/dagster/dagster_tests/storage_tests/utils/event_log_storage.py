@@ -2028,7 +2028,6 @@ class TestEventLogStorage:
                     assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
-        pytest.skip("Temporarily skipping until this is available on all instance types")
         a = AssetKey(["a"])
         b = AssetKey(["b"])
         run_id = make_new_run_id()
