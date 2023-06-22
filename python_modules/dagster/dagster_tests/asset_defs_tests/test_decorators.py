@@ -1124,3 +1124,52 @@ def test_multi_asset_with_auto_materialize_policy():
         AssetKey("o2"): AutoMaterializePolicy.eager(),
         AssetKey("o3"): AutoMaterializePolicy.lazy(),
     }
+
+
+@pytest.mark.parametrize(
+    "key,expected_key",
+    [
+        (
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+        ),
+        ("the_asset", AssetKey(["the_asset"])),
+        (["prefix", "the_asset"], AssetKey(["prefix", "the_asset"])),
+        (("prefix", "the_asset"), AssetKey(["prefix", "the_asset"])),
+    ],
+)
+def test_asset_key_provided(key, expected_key):
+    @asset(key=key)
+    def foo():
+        return 1
+
+    assert foo.key == expected_key
+
+
+def test_error_on_asset_key_provided():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", key_prefix="foo")
+        def yay():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo")
+        def yay():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo", key_prefix="bar")
+        def yay():
+            ...

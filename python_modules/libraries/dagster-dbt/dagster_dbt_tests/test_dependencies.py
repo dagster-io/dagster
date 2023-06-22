@@ -68,9 +68,5 @@ def test_get_asset_keys_for_model() -> None:
         ["customers"]
     )
 
-    assert test_dagster_metadata_manifest.get_asset_key_for_model(
-        "customers", key_prefix=["prefix"]
-    ) == AssetKey(["prefix", "customers"])
-
     with pytest.raises(DagsterInvalidInvocationError, match="Could not find a dbt model with name"):
         test_dagster_metadata_manifest.get_asset_key_for_model("nonexistent")

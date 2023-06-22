@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Tuple
 
 import pandas as pd
 from dagster import AssetIn, AssetOut, OpExecutionContext, asset, multi_asset
@@ -10,14 +10,23 @@ from ..constants import MANIFEST_PATH
 manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 
-@multi_asset(
-    outs={
-        name: AssetOut(key=asset_key)
-        for name, asset_key in manifest.get_asset_keys_by_output_name_for_source("raw_data").items()
-    },
+@asset(
+    key=manifest.get_asset_key_for_source("raw_data"),
 )
 def raw_inventory() -> Any:
     return pd.DataFrame()
+
+
+@multi_asset(
+    outs={
+        name: AssetOut(key=asset_key)
+        for name, asset_key in manifest.get_asset_keys_by_output_name_for_source(
+            "clients_data"
+        ).items()
+    }
+)
+def clients_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    return pd.DataFrame(), pd.DataFrame()
 
 
 @dbt_assets(manifest=manifest)
