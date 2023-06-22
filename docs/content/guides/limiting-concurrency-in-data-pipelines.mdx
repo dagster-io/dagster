@@ -110,6 +110,7 @@ Dagster supports placing limits on the number of processes that can be in progre
 
 - **Run concurrency** controls the total number of runs in a deployment that can execute at the same time. Run concurrency applies to both op and asset-based jobs and all [code locations][code-location-concept] in a single deployment. Any runs beyond the limit will be queued and won’t use any compute.
 - **Op concurrency** controls the number of ops that can execute in parallel **in a single run**. **Note**: This type of concurrency applies to both op and asset-based jobs, as each asset includes an op that's responsible for computing the contents of the asset.
+- **Global op concurrency <Experimental />** controls the number of ops that can execute in parallel **across runs**. **Note**: This type of concurrency applies to both op and asset-based jobs, as each asset includes an op that's responsible for computing the contents of the asset.
 
 By limiting the number of parallel processes Dagster executes, you can ensure that resources are not overwhelmed and that each process has the resources it needs to run efficiently. This can lead to faster and more reliable pipeline execution, as well as easier monitoring and debugging of issues.
 
@@ -386,6 +387,25 @@ height={1638}
 
 </TabItem>
 </TabGroup>
+
+### Limiting op concurrency across runs <Experimental />
+
+Limits can be specified on the Dagster instance using the special op tag `dagster/concurrency_key`. If this instance limit would be exceeded by launching an op/asset, then the op/asset will be queued.
+
+For example, to globally limit the number of running ops touching redshift to 2, the op must be first tagged with the global concurrency key:
+
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_global_concurrency endbefore=end_global_concurrency
+@op(tags={"dagster/concurrency_key": "redshift"})
+def my_redshift_op():
+    ...
+```
+
+To specify limits on the number of ops/assets tagged with a particular concurrency key, you can either use the `dagster` CLI command or use Dagit:
+
+- To specify a global concurrency limit using the CLI, use `dagster instance concurrency set <concurrency_key> <limit>`
+- To specify a global concurrency limit using Dagit, navigate to the **Concurrency limits** tab on the Deployment page in Dagit, after first enabling the **Experimental instance-level concurrency limits** option in **User Settings**.
+
+The concurrency key should match the name that the op is tagged with. For example, if the op is tagged with `dagster/concurrency_key: redshift`, then the concurrency key should be `redshift`.
 
 ---
 
