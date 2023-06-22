@@ -260,6 +260,30 @@ def test_daily_to_daily_lag_different_start_date():
     ).get_partition_keys() == ["2021-05-06"]
 
 
+def test_daily_to_daily_many_to_one():
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
+    mapping = TimeWindowPartitionMapping(start_offset=-1)
+
+    """
+    assert mapping.get_upstream_partitions_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04"]), upstream_partitions_def
+    ).get_partition_keys() == ["2022-07-03", "2022-07-04"]
+    """
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-03", "2022-07-04"]),
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-03", "2022-07-04", "2022-07-05"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-03"]), downstream_partitions_def
+    ).get_partition_keys() == ["2022-07-03", "2022-07-04"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-04"]), downstream_partitions_def
+    ).get_partition_keys() == ["2022-07-04", "2022-07-05"]
+
+
 @pytest.mark.parametrize(
     "upstream_partitions_def,downstream_partitions_def,upstream_keys,expected_downstream_keys,current_time",
     [
