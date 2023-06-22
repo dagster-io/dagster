@@ -5,7 +5,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {testId} from '../testing/testId';
 import {ClearButton} from '../ui/ClearButton';
 
-import {partitionsToText, spanTextToSelections} from './SpanRepresentation';
+import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
 
 export const DimensionRangeInput: React.FC<{
   value: string[];
@@ -28,11 +28,12 @@ export const DimensionRangeInput: React.FC<{
   }, [partitionKeys, isTimeseries]);
 
   const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
-    try {
-      onChange(spanTextToSelections(partitionKeys, valueString).selectedKeys);
-    } catch (err: any) {
+    const selections = spanTextToSelectionsOrError(partitionKeys, valueString);
+    if (selections instanceof Error) {
       e.preventDefault();
-      showCustomAlert({body: err.message});
+      showCustomAlert({body: selections.message});
+    } else {
+      onChange(selections.selectedKeys);
     }
   };
 
