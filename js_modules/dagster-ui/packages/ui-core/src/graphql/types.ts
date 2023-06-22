@@ -4334,6 +4334,7 @@ export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
 export type TestFields = {
   __typename: 'TestFields';
   alwaysException: Maybe<Scalars['String']>;
+  asyncString: Maybe<Scalars['String']>;
 };
 
 export type TextMetadataEntry = MetadataEntry & {
@@ -12761,6 +12762,8 @@ export const buildTestFields = (
       overrides && overrides.hasOwnProperty('alwaysException')
         ? overrides.alwaysException!
         : 'quibusdam',
+    asyncString:
+      overrides && overrides.hasOwnProperty('asyncString') ? overrides.asyncString! : 'non',
   };
 };
 
