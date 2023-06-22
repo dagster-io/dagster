@@ -321,7 +321,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
   return (
     <ShortcutHandler
       shortcutLabel="F"
-      shortcutFilter={(e) => e.code === 'KeyF'}
+      shortcutFilter={(e) =>
+        e.code === 'KeyF' && !(e.metaKey || e.ctrlKey || e.altKey || e.shiftKey)
+      }
       onShortcut={() => setIsOpen((isOpen) => !isOpen)}
     >
       <PopoverStyle />
