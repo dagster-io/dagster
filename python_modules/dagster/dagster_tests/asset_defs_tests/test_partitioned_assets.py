@@ -69,10 +69,10 @@ def get_upstream_partitions_for_partition_range(
         else None
     )
     upstream_partitions_subset = (
-        downstream_partition_mapping.get_upstream_partitions_for_partitions(
+        downstream_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset,
             upstream_partitions_def,
-        )
+        ).partitions_subset
     )
     upstream_key_ranges = upstream_partitions_subset.get_partition_key_ranges()
     check.invariant(len(upstream_key_ranges) == 1)

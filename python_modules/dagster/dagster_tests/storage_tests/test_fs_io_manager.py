@@ -32,6 +32,7 @@ from dagster import (
 from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
@@ -290,14 +291,14 @@ def test_fs_io_manager_partitioned_no_partitions():
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
 
         class NoPartitionsPartitionMapping(PartitionMapping):
-            def get_upstream_partitions_for_partitions(
+            def get_upstream_mapped_partitions_result_for_partitions(
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
                 upstream_partitions_def: PartitionsDefinition,
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-            ) -> PartitionsSubset:
-                return upstream_partitions_def.empty_subset()
+            ) -> UpstreamPartitionsResult:
+                return UpstreamPartitionsResult(upstream_partitions_def.empty_subset(), [])
 
             def get_downstream_partitions_for_partitions(
                 self,
@@ -305,22 +306,6 @@ def test_fs_io_manager_partitioned_no_partitions():
                 downstream_partitions_def,
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-            ):
-                raise NotImplementedError()
-
-            def get_upstream_partitions_for_partition_range(
-                self,
-                downstream_partition_key_range,
-                downstream_partitions_def,
-                upstream_partitions_def,
-            ):
-                raise NotImplementedError()
-
-            def get_downstream_partitions_for_partition_range(
-                self,
-                upstream_partition_key_range,
-                downstream_partitions_def,
-                upstream_partitions_def,
             ):
                 raise NotImplementedError()
 

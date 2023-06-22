@@ -1,10 +1,9 @@
 from contextlib import contextmanager
-from typing import Iterator, List, Optional, cast
+from typing import Iterator, List, cast
 from unittest import mock
 
 import pytest
 from dagster import (
-    AssetIn,
     AssetKey,
     AssetOut,
     AssetSelection,
@@ -19,9 +18,6 @@ from dagster import (
     EventRecordsFilter,
     FreshnessPolicy,
     Output,
-    PartitionKeyRange,
-    PartitionMapping,
-    PartitionsDefinition,
     RunConfig,
     RunRequest,
     SkipReason,
@@ -911,35 +907,6 @@ def test_multi_asset_sensor_has_assets():
         passing_sensor(ctx)
 
 
-def test_multi_asset_sensor_invalid_partitions():
-    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
-
-    @asset(partitions_def=static_partitions_def)
-    def static_partitions_asset():
-        return 1
-
-    @asset(partitions_def=DailyPartitionsDefinition("2020-01-01"))
-    def daily_asset():
-        return 1
-
-    @repository
-    def my_repo():
-        return [static_partitions_asset, daily_asset]
-
-    with instance_for_test() as instance:
-        with build_multi_asset_sensor_context(
-            monitored_assets=[static_partitions_asset.key],
-            instance=instance,
-            repository_def=my_repo,
-        ) as context:
-            with pytest.raises(DagsterInvalidInvocationError):
-                context.get_downstream_partition_keys(
-                    "2020-01-01",
-                    to_asset_key=AssetKey("static_partitions_asset"),
-                    from_asset_key=AssetKey("daily_asset"),
-                )
-
-
 def test_partitions_multi_asset_sensor_context():
     daily_partitions_def = DailyPartitionsDefinition("2020-01-01")
 
@@ -1094,43 +1061,15 @@ def test_multi_asset_sensor_all_partitions_materialized():
         asset_sensor(ctx)
 
 
-def test_multi_asset_sensor_custom_partition_mapping():
-    class LastDownstreamPartitionMapping(PartitionMapping):
-        def get_upstream_partitions_for_partition_range(
-            self,
-            downstream_partition_key_range: Optional[PartitionKeyRange],
-            downstream_partitions_def: Optional[PartitionsDefinition],
-            upstream_partitions_def: PartitionsDefinition,
-        ) -> PartitionKeyRange:
-            raise NotImplementedError()
-
-        def get_downstream_partitions_for_partition_range(
-            self,
-            upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: Optional[PartitionsDefinition],
-            upstream_partitions_def: PartitionsDefinition,
-        ) -> PartitionKeyRange:
-            if not isinstance(downstream_partitions_def, PartitionsDefinition):
-                raise DagsterInvariantViolationError(
-                    "Expected downstream_partitions_def to be a PartitionsDefinition"
-                )
-            first_partition_key = downstream_partitions_def.get_first_partition_key()
-            assert first_partition_key is not None
-            return PartitionKeyRange(first_partition_key, first_partition_key)
-
+def test_multi_asset_sensor_partition_mapping():
     @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
     def july_daily_partitions():
         return 1
 
     @asset(
         partitions_def=DailyPartitionsDefinition("2022-08-01"),
-        ins={
-            "upstream": AssetIn(
-                key=july_daily_partitions.key, partition_mapping=LastDownstreamPartitionMapping()
-            )
-        },
     )
-    def downstream_daily_partitions(upstream):
+    def downstream_daily_partitions(july_daily_partitions):
         return 1
 
     @repository
@@ -1147,12 +1086,12 @@ def test_multi_asset_sensor_custom_partition_mapping():
                 to_asset_key=downstream_daily_partitions.key,
                 from_asset_key=july_daily_partitions.key,
             ):
-                assert downstream_partition == "2022-08-01"
+                assert downstream_partition == "2022-08-10"
 
     with instance_for_test() as instance:
         materialize(
             [july_daily_partitions],
-            partition_key="2022-07-10",
+            partition_key="2022-08-10",
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
