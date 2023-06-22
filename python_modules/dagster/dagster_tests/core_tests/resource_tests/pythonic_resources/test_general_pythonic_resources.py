@@ -85,7 +85,8 @@ def test_basic_structured_resource_assets() -> None:
         writer.output("hello, world!")
 
     defs = Definitions(
-        assets=[hello_world_asset], resources={"writer": WriterResource(prefix="greeting: ")}
+        assets=[hello_world_asset],
+        resources={"writer": WriterResource(prefix="greeting: ")},
     )
 
     assert defs.get_implicit_global_asset_job_def().execute_in_process().success
@@ -234,7 +235,8 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: ResourceParam[bool], resource_with_cleanup_2: ResourceParam[bool]
+        resource_with_cleanup_1: ResourceParam[bool],
+        resource_with_cleanup_2: ResourceParam[bool],
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -434,7 +436,10 @@ def test_basic_enum_override_with_resource_instance() -> None:
 
         def setup_for_execution(self, context: InitResourceContext) -> None:
             setup_executed["yes"] = True
-            assert context.resource_config["my_enum"] in [BasicEnum.A.value, BasicEnum.B.value]
+            assert context.resource_config["my_enum"] in [
+                BasicEnum.A.value,
+                BasicEnum.B.value,
+            ]
 
     @asset
     def asset_with_resource(context, my_resource: MyResource):
@@ -549,6 +554,89 @@ def test_resources_which_return():
         .success
     )
     assert completed["yes"]
+
+
+def test_nested_config_class() -> None:
+    # Validate that we can nest Config classes in a pythonic resource
+
+    class User(Config):
+        name: str
+        age: int
+
+    class UsersResource(ConfigurableResource):
+        users: List[User]
+
+    executed = {}
+
+    @asset
+    def an_asset(users_resource: UsersResource):
+        assert len(users_resource.users) == 2
+        assert users_resource.users[0].name == "Bob"
+        assert users_resource.users[0].age == 25
+        assert users_resource.users[1].name == "Alice"
+        assert users_resource.users[1].age == 30
+
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "users_resource": UsersResource(
+                users=[
+                    User(name="Bob", age=25),
+                    User(name="Alice", age=30),
+                ]
+            )
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
+
+
+def test_using_enum_simple() -> None:
+    executed = {}
+
+    class SimpleEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class MyResource(ConfigurableResource):
+        an_enum: SimpleEnum
+
+    @asset
+    def an_asset(my_resource: MyResource):
+        assert my_resource.an_enum == SimpleEnum.FOO
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "my_resource": MyResource(
+                an_enum=SimpleEnum.FOO,
+            )
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
+    executed.clear()
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "my_resource": MyResource.configure_at_launch(),
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {"resources": {"my_resource": {"config": {"an_enum": SimpleEnum.FOO.name}}}}
+        )
+        .success
+    )
+    assert executed["yes"]
 
 
 def test_using_enum_complex() -> None:
@@ -995,41 +1083,3 @@ def test_telemetry_dagster_resource():
             return True
 
     assert MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001
-
-
-def test_nested_config_class() -> None:
-    # Validate that we can nest Config classes in a pythonic resource
-
-    class User(Config):
-        name: str
-        age: int
-
-    class UsersResource(ConfigurableResource):
-        users: List[User]
-
-    executed = {}
-
-    @asset
-    def an_asset(users_resource: UsersResource):
-        assert len(users_resource.users) == 2
-        assert users_resource.users[0].name == "Bob"
-        assert users_resource.users[0].age == 25
-        assert users_resource.users[1].name == "Alice"
-        assert users_resource.users[1].age == 30
-
-        executed["yes"] = True
-
-    defs = Definitions(
-        assets=[an_asset],
-        resources={
-            "users_resource": UsersResource(
-                users=[
-                    User(name="Bob", age=25),
-                    User(name="Alice", age=30),
-                ]
-            )
-        },
-    )
-
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
-    assert executed["yes"]

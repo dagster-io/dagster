@@ -1,3 +1,4 @@
+import enum
 import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List
@@ -20,7 +21,7 @@ from dagster._config.pythonic_config import (
 from dagster._core.storage.io_manager import IOManager
 
 
-def test_nested_resources():
+def test_nested_resources() -> None:
     out_txt = []
 
     class Writer(ConfigurableResource, ABC):
@@ -91,7 +92,7 @@ def test_nested_resources():
     assert out_txt == ['greeting: {\n  "hello": "world"\n}']
 
 
-def test_nested_resources_multiuse():
+def test_nested_resources_multiuse() -> None:
     class AWSCredentialsResource(ConfigurableResource):
         username: str
         password: str
@@ -129,7 +130,7 @@ def test_nested_resources_multiuse():
     assert completed["yes"]
 
 
-def test_nested_resources_runtime_config():
+def test_nested_resources_runtime_config() -> None:
     class AWSCredentialsResource(ConfigurableResource):
         username: str
         password: str
@@ -183,7 +184,7 @@ def test_nested_resources_runtime_config():
     assert completed["yes"]
 
 
-def test_nested_resources_runtime_config_complex():
+def test_nested_resources_runtime_config_complex() -> None:
     class CredentialsResource(ConfigurableResource):
         username: str
         password: str
@@ -274,7 +275,7 @@ def test_nested_resources_runtime_config_complex():
     assert completed["yes"]
 
 
-def test_nested_function_resource():
+def test_nested_function_resource() -> None:
     out_txt = []
 
     @resource
@@ -310,7 +311,7 @@ def test_nested_function_resource():
     assert out_txt == ["foo!", "bar!"]
 
 
-def test_nested_function_resource_configured():
+def test_nested_function_resource_configured() -> None:
     out_txt = []
 
     @resource(config_schema={"prefix": Field(str, default_value="")})
@@ -362,7 +363,7 @@ def test_nested_function_resource_configured():
     assert out_txt == ["msg: foo!", "msg: bar!"]
 
 
-def test_nested_function_resource_runtime_config():
+def test_nested_function_resource_runtime_config() -> None:
     out_txt = []
 
     @resource(config_schema={"prefix": str})
@@ -526,3 +527,70 @@ def test_nested_resource_raw_value_io_manager() -> None:
         "ConfigIOManager handle_output base/my_downstream_asset",
         "RawIOManager handle_output my_downstream_asset",
     ]
+
+
+def test_enum_nested_resource_no_run_config() -> None:
+    class MyEnum(enum.Enum):
+        A = "a_value"
+        B = "b_value"
+
+    class ResourceWithEnum(ConfigurableResource):
+        my_enum: MyEnum
+
+    class OuterResourceWithResourceWithEnum(ConfigurableResource):
+        resource_with_enum: ResourceWithEnum
+
+    @asset
+    def asset_with_outer_resource(outer_resource: OuterResourceWithResourceWithEnum):
+        return outer_resource.resource_with_enum.my_enum.value
+
+    defs = Definitions(
+        assets=[asset_with_outer_resource],
+        resources={
+            "outer_resource": OuterResourceWithResourceWithEnum(
+                resource_with_enum=ResourceWithEnum(my_enum=MyEnum.A)
+            )
+        },
+    )
+
+    a_job = defs.get_implicit_global_asset_job_def()
+
+    result = a_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("asset_with_outer_resource") == "a_value"
+
+
+def test_enum_nested_resource_run_config_override() -> None:
+    class MyEnum(enum.Enum):
+        A = "a_value"
+        B = "b_value"
+
+    class ResourceWithEnum(ConfigurableResource):
+        my_enum: MyEnum
+
+    class OuterResourceWithResourceWithEnum(ConfigurableResource):
+        resource_with_enum: ResourceWithEnum
+
+    @asset
+    def asset_with_outer_resource(outer_resource: OuterResourceWithResourceWithEnum):
+        return outer_resource.resource_with_enum.my_enum.value
+
+    resource_with_enum = ResourceWithEnum.configure_at_launch()
+    defs = Definitions(
+        assets=[asset_with_outer_resource],
+        resources={
+            "resource_with_enum": resource_with_enum,
+            "outer_resource": OuterResourceWithResourceWithEnum(
+                resource_with_enum=resource_with_enum
+            ),
+        },
+    )
+
+    a_job = defs.get_implicit_global_asset_job_def()
+
+    # Case: I'm re-specifying the nested enum at runtime - expect the runtime config to override the resource config
+    result = a_job.execute_in_process(
+        run_config={"resources": {"resource_with_enum": {"config": {"my_enum": "B"}}}}
+    )
+    assert result.success
+    assert result.output_for_node("asset_with_outer_resource") == "b_value"
