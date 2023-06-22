@@ -38,6 +38,7 @@ models:
 - Fixed an issue where the `dagster-daemon run` command sometimes kept code server subprocesses open longer than it needed to, making the process use more memory.
 - Previously, when using `@observable_source_asset`s with AutoMaterializePolicies, it was possible for downstream assets to get “stuck”, not getting materialized when other upstream assets changed, or for multiple down materializations to be kicked off in response to the same version being observed multiple times. This has been fixed.
 - Fixed a case where the materialization count for partitioned assets could be wrong.
+- Fixed an error which arose when trying to request resources within run failure sensors.
 - [dagster-wandb] Fixed handling for multi-dimensional partitions. Thanks @chrishiste
 
 ### Experimental
