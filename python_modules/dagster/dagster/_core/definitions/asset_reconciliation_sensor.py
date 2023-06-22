@@ -905,9 +905,16 @@ def reconcile(
 
     # fetch some data in advance to batch some queries
     target_asset_keys_and_parents_list = list(target_asset_keys_and_parents)
-    instance_queryer.prefetch_asset_records(target_asset_keys_and_parents_list)
+    instance_queryer.prefetch_asset_records(
+        [key for key in target_asset_keys_and_parents_list if not asset_graph.is_source(key)]
+    )
     instance_queryer.prefetch_asset_partition_counts(
-        target_asset_keys_and_parents_list, after_cursor=cursor.latest_storage_id
+        [
+            key
+            for key in target_asset_keys_and_parents_list
+            if asset_graph.is_partitioned(key) and not asset_graph.is_source(key)
+        ],
+        after_cursor=cursor.latest_storage_id,
     )
 
     conditions_by_asset_partition_for_freshness = (
