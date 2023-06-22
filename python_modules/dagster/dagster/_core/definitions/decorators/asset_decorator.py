@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Mapping,
+    NamedTuple,
     Optional,
     Set,
     Tuple,
@@ -15,12 +16,14 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
@@ -46,6 +49,27 @@ from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 
 
+class UpstreamAsset(
+    NamedTuple(
+        "_UpstreamAsset",
+        [
+            ("key", PublicAttr[AssetKey]),
+            ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
+        ],
+    )
+):
+    def __new__(
+        cls, key: CoercibleToAssetKey, partition_mapping: Optional[PartitionMapping] = None
+    ):
+        return super(UpstreamAsset, cls).__new__(
+            cls,
+            key=AssetKey.from_coercible(key),
+            partition_mapping=check.opt_inst_param(
+                partition_mapping, "partition_mapping", PartitionMapping
+            ),
+        )
+
+
 @overload
 def asset(
     compute_fn: Callable,
@@ -60,7 +84,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = ...,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, UpstreamAsset]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -89,7 +113,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, UpstreamAsset]]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -190,18 +214,20 @@ def asset(
                 " upstream_assets instead."
             )
 
-        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+        upstream_asset_deps: Optional[Set[UpstreamAsset]] = _make_upstream_assets(upstream_assets)
         if non_argument_deps is not None:
             deprecation_warning(
                 "non_argument_deps", "X.X.X", "use parameter upstream_assets instead"
             )
-            upstream_asset_deps = {dep for dep in non_argument_deps}
+            # this set conversion is an annoying side effect of the type changing from
+            # Union[Set[AssetKey], Set[str]] to Set[Union[CoercibleToAssetKey, UpstreamAsset]]
+            upstream_asset_deps = _make_upstream_assets({dep for dep in non_argument_deps})
 
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            upstream_assets=_make_asset_keys(upstream_asset_deps),
+            upstream_assets=upstream_asset_deps,
             metadata=metadata,
             description=description,
             config_schema=config_schema,
@@ -252,7 +278,7 @@ class _Asset:
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        upstream_assets: Optional[Set[AssetKey]] = None,
+        upstream_assets: Optional[Set[UpstreamAsset]] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
@@ -307,7 +333,12 @@ class _Asset:
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, self.upstream_assets)
+        upstream_asset_keys = (
+            {asset.key for asset in self.upstream_assets}
+            if self.upstream_assets is not None
+            else None
+        )
+        asset_ins = build_asset_ins(fn, self.ins or {}, upstream_asset_keys)
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
@@ -385,6 +416,10 @@ class _Asset:
             for input_name, asset_in in self.ins.items()
             if asset_in.partition_mapping is not None
         }
+        if self.upstream_assets is not None:
+            for upstream in self.upstream_assets:
+                if upstream.partition_mapping is not None:
+                    partition_mappings[upstream.key] = upstream.partition_mapping
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -414,7 +449,7 @@ def multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, UpstreamAsset]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -543,15 +578,21 @@ def multi_asset(
             " upstream_assets instead."
         )
 
-    upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+    upstream_asset_deps: Optional[Set[UpstreamAsset]] = _make_upstream_assets(upstream_assets)
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "X.X.X", "use parameter upstream_assets instead")
-        upstream_asset_deps = {dep for dep in non_argument_deps}
+        # this set conversion is an annoying side effect of the type changing from
+        # Union[Set[AssetKey], Set[str]] to Set[Union[CoercibleToAssetKey, UpstreamAsset]]
+        upstream_asset_deps = _make_upstream_assets({dep for dep in non_argument_deps})
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
-            fn, ins or {}, upstream_assets=_make_asset_keys(upstream_asset_deps)
+            fn,
+            ins or {},
+            upstream_assets={asset.key for asset in upstream_asset_deps}
+            if upstream_asset_deps is not None
+            else None,
         )
         asset_outs = build_asset_outs(outs)
 
@@ -647,6 +688,10 @@ def multi_asset(
             for input_name, asset_in in (ins or {}).items()
             if asset_in.partition_mapping is not None
         }
+        if upstream_asset_deps is not None:
+            for upstream in upstream_asset_deps:
+                if upstream.partition_mapping is not None:
+                    partition_mappings[upstream.key] = upstream.partition_mapping
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -1008,10 +1053,33 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _make_asset_keys(deps: Optional[Set[CoercibleToAssetKey]]) -> Optional[Set[AssetKey]]:
+def _make_asset_keys(
+    deps: Optional[Set[Union[CoercibleToAssetKey, UpstreamAsset]]]
+) -> Optional[Set[AssetKey]]:
     """Convert all str items to AssetKey in the set."""
     if deps is None:
         return deps
 
-    deps_asset_keys = {AssetKey.from_coercible(dep) for dep in deps}
+    deps_asset_keys: Set[AssetKey] = set()
+    for dep in deps:
+        if isinstance(dep, UpstreamAsset):
+            deps_asset_keys.add(AssetKey.from_coercible(dep.key))
+        else:
+            deps_asset_keys.add(AssetKey.from_coercible(dep))
     return deps_asset_keys
+
+
+def _make_upstream_assets(
+    deps: Optional[Set[Union[CoercibleToAssetKey, UpstreamAsset]]]
+) -> Optional[Set[UpstreamAsset]]:
+    """Convert all str items to UpstreamAsset in the set."""
+    if deps is None:
+        return deps
+
+    deps_upstream_assets: Set[UpstreamAsset] = set()
+    for dep in deps:
+        if isinstance(dep, UpstreamAsset):
+            deps_upstream_assets.add(dep)
+        else:
+            deps_upstream_assets.add(UpstreamAsset(key=dep))
+    return deps_upstream_assets
