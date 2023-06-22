@@ -605,17 +605,17 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.get_latest_record(asset_partition, None):
+                if instance_queryer.record_exists(asset_partition):
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)
         else:
             if not cursor.was_previously_materialized_or_requested(asset_key):
-                asset = AssetKeyPartitionKey(asset_key)
-                if instance_queryer.get_latest_record(asset, None):
+                asset_partition = AssetKeyPartitionKey(asset_key)
+                if instance_queryer.record_exists(asset_partition):
                     newly_materialized_root_asset_keys.add(asset_key)
                 else:
-                    never_materialized_or_requested.add(asset)
+                    never_materialized_or_requested.add(asset_partition)
 
     return (
         never_materialized_or_requested,
@@ -889,7 +889,6 @@ def reconcile(
 
     # fetch some data in advance to batch some queries
     target_asset_keys_and_parents_list = list(target_asset_keys_and_parents)
-    print(target_asset_keys_and_parents_list)
     instance_queryer.prefetch_asset_records(
         [key for key in target_asset_keys_and_parents_list if not asset_graph.is_source(key)]
     )

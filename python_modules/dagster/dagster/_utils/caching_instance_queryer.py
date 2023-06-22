@@ -104,7 +104,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 self._asset_record_cache[key] = None
 
     ####################
-    # MATERIALIZATION / ASSET RECORDS
+    # ASSET RECORDS / STORAGE IDS
     ####################
 
     def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
@@ -114,25 +114,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return self._asset_record_cache[asset_key]
 
-    def record_exists(
-        self,
-        asset_partition: AssetKeyPartitionKey,
-        after_cursor: Optional[int] = None,
-    ) -> bool:
-        """Returns True if there is a materialization record for the given asset partition after
-        the specified cursor.
-
-        Args:
-            asset_partition (AssetKeyPartitionKey): The asset partition to query.
-            after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
-                greater than this value will be considered.
-        """
-        return (self.get_latest_storage_id(asset_partition) or 0) > (after_cursor or 0)
+    def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
+        if self.asset_graph.is_source(asset_key):
+            return DagsterEventType.ASSET_OBSERVATION
+        else:
+            return DagsterEventType.ASSET_MATERIALIZATION
 
     @cached_method
     def _get_latest_record(
         self, *, asset_partition: AssetKeyPartitionKey, before_cursor: Optional[int] = None
     ) -> Optional["EventLogRecord"]:
+        """Returns the latest event log record for the given asset partition of an asset. For
+        observable source assets, this will be an AssetObservation, otherwise it will be an
+        AssetMaterialization.
+        """
         from dagster._core.event_api import EventRecordsFilter
 
         # in the simple case, just use the asset record
@@ -159,6 +154,58 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             limit=1,
         )
         return next(iter(records), None)
+
+    @cached_method
+    def _get_latest_storage_ids(
+        self, *, asset_key: AssetKey
+    ) -> Mapping[AssetKeyPartitionKey, Optional[int]]:
+        """Returns a mapping from asset partition to the latest storage id for that asset partition
+        for all asset partitions associated with the given asset key.
+
+        Note that for partitioned assets, an asset partition with a None partition key will be
+        present in the mapping, representing the latest storage id for the asset as a whole.
+        """
+        asset_partition = AssetKeyPartitionKey(asset_key)
+        latest_record = self._get_latest_record(asset_partition=asset_partition)
+        latest_storage_ids = {
+            asset_partition: latest_record.storage_id if latest_record is not None else None
+        }
+        if self.asset_graph.is_partitioned(asset_key):
+            latest_storage_ids.update(
+                {
+                    AssetKeyPartitionKey(asset_key, partition_key): storage_id
+                    for partition_key, storage_id in self.instance.get_latest_storage_id_by_partition(
+                        asset_key, event_type=self._event_type_for_key(asset_key)
+                    ).items()
+                }
+            )
+        return latest_storage_ids
+
+    def get_latest_storage_id(self, asset_partition: AssetKeyPartitionKey) -> Optional[int]:
+        """Returns the latest storage id for the given asset partition. If the asset has never been
+        materialized, returns None.
+
+        Args:
+            asset_partition (AssetKeyPartitionKey): The asset partition to query.
+        """
+        return self._get_latest_storage_ids(asset_key=asset_partition.asset_key).get(
+            asset_partition
+        )
+
+    def record_exists(
+        self,
+        asset_partition: AssetKeyPartitionKey,
+        after_cursor: Optional[int] = None,
+    ) -> bool:
+        """Returns True if there is a materialization record for the given asset partition after
+        the specified cursor.
+
+        Args:
+            asset_partition (AssetKeyPartitionKey): The asset partition to query.
+            after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
+                greater than this value will be considered.
+        """
+        return (self.get_latest_storage_id(asset_partition) or 0) > (after_cursor or 0)
 
     def get_latest_record(
         self,
@@ -360,37 +407,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return partition_key in self.get_dynamic_partitions(partitions_def_name)
 
     ####################
-    # SCRATCH
+    # RECONCILIATION
     ####################
-
-    def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
-        if self.asset_graph.is_source(asset_key):
-            return DagsterEventType.ASSET_OBSERVATION
-        else:
-            return DagsterEventType.ASSET_MATERIALIZATION
-
-    @cached_method
-    def get_latest_storage_ids(
-        self, *, asset_key: AssetKey
-    ) -> Mapping[AssetKeyPartitionKey, Optional[int]]:
-        asset_partition = AssetKeyPartitionKey(asset_key)
-        latest_record = self._get_latest_record(asset_partition=asset_partition)
-        latest_storage_ids = {
-            asset_partition: latest_record.storage_id if latest_record is not None else None
-        }
-        if self.asset_graph.is_partitioned(asset_key):
-            latest_storage_ids.update(
-                {
-                    AssetKeyPartitionKey(asset_key, partition_key): storage_id
-                    for partition_key, storage_id in self.instance.get_latest_storage_id_by_partition(
-                        asset_key, event_type=self._event_type_for_key(asset_key)
-                    ).items()
-                }
-            )
-        return latest_storage_ids
-
-    def get_latest_storage_id(self, asset_partition: AssetKeyPartitionKey) -> Optional[int]:
-        return self.get_latest_storage_ids(asset_key=asset_partition.asset_key).get(asset_partition)
 
     def _asset_partitions_data_versions(
         self,
@@ -410,7 +428,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 else {}
             )
         else:
-            query_result = self.instance._event_storage.get_latest_tags_by_partition(
+            query_result = self.instance._event_storage.get_latest_tags_by_partition(  # noqa
                 asset_key,
                 event_type=self._event_type_for_key(asset_key),
                 tag_keys=[DATA_VERSION_TAG],
@@ -440,7 +458,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # quick check that just compares latest storage ids
         updated_after_cursor = [
             asset_partition
-            for asset_partition, latest_storage_id in self.get_latest_storage_ids(
+            for asset_partition, latest_storage_id in self._get_latest_storage_ids(
                 asset_key=asset_key
             ).items()
             if (asset_partitions is None or asset_partition in asset_partitions)
@@ -499,7 +517,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
             # for existence of upstream materialization, do not worry about timestamps
             if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
-                continue
+                return self.asset_graph.is_source(parent_key) or all(
+                    self.record_exists(parent) for parent in parent_asset_partitions
+                )
 
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
