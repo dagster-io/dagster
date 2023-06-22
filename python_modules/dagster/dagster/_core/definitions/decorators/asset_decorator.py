@@ -34,7 +34,7 @@ from dagster._utils.backcompat import (
 
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
-from ..assets import AssetsDefinition
+from ..assets import AssetsDefinition, InternalAssetEdge
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -60,7 +60,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = ...,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, InternalAssetEdge]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -89,7 +89,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, InternalAssetEdge]]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -190,18 +190,18 @@ def asset(
                 " upstream_assets instead."
             )
 
-        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+        upstream_asset_deps: Optional[Set[InternalAssetEdge]] = _make_asset_edges(upstream_assets)
         if non_argument_deps is not None:
             deprecation_warning(
                 "non_argument_deps", "X.X.X", "use parameter upstream_assets instead"
             )
-            upstream_asset_deps = {dep for dep in non_argument_deps}
+            upstream_asset_deps = _make_asset_edges({dep for dep in non_argument_deps})
 
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            upstream_assets=_make_asset_keys(upstream_asset_deps),
+            upstream_assets=upstream_asset_deps,
             metadata=metadata,
             description=description,
             config_schema=config_schema,
@@ -252,7 +252,7 @@ class _Asset:
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        upstream_assets: Optional[Set[AssetKey]] = None,
+        upstream_assets: Optional[Set[InternalAssetEdge]] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
@@ -277,7 +277,7 @@ class _Asset:
             key_prefix = [key_prefix]
         self.key_prefix = key_prefix
         self.ins = ins or {}
-        self.upstream_assets = upstream_assets
+        self.upstream_assets = upstream_assets or {}
         self.metadata = metadata
         self.description = description
         self.required_resource_keys = check.opt_set_param(
@@ -307,7 +307,9 @@ class _Asset:
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, self.upstream_assets)
+        asset_ins = build_asset_ins(
+            fn, self.ins or {}, {asset.key for asset in self.upstream_assets}
+        )
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
@@ -386,6 +388,11 @@ class _Asset:
             if asset_in.partition_mapping is not None
         }
 
+        if self.upstream_assets is not None:
+            for upstream in self.upstream_assets:
+                if upstream.partition_mapping is not None:
+                    partition_mappings[upstream.key] = upstream.partition_mapping
+
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
@@ -414,7 +421,7 @@ def multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    upstream_assets: Optional[Set[CoercibleToAssetKey]] = None,
+    upstream_assets: Optional[Set[Union[CoercibleToAssetKey, InternalAssetEdge]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -543,15 +550,19 @@ def multi_asset(
             " upstream_assets instead."
         )
 
-    upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = upstream_assets
+    upstream_asset_deps: Optional[Set[InternalAssetEdge]] = _make_asset_edges(upstream_assets)
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "X.X.X", "use parameter upstream_assets instead")
-        upstream_asset_deps = {dep for dep in non_argument_deps}
+        upstream_asset_deps = _make_asset_edges({dep for dep in non_argument_deps})
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
-            fn, ins or {}, upstream_assets=_make_asset_keys(upstream_asset_deps)
+            fn,
+            ins or {},
+            upstream_assets={asset.key for asset in upstream_asset_deps}
+            if upstream_asset_deps
+            else None,
         )
         asset_outs = build_asset_outs(outs)
 
@@ -647,6 +658,11 @@ def multi_asset(
             for input_name, asset_in in (ins or {}).items()
             if asset_in.partition_mapping is not None
         }
+
+        if upstream_asset_deps is not None:
+            for upstream in upstream_asset_deps:
+                if upstream.partition_mapping is not None:
+                    partition_mappings[upstream.key] = upstream.partition_mapping
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -1015,3 +1031,20 @@ def _make_asset_keys(deps: Optional[Set[CoercibleToAssetKey]]) -> Optional[Set[A
 
     deps_asset_keys = {AssetKey.from_coercible(dep) for dep in deps}
     return deps_asset_keys
+
+
+def _make_asset_edges(
+    deps: Optional[Set[Union[CoercibleToAssetKey, InternalAssetEdge]]]
+) -> Optional[Set[InternalAssetEdge]]:
+    """Convert all str items to AssetKey in the set."""
+    if deps is None:
+        return deps
+
+    edges: Set[InternalAssetEdge] = set()
+    for dep in deps:
+        if isinstance(dep, InternalAssetEdge):
+            edges.add(dep)
+        else:
+            edges.add(InternalAssetEdge(key=dep))
+
+    return edges

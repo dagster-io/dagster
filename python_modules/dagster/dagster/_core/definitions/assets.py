@@ -9,6 +9,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -61,6 +62,29 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.compute import OpExecutionContext
 
     from .graph_definition import GraphDefinition
+
+from dagster._annotations import PublicAttr
+
+
+class InternalAssetEdge(  # i'm so bad at naming
+    NamedTuple(
+        "_InternalAssetEdge",
+        [
+            ("key", PublicAttr[AssetKey]),
+            ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
+        ],
+    )
+):
+    def __new__(
+        cls, key: CoercibleToAssetKey, partition_mapping: Optional[PartitionMapping] = None
+    ):
+        return super(InternalAssetEdge, cls).__new__(
+            cls,
+            key=AssetKey.from_coercible(key),
+            partition_mapping=check.opt_inst_param(
+                partition_mapping, "partition_mapping", PartitionMapping
+            ),
+        )
 
 
 class AssetsDefinition(ResourceAddable, IHasInternalInit):
@@ -612,6 +636,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
         )
+
+    @public
+    def with_partition_mapping(self, partition_mapping: PartitionMapping):
+        return InternalAssetEdge(key=self.key, partition_mapping=partition_mapping)
 
     @public
     @property
