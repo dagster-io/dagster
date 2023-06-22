@@ -32,6 +32,7 @@ from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
+from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import (
     ExternalExecutionPlan,
@@ -681,8 +682,12 @@ def get_asset_backfill_iteration_materialized_partitions(
     """
     recently_materialized_asset_partitions = AssetGraphSubset(asset_graph)
     for asset_key in asset_backfill_data.target_subset.asset_keys:
-        records = instance_queryer.get_materialization_records(
-            asset_key=asset_key, after_cursor=asset_backfill_data.latest_storage_id
+        records = instance_queryer.instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+                after_cursor=asset_backfill_data.latest_storage_id,
+            )
         )
         records_in_backfill = [
             record
@@ -747,9 +752,20 @@ def execute_asset_backfill_iteration_inner(
     if request_roots:
         initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
 
-        next_latest_storage_id = instance_queryer.get_latest_storage_id(
-            DagsterEventType.ASSET_MATERIALIZATION
+        next_latest_storage_id = None
+        latest_materialization_record = next(
+            iter(
+                instance_queryer.instance.get_event_records(
+                    event_records_filter=EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION
+                    ),
+                    limit=1,
+                )
+            ),
+            None,
         )
+        if latest_materialization_record is not None:
+            next_latest_storage_id = latest_materialization_record.storage_id
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
     else:
