@@ -71,6 +71,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         inst_data: Optional[ConfigurableClassData] = None,
         task_definition=None,
         container_name="run",
+        repository_credentials=None,
         secrets=None,
         secrets_tag="dagster",
         env_vars=None,
@@ -110,6 +111,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         self.container_name = container_name
 
+        self.repository_credentials = check.opt_str_param(repository_credentials, "repository_credentials")
+        
         self.secrets = check.opt_list_param(secrets, "secrets")
 
         self.env_vars = check.opt_list_param(env_vars, "env_vars")
@@ -255,6 +258,16 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 default_value="run",
                 description=(
                     "The container name to use when launching new tasks. Defaults to 'run'."
+                ),
+            ),
+            "repository_credentials": Field(
+                StringSource,
+                is_required=False,
+                default_value=None,
+                description=(
+                    "The arn of the secret to authenticate into your private container registry."
+                    "This does not apply if you are leveraging ECR for your images, see "
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/private-auth.html."
                 ),
             ),
             "secrets": Field(
@@ -585,6 +598,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         if self.task_definition_dict.get("log_group")
                         else None
                     ),
+                    repository_credentials=self.repository_credentials,
                     secrets=secrets if secrets else [],
                     environment=environment,
                     execution_role_arn=container_context.execution_role_arn,
@@ -611,6 +625,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     image,
                     self._get_container_name(container_context),
                     environment=environment,
+                    repository_credentials=self.repository_credentials,
                     secrets=secrets if secrets else {},
                     include_sidecars=self.include_sidecars,
                     task_role_arn=container_context.task_role_arn,
