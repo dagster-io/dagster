@@ -442,17 +442,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 if asset_partitions is not None
                 else None,
             )
-            print("============================")
-            print(
-                [
-                    asset_partition.partition_key
-                    for asset_partition in asset_partitions
-                    if asset_partition.partition_key is not None
-                ]
-            )
-            print(after_cursor)
-            print("query_result", query_result)
-            print("============================")
             return {
                 AssetKeyPartitionKey(asset_key, partition_key): DataVersion(tags[DATA_VERSION_TAG])
                 if tags.get(DATA_VERSION_TAG)
@@ -477,7 +466,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if (asset_partitions is None or asset_partition in asset_partitions)
             and (latest_storage_id or 0) > (after_cursor or 0)
         ]
-        print("UPDATED", updated_after_cursor)
         if not updated_after_cursor:
             return []
         # for regular assets, don't bother checking versions
@@ -489,11 +477,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_versions = self._asset_partitions_data_versions(
             asset_key, updated_after_cursor, after_cursor=after_cursor
         )
-        print("L", latest_versions)
         previous_versions = self._asset_partitions_data_versions(
             asset_key, updated_after_cursor, before_cursor=after_cursor
         )
-        print("P", previous_versions)
         return [
             asset_partition
             for asset_partition, version in latest_versions.items()

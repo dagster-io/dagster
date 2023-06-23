@@ -473,20 +473,17 @@ def find_parent_materialized_asset_partitions(
     """
     result_asset_partitions: Set[AssetKeyPartitionKey] = set()
     result_latest_storage_id = latest_storage_id
-    print("-----------------------------------")
 
     for asset_key in target_asset_keys_and_parents:
         if asset_graph.is_source(asset_key) and not asset_graph.is_observable(asset_key):
             continue
 
         # the set of asset partitions which have been updated since the latest storage id
-        print("...........", asset_key)
         new_asset_partitions = instance_queryer.get_new_asset_partitions(
             asset_key=asset_key,
             asset_partitions=None,
             after_cursor=latest_storage_id,
         )
-        print("NAP", new_asset_partitions)
         if not new_asset_partitions:
             continue
 
@@ -518,7 +515,6 @@ def find_parent_materialized_asset_partitions(
                     )
                 ]
             )
-            print("PARTITIONS SUBSET", partitions_subset)
             for child in asset_graph.get_children(asset_key):
                 child_partitions_def = asset_graph.get_partitions_def(child)
                 if child not in target_asset_keys:
@@ -538,7 +534,6 @@ def find_parent_materialized_asset_partitions(
                         )
                     )
                     for child_partition in child_partitions_subset.get_partition_keys():
-                        print("CHILD", child_partition)
                         # we need to see if the child is planned for the same run, but this is
                         # expensive, so we try to avoid doing so in as many situations as possible
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
@@ -572,7 +567,6 @@ def find_parent_materialized_asset_partitions(
         ):
             result_latest_storage_id = asset_latest_storage_id
 
-    print("RESULT", result_asset_partitions, result_latest_storage_id)
     return (result_asset_partitions, result_latest_storage_id)
 
 
