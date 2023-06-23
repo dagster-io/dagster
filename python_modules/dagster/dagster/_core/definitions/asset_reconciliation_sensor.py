@@ -479,7 +479,7 @@ def find_parent_materialized_asset_partitions(
             continue
 
         # the set of asset partitions which have been updated since the latest storage id
-        new_asset_partitions = instance_queryer.get_new_asset_partitions(
+        new_asset_partitions = instance_queryer.get_asset_partitions_updated_after_cursor(
             asset_key=asset_key,
             asset_partitions=None,
             after_cursor=latest_storage_id,
@@ -490,7 +490,9 @@ def find_parent_materialized_asset_partitions(
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
             latest_record = check.not_none(
-                instance_queryer.get_latest_record(AssetKeyPartitionKey(asset_key))
+                instance_queryer.get_latest_materialization_or_observation_record(
+                    AssetKeyPartitionKey(asset_key)
+                )
             )
             for child in asset_graph.get_children_partitions(
                 dynamic_partitions_store=instance_queryer,
@@ -548,7 +550,7 @@ def find_parent_materialized_asset_partitions(
                             result_asset_partitions.add(child_asset_partition)
                         else:
                             latest_partition_record = check.not_none(
-                                instance_queryer.get_latest_record(
+                                instance_queryer.get_latest_materialization_or_observation_record(
                                     AssetKeyPartitionKey(asset_key, child_partition),
                                     after_cursor=latest_storage_id,
                                 )
@@ -558,8 +560,10 @@ def find_parent_materialized_asset_partitions(
                             ):
                                 result_asset_partitions.add(child_asset_partition)
 
-        asset_latest_storage_id = instance_queryer.get_latest_storage_id(
-            AssetKeyPartitionKey(asset_key)
+        asset_latest_storage_id = (
+            instance_queryer.get_latest_materialization_or_observation_storage_id(
+                AssetKeyPartitionKey(asset_key)
+            )
         )
         if (
             result_latest_storage_id is None
@@ -605,14 +609,18 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.record_exists(asset_partition):
+                if instance_queryer.asset_partition_has_materialization_or_observation(
+                    asset_partition
+                ):
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)
         else:
             if not cursor.was_previously_materialized_or_requested(asset_key):
                 asset_partition = AssetKeyPartitionKey(asset_key)
-                if instance_queryer.record_exists(asset_partition):
+                if instance_queryer.asset_partition_has_materialization_or_observation(
+                    asset_partition
+                ):
                     newly_materialized_root_asset_keys.add(asset_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)
@@ -686,8 +694,9 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             return False
         # the policy does not allow for materializing missing partitions and it's missing
-        elif not auto_materialize_policy.on_missing and not instance_queryer.record_exists(
-            candidate
+        elif (
+            not auto_materialize_policy.on_missing
+            and not instance_queryer.asset_partition_has_materialization_or_observation(candidate)
         ):
             return False
 
@@ -759,8 +768,11 @@ def determine_asset_partitions_to_auto_materialize(
         conditions = set()
         if auto_materialize_policy is None:
             return conditions
-        elif auto_materialize_policy.on_missing and not instance_queryer.record_exists(
-            asset_partition=candidate
+        elif (
+            auto_materialize_policy.on_missing
+            and not instance_queryer.asset_partition_has_materialization_or_observation(
+                asset_partition=candidate
+            )
         ):
             conditions.add(MissingAutoMaterializeCondition())
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(

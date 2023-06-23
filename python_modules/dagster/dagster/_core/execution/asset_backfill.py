@@ -752,20 +752,10 @@ def execute_asset_backfill_iteration_inner(
     if request_roots:
         initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
 
-        next_latest_storage_id = None
-        latest_materialization_record = next(
-            iter(
-                instance_queryer.instance.get_event_records(
-                    event_records_filter=EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION
-                    ),
-                    limit=1,
-                )
-            ),
-            None,
+        next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION
         )
-        if latest_materialization_record is not None:
-            next_latest_storage_id = latest_materialization_record.storage_id
+
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
     else:
