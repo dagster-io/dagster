@@ -17,6 +17,7 @@ from typing import (
 
 from typing_extensions import get_args
 
+import dagster._check as check
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetMaterialization,
@@ -205,17 +206,22 @@ def validate_and_coerce_op_result_to_iterator(
         # this happens when a user explicitly returns a generator in the op
         for event in result:
             yield event
-    elif isinstance(result, (AssetMaterialization, ExpectationResult)):
+
+    # [A] yield it here...
+    # elif isinstance(result, AssetMaterialization):
+    #     yield result
+
+    elif isinstance(result, (ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
-            "returning an AssetMaterialization "
-            "or an ExpectationResult from "
-            f"{context.op_def.node_type_str} you must yield them "
+            "returning an ExpectationResult from "
+            f"{context.op_def.node_type_str} you must yield it "
             "directly, or log them using the OpExecutionContext.log_event method to avoid "
             "ambiguity with an implied result from returning a "
             "value. Check out the docs on logging events here: "
             "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
+
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: Unexpectedly returned output of type"
@@ -253,6 +259,8 @@ def validate_and_coerce_op_result_to_iterator(
                             mapping_key=dynamic_output.mapping_key,
                             metadata=dynamic_output.metadata,
                         )
+            elif isinstance(element, AssetMaterialization):
+                yield element
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
                     annotation
@@ -291,3 +299,5 @@ def validate_and_coerce_op_result_to_iterator(
                         "https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
                 yield Output(output_name=output_def.name, value=element)
+    else:
+        check.failed("do we ever hit this unhandled case?")

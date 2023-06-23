@@ -196,7 +196,7 @@ def execute_core_compute(
 
     op_output_names = {output.name for output in step.step_outputs}
     omitted_outputs = op_output_names.difference(emitted_result_names)
-    if omitted_outputs:
+    if omitted_outputs and not step_context.has_observed_user_asset_mats():
         step_context.log.info(
             f"{step_context.op_def.node_type_str} '{step.node_handle}' did not fire "
             f"outputs {omitted_outputs!r}"

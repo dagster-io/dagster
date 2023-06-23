@@ -90,8 +90,14 @@ def _step_output_error_checked_user_event_sequence(
     output_names = list([output_def.name for output_def in step.step_outputs])
 
     for user_event in user_event_sequence:
-        if not isinstance(user_event, (Output, DynamicOutput)):
+        if not isinstance(user_event, (Output, DynamicOutput, AssetMaterialization)):
             yield user_event
+            continue
+
+        # [A] ... to swallow here
+        if isinstance(user_event, AssetMaterialization):
+            step_context.observe_user_asset_mat(user_event.asset_key, user_event)
+            # defer yielding til post resolve to apply tags
             continue
 
         # do additional processing on Outputs
@@ -197,6 +203,15 @@ def _step_output_error_checked_user_event_sequence(
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
                 )
+                yield Output(output_name=step_output_def.name, value=None)
+
+            if step_context.is_sda_step and step_context.get_observed_user_asset_mat(
+                step_context.asset_key_for_output(step_output_def.name)
+            ):
+                # think its fine to omit log
+                # step_context.log.info(
+                #     f"Emitting implicit Nothing for materialized asset {op_label}"
+                # )
                 yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(
@@ -413,6 +428,7 @@ def core_dagster_event_sequence_for_step(
                     yield evt
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
             # to do something with these in the above path eventually
+            # ^ wat?
             elif isinstance(user_event, AssetMaterialization):
                 yield DagsterEvent.asset_materialization(step_context, user_event)
             elif isinstance(user_event, AssetObservation):
@@ -536,7 +552,11 @@ def _get_output_asset_materializations(
     if backfill_id:
         tags[BACKFILL_ID_TAG] = backfill_id
 
-    if asset_partitions:
+    user_event = step_context.get_observed_user_asset_mat(asset_key)
+    if asset_partitions and user_event:
+        # this will be a bit involved
+        check.failed("unhandled")
+    elif asset_partitions:
         for partition in asset_partitions:
             with disable_dagster_warnings():
                 tags.update(
@@ -551,6 +571,20 @@ def _get_output_asset_materializations(
                     metadata=all_metadata,
                     tags=tags,
                 )
+    elif user_event:
+        if tags:
+            yield AssetMaterialization(
+                **{  # dirty mergey
+                    **user_event._asdict(),
+                    "tags": {
+                        **(user_event.tags if user_event.tags else {}),
+                        **tags,
+                    },
+                },
+            )
+        else:
+            yield user_event
+
     else:
         with disable_dagster_warnings():
             yield AssetMaterialization(asset_key=asset_key, metadata=all_metadata, tags=tags)

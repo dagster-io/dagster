@@ -20,6 +20,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.data_version import DataVersion
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -484,7 +485,7 @@ class AssetMaterialization(
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
-            job runs
+            job runs. Optional in cases when the key can be inferred from the current context.
         description (Optional[str]): A longer human-readable description of the materialized value.
         partition (Optional[str]): The name of the partition
             that was materialized.
@@ -498,18 +499,32 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key: CoercibleToAssetKey,
+        asset_key: Optional[CoercibleToAssetKey] = None,
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
         from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+        from dagster._core.execution.context.compute import get_execution_context
 
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
+        elif asset_key is None:
+            current_ctx = get_execution_context()
+            if current_ctx is None:
+                raise DagsterInvariantViolationError(
+                    "Could not infer asset_key, not currently in the context of an execution."
+                )
+            keys = current_ctx.selected_asset_keys
+            if len(keys) != 1:
+                raise DagsterInvariantViolationError(
+                    f"Could not infer asset_key, there are {len(keys)} in the current execution"
+                    " context. Specify the appropriate asset_key."
+                )
+            asset_key = next(iter(keys))
         else:
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
