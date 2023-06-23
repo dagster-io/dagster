@@ -96,14 +96,11 @@ export const Button = React.forwardRef(
     const {children, icon, intent, loading, outlined, rightIcon, ...rest} = props;
 
     let iconOrSpinner = icon;
-    let rightIconOrSpinner = rightIcon;
+    const rightIconOrSpinner = rightIcon;
 
     if (loading) {
       const spinnerColor = intentToSpinnerColor(intent, outlined);
-      iconOrSpinner = rightIcon ? icon : <Spinner purpose="body-text" fillColor={spinnerColor} />;
-      rightIconOrSpinner = rightIcon ? (
-        <Spinner purpose="body-text" fillColor={spinnerColor} />
-      ) : null;
+      iconOrSpinner = <Spinner purpose="body-text" fillColor={spinnerColor} />;
     }
 
     return (
