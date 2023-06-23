@@ -433,13 +433,26 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 event_type=self._event_type_for_key(asset_key),
                 tag_keys=[DATA_VERSION_TAG],
                 after_cursor=after_cursor,
+                before_cursor=before_cursor,
                 asset_partitions=[
-                    check.not_none(asset_partition.partition_key)
+                    asset_partition.partition_key
                     for asset_partition in asset_partitions
+                    if asset_partition.partition_key is not None
                 ]
                 if asset_partitions is not None
                 else None,
             )
+            print("============================")
+            print(
+                [
+                    asset_partition.partition_key
+                    for asset_partition in asset_partitions
+                    if asset_partition.partition_key is not None
+                ]
+            )
+            print(after_cursor)
+            print("query_result", query_result)
+            print("============================")
             return {
                 AssetKeyPartitionKey(asset_key, partition_key): DataVersion(tags[DATA_VERSION_TAG])
                 if tags.get(DATA_VERSION_TAG)
@@ -464,6 +477,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if (asset_partitions is None or asset_partition in asset_partitions)
             and (latest_storage_id or 0) > (after_cursor or 0)
         ]
+        print("UPDATED", updated_after_cursor)
         if not updated_after_cursor:
             return []
         # for regular assets, don't bother checking versions
@@ -475,9 +489,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_versions = self._asset_partitions_data_versions(
             asset_key, updated_after_cursor, after_cursor=after_cursor
         )
+        print("L", latest_versions)
         previous_versions = self._asset_partitions_data_versions(
             asset_key, updated_after_cursor, before_cursor=after_cursor
         )
+        print("P", previous_versions)
         return [
             asset_partition
             for asset_partition, version in latest_versions.items()
@@ -514,18 +530,16 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             parent_asset_partitions_by_key[parent.asset_key].append(parent)
 
         for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
-            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
-            # for existence of upstream materialization, do not worry about timestamps
-            if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
-                return self.asset_graph.is_source(parent_key) or all(
-                    self.record_exists(parent) for parent in parent_asset_partitions
-                )
-
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
                 parent_key
             ):
                 continue
+
+            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
+            # for existence of upstream materialization, do not worry about timestamps
+            if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
+                return all(self.record_exists(parent) for parent in parent_asset_partitions)
             elif self.get_new_asset_partitions(
                 asset_key=parent_key,
                 asset_partitions=parent_asset_partitions,

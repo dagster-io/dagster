@@ -47,6 +47,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -476,9 +477,19 @@ def multi_asset_def(
     return _assets
 
 
-def observable_source_asset_def(key: str, changes: bool = True):
-    @observable_source_asset(name=key)
-    def _observable():
+def observable_source_asset_def(
+    key: str, partitions_def: Optional[PartitionsDefinition] = None, changes: bool = True
+):
+    def _data_version() -> DataVersion:
         return DataVersion(str(random.random())) if changes else DataVersion("the_version")
+
+    @observable_source_asset(name=key, partitions_def=partitions_def)
+    def _observable():
+        if partitions_def is None:
+            return _data_version()
+        else:
+            return DataVersionsByPartition(
+                {partition: _data_version() for partition in partitions_def.get_partition_keys()}
+            )
 
     return _observable
