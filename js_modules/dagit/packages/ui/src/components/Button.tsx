@@ -96,7 +96,6 @@ export const Button = React.forwardRef(
     const {children, icon, intent, loading, outlined, rightIcon, ...rest} = props;
 
     let iconOrSpinner = icon;
-    const rightIconOrSpinner = rightIcon;
 
     if (loading) {
       const spinnerColor = intentToSpinnerColor(intent, outlined);
@@ -107,7 +106,7 @@ export const Button = React.forwardRef(
       <BaseButton
         {...rest}
         icon={iconOrSpinner}
-        rightIcon={rightIconOrSpinner}
+        rightIcon={rightIcon}
         loading={loading}
         fillColor={intentToFillColor(intent, outlined)}
         textColor={intentToTextColor(intent, outlined)}
