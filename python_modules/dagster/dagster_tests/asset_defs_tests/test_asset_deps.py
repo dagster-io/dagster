@@ -192,7 +192,7 @@ def test_mulit_asset_deps_via_mixed_types():
     assert res.success
 
 
-def test_mulit_asset_deps_via_assets_definition_fails():
+def test_multi_asset_deps_via_assets_definition_fails():
     @multi_asset(
         outs={
             "asset_1": AssetOut(),

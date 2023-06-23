@@ -200,13 +200,12 @@ def asset(
         ] = None
         if deps is not None:
             for dep in deps:
-                if isinstance(dep, AssetsDefinition):
-                    if len(dep.keys) > 1:
-                        raise DagsterInvalidDefinitionError(
-                            "Cannot pass a multi asset AssetsDefinition as an argument to deps."
-                            " Instead, specify dependencies on multi assets via AssetKeys or"
-                            " strings."
-                        )
+                if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
+                    raise DagsterInvalidDefinitionError(
+                        "Cannot pass a multi asset AssetsDefinition as an argument to deps."
+                        " Instead, specify dependencies on multi assets via AssetKeys or"
+                        " strings."
+                    )
             upstream_asset_deps = deps
 
         if non_argument_deps is not None:
@@ -546,21 +545,19 @@ def multi_asset(
     upstream_asset_deps: Optional[
         Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
     ] = None
+
     if deps is not None:
         for dep in deps:
-            if isinstance(dep, AssetsDefinition):
-                if len(dep.keys) > 1:
-                    raise DagsterInvalidDefinitionError(
-                        "Cannot pass a multi asset AssetsDefinition as an argument to deps."
-                        " Instead, pecify dependencies on multi assets via AssetKeys or strings."
-                    )
-        upstream_asset_deps: Optional[
-            Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
-        ] = deps
+            if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
+                raise DagsterInvalidDefinitionError(
+                    "Cannot pass a multi asset AssetsDefinition as an argument to deps."
+                    " Instead, specify dependencies on multi assets via AssetKeys or strings."
+                )
+        upstream_asset_deps = deps
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
         # this set -> list conversion is a side effect of the type changing from
-        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
+        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
         upstream_asset_deps = [dep for dep in non_argument_deps]
 
     if resource_defs is not None:
@@ -1074,7 +1071,8 @@ def _make_asset_keys(
     deps_asset_keys: Set[AssetKey] = set()
     for dep in deps:
         if isinstance(dep, AssetsDefinition):
-            # this will error if the AssetsDefinition is a multi_asset
+            # this will error if the AssetsDefinition is a multi_asset, but we should have caught that
+            # earlier in execution
             deps_asset_keys.add(dep.key)
         elif isinstance(dep, SourceAsset):
             deps_asset_keys.add(dep.key)
