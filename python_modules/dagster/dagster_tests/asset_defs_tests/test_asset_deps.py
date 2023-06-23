@@ -104,7 +104,7 @@ def test_single_asset_deps_via_mixed_types():
     assert res.success
 
 
-def test_mulit_asset_deps_via_string():
+def test_multi_asset_deps_via_string():
     @multi_asset(
         outs={
             "asset_1": AssetOut(),
@@ -136,7 +136,7 @@ def test_mulit_asset_deps_via_string():
     assert res.success
 
 
-def test_mulit_asset_deps_via_key():
+def test_multi_asset_deps_via_key():
     @multi_asset(
         outs={
             "asset_1": AssetOut(),
@@ -168,7 +168,7 @@ def test_mulit_asset_deps_via_key():
     assert res.success
 
 
-def test_mulit_asset_deps_via_mixed_types():
+def test_multi_asset_deps_via_mixed_types():
     @multi_asset(
         outs={
             "asset_1": AssetOut(),
@@ -210,6 +210,88 @@ def test_multi_asset_deps_via_assets_definition_fails():
         @asset(deps=[a_multi_asset])
         def depends_on_both_sub_assets():
             return None
+
+
+def test_multi_asset_downstream_deps_via_assets_definition():
+    @asset
+    def asset_1():
+        return None
+
+    @multi_asset(deps=[asset_1], outs={"out1": AssetOut(), "out2": AssetOut()})
+    def asset_2():
+        return None, None
+
+    assert len(asset_2.input_names) == 1
+    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+
+    res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
+
+    assert res.success
+
+
+def test_multi_asset_downstream_deps_via_string():
+    @asset
+    def asset_1():
+        return None
+
+    @multi_asset(deps=["asset_1"], outs={"out1": AssetOut(), "out2": AssetOut()})
+    def asset_2():
+        return None, None
+
+    assert len(asset_2.input_names) == 1
+    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+
+    res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
+
+    assert res.success
+
+
+def test_multi_asset_downstream_deps_via_asset_key():
+    @asset
+    def asset_1():
+        return None
+
+    @multi_asset(deps=[AssetKey("asset_1")], outs={"out1": AssetOut(), "out2": AssetOut()})
+    def asset_2():
+        return None, None
+
+    assert len(asset_2.input_names) == 1
+    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+
+    res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
+    assert res.success
+
+
+def test_multi_asset_downstream_deps_via_mixed_types():
+    @asset
+    def via_definition():
+        return None
+
+    @asset
+    def via_string():
+        return None
+
+    @asset
+    def via_asset_key():
+        return None
+
+    @multi_asset(
+        deps=[via_definition, "via_string", AssetKey("via_asset_key")],
+        outs={"out1": AssetOut(), "out2": AssetOut()},
+    )
+    def downstream():
+        return None, None
+
+    assert len(downstream.input_names) == 3
+    assert downstream.op.ins["via_definition"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert downstream.op.ins["via_string"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert downstream.op.ins["via_asset_key"].dagster_type.kind == DagsterTypeKind.NOTHING
+
+    res = materialize(
+        [via_definition, via_string, via_asset_key, downstream],
+        resources={"io_manager": TestingIOManager()},
+    )
+    assert res.success
 
 
 def test_source_asset_deps_via_assets_definition():
