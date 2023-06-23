@@ -71,7 +71,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         inst_data: Optional[ConfigurableClassData] = None,
         task_definition=None,
         container_name="run",
-        repository_credentials=None,
         secrets=None,
         secrets_tag="dagster",
         env_vars=None,
@@ -80,6 +79,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        repository_credentials: Optional[str] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -258,16 +258,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 default_value="run",
                 description=(
                     "The container name to use when launching new tasks. Defaults to 'run'."
-                ),
-            ),
-            "repository_credentials": Field(
-                StringSource,
-                is_required=False,
-                default_value=None,
-                description=(
-                    "The arn of the secret to authenticate into your private container registry."
-                    "This does not apply if you are leveraging ECR for your images, see "
-                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/private-auth.html."
                 ),
             ),
             "secrets": Field(
@@ -598,7 +588,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         if self.task_definition_dict.get("log_group")
                         else None
                     ),
-                    repository_credentials=self.repository_credentials,
                     secrets=secrets if secrets else [],
                     environment=environment,
                     execution_role_arn=container_context.execution_role_arn,
@@ -615,6 +604,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     runtime_platform=runtime_platform,
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    repository_credentials=container_context.repository_credentials,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -625,7 +615,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     image,
                     self._get_container_name(container_context),
                     environment=environment,
-                    repository_credentials=self.repository_credentials,
                     secrets=secrets if secrets else {},
                     include_sidecars=self.include_sidecars,
                     task_role_arn=container_context.task_role_arn,
@@ -637,6 +626,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     additional_sidecars=container_context.run_sidecar_containers,
+                    repository_credentials=container_context.repository_credentials,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

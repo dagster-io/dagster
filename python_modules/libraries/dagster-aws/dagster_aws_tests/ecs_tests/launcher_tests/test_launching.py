@@ -685,6 +685,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         }
     ]
 
+    repository_credentials = "fake-secret-arn",
+
     # You can provide a family or a task definition ARN
     with instance_cm(
         {
@@ -697,6 +699,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
                 "runtime_platform": {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"},
                 "mount_points": mount_points,
                 "volumes": volumes,
+                "repository_credentials": repository_credentials,
             },
             "container_name": container_name,
         }
@@ -737,6 +740,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
 
         container_definition = task_definition["containerDefinitions"][0]
         assert container_definition["mountPoints"] == mount_points
+
+        assert container_definition["repositoryCredentials"]["credentialsParameter"] == repository_credentials
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
@@ -975,6 +980,8 @@ def test_launch_run_with_container_context(
     assert task_definition["volumes"] == container_context_config["ecs"]["volumes"]
 
     assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
+
+    assert container_definition["repositoryCredentials"]["credentialsParameter"] == container_context_config["ecs"]["repository_credentials"]
 
     sidecar_container = task_definition["containerDefinitions"][1]
     assert sidecar_container["name"] == "busyrun"
