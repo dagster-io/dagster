@@ -138,7 +138,7 @@ def asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str, Sequence[str]]]]):
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, CoercibleToAssetKey]]]):
              Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
@@ -474,7 +474,7 @@ def multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Sequence[Union[AssetsDefinition, AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, CoercibleToAssetKey]]]): Set of asset keys that are upstream
             dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
