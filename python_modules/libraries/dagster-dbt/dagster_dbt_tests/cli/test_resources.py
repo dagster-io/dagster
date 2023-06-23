@@ -50,10 +50,22 @@ def test_ls(test_project_dir, dbt_config_dir):
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    # slightly different output formats between dbt versions result in raw log output shifting
-    expected_results = 25
-    raw_lines = len(dbt_result.raw_output.split("\n\n"))
-    assert raw_lines == expected_results or raw_lines == expected_results + 2
+    for expected_element in [
+        "ephem1",
+        "ephem2",
+        "subdir.least_caloric",
+        "sort_by_calories",
+        "sort_cold_cereals_by_calories",
+        "sort_hot_cereals_by_calories",
+        # snapshot
+        "sort_snapshot.orders_snapshot",
+        # tests
+        "accepted_values_sort_by_calories_type__H__C",
+        "not_null_sort_by_calories_carbo",
+    ]:
+        assert (
+            f"dagster_dbt_test_project.{expected_element}" in dbt_result.raw_output
+        ), dbt_result.raw_output
 
 
 def test_ls_resource_type(test_project_dir, dbt_config_dir):
@@ -63,10 +75,21 @@ def test_ls_resource_type(test_project_dir, dbt_config_dir):
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    # slightly different output formats between dbt versions result in raw log output shifting
-    expected_results = 6
-    raw_lines = len(dbt_result.raw_output.split("\n\n"))
-    assert raw_lines == expected_results or raw_lines == expected_results + 2
+    for expected_element in [
+        "ephem1",
+        "ephem2",
+        "subdir.least_caloric",
+        "sort_by_calories",
+        "sort_cold_cereals_by_calories",
+        "sort_hot_cereals_by_calories",
+    ]:
+        assert (
+            f"dagster_dbt_test_project.{expected_element}" in dbt_result.raw_output
+        ), dbt_result.raw_output
+
+    # should not include snapshots or tests
+    assert "dagster_dbt_test_project.sort_snapshot.orders_snapshot" not in dbt_result.raw_output
+    assert "dagster_dbt_test_project.not_null_sort_by_calories_carbo" not in dbt_result.raw_output
 
 
 def test_test(dbt_seed, test_project_dir, dbt_config_dir):
