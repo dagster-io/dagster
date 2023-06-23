@@ -337,16 +337,15 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
 
-        if (
-            event.dagster_event
-            and event.dagster_event.asset_key
-            and event.dagster_event.is_step_materialization
-            and isinstance(
-                event.dagster_event.step_materialization_data.materialization, AssetMaterialization
-            )
-            and event.dagster_event.step_materialization_data.materialization.tags
-        ):
-            if not self.has_table(AssetEventTagsTable.name):
+        if event.dagster_event and event.dagster_event.asset_key:
+            if event.dagster_event.is_step_materialization:
+                tags = event.dagster_event.step_materialization_data.materialization.tags
+            elif event.dagster_event.is_asset_observation:
+                tags = event.dagster_event.asset_observation_data.asset_observation.tags
+            else:
+                tags = None
+
+            if not tags or not self.has_table(AssetEventTagsTable.name):
                 # If tags table does not exist, silently exit. This is to support OSS
                 # users who have not yet run the migration to create the table.
                 # On read, we will throw an error if the table does not exist.
@@ -355,7 +354,6 @@ class SqlEventLogStorage(EventLogStorage):
             check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
             asset_key_str = event.dagster_event.asset_key.to_string()
 
-            tags = event.dagster_event.step_materialization_data.materialization.tags
             with self.index_connection() as conn:
                 conn.execute(
                     AssetEventTagsTable.insert(),
