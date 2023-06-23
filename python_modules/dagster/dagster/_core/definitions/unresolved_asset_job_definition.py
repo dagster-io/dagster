@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         JobDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        ResourceDefinition,
         SourceAsset,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
@@ -169,7 +170,7 @@ class UnresolvedAssetJobDefinition(
         source_assets: Optional[Sequence["SourceAsset"]] = None,
         default_executor_def: Optional["ExecutorDefinition"] = None,
         asset_graph: Optional["InternalAssetGraph"] = None,
-        resource_defs=None,
+        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
 
