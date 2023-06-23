@@ -196,6 +196,8 @@ def asset(
         upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = deps
         if non_argument_deps is not None:
             deprecation_warning("non_argument_deps", "X.X.X", "use parameter deps instead")
+            # this set conversion is an annoying side effect of the type changing from
+            # Union[Set[AssetKey], Set[str]] to Set[CoercibleToAssetKey]
             upstream_asset_deps = {dep for dep in non_argument_deps}
 
         return _Asset(
@@ -552,6 +554,8 @@ def multi_asset(
     upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = deps
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "X.X.X", "use parameter deps instead")
+        # this set conversion is an annoying side effect of the type changing from
+        # Union[Set[AssetKey], Set[str]] to Set[CoercibleToAssetKey]
         upstream_asset_deps = {dep for dep in non_argument_deps}
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
