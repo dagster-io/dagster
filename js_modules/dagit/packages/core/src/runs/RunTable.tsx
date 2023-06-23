@@ -156,6 +156,7 @@ export const RunTable = (props: RunTableProps) => {
                 additionalActionsForRun={props.additionalActionsForRun}
                 onToggleChecked={onToggleFactory(run.id)}
                 isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
+                hideCreatedBy={hideCreatedBy}
               />
             ))}
           </tbody>
