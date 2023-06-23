@@ -1476,3 +1476,13 @@ def test_asset_takes_bare_resource():
     defs = Definitions(assets=[blah])
     defs.get_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
+
+
+def test_asset_key_with_prefix():
+    assert AssetKey("foo").with_prefix("prefix") == AssetKey(["prefix", "foo"])
+    assert AssetKey("foo").with_prefix(["prefix_one", "prefix_two"]) == AssetKey(
+        ["prefix_one", "prefix_two", "foo"]
+    )
+
+    with pytest.raises(CheckError):
+        AssetKey("foo").with_prefix(1)
