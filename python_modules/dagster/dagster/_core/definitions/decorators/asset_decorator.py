@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -60,7 +61,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
-    deps: Optional[Set[CoercibleToAssetKey]] = ...,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -90,7 +91,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     deps: Optional[
-        Set[CoercibleToAssetKey]
+        Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]
     ] = None,  # if deps will become the default experience, should it go above ins?
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
@@ -136,7 +137,7 @@ def asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Set[Union[AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
+        deps (Optional[Sequence[Union[AssetsDefinition, AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
             dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
@@ -193,12 +194,12 @@ def asset(
                 "Cannot specify both deps and non_argument_deps. Use only deps instead."
             )
 
-        upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = deps
+        upstream_asset_deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = deps
         if non_argument_deps is not None:
             deprecation_warning("non_argument_deps", "X.X.X", "use parameter deps instead")
-            # this set conversion is an annoying side effect of the type changing from
-            # Union[Set[AssetKey], Set[str]] to Set[CoercibleToAssetKey]
-            upstream_asset_deps = {dep for dep in non_argument_deps}
+            # this set -> list conversion is a side effect of the type changing from
+            # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
+            upstream_asset_deps = [dep for dep in non_argument_deps]
 
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
@@ -430,7 +431,7 @@ def multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Set[CoercibleToAssetKey]] = None,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -460,7 +461,7 @@ def multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Set[Union[AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
+        deps (Optional[Sequence[Union[AssetsDefinition, AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
             dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
@@ -551,12 +552,12 @@ def multi_asset(
             "Cannot specify both deps and non_argument_deps. Use only deps instead."
         )
 
-    upstream_asset_deps: Optional[Set[CoercibleToAssetKey]] = deps
+    upstream_asset_deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = deps
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "X.X.X", "use parameter deps instead")
-        # this set conversion is an annoying side effect of the type changing from
-        # Union[Set[AssetKey], Set[str]] to Set[CoercibleToAssetKey]
-        upstream_asset_deps = {dep for dep in non_argument_deps}
+        # this set -> list conversion is a side effect of the type changing from
+        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
+        upstream_asset_deps = [dep for dep in non_argument_deps]
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
@@ -1023,10 +1024,20 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _make_asset_keys(deps: Optional[Set[CoercibleToAssetKey]]) -> Optional[Set[AssetKey]]:
-    """Convert all str items to AssetKey in the set."""
+def _make_asset_keys(
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]]
+) -> Optional[Set[AssetKey]]:
+    """Convert all items to AssetKey in a set. By putting all of the AsestKeys in a set, it will also deduplicate them.
+    """
     if deps is None:
         return deps
 
-    deps_asset_keys = {AssetKey.from_coercible(dep) for dep in deps}
+    deps_asset_keys: Set[AssetKey] = set()
+    for dep in deps:
+        if isinstance(dep, AssetsDefinition):
+            # this will error if the AssetsDefinition is a multi_asset
+            deps_asset_keys.add(dep.key)
+        else:
+            deps_asset_keys.add(AssetKey.from_coercible(dep))
+
     return deps_asset_keys
