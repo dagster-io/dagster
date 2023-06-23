@@ -211,7 +211,9 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
     )
 
-    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
+    all_resource_defs = get_all_resource_defs(
+        assets, resolved_source_assets, hooks or set(), wrapped_resource_defs
+    )
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -313,7 +315,7 @@ def build_source_asset_observation_job(
         graph, assets_defs_by_node_handle, source_assets, resolved_asset_deps
     )
 
-    all_resource_defs = get_all_resource_defs(assets, source_assets, resource_defs)
+    all_resource_defs = get_all_resource_defs(assets, source_assets, hooks or set(), resource_defs)
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -569,6 +571,7 @@ def _ensure_resources_dont_conflict(
 def check_resources_satisfy_requirements(
     assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
+    hooks: AbstractSet[HookDefinition],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
     """Ensures that between the provided resources on an asset and the resource_defs mapping, that all resource requirements are satisfied.
@@ -582,15 +585,18 @@ def check_resources_satisfy_requirements(
         ensure_requirements_satisfied(
             merge_dicts(resource_defs, asset.resource_defs), list(asset.get_resource_requirements())
         )
+    for hook in hooks:
+        ensure_requirements_satisfied(resource_defs, list(hook.get_resource_requirements()))
 
 
 def get_all_resource_defs(
     assets: Iterable[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
+    hooks: AbstractSet[HookDefinition],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, ResourceDefinition]:
     # Ensures that no resource keys conflict, and each asset has its resource requirements satisfied.
-    check_resources_satisfy_requirements(assets, source_assets, resource_defs)
+    check_resources_satisfy_requirements(assets, source_assets, hooks, resource_defs)
 
     all_resource_defs = dict(resource_defs)
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]

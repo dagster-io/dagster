@@ -186,7 +186,7 @@ def build_caching_repository_data_from_list(
             assets=assets_defs,
             source_assets=source_assets,
             executor_def=default_executor_def,
-            resource_defs={},  # ????
+            resource_defs=top_level_resources,
         ):
             jobs[job_def.name] = job_def
 
@@ -230,7 +230,9 @@ def build_caching_repository_data_from_list(
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
             resolved_job = unresolved_job_def.resolve(
-                asset_graph=asset_graph, default_executor_def=default_executor_def
+                asset_graph=asset_graph,
+                default_executor_def=default_executor_def,
+                resource_defs=top_level_resources,
             )
             jobs[name] = resolved_job
 
