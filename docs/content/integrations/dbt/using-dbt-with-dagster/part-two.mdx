@@ -30,8 +30,6 @@ In this step, you'll load the dbt models into Dagster as assets using the [`dags
 Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster/assets`, and add the following code:
 
 ```python
-# /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
-
 from dagster_dbt import load_assets_from_dbt_project
 
 from dagster import file_relative_path
@@ -80,8 +78,6 @@ Assets loaded from dbt require a dbt resource, which is responsible for firing o
 Open the `__init__.py` file, located in `/tutorial_template/tutorial_dbt_dagster`, and add the following code:
 
 ```python
-# /tutorial_template/tutorial_dbt_dagster/__init__.py
-
 import os
 
 from dagster_dbt import DbtCliClientResource

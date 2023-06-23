@@ -40,8 +40,6 @@ To add the `order_count_chart` asset:
 1. In `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py`, replace the imports section with the following:
 
    ```python
-   # /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
-
    import pandas as pd
    import plotly.express as px
    from dagster_dbt import load_assets_from_dbt_project
@@ -76,8 +74,6 @@ Let's review what's happening here:
 At this point, `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py` should look like this:
 
 ```python
-# /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
-
 import pandas as pd
 import plotly.express as px
 from dagster_dbt import load_assets_from_dbt_project

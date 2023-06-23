@@ -7,9 +7,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 <Note>
   This is part one of the{" "}
-  <a href="/integrations/dbt/using-dbt-with-dagster">
-    Using dbt with Dagster software-defined assets
-  </a>{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster">Using dbt with Dagster</a>{" "}
   tutorial.
 </Note>
 
@@ -71,8 +69,6 @@ In this step, you'll add a profile to the dbt project. Profiles in dbt allow you
 2. Add the following code to the file:
 
    ```yaml
-   # /tutorial_template/jaffle_shop/config/profiles.yml
-
    jaffle_shop:
      target: local
      outputs:
@@ -91,8 +87,6 @@ Next, you'll tell the dbt models where their source data will be located. There 
 In dbt, [sources are declared](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) using `sources.yml` files. We've provided this file for you in `/tutorial_template/jaffle_shop/models`, which defines the location of tables containing source data:
 
 ```yaml
-# /tutorial_template/jaffle_shop/models/sources.yml
-
 version: 2
 
 sources:
@@ -109,8 +103,6 @@ In `/tutorial_template/jaffle_shop/models/staging`, update the `stg_customers.sq
 1. In `stg_customers.sql`, replace its contents with the following:
 
    ```sql
-   # /tutorial_template/jaffle_shop/models/staging/stg_customers.sql
-
    select
        id as customer_id,
        first_name,
@@ -121,8 +113,6 @@ In `/tutorial_template/jaffle_shop/models/staging`, update the `stg_customers.sq
 2. In `stg_orders.sql`, replace its contents with the following:
 
    ```sql
-   # /tutorial_template/jaffle_shop/models/staging/stg_orders.sql
-
    select
        id as order_id,
        user_id as customer_id,
