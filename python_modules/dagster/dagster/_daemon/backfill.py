@@ -32,7 +32,7 @@ def execute_backfill_iteration(
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
-                    backfill, workspace_process_context, instance
+                    backfill, logger, workspace_process_context, instance
                 )
             else:
                 yield from execute_job_backfill_iteration(

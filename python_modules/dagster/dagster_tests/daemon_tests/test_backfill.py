@@ -927,3 +927,39 @@ def test_asset_backfill_cancellation(
     assert backfill
     assert backfill.status == BulkActionStatus.CANCELED
     assert instance.get_runs_count() == 1  # Assert that additional runs are not created
+
+
+def test_error_code_location(
+    caplog, instance, workspace_context, unloadable_location_workspace_context
+):
+    asset_selection = [AssetKey("asset_a")]
+    partition_keys = partitions_a.get_partition_keys()
+    backfill_id = "dummy_backfill"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+
+    errors = list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+
+    assert len(errors) == 1
+    assert (
+        "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset asset_a does not exist."
+        in errors[0].message
+    )
+    assert "Failure loading location" in caplog.text

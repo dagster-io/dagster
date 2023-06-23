@@ -6,7 +6,10 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster._core.errors import (
+    DagsterAssetBackfillDataLoadError,
+    DagsterDefinitionChangedDeserializationError,
+)
 from dagster._core.instance import DynamicPartitionsStore
 
 from .asset_graph import AssetGraph
@@ -205,6 +208,14 @@ class AssetGraphSubset:
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
+
+            if asset_key not in asset_graph.all_asset_keys:
+                raise DagsterAssetBackfillDataLoadError(
+                    f"Asset {key} does not exist. This error may occur when (1) the asset's code"
+                    " location is unloadable or (2) the asset has been removed. When (1) occurs,"
+                    " review the backfill daemon logs to see which code locations are unloadable."
+                )
+
             partitions_def = asset_graph.get_partitions_def(asset_key)
 
             if partitions_def is None:

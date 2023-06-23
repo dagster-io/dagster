@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -49,6 +50,7 @@ from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
 )
+from dagster._core.workspace.workspace import IWorkspace
 from dagster._utils import hash_collection, utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -418,8 +420,23 @@ def fetch_cancelable_run_ids_for_asset_backfill(instance: DagsterInstance, backf
     return [run.run_id for run in backfill_runs if run.status in CANCELABLE_RUN_STATUSES]
 
 
+def _check_workspace_is_loadable(context: IWorkspace, logger: logging.Logger) -> None:
+    location_entries_by_name = {
+        location_entry.origin.location_name: location_entry
+        for location_entry in context.get_workspace_snapshot().values()
+    }
+
+    for location_name, location_entry in location_entries_by_name.items():
+        if location_entry.load_error:
+            logger.warning(
+                f"Failure loading location {location_name} due to error:"
+                f" {location_entry.load_error}"
+            )
+
+
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
+    logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
 ) -> Iterable[None]:
@@ -431,9 +448,10 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
-    asset_graph = ExternalAssetGraph.from_workspace(
-        workspace_process_context.create_request_context()
-    )
+    workspace_context = workspace_process_context.create_request_context()
+    _check_workspace_is_loadable(workspace_context, logger)
+    asset_graph = ExternalAssetGraph.from_workspace(workspace_context)
+
     if backfill.serialized_asset_backfill_data is None:
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 

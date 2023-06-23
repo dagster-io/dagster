@@ -665,7 +665,14 @@ class DagsterUndefinedDataVersionError(DagsterError):
     """
 
 
-class DagsterDefinitionChangedDeserializationError(DagsterError):
+class DagsterAssetBackfillDataLoadError(DagsterError):
+    """Indicates that an asset backfill is now unloadable. May happen when (1) a code location containing
+    targeted assets is unloadable or (2) and asset or an asset's partitions definition has been removed.
+    When (1) occurs, review the backfill daemon logs to see which code locations are unloadable.
+    """
+
+
+class DagsterDefinitionChangedDeserializationError(DagsterAssetBackfillDataLoadError):
     """Indicates that a stored value can't be deserialized because the definition needed to interpret
     it has changed.
     """
