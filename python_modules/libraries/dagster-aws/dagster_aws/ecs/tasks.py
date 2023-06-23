@@ -16,7 +16,6 @@ class DagsterEcsTaskDefinitionConfig(
             ("container_name", str),
             ("command", Optional[Sequence[str]]),
             ("log_configuration", Optional[Mapping[str, Any]]),
-            ("repository_credentials", Optional[str]),
             ("secrets", Sequence[Mapping[str, str]]),
             ("environment", Sequence[Mapping[str, str]]),
             ("execution_role_arn", Optional[str]),
@@ -29,6 +28,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("runtime_platform", Mapping[str, Any]),
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
+            ("repository_credentials", Optional[str]),
         ],
     )
 ):
@@ -43,7 +43,6 @@ class DagsterEcsTaskDefinitionConfig(
         container_name: str,
         command: Optional[Sequence[str]],
         log_configuration: Optional[Mapping[str, Any]],
-        repository_credentials: Optional[str],
         secrets: Optional[Sequence[Mapping[str, str]]],
         environment: Optional[Sequence[Mapping[str, str]]],
         execution_role_arn: Optional[str],
@@ -56,6 +55,7 @@ class DagsterEcsTaskDefinitionConfig(
         runtime_platform: Optional[Mapping[str, Any]] = None,
         mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        repository_credentials: Optional[str] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -64,7 +64,6 @@ class DagsterEcsTaskDefinitionConfig(
             check.str_param(container_name, "container_name"),
             check.opt_sequence_param(command, "command"),
             check.opt_mapping_param(log_configuration, "log_configuration"),
-            check.opt_str_param(repository_secret, "repository_credentials"),
             sorted(check.opt_sequence_param(secrets, "secrets"), key=lambda s: s["name"]),
             sorted(check.opt_sequence_param(environment, "environment"), key=lambda e: e["name"]),
             check.opt_str_param(execution_role_arn, "execution_role_arn"),
@@ -77,6 +76,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_mapping_param(runtime_platform, "runtime_platform"),
             check.opt_sequence_param(mount_points, "mount_points"),
             check.opt_sequence_param(volumes, "volumes"),
+            check.opt_str_param(repository_credentials, "repository_credentials"),
         )
 
     def task_definition_dict(self):
@@ -99,7 +99,7 @@ class DagsterEcsTaskDefinitionConfig(
                     ({"secrets": self.secrets} if self.secrets else {}),
                     ({"environment": self.environment} if self.environment else {}),
                     ({"mountPoints": self.mount_points} if self.mount_points else {}),
-                    ({"repositoryCredentials": { "credentialsParameter": repository_credentials }} if self.repository_credentials else {}),
+                    ({"repositoryCredentials": { "credentialsParameter": self.repository_credentials }} if self.repository_credentials else {}),
                 ),
                 *self.sidecars,
             ],
@@ -149,7 +149,6 @@ class DagsterEcsTaskDefinitionConfig(
             container_name=container_name,
             command=container_definition.get("command"),
             log_configuration=container_definition.get("logConfiguration"),
-            repository_credentials=container_definition.get("repository_credentials"),
             secrets=container_definition.get("secrets"),
             environment=container_definition.get("environment"),
             execution_role_arn=task_definition_dict.get("executionRoleArn"),
@@ -162,6 +161,7 @@ class DagsterEcsTaskDefinitionConfig(
             runtime_platform=task_definition_dict.get("runtimePlatform"),
             mount_points=container_definition.get("mountPoints"),
             volumes=task_definition_dict.get("volumes"),
+            repository_credentials=container_definition.get("repositoryCredentials", {}).get("credentialsParameter"),
         )
 
 
@@ -188,7 +188,6 @@ def get_task_definition_dict_from_current_task(
     container_name,
     environment,
     command=None,
-    repository_credentials=None,
     secrets=None,
     include_sidecars=False,
     task_role_arn=None,
@@ -200,6 +199,7 @@ def get_task_definition_dict_from_current_task(
     mount_points=None,
     volumes=None,
     additional_sidecars=None,
+    repository_credentials=None,
 ):
     current_container_name = current_ecs_container_name()
 
