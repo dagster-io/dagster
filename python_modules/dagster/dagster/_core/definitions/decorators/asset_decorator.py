@@ -25,6 +25,7 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping, Metadat
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import (
@@ -60,8 +61,7 @@ def asset(
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = ...,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -80,6 +80,7 @@ def asset(
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
     key: Optional[CoercibleToAssetKey] = None,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -91,7 +92,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     deps: Optional[
-        Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]
+        Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
     ] = None,  # if deps will become the default experience, should it go above ins?
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
@@ -137,8 +138,8 @@ def asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Sequence[Union[AssetsDefinition, AssetKey, str, Sequence[str]]]]): Set of asset keys that are upstream
-            dependencies, but do not pass an input to the asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str, Sequence[str]]]]):
+             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -194,11 +195,24 @@ def asset(
                 "Cannot specify both deps and non_argument_deps. Use only deps instead."
             )
 
-        upstream_asset_deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = deps
+        upstream_asset_deps: Optional[
+            Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
+        ] = None
+        if deps is not None:
+            for dep in deps:
+                if isinstance(dep, AssetsDefinition):
+                    if len(dep.keys) > 1:
+                        raise DagsterInvalidDefinitionError(
+                            "Cannot pass a multi asset AssetsDefinition as an argument to deps."
+                            " Instead, specify dependencies on multi assets via AssetKeys or"
+                            " strings."
+                        )
+            upstream_asset_deps = deps
+
         if non_argument_deps is not None:
-            deprecation_warning("non_argument_deps", "X.X.X", "use parameter deps instead")
+            deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
             # this set -> list conversion is a side effect of the type changing from
-            # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
+            # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
             upstream_asset_deps = [dep for dep in non_argument_deps]
 
         return _Asset(
@@ -431,7 +445,7 @@ def multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = None,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -524,6 +538,31 @@ def multi_asset(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
+    if non_argument_deps is not None and deps is not None:
+        raise DagsterInvalidDefinitionError(
+            "Cannot specify both deps and non_argument_deps. Use only deps instead."
+        )
+
+    upstream_asset_deps: Optional[
+        Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
+    ] = None
+    if deps is not None:
+        for dep in deps:
+            if isinstance(dep, AssetsDefinition):
+                if len(dep.keys) > 1:
+                    raise DagsterInvalidDefinitionError(
+                        "Cannot pass a multi asset AssetsDefinition as an argument to deps."
+                        " Instead, pecify dependencies on multi assets via AssetKeys or strings."
+                    )
+        upstream_asset_deps: Optional[
+            Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
+        ] = deps
+    if non_argument_deps is not None:
+        deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
+        # this set -> list conversion is a side effect of the type changing from
+        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
+        upstream_asset_deps = [dep for dep in non_argument_deps]
+
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
 
@@ -554,7 +593,7 @@ def multi_asset(
 
     upstream_asset_deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = deps
     if non_argument_deps is not None:
-        deprecation_warning("non_argument_deps", "X.X.X", "use parameter deps instead")
+        deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
         # this set -> list conversion is a side effect of the type changing from
         # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
         upstream_asset_deps = [dep for dep in non_argument_deps]
@@ -1025,7 +1064,7 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
 
 
 def _make_asset_keys(
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]]
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
 ) -> Optional[Set[AssetKey]]:
     """Convert all items to AssetKey in a set. By putting all of the AsestKeys in a set, it will also deduplicate them.
     """
@@ -1036,6 +1075,8 @@ def _make_asset_keys(
     for dep in deps:
         if isinstance(dep, AssetsDefinition):
             # this will error if the AssetsDefinition is a multi_asset
+            deps_asset_keys.add(dep.key)
+        elif isinstance(dep, SourceAsset):
             deps_asset_keys.add(dep.key)
         else:
             deps_asset_keys.add(AssetKey.from_coercible(dep))

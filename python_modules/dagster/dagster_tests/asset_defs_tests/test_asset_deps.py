@@ -2,8 +2,17 @@
 # I can sort them out into the files that make sense for each test
 
 import pytest
-from dagster import AssetKey, AssetOut, IOManager, SourceAsset, asset, materialize, multi_asset
-from dagster._check import CheckError
+from dagster import (
+    AssetKey,
+    AssetOut,
+    FilesystemIOManager,
+    IOManager,
+    SourceAsset,
+    asset,
+    materialize,
+    multi_asset,
+)
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 
@@ -194,8 +203,8 @@ def test_mulit_asset_deps_via_assets_definition_fails():
         return None, None
 
     with pytest.raises(
-        CheckError,
-        match="Tried to retrieve asset key from an assets definition with multiple asset keys",
+        DagsterInvalidDefinitionError,
+        match="Cannot pass a multi asset AssetsDefinition as an argument to deps",
     ):
 
         @asset(deps=[a_multi_asset])
@@ -242,4 +251,30 @@ def test_source_asset_deps_via_key():
     assert depends_on_source_asset.op.ins["a_key"].dagster_type.kind == DagsterTypeKind.NOTHING
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
+    assert res.success
+
+
+def test_interop():
+    @asset
+    def no_value_asset():
+        return None
+
+    @asset(io_manager_key="fs_io_manager")
+    def value_asset() -> int:
+        return 1
+
+    @asset(
+        deps=[no_value_asset],
+    )
+    def interop_asset(value_asset: int):
+        assert value_asset == 1
+
+    assert len(interop_asset.input_names) == 2
+    assert interop_asset.op.ins["no_value_asset"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert interop_asset.op.ins["value_asset"].dagster_type.kind == DagsterTypeKind.SCALAR
+
+    res = materialize(
+        [no_value_asset, value_asset, interop_asset],
+        resources={"io_manager": TestingIOManager(), "fs_io_manager": FilesystemIOManager()},
+    )
     assert res.success
