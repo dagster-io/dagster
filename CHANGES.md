@@ -16,7 +16,7 @@ models:
     config:
       meta:
         dagster:
-					asset_key: ["my", "custom", "asset_key"]
+          asset_key: ["my", "custom", "asset_key"]
 ```
 
 - [dagster-dbt] Customized groups can now be specified for models in the dbt project, using `meta.dagster.group`. This field takes in a string that is used as the Dagster group for the generated software-defined asset corresponding to the dbt model.
@@ -29,7 +29,7 @@ models:
     config:
       meta:
         dagster:
-					group: "my_group"
+          group: "my_group"
 ```
 
 ### Bugfixes
