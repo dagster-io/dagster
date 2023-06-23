@@ -101,6 +101,7 @@ def test_dbt_asset_selection(select, exclude, expected_asset_names):
     assert expected_keys == actual_keys
 
 
+@pytest.mark.skip("Using state with the DbtManifestAssetSelection is deprecated")
 def test_dbt_asset_selection_with_state():
     """Changes from previous state to sample_manifest.json.
 
