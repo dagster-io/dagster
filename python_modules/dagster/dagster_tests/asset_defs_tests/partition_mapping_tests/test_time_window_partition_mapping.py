@@ -265,14 +265,14 @@ def test_daily_to_daily_many_to_one():
     downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
     mapping = TimeWindowPartitionMapping(start_offset=-1)
 
-    assert mapping.get_upstream_partitions_for_partitions(
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
         subset_with_keys(downstream_partitions_def, ["2022-07-04"]), upstream_partitions_def
-    ).get_partition_keys() == ["2022-07-03", "2022-07-04"]
+    ).partitions_subset.get_partition_keys() == ["2022-07-03", "2022-07-04"]
 
-    assert mapping.get_upstream_partitions_for_partitions(
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
         subset_with_keys(downstream_partitions_def, ["2022-07-04", "2022-07-05"]),
         upstream_partitions_def,
-    ).get_partition_keys() == ["2022-07-03", "2022-07-04", "2022-07-05"]
+    ).partitions_subset.get_partition_keys() == ["2022-07-03", "2022-07-04", "2022-07-05"]
 
     assert mapping.get_downstream_partitions_for_partitions(
         subset_with_keys(upstream_partitions_def, ["2022-07-03", "2022-07-04"]),
