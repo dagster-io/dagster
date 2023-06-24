@@ -5,7 +5,7 @@ from dagster import resource
 from dagster._annotations import public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.merger import merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 
 from ..dbt_resource import DbtClient
@@ -184,7 +184,7 @@ class DbtCliClient(DbtClient):
             if not (k in self.strict_flags and k not in extra_flags)
         }
 
-        return merge_dicts(
+        return deep_merge_dicts(
             default_flags, self._format_params(extra_flags, replace_underscores=True)
         )
 
