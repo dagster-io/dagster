@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import (
     AbstractSet,
     Any,
@@ -47,6 +49,8 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
+
+8
 
 
 class AbstractComputeExecutionContext(ABC):
@@ -657,3 +661,27 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 #  * having ops in a graph that form a graph backed asset
 # so we have a single type that users can call by their preferred name where appropriate
 AssetExecutionContext: TypeAlias = OpExecutionContext
+
+_current_context: ContextVar[Optional[OpExecutionContext]] = ContextVar(
+    "execution_context", default=None
+)
+
+
+@contextmanager
+def enter_execution_context(
+    step_context: StepExecutionContext,
+) -> Iterator[OpExecutionContext]:
+    if step_context.is_sda_step:
+        ctx = AssetExecutionContext(step_context)
+    else:
+        ctx = OpExecutionContext(step_context)
+
+    token = _current_context.set(ctx)
+    try:
+        yield ctx
+    finally:
+        _current_context.reset(token)
+
+
+def get_execution_context():
+    return _current_context.get()

@@ -29,7 +29,7 @@ from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
@@ -135,46 +135,46 @@ def _yield_compute_results(
 ) -> Iterator[OpOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    context = OpExecutionContext(step_context)
-    user_event_generator = compute_fn(context, inputs)
+    with enter_execution_context(step_context) as context:
+        user_event_generator = compute_fn(context, inputs)
 
-    if isinstance(user_event_generator, Output):
-        raise DagsterInvariantViolationError(
-            (
-                "Compute function for {described_node} returned an Output rather than "
-                "yielding it. The compute_fn of the {node_type} must yield "
-                "its results"
-            ).format(
-                described_node=step_context.describe_op(),
-                node_type=step_context.op_def.node_type_str,
+        if isinstance(user_event_generator, Output):
+            raise DagsterInvariantViolationError(
+                (
+                    "Compute function for {described_node} returned an Output rather than "
+                    "yielding it. The compute_fn of the {node_type} must yield "
+                    "its results"
+                ).format(
+                    described_node=step_context.describe_op(),
+                    node_type=step_context.op_def.node_type_str,
+                )
             )
-        )
 
-    if user_event_generator is None:
-        return
+        if user_event_generator is None:
+            return
 
-    if inspect.isasyncgen(user_event_generator):
-        user_event_generator = gen_from_async_gen(user_event_generator)
+        if inspect.isasyncgen(user_event_generator):
+            user_event_generator = gen_from_async_gen(user_event_generator)
 
-    op_label = step_context.describe_op()
+        op_label = step_context.describe_op()
 
-    for event in iterate_with_context(
-        lambda: op_execution_error_boundary(
-            DagsterExecutionStepExecutionError,
-            msg_fn=lambda: f"Error occurred while executing {op_label}:",
-            step_context=step_context,
-            step_key=step_context.step.key,
-            op_def_name=step_context.op_def.name,
-            op_name=step_context.op.name,
-        ),
-        user_event_generator,
-    ):
+        for event in iterate_with_context(
+            lambda: op_execution_error_boundary(
+                DagsterExecutionStepExecutionError,
+                msg_fn=lambda: f"Error occurred while executing {op_label}:",
+                step_context=step_context,
+                step_key=step_context.step.key,
+                op_def_name=step_context.op_def.name,
+                op_name=step_context.op.name,
+            ),
+            user_event_generator,
+        ):
+            if context.has_events():
+                yield from context.consume_events()
+            yield _validate_event(event, step_context)
+
         if context.has_events():
             yield from context.consume_events()
-        yield _validate_event(event, step_context)
-
-    if context.has_events():
-        yield from context.consume_events()
 
 
 def execute_core_compute(
