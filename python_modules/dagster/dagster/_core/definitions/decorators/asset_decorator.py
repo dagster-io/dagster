@@ -138,8 +138,8 @@ def asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, CoercibleToAssetKey]]]):
-             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]):
+            List of assets that are upstream dependencies, but do not pass an input value to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -192,7 +192,7 @@ def asset(
     def create_asset():
         if non_argument_deps is not None and deps is not None:
             raise DagsterInvalidDefinitionError(
-                "Cannot specify both deps and non_argument_deps. Use only deps instead."
+                "Cannot specify both deps and non_argument_deps to @asset. Use only deps instead."
             )
 
         upstream_asset_deps: Optional[
@@ -202,9 +202,10 @@ def asset(
             for dep in deps:
                 if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
                     raise DagsterInvalidDefinitionError(
-                        "Cannot pass a multi asset AssetsDefinition as an argument to deps."
-                        " Instead, specify dependencies on multi assets via AssetKeys or"
-                        " strings."
+                        "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                        " Instead, specify dependencies on the assets created by the multi_asset"
+                        f" via AssetKeys or strings. For the multi_asset {dep.node_def.name}, the"
+                        f" available keys are: {dep.keys}."
                     )
             upstream_asset_deps = deps
 
@@ -212,7 +213,7 @@ def asset(
             deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
             # this set -> list conversion is a side effect of the type changing from
             # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
-            upstream_asset_deps = [dep for dep in non_argument_deps]
+            upstream_asset_deps = list(non_argument_deps)
 
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
@@ -474,8 +475,8 @@ def multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, CoercibleToAssetKey]]]): Set of asset keys that are upstream
-            dependencies, but do not pass an input to the asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]): List of assets that are upstream
+            dependencies, but do not pass an input value to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -550,15 +551,17 @@ def multi_asset(
         for dep in deps:
             if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
                 raise DagsterInvalidDefinitionError(
-                    "Cannot pass a multi asset AssetsDefinition as an argument to deps."
-                    " Instead, specify dependencies on multi assets via AssetKeys or strings."
+                    "Cannot pass a multi_asset AssetsDefinition as an argument to deps. Instead,"
+                    " specify dependencies on the assets created by the multi_asset via AssetKeys"
+                    f" or strings. For the multi_asset {dep.node_def.name}, the available keys are:"
+                    f" {dep.keys}."
                 )
         upstream_asset_deps = deps
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
         # this set -> list conversion is a side effect of the type changing from
         # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
-        upstream_asset_deps = [dep for dep in non_argument_deps]
+        upstream_asset_deps = list(non_argument_deps)
 
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
