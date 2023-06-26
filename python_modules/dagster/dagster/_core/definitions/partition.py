@@ -177,8 +177,12 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[T_str]:
         keys_exist = {
-            partition_key_range.start: self.has_partition_key(partition_key_range.start),
-            partition_key_range.end: self.has_partition_key(partition_key_range.end),
+            partition_key_range.start: self.has_partition_key(
+                partition_key_range.start, dynamic_partitions_store=dynamic_partitions_store
+            ),
+            partition_key_range.end: self.has_partition_key(
+                partition_key_range.end, dynamic_partitions_store=dynamic_partitions_store
+            ),
         }
         if not all(keys_exist.values()):
             raise DagsterInvalidInvocationError(
