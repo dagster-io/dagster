@@ -9,6 +9,7 @@ sources:
         meta:
           dagster:
             asset_key: ['customized', 'source', 'jaffle_shop', 'main', 'raw_customers']
+      - name: raw_events
 
 models:
   - name: customers
