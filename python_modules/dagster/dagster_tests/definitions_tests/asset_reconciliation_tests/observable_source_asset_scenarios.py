@@ -45,14 +45,12 @@ downstream_of_slowly_changing_observable_source = [
 ]
 
 partitioned_downstream_of_changing_observable_source = [
-    observable_source_asset_def(
-        "source_asset", partitions_def=two_partitions_partitions_def, changes=True
-    ),
+    observable_source_asset_def("source_asset", partitions_def=two_partitions_partitions_def),
     asset_def("asset1", ["source_asset"], partitions_def=two_partitions_partitions_def),
 ]
 partitioned_downstream_of_unchanging_observable_source = [
     observable_source_asset_def(
-        "source_asset", partitions_def=two_partitions_partitions_def, changes=False
+        "source_asset", partitions_def=two_partitions_partitions_def, minutes_to_change=10**100
     ),
     asset_def("asset1", ["source_asset"], partitions_def=two_partitions_partitions_def),
 ]
