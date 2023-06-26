@@ -2,7 +2,6 @@ import contextlib
 import datetime
 import itertools
 import os
-import random
 import sys
 from typing import (
     AbstractSet,
@@ -476,9 +475,13 @@ def multi_asset_def(
     return _assets
 
 
-def observable_source_asset_def(key: str, changes: bool = True):
+def observable_source_asset_def(key: str, minutes_to_change: int = 0):
     @observable_source_asset(name=key)
     def _observable():
-        return DataVersion(str(random.random())) if changes else DataVersion("the_version")
+        return (
+            DataVersion(str(pendulum.now().minute // minutes_to_change))
+            if minutes_to_change
+            else DataVersion(str(pendulum.now()))
+        )
 
     return _observable
