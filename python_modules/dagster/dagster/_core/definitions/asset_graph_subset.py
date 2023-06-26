@@ -7,7 +7,6 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.errors import (
-    DagsterAssetBackfillDataLoadError,
     DagsterDefinitionChangedDeserializationError,
 )
 from dagster._core.instance import DynamicPartitionsStore
@@ -210,10 +209,8 @@ class AssetGraphSubset:
             asset_key = AssetKey.from_user_string(key)
 
             if asset_key not in asset_graph.all_asset_keys:
-                raise DagsterAssetBackfillDataLoadError(
-                    f"Asset {key} does not exist. This error may occur when (1) the asset's code"
-                    " location is unloadable or (2) the asset has been removed. When (1) occurs,"
-                    " review the backfill daemon logs to see which code locations are unloadable."
+                raise DagsterDefinitionChangedDeserializationError(
+                    f"Asset {key} existed at storage-time, but no longer does"
                 )
 
             partitions_def = asset_graph.get_partitions_def(asset_key)

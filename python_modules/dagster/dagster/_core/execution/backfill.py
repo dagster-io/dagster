@@ -6,9 +6,7 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.errors import (
-    DagsterAssetBackfillDataLoadError,
-)
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DynamicPartitionsStore
@@ -156,7 +154,7 @@ class PartitionBackfill(
                     ExternalAssetGraph.from_workspace(workspace),
                     self.backfill_timestamp,
                 )
-            except DagsterAssetBackfillDataLoadError:
+            except DagsterDefinitionChangedDeserializationError:
                 return []
 
             return asset_backfill_data.get_backfill_status_per_asset_key()
@@ -176,7 +174,7 @@ class PartitionBackfill(
                     ExternalAssetGraph.from_workspace(workspace),
                     self.backfill_timestamp,
                 )
-            except DagsterAssetBackfillDataLoadError:
+            except DagsterDefinitionChangedDeserializationError:
                 return None
 
             return asset_backfill_data.get_target_root_partitions_subset()
@@ -194,7 +192,7 @@ class PartitionBackfill(
                     ExternalAssetGraph.from_workspace(workspace),
                     self.backfill_timestamp,
                 )
-            except DagsterAssetBackfillDataLoadError:
+            except DagsterDefinitionChangedDeserializationError:
                 return 0
 
             return asset_backfill_data.get_num_partitions()
@@ -215,7 +213,7 @@ class PartitionBackfill(
                     ExternalAssetGraph.from_workspace(workspace),
                     self.backfill_timestamp,
                 )
-            except DagsterAssetBackfillDataLoadError:
+            except DagsterDefinitionChangedDeserializationError:
                 return None
 
             return asset_backfill_data.get_partition_names()
