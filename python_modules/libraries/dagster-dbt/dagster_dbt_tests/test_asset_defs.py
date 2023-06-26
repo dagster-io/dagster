@@ -596,11 +596,11 @@ def test_subsetting(
 ):
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
 
-    @asset(non_argument_deps={AssetKey("sort_by_calories")})
+    @asset(deps=[AssetKey("sort_by_calories")])
     def hanger1():
         return None
 
-    @asset(non_argument_deps={AssetKey(["subdir_schema", "least_caloric"])})
+    @asset(deps=[AssetKey(["subdir_schema", "least_caloric"])])
     def hanger2():
         return None
 
