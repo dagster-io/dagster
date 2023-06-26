@@ -38,6 +38,7 @@ logger = get_dagster_logger()
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 
 
+@experimental
 @dataclass
 class DbtManifest:
     """Helper class for dbt manifest operations."""
