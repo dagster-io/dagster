@@ -26,10 +26,12 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
+    CoercibleToAssetKey,
     FreshnessPolicy,
     Nothing,
     Output,
     ResourceDefinition,
+    SourceAsset,
     _check as check,
 )
 from dagster._core.definitions import AssetsDefinition, multi_asset
@@ -40,7 +42,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
@@ -149,7 +151,7 @@ def _build_airbyte_assets_from_metadata(
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
-        non_argument_deps=set((assets_defn_meta.keys_by_input_name or {}).values()),
+        deps=list((assets_defn_meta.keys_by_input_name or {}).values()),
         outs={
             k: AssetOut(
                 key=v,
@@ -206,6 +208,7 @@ def build_airbyte_assets(
     asset_key_prefix: Optional[Sequence[str]] = None,
     group_name: Optional[str] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
@@ -223,9 +226,17 @@ def build_airbyte_assets(
             derived tables that will be created by the normalization process.
         asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
             If left blank, assets will have a key of `AssetKey([table_name])`.
-        upstream_assets (Optional[Set[AssetKey]]): A list of assets to add as sources.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, str, AssetKey]]]):
+            A list of assets to add as sources.
+        upstream_assets (Optional[Set[AssetKey]]): Deprecated, use deps instead. A list of assets to add as sources.
         freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
     """
+    if upstream_assets is not None and deps is not None:
+        raise DagsterInvalidDefinitionError(
+            "Cannot specify both deps and upstream_assets to build_airbyte_assets. Use only deps"
+            " instead."
+        )
+
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
@@ -253,13 +264,17 @@ def build_airbyte_assets(
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {AssetKey([*asset_key_prefix, base_table])}
 
+    upstream_deps = deps
+    if upstream_assets is not None:
+        upstream_deps = list(upstream_assets)
+
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[table] = upstream_assets or set()
+        internal_deps[table] = upstream_deps or set()
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
-        non_argument_deps=upstream_assets or set(),
+        deps=upstream_deps,
         outs=outputs,
         internal_asset_deps=internal_deps,
         compute_kind="airbyte",
