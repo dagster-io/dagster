@@ -176,11 +176,9 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[T_str]:
-        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
-
         keys_exist = {
-            partition_key_range.start: partition_key_range.start in partition_keys,
-            partition_key_range.end: partition_key_range.end in partition_keys,
+            partition_key_range.start: self.has_partition_key(partition_key_range.start),
+            partition_key_range.end: self.has_partition_key(partition_key_range.end),
         }
         if not all(keys_exist.values()):
             raise DagsterInvalidInvocationError(
@@ -189,6 +187,11 @@ class PartitionsDefinition(ABC, Generic[T_str]):
                 {list(key for key in keys_exist if keys_exist[key] is False)}"""
             )
 
+        # in the simple case, simply return the single key in the range
+        if partition_key_range.start == partition_key_range.end:
+            return [cast(T_str, partition_key_range.start)]
+
+        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
         return partition_keys[
             partition_keys.index(partition_key_range.start) : partition_keys.index(
                 partition_key_range.end
