@@ -125,8 +125,8 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
+            start_offset=self.start_offset,
+            end_offset=self.end_offset,
             current_time=current_time,
         )
 
@@ -146,8 +146,8 @@ class TimeWindowPartitionMapping(
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
-            -self.start_offset,
-            -self.end_offset,
+            end_offset=-self.start_offset,
+            start_offset=-self.end_offset,
             current_time=current_time,
         ).partitions_subset
 
