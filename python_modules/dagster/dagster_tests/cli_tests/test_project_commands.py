@@ -90,6 +90,21 @@ def test_from_example_command_succeeds():
         assert not os.path.exists("my_dagster_project/tox.ini")
 
 
+def test_from_example_command_default_name():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            from_example_command,
+            ["--name", "assets_dbt_python", "--example", "assets_dbt_python"],
+        )
+        assert result.exit_code == 0
+        assert os.path.exists("assets_dbt_python")
+        assert os.path.exists("assets_dbt_python/assets_dbt_python")
+        assert os.path.exists("assets_dbt_python/assets_dbt_python_tests")
+        # ensure we filter out tox.ini because it's used in our own CI
+        assert not os.path.exists("assets_dbt_python/tox.ini")
+
+
 def test_available_examples_in_sync_with_example_folder():
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
     # run me

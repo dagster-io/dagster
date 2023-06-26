@@ -478,10 +478,14 @@ def multi_asset_def(
 
 
 def observable_source_asset_def(
-    key: str, partitions_def: Optional[PartitionsDefinition] = None, changes: bool = True
+    key: str, partitions_def: Optional[PartitionsDefinition] = None, minutes_to_change: int = 0
 ):
     def _data_version() -> DataVersion:
-        return DataVersion(str(random.random())) if changes else DataVersion("the_version")
+        return (
+            DataVersion(str(pendulum.now().minute // minutes_to_change))
+            if minutes_to_change
+            else DataVersion(str(random.random()))
+        )
 
     @observable_source_asset(name=key, partitions_def=partitions_def)
     def _observable():
