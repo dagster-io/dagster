@@ -526,7 +526,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_key, updated_after_cursor, after_cursor=after_cursor
         )
         previous_versions = self._asset_partitions_data_versions(
-            asset_key, updated_after_cursor, before_cursor=after_cursor
+            asset_key, updated_after_cursor, before_cursor=after_cursor + 1
         )
         return [
             asset_partition
