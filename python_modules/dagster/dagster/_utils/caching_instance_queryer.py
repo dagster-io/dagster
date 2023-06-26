@@ -362,8 +362,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             self.get_observation_record(
                 asset_key=observable_source_asset_key,
                 # we're looking for if a new version exists after `after_cursor`, so we need to know
-                # what the version was before `after_cursor`
-                before_cursor=after_cursor,
+                # what the version was at or before `after_cursor`
+                before_cursor=after_cursor + 1,
             )
             # if the after_cursor is None, then no previous version can exist
             if after_cursor is not None
