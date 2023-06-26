@@ -32,7 +32,6 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -201,7 +200,6 @@ def _build_airbyte_assets_from_metadata(
     return _assets
 
 
-@experimental
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],
@@ -742,7 +740,6 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         return output_connections
 
 
-@experimental
 def load_assets_from_airbyte_instance(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
@@ -858,7 +855,6 @@ def load_assets_from_airbyte_instance(
     )
 
 
-@experimental
 def load_assets_from_airbyte_project(
     project_dir: str,
     workspace_id: Optional[str] = None,
