@@ -113,7 +113,11 @@ function flattenIO(arrays: OpLinkInfo[][]) {
   return Object.values(map);
 }
 
-export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): OpGraphLayout {
+export type LayoutOpGraphOptions = {
+  parentOp?: ILayoutOp;
+};
+
+export function layoutOpGraph(pipelineOps: ILayoutOp[], opts: LayoutOpGraphOptions): OpGraphLayout {
   const g = new dagre.graphlib.Graph();
 
   // First, identify how much space we need to pad the DAG by in order to show the
@@ -122,8 +126,9 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
   let parentIOPadding = 0;
   let marginy = MARGIN_BASE;
   let marginx = MARGIN_BASE;
-  if (parentOp) {
-    parentIOPadding = Math.max(parentOp.inputs.length, parentOp.outputs.length) * IO_HEIGHT;
+  if (opts.parentOp) {
+    parentIOPadding =
+      Math.max(opts.parentOp.inputs.length, opts.parentOp.outputs.length) * IO_HEIGHT;
     marginx = PARENT_DEFINITION_PADDING + PARENT_INVOCATION_PADDING;
     marginy = marginx + parentIOPadding;
   }
@@ -224,10 +229,10 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], parentOp?: ILayoutOp): O
     parent: null,
   };
 
-  if (parentOp) {
+  if (opts.parentOp) {
     // Now that we've computed the pipeline layout fully, lay out the
     // composite op around the completed DAG.
-    result.parent = layoutParentGraphOp(result, parentOp, parentIOPadding);
+    result.parent = layoutParentGraphOp(result, opts.parentOp, parentIOPadding);
   }
 
   return result;

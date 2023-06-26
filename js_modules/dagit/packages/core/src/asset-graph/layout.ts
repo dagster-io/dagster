@@ -33,25 +33,39 @@ export type AssetGraphLayout = {
   groups: {[name: string]: GroupLayout};
 };
 
-const opts: {margin: number} = {
-  margin: 100,
-};
-
 // Prefix group nodes in the Dagre layout so that an asset and an asset
 // group cannot have the same name.
 const GROUP_NODE_PREFIX = 'group__';
 
-export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
+const MARGIN = 100;
+
+export type LayoutAssetGraphOptions = {horizontalDAGs: boolean};
+
+export const layoutAssetGraph = (
+  graphData: GraphData,
+  opts: LayoutAssetGraphOptions,
+): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
 
-  g.setGraph({
-    rankdir: 'TB',
-    marginx: opts.margin,
-    marginy: opts.margin,
-    nodesep: 40,
-    edgesep: 10,
-    ranksep: 10,
-  });
+  g.setGraph(
+    opts.horizontalDAGs
+      ? {
+          rankdir: 'LR',
+          marginx: MARGIN,
+          marginy: MARGIN,
+          nodesep: -10,
+          edgesep: 10,
+          ranksep: 30,
+        }
+      : {
+          rankdir: 'TB',
+          marginx: MARGIN,
+          marginy: MARGIN,
+          nodesep: 40,
+          edgesep: 10,
+          ranksep: 10,
+        },
+  );
   g.setDefaultEdgeLabel(() => ({}));
 
   const parentNodeIdForNode = (node: GraphNode) =>
@@ -121,7 +135,9 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   // Add all the link nodes to the graph
   Object.keys(linksToAssetsOutsideGraphedSet).forEach((id) => {
-    g.setNode(id, getAssetLinkDimensions());
+    const path = JSON.parse(id);
+    const label = path[path.length - 1] || '';
+    g.setNode(id, getAssetLinkDimensions(label, opts));
   });
 
   dagre.layout(g);
@@ -186,27 +202,38 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     const wXInset = !!linksToAssetsOutsideGraphedSet[e.w] ? 16 : 24;
 
     // Ignore the coordinates from dagre and use the top left + bottom left of the
-    edges.push({
-      from: {x: v.x - v.width / 2 + vXInset, y: v.y - 30 + v.height / 2},
-      fromId: e.v,
-      to: {x: w.x - w.width / 2 + wXInset, y: w.y + 20 - w.height / 2},
-      toId: e.w,
-    });
+    edges.push(
+      opts.horizontalDAGs
+        ? {
+            from: {x: v.x + v.width / 2, y: v.y},
+            fromId: e.v,
+            to: {x: w.x - w.width / 2 - 5, y: w.y},
+            toId: e.w,
+          }
+        : {
+            from: {x: v.x - v.width / 2 + vXInset, y: v.y - 30 + v.height / 2},
+            fromId: e.v,
+            to: {x: w.x - w.width / 2 + wXInset, y: w.y + 20 - w.height / 2},
+            toId: e.w,
+          },
+    );
   });
 
   return {
     nodes,
     edges,
-    width: maxWidth + opts.margin,
-    height: maxHeight + opts.margin,
+    width: maxWidth + MARGIN,
+    height: maxHeight + MARGIN,
     groups: showGroups ? groups : {},
   };
 };
 
 export const ASSET_LINK_NAME_MAX_LENGTH = 10;
 
-export const getAssetLinkDimensions = () => {
-  return {width: 106, height: 90};
+export const getAssetLinkDimensions = (label: string, opts: LayoutAssetGraphOptions) => {
+  return opts.horizontalDAGs
+    ? {width: 32 + 8 * Math.min(ASSET_LINK_NAME_MAX_LENGTH, label.length), height: 90}
+    : {width: 106, height: 90};
 };
 
 export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {
