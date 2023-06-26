@@ -157,45 +157,45 @@ run_coordinator:
 
 # end_marker_run_coordinator_default
 
-# start_marker_run_coordinator_queued
+# start_marker_run_coordinator_queued_default
 
-# There are a few ways to configure the QueuedRunCoordinator:
-
-# this first option has concurrency limits set to default values
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
 
-# this second option manually specifies limits:
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
-    max_concurrent_runs: 25
-    tag_concurrency_limits:
-      - key: "database"
-        value: "redshift"
-        limit: 4
-      - key: "dagster/backfill"
-        limit: 10
+# end_marker_run_coordinator_queued_default
 
-# as always, some or all of these values can be obtained from environment variables:
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
-    max_concurrent_runs:
-      env: DAGSTER_OVERALL_CONCURRENCY_LIMIT
-    tag_concurrency_limits:
-      - key: "database"
-        value: "redshift"
-        limit:
-          env: DAGSTER_REDSHIFT_CONCURRENCY_LIMIT
-      - key: "dagster/backfill"
-        limit:
-          env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
+# start_marker_run_coordinator_queued_manual_limits
 
-# for higher dequeue throughput, threading can be enabled:
+run_queue:
+  max_concurrent_runs: 25
+  tag_concurrency_limits:
+    - key: "database"
+      value: "redshift"
+      limit: 4
+    - key: "dagster/backfill"
+      limit: 10
+
+# end_marker_run_coordinator_queued_manual_limits
+
+# start_marker_run_coordinator_queued_env_vars
+
+run_queue:
+  max_concurrent_runs:
+    env: DAGSTER_OVERALL_CONCURRENCY_LIMIT
+  tag_concurrency_limits:
+    - key: "database"
+      value: "redshift"
+      limit:
+        env: DAGSTER_REDSHIFT_CONCURRENCY_LIMIT
+    - key: "dagster/backfill"
+      limit:
+        env: DAGSTER_BACKFILL_CONCURRENCY_LIMIT
+
+# end_marker_run_coordinator_queued_env_vars
+
+# start_marker_run_coordinator_queued_threading
+
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
@@ -203,7 +203,7 @@ run_coordinator:
     dequeue_use_threads: true
     dequeue_num_workers: 8
 
-# end_marker_run_coordinator_queued
+# end_marker_run_coordinator_queued_threading
 
 # start_marker_compute_log_storage_local
 
