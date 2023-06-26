@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import itertools
 import os
+import random
 import sys
 from typing import (
     AbstractSet,
@@ -481,7 +482,7 @@ def observable_source_asset_def(key: str, minutes_to_change: int = 0):
         return (
             DataVersion(str(pendulum.now().minute // minutes_to_change))
             if minutes_to_change
-            else DataVersion(str(pendulum.now()))
+            else DataVersion(str(random.random()))
         )
 
     return _observable
