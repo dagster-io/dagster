@@ -176,6 +176,10 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     def has_prefix(self, prefix: Sequence[str]) -> bool:
         return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
 
+    def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
+        prefix = key_prefix_from_coercible(prefix)
+        return AssetKey(list(prefix) + list(self.path))
+
 
 class AssetKeyPartitionKey(NamedTuple):
     """An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
