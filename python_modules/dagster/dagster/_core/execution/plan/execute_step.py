@@ -57,6 +57,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import execute_core_compute
@@ -462,13 +463,14 @@ def core_dagster_event_sequence_for_step(
     else:
         core_gen = step_context.op_def.compute_fn
 
-    with time_execution_scope() as timer_result:
-        user_event_sequence = check.generator(
-            execute_core_compute(
-                step_context,
-                inputs,
-                core_gen,
-            )
+    with time_execution_scope() as timer_result, enter_execution_context(
+        step_context
+    ) as compute_context:
+        user_event_sequence = execute_core_compute(
+            step_context,
+            inputs,
+            core_gen,
+            compute_context,
         )
 
         # It is important for this loop to be indented within the

@@ -23,7 +23,7 @@ from dagster import (
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import DagsterRun
 
 
@@ -405,3 +405,24 @@ def test_error_on_invalid_context_annotation():
         @asset
         def the_asset(context: int):
             pass
+
+
+def test_get_context():
+    with pytest.raises(DagsterInvariantViolationError):
+        OpExecutionContext.get()
+
+    @op
+    def o(context):
+        assert context == OpExecutionContext.get()
+
+    @job
+    def j():
+        o()
+
+    assert j.execute_in_process().success
+
+    @asset
+    def a(context: AssetExecutionContext):
+        assert context == AssetExecutionContext.get()
+
+    assert materialize([a]).success
