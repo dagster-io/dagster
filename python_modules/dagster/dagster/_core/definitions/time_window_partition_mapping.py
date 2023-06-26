@@ -196,7 +196,9 @@ class TimeWindowPartitionMapping(
             return UpstreamPartitionsResult(from_partitions_subset, [])
 
         time_windows = []
-        for from_partition_time_window in from_partitions_subset.included_time_windows:
+        for from_partition_time_window in from_partitions_subset.included_time_windows(
+            current_time=current_time
+        ):
             from_start_dt, from_end_dt = from_partition_time_window
             offsetted_start_dt = _offsetted_datetime(
                 from_partitions_def, from_start_dt, start_offset
@@ -222,12 +224,18 @@ class TimeWindowPartitionMapping(
                 window_start = (
                     to_partitions_def.start_time_for_partition_key(to_start_partition_key)
                     if to_start_partition_key
-                    else cast(TimeWindow, to_partitions_def.get_first_partition_window()).start
+                    else cast(
+                        TimeWindow,
+                        to_partitions_def.get_first_partition_window(current_time=current_time),
+                    ).start
                 )
                 window_end = (
                     to_partitions_def.end_time_for_partition_key(to_end_partition_key)
                     if to_end_partition_key
-                    else cast(TimeWindow, to_partitions_def.get_last_partition_window()).end
+                    else cast(
+                        TimeWindow,
+                        to_partitions_def.get_last_partition_window(current_time=current_time),
+                    ).end
                 )
 
                 if window_start < window_end:
