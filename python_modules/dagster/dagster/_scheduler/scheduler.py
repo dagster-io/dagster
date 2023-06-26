@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 # how often do we update the job row in the database with the last iteration timestamp.  This
 # creates a checkpoint so that if the cron schedule changes, we don't try to backfill schedule ticks
 # from the start of the schedule, just since the last recorded iteration interval.
-LAST_RECORDED_ITERATION_INTERVAL = 3600
+LAST_RECORDED_ITERATION_INTERVAL_SECONDS = 3600
 
 
 class _ScheduleLaunchContext:
@@ -491,23 +491,13 @@ def launch_scheduled_runs_for_schedule_iterator(
         if log_verbose_checks:
             logger.info(f"No new tick times to evaluate for {schedule_name}")
 
-        # insert last considered timestamp here
-        if (
-            not instigator_data.last_iteration_timestamp
-            or instigator_data.last_iteration_timestamp + LAST_RECORDED_ITERATION_INTERVAL
-            < end_datetime_utc.timestamp()
-        ):
-            with schedule_state_lock:
-                instance.update_instigator_state(
-                    schedule_state.with_data(
-                        ScheduleInstigatorData(
-                            cron_schedule=instigator_data.cron_schedule,
-                            start_timestamp=instigator_data.start_timestamp,
-                            last_iteration_timestamp=end_datetime_utc.timestamp(),
-                        )
-                    )
-                )
-
+        _log_iteration_timestamp(
+            instance,
+            schedule_state,
+            schedule_state_lock,
+            instigator_data,
+            end_datetime_utc.timestamp(),
+        )
         return
 
     if not external_schedule.partition_set_name and len(tick_times) > 1:
@@ -598,6 +588,15 @@ def launch_scheduled_runs_for_schedule_iterator(
                     )
                     yield error_data
                     return
+
+    # now log the iteration timestamp
+    _log_iteration_timestamp(
+        instance,
+        schedule_state,
+        schedule_state_lock,
+        instigator_data,
+        end_datetime_utc.timestamp(),
+    )
 
 
 def _check_for_debug_crash(
@@ -879,3 +878,36 @@ def _create_scheduler_run(
         if run_request.asset_selection
         else None,
     )
+
+
+def _log_iteration_timestamp(
+    instance: DagsterInstance,
+    schedule_state: InstigatorState,
+    schedule_state_lock: threading.Lock,
+    instigator_data: ScheduleInstigatorData,
+    iteration_timestamp: float,
+):
+    # Utility function that logs iteration timestamps for schedules that are running, to record a
+    # successful iteration, regardless of whether or not a tick was processed or not.  This is so
+    # that when a cron schedule changes, we can modify the evaluation "start time" from the moment
+    # that the schedule was turned on to the last time that the schedule was processed in a valid
+    # state (even in between ticks).
+
+    # Rather than logging every single iteration, we log every hour.  This means that if the cron
+    # schedule changes to run to a time that is less than an hour ago, when the code location is
+    # deployed, a tick might be registered for that time, with a run kicking off.
+    if (
+        not instigator_data.last_iteration_timestamp
+        or instigator_data.last_iteration_timestamp + LAST_RECORDED_ITERATION_INTERVAL_SECONDS
+        < iteration_timestamp
+    ):
+        with schedule_state_lock:
+            instance.update_instigator_state(
+                schedule_state.with_data(
+                    ScheduleInstigatorData(
+                        cron_schedule=instigator_data.cron_schedule,
+                        start_timestamp=instigator_data.start_timestamp,
+                        last_iteration_timestamp=iteration_timestamp,
+                    )
+                )
+            )
