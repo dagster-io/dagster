@@ -408,7 +408,7 @@ class InputContext:
                 ),
             )
 
-        time_windows = subset.included_time_windows
+        time_windows = subset.included_time_windows()
         if len(time_windows) != 1:
             check.failed(
                 (
