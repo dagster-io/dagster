@@ -59,8 +59,8 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 "dataframe_columns": MetadataValue.table_schema(
                     TableSchema(
                         columns=[
-                            TableColumn(name=name, type=str(dtype))
-                            for name, dtype in obj.dtypes.iteritems()
+                            TableColumn(name=name, type=str(dtype))  # type: ignore  # (bad stubs)
+                            for name, dtype in obj.dtypes.items()
                         ]
                     )
                 ),
