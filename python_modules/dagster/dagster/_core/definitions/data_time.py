@@ -25,7 +25,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     get_input_event_pointer_tag,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -191,15 +191,11 @@ class CachingDataTimeResolver:
                 before_cursor = None
 
             if before_cursor is not None:
-                if parent_key in self.asset_graph.source_asset_keys:
-                    parent_record = self.instance_queryer.get_observation_record(
-                        asset_key=parent_key, before_cursor=before_cursor
+                parent_record = (
+                    self._instance_queryer.get_latest_materialization_or_observation_record(
+                        AssetKeyPartitionKey(parent_key), before_cursor=before_cursor
                     )
-                else:
-                    parent_record = self._instance_queryer.get_latest_materialization_record(
-                        parent_key, before_cursor=before_cursor
-                    )
-
+                )
                 if parent_record is not None:
                     upstream_records[parent_key] = parent_record
 
@@ -487,7 +483,9 @@ class CachingDataTimeResolver:
     def get_current_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
     ) -> Optional[datetime.datetime]:
-        latest_record = self.instance_queryer.get_latest_materialization_record(asset_key)
+        latest_record = self.instance_queryer.get_latest_materialization_or_observation_record(
+            AssetKeyPartitionKey(asset_key)
+        )
         if latest_record is None:
             return None
 
