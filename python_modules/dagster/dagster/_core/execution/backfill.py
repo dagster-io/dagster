@@ -6,9 +6,7 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.errors import (
-    DagsterDefinitionChangedDeserializationError,
-)
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DynamicPartitionsStore
