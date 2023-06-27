@@ -235,7 +235,7 @@ export const RunsRoot = () => {
                               setFilterTokensWithStatus([]);
                             }}
                           >
-                            Clear All
+                            Clear all
                           </ButtonLink>
                         </>
                       ) : null
