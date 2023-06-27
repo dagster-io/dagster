@@ -7,6 +7,14 @@ interface TextProps {
   color?: string;
 }
 
+export const Title = styled.span<TextProps>`
+  ${({color}) => (color ? `color: ${color};` : null)}
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 29px;
+  -webkit-font-smoothing: antialiased;
+`;
+
 export const Heading = styled.span<TextProps>`
   ${({color}) => (color ? `color: ${color};` : null)}
   font-size: 18px;
