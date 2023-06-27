@@ -96,7 +96,7 @@ sources:
       - name: customers_raw
 ```
 
-The Dagster assets you build in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-three) will create `orders_raw` and `customers_raw` tables when materialized. To have the models select data from these tables, you'll need to update the models.
+The Dagster assets you build in [part three of this tutorial](/integrations/dbt/using-dbt-with-dagster/upstream-assets) will create `orders_raw` and `customers_raw` tables when materialized. To have the models select data from these tables, you'll need to update the models.
 
 In `/tutorial_template/jaffle_shop/models/staging`, update the `stg_customers.sql` and `stg_orders.sql` models to use the [`{{ source()}}` function](https://docs.getdbt.com/reference/dbt-jinja-functions/source). This function tells the dbt model to select data from the defined source. In this example, that's the `customers_raw` and `orders_raw` tables in the DuckDB database:.
 
@@ -125,4 +125,4 @@ In `/tutorial_template/jaffle_shop/models/staging`, update the `stg_customers.sq
 
 ## What's next?
 
-At this point, you should have a fully-configured dbt project that's ready to work with Dagster. The next step is to [load the dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two).
+At this point, you should have a fully-configured dbt project that's ready to work with Dagster. The next step is to [load the dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models).
