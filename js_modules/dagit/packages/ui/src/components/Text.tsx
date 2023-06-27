@@ -7,7 +7,7 @@ interface TextProps {
   color?: string;
 }
 
-export const BigHeading = styled.span<TextProps>`
+export const Title = styled.span<TextProps>`
   ${({color}) => (color ? `color: ${color};` : null)}
   font-size: 24px;
   font-weight: 600;
