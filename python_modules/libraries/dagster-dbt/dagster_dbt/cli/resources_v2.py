@@ -245,11 +245,11 @@ class DbtManifest:
             for node in self.node_info_by_dbt_unique_id.values()
         }
 
-    def get_node_info_by_output_name(self, output_name: str) -> Mapping[str, Any]:
+    def get_node_info_for_output_name(self, output_name: str) -> Mapping[str, Any]:
         """Get a dbt node's dictionary representation in the manifest by its Dagster output name."""
         return self.node_info_by_output_name[output_name]
 
-    def get_asset_key_by_output_name(self, output_name: str) -> AssetKey:
+    def get_asset_key_for_output_name(self, output_name: str) -> AssetKey:
         """Return the corresponding dbt node's Dagster asset key for a Dagster output name.
 
         Args:
@@ -258,7 +258,7 @@ class DbtManifest:
         Returns:
             AssetKey: The corresponding dbt node's Dagster asset key.
         """
-        return self.node_info_to_asset_key(self.get_node_info_by_output_name(output_name))
+        return self.node_info_to_asset_key(self.get_node_info_for_output_name(output_name))
 
     def get_asset_key_for_dbt_unique_id(self, unique_id: str) -> AssetKey:
         node_info = self.node_info_by_dbt_unique_id.get(unique_id)
@@ -531,7 +531,7 @@ class DbtManifest:
 
         selected_dbt_resources = []
         for output_name in context.selected_output_names:
-            node_info = self.get_node_info_by_output_name(output_name)
+            node_info = self.get_node_info_for_output_name(output_name)
 
             # Explicitly select a dbt resource by its fully qualified name (FQN).
             # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
