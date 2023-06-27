@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import tempfile
 from abc import ABC, abstractmethod
@@ -794,8 +795,9 @@ def make_graphql_context_test_suite(context_variants):
         @pytest.fixture(name="graphql_context")
         def yield_graphql_context(self, class_scoped_graphql_context):
             instance = class_scoped_graphql_context.instance
-            instance.wipe()
-            instance.wipe_all_schedules()
+            with contextlib.suppress(FileNotFoundError):
+                instance.wipe()
+                instance.wipe_all_schedules()
             yield class_scoped_graphql_context
             # ensure that any runs launched by the test are cleaned up
             # Since launcher is lazy loaded, we don't need to do anyting if it's None
