@@ -13,42 +13,38 @@ def test_old_resource_authenticate_via_config():
     asset_info = dict()
 
     @asset(required_resource_keys={"bigquery"})
-    def test_asset() -> int:
-        asset_info["gcp_creds_file"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
+    def test_asset(context) -> int:
+        assert (
+            context.resources.bigquery.google_auth_resource.service_account_info
+            is not None
+        )
+        assert (
+            context.resources.bigquery.google_auth_resource.service_account_file
+            is None
+        )
         return 1
 
-    old_gcp_creds_file = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+    old_gcp_creds_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", None)
     assert old_gcp_creds_file is not None
 
-    passed = False
+    with open(old_gcp_creds_file, "r") as f:
+        gcp_creds = f.read()
 
-    try:
-        with open(old_gcp_creds_file, "r") as f:
-            gcp_creds = f.read()
-
-        resource_defs = {
-            "bigquery": bigquery_resource.configured(
-                {
-                    "project": os.getenv("GCP_PROJECT_ID"),
-                    "gcp_credentials": base64.b64encode(str.encode(gcp_creds)).decode(),
-                }
-            )
-        }
-
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
-
-        result = materialize(
-            [test_asset],
-            resources=resource_defs,
+    resource_defs = {
+        "bigquery": bigquery_resource.configured(
+            {
+                "project": os.getenv("GCP_PROJECT_ID"),
+                "gcp_credentials": base64.b64encode(str.encode(gcp_creds)).decode(),
+            }
         )
-        passed = result.success
+    }
 
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
-        assert not os.path.exists(asset_info["gcp_creds_file"])
-    finally:
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
-        assert passed
+
+    result = materialize(
+        [test_asset],
+        resources=resource_defs,
+    )
+    assert result.success
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
@@ -57,40 +53,38 @@ def test_pythonic_resource_authenticate_via_config():
 
     @asset
     def test_asset(bigquery: BigQueryResource) -> int:
-        with bigquery.get_client():
-            asset_info["gcp_creds_file"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-            assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
-            return 1
+        assert bigquery.google_auth_resource is not None
 
-    old_gcp_creds_file = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
-    assert old_gcp_creds_file is not None
-
-    passed = False
-
-    try:
-        with open(old_gcp_creds_file, "r") as f:
-            gcp_creds = f.read()
-
-        resource_defs = {
-            "bigquery": BigQueryResource(
-                project=EnvVar("GCP_PROJECT_ID"),
-                gcp_credentials=base64.b64encode(str.encode(gcp_creds)).decode(),
-            ),
-        }
-
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
-
-        result = materialize(
-            [test_asset],
-            resources=resource_defs,
+        assert (
+            bigquery.google_auth_resource.service_account_info
+            is not None
         )
-        passed = result.success
+        assert (
+            bigquery.google_auth_resource.service_account_file
+            is None
+        )
+        return 1
 
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
-        assert not os.path.exists(asset_info["gcp_creds_file"])
-    finally:
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
-        assert passed
+    gcp_creds_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", None)
+    assert gcp_creds_file is not None
+
+    with open(gcp_creds_file, "r") as f:
+        gcp_creds = f.read()
+
+    resource_defs = {
+        "bigquery": BigQueryResource(
+            project=EnvVar("GCP_PROJECT_ID"),
+            gcp_credentials=base64.b64encode(str.encode(gcp_creds)).decode(),
+        ),
+    }
+
+    assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
+
+    result = materialize(
+        [test_asset],
+        resources=resource_defs,
+    )
+    assert result.success
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
