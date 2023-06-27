@@ -36,16 +36,6 @@ export interface RunsFilterInputProps {
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilterInput = (props: RunsFilterInputProps) => {
-  const {button, activeFiltersJsx} = useRunsFilterInput(props);
-  return (
-    <div>
-      {button}
-      {activeFiltersJsx}
-    </div>
-  );
-};
-
 export type RunFilterTokenType =
   | 'id'
   | 'status'

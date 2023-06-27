@@ -121,8 +121,8 @@ export const RunTable = (props: RunTableProps) => {
         <Table>
           <thead>
             <tr>
-              <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-                {canTerminateOrDeleteAny ? (
+              {canTerminateOrDeleteAny ? (
+                <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
                   <Checkbox
                     indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
                     checked={checkedIds.size === runs.length}
@@ -132,8 +132,8 @@ export const RunTable = (props: RunTableProps) => {
                       }
                     }}
                   />
-                ) : null}
-              </th>
+                </th>
+              ) : null}
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>Target</th>
@@ -330,11 +330,9 @@ const RunRow: React.FC<{
         setIsHovered(false);
       }}
     >
-      <td>
-        {canTerminateOrDelete && onToggleChecked ? (
-          <Checkbox checked={!!checked} onChange={onChange} />
-        ) : null}
-      </td>
+      {canTerminateOrDelete ? (
+        <td>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</td>
+      ) : null}
       <td>
         <Link to={`/runs/${run.id}`}>
           <Mono>{titleForRun(run)}</Mono>
