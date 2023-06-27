@@ -4,13 +4,13 @@ from dagster import AssetIn, MetadataValue, asset, file_relative_path
 from dagster_dbt import load_assets_from_dbt_project
 
 
-@asset(key_prefix=["jaffle_shop"], group_name="staging")
+@asset(key_prefix=["jaffle_shop"])
 def customers_raw() -> pd.DataFrame:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     return data
 
 
-@asset(key_prefix=["jaffle_shop"], group_name="staging")
+@asset(key_prefix=["jaffle_shop"])
 def orders_raw() -> pd.DataFrame:
     data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
     return data
@@ -26,7 +26,7 @@ dbt_assets = load_assets_from_dbt_project(
 )
 
 
-@asset(ins={"customers": AssetIn(key_prefix=["jaffle_shop"])}, group_name="staging")
+@asset(ins={"customers": AssetIn(key_prefix=["jaffle_shop"])})
 def order_count_chart(context, customers: pd.DataFrame) -> None:
     fig = px.histogram(customers, x="number_of_orders")
     fig.update_layout(bargap=0.2)
