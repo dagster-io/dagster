@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -31,7 +32,12 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterAssetBackfillDataLoadError,
+    DagsterBackfillFailedError,
+    DagsterDefinitionChangedDeserializationError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import (
@@ -49,6 +55,7 @@ from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
 )
+from dagster._core.workspace.workspace import IWorkspace
 from dagster._utils import hash_collection, utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -418,8 +425,27 @@ def fetch_cancelable_run_ids_for_asset_backfill(instance: DagsterInstance, backf
     return [run.run_id for run in backfill_runs if run.status in CANCELABLE_RUN_STATUSES]
 
 
+def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:
+    location_entries_by_name = {
+        location_entry.origin.location_name: location_entry
+        for location_entry in context.get_workspace_snapshot().values()
+    }
+    unloadable_location_names = []
+
+    for location_name, location_entry in location_entries_by_name.items():
+        if location_entry.load_error:
+            logger.warning(
+                f"Failure loading location {location_name} due to error:"
+                f" {location_entry.load_error}"
+            )
+            unloadable_location_names.append(location_name)
+
+    return unloadable_location_names
+
+
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
+    logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
 ) -> Iterable[None]:
@@ -431,15 +457,26 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
-    asset_graph = ExternalAssetGraph.from_workspace(
-        workspace_process_context.create_request_context()
-    )
+    workspace_context = workspace_process_context.create_request_context()
+    unloadable_locations = _get_unloadable_location_names(workspace_context, logger)
+    asset_graph = ExternalAssetGraph.from_workspace(workspace_context)
+
     if backfill.serialized_asset_backfill_data is None:
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 
-    asset_backfill_data = AssetBackfillData.from_serialized(
-        backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
-    )
+    try:
+        asset_backfill_data = AssetBackfillData.from_serialized(
+            backfill.serialized_asset_backfill_data, asset_graph, backfill.backfill_timestamp
+        )
+    except DagsterDefinitionChangedDeserializationError as ex:
+        unloadable_locations_error = (
+            "This could be because it's inside a code location that's failing to load:"
+            f" {unloadable_locations}"
+            if unloadable_locations
+            else ""
+        )
+        raise DagsterAssetBackfillDataLoadError(f"{str(ex)}. {unloadable_locations_error}")
+
     backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
 
     instance_queryer = CachingInstanceQueryer(
