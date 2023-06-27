@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import itertools
 import os
+import random
 import sys
 from typing import (
     AbstractSet,
@@ -46,6 +47,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -475,13 +477,23 @@ def multi_asset_def(
     return _assets
 
 
-def observable_source_asset_def(key: str, minutes_to_change: int = 0):
-    @observable_source_asset(name=key)
-    def _observable():
+def observable_source_asset_def(
+    key: str, partitions_def: Optional[PartitionsDefinition] = None, minutes_to_change: int = 0
+):
+    def _data_version() -> DataVersion:
         return (
             DataVersion(str(pendulum.now().minute // minutes_to_change))
             if minutes_to_change
-            else DataVersion(str(pendulum.now()))
+            else DataVersion(str(random.random()))
         )
+
+    @observable_source_asset(name=key, partitions_def=partitions_def)
+    def _observable():
+        if partitions_def is None:
+            return _data_version()
+        else:
+            return DataVersionsByPartition(
+                {partition: _data_version() for partition in partitions_def.get_partition_keys()}
+            )
 
     return _observable

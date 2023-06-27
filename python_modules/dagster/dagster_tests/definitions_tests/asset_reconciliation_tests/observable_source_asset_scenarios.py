@@ -10,7 +10,7 @@ from .asset_reconciliation_scenario import (
     run,
     run_request,
 )
-from .partition_scenarios import hourly_partitions_def
+from .partition_scenarios import hourly_partitions_def, two_partitions_partitions_def
 
 unpartitioned_downstream_of_observable_source = [
     observable_source_asset_def("source_asset"),
@@ -42,6 +42,17 @@ downstream_of_unchanging_observable_source = [
 downstream_of_slowly_changing_observable_source = [
     observable_source_asset_def("source_asset1", minutes_to_change=30),
     asset_def("asset1", ["source_asset1"]),
+]
+
+partitioned_downstream_of_changing_observable_source = [
+    observable_source_asset_def("source_asset", partitions_def=two_partitions_partitions_def),
+    asset_def("asset1", ["source_asset"], partitions_def=two_partitions_partitions_def),
+]
+partitioned_downstream_of_unchanging_observable_source = [
+    observable_source_asset_def(
+        "source_asset", partitions_def=two_partitions_partitions_def, minutes_to_change=10**100
+    ),
+    asset_def("asset1", ["source_asset"], partitions_def=two_partitions_partitions_def),
 ]
 
 observable_source_asset_scenarios = {
@@ -159,6 +170,50 @@ observable_source_asset_scenarios = {
             expected_run_requests=[run_request(["asset1"])],
         ),
         unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
+    "partitioned_downstream_of_changing_observable_source": AssetReconciliationScenario(
+        assets=partitioned_downstream_of_changing_observable_source,
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_downstream_of_changing_observable_source,
+            unevaluated_runs=[
+                run(["source_asset"], is_observation=True),
+                run(["asset1"], partition_key="a"),
+            ],
+            expected_run_requests=[
+                run_request(["asset1"], partition_key="b"),
+            ],
+        ),
+        unevaluated_runs=[
+            run(["source_asset"], is_observation=True),
+            run(["source_asset"], is_observation=True),
+            run(["asset1"], partition_key="a"),
+            run(["asset1"], partition_key="b"),
+            run(["source_asset"], is_observation=True),
+        ],
+        expected_run_requests=[
+            run_request(["asset1"], partition_key="a"),
+            run_request(["asset1"], partition_key="b"),
+        ],
+    ),
+    "partitioned_downstream_of_unchanging_observable_source": AssetReconciliationScenario(
+        assets=partitioned_downstream_of_unchanging_observable_source,
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_downstream_of_unchanging_observable_source,
+            unevaluated_runs=[
+                run(["source_asset"], is_observation=True),
+                run(["asset1"], partition_key="a"),
+            ],
+            expected_run_requests=[
+                run_request(["asset1"], partition_key="b"),
+            ],
+        ),
+        unevaluated_runs=[
+            run(["source_asset"], is_observation=True),
+            run(["source_asset"], is_observation=True),
+            run(["source_asset"], is_observation=True),
+            run(["source_asset"], is_observation=True),
+        ],
         expected_run_requests=[],
     ),
     "slowly_changing_observable_many_observations": AssetReconciliationScenario(

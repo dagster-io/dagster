@@ -23,6 +23,7 @@ from dagster import (
 )
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
@@ -625,6 +626,46 @@ def test_hooks():
 
     job = define_asset_job("with_hooks", hooks={foo, bar}).resolve([a, b], [])
     assert job.hook_defs == {foo, bar}
+
+
+def test_hooks_with_resources():
+    @asset
+    def a():
+        pass
+
+    @asset
+    def b(a):
+        pass
+
+    @success_hook(required_resource_keys={"a"})
+    def foo(_):
+        pass
+
+    @failure_hook(required_resource_keys={"b", "c"})
+    def bar(_):
+        pass
+
+    job = define_asset_job("with_hooks", hooks={foo, bar}).resolve(
+        [a, b], [], resource_defs={"a": 1, "b": 2, "c": 3}
+    )
+    assert job.hook_defs == {foo, bar}
+
+    defs = Definitions(
+        assets=[a, b],
+        jobs=[define_asset_job("with_hooks", hooks={foo, bar})],
+        resources={"a": 1, "b": 2, "c": 3},
+    )
+    assert defs.get_job_def("with_hooks").hook_defs == {foo, bar}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'c' required by hook 'bar'",
+    ):
+        defs = Definitions(
+            assets=[a, b],
+            jobs=[define_asset_job("with_hooks", hooks={foo, bar})],
+            resources={"a": 1, "b": 2},
+        ).get_job_def("with_hooks")
 
 
 def test_partitioned_schedule():
