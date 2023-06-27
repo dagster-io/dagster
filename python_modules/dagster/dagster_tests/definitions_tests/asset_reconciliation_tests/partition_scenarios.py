@@ -92,6 +92,16 @@ non_partitioned_after_partitioned = [
     asset_def("asset2", ["asset1"]),
 ]
 
+two_hourly_to_one_daily = [
+    asset_def("hourly_1", partitions_def=hourly_partitions_def),
+    asset_def("hourly_2", partitions_def=hourly_partitions_def),
+    asset_def(
+        "daily",
+        ["hourly_1", "hourly_2"],
+        partitions_def=daily_partitions_def,
+    ),
+]
+
 
 partition_scenarios = {
     "one_asset_one_partition_never_materialized": AssetReconciliationScenario(

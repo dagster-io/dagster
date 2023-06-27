@@ -56,6 +56,8 @@ class MissingAutoMaterializeCondition(NamedTuple):
 @whitelist_for_serdes
 class ParentOutdatedAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be skipped because one or more of its parents are outdated.
+    This could be because the parent isn't going to run, or it could be that the parent is going to be materialized
+    but in a separate run due to different partitions or repositories.
     """
 
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
