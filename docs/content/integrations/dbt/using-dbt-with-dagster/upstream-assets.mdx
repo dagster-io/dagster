@@ -13,7 +13,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
   tutorial.
 </Note>
 
-By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/part-one) and [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/part-two).
+By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project) and [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models).
 
 In this step, you'll:
 
@@ -32,8 +32,6 @@ In `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py`:
 1. Replace the import section at the top of the file with the following:
 
    ```python
-   # /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
-
    import pandas as pd
    from dagster_dbt import load_assets_from_dbt_project
 
@@ -60,15 +58,13 @@ Let's take a closer look at the arguments we've provided:
 
 - `key_prefix` - When the assets are materialized, Dagster will store them in DuckDB in the schema defined by the last value in `key_prefix`. In this case, that's `jaffle_shop`. The tables will have the same names as the assets that produced them, which are `customers_raw` and `orders_raw`.
 
-  Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/tutorial_template/jaffle_shop/models/sources.yml`, which you configured in [part one of this tutorial](/integrations/dbt/using-dbt-with-dagster/part-one#step-3-configure-dbt-model-data-sources).
+  Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/tutorial_template/jaffle_shop/models/sources.yml`, which you configured in [part one of this tutorial](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project#step-3-configure-dbt-model-data-sources).
 
 - `group_name` - When Dagster loads the dbt models as assets, the assets will be placed in an asset group based on the name of the folder (`staging`) containing the models. Because we want the assets we add to be included in the same group, we defined this as `staging`.
 
 At this point, the `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py` file should look like this:
 
 ```python
-# /tutorial_template/tutorial_dbt_dagster/assets/__init__.py
-
 import pandas as pd
 from dagster_dbt import load_assets_from_dbt_project
 
@@ -109,8 +105,6 @@ In this step, we'll supply the `duckdb_io_manager` to our assets. This resource 
 In `/tutorial_template/tutorial_dbt_dagster/__init__.py`, replace its contents with the following:
 
 ```python
-# /tutorial_template/tutorial_dbt_dagster/__init__.py
-
 import os
 
 from dagster_dbt import DbtCliClientResource
@@ -147,7 +141,7 @@ Now that you've created assets and resources, it's time to materialize the asset
 
    <Image
    alt="Asset graph in Dagit, showing dbt models and unmaterialized assets"
-   src="/images/integrations/dbt/using-dbt-with-dagster/part-three-asset-graph-unmaterialized.png"
+   src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets-asset-graph-unmaterialized.png"
    width={1089}
    height={897}
    />
@@ -156,7 +150,7 @@ Now that you've created assets and resources, it's time to materialize the asset
 
    <Image
    alt="Asset graph in Dagit, showing materialized assets"
-   src="/images/integrations/dbt/using-dbt-with-dagster/part-three-asset-graph-materialized.png"
+   src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets-asset-graph-materialized.png"
    width={1091}
    height={896}
    />
@@ -170,4 +164,4 @@ After the run completes, you can:
 
 ## What's next?
 
-At this point, you've built and materialized two upstream Dagster assets, providing source data to your dbt models. In the last section of the tutorial, we'll show you how to add a [downstream asset to the pipeline](/integrations/dbt/using-dbt-with-dagster/part-four).
+At this point, you've built and materialized two upstream Dagster assets, providing source data to your dbt models. In the last section of the tutorial, we'll show you how to add a [downstream asset to the pipeline](/integrations/dbt/using-dbt-with-dagster/downstream-assets).
