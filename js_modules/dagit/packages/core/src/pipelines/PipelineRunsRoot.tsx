@@ -88,8 +88,6 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     allTokens.push(repoToken);
   }
 
-  console.log({filterTokens, allTokens});
-
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PipelineRunsRootQuery,
     PipelineRunsRootQueryVariables
