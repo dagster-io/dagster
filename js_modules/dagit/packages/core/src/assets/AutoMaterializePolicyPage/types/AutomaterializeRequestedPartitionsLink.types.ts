@@ -7,7 +7,7 @@ export type RunStatusAndPartitionKeyQueryVariables = Types.Exact<{
 }>;
 
 export type RunStatusAndPartitionKeyQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   runsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
     | {

@@ -10,7 +10,7 @@ export type LogTelemetryMutationVariables = Types.Exact<{
 }>;
 
 export type LogTelemetryMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   logTelemetry:
     | {__typename: 'LogTelemetrySuccess'; action: string}
     | {

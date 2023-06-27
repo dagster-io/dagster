@@ -7,7 +7,7 @@ export type RunStatusOnlyQueryVariables = Types.Exact<{
 }>;
 
 export type RunStatusOnlyQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   runOrError:
     | {__typename: 'PythonError'}
     | {__typename: 'Run'; id: string; status: Types.RunStatus}

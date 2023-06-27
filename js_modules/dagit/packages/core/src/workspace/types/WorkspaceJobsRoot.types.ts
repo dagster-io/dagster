@@ -7,7 +7,7 @@ export type WorkspaceJobsQueryVariables = Types.Exact<{
 }>;
 
 export type WorkspaceJobsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   repositoryOrError:
     | {
         __typename: 'PythonError';

@@ -7,7 +7,7 @@ export type StartSensorMutationVariables = Types.Exact<{
 }>;
 
 export type StartSensorMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   startSensor:
     | {
         __typename: 'PythonError';
@@ -34,7 +34,7 @@ export type StopRunningSensorMutationVariables = Types.Exact<{
 }>;
 
 export type StopRunningSensorMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   stopSensor:
     | {
         __typename: 'PythonError';

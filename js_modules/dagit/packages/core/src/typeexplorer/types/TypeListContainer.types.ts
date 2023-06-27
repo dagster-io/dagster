@@ -7,7 +7,7 @@ export type TypeListContainerQueryVariables = Types.Exact<{
 }>;
 
 export type TypeListContainerQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineOrError:
     | {__typename: 'InvalidSubsetError'}
     | {

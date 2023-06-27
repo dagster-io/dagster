@@ -26,7 +26,7 @@ export const AssetCatalogGroupTableMock: MockedResponse<AssetCatalogGroupTableQu
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [],
     },
   },
@@ -39,7 +39,7 @@ export const SingleAssetQueryTrafficDashboard: MockedResponse<SingleNonSdaAssetQ
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetOrError: {
         id: '["dashboards", "traffic_dashboard"]',
         assetMaterializations: [
@@ -73,7 +73,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<AssetGrap
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["good_asset"]',
@@ -133,7 +133,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<AssetGraph
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["late_asset"]',
@@ -189,7 +189,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<AssetGraphLiveQuery> 
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["run_failing_asset"]',
@@ -332,7 +332,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetsOrError: {
         __typename: 'AssetConnection',
         nodes: AssetCatalogTableMockAssets,

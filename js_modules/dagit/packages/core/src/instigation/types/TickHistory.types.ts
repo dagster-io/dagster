@@ -11,7 +11,7 @@ export type TickHistoryQueryVariables = Types.Exact<{
 }>;
 
 export type TickHistoryQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instigationStateOrError:
     | {
         __typename: 'InstigationState';

@@ -27,7 +27,7 @@ export type AssetGraphLiveQueryVariables = Types.Exact<{
 }>;
 
 export type AssetGraphLiveQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;

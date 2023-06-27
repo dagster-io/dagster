@@ -18,7 +18,7 @@ export const buildRunStatusOnlyQuery = (
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         runOrError: buildRun({
           id: runId,
           status,

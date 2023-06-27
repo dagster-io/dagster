@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type RunTagKeysQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type RunTagKeysQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   runTagKeysOrError:
     | {__typename: 'PythonError'}
     | {__typename: 'RunTagKeys'; keys: Array<string>}
@@ -17,7 +17,7 @@ export type RunTagValuesQueryVariables = Types.Exact<{
 }>;
 
 export type RunTagValuesQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   runTagsOrError:
     | {__typename: 'PythonError'}
     | {

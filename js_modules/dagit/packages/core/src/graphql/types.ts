@@ -547,416 +547,6 @@ export type DaemonStatus = {
   required: Scalars['Boolean'];
 };
 
-export type DagitMutation = {
-  __typename: 'DagitMutation';
-  addDynamicPartition: AddDynamicPartitionResult;
-  cancelPartitionBackfill: CancelBackfillResult;
-  deletePipelineRun: DeletePipelineRunResult;
-  deleteRun: DeletePipelineRunResult;
-  freeConcurrencySlotsForRun: Scalars['Boolean'];
-  launchPartitionBackfill: LaunchBackfillResult;
-  launchPipelineExecution: LaunchRunResult;
-  launchPipelineReexecution: LaunchRunReexecutionResult;
-  launchRun: LaunchRunResult;
-  launchRunReexecution: LaunchRunReexecutionResult;
-  logTelemetry: LogTelemetryMutationResult;
-  reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
-  reloadWorkspace: ReloadWorkspaceMutationResult;
-  resumePartitionBackfill: ResumeBackfillResult;
-  scheduleDryRun: ScheduleDryRunResult;
-  sensorDryRun: SensorDryRunResult;
-  setAutoMaterializePaused: Scalars['Boolean'];
-  setConcurrencyLimit: Scalars['Boolean'];
-  setNuxSeen: Scalars['Boolean'];
-  setSensorCursor: SensorOrError;
-  shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
-  startSchedule: ScheduleMutationResult;
-  startSensor: SensorOrError;
-  stopRunningSchedule: ScheduleMutationResult;
-  stopSensor: StopSensorMutationResultOrError;
-  terminatePipelineExecution: TerminateRunResult;
-  terminateRun: TerminateRunResult;
-  wipeAssets: AssetWipeMutationResult;
-};
-
-export type DagitMutationAddDynamicPartitionArgs = {
-  partitionKey: Scalars['String'];
-  partitionsDefName: Scalars['String'];
-  repositorySelector: RepositorySelector;
-};
-
-export type DagitMutationCancelPartitionBackfillArgs = {
-  backfillId: Scalars['String'];
-};
-
-export type DagitMutationDeletePipelineRunArgs = {
-  runId: Scalars['String'];
-};
-
-export type DagitMutationDeleteRunArgs = {
-  runId: Scalars['String'];
-};
-
-export type DagitMutationFreeConcurrencySlotsForRunArgs = {
-  runId: Scalars['String'];
-};
-
-export type DagitMutationLaunchPartitionBackfillArgs = {
-  backfillParams: LaunchBackfillParams;
-};
-
-export type DagitMutationLaunchPipelineExecutionArgs = {
-  executionParams: ExecutionParams;
-};
-
-export type DagitMutationLaunchPipelineReexecutionArgs = {
-  executionParams?: InputMaybe<ExecutionParams>;
-  reexecutionParams?: InputMaybe<ReexecutionParams>;
-};
-
-export type DagitMutationLaunchRunArgs = {
-  executionParams: ExecutionParams;
-};
-
-export type DagitMutationLaunchRunReexecutionArgs = {
-  executionParams?: InputMaybe<ExecutionParams>;
-  reexecutionParams?: InputMaybe<ReexecutionParams>;
-};
-
-export type DagitMutationLogTelemetryArgs = {
-  action: Scalars['String'];
-  clientId: Scalars['String'];
-  clientTime: Scalars['String'];
-  metadata: Scalars['String'];
-};
-
-export type DagitMutationReloadRepositoryLocationArgs = {
-  repositoryLocationName: Scalars['String'];
-};
-
-export type DagitMutationResumePartitionBackfillArgs = {
-  backfillId: Scalars['String'];
-};
-
-export type DagitMutationScheduleDryRunArgs = {
-  selectorData: ScheduleSelector;
-  timestamp?: InputMaybe<Scalars['Float']>;
-};
-
-export type DagitMutationSensorDryRunArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  selectorData: SensorSelector;
-};
-
-export type DagitMutationSetAutoMaterializePausedArgs = {
-  paused: Scalars['Boolean'];
-};
-
-export type DagitMutationSetConcurrencyLimitArgs = {
-  concurrencyKey: Scalars['String'];
-  limit: Scalars['Int'];
-};
-
-export type DagitMutationSetSensorCursorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  sensorSelector: SensorSelector;
-};
-
-export type DagitMutationShutdownRepositoryLocationArgs = {
-  repositoryLocationName: Scalars['String'];
-};
-
-export type DagitMutationStartScheduleArgs = {
-  scheduleSelector: ScheduleSelector;
-};
-
-export type DagitMutationStartSensorArgs = {
-  sensorSelector: SensorSelector;
-};
-
-export type DagitMutationStopRunningScheduleArgs = {
-  scheduleOriginId: Scalars['String'];
-  scheduleSelectorId: Scalars['String'];
-};
-
-export type DagitMutationStopSensorArgs = {
-  jobOriginId: Scalars['String'];
-  jobSelectorId: Scalars['String'];
-};
-
-export type DagitMutationTerminatePipelineExecutionArgs = {
-  runId: Scalars['String'];
-  terminatePolicy?: InputMaybe<TerminateRunPolicy>;
-};
-
-export type DagitMutationTerminateRunArgs = {
-  runId: Scalars['String'];
-  terminatePolicy?: InputMaybe<TerminateRunPolicy>;
-};
-
-export type DagitMutationWipeAssetsArgs = {
-  assetKeys: Array<AssetKeyInput>;
-};
-
-export type DagitQuery = {
-  __typename: 'DagitQuery';
-  allTopLevelResourceDetailsOrError: ResourcesOrError;
-  assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
-  assetNodeOrError: AssetNodeOrError;
-  assetNodes: Array<AssetNode>;
-  assetOrError: AssetOrError;
-  assetsLatestInfo: Array<AssetLatestInfo>;
-  assetsOrError: AssetsOrError;
-  autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
-  capturedLogs: CapturedLogs;
-  capturedLogsMetadata: CapturedLogsMetadata;
-  executionPlanOrError: ExecutionPlanOrError;
-  graphOrError: GraphOrError;
-  instance: Instance;
-  instigationStateOrError: InstigationStateOrError;
-  isPipelineConfigValid: PipelineConfigValidationResult;
-  locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
-  logsForRun: EventConnectionOrError;
-  partitionBackfillOrError: PartitionBackfillOrError;
-  partitionBackfillsOrError: PartitionBackfillsOrError;
-  partitionSetOrError: PartitionSetOrError;
-  partitionSetsOrError: PartitionSetsOrError;
-  permissions: Array<Permission>;
-  pipelineOrError: PipelineOrError;
-  pipelineRunOrError: RunOrError;
-  pipelineRunsOrError: RunsOrError;
-  pipelineSnapshotOrError: PipelineSnapshotOrError;
-  repositoriesOrError: RepositoriesOrError;
-  repositoryOrError: RepositoryOrError;
-  runConfigSchemaOrError: RunConfigSchemaOrError;
-  runGroupOrError: RunGroupOrError;
-  runGroupsOrError: RunGroupsOrError;
-  runOrError: RunOrError;
-  runTagKeysOrError: Maybe<RunTagKeysOrError>;
-  runTagsOrError: Maybe<RunTagsOrError>;
-  runsOrError: RunsOrError;
-  scheduleOrError: ScheduleOrError;
-  scheduler: SchedulerOrError;
-  schedulesOrError: SchedulesOrError;
-  sensorOrError: SensorOrError;
-  sensorsOrError: SensorsOrError;
-  shouldShowNux: Scalars['Boolean'];
-  test: Maybe<TestFields>;
-  topLevelResourceDetailsOrError: ResourceDetailsOrError;
-  unloadableInstigationStatesOrError: InstigationStatesOrError;
-  utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
-  version: Scalars['String'];
-  workspaceOrError: WorkspaceOrError;
-};
-
-export type DagitQueryAllTopLevelResourceDetailsOrErrorArgs = {
-  repositorySelector: RepositorySelector;
-};
-
-export type DagitQueryAssetNodeDefinitionCollisionsArgs = {
-  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
-};
-
-export type DagitQueryAssetNodeOrErrorArgs = {
-  assetKey: AssetKeyInput;
-};
-
-export type DagitQueryAssetNodesArgs = {
-  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
-  group?: InputMaybe<AssetGroupSelector>;
-  loadMaterializations?: InputMaybe<Scalars['Boolean']>;
-  pipeline?: InputMaybe<PipelineSelector>;
-};
-
-export type DagitQueryAssetOrErrorArgs = {
-  assetKey: AssetKeyInput;
-};
-
-export type DagitQueryAssetsLatestInfoArgs = {
-  assetKeys: Array<AssetKeyInput>;
-};
-
-export type DagitQueryAssetsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  limit?: InputMaybe<Scalars['Int']>;
-  prefix?: InputMaybe<Array<Scalars['String']>>;
-};
-
-export type DagitQueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
-  assetKey: AssetKeyInput;
-  cursor?: InputMaybe<Scalars['String']>;
-  limit: Scalars['Int'];
-};
-
-export type DagitQueryCapturedLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  limit?: InputMaybe<Scalars['Int']>;
-  logKey: Array<Scalars['String']>;
-};
-
-export type DagitQueryCapturedLogsMetadataArgs = {
-  logKey: Array<Scalars['String']>;
-};
-
-export type DagitQueryExecutionPlanOrErrorArgs = {
-  mode: Scalars['String'];
-  pipeline: PipelineSelector;
-  runConfigData?: InputMaybe<Scalars['RunConfigData']>;
-};
-
-export type DagitQueryGraphOrErrorArgs = {
-  selector?: InputMaybe<GraphSelector>;
-};
-
-export type DagitQueryInstigationStateOrErrorArgs = {
-  instigationSelector: InstigationSelector;
-};
-
-export type DagitQueryIsPipelineConfigValidArgs = {
-  mode: Scalars['String'];
-  pipeline: PipelineSelector;
-  runConfigData?: InputMaybe<Scalars['RunConfigData']>;
-};
-
-export type DagitQueryLogsForRunArgs = {
-  afterCursor?: InputMaybe<Scalars['String']>;
-  limit?: InputMaybe<Scalars['Int']>;
-  runId: Scalars['ID'];
-};
-
-export type DagitQueryPartitionBackfillOrErrorArgs = {
-  backfillId: Scalars['String'];
-};
-
-export type DagitQueryPartitionBackfillsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  limit?: InputMaybe<Scalars['Int']>;
-  status?: InputMaybe<BulkActionStatus>;
-};
-
-export type DagitQueryPartitionSetOrErrorArgs = {
-  partitionSetName?: InputMaybe<Scalars['String']>;
-  repositorySelector: RepositorySelector;
-};
-
-export type DagitQueryPartitionSetsOrErrorArgs = {
-  pipelineName: Scalars['String'];
-  repositorySelector: RepositorySelector;
-};
-
-export type DagitQueryPipelineOrErrorArgs = {
-  params: PipelineSelector;
-};
-
-export type DagitQueryPipelineRunOrErrorArgs = {
-  runId: Scalars['ID'];
-};
-
-export type DagitQueryPipelineRunsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']>;
-};
-
-export type DagitQueryPipelineSnapshotOrErrorArgs = {
-  activePipelineSelector?: InputMaybe<PipelineSelector>;
-  snapshotId?: InputMaybe<Scalars['String']>;
-};
-
-export type DagitQueryRepositoriesOrErrorArgs = {
-  repositorySelector?: InputMaybe<RepositorySelector>;
-};
-
-export type DagitQueryRepositoryOrErrorArgs = {
-  repositorySelector: RepositorySelector;
-};
-
-export type DagitQueryRunConfigSchemaOrErrorArgs = {
-  mode?: InputMaybe<Scalars['String']>;
-  selector: PipelineSelector;
-};
-
-export type DagitQueryRunGroupOrErrorArgs = {
-  runId: Scalars['ID'];
-};
-
-export type DagitQueryRunGroupsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']>;
-};
-
-export type DagitQueryRunOrErrorArgs = {
-  runId: Scalars['ID'];
-};
-
-export type DagitQueryRunTagsOrErrorArgs = {
-  limit?: InputMaybe<Scalars['Int']>;
-  tagKeys?: InputMaybe<Array<Scalars['String']>>;
-  valuePrefix?: InputMaybe<Scalars['String']>;
-};
-
-export type DagitQueryRunsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']>;
-};
-
-export type DagitQueryScheduleOrErrorArgs = {
-  scheduleSelector: ScheduleSelector;
-};
-
-export type DagitQuerySchedulesOrErrorArgs = {
-  repositorySelector: RepositorySelector;
-  scheduleStatus?: InputMaybe<InstigationStatus>;
-};
-
-export type DagitQuerySensorOrErrorArgs = {
-  sensorSelector: SensorSelector;
-};
-
-export type DagitQuerySensorsOrErrorArgs = {
-  repositorySelector: RepositorySelector;
-  sensorStatus?: InputMaybe<InstigationStatus>;
-};
-
-export type DagitQueryTopLevelResourceDetailsOrErrorArgs = {
-  resourceSelector: ResourceSelector;
-};
-
-export type DagitQueryUnloadableInstigationStatesOrErrorArgs = {
-  instigationType?: InputMaybe<InstigationType>;
-};
-
-export type DagitQueryUtilizedEnvVarsOrErrorArgs = {
-  repositorySelector: RepositorySelector;
-};
-
-export type DagitSubscription = {
-  __typename: 'DagitSubscription';
-  capturedLogs: CapturedLogs;
-  computeLogs: ComputeLogFile;
-  locationStateChangeEvents: LocationStateChangeSubscription;
-  pipelineRunLogs: PipelineRunLogsSubscriptionPayload;
-};
-
-export type DagitSubscriptionCapturedLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  logKey: Array<Scalars['String']>;
-};
-
-export type DagitSubscriptionComputeLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  ioType: ComputeIoType;
-  runId: Scalars['ID'];
-  stepKey: Scalars['String'];
-};
-
-export type DagitSubscriptionPipelineRunLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  runId: Scalars['ID'];
-};
-
 export enum DagsterEventType {
   ALERT_FAILURE = 'ALERT_FAILURE',
   ALERT_START = 'ALERT_START',
@@ -2251,6 +1841,157 @@ export type MultiPartitionStatuses = {
   ranges: Array<MaterializedPartitionRangeStatuses2D>;
 };
 
+export type Mutation = {
+  __typename: 'Mutation';
+  addDynamicPartition: AddDynamicPartitionResult;
+  cancelPartitionBackfill: CancelBackfillResult;
+  deletePipelineRun: DeletePipelineRunResult;
+  deleteRun: DeletePipelineRunResult;
+  freeConcurrencySlotsForRun: Scalars['Boolean'];
+  launchPartitionBackfill: LaunchBackfillResult;
+  launchPipelineExecution: LaunchRunResult;
+  launchPipelineReexecution: LaunchRunReexecutionResult;
+  launchRun: LaunchRunResult;
+  launchRunReexecution: LaunchRunReexecutionResult;
+  logTelemetry: LogTelemetryMutationResult;
+  reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
+  reloadWorkspace: ReloadWorkspaceMutationResult;
+  resumePartitionBackfill: ResumeBackfillResult;
+  scheduleDryRun: ScheduleDryRunResult;
+  sensorDryRun: SensorDryRunResult;
+  setAutoMaterializePaused: Scalars['Boolean'];
+  setConcurrencyLimit: Scalars['Boolean'];
+  setNuxSeen: Scalars['Boolean'];
+  setSensorCursor: SensorOrError;
+  shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
+  startSchedule: ScheduleMutationResult;
+  startSensor: SensorOrError;
+  stopRunningSchedule: ScheduleMutationResult;
+  stopSensor: StopSensorMutationResultOrError;
+  terminatePipelineExecution: TerminateRunResult;
+  terminateRun: TerminateRunResult;
+  wipeAssets: AssetWipeMutationResult;
+};
+
+export type MutationAddDynamicPartitionArgs = {
+  partitionKey: Scalars['String'];
+  partitionsDefName: Scalars['String'];
+  repositorySelector: RepositorySelector;
+};
+
+export type MutationCancelPartitionBackfillArgs = {
+  backfillId: Scalars['String'];
+};
+
+export type MutationDeletePipelineRunArgs = {
+  runId: Scalars['String'];
+};
+
+export type MutationDeleteRunArgs = {
+  runId: Scalars['String'];
+};
+
+export type MutationFreeConcurrencySlotsForRunArgs = {
+  runId: Scalars['String'];
+};
+
+export type MutationLaunchPartitionBackfillArgs = {
+  backfillParams: LaunchBackfillParams;
+};
+
+export type MutationLaunchPipelineExecutionArgs = {
+  executionParams: ExecutionParams;
+};
+
+export type MutationLaunchPipelineReexecutionArgs = {
+  executionParams?: InputMaybe<ExecutionParams>;
+  reexecutionParams?: InputMaybe<ReexecutionParams>;
+};
+
+export type MutationLaunchRunArgs = {
+  executionParams: ExecutionParams;
+};
+
+export type MutationLaunchRunReexecutionArgs = {
+  executionParams?: InputMaybe<ExecutionParams>;
+  reexecutionParams?: InputMaybe<ReexecutionParams>;
+};
+
+export type MutationLogTelemetryArgs = {
+  action: Scalars['String'];
+  clientId: Scalars['String'];
+  clientTime: Scalars['String'];
+  metadata: Scalars['String'];
+};
+
+export type MutationReloadRepositoryLocationArgs = {
+  repositoryLocationName: Scalars['String'];
+};
+
+export type MutationResumePartitionBackfillArgs = {
+  backfillId: Scalars['String'];
+};
+
+export type MutationScheduleDryRunArgs = {
+  selectorData: ScheduleSelector;
+  timestamp?: InputMaybe<Scalars['Float']>;
+};
+
+export type MutationSensorDryRunArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  selectorData: SensorSelector;
+};
+
+export type MutationSetAutoMaterializePausedArgs = {
+  paused: Scalars['Boolean'];
+};
+
+export type MutationSetConcurrencyLimitArgs = {
+  concurrencyKey: Scalars['String'];
+  limit: Scalars['Int'];
+};
+
+export type MutationSetSensorCursorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  sensorSelector: SensorSelector;
+};
+
+export type MutationShutdownRepositoryLocationArgs = {
+  repositoryLocationName: Scalars['String'];
+};
+
+export type MutationStartScheduleArgs = {
+  scheduleSelector: ScheduleSelector;
+};
+
+export type MutationStartSensorArgs = {
+  sensorSelector: SensorSelector;
+};
+
+export type MutationStopRunningScheduleArgs = {
+  scheduleOriginId: Scalars['String'];
+  scheduleSelectorId: Scalars['String'];
+};
+
+export type MutationStopSensorArgs = {
+  jobOriginId: Scalars['String'];
+  jobSelectorId: Scalars['String'];
+};
+
+export type MutationTerminatePipelineExecutionArgs = {
+  runId: Scalars['String'];
+  terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+export type MutationTerminateRunArgs = {
+  runId: Scalars['String'];
+  terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+export type MutationWipeAssetsArgs = {
+  assetKeys: Array<AssetKeyInput>;
+};
+
 export type NestedResourceEntry = {
   __typename: 'NestedResourceEntry';
   name: Scalars['String'];
@@ -2914,6 +2655,240 @@ export type PythonError = Error & {
   errorChain: Array<ErrorChainLink>;
   message: Scalars['String'];
   stack: Array<Scalars['String']>;
+};
+
+export type Query = {
+  __typename: 'Query';
+  allTopLevelResourceDetailsOrError: ResourcesOrError;
+  assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
+  assetNodeOrError: AssetNodeOrError;
+  assetNodes: Array<AssetNode>;
+  assetOrError: AssetOrError;
+  assetsLatestInfo: Array<AssetLatestInfo>;
+  assetsOrError: AssetsOrError;
+  autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
+  capturedLogs: CapturedLogs;
+  capturedLogsMetadata: CapturedLogsMetadata;
+  executionPlanOrError: ExecutionPlanOrError;
+  graphOrError: GraphOrError;
+  instance: Instance;
+  instigationStateOrError: InstigationStateOrError;
+  isPipelineConfigValid: PipelineConfigValidationResult;
+  locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
+  logsForRun: EventConnectionOrError;
+  partitionBackfillOrError: PartitionBackfillOrError;
+  partitionBackfillsOrError: PartitionBackfillsOrError;
+  partitionSetOrError: PartitionSetOrError;
+  partitionSetsOrError: PartitionSetsOrError;
+  permissions: Array<Permission>;
+  pipelineOrError: PipelineOrError;
+  pipelineRunOrError: RunOrError;
+  pipelineRunsOrError: RunsOrError;
+  pipelineSnapshotOrError: PipelineSnapshotOrError;
+  repositoriesOrError: RepositoriesOrError;
+  repositoryOrError: RepositoryOrError;
+  runConfigSchemaOrError: RunConfigSchemaOrError;
+  runGroupOrError: RunGroupOrError;
+  runGroupsOrError: RunGroupsOrError;
+  runOrError: RunOrError;
+  runTagKeysOrError: Maybe<RunTagKeysOrError>;
+  runTagsOrError: Maybe<RunTagsOrError>;
+  runsOrError: RunsOrError;
+  scheduleOrError: ScheduleOrError;
+  scheduler: SchedulerOrError;
+  schedulesOrError: SchedulesOrError;
+  sensorOrError: SensorOrError;
+  sensorsOrError: SensorsOrError;
+  shouldShowNux: Scalars['Boolean'];
+  test: Maybe<TestFields>;
+  topLevelResourceDetailsOrError: ResourceDetailsOrError;
+  unloadableInstigationStatesOrError: InstigationStatesOrError;
+  utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
+  version: Scalars['String'];
+  workspaceOrError: WorkspaceOrError;
+};
+
+export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
+};
+
+export type QueryAssetNodeDefinitionCollisionsArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type QueryAssetNodeOrErrorArgs = {
+  assetKey: AssetKeyInput;
+};
+
+export type QueryAssetNodesArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
+  group?: InputMaybe<AssetGroupSelector>;
+  loadMaterializations?: InputMaybe<Scalars['Boolean']>;
+  pipeline?: InputMaybe<PipelineSelector>;
+};
+
+export type QueryAssetOrErrorArgs = {
+  assetKey: AssetKeyInput;
+};
+
+export type QueryAssetsLatestInfoArgs = {
+  assetKeys: Array<AssetKeyInput>;
+};
+
+export type QueryAssetsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  prefix?: InputMaybe<Array<Scalars['String']>>;
+};
+
+export type QueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
+  assetKey: AssetKeyInput;
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
+};
+
+export type QueryCapturedLogsArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  logKey: Array<Scalars['String']>;
+};
+
+export type QueryCapturedLogsMetadataArgs = {
+  logKey: Array<Scalars['String']>;
+};
+
+export type QueryExecutionPlanOrErrorArgs = {
+  mode: Scalars['String'];
+  pipeline: PipelineSelector;
+  runConfigData?: InputMaybe<Scalars['RunConfigData']>;
+};
+
+export type QueryGraphOrErrorArgs = {
+  selector?: InputMaybe<GraphSelector>;
+};
+
+export type QueryInstigationStateOrErrorArgs = {
+  instigationSelector: InstigationSelector;
+};
+
+export type QueryIsPipelineConfigValidArgs = {
+  mode: Scalars['String'];
+  pipeline: PipelineSelector;
+  runConfigData?: InputMaybe<Scalars['RunConfigData']>;
+};
+
+export type QueryLogsForRunArgs = {
+  afterCursor?: InputMaybe<Scalars['String']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  runId: Scalars['ID'];
+};
+
+export type QueryPartitionBackfillOrErrorArgs = {
+  backfillId: Scalars['String'];
+};
+
+export type QueryPartitionBackfillsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  status?: InputMaybe<BulkActionStatus>;
+};
+
+export type QueryPartitionSetOrErrorArgs = {
+  partitionSetName?: InputMaybe<Scalars['String']>;
+  repositorySelector: RepositorySelector;
+};
+
+export type QueryPartitionSetsOrErrorArgs = {
+  pipelineName: Scalars['String'];
+  repositorySelector: RepositorySelector;
+};
+
+export type QueryPipelineOrErrorArgs = {
+  params: PipelineSelector;
+};
+
+export type QueryPipelineRunOrErrorArgs = {
+  runId: Scalars['ID'];
+};
+
+export type QueryPipelineRunsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  filter?: InputMaybe<RunsFilter>;
+  limit?: InputMaybe<Scalars['Int']>;
+};
+
+export type QueryPipelineSnapshotOrErrorArgs = {
+  activePipelineSelector?: InputMaybe<PipelineSelector>;
+  snapshotId?: InputMaybe<Scalars['String']>;
+};
+
+export type QueryRepositoriesOrErrorArgs = {
+  repositorySelector?: InputMaybe<RepositorySelector>;
+};
+
+export type QueryRepositoryOrErrorArgs = {
+  repositorySelector: RepositorySelector;
+};
+
+export type QueryRunConfigSchemaOrErrorArgs = {
+  mode?: InputMaybe<Scalars['String']>;
+  selector: PipelineSelector;
+};
+
+export type QueryRunGroupOrErrorArgs = {
+  runId: Scalars['ID'];
+};
+
+export type QueryRunGroupsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  filter?: InputMaybe<RunsFilter>;
+  limit?: InputMaybe<Scalars['Int']>;
+};
+
+export type QueryRunOrErrorArgs = {
+  runId: Scalars['ID'];
+};
+
+export type QueryRunTagsOrErrorArgs = {
+  limit?: InputMaybe<Scalars['Int']>;
+  tagKeys?: InputMaybe<Array<Scalars['String']>>;
+  valuePrefix?: InputMaybe<Scalars['String']>;
+};
+
+export type QueryRunsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  filter?: InputMaybe<RunsFilter>;
+  limit?: InputMaybe<Scalars['Int']>;
+};
+
+export type QueryScheduleOrErrorArgs = {
+  scheduleSelector: ScheduleSelector;
+};
+
+export type QuerySchedulesOrErrorArgs = {
+  repositorySelector: RepositorySelector;
+  scheduleStatus?: InputMaybe<InstigationStatus>;
+};
+
+export type QuerySensorOrErrorArgs = {
+  sensorSelector: SensorSelector;
+};
+
+export type QuerySensorsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
+  sensorStatus?: InputMaybe<InstigationStatus>;
+};
+
+export type QueryTopLevelResourceDetailsOrErrorArgs = {
+  resourceSelector: ResourceSelector;
+};
+
+export type QueryUnloadableInstigationStatesOrErrorArgs = {
+  instigationType?: InputMaybe<InstigationType>;
+};
+
+export type QueryUtilizedEnvVarsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type ReexecutionParams = {
@@ -3891,6 +3866,31 @@ export type StopSensorMutationResultOrError =
   | PythonError
   | StopSensorMutationResult
   | UnauthorizedError;
+
+export type Subscription = {
+  __typename: 'Subscription';
+  capturedLogs: CapturedLogs;
+  computeLogs: ComputeLogFile;
+  locationStateChangeEvents: LocationStateChangeSubscription;
+  pipelineRunLogs: PipelineRunLogsSubscriptionPayload;
+};
+
+export type SubscriptionCapturedLogsArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  logKey: Array<Scalars['String']>;
+};
+
+export type SubscriptionComputeLogsArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  ioType: ComputeIoType;
+  runId: Scalars['ID'];
+  stepKey: Scalars['String'];
+};
+
+export type SubscriptionPipelineRunLogsArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  runId: Scalars['ID'];
+};
 
 export type Table = {
   __typename: 'Table';
@@ -5174,477 +5174,6 @@ export const buildDaemonStatus = (
         ? overrides.lastHeartbeatTime!
         : 8.69,
     required: overrides && overrides.hasOwnProperty('required') ? overrides.required! : false,
-  };
-};
-
-export const buildDagitMutation = (
-  overrides?: Partial<DagitMutation>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'DagitMutation'} & DagitMutation => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('DagitMutation');
-  return {
-    __typename: 'DagitMutation',
-    addDynamicPartition:
-      overrides && overrides.hasOwnProperty('addDynamicPartition')
-        ? overrides.addDynamicPartition!
-        : relationshipsToOmit.has('AddDynamicPartitionSuccess')
-        ? ({} as AddDynamicPartitionSuccess)
-        : buildAddDynamicPartitionSuccess({}, relationshipsToOmit),
-    cancelPartitionBackfill:
-      overrides && overrides.hasOwnProperty('cancelPartitionBackfill')
-        ? overrides.cancelPartitionBackfill!
-        : relationshipsToOmit.has('CancelBackfillSuccess')
-        ? ({} as CancelBackfillSuccess)
-        : buildCancelBackfillSuccess({}, relationshipsToOmit),
-    deletePipelineRun:
-      overrides && overrides.hasOwnProperty('deletePipelineRun')
-        ? overrides.deletePipelineRun!
-        : relationshipsToOmit.has('DeletePipelineRunSuccess')
-        ? ({} as DeletePipelineRunSuccess)
-        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
-    deleteRun:
-      overrides && overrides.hasOwnProperty('deleteRun')
-        ? overrides.deleteRun!
-        : relationshipsToOmit.has('DeletePipelineRunSuccess')
-        ? ({} as DeletePipelineRunSuccess)
-        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
-    freeConcurrencySlotsForRun:
-      overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
-        ? overrides.freeConcurrencySlotsForRun!
-        : false,
-    launchPartitionBackfill:
-      overrides && overrides.hasOwnProperty('launchPartitionBackfill')
-        ? overrides.launchPartitionBackfill!
-        : relationshipsToOmit.has('ConflictingExecutionParamsError')
-        ? ({} as ConflictingExecutionParamsError)
-        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
-    launchPipelineExecution:
-      overrides && overrides.hasOwnProperty('launchPipelineExecution')
-        ? overrides.launchPipelineExecution!
-        : relationshipsToOmit.has('ConflictingExecutionParamsError')
-        ? ({} as ConflictingExecutionParamsError)
-        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
-    launchPipelineReexecution:
-      overrides && overrides.hasOwnProperty('launchPipelineReexecution')
-        ? overrides.launchPipelineReexecution!
-        : relationshipsToOmit.has('ConflictingExecutionParamsError')
-        ? ({} as ConflictingExecutionParamsError)
-        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
-    launchRun:
-      overrides && overrides.hasOwnProperty('launchRun')
-        ? overrides.launchRun!
-        : relationshipsToOmit.has('ConflictingExecutionParamsError')
-        ? ({} as ConflictingExecutionParamsError)
-        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
-    launchRunReexecution:
-      overrides && overrides.hasOwnProperty('launchRunReexecution')
-        ? overrides.launchRunReexecution!
-        : relationshipsToOmit.has('ConflictingExecutionParamsError')
-        ? ({} as ConflictingExecutionParamsError)
-        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
-    logTelemetry:
-      overrides && overrides.hasOwnProperty('logTelemetry')
-        ? overrides.logTelemetry!
-        : relationshipsToOmit.has('LogTelemetrySuccess')
-        ? ({} as LogTelemetrySuccess)
-        : buildLogTelemetrySuccess({}, relationshipsToOmit),
-    reloadRepositoryLocation:
-      overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
-        ? overrides.reloadRepositoryLocation!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    reloadWorkspace:
-      overrides && overrides.hasOwnProperty('reloadWorkspace')
-        ? overrides.reloadWorkspace!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    resumePartitionBackfill:
-      overrides && overrides.hasOwnProperty('resumePartitionBackfill')
-        ? overrides.resumePartitionBackfill!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    scheduleDryRun:
-      overrides && overrides.hasOwnProperty('scheduleDryRun')
-        ? overrides.scheduleDryRun!
-        : relationshipsToOmit.has('DryRunInstigationTick')
-        ? ({} as DryRunInstigationTick)
-        : buildDryRunInstigationTick({}, relationshipsToOmit),
-    sensorDryRun:
-      overrides && overrides.hasOwnProperty('sensorDryRun')
-        ? overrides.sensorDryRun!
-        : relationshipsToOmit.has('DryRunInstigationTick')
-        ? ({} as DryRunInstigationTick)
-        : buildDryRunInstigationTick({}, relationshipsToOmit),
-    setAutoMaterializePaused:
-      overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
-        ? overrides.setAutoMaterializePaused!
-        : true,
-    setConcurrencyLimit:
-      overrides && overrides.hasOwnProperty('setConcurrencyLimit')
-        ? overrides.setConcurrencyLimit!
-        : true,
-    setNuxSeen: overrides && overrides.hasOwnProperty('setNuxSeen') ? overrides.setNuxSeen! : true,
-    setSensorCursor:
-      overrides && overrides.hasOwnProperty('setSensorCursor')
-        ? overrides.setSensorCursor!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    shutdownRepositoryLocation:
-      overrides && overrides.hasOwnProperty('shutdownRepositoryLocation')
-        ? overrides.shutdownRepositoryLocation!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    startSchedule:
-      overrides && overrides.hasOwnProperty('startSchedule')
-        ? overrides.startSchedule!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    startSensor:
-      overrides && overrides.hasOwnProperty('startSensor')
-        ? overrides.startSensor!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    stopRunningSchedule:
-      overrides && overrides.hasOwnProperty('stopRunningSchedule')
-        ? overrides.stopRunningSchedule!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    stopSensor:
-      overrides && overrides.hasOwnProperty('stopSensor')
-        ? overrides.stopSensor!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    terminatePipelineExecution:
-      overrides && overrides.hasOwnProperty('terminatePipelineExecution')
-        ? overrides.terminatePipelineExecution!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    terminateRun:
-      overrides && overrides.hasOwnProperty('terminateRun')
-        ? overrides.terminateRun!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    wipeAssets:
-      overrides && overrides.hasOwnProperty('wipeAssets')
-        ? overrides.wipeAssets!
-        : relationshipsToOmit.has('AssetNotFoundError')
-        ? ({} as AssetNotFoundError)
-        : buildAssetNotFoundError({}, relationshipsToOmit),
-  };
-};
-
-export const buildDagitQuery = (
-  overrides?: Partial<DagitQuery>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'DagitQuery'} & DagitQuery => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('DagitQuery');
-  return {
-    __typename: 'DagitQuery',
-    allTopLevelResourceDetailsOrError:
-      overrides && overrides.hasOwnProperty('allTopLevelResourceDetailsOrError')
-        ? overrides.allTopLevelResourceDetailsOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    assetNodeDefinitionCollisions:
-      overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
-        ? overrides.assetNodeDefinitionCollisions!
-        : [],
-    assetNodeOrError:
-      overrides && overrides.hasOwnProperty('assetNodeOrError')
-        ? overrides.assetNodeOrError!
-        : relationshipsToOmit.has('AssetNode')
-        ? ({} as AssetNode)
-        : buildAssetNode({}, relationshipsToOmit),
-    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
-    assetOrError:
-      overrides && overrides.hasOwnProperty('assetOrError')
-        ? overrides.assetOrError!
-        : relationshipsToOmit.has('Asset')
-        ? ({} as Asset)
-        : buildAsset({}, relationshipsToOmit),
-    assetsLatestInfo:
-      overrides && overrides.hasOwnProperty('assetsLatestInfo') ? overrides.assetsLatestInfo! : [],
-    assetsOrError:
-      overrides && overrides.hasOwnProperty('assetsOrError')
-        ? overrides.assetsOrError!
-        : relationshipsToOmit.has('AssetConnection')
-        ? ({} as AssetConnection)
-        : buildAssetConnection({}, relationshipsToOmit),
-    autoMaterializeAssetEvaluationsOrError:
-      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationsOrError')
-        ? overrides.autoMaterializeAssetEvaluationsOrError!
-        : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
-        ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
-        : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
-    capturedLogs:
-      overrides && overrides.hasOwnProperty('capturedLogs')
-        ? overrides.capturedLogs!
-        : relationshipsToOmit.has('CapturedLogs')
-        ? ({} as CapturedLogs)
-        : buildCapturedLogs({}, relationshipsToOmit),
-    capturedLogsMetadata:
-      overrides && overrides.hasOwnProperty('capturedLogsMetadata')
-        ? overrides.capturedLogsMetadata!
-        : relationshipsToOmit.has('CapturedLogsMetadata')
-        ? ({} as CapturedLogsMetadata)
-        : buildCapturedLogsMetadata({}, relationshipsToOmit),
-    executionPlanOrError:
-      overrides && overrides.hasOwnProperty('executionPlanOrError')
-        ? overrides.executionPlanOrError!
-        : relationshipsToOmit.has('ExecutionPlan')
-        ? ({} as ExecutionPlan)
-        : buildExecutionPlan({}, relationshipsToOmit),
-    graphOrError:
-      overrides && overrides.hasOwnProperty('graphOrError')
-        ? overrides.graphOrError!
-        : relationshipsToOmit.has('Graph')
-        ? ({} as Graph)
-        : buildGraph({}, relationshipsToOmit),
-    instance:
-      overrides && overrides.hasOwnProperty('instance')
-        ? overrides.instance!
-        : relationshipsToOmit.has('Instance')
-        ? ({} as Instance)
-        : buildInstance({}, relationshipsToOmit),
-    instigationStateOrError:
-      overrides && overrides.hasOwnProperty('instigationStateOrError')
-        ? overrides.instigationStateOrError!
-        : relationshipsToOmit.has('InstigationState')
-        ? ({} as InstigationState)
-        : buildInstigationState({}, relationshipsToOmit),
-    isPipelineConfigValid:
-      overrides && overrides.hasOwnProperty('isPipelineConfigValid')
-        ? overrides.isPipelineConfigValid!
-        : relationshipsToOmit.has('InvalidSubsetError')
-        ? ({} as InvalidSubsetError)
-        : buildInvalidSubsetError({}, relationshipsToOmit),
-    locationStatusesOrError:
-      overrides && overrides.hasOwnProperty('locationStatusesOrError')
-        ? overrides.locationStatusesOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    logsForRun:
-      overrides && overrides.hasOwnProperty('logsForRun')
-        ? overrides.logsForRun!
-        : relationshipsToOmit.has('EventConnection')
-        ? ({} as EventConnection)
-        : buildEventConnection({}, relationshipsToOmit),
-    partitionBackfillOrError:
-      overrides && overrides.hasOwnProperty('partitionBackfillOrError')
-        ? overrides.partitionBackfillOrError!
-        : relationshipsToOmit.has('BackfillNotFoundError')
-        ? ({} as BackfillNotFoundError)
-        : buildBackfillNotFoundError({}, relationshipsToOmit),
-    partitionBackfillsOrError:
-      overrides && overrides.hasOwnProperty('partitionBackfillsOrError')
-        ? overrides.partitionBackfillsOrError!
-        : relationshipsToOmit.has('PartitionBackfills')
-        ? ({} as PartitionBackfills)
-        : buildPartitionBackfills({}, relationshipsToOmit),
-    partitionSetOrError:
-      overrides && overrides.hasOwnProperty('partitionSetOrError')
-        ? overrides.partitionSetOrError!
-        : relationshipsToOmit.has('PartitionSet')
-        ? ({} as PartitionSet)
-        : buildPartitionSet({}, relationshipsToOmit),
-    partitionSetsOrError:
-      overrides && overrides.hasOwnProperty('partitionSetsOrError')
-        ? overrides.partitionSetsOrError!
-        : relationshipsToOmit.has('PartitionSets')
-        ? ({} as PartitionSets)
-        : buildPartitionSets({}, relationshipsToOmit),
-    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
-    pipelineOrError:
-      overrides && overrides.hasOwnProperty('pipelineOrError')
-        ? overrides.pipelineOrError!
-        : relationshipsToOmit.has('InvalidSubsetError')
-        ? ({} as InvalidSubsetError)
-        : buildInvalidSubsetError({}, relationshipsToOmit),
-    pipelineRunOrError:
-      overrides && overrides.hasOwnProperty('pipelineRunOrError')
-        ? overrides.pipelineRunOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    pipelineRunsOrError:
-      overrides && overrides.hasOwnProperty('pipelineRunsOrError')
-        ? overrides.pipelineRunsOrError!
-        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
-        ? ({} as InvalidPipelineRunsFilterError)
-        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
-    pipelineSnapshotOrError:
-      overrides && overrides.hasOwnProperty('pipelineSnapshotOrError')
-        ? overrides.pipelineSnapshotOrError!
-        : relationshipsToOmit.has('PipelineNotFoundError')
-        ? ({} as PipelineNotFoundError)
-        : buildPipelineNotFoundError({}, relationshipsToOmit),
-    repositoriesOrError:
-      overrides && overrides.hasOwnProperty('repositoriesOrError')
-        ? overrides.repositoriesOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    repositoryOrError:
-      overrides && overrides.hasOwnProperty('repositoryOrError')
-        ? overrides.repositoryOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    runConfigSchemaOrError:
-      overrides && overrides.hasOwnProperty('runConfigSchemaOrError')
-        ? overrides.runConfigSchemaOrError!
-        : relationshipsToOmit.has('InvalidSubsetError')
-        ? ({} as InvalidSubsetError)
-        : buildInvalidSubsetError({}, relationshipsToOmit),
-    runGroupOrError:
-      overrides && overrides.hasOwnProperty('runGroupOrError')
-        ? overrides.runGroupOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    runGroupsOrError:
-      overrides && overrides.hasOwnProperty('runGroupsOrError')
-        ? overrides.runGroupsOrError!
-        : relationshipsToOmit.has('RunGroupsOrError')
-        ? ({} as RunGroupsOrError)
-        : buildRunGroupsOrError({}, relationshipsToOmit),
-    runOrError:
-      overrides && overrides.hasOwnProperty('runOrError')
-        ? overrides.runOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    runTagKeysOrError:
-      overrides && overrides.hasOwnProperty('runTagKeysOrError')
-        ? overrides.runTagKeysOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    runTagsOrError:
-      overrides && overrides.hasOwnProperty('runTagsOrError')
-        ? overrides.runTagsOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    runsOrError:
-      overrides && overrides.hasOwnProperty('runsOrError')
-        ? overrides.runsOrError!
-        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
-        ? ({} as InvalidPipelineRunsFilterError)
-        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
-    scheduleOrError:
-      overrides && overrides.hasOwnProperty('scheduleOrError')
-        ? overrides.scheduleOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    scheduler:
-      overrides && overrides.hasOwnProperty('scheduler')
-        ? overrides.scheduler!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    schedulesOrError:
-      overrides && overrides.hasOwnProperty('schedulesOrError')
-        ? overrides.schedulesOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    sensorOrError:
-      overrides && overrides.hasOwnProperty('sensorOrError')
-        ? overrides.sensorOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    sensorsOrError:
-      overrides && overrides.hasOwnProperty('sensorsOrError')
-        ? overrides.sensorsOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    shouldShowNux:
-      overrides && overrides.hasOwnProperty('shouldShowNux') ? overrides.shouldShowNux! : true,
-    test:
-      overrides && overrides.hasOwnProperty('test')
-        ? overrides.test!
-        : relationshipsToOmit.has('TestFields')
-        ? ({} as TestFields)
-        : buildTestFields({}, relationshipsToOmit),
-    topLevelResourceDetailsOrError:
-      overrides && overrides.hasOwnProperty('topLevelResourceDetailsOrError')
-        ? overrides.topLevelResourceDetailsOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-    unloadableInstigationStatesOrError:
-      overrides && overrides.hasOwnProperty('unloadableInstigationStatesOrError')
-        ? overrides.unloadableInstigationStatesOrError!
-        : relationshipsToOmit.has('InstigationStates')
-        ? ({} as InstigationStates)
-        : buildInstigationStates({}, relationshipsToOmit),
-    utilizedEnvVarsOrError:
-      overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
-        ? overrides.utilizedEnvVarsOrError!
-        : relationshipsToOmit.has('EnvVarWithConsumersList')
-        ? ({} as EnvVarWithConsumersList)
-        : buildEnvVarWithConsumersList({}, relationshipsToOmit),
-    version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'sed',
-    workspaceOrError:
-      overrides && overrides.hasOwnProperty('workspaceOrError')
-        ? overrides.workspaceOrError!
-        : relationshipsToOmit.has('PythonError')
-        ? ({} as PythonError)
-        : buildPythonError({}, relationshipsToOmit),
-  };
-};
-
-export const buildDagitSubscription = (
-  overrides?: Partial<DagitSubscription>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'DagitSubscription'} & DagitSubscription => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('DagitSubscription');
-  return {
-    __typename: 'DagitSubscription',
-    capturedLogs:
-      overrides && overrides.hasOwnProperty('capturedLogs')
-        ? overrides.capturedLogs!
-        : relationshipsToOmit.has('CapturedLogs')
-        ? ({} as CapturedLogs)
-        : buildCapturedLogs({}, relationshipsToOmit),
-    computeLogs:
-      overrides && overrides.hasOwnProperty('computeLogs')
-        ? overrides.computeLogs!
-        : relationshipsToOmit.has('ComputeLogFile')
-        ? ({} as ComputeLogFile)
-        : buildComputeLogFile({}, relationshipsToOmit),
-    locationStateChangeEvents:
-      overrides && overrides.hasOwnProperty('locationStateChangeEvents')
-        ? overrides.locationStateChangeEvents!
-        : relationshipsToOmit.has('LocationStateChangeSubscription')
-        ? ({} as LocationStateChangeSubscription)
-        : buildLocationStateChangeSubscription({}, relationshipsToOmit),
-    pipelineRunLogs:
-      overrides && overrides.hasOwnProperty('pipelineRunLogs')
-        ? overrides.pipelineRunLogs!
-        : relationshipsToOmit.has('PipelineRunLogsSubscriptionFailure')
-        ? ({} as PipelineRunLogsSubscriptionFailure)
-        : buildPipelineRunLogsSubscriptionFailure({}, relationshipsToOmit),
   };
 };
 
@@ -8184,6 +7713,174 @@ export const buildMultiPartitionStatuses = (
   };
 };
 
+export const buildMutation = (
+  overrides?: Partial<Mutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Mutation'} & Mutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Mutation');
+  return {
+    __typename: 'Mutation',
+    addDynamicPartition:
+      overrides && overrides.hasOwnProperty('addDynamicPartition')
+        ? overrides.addDynamicPartition!
+        : relationshipsToOmit.has('AddDynamicPartitionSuccess')
+        ? ({} as AddDynamicPartitionSuccess)
+        : buildAddDynamicPartitionSuccess({}, relationshipsToOmit),
+    cancelPartitionBackfill:
+      overrides && overrides.hasOwnProperty('cancelPartitionBackfill')
+        ? overrides.cancelPartitionBackfill!
+        : relationshipsToOmit.has('CancelBackfillSuccess')
+        ? ({} as CancelBackfillSuccess)
+        : buildCancelBackfillSuccess({}, relationshipsToOmit),
+    deletePipelineRun:
+      overrides && overrides.hasOwnProperty('deletePipelineRun')
+        ? overrides.deletePipelineRun!
+        : relationshipsToOmit.has('DeletePipelineRunSuccess')
+        ? ({} as DeletePipelineRunSuccess)
+        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    deleteRun:
+      overrides && overrides.hasOwnProperty('deleteRun')
+        ? overrides.deleteRun!
+        : relationshipsToOmit.has('DeletePipelineRunSuccess')
+        ? ({} as DeletePipelineRunSuccess)
+        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
+    freeConcurrencySlotsForRun:
+      overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
+        ? overrides.freeConcurrencySlotsForRun!
+        : false,
+    launchPartitionBackfill:
+      overrides && overrides.hasOwnProperty('launchPartitionBackfill')
+        ? overrides.launchPartitionBackfill!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    launchPipelineExecution:
+      overrides && overrides.hasOwnProperty('launchPipelineExecution')
+        ? overrides.launchPipelineExecution!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    launchPipelineReexecution:
+      overrides && overrides.hasOwnProperty('launchPipelineReexecution')
+        ? overrides.launchPipelineReexecution!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    launchRun:
+      overrides && overrides.hasOwnProperty('launchRun')
+        ? overrides.launchRun!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    launchRunReexecution:
+      overrides && overrides.hasOwnProperty('launchRunReexecution')
+        ? overrides.launchRunReexecution!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    logTelemetry:
+      overrides && overrides.hasOwnProperty('logTelemetry')
+        ? overrides.logTelemetry!
+        : relationshipsToOmit.has('LogTelemetrySuccess')
+        ? ({} as LogTelemetrySuccess)
+        : buildLogTelemetrySuccess({}, relationshipsToOmit),
+    reloadRepositoryLocation:
+      overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
+        ? overrides.reloadRepositoryLocation!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    reloadWorkspace:
+      overrides && overrides.hasOwnProperty('reloadWorkspace')
+        ? overrides.reloadWorkspace!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    resumePartitionBackfill:
+      overrides && overrides.hasOwnProperty('resumePartitionBackfill')
+        ? overrides.resumePartitionBackfill!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    scheduleDryRun:
+      overrides && overrides.hasOwnProperty('scheduleDryRun')
+        ? overrides.scheduleDryRun!
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
+    sensorDryRun:
+      overrides && overrides.hasOwnProperty('sensorDryRun')
+        ? overrides.sensorDryRun!
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
+    setAutoMaterializePaused:
+      overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
+        ? overrides.setAutoMaterializePaused!
+        : true,
+    setConcurrencyLimit:
+      overrides && overrides.hasOwnProperty('setConcurrencyLimit')
+        ? overrides.setConcurrencyLimit!
+        : false,
+    setNuxSeen: overrides && overrides.hasOwnProperty('setNuxSeen') ? overrides.setNuxSeen! : true,
+    setSensorCursor:
+      overrides && overrides.hasOwnProperty('setSensorCursor')
+        ? overrides.setSensorCursor!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    shutdownRepositoryLocation:
+      overrides && overrides.hasOwnProperty('shutdownRepositoryLocation')
+        ? overrides.shutdownRepositoryLocation!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    startSchedule:
+      overrides && overrides.hasOwnProperty('startSchedule')
+        ? overrides.startSchedule!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    startSensor:
+      overrides && overrides.hasOwnProperty('startSensor')
+        ? overrides.startSensor!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    stopRunningSchedule:
+      overrides && overrides.hasOwnProperty('stopRunningSchedule')
+        ? overrides.stopRunningSchedule!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    stopSensor:
+      overrides && overrides.hasOwnProperty('stopSensor')
+        ? overrides.stopSensor!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    terminatePipelineExecution:
+      overrides && overrides.hasOwnProperty('terminatePipelineExecution')
+        ? overrides.terminatePipelineExecution!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    terminateRun:
+      overrides && overrides.hasOwnProperty('terminateRun')
+        ? overrides.terminateRun!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    wipeAssets:
+      overrides && overrides.hasOwnProperty('wipeAssets')
+        ? overrides.wipeAssets!
+        : relationshipsToOmit.has('AssetNotFoundError')
+        ? ({} as AssetNotFoundError)
+        : buildAssetNotFoundError({}, relationshipsToOmit),
+  };
+};
+
 export const buildNestedResourceEntry = (
   overrides?: Partial<NestedResourceEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9564,6 +9261,274 @@ export const buildPythonError = (
     errorChain: overrides && overrides.hasOwnProperty('errorChain') ? overrides.errorChain! : [],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'veritatis',
     stack: overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : [],
+  };
+};
+
+export const buildQuery = (
+  overrides?: Partial<Query>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Query'} & Query => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Query');
+  return {
+    __typename: 'Query',
+    allTopLevelResourceDetailsOrError:
+      overrides && overrides.hasOwnProperty('allTopLevelResourceDetailsOrError')
+        ? overrides.allTopLevelResourceDetailsOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    assetNodeDefinitionCollisions:
+      overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
+        ? overrides.assetNodeDefinitionCollisions!
+        : [],
+    assetNodeOrError:
+      overrides && overrides.hasOwnProperty('assetNodeOrError')
+        ? overrides.assetNodeOrError!
+        : relationshipsToOmit.has('AssetNode')
+        ? ({} as AssetNode)
+        : buildAssetNode({}, relationshipsToOmit),
+    assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
+    assetOrError:
+      overrides && overrides.hasOwnProperty('assetOrError')
+        ? overrides.assetOrError!
+        : relationshipsToOmit.has('Asset')
+        ? ({} as Asset)
+        : buildAsset({}, relationshipsToOmit),
+    assetsLatestInfo:
+      overrides && overrides.hasOwnProperty('assetsLatestInfo') ? overrides.assetsLatestInfo! : [],
+    assetsOrError:
+      overrides && overrides.hasOwnProperty('assetsOrError')
+        ? overrides.assetsOrError!
+        : relationshipsToOmit.has('AssetConnection')
+        ? ({} as AssetConnection)
+        : buildAssetConnection({}, relationshipsToOmit),
+    autoMaterializeAssetEvaluationsOrError:
+      overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationsOrError')
+        ? overrides.autoMaterializeAssetEvaluationsOrError!
+        : relationshipsToOmit.has('AutoMaterializeAssetEvaluationNeedsMigrationError')
+        ? ({} as AutoMaterializeAssetEvaluationNeedsMigrationError)
+        : buildAutoMaterializeAssetEvaluationNeedsMigrationError({}, relationshipsToOmit),
+    capturedLogs:
+      overrides && overrides.hasOwnProperty('capturedLogs')
+        ? overrides.capturedLogs!
+        : relationshipsToOmit.has('CapturedLogs')
+        ? ({} as CapturedLogs)
+        : buildCapturedLogs({}, relationshipsToOmit),
+    capturedLogsMetadata:
+      overrides && overrides.hasOwnProperty('capturedLogsMetadata')
+        ? overrides.capturedLogsMetadata!
+        : relationshipsToOmit.has('CapturedLogsMetadata')
+        ? ({} as CapturedLogsMetadata)
+        : buildCapturedLogsMetadata({}, relationshipsToOmit),
+    executionPlanOrError:
+      overrides && overrides.hasOwnProperty('executionPlanOrError')
+        ? overrides.executionPlanOrError!
+        : relationshipsToOmit.has('ExecutionPlan')
+        ? ({} as ExecutionPlan)
+        : buildExecutionPlan({}, relationshipsToOmit),
+    graphOrError:
+      overrides && overrides.hasOwnProperty('graphOrError')
+        ? overrides.graphOrError!
+        : relationshipsToOmit.has('Graph')
+        ? ({} as Graph)
+        : buildGraph({}, relationshipsToOmit),
+    instance:
+      overrides && overrides.hasOwnProperty('instance')
+        ? overrides.instance!
+        : relationshipsToOmit.has('Instance')
+        ? ({} as Instance)
+        : buildInstance({}, relationshipsToOmit),
+    instigationStateOrError:
+      overrides && overrides.hasOwnProperty('instigationStateOrError')
+        ? overrides.instigationStateOrError!
+        : relationshipsToOmit.has('InstigationState')
+        ? ({} as InstigationState)
+        : buildInstigationState({}, relationshipsToOmit),
+    isPipelineConfigValid:
+      overrides && overrides.hasOwnProperty('isPipelineConfigValid')
+        ? overrides.isPipelineConfigValid!
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
+    locationStatusesOrError:
+      overrides && overrides.hasOwnProperty('locationStatusesOrError')
+        ? overrides.locationStatusesOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    logsForRun:
+      overrides && overrides.hasOwnProperty('logsForRun')
+        ? overrides.logsForRun!
+        : relationshipsToOmit.has('EventConnection')
+        ? ({} as EventConnection)
+        : buildEventConnection({}, relationshipsToOmit),
+    partitionBackfillOrError:
+      overrides && overrides.hasOwnProperty('partitionBackfillOrError')
+        ? overrides.partitionBackfillOrError!
+        : relationshipsToOmit.has('BackfillNotFoundError')
+        ? ({} as BackfillNotFoundError)
+        : buildBackfillNotFoundError({}, relationshipsToOmit),
+    partitionBackfillsOrError:
+      overrides && overrides.hasOwnProperty('partitionBackfillsOrError')
+        ? overrides.partitionBackfillsOrError!
+        : relationshipsToOmit.has('PartitionBackfills')
+        ? ({} as PartitionBackfills)
+        : buildPartitionBackfills({}, relationshipsToOmit),
+    partitionSetOrError:
+      overrides && overrides.hasOwnProperty('partitionSetOrError')
+        ? overrides.partitionSetOrError!
+        : relationshipsToOmit.has('PartitionSet')
+        ? ({} as PartitionSet)
+        : buildPartitionSet({}, relationshipsToOmit),
+    partitionSetsOrError:
+      overrides && overrides.hasOwnProperty('partitionSetsOrError')
+        ? overrides.partitionSetsOrError!
+        : relationshipsToOmit.has('PartitionSets')
+        ? ({} as PartitionSets)
+        : buildPartitionSets({}, relationshipsToOmit),
+    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
+    pipelineOrError:
+      overrides && overrides.hasOwnProperty('pipelineOrError')
+        ? overrides.pipelineOrError!
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
+    pipelineRunOrError:
+      overrides && overrides.hasOwnProperty('pipelineRunOrError')
+        ? overrides.pipelineRunOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    pipelineRunsOrError:
+      overrides && overrides.hasOwnProperty('pipelineRunsOrError')
+        ? overrides.pipelineRunsOrError!
+        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
+        ? ({} as InvalidPipelineRunsFilterError)
+        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
+    pipelineSnapshotOrError:
+      overrides && overrides.hasOwnProperty('pipelineSnapshotOrError')
+        ? overrides.pipelineSnapshotOrError!
+        : relationshipsToOmit.has('PipelineNotFoundError')
+        ? ({} as PipelineNotFoundError)
+        : buildPipelineNotFoundError({}, relationshipsToOmit),
+    repositoriesOrError:
+      overrides && overrides.hasOwnProperty('repositoriesOrError')
+        ? overrides.repositoriesOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    repositoryOrError:
+      overrides && overrides.hasOwnProperty('repositoryOrError')
+        ? overrides.repositoryOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    runConfigSchemaOrError:
+      overrides && overrides.hasOwnProperty('runConfigSchemaOrError')
+        ? overrides.runConfigSchemaOrError!
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
+    runGroupOrError:
+      overrides && overrides.hasOwnProperty('runGroupOrError')
+        ? overrides.runGroupOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    runGroupsOrError:
+      overrides && overrides.hasOwnProperty('runGroupsOrError')
+        ? overrides.runGroupsOrError!
+        : relationshipsToOmit.has('RunGroupsOrError')
+        ? ({} as RunGroupsOrError)
+        : buildRunGroupsOrError({}, relationshipsToOmit),
+    runOrError:
+      overrides && overrides.hasOwnProperty('runOrError')
+        ? overrides.runOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    runTagKeysOrError:
+      overrides && overrides.hasOwnProperty('runTagKeysOrError')
+        ? overrides.runTagKeysOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    runTagsOrError:
+      overrides && overrides.hasOwnProperty('runTagsOrError')
+        ? overrides.runTagsOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    runsOrError:
+      overrides && overrides.hasOwnProperty('runsOrError')
+        ? overrides.runsOrError!
+        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
+        ? ({} as InvalidPipelineRunsFilterError)
+        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
+    scheduleOrError:
+      overrides && overrides.hasOwnProperty('scheduleOrError')
+        ? overrides.scheduleOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    scheduler:
+      overrides && overrides.hasOwnProperty('scheduler')
+        ? overrides.scheduler!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    schedulesOrError:
+      overrides && overrides.hasOwnProperty('schedulesOrError')
+        ? overrides.schedulesOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    sensorOrError:
+      overrides && overrides.hasOwnProperty('sensorOrError')
+        ? overrides.sensorOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    sensorsOrError:
+      overrides && overrides.hasOwnProperty('sensorsOrError')
+        ? overrides.sensorsOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    shouldShowNux:
+      overrides && overrides.hasOwnProperty('shouldShowNux') ? overrides.shouldShowNux! : false,
+    test:
+      overrides && overrides.hasOwnProperty('test')
+        ? overrides.test!
+        : relationshipsToOmit.has('TestFields')
+        ? ({} as TestFields)
+        : buildTestFields({}, relationshipsToOmit),
+    topLevelResourceDetailsOrError:
+      overrides && overrides.hasOwnProperty('topLevelResourceDetailsOrError')
+        ? overrides.topLevelResourceDetailsOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    unloadableInstigationStatesOrError:
+      overrides && overrides.hasOwnProperty('unloadableInstigationStatesOrError')
+        ? overrides.unloadableInstigationStatesOrError!
+        : relationshipsToOmit.has('InstigationStates')
+        ? ({} as InstigationStates)
+        : buildInstigationStates({}, relationshipsToOmit),
+    utilizedEnvVarsOrError:
+      overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
+        ? overrides.utilizedEnvVarsOrError!
+        : relationshipsToOmit.has('EnvVarWithConsumersList')
+        ? ({} as EnvVarWithConsumersList)
+        : buildEnvVarWithConsumersList({}, relationshipsToOmit),
+    version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'et',
+    workspaceOrError:
+      overrides && overrides.hasOwnProperty('workspaceOrError')
+        ? overrides.workspaceOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
@@ -11537,6 +11502,41 @@ export const buildStopSensorMutationResult = (
         : relationshipsToOmit.has('InstigationState')
         ? ({} as InstigationState)
         : buildInstigationState({}, relationshipsToOmit),
+  };
+};
+
+export const buildSubscription = (
+  overrides?: Partial<Subscription>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Subscription'} & Subscription => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Subscription');
+  return {
+    __typename: 'Subscription',
+    capturedLogs:
+      overrides && overrides.hasOwnProperty('capturedLogs')
+        ? overrides.capturedLogs!
+        : relationshipsToOmit.has('CapturedLogs')
+        ? ({} as CapturedLogs)
+        : buildCapturedLogs({}, relationshipsToOmit),
+    computeLogs:
+      overrides && overrides.hasOwnProperty('computeLogs')
+        ? overrides.computeLogs!
+        : relationshipsToOmit.has('ComputeLogFile')
+        ? ({} as ComputeLogFile)
+        : buildComputeLogFile({}, relationshipsToOmit),
+    locationStateChangeEvents:
+      overrides && overrides.hasOwnProperty('locationStateChangeEvents')
+        ? overrides.locationStateChangeEvents!
+        : relationshipsToOmit.has('LocationStateChangeSubscription')
+        ? ({} as LocationStateChangeSubscription)
+        : buildLocationStateChangeSubscription({}, relationshipsToOmit),
+    pipelineRunLogs:
+      overrides && overrides.hasOwnProperty('pipelineRunLogs')
+        ? overrides.pipelineRunLogs!
+        : relationshipsToOmit.has('PipelineRunLogsSubscriptionFailure')
+        ? ({} as PipelineRunLogsSubscriptionFailure)
+        : buildPipelineRunLogsSubscriptionFailure({}, relationshipsToOmit),
   };
 };
 

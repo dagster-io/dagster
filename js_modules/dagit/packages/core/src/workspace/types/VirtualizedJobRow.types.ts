@@ -7,7 +7,7 @@ export type SingleJobQueryVariables = Types.Exact<{
 }>;
 
 export type SingleJobQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineOrError:
     | {__typename: 'InvalidSubsetError'}
     | {

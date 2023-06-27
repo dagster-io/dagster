@@ -1,9 +1,3 @@
-schema {
-  query: DagitQuery
-  mutation: DagitMutation
-  subscription: DagitSubscription
-}
-
 type ComputeLogFile {
   path: String!
   data: String
@@ -2833,7 +2827,7 @@ type UsedSolid {
   invocations: [NodeInvocationSite!]!
 }
 
-type DagitQuery {
+type Query {
   version: String!
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
@@ -3130,7 +3124,7 @@ type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
 
-type DagitMutation {
+type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(
@@ -3237,7 +3231,7 @@ type AddDynamicPartitionSuccess {
   partitionKey: String!
 }
 
-type DagitSubscription {
+type Subscription {
   pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   capturedLogs(logKey: [String!]!, cursor: String): CapturedLogs!
