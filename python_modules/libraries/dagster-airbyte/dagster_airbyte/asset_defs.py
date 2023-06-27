@@ -26,7 +26,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    CoercibleToAssetKey,
     FreshnessPolicy,
     Nothing,
     Output,
@@ -39,7 +38,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
