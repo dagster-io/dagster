@@ -54,7 +54,7 @@ def _add_run(instance):
     return result.run_id
 
 
-@pytest.mark.parametrize("path", ["/dagster-webserver-info", "/dagit_info"])
+@pytest.mark.parametrize("path", ["/server_info", "/dagit_info"])
 def test_dagster_webserver_info(path: str, test_client: TestClient):
     response = test_client.get(path)
     assert response.status_code == 200

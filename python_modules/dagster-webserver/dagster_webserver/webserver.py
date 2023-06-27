@@ -93,7 +93,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 CSP configuration file could not be found.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
-                "make rebuild_dagster_ui" in the project root.
+                "make rebuild_ui" in the project root.
                 """
             )
 
@@ -274,7 +274,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     def build_routes(self):
         routes = (
             [
-                Route("/dagster-webserver-info", self.webserver_info_endpoint),
+                Route("/server_info", self.webserver_info_endpoint),
                 # Remove /dagit_info with 2.0
                 Route("/dagit_info", self.webserver_info_endpoint),
                 Route(
@@ -301,7 +301,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     self.download_captured_logs_endpoint,
                 ),
                 Route(
-                    "/dagster-webserver/notebook",
+                    "/notebook",
                     self.download_notebook,
                 ),
                 # Remove /dagit/notebook with 2.0

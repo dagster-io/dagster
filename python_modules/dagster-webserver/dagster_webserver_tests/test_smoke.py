@@ -55,7 +55,7 @@ def test_smoke_app(gen_instance):
             assert result.status_code == 400
             assert result.content == b"No GraphQL query found in the request"
 
-            result = client.get("/dagster-webserver/notebook?path=foo.bar&repoLocName=foo_repo")
+            result = client.get("/notebook?path=foo.bar&repoLocName=foo_repo")
             assert result.status_code == 400
             assert result.content.decode("utf-8") == "Invalid Path"
 

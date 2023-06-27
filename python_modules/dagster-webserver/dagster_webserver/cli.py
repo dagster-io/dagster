@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import sys
+import textwrap
 from typing import Optional
 
 import click
@@ -40,20 +41,34 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 @click.command(
     name="dagster-webserver",
-    help=(
-        "Run dagster-webserver. Loads a repository or pipeline/job.\n\n{warning}".format(
-            warning=WORKSPACE_TARGET_WARNING
-        )
-        + (
-            "\n\nExamples:\n\n1. dagster-webserver (works if .{default_filename} exists)\n\n2."
-            " dagster-webserver -w path/to/{default_filename}\n\n3. dagster-webserver -f"
-            " path/to/file.py\n\n4. dagster-webserver -f path/to/file.py -d"
-            " path/to/working_directory\n\n5. dagster-webserver -m some_module\n\n6."
-            " dagster-webserver -f path/to/file.py -a define_repo\n\n7. dagster-webserver -m"
-            " some_module -a define_repo\n\n8. dagster-webserver -p 3333\n\nOptions can also"
-            " provide arguments via environment variables prefixed with DAGSTER_WEBSERVER\n\nFor"
-            " example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver"
-        ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
+    help=textwrap.dedent(
+        f"""
+        Run dagster-webserver. Loads a code location.
+
+        {WORKSPACE_TARGET_WARNING}
+
+        Examples:
+
+        1. dagster-webserver (works if ./{DEFAULT_WORKSPACE_YAML_FILENAME} exists)
+
+        2. dagster-webserver -w path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}
+
+        3. dagster-webserver -f path/to/file.py
+
+        4. dagster-webserver -f path/to/file.py -d path/to/working_directory
+
+        5. dagster-webserver -m some_module
+
+        6. dagster-webserver -f path/to/file.py -a define_repo
+
+        7. dagster-webserver -m some_module -a define_repo
+
+        8. dagster-webserver -p 3333
+
+        Options can also provide arguments via environment variables prefixed with DAGSTER_WEBSERVER.
+
+        For example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver
+    """
     ),
 )
 @workspace_target_argument
@@ -78,7 +93,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "-l",
     type=click.STRING,
     default="",
-    help="The path prefix where webserver will be hosted (eg: /dagster-webserver)",
+    help="The path prefix where server will be hosted (eg: /dagster-webserver)",
     show_default=True,
 )
 @click.option(
@@ -104,14 +119,14 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 @click.option(
     "--read-only",
     help=(
-        "Start webserver in read-only mode, where all mutations such as launching runs and "
+        "Start server in read-only mode, where all mutations such as launching runs and "
         "turning schedules on/off are turned off."
     ),
     is_flag=True,
 )
 @click.option(
     "--suppress-warnings",
-    help="Filter all warnings when hosting webserver.",
+    help="Filter all warnings when hosting server.",
     is_flag=True,
 )
 @click.option(
@@ -238,5 +253,13 @@ cli = create_dagster_webserver_cli()
 
 
 def main():
+    # Click does not support passing multiple env var prefixes, so for backcompat we will convert any
+    # DAGIT_* env vars to their DAGSTER_WEBSERVER_* equivalents here. Remove this in 2.0.
+    for key, val in os.environ.items():
+        if key.startswith("DAGIT_"):
+            new_key = "DAGSTER_WEBSERVER_" + key[6:]
+            if new_key not in os.environ:
+                os.environ[new_key] = val
+
     # click magic
-    cli(auto_envvar_prefix="DAGSTER_WEBSERVER")  # pylint:disable=E1120
+    cli(auto_envvar_prefix="DAGSTER_WEBSERVER")

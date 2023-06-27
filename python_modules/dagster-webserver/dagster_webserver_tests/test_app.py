@@ -62,8 +62,8 @@ def test_create_app_with_workspace_and_scheduler():
                 assert create_app_from_workspace_process_context(workspace_process_context)
 
 
-@pytest.mark.parametrize("leading_path_segment", ["dagster-webserver", "dagit"])
-def test_notebook_view(leading_path_segment):
+@pytest.mark.parametrize("url_path", ["notebook", "dagit/notebook"])
+def test_notebook_view(url_path):
     notebook_path = file_relative_path(__file__, "render_uuid_notebook.ipynb")
 
     with instance_for_test() as instance:
@@ -75,9 +75,7 @@ def test_notebook_view(leading_path_segment):
                     workspace_process_context,
                 )
             )
-            res = client.get(
-                f"/{leading_path_segment}/notebook?path={notebook_path}&repoLocName=load_from_file"
-            )
+            res = client.get(f"/{url_path}?path={notebook_path}&repoLocName=load_from_file")
 
             assert res.status_code == 200
             # This magic guid is hardcoded in the notebook

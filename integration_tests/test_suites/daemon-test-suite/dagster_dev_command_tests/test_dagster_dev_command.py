@@ -15,9 +15,7 @@ def _wait_for_dagit_running(dagit_port):
     start_time = time.time()
     while True:
         try:
-            dagit_json = requests.get(
-                f"http://localhost:{dagit_port}/dagster-webserver-info"
-            ).json()
+            dagit_json = requests.get(f"http://localhost:{dagit_port}/server_info").json()
             if dagit_json:
                 return
         except:

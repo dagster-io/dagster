@@ -58,14 +58,14 @@ def dev_command_options(f):
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
-    "--webserver-port",
+    "--port",
     "--dagit-port",
     "-p",
     help="Port to use for the Dagster webserver.",
     required=False,
 )
 @click.option(
-    "--webserver-host",
+    "--host",
     "--dagit-host",
     "-h",
     help="Host to use for the Dagster webserver.",
@@ -73,8 +73,8 @@ def dev_command_options(f):
 )
 def dev_command(
     code_server_log_level: str,
-    webserver_port: Optional[str],
-    webserver_host: Optional[str],
+    port: Optional[str],
+    host: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
     # check if dagster-webserver installed, crash if not
@@ -134,8 +134,8 @@ def dev_command(
 
         webserver_process = open_ipc_subprocess(
             [sys.executable, "-m", "dagster_webserver"]
-            + (["--port", webserver_port] if webserver_port else [])
-            + (["--host", webserver_host] if webserver_host else [])
+            + (["--port", port] if port else [])
+            + (["--host", host] if host else [])
             + args
         )
         daemon_process = open_ipc_subprocess(
