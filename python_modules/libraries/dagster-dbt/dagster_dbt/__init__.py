@@ -2,7 +2,6 @@ from .asset_defs import (
     load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
     load_assets_from_dbt_project as load_assets_from_dbt_project,
 )
-from .asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .cli import (
     DbtCliClientResource as DbtCliClientResource,
     DbtCliOutput as DbtCliOutput,
