@@ -157,10 +157,23 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                   <RunTable
                     runs={displayed}
                     onAddTag={onAddTag}
-                    actionBarComponents={button}
+                    actionBarComponents={
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          justifyContent: 'space-between',
+                          grow: 1,
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                        margin={{right: 8}}
+                      >
+                        {button}
+                        <QueryRefreshCountdown refreshState={refreshState} />
+                      </Box>
+                    }
                     belowActionBarComponents={
                       <>
-                        <QueryRefreshCountdown refreshState={refreshState} />
                         {permanentTokens.map(({token, value}) => (
                           <Tag key={token}>{`${token}:${value}`}</Tag>
                         ))}
@@ -172,7 +185,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                                 setFilterTokens([]);
                               }}
                             >
-                              Clear All
+                              Clear all
                             </ButtonLink>
                           </>
                         ) : null}
