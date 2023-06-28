@@ -1802,21 +1802,24 @@ def has_one_dimension_time_window_partitioning(
 
 def get_time_partitions_def(
     partitions_def: Optional[PartitionsDefinition],
-) -> TimeWindowPartitionsDefinition:
+) -> Optional[TimeWindowPartitionsDefinition]:
+    """For a given PartitionsDefinition, return the associated TimeWindowPartitionsDefinition if it
+    exists.
+    """
     from .multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None:
-        check.failed("Cannot get time partitions def from None object")
+        return None
     elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return partitions_def
-    elif isinstance(partitions_def, MultiPartitionsDefinition):
+    elif isinstance(
+        partitions_def, MultiPartitionsDefinition
+    ) and has_one_dimension_time_window_partitioning(partitions_def):
         return cast(
             TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
         )
     else:
-        check.failed(
-            f"Cannot return time partitions def from non-time partitions def {partitions_def}"
-        )
+        return None
 
 
 def get_time_partition_key(
