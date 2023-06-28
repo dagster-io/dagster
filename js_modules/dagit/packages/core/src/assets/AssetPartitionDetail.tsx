@@ -15,7 +15,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
 import {RunStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
@@ -50,7 +50,13 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     },
   );
 
-  const {materializations, observations, hasLineage, latestRunForPartition} = React.useMemo(() => {
+  const {
+    stepKey,
+    latestRunForPartition,
+    materializations,
+    observations,
+    hasLineage,
+  } = React.useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         materializations: [],
@@ -60,6 +66,8 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
       };
     }
     return {
+      stepKey: stepKeyForAsset(result.data.assetNodeOrError),
+
       latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
 
       materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
@@ -83,6 +91,7 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
   return (
     <AssetPartitionDetail
       assetKey={props.assetKey}
+      stepKey={stepKey}
       latestRunForPartition={latestRunForPartition}
       hasLineage={hasLineage}
       group={{
@@ -102,6 +111,7 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
+        opNames
         latestRunForPartition(partition: $partitionKey) {
           id
           ...AssetPartitionLatestRunFragment
@@ -137,7 +147,8 @@ export const AssetPartitionDetail: React.FC<{
   latestRunForPartition: AssetPartitionLatestRunFragment | null;
   hasLineage: boolean;
   hasLoadingState?: boolean;
-}> = ({assetKey, group, hasLineage, hasLoadingState, latestRunForPartition}) => {
+  stepKey?: string;
+}> = ({assetKey, stepKey, group, hasLineage, hasLoadingState, latestRunForPartition}) => {
   const {latest, partition, all} = group;
 
   // Somewhat confusing, but we have `latestEventRun`, the run that generated the
@@ -195,6 +206,7 @@ export const AssetPartitionDetail: React.FC<{
       {currentRun?.status === RunStatus.FAILURE && (
         <FailedRunSinceMaterializationBanner
           run={currentRun}
+          stepKey={stepKey}
           padding={{horizontal: 0, vertical: 16}}
           border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         />
