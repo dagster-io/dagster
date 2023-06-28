@@ -67,10 +67,12 @@ type Args = {
 export function useTimeRangeFilter({
   name,
   icon,
-  timezone,
+  timezone: _timezone,
   initialState,
   onStateChanged,
 }: Args): TimeRangeFilter {
+  const timezone =
+    _timezone === 'Automatic' ? Intl.DateTimeFormat().resolvedOptions().timeZone : _timezone;
   const [state, setState] = React.useState<TimeRangeState>(initialState || [null, null]);
   React.useEffect(() => {
     onStateChanged?.(state);
@@ -178,8 +180,7 @@ export function ActiveFilterState({
         year: 'numeric',
         month: 'numeric',
         day: 'numeric',
-        timeZone:
-          timezone === 'Automatic' ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone,
+        timeZone: timezone,
       }),
     [timezone],
   );

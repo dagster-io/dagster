@@ -10,6 +10,7 @@ import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 
+import {TimeContext} from '../app/time/TimeContext';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -405,6 +406,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
+  const {
+    timezone: [timezone],
+  } = React.useContext(TimeContext);
+
   const {button, activeFiltersJsx} = useFilters({
     filters: [
       !enabledFilters || enabledFilters?.includes('status') ? statusFilter : null,
@@ -466,7 +471,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       useTimeRangeFilter({
         name: 'Created date',
         icon: 'date',
-        timezone: 'UTC',
+        timezone,
         initialState: React.useMemo(() => {
           const before = tokens.find((token) => token.token === 'created_date_before');
           const after = tokens.find((token) => token.token === 'created_date_after');
