@@ -16,6 +16,7 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
+    OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
     asset,
@@ -445,12 +446,12 @@ def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
     manager = json_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
 
     @asset(io_manager_def=manager)
-    def non_partitioned_asset(context: OpExecutionContext):
-        return "b"
+    def non_partitioned_asset():
+        return json_data
 
     result = materialize([non_partitioned_asset])
 
-    assert result.output_for_node("non_partitioned_asset") == "b"
+    assert result.output_for_node("non_partitioned_asset") == json_data
 
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]), io_manager_def=manager)
     def partitioned_asset(context: OpExecutionContext):
