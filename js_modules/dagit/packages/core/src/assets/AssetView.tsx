@@ -217,7 +217,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
       return <AssetLoadingDefinitionState />;
     }
-    return <AssetAutomaterializePolicyPage assetKey={assetKey} />;
+    return (
+      <AssetAutomaterializePolicyPage
+        assetKey={assetKey}
+        assetHasDefinedPartitions={!!definition?.partitionDefinition}
+      />
+    );
   };
 
   return (

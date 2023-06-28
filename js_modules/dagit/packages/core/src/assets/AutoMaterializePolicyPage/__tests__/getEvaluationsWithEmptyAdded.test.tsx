@@ -1,5 +1,5 @@
 import {buildAutoMaterializeAssetEvaluationRecord} from '../../../graphql/types';
-import {getEvaluationsWithEmptyAdded} from '../AssetAutomaterializePolicyPage';
+import {getEvaluationsWithEmptyAdded} from '../getEvaluationsWithEmptyAdded';
 
 describe('getEvaluationsWithEmptyAdded', () => {
   it('should return an empty array if isLoading is true', () => {
