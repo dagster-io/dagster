@@ -433,7 +433,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.assets_def`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.assets_def`."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
@@ -445,7 +445,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.selected_asset_keys`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.selected_asset_keys`."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             return set()
@@ -455,7 +455,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.selected_output_names`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.selected_output_names`."""
         # map selected asset keys to the output names they correspond to
         selected_asset_keys = self.selected_asset_keys
         selected_outputs: Set[str] = set()
@@ -478,7 +478,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_key_for_output`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_key_for_output`."""
         asset_output_info = self.job_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
         )
@@ -490,7 +490,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_key_for_input`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_key_for_input`."""
         key = self.job_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
         )
@@ -512,7 +512,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partition_key_for_output`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_for_output`."""
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
     @deprecated
@@ -530,7 +530,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partitions_time_window_for_output`.
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_time_window_for_output`.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
@@ -539,25 +539,26 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partition_key_range_for_output`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_range_for_output`.
+        """
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
     @deprecated
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partition_key_range_for_input`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_range_for_input`."""
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @deprecated
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partition_key_for_input`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_for_input`."""
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
     @deprecated
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partitions_def_for_output`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_def_for_output`."""
         asset_key = self.asset_key_for_output(output_name)
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
@@ -573,7 +574,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partitions_def_for_input`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_def_for_input`."""
         asset_key = self.asset_key_for_input(input_name)
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
@@ -589,7 +590,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partition_keys_for_output`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_keys_for_output`."""
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_output(output_name),
             dynamic_partitions_store=self.instance,
@@ -598,7 +599,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partition_keys_for_input`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_keys_for_input`."""
         return list(
             self._step_execution_context.asset_partitions_subset_for_input(
                 input_name
@@ -608,7 +609,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @deprecated
     @public
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.asset_partitions_time_window_for_input`.
+        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_time_window_for_input`.
         """
         return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
@@ -616,7 +617,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        """DEPRECATED: use :py:func:`AssetExecutionContext.get_asset_provenance`."""
+        """DEPRECATED - use :py:func:`AssetExecutionContext.get_asset_provenance`."""
         record = self.instance.get_latest_data_version_record(asset_key)
 
         return (
@@ -632,24 +633,30 @@ class AssetExecutionContext(OpExecutionContext):
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
+        """The backing AssetsDefinition for what is currently executing."""
         return super().assets_def
 
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Get the set of AssetKeys this execution is expected to materialize."""
         return super().selected_asset_keys
 
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
+        """Get the output names that correspond to the current selection of assets this execution is expected to materialize.
+        """
         return super().selected_output_names
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        """Return the AssetKey for the corresponding output."""
         return super().asset_key_for_output(output_name)
 
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
+        """Return the AssetKey for the corresponding input."""
         return super().asset_key_for_input(input_name)
 
     @public
@@ -674,10 +681,13 @@ class AssetExecutionContext(OpExecutionContext):
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
+        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
         return super().asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
+        """
         return super().asset_partition_key_range_for_input(input_name)
 
     @public
