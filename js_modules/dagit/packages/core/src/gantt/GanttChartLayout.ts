@@ -426,9 +426,9 @@ export const adjustLayoutWithRunMetadata = (
     const widthForMs = ({start, end}: {start: number; end?: number}) =>
       Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
 
-    positionAndSplitBoxes(boxes, metadata, (_box, run) => ({
-      x: run ? xForMs(run.start) : 0,
-      width: run ? widthForMs(run) : BOX_WIDTH,
+    positionAndSplitBoxes(boxes, metadata, (_box, attempt) => ({
+      x: attempt ? xForMs(attempt.start) : 0,
+      width: attempt ? widthForMs(attempt) : BOX_WIDTH,
     }));
 
     positionUntimedBoxes(boxes, xForMs(nowMs) + BOX_SPACING_X);
