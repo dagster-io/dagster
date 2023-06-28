@@ -195,6 +195,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         if partition_key_range.start == partition_key_range.end:
             return [cast(T_str, partition_key_range.start)]
 
+        # defer this call as it is potentially expensive
         partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
         return partition_keys[
             partition_keys.index(partition_key_range.start) : partition_keys.index(
