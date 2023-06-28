@@ -1,24 +1,20 @@
 import asyncio
-import inspect
 from abc import abstractmethod
-from asyncio import coroutine
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union, Coroutine
+from typing import Any, Dict, Mapping, Optional, Union
 
-import fsspec
-from fsspec import AbstractFileSystem
 from fsspec.asyn import AsyncFileSystem
-from fsspec.implementations.local import LocalFileSystem
+from upath import UPath
 
 from dagster import (
+    DagsterInvariantViolationError,
     InputContext,
     MetadataValue,
     MultiPartitionKey,
     OutputContext,
-    _check as check, DagsterInvariantViolationError,
+    _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
-from upath import UPath
 
 
 class UPathIOManager(MemoizableIOManager):
@@ -231,7 +227,8 @@ class UPathIOManager(MemoizableIOManager):
                 if backcompat_path is not None:
                     try:
                         context.log.debug(
-                            f"Loading from normal path failed. Loading partition from backcompat {backcompat_path}..."
+                            "Loading from normal path failed. Loading partition from backcompat"
+                            f" {backcompat_path}..."
                         )
                         obj = self.load_from_path(context=context, path=path)
                         return obj
@@ -321,17 +318,20 @@ class UPathIOManager(MemoizableIOManager):
 
     @staticmethod
     def get_async_filesystem(path: "Path") -> AsyncFileSystem:
-        """
-        A helper method for the `UPathIOManager` end-user, is useful inside an async `load_from_path`.
+        """A helper method for the `UPathIOManager` end-user, is useful inside an async `load_from_path`.
         The returned `fsspec` FileSystem will have async IO methods.
-        https://filesystem-spec.readthedocs.io/en/latest/async.html
+        https://filesystem-spec.readthedocs.io/en/latest/async.html.
         """
         if isinstance(path, Path):
             try:
                 from morefs import AsyncLocalFileSystem
+
                 return AsyncLocalFileSystem()
             except ImportError as e:
-                raise RuntimeError("Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local filesystem") from e
+                raise RuntimeError(
+                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
+                    " filesystem"
+                ) from e
         elif isinstance(path, UPath):
             kwargs = path._kwargs.copy()  # noqa
             kwargs["asynchronous"] = True

@@ -31,7 +31,7 @@ from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from upath import UPath
-import aiofile
+
 
 class DummyIOManager(UPathIOManager):
     """This IOManager simply outputs the object path without loading or writing anything."""
