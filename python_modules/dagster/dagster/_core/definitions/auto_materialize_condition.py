@@ -1,7 +1,6 @@
 from enum import Enum
-from typing import NamedTuple, Optional, Sequence, Union
+from typing import NamedTuple, Union
 
-from dagster._core.definitions.events import AssetKey
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -62,7 +61,6 @@ class ParentOutdatedAutoMaterializeCondition(NamedTuple):
     """
 
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
-    parent_asset_keys: Optional[Sequence[AssetKey]] = None
 
 
 @whitelist_for_serdes

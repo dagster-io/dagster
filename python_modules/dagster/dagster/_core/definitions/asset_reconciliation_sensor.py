@@ -617,7 +617,6 @@ def determine_asset_partitions_to_auto_materialize(
     Mapping[AssetKey, AbstractSet[str]],
     Optional[int],
 ]:
-    defaultdict(set)
     evaluation_time = instance_queryer.evaluation_time
 
     (
@@ -681,7 +680,8 @@ def determine_asset_partitions_to_auto_materialize(
     )
 
     def get_unresolved_parent_asset_keys(candidate: AssetKeyPartitionKey) -> AbstractSet[AssetKey]:
-        """Returns the set of parent asset keys which will be unresolved when this candidate is materialized.
+        """Returns the set of parent asset keys which would be unresolved if this candidate were
+        materialize this tick.
         """
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
