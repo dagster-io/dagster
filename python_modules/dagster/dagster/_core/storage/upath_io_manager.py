@@ -251,7 +251,11 @@ class UPathIOManager(MemoizableIOManager):
 
         if asyncio.iscoroutine(next(iter(objs.values()))):
             # load_from_path returns a coroutine, so we need to await the results
-            awaited_objects = asyncio.run(asyncio.gather(*objs.values()))
+            async def collect():
+                return await asyncio.gather(*objs.values())
+
+            awaited_objects = asyncio.run(collect())
+
             return {
                 partition_key: awaited_object
                 for partition_key, awaited_object in zip(objs, awaited_objects)
@@ -324,7 +328,7 @@ class UPathIOManager(MemoizableIOManager):
         """
         if isinstance(path, Path):
             try:
-                from morefs import AsyncLocalFileSystem
+                from morefs.asyn_local import AsyncLocalFileSystem
 
                 return AsyncLocalFileSystem()
             except ImportError as e:

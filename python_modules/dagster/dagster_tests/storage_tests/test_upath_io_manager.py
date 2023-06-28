@@ -1,10 +1,12 @@
 import json
 import pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
 import pytest
+from pydantic import PrivateAttr, Field as PydanticField
+
 from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
@@ -25,6 +27,7 @@ from dagster import (
     build_output_context,
     io_manager,
     materialize,
+    ConfigurableIOManager, ResourceDependency, TimeWindowPartitionMapping
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
@@ -418,32 +421,33 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
     assert handled_output_data.metadata["length"] == MetadataValue.int(get_length(json_data))
 
 
-@pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
-def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
-    class JSONIOManager(UPathIOManager):
-        extension: str = ".json"
 
-        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
-            with path.open("w") as file:
-                json.dump(obj, file)
+class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
+    base_dir: str = PydanticField(None, description="Base directory for storing files.")
 
-        async def load_from_path(self, context: InputContext, path: UPath) -> Any:
-            fs = self.get_async_filesystem(path)
+    _base_path: UPath = PrivateAttr()
 
-            async with fs.open_async(str(path), "wb") as file:
-                data = await file.read()
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._base_path = (
+            UPath(self.base_dir)
+        )
 
+    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+        with path.open("w") as file:
+            json.dump(obj, file)
+
+    async def load_from_path(self, context: InputContext, path: UPath) -> Any:
+        fs = self.get_async_filesystem(path)
+
+        async with fs.open_async(str(path), "wb") as file:
+            data = await file.read()
             return json.loads(data)
 
-    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
-    def json_io_manager(init_context: InitResourceContext):
-        assert init_context.instance is not None
-        base_path = UPath(
-            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
-        )
-        return JSONIOManager(base_path=cast(UPath, base_path))
 
-    manager = json_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
+
+@pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
+def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
 
     @asset(io_manager_def=manager)
     def non_partitioned_asset():
@@ -460,3 +464,40 @@ def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
     result = materialize([partitioned_asset], partition_key="a")
 
     assert result.output_for_node("partitioned_asset") == "a"
+
+
+def test_upath_io_manager_async_multiple_time_partitions(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1)
+            )
+        }
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]):
+        return upstream_asset
+
+    for days in range(5):
+        materialize(
+            [upstream_asset],
+            partition_key=(start + timedelta(days=days)).strftime(daily.fmt),
+        )
+
+    result = materialize(
+        [upstream_asset.to_source_asset(), downstream_asset],
+        partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
+    )
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert len(downstream_asset_data) == 3, "downstream day should map to 3 upstream days"
