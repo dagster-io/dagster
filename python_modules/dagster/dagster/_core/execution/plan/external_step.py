@@ -11,6 +11,7 @@ from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry
@@ -22,6 +23,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster._serdes import deserialize_value
+
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
@@ -235,6 +237,22 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
+
+    if step_context.has_partition_key:
+        partitions_def = next(
+            step_context._partitions_def_for_output(output_name=output_name)
+            for output_name in step_context.op_def.output_dict.keys()
+        )
+
+        # If we deal with DynamicPartitions, add the relevant partition to the remote instance
+        if (
+            isinstance(partitions_def, DynamicPartitionsDefinition) and
+            partitions_def.name is not None
+        ):
+            step_context.instance.add_dynamic_partitions(
+                partitions_def_name=partitions_def.name,
+                partition_keys=[step_context.partition_key]
+            )
 
     # The step should be forced to run locally with respect to the remote process that this step
     # context is being deserialized in
