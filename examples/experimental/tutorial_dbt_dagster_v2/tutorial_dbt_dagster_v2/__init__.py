@@ -1,5 +1,5 @@
 from dagster import Definitions
-from dagster_dbt.cli import DbtCli
+from dagster_dbt import DbtCli
 
 from .assets.build import my_dbt_assets
 from .constants import DBT_PROJECT_DIR

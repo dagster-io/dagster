@@ -1,4 +1,4 @@
-from dagster_dbt.cli.resources_v2 import DbtManifest
+from dagster_dbt import DbtManifest
 
 from ..constants import MANIFEST_PATH
 

@@ -705,8 +705,7 @@ class DbtCli(ConfigurableResource):
         Examples:
             .. code-block:: python
 
-                from dagster_dbt.asset_decorator import dbt_assets
-                from dagster_dbt.cli import DbtCli, DbtManifest
+                from dagster_dbt import DbtCli, DbtManifest, dbt_assets
 
                 manifest = DbtManifest.read(path="target/manifest.json")
 
