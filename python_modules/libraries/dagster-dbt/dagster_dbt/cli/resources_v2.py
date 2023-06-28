@@ -298,7 +298,7 @@ class DbtManifest:
 class DbtCliEventMessage:
     """Represents a dbt CLI event."""
 
-    event: Dict[str, Any]
+    raw_event: Dict[str, Any]
 
     @classmethod
     def from_log(cls, log: str) -> "DbtCliEventMessage":
@@ -306,12 +306,12 @@ class DbtCliEventMessage:
 
         We assume that the log format is json.
         """
-        event: Dict[str, Any] = json.loads(log)
+        raw_event: Dict[str, Any] = json.loads(log)
 
-        return cls(event=event)
+        return cls(raw_event=raw_event)
 
     def __str__(self) -> str:
-        return self.event["info"]["msg"]
+        return self.raw_event["info"]["msg"]
 
     def to_default_asset_events(
         self, manifest: DbtManifest
@@ -326,7 +326,7 @@ class DbtCliEventMessage:
                 - AssetMaterializations for refables (e.g. models, seeds, snapshots.)
                 - AssetObservations for test results.
         """
-        event_node_info: Dict[str, Any] = self.event["data"].get("node_info")
+        event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
 

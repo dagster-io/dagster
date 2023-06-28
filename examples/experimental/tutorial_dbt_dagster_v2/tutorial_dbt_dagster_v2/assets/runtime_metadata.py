@@ -13,7 +13,7 @@ def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
     for event in dbt.cli(["build"], manifest=manifest, context=context).stream_raw_events():
         for dagster_event in event.to_default_asset_events(manifest=manifest):
             if isinstance(dagster_event, Output):
-                event_node_info = event.event["data"]["node_info"]
+                event_node_info = event.raw_event["data"]["node_info"]
 
                 started_at = parser.isoparse(event_node_info["node_started_at"])
                 completed_at = parser.isoparse(event_node_info["node_finished_at"])
