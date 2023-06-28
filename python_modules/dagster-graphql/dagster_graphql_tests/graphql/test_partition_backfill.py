@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from typing import List, Optional, Tuple, cast
@@ -213,7 +214,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
         instance_queryer=CachingInstanceQueryer(
-            graphql_context.instance, asset_backfill_data.backfill_start_time
+            graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_time
         ),
         asset_graph=asset_graph,
         run_tags=backfill.tags,
@@ -239,7 +240,11 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
     """
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
-        list(execute_asset_backfill_iteration(backfill, context, graphql_context.instance))
+        list(
+            execute_asset_backfill_iteration(
+                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+            )
+        )
 
 
 def _mock_asset_backfill_runs(

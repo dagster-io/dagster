@@ -253,3 +253,20 @@ def test_dbt_meta_asset_key() -> None:
         AssetKey(["customized", "staging", "orders"]),
         AssetKey(["customized", "staging", "payments"]),
     }.issubset(my_dbt_assets.keys)
+
+
+def test_dbt_config_group() -> None:
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.group_names_by_key == {
+        AssetKey(["customers"]): "default",
+        AssetKey(["customized", "staging", "customers"]): "customized_dagster_group",
+        AssetKey(["customized", "staging", "orders"]): "staging",
+        AssetKey(["customized", "staging", "payments"]): "staging",
+        AssetKey(["orders"]): "default",
+        AssetKey(["raw_customers"]): "default",
+        AssetKey(["raw_orders"]): "default",
+        AssetKey(["raw_payments"]): "default",
+    }

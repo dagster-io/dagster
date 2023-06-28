@@ -6,6 +6,7 @@ models:
       meta:
         dagster:
           asset_key: ['customized', 'staging', 'customers']
+          group: customized_dagster_group
     columns:
       - name: customer_id
         tests:

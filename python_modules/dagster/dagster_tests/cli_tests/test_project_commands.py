@@ -10,7 +10,7 @@ from dagster._cli.project import (
     scaffold_repository_command,
 )
 from dagster._core.workspace.load_target import get_origins_from_toml
-from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE
+from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE, _get_url_for_version
 from dagster._generate.generate import _should_skip_file
 
 
@@ -90,6 +90,21 @@ def test_from_example_command_succeeds():
         assert not os.path.exists("my_dagster_project/tox.ini")
 
 
+def test_from_example_command_default_name():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            from_example_command,
+            ["--name", "assets_dbt_python", "--example", "assets_dbt_python"],
+        )
+        assert result.exit_code == 0
+        assert os.path.exists("assets_dbt_python")
+        assert os.path.exists("assets_dbt_python/assets_dbt_python")
+        assert os.path.exists("assets_dbt_python/assets_dbt_python_tests")
+        # ensure we filter out tox.ini because it's used in our own CI
+        assert not os.path.exists("assets_dbt_python/tox.ini")
+
+
 def test_available_examples_in_sync_with_example_folder():
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
     # run me
@@ -137,3 +152,8 @@ def test_scaffold_repository_command_succeeds():
         assert os.path.exists("my_dagster_repo/my_dagster_repo")
         assert os.path.exists("my_dagster_repo/my_dagster_repo_tests")
         assert not os.path.exists("my_dagster_repo/workspace.yaml")
+
+
+def test_versioned_download():
+    assert _get_url_for_version("1.3.3").endswith("1.3.3")
+    assert _get_url_for_version("1!0+dev").endswith("master")

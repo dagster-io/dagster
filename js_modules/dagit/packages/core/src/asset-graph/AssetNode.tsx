@@ -1,9 +1,9 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, Spinner, Tooltip, Body} from '@dagster-io/ui';
+import {Body, Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled, {CSSObject} from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
 import {
@@ -22,7 +22,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode, stepKeyForAsset} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
@@ -58,7 +58,11 @@ export const AssetNode: React.FC<{
             <span style={{marginTop: 1}}>
               <Icon name={isSource ? 'source_asset' : 'asset'} />
             </span>
-            <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+            <div
+              data-tooltip={displayName}
+              data-tooltip-style={isSource ? NameTooltipStyleSource : NameTooltipStyle}
+              style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
+            >
               {withMiddleTruncation(displayName, {
                 maxLength: ASSET_NODE_NAME_MAX_LENGTH,
               })}
@@ -137,13 +141,6 @@ const AssetNodeStatusRow: React.FC<StatusRowProps> = ({definition, liveData}) =>
   return <AssetNodeStatusBox background={background}>{content}</AssetNodeStatusBox>;
 };
 
-function getStepKey(definition: {opNames: string[]}) {
-  // Used for linking to the run with this step highlighted. We only support highlighting
-  // a single step, so just use the first one.
-  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
-  return firstOp || '';
-}
-
 export function buildAssetNodeStatusContent({
   assetKey,
   definition,
@@ -211,7 +208,7 @@ export function buildAssetNodeStatusContent({
               <AssetRunLink
                 runId={liveData.lastObservation.runId}
                 event={{
-                  stepKey: getStepKey(definition),
+                  stepKey: stepKeyForAsset(definition),
                   timestamp: liveData.lastObservation.timestamp,
                 }}
               >
@@ -336,7 +333,7 @@ export function buildAssetNodeStatusContent({
     <span style={{overflow: 'hidden'}}>
       <AssetRunLink
         runId={lastMaterialization.runId}
-        event={{stepKey: getStepKey(definition), timestamp: lastMaterialization.timestamp}}
+        event={{stepKey: stepKeyForAsset(definition), timestamp: lastMaterialization.timestamp}}
       >
         <TimestampDisplay
           timestamp={Number(lastMaterialization.timestamp) / 1000}
@@ -597,16 +594,39 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
     }
   }
 `;
+
+/** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
+const NameCSS: CSSObject = {
+  padding: '3px 6px',
+  color: Colors.Gray800,
+  fontFamily: FontFamily.monospace,
+  fontWeight: 600,
+};
+
+const NameTooltipCSS: CSSObject = {
+  ...NameCSS,
+  top: -9,
+  left: -12,
+  fontSize: 16.8,
+};
+
+const NameTooltipStyle = JSON.stringify({
+  ...NameTooltipCSS,
+  background: Colors.Blue50,
+  border: `1px solid ${Colors.Blue100}`,
+});
+
+const NameTooltipStyleSource = JSON.stringify({
+  ...NameTooltipCSS,
+  background: Colors.Gray100,
+  border: `1px solid ${Colors.Gray200}`,
+});
+
 const Name = styled.div<{$isSource: boolean}>`
-  /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
+  ${NameCSS};
   display: flex;
-  padding: 3px 6px;
-  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
-  font-family: ${FontFamily.monospace};
-  border-top-left-radius: 7px;
-  border-top-right-radius: 7px;
-  font-weight: 600;
   gap: 4px;
+  background: ${(p) => (p.$isSource ? Colors.Gray100 : Colors.Blue50)};
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`

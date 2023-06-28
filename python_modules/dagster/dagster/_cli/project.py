@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Sequence
+from typing import Optional, Sequence
 
 import click
 
@@ -133,7 +133,6 @@ def scaffold_command(name: str):
 )
 @click.option(
     "--name",
-    required=True,
     type=click.STRING,
     help="Name of the new Dagster project",
 )
@@ -147,7 +146,8 @@ def scaffold_command(name: str):
         "You can also find the available examples via `dagster project list-examples`."
     ),
 )
-def from_example_command(name: str, example: str):
+def from_example_command(name: Optional[str], example: str):
+    name = name or example
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(

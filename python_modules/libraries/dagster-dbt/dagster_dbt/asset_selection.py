@@ -5,6 +5,7 @@ import dagster._check as check
 from dagster import AssetKey, AssetSelection
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._utils.backcompat import deprecation_warning
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -90,6 +91,10 @@ class DbtManifestAssetSelection(AssetSelection):
 
         self.state_path = check.opt_str_param(state_path, "state_path")
         if self.state_path:
+            deprecation_warning(
+                "The state_path argument to DbtManifestAssetSelection",
+                "1.4.0",
+            )
             check.param_invariant(
                 self.manifest_json_path is not None,
                 "state_path",

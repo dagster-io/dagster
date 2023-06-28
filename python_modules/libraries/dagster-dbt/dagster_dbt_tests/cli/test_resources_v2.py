@@ -86,7 +86,7 @@ def test_dbt_without_partial_parse() -> None:
 
     assert dbt_cli_compile_without_partial_parse_task.is_successful()
     assert any(
-        "Unable to do partial parsing" in event.event["info"]["msg"]
+        "Unable to do partial parsing" in event.raw_event["info"]["msg"]
         for event in dbt_cli_compile_without_partial_parse_task.stream_raw_events()
     )
 
@@ -115,7 +115,7 @@ def test_dbt_with_partial_parse() -> None:
 
     assert dbt_cli_compile_with_partial_parse_task.is_successful()
     assert not any(
-        "Unable to do partial parsing" in event.event["info"]["msg"]
+        "Unable to do partial parsing" in event.raw_event["info"]["msg"]
         for event in dbt_cli_compile_with_partial_parse_task.stream_raw_events()
     )
 
@@ -222,7 +222,7 @@ def test_dbt_cli_default_selection(mocker: MockerFixture, exclude: Optional[str]
 )
 def test_no_default_asset_events_emitted(data: dict) -> None:
     manifest = DbtManifest(raw_manifest={})
-    asset_events = DbtCliEventMessage(event={"data": data}).to_default_asset_events(
+    asset_events = DbtCliEventMessage(raw_event={"data": data}).to_default_asset_events(
         manifest=manifest
     )
 
@@ -231,7 +231,7 @@ def test_no_default_asset_events_emitted(data: dict) -> None:
 
 def test_to_default_asset_output_events() -> None:
     manifest = DbtManifest(raw_manifest={})
-    event = {
+    raw_event = {
         "data": {
             "node_info": {
                 "unique_id": "a.b.c",
@@ -242,7 +242,9 @@ def test_to_default_asset_output_events() -> None:
             }
         }
     }
-    asset_events = list(DbtCliEventMessage(event=event).to_default_asset_events(manifest=manifest))
+    asset_events = list(
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+    )
 
     assert len(asset_events) == 1
     assert all(isinstance(e, Output) for e in asset_events)
@@ -277,7 +279,7 @@ def test_to_default_asset_observation_events() -> None:
             },
         }
     )
-    event = {
+    raw_event = {
         "data": {
             "node_info": {
                 "unique_id": "a.b.c",
@@ -287,7 +289,9 @@ def test_to_default_asset_observation_events() -> None:
             }
         }
     }
-    asset_events = list(DbtCliEventMessage(event=event).to_default_asset_events(manifest=manifest))
+    asset_events = list(
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+    )
 
     assert len(asset_events) == 2
     assert all(isinstance(e, AssetObservation) for e in asset_events)

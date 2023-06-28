@@ -1824,6 +1824,16 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
+    @traced
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, event_type: DagsterEventType
+    ) -> Mapping[str, int]:
+        """Fetch the latest materialzation storage id for each partition for a given asset key.
+
+        Returns a mapping of partition to storage id.
+        """
+        return self._event_storage.get_latest_storage_id_by_partition(asset_key, event_type)
+
     @public
     @traced
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:

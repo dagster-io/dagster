@@ -1,5 +1,5 @@
 import wandb
-from dagster import AssetIn, OpExecutionContext, asset
+from dagster import AssetExecutionContext, AssetIn, asset
 from dagster_wandb import WandbArtifactConfiguration
 
 wandb_artifact_configuration: WandbArtifactConfiguration = {
@@ -79,11 +79,11 @@ def write_advanced_artifact() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
     },
     output_required=False,
 )
-def get_table(context: OpExecutionContext, table: wandb.Table) -> None:
+def get_table(context: AssetExecutionContext, table: wandb.Table) -> None:
     """Example that reads a W&B Table contained in an Artifact.
 
     Args:
-        context (OpExecutionContext): Dagster execution context
+        context (AssetExecutionContext): Dagster execution context
         table (wandb.Table): Table contained in our downloaded Artifact
 
     Here, we use the integration to read the W&B Table object created in the previous asset.
@@ -108,11 +108,11 @@ def get_table(context: OpExecutionContext, table: wandb.Table) -> None:
     },
     output_required=False,
 )
-def get_path(context: OpExecutionContext, path: str) -> None:
+def get_path(context: AssetExecutionContext, path: str) -> None:
     """Example that gets the local path of a file contained in an Artifact.
 
     Args:
-        context (OpExecutionContext): Dagster execution context
+        context (AssetExecutionContext): Dagster execution context
         path (str): Path in the local filesystem of the downloaded file
 
     Here, we use the integration to collect the local of the file added through the 'add_dirs' in
@@ -133,12 +133,12 @@ def get_path(context: OpExecutionContext, path: str) -> None:
     output_required=False,
 )
 def get_artifact(
-    context: OpExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
+    context: AssetExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
 ) -> None:
     """Example that gets the entire Artifact object.
 
     Args:
-        context (OpExecutionContext): Dagster execution context
+        context (AssetExecutionContext): Dagster execution context
         artifact (wandb.wandb_sdk.wandb_artifacts.Artifact): Downloaded Artifact object
 
     Here, we use the integration to collect the entire W&B Artifact object created from in first

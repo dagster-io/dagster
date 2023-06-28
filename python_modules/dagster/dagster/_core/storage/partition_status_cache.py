@@ -502,8 +502,13 @@ def _get_fresh_asset_status_cache_value(
     asset_key: AssetKey,
     dynamic_partitions_store: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
+    cached_status_data: Optional[AssetStatusCacheValue] = None,
 ) -> Optional[AssetStatusCacheValue]:
-    cached_status_data = _fetch_stored_asset_status_cache_value(instance, asset_key)
+    cached_status_data = (
+        _fetch_stored_asset_status_cache_value(instance, asset_key)
+        if not cached_status_data
+        else cached_status_data
+    )
 
     updated_cache_value = None
     if cached_status_data is None or cached_status_data.partitions_def_id != (

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, cast
 import pytest
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
     AssetIn,
     DagsterType,
     DailyPartitionsDefinition,
@@ -15,7 +16,6 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
-    OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
     asset,
@@ -168,7 +168,7 @@ def test_upath_io_manager_multiple_time_partitions(
     dummy_io_manager: DummyIOManager,
 ):
     @asset(partitions_def=hourly)
-    def upstream_asset(context: OpExecutionContext) -> str:
+    def upstream_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     @asset(
@@ -190,7 +190,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
 
     @asset(partitions_def=upstream_partitions_def)
-    def upstream_asset(context: OpExecutionContext) -> str:
+    def upstream_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     @asset(ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())})
@@ -229,7 +229,7 @@ def test_upath_io_manager_static_partitions_with_dot():
         return TrackingIOManager(base_path=base_path)
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context: OpExecutionContext) -> str:
+    def my_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     my_job = build_assets_job(
@@ -267,7 +267,7 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
         return TrackingIOManager(base_path=base_path)
 
     @asset(partitions_def=partitions_def)
-    def my_asset(context: OpExecutionContext) -> str:
+    def my_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     my_job = build_assets_job(
@@ -308,7 +308,7 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
     dummy_io_manager: DummyIOManager,
 ):
     @asset(partitions_def=hourly)
-    def upstream_asset(context: OpExecutionContext) -> str:
+    def upstream_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     @asset(partitions_def=daily)
@@ -333,7 +333,7 @@ def test_skip_type_check_for_multiple_partitions_with_no_type_annotation(
     dummy_io_manager: DummyIOManager,
 ):
     @asset(partitions_def=hourly)
-    def upstream_asset(context: OpExecutionContext) -> str:
+    def upstream_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     @asset(
@@ -357,7 +357,7 @@ def test_skip_type_check_for_multiple_partitions_with_any_type(
     dummy_io_manager: DummyIOManager,
 ):
     @asset(partitions_def=hourly)
-    def upstream_asset(context: OpExecutionContext) -> str:
+    def upstream_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
     @asset(

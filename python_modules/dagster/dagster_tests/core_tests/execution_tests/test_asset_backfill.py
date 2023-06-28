@@ -19,6 +19,7 @@ from dagster import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
@@ -390,7 +391,9 @@ def execute_asset_backfill_iteration_consume_generator(
     for result in execute_asset_backfill_iteration_inner(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
-        instance_queryer=CachingInstanceQueryer(instance, asset_backfill_data.backfill_start_time),
+        instance_queryer=CachingInstanceQueryer(
+            instance, asset_graph, asset_backfill_data.backfill_start_time
+        ),
         asset_graph=asset_graph,
         run_tags={},
         backfill_start_time=asset_backfill_data.backfill_start_time,
@@ -450,11 +453,13 @@ def run_backfill_to_completion(
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
             assert asset_partition not in fail_and_downstream_asset_partitions
 
-            for parent_asset_partition in asset_graph.get_parents_partitions(
+            parent_partitions_result = asset_graph.get_parents_partitions(
                 instance,
                 backfill_data.backfill_start_time,
                 *asset_partition,
-            ):
+            )
+
+            for parent_asset_partition in parent_partitions_result.parent_partitions:
                 if (
                     parent_asset_partition in backfill_data.target_subset
                     and parent_asset_partition not in backfill_data.materialized_subset
@@ -745,6 +750,41 @@ def test_asset_backfill_selects_only_existent_partitions():
     assert len(target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key)) == 0
 
 
+def test_asset_backfill_throw_error_on_invalid_upstreams():
+    @asset(partitions_def=DailyPartitionsDefinition("2023-06-01"))
+    def june_asset():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-05-01"))
+    def may_asset(
+        june_asset,
+    ):
+        return june_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            june_asset,
+            may_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=["2023-05-10"],
+        asset_graph=asset_graph,
+        asset_selection=[
+            may_asset.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 5, 15, 0, 0, 0),
+    )
+
+    instance = DagsterInstance.ephemeral()
+    with pytest.raises(DagsterInvariantViolationError, match="depends on invalid partition keys"):
+        run_backfill_to_completion(asset_graph, assets_by_repo_name, backfill_data, [], instance)
+
+
 def test_asset_backfill_cancellation():
     instance = DagsterInstance.ephemeral()
 
@@ -789,7 +829,7 @@ def test_asset_backfill_cancellation():
 
     assert len(instance.get_runs()) == 1
 
-    instance_queryer = CachingInstanceQueryer(instance, backfill_start_time)
+    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_time)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(

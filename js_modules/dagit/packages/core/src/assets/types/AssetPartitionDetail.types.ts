@@ -13,6 +13,7 @@ export type AssetPartitionDetailQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
+        opNames: Array<string>;
         latestRunForPartition: {
           __typename: 'Run';
           id: string;

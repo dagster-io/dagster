@@ -55,6 +55,7 @@ interface RunTableProps {
   belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
   additionalActionsForRun?: (run: RunTableRunFragment) => JSX.Element[];
+  emptyState?: () => React.ReactNode;
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -66,6 +67,7 @@ export const RunTable = (props: RunTableProps) => {
     actionBarComponents,
     belowActionBarComponents,
     hideCreatedBy,
+    emptyState,
   } = props;
   const allIds = runs.map((r) => r.id);
 
@@ -77,7 +79,11 @@ export const RunTable = (props: RunTableProps) => {
 
   function content() {
     if (runs.length === 0) {
-      const anyFilter = Object.keys(filter || {}).length;
+      const anyFilter = !!Object.keys(filter || {}).length;
+      if (emptyState) {
+        return <>{emptyState()}</>;
+      }
+
       return (
         <div>
           <Box margin={{vertical: 32}}>
@@ -115,8 +121,8 @@ export const RunTable = (props: RunTableProps) => {
         <Table>
           <thead>
             <tr>
-              <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-                {canTerminateOrDeleteAny ? (
+              {canTerminateOrDeleteAny ? (
+                <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
                   <Checkbox
                     indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
                     checked={checkedIds.size === runs.length}
@@ -126,8 +132,8 @@ export const RunTable = (props: RunTableProps) => {
                       }
                     }}
                   />
-                ) : null}
-              </th>
+                </th>
+              ) : null}
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>Target</th>
@@ -150,6 +156,7 @@ export const RunTable = (props: RunTableProps) => {
                 additionalActionsForRun={props.additionalActionsForRun}
                 onToggleChecked={onToggleFactory(run.id)}
                 isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
+                hideCreatedBy={hideCreatedBy}
               />
             ))}
           </tbody>
@@ -323,11 +330,9 @@ const RunRow: React.FC<{
         setIsHovered(false);
       }}
     >
-      <td>
-        {canTerminateOrDelete && onToggleChecked ? (
-          <Checkbox checked={!!checked} onChange={onChange} />
-        ) : null}
-      </td>
+      {canTerminateOrDelete ? (
+        <td>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</td>
+      ) : null}
       <td>
         <Link to={`/runs/${run.id}`}>
           <Mono>{titleForRun(run)}</Mono>

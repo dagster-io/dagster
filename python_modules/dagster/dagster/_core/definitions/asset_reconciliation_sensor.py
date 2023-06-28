@@ -26,7 +26,6 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -35,20 +34,21 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.backcompat import deprecation_warning
-from dagster._utils.schedules import cron_string_iterator
 
-from .asset_selection import AssetGraph, AssetSelection
+from .asset_graph import AssetGraph, ParentsPartitionsResult
+from .asset_selection import AssetSelection
 from .auto_materialize_condition import (
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
     MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
 from .decorators.sensor_decorator import sensor
+from .freshness_based_auto_materialize import (
+    determine_asset_partitions_to_auto_materialize_for_freshness,
+)
 from .partition import PartitionsDefinition, PartitionsSubset, SerializedPartitionsSubset
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -475,38 +475,25 @@ def find_parent_materialized_asset_partitions(
     result_latest_storage_id = latest_storage_id
 
     for asset_key in target_asset_keys_and_parents:
-        if asset_graph.is_source(asset_key):
-            if asset_graph.is_observable(asset_key):
-                # for observable sources, find the storage id of the latest version record that differs
-                # from the previous version (if any)
-                new_version_storage_id = instance_queryer.new_version_storage_id(
-                    observable_source_asset_key=asset_key, after_cursor=latest_storage_id
-                )
-                if new_version_storage_id is not None:
-                    if (
-                        result_latest_storage_id is None
-                        or new_version_storage_id > result_latest_storage_id
-                    ):
-                        result_latest_storage_id = new_version_storage_id
-                    for child in asset_graph.get_children_partitions(
-                        dynamic_partitions_store=instance_queryer,
-                        current_time=instance_queryer.evaluation_time,
-                        asset_key=asset_key,
-                        partition_key=None,
-                    ):
-                        if child.asset_key in target_asset_keys:
-                            result_asset_partitions.add(child)
+        if asset_graph.is_source(asset_key) and not asset_graph.is_observable(asset_key):
+            continue
 
+        # the set of asset partitions which have been updated since the latest storage id
+        new_asset_partitions = instance_queryer.get_asset_partitions_updated_after_cursor(
+            asset_key=asset_key,
+            asset_partitions=None,
+            after_cursor=latest_storage_id,
+        )
+        if not new_asset_partitions:
             continue
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
-        latest_record = instance_queryer.get_latest_materialization_record(
-            asset_key, after_cursor=latest_storage_id
-        )
-        if latest_record is None:
-            continue
-
         if partitions_def is None:
+            latest_record = check.not_none(
+                instance_queryer.get_latest_materialization_or_observation_record(
+                    AssetKeyPartitionKey(asset_key)
+                )
+            )
             for child in asset_graph.get_children_partitions(
                 dynamic_partitions_store=instance_queryer,
                 current_time=instance_queryer.evaluation_time,
@@ -518,20 +505,17 @@ def find_parent_materialized_asset_partitions(
                 ):
                     result_asset_partitions.add(child)
         else:
-            # for partitioned assets, we want the set of all asset partitions that have been
-            # materialized since the latest_storage_id, not just the most recent
-            materialized_partitions = [
-                partition_key
-                for partition_key in instance_queryer.get_materialized_partitions(
-                    asset_key, after_cursor=latest_storage_id
-                )
-                if partitions_def.has_partition_key(
-                    partition_key, dynamic_partitions_store=instance_queryer
-                )
-            ]
-
             partitions_subset = partitions_def.empty_subset().with_partition_keys(
-                materialized_partitions
+                [
+                    asset_partition.partition_key
+                    for asset_partition in new_asset_partitions
+                    if asset_partition.partition_key is not None
+                    and partitions_def.has_partition_key(
+                        asset_partition.partition_key,
+                        dynamic_partitions_store=instance_queryer,
+                        current_time=instance_queryer.evaluation_time,
+                    )
+                ]
             )
             for child in asset_graph.get_children(asset_key):
                 child_partitions_def = asset_graph.get_partitions_def(child)
@@ -561,12 +545,12 @@ def find_parent_materialized_asset_partitions(
                         # different partition keys
                         elif (
                             child_partitions_def != partitions_def
-                            or child_partition not in materialized_partitions
+                            or child_partition not in partitions_subset
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
                             latest_partition_record = check.not_none(
-                                instance_queryer.get_latest_materialization_record(
+                                instance_queryer.get_latest_materialization_or_observation_record(
                                     AssetKeyPartitionKey(asset_key, child_partition),
                                     after_cursor=latest_storage_id,
                                 )
@@ -576,8 +560,16 @@ def find_parent_materialized_asset_partitions(
                             ):
                                 result_asset_partitions.add(child_asset_partition)
 
-        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
-            result_latest_storage_id = latest_record.storage_id
+        asset_latest_storage_id = (
+            instance_queryer.get_latest_materialization_or_observation_storage_id(
+                AssetKeyPartitionKey(asset_key)
+            )
+        )
+        if (
+            result_latest_storage_id is None
+            or (asset_latest_storage_id or 0) > result_latest_storage_id
+        ):
+            result_latest_storage_id = asset_latest_storage_id
 
     return (result_asset_partitions, result_latest_storage_id)
 
@@ -617,17 +609,21 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.get_latest_materialization_record(asset_partition, None):
+                if instance_queryer.asset_partition_has_materialization_or_observation(
+                    asset_partition
+                ):
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)
         else:
             if not cursor.was_previously_materialized_or_requested(asset_key):
-                asset = AssetKeyPartitionKey(asset_key)
-                if instance_queryer.get_latest_materialization_record(asset, None):
+                asset_partition = AssetKeyPartitionKey(asset_key)
+                if instance_queryer.asset_partition_has_materialization_or_observation(
+                    asset_partition
+                ):
                     newly_materialized_root_asset_keys.add(asset_key)
                 else:
-                    never_materialized_or_requested.add(asset)
+                    never_materialized_or_requested.add(asset_partition)
 
     return (
         never_materialized_or_requested,
@@ -698,12 +694,9 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             return False
         # the policy does not allow for materializing missing partitions and it's missing
-        elif not auto_materialize_policy.on_missing and not instance_queryer.materialization_exists(
-            candidate
-        ):
-            return False
-        elif not asset_graph.partition_maps_to_valid_parents(
-            instance_queryer, evaluation_time, candidate
+        elif (
+            not auto_materialize_policy.on_missing
+            and not instance_queryer.asset_partition_has_materialization_or_observation(candidate)
         ):
             return False
 
@@ -732,16 +725,12 @@ def determine_asset_partitions_to_auto_materialize(
     def parents_will_be_reconciled(
         asset_graph: AssetGraph,
         candidate: AssetKeyPartitionKey,
+        parent_partitions_result: ParentsPartitionsResult,
     ) -> bool:
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-        for parent in asset_graph.get_parents_partitions(
-            instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
-        ):
-            if instance_queryer.is_reconciled(
-                asset_partition=parent,
-                asset_graph=asset_graph,
-            ):
+        for parent in parent_partitions_result.parent_partitions:
+            if instance_queryer.is_reconciled(asset_partition=parent):
                 continue
 
             if not (
@@ -779,13 +768,15 @@ def determine_asset_partitions_to_auto_materialize(
         conditions = set()
         if auto_materialize_policy is None:
             return conditions
-        elif auto_materialize_policy.on_missing and not instance_queryer.materialization_exists(
-            asset_partition=candidate
+        elif (
+            auto_materialize_policy.on_missing
+            and not instance_queryer.asset_partition_has_materialization_or_observation(
+                asset_partition=candidate
+            )
         ):
             conditions.add(MissingAutoMaterializeCondition())
         elif auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
-            asset_partition=candidate,
-            asset_graph=asset_graph,
+            asset_partition=candidate
         ):
             conditions.add(ParentMaterializedAutoMaterializeCondition())
 
@@ -823,9 +814,29 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             return False
 
+        parent_partitions_by_candidate = {
+            candidate: asset_graph.get_parents_partitions(
+                instance_queryer, evaluation_time, candidate.asset_key, candidate.partition_key
+            )
+            for candidate in candidates_unit
+        }
+        if any(
+            # do not reconcile candidate if have invalid parents
+            len(
+                parent_partitions_by_candidate[
+                    candidate
+                ].required_but_nonexistent_parents_partitions
+            )
+            != 0
+            for candidate in candidates_unit
+        ):
+            return False
+
         if all(
             will_be_materialized_for_freshness(candidate)
-            or parents_will_be_reconciled(asset_graph, candidate)
+            or parents_will_be_reconciled(
+                asset_graph, candidate, parent_partitions_by_candidate[candidate]
+            )
             for candidate in candidates_unit
         ):
             unit_conditions = set().union(
@@ -866,208 +877,6 @@ def determine_asset_partitions_to_auto_materialize(
     )
 
 
-def get_execution_period_for_policy(
-    freshness_policy: FreshnessPolicy,
-    effective_data_time: Optional[datetime.datetime],
-    current_time: datetime.datetime,
-) -> pendulum.Period:
-    if effective_data_time is None:
-        return pendulum.Period(start=current_time, end=current_time)
-
-    if freshness_policy.cron_schedule:
-        tick_iterator = cron_string_iterator(
-            start_timestamp=current_time.timestamp(),
-            cron_string=freshness_policy.cron_schedule,
-            execution_timezone=freshness_policy.cron_schedule_timezone,
-        )
-
-        while True:
-            # find the next tick tick that requires data after the current effective data time
-            # (usually, this will be the next tick)
-            tick = next(tick_iterator)
-            required_data_time = tick - freshness_policy.maximum_lag_delta
-            if effective_data_time is None or effective_data_time < required_data_time:
-                return pendulum.Period(start=required_data_time, end=tick)
-
-    else:
-        return pendulum.Period(
-            # we don't want to execute this too frequently
-            start=effective_data_time + 0.9 * freshness_policy.maximum_lag_delta,
-            end=max(effective_data_time + freshness_policy.maximum_lag_delta, current_time),
-        )
-
-
-def get_execution_period_and_conditions_for_policies(
-    local_policy: Optional[FreshnessPolicy],
-    policies: AbstractSet[FreshnessPolicy],
-    effective_data_time: Optional[datetime.datetime],
-    current_time: datetime.datetime,
-) -> Tuple[Optional[pendulum.Period], AbstractSet[AutoMaterializeCondition]]:
-    """Determines a range of times for which you can kick off an execution of this asset to solve
-    the most pressing constraint, alongside a maximum number of additional constraints.
-    """
-    merged_period = None
-    conditions = set()
-    for period, policy in sorted(
-        (
-            (get_execution_period_for_policy(policy, effective_data_time, current_time), policy)
-            for policy in policies
-        ),
-        # sort execution periods by most pressing
-        key=lambda pp: pp[0].end,
-    ):
-        if merged_period is None:
-            merged_period = period
-        elif period.start <= merged_period.end:
-            merged_period = pendulum.Period(
-                start=max(period.start, merged_period.start),
-                end=period.end,
-            )
-        else:
-            break
-
-        if policy == local_policy:
-            conditions.add(FreshnessAutoMaterializeCondition())
-        else:
-            conditions.add(DownstreamFreshnessAutoMaterializeCondition())
-
-    return merged_period, conditions
-
-
-def determine_asset_partitions_to_auto_materialize_for_freshness(
-    data_time_resolver: "CachingDataTimeResolver",
-    asset_graph: AssetGraph,
-    target_asset_keys: AbstractSet[AssetKey],
-    target_asset_keys_and_parents: AbstractSet[AssetKey],
-    current_time: datetime.datetime,
-) -> Mapping[AssetKeyPartitionKey, Set[AutoMaterializeCondition]]:
-    """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
-    FreshnessPolicies, as well as a set of AssetKeyPartitionKeys which will be materialized at
-    some point within the plan window.
-
-    Attempts to minimize the total number of asset executions.
-    """
-    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-
-    # now we have a full set of constraints, we can find solutions for them as we move down
-    conditions_by_asset_partition: Mapping[
-        AssetKeyPartitionKey, Set[AutoMaterializeCondition]
-    ] = defaultdict(set)
-    waiting_to_materialize: Set[AssetKey] = set()
-    expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
-
-    for level in asset_graph.toposort_asset_keys():
-        for key in level:
-            if (
-                key not in target_asset_keys_and_parents
-                or key not in asset_graph.non_source_asset_keys
-                or not asset_graph.get_downstream_freshness_policies(asset_key=key)
-            ):
-                continue
-
-            parents = asset_graph.get_parents(key)
-
-            if any(p in waiting_to_materialize for p in parents):
-                # we can't materialize this asset yet, because we're waiting on a parent
-                waiting_to_materialize.add(key)
-                continue
-
-            # if we're going to materialize a parent of this asset that's in a different repository,
-            # then we need to wait
-            if isinstance(asset_graph, ExternalAssetGraph):
-                repo = asset_graph.get_repository_handle(key)
-                if any(
-                    AssetKeyPartitionKey(p, None) in conditions_by_asset_partition
-                    and asset_graph.get_repository_handle(p) is not repo
-                    for p in parents
-                ):
-                    waiting_to_materialize.add(key)
-                    continue
-
-            # figure out the current contents of this asset with respect to its constraints
-            current_data_time = data_time_resolver.get_current_data_time(key, current_time)
-
-            # figure out the expected data time of this asset if it were to be executed on this tick
-            # for root assets, this would just be the current time
-            expected_data_time = (
-                min(
-                    (
-                        cast(datetime.datetime, expected_data_time_by_key[k])
-                        for k in parents
-                        if k in expected_data_time_by_key
-                        and expected_data_time_by_key[k] is not None
-                    ),
-                    default=None,
-                )
-                if asset_graph.has_non_source_parents(key)
-                else current_time
-            )
-
-            # currently, freshness logic has no effect on partitioned assets
-            if key in target_asset_keys and not asset_graph.is_partitioned(key):
-                # calculate the data times you would expect after all currently-executing runs
-                # were to successfully complete
-                in_progress_data_time = data_time_resolver.get_in_progress_data_time(
-                    key, current_time
-                )
-
-                # calculate the data times you would have expected if the most recent run succeeded
-                failed_data_time = data_time_resolver.get_ignored_failure_data_time(
-                    key, current_time
-                )
-
-                effective_data_time = max(
-                    filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
-                    default=None,
-                )
-
-                # figure out a time period that you can execute this asset within to solve a maximum
-                # number of constraints
-                (
-                    execution_period,
-                    execution_conditions,
-                ) = get_execution_period_and_conditions_for_policies(
-                    local_policy=asset_graph.freshness_policies_by_key.get(key),
-                    policies=asset_graph.get_downstream_freshness_policies(asset_key=key),
-                    effective_data_time=effective_data_time,
-                    current_time=current_time,
-                )
-            else:
-                execution_period, execution_conditions = None, set()
-
-            # a key may already be in conditions by the time we get here if a required
-            # neighbor was selected to be updated
-            asset_partition = AssetKeyPartitionKey(key, None)
-            if asset_partition in conditions_by_asset_partition and all(
-                condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-                for condition in conditions_by_asset_partition[asset_partition]
-            ):
-                expected_data_time_by_key[key] = expected_data_time
-            elif (
-                execution_period is not None
-                and execution_period.start <= current_time
-                and expected_data_time is not None
-                and expected_data_time >= execution_period.start
-                and all(
-                    condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-                    for condition in execution_conditions
-                )
-            ):
-                expected_data_time_by_key[key] = expected_data_time
-                conditions_by_asset_partition[asset_partition].update(execution_conditions)
-                # all required neighbors will be updated on the same tick
-                for required_key in asset_graph.get_required_multi_asset_keys(key):
-                    conditions_by_asset_partition[
-                        (AssetKeyPartitionKey(required_key, None))
-                    ].update(execution_conditions)
-            else:
-                # if downstream assets consume this, they should expect data time equal to the
-                # current time for this asset, as it's not going to be updated
-                expected_data_time_by_key[key] = current_data_time
-
-    return conditions_by_asset_partition
-
-
 def reconcile(
     asset_graph: AssetGraph,
     target_asset_keys: AbstractSet[AssetKey],
@@ -1083,7 +892,9 @@ def reconcile(
 
     current_time = pendulum.now("UTC")
 
-    instance_queryer = CachingInstanceQueryer(instance=instance, evaluation_time=current_time)
+    instance_queryer = CachingInstanceQueryer(
+        instance=instance, asset_graph=asset_graph, evaluation_time=current_time
+    )
 
     target_parent_asset_keys = {
         parent
@@ -1094,16 +905,21 @@ def reconcile(
 
     # fetch some data in advance to batch some queries
     target_asset_keys_and_parents_list = list(target_asset_keys_and_parents)
-    instance_queryer.prefetch_asset_records(target_asset_keys_and_parents_list)
+    instance_queryer.prefetch_asset_records(
+        [key for key in target_asset_keys_and_parents_list if not asset_graph.is_source(key)]
+    )
     instance_queryer.prefetch_asset_partition_counts(
-        target_asset_keys_and_parents_list, after_cursor=cursor.latest_storage_id
+        [
+            key
+            for key in target_asset_keys_and_parents_list
+            if asset_graph.is_partitioned(key) and not asset_graph.is_source(key)
+        ],
+        after_cursor=cursor.latest_storage_id,
     )
 
     conditions_by_asset_partition_for_freshness = (
         determine_asset_partitions_to_auto_materialize_for_freshness(
-            data_time_resolver=CachingDataTimeResolver(
-                instance_queryer=instance_queryer, asset_graph=asset_graph
-            ),
+            data_time_resolver=CachingDataTimeResolver(instance_queryer=instance_queryer),
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             target_asset_keys_and_parents=target_asset_keys_and_parents,

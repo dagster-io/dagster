@@ -202,6 +202,7 @@ def test_assets_cloud() -> None:
         destination_tables=["foo", "bar"],
         normalization_tables={"bar": {"bar_baz", "bar_qux"}},
         asset_key_prefix=["some", "prefix"],
+        group_name="foo",
     )
 
     ab_job = build_assets_job(
@@ -242,4 +243,10 @@ def test_assets_cloud() -> None:
             AssetKey(["some", "prefix", "bar"]),
             AssetKey(["some", "prefix", "bar_baz"]),
             AssetKey(["some", "prefix", "bar_qux"]),
+        }
+        assert ab_assets[0].group_names_by_key == {
+            AssetKey(["some", "prefix", "foo"]): "foo",
+            AssetKey(["some", "prefix", "bar"]): "foo",
+            AssetKey(["some", "prefix", "bar_baz"]): "foo",
+            AssetKey(["some", "prefix", "bar_qux"]): "foo",
         }

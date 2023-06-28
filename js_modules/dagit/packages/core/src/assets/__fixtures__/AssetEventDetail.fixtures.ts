@@ -287,6 +287,7 @@ export const buildAssetPartitionDetailMock = (
       assetNodeOrError: {
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset_1"]',
+        opNames: ['a_different_step'],
         assetMaterializations: [MaterializationEventFull, MaterializationEventOlder],
         assetObservations: [
           BasicObservationEvent,

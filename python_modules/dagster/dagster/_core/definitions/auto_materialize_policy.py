@@ -39,12 +39,11 @@ class AutoMaterializePolicy(
     - it is missing
     - it has a freshness policy that requires more up-to-date data
     - any of its descendants have a freshness policy that require more up-to-date data
-    - any of its parent assets / partitions have been updated more recently than it has
+    - any of its parent assets / partitions have newer data
 
     For an asset / partition of an asset with a _lazy_ policy to be auto-materialized, at least one
     of the following must be true:
 
-    - it is missing
     - it has a freshness policy that requires more up-to-date data
     - any of its descendants have a freshness policy that require more up-to-date data
 
@@ -52,8 +51,7 @@ class AutoMaterializePolicy(
     of the following are true:
 
     - any of its parent assets / partitions are missing
-    - any of its ancestor assets / partitions have ancestors that have been updated more recently
-        than they have
+    - any of its ancestor assets / partitions have ancestors of their own with newer data
 
     Lastly, the `max_materializations_per_minute` parameter, which is set to 1 by default,
     rate-limits the number of auto-materializations that can occur for a particular asset within
@@ -129,7 +127,7 @@ class AutoMaterializePolicy(
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
-            on_missing=True,
+            on_missing=False,
             on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,

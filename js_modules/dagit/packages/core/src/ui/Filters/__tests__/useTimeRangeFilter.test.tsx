@@ -26,7 +26,6 @@ jest.mock('react-dates', () => {
 const mockFilterProps = {
   name: 'Test Filter',
   icon: 'date' as IconName,
-  timezone: 'UTC',
   initialState: [null, null] as TimeRangeState,
 };
 

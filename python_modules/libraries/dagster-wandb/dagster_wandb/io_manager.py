@@ -271,6 +271,10 @@ class ArtifactsIOManager(IOManager):
                 if context.has_partition_key:
                     artifact_name = f"{artifact_name}.{context.partition_key}"
 
+                # We replace the | character with - because it is not allowed in artifact names
+                # The | character is used in multi-dimensional partition keys
+                artifact_name = str(artifact_name).replace("|", "-")
+
                 # Creates an artifact to hold the obj
                 artifact = self.wandb.Artifact(
                     name=artifact_name,
