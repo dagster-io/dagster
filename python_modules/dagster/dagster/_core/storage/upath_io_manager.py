@@ -247,18 +247,24 @@ class UPathIOManager(MemoizableIOManager):
         objs = {}
 
         for partition_key in context.asset_partition_keys:
-            objs[partition_key] = load_partition(partition_key)
+            obj = load_partition(partition_key)
+            if obj is not None:  # in case some partitions were skipped
+                objs[partition_key] = obj
 
         if asyncio.iscoroutine(next(iter(objs.values()))):
             # load_from_path returns a coroutine, so we need to await the results
-            async def collect():
-                return await asyncio.gather(*objs.values())
 
-            awaited_objects = asyncio.run(collect())
+            async def collect():
+                results = await asyncio.gather(*[obj for obj in objs.values()])
+
+                return results
+
+            awaited_objects = asyncio.get_event_loop().run_until_complete(collect())
 
             return {
                 partition_key: awaited_object
                 for partition_key, awaited_object in zip(objs, awaited_objects)
+                if awaited_object is not None
             }
         else:
             return objs
@@ -326,7 +332,7 @@ class UPathIOManager(MemoizableIOManager):
         The returned `fsspec` FileSystem will have async IO methods.
         https://filesystem-spec.readthedocs.io/en/latest/async.html.
         """
-        if isinstance(path, Path):
+        if isinstance(path, Path) and not isinstance(path, UPath):
             try:
                 from morefs.asyn_local import AsyncLocalFileSystem
 
