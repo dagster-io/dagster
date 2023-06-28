@@ -7,3 +7,5 @@ MANHATTAN_STATS_FILE_PATH = "data/staging/manhattan_stats.geojson"
 MANHATTAN_MAP_FILE_PATH = "data/outputs/manhattan_map.png"
 
 REQUEST_DESTINATION_TEMPLATE_FILE_PATH = "data/outputs/{}.png"
+
+DATE_FORMAT = "%Y-%m-%d"

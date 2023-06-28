@@ -7,15 +7,15 @@ setup(
         "dagster==1.3.*",
         "dagster-cloud",
         "dagster-dbt",
+        "dagster-duckdb",
         "dagster-gcp",
         "dbt-duckdb",
         "geopandas",
         "kaleido",
         "pandas",
         "plotly",
-        "shapely",
         "psycopg2-binary",
-        "dagster-duckdb"
+        "shapely"
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
