@@ -16,6 +16,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -382,6 +383,39 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             of_type=DagsterEventType.ASSET_MATERIALIZATION,
         ).records
         return set(cast(AssetKey, record.asset_key) for record in materializations)
+
+    ####################
+    # BACKFILLS
+    ####################
+
+    @cached_method
+    def get_active_backfill_target_asset_graph_subset(self) -> AssetGraphSubset:
+        """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
+        an active asset backfill.
+        """
+        from dagster._core.execution.asset_backfill import AssetBackfillData
+        from dagster._core.execution.backfill import BulkActionStatus
+
+        asset_backfills = [
+            backfill
+            for backfill in self.instance.get_backfills(status=BulkActionStatus.REQUESTED)
+            if backfill.is_asset_backfill
+        ]
+
+        result = AssetGraphSubset(self.asset_graph)
+        for asset_backfill in asset_backfills:
+            if asset_backfill.serialized_asset_backfill_data is None:
+                check.failed("Asset backfill missing serialized_asset_backfill_data")
+
+            asset_backfill_data = AssetBackfillData.from_serialized(
+                asset_backfill.serialized_asset_backfill_data,
+                self.asset_graph,
+                asset_backfill.backfill_timestamp,
+            )
+
+            result |= asset_backfill_data.target_subset
+
+        return result
 
     ####################
     # PARTITION COUNTS
