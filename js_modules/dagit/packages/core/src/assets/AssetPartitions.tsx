@@ -343,7 +343,7 @@ function sortResults(results: string[], sortType: SortType) {
     case SortType.REVERSE_ORIGINAL:
       return [...results].reverse();
     case SortType.ALPHABETICAL:
-      return results.sort(alphabeticalCollator.compare);
+      return [...results].sort(alphabeticalCollator.compare);
     case SortType.REVERSE_ALPHABETICAL:
       return [...results].sort((a, b) => -alphabeticalCollator.compare(a, b));
   }

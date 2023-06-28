@@ -180,7 +180,7 @@ describe('AssetPartitions', () => {
     });
 
     await userEvent.click(screen.getByTestId('sort-0'));
-    await userEvent.click(screen.getByTestId('sort-reverse-original'));
+    await userEvent.click(screen.getByTestId('sort-original'));
 
     await waitFor(() => {
       expect(
@@ -196,7 +196,7 @@ describe('AssetPartitions', () => {
 
     await userEvent.click(screen.getByTestId('sort-1'));
     await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-reverse-original'));
+      await userEvent.click(screen.getByTestId('sort-original'));
     });
     await waitFor(() => {
       expect(
