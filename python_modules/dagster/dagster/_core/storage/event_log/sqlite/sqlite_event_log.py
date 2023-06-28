@@ -1,3 +1,4 @@
+import contextlib
 import glob
 import logging
 import os
@@ -379,7 +380,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 and not filename.endswith(f"{INDEX_SHARD_NAME}.db-wal")
                 and not filename.endswith(f"{INDEX_SHARD_NAME}.db-shm")
             ):
-                os.unlink(filename)
+                with contextlib.suppress(FileNotFoundError):
+                    os.unlink(filename)
 
         self._initialized_dbs = set()
         self._wipe_index()
