@@ -1,8 +1,9 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Icon, Mono} from '@dagster-io/ui';
+import {Box, Button, Colors, Dialog, DialogFooter, Icon, Mono, Spinner} from '@dagster-io/ui';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {DagsterEventType} from '../graphql/types';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
@@ -15,21 +16,50 @@ import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 
+export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: string[]}) {
+  const [showingLogs, setShowingLogs] = React.useState<{runId: string; stepKeys: string[]} | null>(
+    null,
+  );
+
+  // Note: This hook captures the runId + stepKeys in state when you click the button and then passes
+  // those values to the modal. This ensures that the modal is "stable" while it's open, even if
+  // the runId passed to the hook changes or becomes undefined. (eg: "Currently materializing" banner)
+
+  return {
+    dialog: (
+      <StepLogsDialog
+        runId={showingLogs?.runId}
+        stepKeys={showingLogs?.stepKeys || []}
+        onClose={() => setShowingLogs(null)}
+      />
+    ),
+    button:
+      runId && stepKeys ? (
+        <Button
+          small
+          icon={<Icon name="wysiwyg" />}
+          onClick={() => setShowingLogs({runId, stepKeys})}
+        >
+          View logs
+        </Button>
+      ) : undefined,
+  };
+}
+
 export const StepLogsDialog: React.FC<{
-  runId: string;
+  runId?: string;
   stepKeys: string[];
-  isOpen: boolean;
   onClose: () => void;
-}> = ({runId, stepKeys, isOpen, onClose}) => {
+}> = ({runId, stepKeys, onClose}) => {
   return (
     <Dialog
-      isOpen={isOpen}
+      isOpen={!!runId}
       style={{width: '80vw'}}
       canOutsideClickClose
       canEscapeKeyClose
       onClose={onClose}
     >
-      {isOpen ? (
+      {runId ? (
         <LogsProvider key={runId} runId={runId}>
           {(logs) => (
             <RunMetadataProvider logs={logs}>
@@ -67,13 +97,23 @@ export const StepLogsModalContent: React.FC<{
   const supportsCapturedLogs = useSupportsCapturedLogs();
   const [logType, setComputeLogType] = useState<LogType>(LogType.structured);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
+
+  const firstLogForStep = logs.allNodes.find(
+    (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeys.includes(l.stepKey),
+  );
+  const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;
+
   const [filter, setFilter] = useState<LogFilter>({
-    hideNonMatches: true,
-    focusedTime: 0,
+    hideNonMatches: false,
+    focusedTime: firstLogForStepTime,
     levels: Object.fromEntries(DefaultLogLevels.map((l) => [l, true])),
-    logQuery: [],
+    logQuery: stepKeys.map((stepKey) => ({token: 'step', value: stepKey})),
     sinceTime: 0,
   });
+
+  React.useEffect(() => {
+    setFilter((filter) => ({...filter, focusedTime: firstLogForStepTime}));
+  }, [firstLogForStepTime]);
 
   const {
     computeLogFileKey,
@@ -84,17 +124,6 @@ export const StepLogsModalContent: React.FC<{
     stepKeys,
     selectionStepKeys: stepKeys,
   });
-
-  // The user can add MORE filters in the filter input, but we truncate the logs
-  // to just the ones for the modal's step keys so it's not possible to un-hide them by
-  // clearing the filter input. This also makes them appear white by default, rather than
-  // being highlighted as "filter matches".
-  const logsFilteredToSteps = React.useMemo(() => {
-    return {
-      ...logs,
-      allNodes: logs.allNodes.filter((node) => node.stepKey && stepKeys.includes(node.stepKey)),
-    };
-  }, [logs, stepKeys]);
 
   return (
     <LogsContainer>
@@ -112,6 +141,7 @@ export const StepLogsModalContent: React.FC<{
       >
         <Link to={`/runs/${runId}?stepKeys=${stepKeys}`}>
           <Box flex={{gap: 4, alignItems: 'center'}}>
+            {!metadata.exitedAt && <Spinner purpose="body-text" />}
             View Run <Mono>{titleForRun({id: runId})}</Mono>
             <Icon name="open_in_new" color={Colors.Link} />
           </Box>
@@ -136,7 +166,7 @@ export const StepLogsModalContent: React.FC<{
         )
       ) : (
         <LogsScrollingTable
-          logs={logsFilteredToSteps}
+          logs={logs}
           filter={filter}
           filterStepKeys={stepKeys}
           filterKey={`${JSON.stringify(filter)}`}

@@ -189,7 +189,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     return (
       <AssetEvents
         assetKey={assetKey}
-        assetHasDefinedPartitions={!!definition?.partitionDefinition}
+        assetNode={definition}
         dataRefreshHint={dataRefreshHint}
         params={params}
         paramsTimeWindowOnly={!!params.asOf}

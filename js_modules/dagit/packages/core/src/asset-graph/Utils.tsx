@@ -203,7 +203,7 @@ export const buildLiveDataForNode = (
     lastObservation,
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
-    stepKey: assetNode.opNames[0]!,
+    stepKey: stepKeyForAsset(assetNode),
     freshnessInfo: assetNode.freshnessInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
@@ -218,6 +218,13 @@ export function tokenForAssetKey(key: {path: string[]}) {
 
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
+}
+
+export function stepKeyForAsset(definition: {opNames: string[]}) {
+  // Used for linking to the run with this step highlighted. We only support highlighting
+  // a single step, so just use the first one.
+  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
+  return firstOp || '';
 }
 
 export const itemWithAssetKey = (key: {path: string[]}) => {
