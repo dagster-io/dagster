@@ -379,8 +379,15 @@ def test_bad_types():
 
     not_an_asset = NotAnAsset()
 
-    @asset(deps=[not_an_asset])
-    def my_asset():
-        return None
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot pass an instance of type <class"
+            " 'dagster_tests.asset_defs_tests.test_asset_deps.test_bad_types.<locals>.NotAnAsset'>"
+            " to deps parameter of @asset"
+        ),
+    ):
 
-    materialize([my_asset], resources={"io_manager": TestingIOManager()})
+        @asset(deps=[not_an_asset])
+        def my_asset():
+            return None

@@ -1040,8 +1040,18 @@ def _type_check_deps_and_non_argument_deps(
         Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
     ] = None
     if deps is not None:
-        check.list_param(deps, "deps", of_type=(CoercibleToAssetKey, AssetsDefinition, SourceAsset))
         for dep in deps:
+            # this gnarly type check is because we can't do isinstance(CoercibleToAssetKey) because CoercibleToAssetKey contains a List[str] subtype
+            # and isinstance breaks checking for List[str]. So split it out into two checks
+            if not (
+                isinstance(dep, (AssetsDefinition, SourceAsset, AssetKey, str))
+                or isinstance(dep, list)
+                and check.list_param(dep, "deps item", of_type=str)
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
+                    " Instead, pass AssetsDefinitions or AssetKeys."
+                )
             if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
                 raise DagsterInvalidDefinitionError(
                     "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
