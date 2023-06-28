@@ -705,7 +705,7 @@ def determine_asset_partitions_to_auto_materialize(
                     and (
                         not isinstance(asset_graph, ExternalAssetGraph)
                         or asset_graph.get_repository_handle(candidate.asset_key)
-                        != asset_graph.get_repository_handle(parent.asset_key)
+                        == asset_graph.get_repository_handle(parent.asset_key)
                     )
                 )
                 and
