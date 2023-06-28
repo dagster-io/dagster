@@ -85,7 +85,7 @@ def reindex_command():
 
 @instance_cli.group(name="concurrency")
 def concurrency_cli():
-    """Commands for working with the instance-wide op concurrency."""
+    """Commands for working with the instance-wide op concurrency (Experimental)."""
 
 
 @concurrency_cli.command(name="get", help="Get op concurrency limits")
