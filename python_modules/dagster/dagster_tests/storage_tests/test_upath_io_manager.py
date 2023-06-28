@@ -1,3 +1,4 @@
+import inspect
 import json
 import pickle
 from datetime import datetime, timedelta
@@ -441,8 +442,15 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
 
         assert path.exists(), f"Path {path} does not exist, is the test written correctly?"
 
-        file = await fs.open_async(str(path), "wb")
-        data = await file.read()
+        if inspect.iscoroutinefunction(fs.open_async):
+            # S3FileSystem has this interface
+            file = await fs.open_async(str(path), "rb")
+            data = await file.read()
+        else:
+            # AsyncLocalFileSystem has this interface
+            async with fs.open_async(str(path), "rb") as file:
+                data = await file.read()
+
         return json.loads(data)
 
 
@@ -467,15 +475,12 @@ def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
     assert result.output_for_node("partitioned_asset") == "a"
 
 
-@pytest.mark.skip(
-    reason="needs S3 access to test, currently the test doesn't work with local filesystem"
-)
 def test_upath_io_manager_async_multiple_time_partitions(
-    s3_path: UPath,
+    tmp_path: Path,
     daily: DailyPartitionsDefinition,
     start: datetime,
 ):
-    manager = AsyncJSONIOManager(base_dir=str(s3_path))
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
 
     @asset(partitions_def=daily, io_manager_def=manager)
     def upstream_asset(context: AssetExecutionContext) -> str:

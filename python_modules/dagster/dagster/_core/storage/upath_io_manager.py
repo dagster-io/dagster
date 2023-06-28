@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Union
@@ -246,16 +247,24 @@ class UPathIOManager(MemoizableIOManager):
 
         objs = {}
 
-        for partition_key in context.asset_partition_keys:
-            obj = load_partition(partition_key)
-            if obj is not None:  # in case some partitions were skipped
-                objs[partition_key] = obj
-
-        if asyncio.iscoroutine(next(iter(objs.values()))):
+        if not inspect.iscoroutinefunction(self.load_from_path):
+            for partition_key in context.asset_partition_keys:
+                obj = load_partition(partition_key)
+                if obj is not None:  # in case some partitions were skipped
+                    objs[partition_key] = obj
+            return objs
+        else:
             # load_from_path returns a coroutine, so we need to await the results
 
             async def collect():
-                results = await asyncio.gather(*[obj for obj in objs.values()])
+                loop = asyncio.get_running_loop()
+
+                tasks = []
+
+                for partition_key in context.asset_partition_keys:
+                    tasks.append(loop.create_task(load_partition(partition_key)))
+
+                results = await asyncio.gather(*tasks)
 
                 return results
 
@@ -263,11 +272,11 @@ class UPathIOManager(MemoizableIOManager):
 
             return {
                 partition_key: awaited_object
-                for partition_key, awaited_object in zip(objs, awaited_objects)
+                for partition_key, awaited_object in zip(
+                    context.asset_partition_keys, awaited_objects
+                )
                 if awaited_object is not None
             }
-        else:
-            return objs
 
     def load_input(self, context: InputContext) -> Union[Any, Dict[str, Any]]:
         # If no asset key, we are dealing with an op output which is always non-partitioned
