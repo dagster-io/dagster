@@ -247,8 +247,9 @@ export const AssetPartitions: React.FC<Props> = ({
                         active={SortType.ORIGINAL === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
-                            sorts[idx] = SortType.ORIGINAL;
-                            return [...sorts];
+                            const copy = [...sorts];
+                            copy[idx] = SortType.ORIGINAL;
+                            return copy;
                           });
                         }}
                         data-testId={testId('sort-original')}
@@ -258,8 +259,9 @@ export const AssetPartitions: React.FC<Props> = ({
                         active={SortType.REVERSE_ORIGINAL === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
-                            sorts[idx] = SortType.REVERSE_ORIGINAL;
-                            return [...sorts];
+                            const copy = [...sorts];
+                            copy[idx] = SortType.REVERSE_ORIGINAL;
+                            return copy;
                           });
                         }}
                         data-testId={testId('sort-reverse-original')}
@@ -269,8 +271,9 @@ export const AssetPartitions: React.FC<Props> = ({
                         active={SortType.ALPHABETICAL === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
-                            sorts[idx] = SortType.ALPHABETICAL;
-                            return [...sorts];
+                            const copy = [...sorts];
+                            copy[idx] = SortType.ALPHABETICAL;
+                            return copy;
                           });
                         }}
                         data-testId={testId('sort-alphabetical')}
@@ -280,8 +283,9 @@ export const AssetPartitions: React.FC<Props> = ({
                         active={SortType.REVERSE_ALPHABETICAL === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
-                            sorts[idx] = SortType.REVERSE_ALPHABETICAL;
-                            return [...sorts];
+                            const copy = [...sorts];
+                            copy[idx] = SortType.REVERSE_ALPHABETICAL;
+                            return [...copy];
                           });
                         }}
                         data-testId={testId('sort-reverse-alphabetical')}
@@ -350,10 +354,9 @@ function sortResults(results: string[], sortType: SortType) {
 }
 
 function getSort(sortTypes: Array<SortType>, idx: number, definitionType: PartitionDefinitionType) {
-  return (
-    sortTypes[idx] ||
-    (definitionType === PartitionDefinitionType.TIME_WINDOW
+  return sortTypes[idx] === undefined
+    ? definitionType === PartitionDefinitionType.TIME_WINDOW
       ? SortType.REVERSE_ORIGINAL
-      : SortType.ORIGINAL)
-  );
+      : SortType.ORIGINAL
+    : sortTypes[idx];
 }
