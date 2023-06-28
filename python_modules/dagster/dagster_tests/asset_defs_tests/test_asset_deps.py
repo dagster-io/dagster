@@ -360,3 +360,27 @@ def test_interop():
         resources={"io_manager": TestingIOManager(), "fs_io_manager": FilesystemIOManager()},
     )
     assert res.success
+
+
+def test_non_existent_asset_key():
+    @asset(deps=["not_real"])
+    def my_asset():
+        return None
+
+    res = materialize([my_asset], resources={"io_manager": TestingIOManager()})
+
+    assert res.success
+
+
+def test_bad_types():
+    class NotAnAsset:
+        def __init__(self):
+            self.foo = "bar"
+
+    not_an_asset = NotAnAsset()
+
+    @asset(deps=[not_an_asset])
+    def my_asset():
+        return None
+
+    materialize([my_asset], resources={"io_manager": TestingIOManager()})
