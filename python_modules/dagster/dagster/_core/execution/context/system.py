@@ -1006,6 +1006,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             return None
 
+    def partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
+        return self._partitions_def_for_output(output_name)
+
     def has_asset_partitions_for_output(self, output_name: str) -> bool:
         return self._partitions_def_for_output(output_name) is not None
 
