@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {PartitionDefinition, PartitionDefinitionType, RepositorySelector} from '../graphql/types';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
@@ -358,5 +358,5 @@ function getSort(sortTypes: Array<SortType>, idx: number, definitionType: Partit
     ? definitionType === PartitionDefinitionType.TIME_WINDOW
       ? SortType.REVERSE_ORIGINAL
       : SortType.ORIGINAL
-    : sortTypes[idx];
+    : sortTypes[idx]!;
 }
