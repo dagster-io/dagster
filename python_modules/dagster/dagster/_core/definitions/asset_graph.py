@@ -39,7 +39,6 @@ from .time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
     get_time_partitions_def,
-    has_one_dimension_time_window_partitioning,
 )
 
 if TYPE_CHECKING:
@@ -703,9 +702,8 @@ class ToposortedPriorityQueue:
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            if partitions_def is None or not has_one_dimension_time_window_partitioning(
-                partitions_def
-            ):
+            time_partitions_def = get_time_partitions_def(partitions_def)
+            if time_partitions_def is None:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
@@ -714,7 +712,7 @@ class ToposortedPriorityQueue:
             # sort self dependencies from oldest to newest, as older partitions must exist before
             # new ones can execute
             partition_sort_key = _sort_key_for_time_window_partition(
-                get_time_partitions_def(partitions_def),
+                time_partitions_def,
                 get_time_partition_key(partitions_def, asset_partition.partition_key),
             )
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
