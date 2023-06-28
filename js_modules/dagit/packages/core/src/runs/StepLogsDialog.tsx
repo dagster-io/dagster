@@ -139,9 +139,11 @@ export const StepLogsModalContent: React.FC<{
         filter={filter}
         onSetFilter={setFilter}
       >
-        <Link to={`/runs/${runId}?stepKeys=${stepKeys}`}>
+        <Link to={`/runs/${runId}?stepKeys=${stepKeys}`} style={{marginLeft: 8}}>
           <Box flex={{gap: 4, alignItems: 'center'}}>
-            {!metadata.exitedAt && <Spinner purpose="body-text" />}
+            {!metadata.exitedAt && logType === LogType.structured && (
+              <Spinner purpose="body-text" />
+            )}
             View Run <Mono>{titleForRun({id: runId})}</Mono>
             <Icon name="open_in_new" color={Colors.Link} />
           </Box>
