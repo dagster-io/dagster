@@ -456,7 +456,6 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       useTimeRangeFilter({
         name: 'Created date',
         icon: 'date',
-        timezone: 'UTC',
         initialState: React.useMemo(() => {
           const before = tokens.find((token) => token.token === 'created_date_before');
           const after = tokens.find((token) => token.token === 'created_date_after');
