@@ -31,7 +31,7 @@ from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from upath import UPath
-
+import aiofile
 
 class DummyIOManager(UPathIOManager):
     """This IOManager simply outputs the object path without loading or writing anything."""
@@ -415,3 +415,47 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
     ].event_specific_data
     assert isinstance(handled_output_data, HandledOutputData)
     assert handled_output_data.metadata["length"] == MetadataValue.int(get_length(json_data))
+
+
+@pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
+def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
+    class JSONIOManager(UPathIOManager):
+        extension: str = ".json"
+
+        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+            with path.open("w") as file:
+                json.dump(obj, file)
+
+        async def load_from_path(self, context: InputContext, path: UPath) -> Any:
+            fs = self.get_async_filesystem(path)
+
+            async with fs.open_async(str(path), "wb") as file:
+                data = await file.read()
+
+            return json.loads(data)
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def json_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return JSONIOManager(base_path=cast(UPath, base_path))
+
+    manager = json_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
+
+    @asset(io_manager_def=manager)
+    def non_partitioned_asset(context: OpExecutionContext):
+        return "b"
+
+    result = materialize([non_partitioned_asset])
+
+    assert result.output_for_node("non_partitioned_asset") == "b"
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]), io_manager_def=manager)
+    def partitioned_asset(context: OpExecutionContext):
+        return context.partition_key
+
+    result = materialize([partitioned_asset], partition_key="a")
+
+    assert result.output_for_node("partitioned_asset") == "a"

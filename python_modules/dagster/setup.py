@@ -128,6 +128,7 @@ setup(
             "snapshottest==0.6.0",
             "tox==3.25.0",
             "yamllint",
+            "morefs[asynclocal]"
         ],
         "black": [
             "black[jupyter]==22.12.0",
