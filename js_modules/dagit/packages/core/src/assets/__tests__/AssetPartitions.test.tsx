@@ -171,20 +171,6 @@ describe('AssetPartitions', () => {
       expect(
         getByTestId(
           screen.getByTestId('partitions-date'),
-          'asset-partition-row-2023-02-05-index-0',
-        ),
-      ).toBeVisible();
-      expect(
-        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
-      ).toBeVisible();
-    });
-
-    await userEvent.click(screen.getByTestId('sort-0'));
-
-    await waitFor(() => {
-      expect(
-        getByTestId(
-          screen.getByTestId('partitions-date'),
           'asset-partition-row-2021-05-06-index-0',
         ),
       ).toBeVisible();
@@ -193,12 +179,45 @@ describe('AssetPartitions', () => {
       ).toBeVisible();
     });
 
+    await userEvent.click(screen.getByTestId('sort-0'));
+    await userEvent.click(screen.getByTestId('sort-reverse-original'));
+
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-02-05-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
+
     await userEvent.click(screen.getByTestId('sort-1'));
+    await waitFor(async () => {
+      await userEvent.click(screen.getByTestId('sort-reverse-original'));
+    });
     await waitFor(() => {
       expect(
         getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
       ).toBeVisible();
     });
+
+    await userEvent.click(screen.getByTestId('sort-1'));
+    await waitFor(async () => {
+      await userEvent.click(screen.getByTestId('sort-alphabetical'));
+    });
+    expect(
+      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-FL-index-0'),
+    ).toBeVisible();
+
+    await waitFor(async () => {
+      await userEvent.click(screen.getByTestId('sort-reverse-alphabetical'));
+    });
+    expect(
+      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
+    ).toBeVisible();
   });
 
   it('should set the focused partition when you click a list element', async () => {

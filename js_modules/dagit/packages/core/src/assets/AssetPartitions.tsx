@@ -251,6 +251,7 @@ export const AssetPartitions: React.FC<Props> = ({
                             return [...sorts];
                           });
                         }}
+                        data-testId={testId('sort-original')}
                       />
                       <MenuItem
                         text="Reverse original sorting"
@@ -261,6 +262,7 @@ export const AssetPartitions: React.FC<Props> = ({
                             return [...sorts];
                           });
                         }}
+                        data-testId={testId('sort-reverse-original')}
                       />
                       <MenuItem
                         text="Alphabetical sorting"
@@ -271,6 +273,7 @@ export const AssetPartitions: React.FC<Props> = ({
                             return [...sorts];
                           });
                         }}
+                        data-testId={testId('sort-alphabetical')}
                       />
                       <MenuItem
                         text="Reverse alphabetical sorting"
@@ -281,6 +284,7 @@ export const AssetPartitions: React.FC<Props> = ({
                             return [...sorts];
                           });
                         }}
+                        data-testId={testId('sort-reverse-alphabetical')}
                       />
                     </Menu>
                   }
