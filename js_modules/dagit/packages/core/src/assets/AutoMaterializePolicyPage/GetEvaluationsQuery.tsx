@@ -23,9 +23,17 @@ export const GET_EVALUATIONS_QUERY = gql`
     numSkipped
     numDiscarded
     timestamp
+    runIds
     conditions {
-      ... on AutoMaterializeConditionWithDecisionType {
-        decisionType
+      ...AutoMateralizeWithConditionFragment
+    }
+  }
+
+  fragment AutoMateralizeWithConditionFragment on AutoMaterializeConditionWithDecisionType {
+    decisionType
+    partitionKeysOrError {
+      ... on PartitionKeys {
+        partitionKeys
       }
     }
   }

@@ -2,6 +2,7 @@ import {MockedResponse} from '@apollo/client/testing';
 import {DocumentNode} from 'graphql';
 
 import {
+  AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
   buildAssetNode,
   buildAutoMaterializeAssetEvaluationNeedsMigrationError,
@@ -9,13 +10,15 @@ import {
   buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
   buildFreshnessPolicy,
+  buildMissingAutoMaterializeCondition,
+  buildPartitionKeys,
 } from '../../../graphql/types';
-import {GET_POLICY_INFO_QUERY} from '../AssetAutomaterializePolicyPage';
+import {GET_POLICY_INFO_QUERY} from '../AutomaterializeRightPanel';
 import {GET_EVALUATIONS_QUERY} from '../GetEvaluationsQuery';
 import {
   GetPolicyInfoQuery,
   GetPolicyInfoQueryVariables,
-} from '../types/AssetAutomaterializePolicyPage.types';
+} from '../types/AutomaterializeRightPanel.types';
 import {
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
@@ -170,6 +173,29 @@ export const buildEvaluationRecordsWithoutPartitions = () => {
   ];
 };
 
+export const SINGLE_MATERIALIZE_RECORD_WITH_PARTITIONS = buildAutoMaterializeAssetEvaluationRecord({
+  evaluationId: 0,
+  runIds: ['abcdef12'],
+  conditions: [
+    buildMissingAutoMaterializeCondition({
+      decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+      partitionKeysOrError: buildPartitionKeys({
+        partitionKeys: ['foo'],
+      }),
+    }),
+  ],
+});
+
+export const SINGLE_MATERIALIZE_RECORD_NO_PARTITIONS = buildAutoMaterializeAssetEvaluationRecord({
+  evaluationId: 0,
+  runIds: ['abcdef12'],
+  conditions: [
+    buildMissingAutoMaterializeCondition({
+      decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+    }),
+  ],
+});
+
 export const Evaluations = {
   None: (assetKeyPath: string[]) => {
     return buildGetEvaluationsQuery({
@@ -214,13 +240,7 @@ export const Evaluations = {
       data: {
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
           currentEvaluationId: 1000,
-          records: assetKeyPath
-            ? [
-                buildAutoMaterializeAssetEvaluationRecord({
-                  evaluationId: 0,
-                }),
-              ]
-            : [],
+          records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_WITH_PARTITIONS] : [],
         }),
       },
     });
