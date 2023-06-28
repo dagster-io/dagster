@@ -1,5 +1,57 @@
 # Changelog
 
+# 1.3.12 (core) / 0.19.12 (libraries)
+
+### New
+
+- The `--name` argument is now optional when running `dagster project from-example`.
+- An asset key can now be directly specified via the asset decorator: `@asset(key=...)`.
+- `AssetKey` now has a `with_prefix` method.
+- Significant performance improvements when using `AutoMaterializePolicy`s with large numbers of partitions.
+- `dagster instance migrate` now prints information about changes to the instance database schema.
+- The [`dagster-cloud-agent` helm chart](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent) now supports setting K8s labels on the agent deployment.
+- [ui] Step compute logs are shown under “Last Materialization” in the asset sidebar.
+- [ui] Truncated asset names now show a tooltip when hovered in the asset graph.
+- [ui] The “Propagate changes” button has been removed and replaced with “Materialize Stale and Missing” (which was the “Propagate changes” predecessor).
+
+### Bugfixes
+
+- [ui] Fixed an issue that prevented filtering by date on the job-specific runs tab.
+- [ui] “F” key with modifiers (alt, ctrl, cmd, shift) no longer toggles the filter menu on pages that support filtering.
+- [ui] Fix empty states on Runs table view for individual jobs, to provide links to materialize an asset or launch a run for the specific job, instead of linking to global pages.
+- [ui] When a run is launched from the Launchpad editor while an editor hint popover is open, the popover remained on the page even after navigation. This has been fixed.
+
+- [ui] Fixed an issue where clicking on the zoom controls on a DAG view would close the right detail panel for selected nodes.
+- [ui] Fixed an issue shift-selecting assets with multi-component asset keys.
+- [ui] Fixed an issue with the truncation of the asset stale causes popover.
+- When using a `TimeWindowPartitionMapping` with a `start_offset` or `end_offset` specified, requesting the downstream partitions of a given upstream partition would yield incorrect results. This has been fixed.
+- When using `AutoMaterializePolicy`s with observable source assets, in rare cases, a second run could be launched in response to the same version being observed twice. This has been fixed.
+
+- When passing in `hook_defs` to `define_asset_job`, if any of those hooks had required resource keys, a missing resource error would surface when the hook was executed. This has been fixed.
+- Fixed a typo in a documentation URL in `dagster-duckdb-polars` tests. The URL now works correctly.
+
+### Experimental
+
+- [dagster-dbt] Added methods to `DbtManifest` to fetch asset keys of sources and models: `DbtManifest.get_asset_key_for_model`, `DbtManifest.get_asset_key_for_source`. These methods are utilities for defining python assets as dependencies of dbt assets via `@asset(key=manifest.get_asset_key_for_model(...)`.
+- [dagster-dbt] The use of the `state_path` parameter with `DbtManifestAssetSelection` has been deprecated, and will be removed in the next minor release.
+- Added experimental support for limiting global op/asset concurrency across runs.
+
+### Dependencies
+
+- Upper bound on the `grpcio` package (for `dagster`) has been removed.
+
+### Breaking Changes
+
+- Legacy methods of `PartitionMapping` have been removed. Defining custom partition mappings has been unsupported since 1.1.7.
+
+### Community Contributions
+
+- [dagster-airbyte] Added the ability to specify asset groups to `build_airbyte_assets`. Thanks [@guy-rvvup](https://github.com/guy-rvvup)!
+
+### Documentation
+
+- For Dagster Cloud Serverless users, we’ve added our static IP addresses to [the Serverless docs](https://docs.dagster.io/dagster-cloud/deployment/serverless#whitelisting-dagsters-ip-addresses).
+
 # 1.3.11 (core) / 0.19.11 (libraries)
 
 ### New
