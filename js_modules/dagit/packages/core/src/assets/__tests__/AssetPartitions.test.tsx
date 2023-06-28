@@ -171,7 +171,7 @@ describe('AssetPartitions', () => {
       expect(
         getByTestId(
           screen.getByTestId('partitions-date'),
-          'asset-partition-row-2021-05-06-index-0',
+          'asset-partition-row-2023-02-05-index-0',
         ),
       ).toBeVisible();
       expect(
@@ -186,7 +186,7 @@ describe('AssetPartitions', () => {
       expect(
         getByTestId(
           screen.getByTestId('partitions-date'),
-          'asset-partition-row-2023-02-05-index-0',
+          'asset-partition-row-2021-05-06-index-0',
         ),
       ).toBeVisible();
       expect(

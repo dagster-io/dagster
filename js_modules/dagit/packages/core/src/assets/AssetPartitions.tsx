@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/types';
+import {PartitionDefinition, PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
@@ -129,7 +129,7 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {dimension, selectedRanges} = selections[idx]!;
     const allKeys = dimension.partitionKeys;
-    const sortType = getSort(sortTypes, idx);
+    const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
@@ -215,7 +215,7 @@ export const AssetPartitions: React.FC<Props> = ({
       </Box>
       <Box style={{flex: 1, minHeight: 0, outline: 'none'}} flex={{direction: 'row'}} tabIndex={-1}>
         {selections.map((selection, idx) => {
-          const sortType = getSort(sortTypes, idx);
+          const sortType = getSort(sortTypes, idx, selection.dimension.type);
           return (
             <Box
               key={selection.dimension.name}
@@ -349,6 +349,11 @@ function sortResults(results: string[], sortType: SortType) {
   }
 }
 
-function getSort(sortTypes: Array<SortType>, idx: number) {
-  return sortTypes[idx] || SortType.ORIGINAL;
+function getSort(sortTypes: Array<SortType>, idx: number, definitionType: PartitionDefinitionType) {
+  return (
+    sortTypes[idx] ||
+    (definitionType === PartitionDefinitionType.TIME_WINDOW
+      ? SortType.REVERSE_ORIGINAL
+      : SortType.ORIGINAL)
+  );
 }
