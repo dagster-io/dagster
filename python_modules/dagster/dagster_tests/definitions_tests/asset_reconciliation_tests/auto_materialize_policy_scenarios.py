@@ -165,13 +165,13 @@ auto_materialize_policy_scenarios = {
             },
             ("daily", "2013-01-05"): {
                 ParentOutdatedAutoMaterializeCondition(
-                    parent_asset_keys=frozenset({AssetKey("hourly")}),
+                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
                 ),
                 MissingAutoMaterializeCondition(),
             },
             ("daily", "2013-01-06"): {
                 ParentOutdatedAutoMaterializeCondition(
-                    parent_asset_keys=frozenset({AssetKey("hourly")}),
+                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
                 ),
                 MissingAutoMaterializeCondition(),
             },
@@ -309,7 +309,7 @@ auto_materialize_policy_scenarios = {
             "asset4": {
                 ParentMaterializedAutoMaterializeCondition(),
                 ParentOutdatedAutoMaterializeCondition(
-                    parent_asset_keys=frozenset({AssetKey("asset3")})
+                    waiting_on_asset_keys=frozenset({AssetKey("asset3")})
                 ),
             },
         },

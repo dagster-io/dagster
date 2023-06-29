@@ -680,9 +680,9 @@ def determine_asset_partitions_to_auto_materialize(
         can_reconcile_fn=can_reconcile_candidate,
     )
 
-    def get_unresolved_parent_asset_keys(candidate: AssetKeyPartitionKey) -> FrozenSet[AssetKey]:
-        """Returns the set of parent asset keys which would be unresolved if this candidate were
-        materialize this tick.
+    def get_waiting_on_asset_keys(candidate: AssetKeyPartitionKey) -> FrozenSet[AssetKey]:
+        """Returns the set of ancestor asset keys that must be materialized before this asset can be
+        materialized.
         """
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
@@ -707,11 +707,9 @@ def determine_asset_partitions_to_auto_materialize(
                     == asset_graph.get_repository_handle(parent.asset_key)
                 )
             ):
-                print("PARENT", parent)
                 unresolved_parents.update(
-                    instance_queryer.unreconciled_parent_keys(asset_partition=parent)
+                    instance_queryer.to_be_materialized_before_reconciled(asset_partition=parent)
                 )
-                print(unresolved_parents)
         return frozenset(unresolved_parents)
 
     def conditions_for_candidate(
@@ -741,10 +739,10 @@ def determine_asset_partitions_to_auto_materialize(
             conditions.add(ParentMaterializedAutoMaterializeCondition())
 
         # if the parents will not be resolved this tick
-        unresolved_parent_keys = get_unresolved_parent_asset_keys(candidate)
-        if unresolved_parent_keys:
+        waiting_on_asset_keys = get_waiting_on_asset_keys(candidate)
+        if waiting_on_asset_keys:
             conditions.add(
-                ParentOutdatedAutoMaterializeCondition(parent_asset_keys=unresolved_parent_keys)
+                ParentOutdatedAutoMaterializeCondition(waiting_on_asset_keys=waiting_on_asset_keys)
             )
 
         if (
