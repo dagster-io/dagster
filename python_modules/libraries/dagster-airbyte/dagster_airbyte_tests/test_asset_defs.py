@@ -5,11 +5,14 @@ from dagster import (
     FreshnessPolicy,
     TableColumn,
     TableSchema,
+    asset,
     build_init_resource_context,
 )
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import StepMaterializationData
+from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._legacy import build_assets_job
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
 
@@ -250,3 +253,45 @@ def test_assets_cloud() -> None:
             AssetKey(["some", "prefix", "bar_baz"]): "foo",
             AssetKey(["some", "prefix", "bar_qux"]): "foo",
         }
+
+
+def test_built_airbyte_asset_with_downstream_asset_errors():
+    destination_tables = ["foo", "bar"]
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        asset_key_prefix=["some", "prefix"],
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+            " Instead, specify dependencies on the assets created by the multi_asset via AssetKeys"
+            " or strings."
+            " For the multi_asset airbyte_sync_12345, the available keys are: "
+            r"\{AssetKey\(\[\'some\'\, \'prefix\'\, \'bar\'\]\)\, AssetKey\(\[\'some\'\,"
+            r" \'prefix\'\, \'foo\'\]\)\}"
+        ),
+    ):
+
+        @asset(deps=ab_assets)
+        def downstream_of_ab():
+            return None
+
+
+def test_built_airbyte_asset_with_downstream_asset():
+    destination_tables = ["foo", "bar"]
+    ab_assets = build_airbyte_assets(  # noqa: F841
+        "12345",
+        destination_tables=destination_tables,
+        asset_key_prefix=["some", "prefix"],
+    )
+
+    @asset(deps=[AssetKey(["some", "prefix", "foo"]), AssetKey(["some", "prefix", "bar"])])
+    def downstream_of_ab():
+        return None
+
+    assert len(downstream_of_ab.input_names) == 2
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.kind == DagsterTypeKind.NOTHING
