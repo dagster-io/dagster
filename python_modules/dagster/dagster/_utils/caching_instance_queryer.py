@@ -485,7 +485,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def _asset_partitions_data_versions(
         self,
         asset_key: AssetKey,
-        asset_partitions: Optional[Sequence[AssetKeyPartitionKey]],
+        asset_partitions: Optional[AbstractSet[AssetKeyPartitionKey]],
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
     ) -> Mapping[AssetKeyPartitionKey, Optional[DataVersion]]:
@@ -526,7 +526,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset_key: AssetKey,
         asset_partitions: Optional[Sequence[AssetKeyPartitionKey]],
         after_cursor: Optional[int],
-    ) -> Sequence[AssetKeyPartitionKey]:
+    ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions that have been updated after the given cursor.
 
         Args:
@@ -538,18 +538,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not self.asset_partition_has_materialization_or_observation(
             AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
         ):
-            return []
+            return set()
         # quick check that just compares latest storage ids
-        updated_after_cursor = [
+        updated_after_cursor = {
             asset_partition
             for asset_partition, latest_storage_id in self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
                 asset_key=asset_key
             ).items()
             if (asset_partitions is None or asset_partition in asset_partitions)
             and (latest_storage_id or 0) > (after_cursor or 0)
-        ]
+        }
         if not updated_after_cursor:
-            return []
+            return set()
         # for regular assets, don't bother checking versions
         # in the future, we may remove this guard
         if after_cursor is None or not self.asset_graph.is_observable(asset_key):
@@ -562,25 +562,30 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         previous_versions = self._asset_partitions_data_versions(
             asset_key, updated_after_cursor, before_cursor=after_cursor + 1
         )
-        return [
+        return {
             asset_partition
             for asset_partition, version in latest_versions.items()
             if previous_versions.get(asset_partition) != version
-        ]
+        }
 
     @cached_method
-    def is_reconciled(self, *, asset_partition: AssetKeyPartitionKey) -> bool:
-        """Returns a boolean representing if the given `asset_partition` is currently reconciled.
+    def unreconciled_parent_keys(
+        self, *, asset_partition: AssetKeyPartitionKey
+    ) -> AbstractSet[AssetKey]:
+        """Returns a set representing the asset keys that have influenced the given `asset_partition`
+        to be considered unreconciled (if any).
         An asset (partition) is considered unreconciled if any of:
         - It has never been materialized
         - One of its parents has been updated more recently than it has
         - One of its parents is unreconciled.
         """
+        print("----------------------------")
+        print("CALCULATING", asset_partition)
         # always treat source assets as reconciled
         if self.asset_graph.is_source(asset_partition.asset_key):
-            return True
+            return set()
         elif not self.asset_partition_has_materialization_or_observation(asset_partition):
-            return False
+            return {asset_partition.asset_key}
 
         time_or_dynamic_partitioned = isinstance(
             self.asset_graph.get_partitions_def(asset_partition.asset_key),
@@ -597,6 +602,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ).parent_partitions:
             parent_asset_partitions_by_key[parent.asset_key].append(parent)
 
+        unreconciled_parents = set()
         for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
@@ -607,21 +613,32 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
             # for existence of upstream materialization, do not worry about timestamps
             if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
-                return all(
+                if not all(
                     self.asset_partition_has_materialization_or_observation(parent)
                     for parent in parent_asset_partitions
-                )
-            elif self.get_asset_partitions_updated_after_cursor(
+                ):
+                    unreconciled_parents.add(parent_key)
+                continue
+
+            updated_parent_asset_partitions = self.get_asset_partitions_updated_after_cursor(
                 asset_key=parent_key,
                 asset_partitions=parent_asset_partitions,
                 after_cursor=self.get_latest_materialization_or_observation_storage_id(
                     asset_partition
                 ),
-            ):
-                return False
-            elif any(
-                not self.is_reconciled(asset_partition=parent) for parent in parent_asset_partitions
-            ):
-                return False
+            )
+            print("UPDATED", updated_parent_asset_partitions)
+            if updated_parent_asset_partitions:
+                for parent in updated_parent_asset_partitions:
+                    unreconciled_parents.add(parent.asset_key)
+            # recurse over parents
+            for parent in set(parent_asset_partitions) - updated_parent_asset_partitions:
+                print("getting_parent", parent)
+                unreconciled_parents.update(self.unreconciled_parent_keys(asset_partition=parent))
 
-        return True
+        print("RESULT", asset_partition, unreconciled_parents)
+        return unreconciled_parents
+
+    @cached_method
+    def is_reconciled(self, *, asset_partition: AssetKeyPartitionKey) -> bool:
+        return len(self.unreconciled_parent_keys(asset_partition=asset_partition)) == 0

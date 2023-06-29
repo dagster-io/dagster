@@ -12,6 +12,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentOutdatedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -163,11 +164,15 @@ auto_materialize_policy_scenarios = {
                 )
             },
             ("daily", "2013-01-05"): {
-                ParentOutdatedAutoMaterializeCondition(),
+                ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_keys=frozenset({AssetKey("hourly")}),
+                ),
                 MissingAutoMaterializeCondition(),
             },
             ("daily", "2013-01-06"): {
-                ParentOutdatedAutoMaterializeCondition(),
+                ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_keys=frozenset({AssetKey("hourly")}),
+                ),
                 MissingAutoMaterializeCondition(),
             },
         },
@@ -287,6 +292,26 @@ auto_materialize_policy_scenarios = {
         expected_conditions={
             "asset3": {ParentMaterializedAutoMaterializeCondition()},
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
+        },
+    ),
+    "auto_materialize_policy_diamond_one_side_updated": AssetReconciliationScenario(
+        assets=[
+            *diamond[0:3],
+            *with_auto_materialize_policy(
+                diamond[-1:],
+                AutoMaterializePolicy.eager(),
+            ),
+        ],
+        asset_selection=AssetSelection.keys("asset4"),
+        unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
+        expected_run_requests=[],
+        expected_conditions={
+            "asset4": {
+                ParentMaterializedAutoMaterializeCondition(),
+                ParentOutdatedAutoMaterializeCondition(
+                    parent_asset_keys=frozenset({AssetKey("asset3")})
+                ),
+            },
         },
     ),
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
