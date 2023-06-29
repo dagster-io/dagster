@@ -19,6 +19,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.errors import DagsterInvalidInvocationError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
@@ -231,6 +232,30 @@ class DbtManifest:
             )
 
         return self.node_info_to_asset_key(next(iter(matching_models)))
+
+    def build_asset_selection(
+        self,
+        dbt_select: str = "fqn:*",
+        dbt_exclude: Optional[str] = None,
+    ) -> AssetSelection:
+        """Create an asset selection for a dbt selection string.
+
+        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+
+        Args:
+            dbt_select (str): A dbt selection string to specify a set of dbt resources.
+            dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+
+        Returns:
+            AssetSelection: An asset selection for the selected dbt nodes.
+        """
+        from ..asset_selection import DbtManifestAssetSelection
+
+        return DbtManifestAssetSelection(
+            manifest=self,
+            select=dbt_select,
+            exclude=dbt_exclude,
+        )
 
     def get_subset_selection_for_context(
         self,
