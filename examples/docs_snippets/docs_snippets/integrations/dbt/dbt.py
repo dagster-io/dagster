@@ -35,12 +35,7 @@ def scope_dbt_cli_resource_config():
 
     dbt_assets = with_resources(
         load_assets_from_dbt_project(DBT_PROJECT_PATH),
-        {
-            "dbt": DbtCli(
-                project_dir=DBT_PROJECT_PATH,
-                target=DBT_TARGET,
-            )
-        },
+        {"dbt": DbtCli(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET)},
     )
     # end_dbt_cli_resource
 
@@ -130,9 +125,7 @@ def scope_input_manager_resources():
     dbt_assets = with_resources(
         load_assets_from_dbt_project(...),
         {
-            "dbt": DbtCli(
-                project_dir="path/to/dbt_project",
-            ),
+            "dbt": DbtCli(project_dir="path/to/dbt_project"),
             "pandas_df_manager": PandasIOManager(connection_str=...),
         },
     )

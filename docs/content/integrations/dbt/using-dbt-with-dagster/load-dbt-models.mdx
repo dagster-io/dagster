@@ -36,11 +36,8 @@ from dagster import file_relative_path
 
 
 DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
-DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
 
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
-)
+dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_PATH, key_prefix=["jaffle_shop"])
 ```
 
 Let's discuss what this example is doing, specifically the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function. This function loads dbt models into Dagster as assets, creating one Dagster asset for each model.
@@ -64,7 +61,6 @@ When invoked, this function:
 Let's take a look at the arguments we've supplied:
 
 - `project_dir`, which is the path to the dbt project
-- `profiles_dir`, which is the path to the dbt project's connection profiles
 - `key_prefix`, which is a prefix to apply to all models in the dbt project
 
 ---
@@ -82,16 +78,11 @@ import os
 
 from dagster_dbt import DbtCli
 from tutorial_dbt_dagster import assets
-from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
+from tutorial_dbt_dagster.assets import DBT_PROJECT_PATH
 
 from dagster import Definitions, load_assets_from_modules
 
-resources = {
-    "dbt": DbtCli(
-        project_dir=DBT_PROJECT_PATH,
-        profiles_dir=DBT_PROFILES,
-    ),
-}
+resources = {"dbt": DbtCli(project_dir=DBT_PROJECT_PATH)}
 
 defs = Definitions(assets=load_assets_from_modules([assets]), resources=resources)
 ```
