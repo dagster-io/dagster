@@ -9,9 +9,10 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Union,
     cast,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -97,18 +98,17 @@ class AbstractComputeExecutionContext(ABC):
 
 
 class OpExecutionContext(AbstractComputeExecutionContext):
-    """The ``context`` object that can be made available as the first argument to an op's compute
-    function.
+    """The ``context`` object that can be made available as the first argument to the function
+    used for computing an op or asset.
 
-    The context object provides system information such as resources, config,
-    and logging to an op's compute function. Users should not instantiate this
-    object directly. To construct an `OpExecutionContext` for testing
-    purposes, use :py:func:`dagster.build_op_context`.
+    This context object provides system information such as resources, config, and logging.
+
+    To construct an execution context for testing purposes, use :py:func:`dagster.build_op_context`.
 
     Example:
         .. code-block:: python
 
-            from dagster import op
+            from dagster import op, OpExecutionContext
 
             @op
             def hello_world(context: OpExecutionContext):
@@ -426,14 +426,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.step.get_mapping_key()
 
     #############################################################################################
-    # asset related methods that are planned to be made only available on `AssetExecutionContext`
+    # asset related methods
     #############################################################################################
 
-    @deprecated
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.assets_def`."""
+        """The backing AssetsDefinition for what is currently executing, errors if not available."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
@@ -441,21 +440,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             )
         return assets_def
 
-    @deprecated
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.selected_asset_keys`."""
+        """Get the set of AssetKeys this execution is expected to materialize."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             return set()
         return assets_def.keys
 
-    @deprecated
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.selected_output_names`."""
+        """Get the output names that correspond to the current selection of assets this execution is expected to materialize.
+        """
         # map selected asset keys to the output names they correspond to
         selected_asset_keys = self.selected_asset_keys
         selected_outputs: Set[str] = set()
@@ -475,10 +473,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         return selected_outputs
 
-    @deprecated
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_key_for_output`."""
+        """Return the AssetKey for the corresponding output."""
         asset_output_info = self.job_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
         )
@@ -487,10 +484,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         else:
             return asset_output_info.key
 
-    @deprecated
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_key_for_input`."""
+        """Return the AssetKey for the corresponding input."""
         key = self.job_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
         )
@@ -509,10 +505,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         return self.asset_partition_key_for_output(output_name)
 
-    @deprecated
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_for_output`."""
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
     @deprecated
@@ -527,38 +524,38 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         return self.asset_partitions_time_window_for_output(output_name)
 
-    @deprecated
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_time_window_for_output`.
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
-    @deprecated
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_range_for_output`.
-        """
+        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
-    @deprecated
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_range_for_input`."""
+        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
+        """
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
-    @deprecated
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_key_for_input`."""
+        """Returns the partition key of the upstream asset corresponding to the given input."""
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
-    @deprecated
     @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_def_for_output`."""
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_output(output_name)
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
@@ -571,10 +568,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         return result
 
-    @deprecated
     @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_def_for_input`."""
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_input(input_name)
         result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
@@ -587,135 +583,24 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         return result
 
-    @deprecated
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_keys_for_output`."""
+        """Returns a list of the partition keys for the given output."""
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_output(output_name),
             dynamic_partitions_store=self.instance,
         )
-
-    @deprecated
-    @public
-    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partition_keys_for_input`."""
-        return list(
-            self._step_execution_context.asset_partitions_subset_for_input(
-                input_name
-            ).get_partition_keys()
-        )
-
-    @deprecated
-    @public
-    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.asset_partitions_time_window_for_input`.
-        """
-        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
-
-    @deprecated
-    @public
-    @experimental
-    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        """DEPRECATED - use :py:func:`AssetExecutionContext.get_asset_provenance`."""
-        record = self.instance.get_latest_data_version_record(asset_key)
-
-        return (
-            None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
-        )
-
-
-class AssetExecutionContext(OpExecutionContext):
-    """The ``context`` object that can be made available as the first argument to an assets's compute
-    function. Extends what is available on :py:class:`OpExecutionContext` with access to asset related information.
-    """
-
-    @public
-    @property
-    def assets_def(self) -> AssetsDefinition:
-        """The backing AssetsDefinition for what is currently executing."""
-        return super().assets_def
-
-    @public
-    @property
-    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        """Get the set of AssetKeys this execution is expected to materialize."""
-        return super().selected_asset_keys
-
-    @public
-    @property
-    def selected_output_names(self) -> AbstractSet[str]:
-        """Get the output names that correspond to the current selection of assets this execution is expected to materialize.
-        """
-        return super().selected_output_names
-
-    @public
-    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        """Return the AssetKey for the corresponding output."""
-        return super().asset_key_for_output(output_name)
-
-    @public
-    def asset_key_for_input(self, input_name: str) -> AssetKey:
-        """Return the AssetKey for the corresponding input."""
-        return super().asset_key_for_input(input_name)
-
-    @public
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
-        name of the default output.
-        """
-        return super().asset_partition_key_for_output(output_name)
-
-    @public
-    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        """The time window for the partitions of the output asset.
-
-        Raises an error if either of the following are true:
-        - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
-        MultiPartitionsDefinition with one time-partitioned dimension.
-        """
-        return super().asset_partitions_time_window_for_output(output_name)
-
-    @public
-    def asset_partition_key_range_for_output(
-        self, output_name: str = "result"
-    ) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
-        return super().asset_partition_key_range_for_output(output_name)
-
-    @public
-    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
-        """
-        return super().asset_partition_key_range_for_input(input_name)
-
-    @public
-    def asset_partition_key_for_input(self, input_name: str) -> str:
-        """Returns the partition key of the upstream asset corresponding to the given input."""
-        return super().asset_partition_key_for_input(input_name)
-
-    @public
-    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        return super().asset_partitions_def_for_output(output_name)
-
-    @public
-    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        return super().asset_partitions_def_for_input(input_name)
-
-    @public
-    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """Returns a list of the partition keys for the given output."""
-        return super().asset_partition_keys_for_output(output_name)
 
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
         """Returns a list of the partition keys of the upstream asset corresponding to the
         given input.
         """
-        return super().asset_partition_keys_for_input(input_name)
+        return list(
+            self._step_execution_context.asset_partitions_subset_for_input(
+                input_name
+            ).get_partition_keys()
+        )
 
     @public
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
@@ -726,7 +611,7 @@ class AssetExecutionContext(OpExecutionContext):
         - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
         """
-        return super().asset_partitions_time_window_for_input(input_name)
+        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
     @experimental
@@ -741,12 +626,15 @@ class AssetExecutionContext(OpExecutionContext):
                 materialization of the asset. Returns `None` if the asset was never materialized or
                 the materialization record is too old to contain provenance information.
         """
-        return super().get_asset_provenance(asset_key)
+        record = self.instance.get_latest_data_version_record(asset_key)
+
+        return (
+            None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
+        )
 
 
-def build_execution_context(
-    step_context: StepExecutionContext,
-) -> Union[OpExecutionContext, AssetExecutionContext]:
-    if step_context.is_sda_step:
-        return AssetExecutionContext(step_context)
-    return OpExecutionContext(step_context)
+# actually forking the object type for assets is tricky for users in the cases of:
+#  * manually constructing ops to make AssetsDefinitions
+#  * having ops in a graph that form a graph backed asset
+# so we have a single type that users can call by their preferred name where appropriate
+AssetExecutionContext: TypeAlias = OpExecutionContext
