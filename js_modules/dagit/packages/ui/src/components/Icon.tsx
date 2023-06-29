@@ -21,6 +21,7 @@ import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
 import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
 import backfill from '../icon-svgs/backfill.svg';
+import bar_chart from '../icon-svgs/bar-chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
@@ -224,6 +225,7 @@ export const Icons = {
   assignment,
   assignment_turned_in,
   attach_file,
+  bar_chart,
   bolt,
   cached,
   cancel,
