@@ -43,12 +43,18 @@ AVAILABLE_EXAMPLES = [
 ]
 
 
-def _get_url_for_version(version: str) -> str:
+def _get_target_for_version(version: str) -> str:
     if version == "1!0+dev":
         target = "master"
     else:
         target = version
-    return f"https://codeload.github.com/dagster-io/dagster/tar.gz/{target}"
+    return target
+
+
+def _get_url_for_version(version: str) -> str:
+    return (
+        f"https://codeload.github.com/dagster-io/dagster/tar.gz/{_get_target_for_version(version)}"
+    )
 
 
 def download_example_from_github(path: str, example: str):
@@ -62,9 +68,9 @@ def download_example_from_github(path: str, example: str):
         )
         sys.exit(1)
 
-    path_to_new_project = os.path.normpath(path)
-    path_to_selected_example = f"dagster-master/examples/{example}"
-
+    path_to_selected_example = (
+        f"dagster-{_get_target_for_version(dagster_version)}/examples/{example}/"
+    )
     click.echo(f"Downloading example '{example}'. This may take a while.")
 
     response = requests.get(_get_url_for_version(dagster_version), stream=True)
@@ -79,7 +85,7 @@ def download_example_from_github(path: str, example: str):
             if _should_skip_file(member.name):
                 continue
 
-            dest = member.name.replace(path_to_selected_example, path_to_new_project)
+            dest = member.name.replace(path_to_selected_example, path)
 
             if member.isdir():
                 os.mkdir(dest)

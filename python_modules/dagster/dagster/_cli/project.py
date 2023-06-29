@@ -148,13 +148,15 @@ def scaffold_command(name: str):
 )
 def from_example_command(name: Optional[str], example: str):
     name = name or example
-    dir_abspath = os.path.abspath(name)
+    dir_abspath = os.path.abspath(name) + "/"
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
             click.style(f"The directory {dir_abspath} already exists. ", fg="red")
             + "\nPlease delete the contents of this path or choose another location."
         )
         sys.exit(1)
+    else:
+        os.mkdir(dir_abspath)
 
     download_example_from_github(dir_abspath, example)
 
