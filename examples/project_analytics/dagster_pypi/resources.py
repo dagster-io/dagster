@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 from dagster import ConfigurableResource, EnvVar
-from dagster_dbt import DbtCliClientResource
+from dagster_dbt import DbtCli
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 from dagster_gcp_pandas import BigQueryPandasIOManager
 from dagster_hex.resources import hex_resource
@@ -105,7 +105,7 @@ resource_def = {
         ),
         "pypi": PyPiLocalResource(input_file=os.path.join(FILE_PATH, "../data/pypi_downloads.csv")),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": DbtCliClientResource(
+        "dbt": DbtCli(
             project_dir=DBT_PROJECT_DIR,
             profiles_dir=DBT_PROFILE_DIR,
             target="local",
@@ -116,7 +116,7 @@ resource_def = {
         "github": GithubSteampipeResource(streampipe_conn=EnvVar("STEAMPIPE_CONN")),
         "pypi": PyPiBigQueryResource(table="bigquery-public-data.pypi.file_downloads"),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": DbtCliClientResource(
+        "dbt": DbtCli(
             project_dir=DBT_PROJECT_DIR,
             profiles_dir=DBT_PROFILE_DIR,
             target="prod",

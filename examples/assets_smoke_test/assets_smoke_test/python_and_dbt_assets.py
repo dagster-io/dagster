@@ -7,7 +7,7 @@ from dagster import (
     load_assets_from_current_module,
 )
 from dagster._utils import file_relative_path
-from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_project
+from dagster_dbt import DbtCli, load_assets_from_dbt_project
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 from pandas import DataFrame
 
@@ -52,6 +52,6 @@ defs = Definitions(
             database=EnvVar("SNOWFLAKE_DATABASE"),
             warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
         ),
-        "dbt": DbtCliClientResource(project_dir=DBT_PROJECT_DIR, profiles_dir=DBT_PROFILES_DIR),
+        "dbt": DbtCli(project_dir=DBT_PROJECT_DIR, profiles_dir=DBT_PROFILES_DIR),
     },
 )

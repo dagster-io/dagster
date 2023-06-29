@@ -8,7 +8,7 @@ from dagster import (
     load_assets_from_package_module,
 )
 from dagster._utils import file_relative_path
-from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_project
+from dagster_dbt import DbtCli, load_assets_from_dbt_project
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 
 from assets_dbt_python.assets import forecasting, raw_data
@@ -49,7 +49,7 @@ resources = {
     # this io_manager is responsible for storing/loading our pickled machine learning model
     "model_io_manager": FilesystemIOManager(),
     # this resource is used to execute dbt cli commands
-    "dbt": DbtCliClientResource(project_dir=DBT_PROJECT_DIR, profiles_dir=DBT_PROFILES_DIR),
+    "dbt": DbtCli(project_dir=DBT_PROJECT_DIR, profiles_dir=DBT_PROFILES_DIR),
 }
 
 defs = Definitions(
