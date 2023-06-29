@@ -90,6 +90,28 @@ def test_from_example_command_succeeds():
         assert not os.path.exists("my_dagster_project/tox.ini")
 
 
+def test_from_example_command_versioned_succeeds():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            from_example_command,
+            [
+                "--name",
+                "my_dagster_project",
+                "--example",
+                "assets_dbt_python",
+                "--version",
+                "1.3.11",
+            ],
+        )
+        assert result.exit_code == 0
+        assert os.path.exists("my_dagster_project")
+        assert os.path.exists("my_dagster_project/assets_dbt_python")
+        assert os.path.exists("my_dagster_project/assets_dbt_python_tests")
+        # ensure we filter out tox.ini because it's used in our own CI
+        assert not os.path.exists("my_dagster_project/tox.ini")
+
+
 def test_from_example_command_default_name():
     runner = CliRunner()
     with runner.isolated_filesystem():

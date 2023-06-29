@@ -6,8 +6,6 @@ from io import BytesIO
 import click
 import requests
 
-from dagster.version import __version__ as dagster_version
-
 from .generate import _should_skip_file
 
 # Examples aren't that can't be downloaded from the dagster project CLI
@@ -57,7 +55,7 @@ def _get_url_for_version(version: str) -> str:
     )
 
 
-def download_example_from_github(path: str, example: str):
+def download_example_from_github(path: str, example: str, version: str):
     if example not in AVAILABLE_EXAMPLES:
         click.echo(
             click.style(
@@ -68,12 +66,10 @@ def download_example_from_github(path: str, example: str):
         )
         sys.exit(1)
 
-    path_to_selected_example = (
-        f"dagster-{_get_target_for_version(dagster_version)}/examples/{example}/"
-    )
+    path_to_selected_example = f"dagster-{_get_target_for_version(version)}/examples/{example}/"
     click.echo(f"Downloading example '{example}'. This may take a while.")
 
-    response = requests.get(_get_url_for_version(dagster_version), stream=True)
+    response = requests.get(_get_url_for_version(version), stream=True)
     with tarfile.open(fileobj=BytesIO(response.raw.read()), mode="r:gz") as tar_file:
         # Extract the selected example folder to destination
         subdir_and_files = [
