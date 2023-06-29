@@ -47,8 +47,8 @@ def create_op_compute_wrapper(op_def: OpDefinition):
     config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
 
     argument_resource_key_mapping = (
-        {v: k for k, v in op_def._resource_key_argument_mapping.items()}
-        if op_def._resource_key_argument_mapping
+        {v: k for k, v in op_def._resource_key_argument_mapping.items()}  # noqa: SLF001
+        if op_def._resource_key_argument_mapping  # noqa: SLF001
         else {}
     )
     resource_arg_mapping = {

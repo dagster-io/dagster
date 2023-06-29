@@ -178,7 +178,6 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         )
         self._resource_key_argument_mapping = resource_key_argument_mapping
 
-
     def dagster_internal_init(
         *,
         compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
@@ -365,6 +364,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             code_version=self._version,
             retry_policy=self.retry_policy,
             version=None,  # code_version replaces version
+            resource_key_argument_mapping=self._resource_key_argument_mapping,
         )
 
     def copy_for_configured(
