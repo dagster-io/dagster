@@ -1,26 +1,17 @@
-from dagster import ScheduleDefinition, define_asset_job
 from dagster_dbt.cli.resources_v2 import DbtManifest
 
 from ..constants import MANIFEST_PATH
 
 manifest = DbtManifest.read(path=MANIFEST_PATH)
 
-daily_dbt_assets_schedule = ScheduleDefinition(
+daily_dbt_assets_schedule = manifest.build_schedule(
+    job_name="all_dbt_assets",
     cron_schedule="0 0 * * *",
-    job=define_asset_job(
-        name="all_dbt_assets",
-        selection=manifest.build_asset_selection(
-            dbt_select="fqn:*",
-        ),
-    ),
+    dbt_select="fqn:*",
 )
 
-hourly_staging_dbt_assets = ScheduleDefinition(
+hourly_staging_dbt_assets = manifest.build_schedule(
+    job_name="staging_dbt_assets",
     cron_schedule="0 * * * *",
-    job=define_asset_job(
-        name="staging_dbt_assets",
-        selection=manifest.build_asset_selection(
-            dbt_select="fqn:staging.*",
-        ),
-    ),
+    dbt_select="fqn:staging.*",
 )

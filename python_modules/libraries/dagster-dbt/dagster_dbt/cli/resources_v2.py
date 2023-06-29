@@ -6,7 +6,18 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import dateutil.parser
 from dagster import (
@@ -16,7 +27,9 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
+    ScheduleDefinition,
     _check as check,
+    define_asset_job,
     get_dagster_logger,
 )
 from dagster._annotations import experimental
@@ -35,6 +48,9 @@ from ..asset_utils import (
     output_name_fn,
 )
 from ..utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
+
+if TYPE_CHECKING:
+    from dagster import RunConfig
 
 logger = get_dagster_logger()
 
@@ -256,6 +272,49 @@ class DbtManifest:
             manifest=self,
             select=dbt_select,
             exclude=dbt_exclude,
+        )
+
+    def build_schedule(
+        self,
+        job_name: str,
+        cron_schedule: str,
+        dbt_select: str = "fqn:*",
+        dbt_exclude: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        config: Optional["RunConfig"] = None,
+        execution_timezone: Optional[str] = None,
+    ) -> ScheduleDefinition:
+        """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
+
+        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+
+        Args:
+            job_name (str): The name of the job to materialize the dbt resources.
+            cron_schedule (str): The cron schedule to define the schedule.
+            dbt_select (str): A dbt selection string to specify a set of dbt resources.
+            dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+            tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
+                to the scheduled runs.
+            config (Optional[RunConfig]): The config that parameterizes the execution of this schedule.
+            execution_timezone (Optional[str]): Timezone in which the schedule should run.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+
+        Returns:
+            ScheduleDefinition: A definition to materialize the selected dbt resources on a cron schedule.
+        """
+        return ScheduleDefinition(
+            cron_schedule=cron_schedule,
+            job=define_asset_job(
+                name=job_name,
+                selection=self.build_asset_selection(
+                    dbt_select=dbt_select,
+                    dbt_exclude=dbt_exclude,
+                ),
+                config=config,
+                tags=tags,
+            ),
+            execution_timezone=execution_timezone,
         )
 
     def get_subset_selection_for_context(
