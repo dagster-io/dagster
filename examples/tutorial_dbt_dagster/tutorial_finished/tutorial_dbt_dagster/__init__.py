@@ -1,14 +1,14 @@
 import os
 
 from dagster import Definitions, load_assets_from_modules
-from dagster_dbt import DbtCliClientResource
+from dagster_dbt import DbtCli
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 
 from tutorial_dbt_dagster import assets
 from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
 resources = {
-    "dbt": DbtCliClientResource(
+    "dbt": DbtCli(
         project_dir=DBT_PROJECT_PATH,
         profiles_dir=DBT_PROFILES,
     ),

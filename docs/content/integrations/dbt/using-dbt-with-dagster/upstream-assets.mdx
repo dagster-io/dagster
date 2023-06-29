@@ -105,7 +105,7 @@ In `/tutorial_template/tutorial_dbt_dagster/__init__.py`, replace its contents w
 ```python
 import os
 
-from dagster_dbt import DbtCliClientResource
+from dagster_dbt import DbtCli
 from tutorial_dbt_dagster import assets
 from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
 
@@ -115,7 +115,7 @@ from dagster import Definitions, load_assets_from_modules
 
 
 resources = {
-    "dbt": DbtCliClientResource(
+    "dbt": DbtCli(
         project_dir=DBT_PROJECT_PATH,
         profiles_dir=DBT_PROFILES,
     ),
