@@ -5,13 +5,10 @@ from dagster_dbt import DbtCli
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 
 from tutorial_dbt_dagster import assets
-from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
+from tutorial_dbt_dagster.assets import DBT_PROJECT_PATH
 
 resources = {
-    "dbt": DbtCli(
-        project_dir=DBT_PROJECT_PATH,
-        profiles_dir=DBT_PROFILES,
-    ),
+    "dbt": DbtCli(project_dir=DBT_PROJECT_PATH),
     "io_manager": DuckDBPandasIOManager(database=os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")),
 }
 
