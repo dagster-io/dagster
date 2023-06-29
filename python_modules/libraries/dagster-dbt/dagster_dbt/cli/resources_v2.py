@@ -61,7 +61,18 @@ PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 @experimental
 @dataclass
 class DbtManifest:
-    """Helper class for dbt manifest operations."""
+    """A wrapper class around the dbt manifest to translate dbt concepts to Dagster concepts.
+
+    Args:
+        raw_manifest (Dict[str, Any]): The raw dictionary representation of the dbt manifest.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_dbt import DbtManifest
+
+            manifest = DbtManifest.read(path="path/to/manifest.json")
+    """
 
     raw_manifest: Dict[str, Any]
 
@@ -74,6 +85,13 @@ class DbtManifest:
 
         Returns:
             DbtManifest: A DbtManifest object.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtManifest
+
+                manifest = DbtManifest.read(path="path/to/manifest.json")
         """
         with open(path, "r") as handle:
             raw_manifest: Dict[str, Any] = json.loads(handle.read())
@@ -93,14 +111,96 @@ class DbtManifest:
 
     @classmethod
     def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
+        """A function that takes a dictionary representing the dbt node and returns the
+        Dagster asset key the represents the dbt node.
+
+        This method can be overridden to provide a custom asset key for a dbt node.
+
+        Args:
+            node_info (Mapping[str, Any]): A dictionary representing the dbt node.
+
+        Returns:
+            AssetKey: The Dagster asset key for the dbt node.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster import AssetKey
+                from dagster_dbt import DbtManifest
+
+
+                class CustomizedDbtManifest(DbtManifest):
+                    @classmethod
+                    def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
+                        return AssetKey(["prefix", node_info["alias"]])
+
+
+                manifest = CustomizedDbtManifest.read(path="path/to/manifest.json")
+        """
         return default_asset_key_fn(node_info)
 
     @classmethod
     def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+        """A function that takes a dictionary representing the dbt node and returns the
+        Dagster description the represents the dbt node.
+
+        This method can be overridden to provide a custom description for a dbt node.
+
+        Args:
+            node_info (Mapping[str, Any]): A dictionary representing the dbt node.
+
+        Returns:
+            str: The description for the dbt node.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DbtManifest
+
+
+                class CustomizedDbtManifest(DbtManifest):
+                    @classmethod
+                    def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+                        return "custom description"
+
+
+                manifest = CustomizedDbtManifest.read(path="path/to/manifest.json")
+        """
         return default_description_fn(node_info)
 
     @classmethod
     def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+        """A function that takes a dictionary representing the dbt node and returns the
+        Dagster metadata the represents the dbt node.
+
+        This method can be overridden to provide custom metadata for a dbt node.
+
+        Args:
+            node_info (Mapping[str, Any]): A dictionary representing the dbt node.
+
+        Returns:
+            Mapping[str, Any]: A dictionary representing the Dagster metadata for the dbt node.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DbtManifest
+
+
+                class CustomizedDbtManifest(DbtManifest):
+                    @classmethod
+                    def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+                        return {"custom": "metadata"}
+
+
+                manifest = CustomizedDbtManifest.read(path="path/to/manifest.json")
+        """
         return default_metadata_fn(node_info)
 
     @property
@@ -150,7 +250,14 @@ class DbtManifest:
         return self.node_info_by_output_name[output_name]
 
     def get_asset_key_by_output_name(self, output_name: str) -> AssetKey:
-        """Get a dbt node's default asset key by its Dagster output name."""
+        """Return the corresponding dbt node's Dagster asset key for a Dagster output name.
+
+        Args:
+            output_name (str): The Dagster output name.
+
+        Returns:
+            AssetKey: The corresponding dbt node's Dagster asset key.
+        """
         return self.node_info_to_asset_key(self.get_node_info_by_output_name(output_name))
 
     def get_asset_key_for_dbt_unique_id(self, unique_id: str) -> AssetKey:
@@ -168,16 +275,29 @@ class DbtManifest:
         return self.node_info_to_asset_key(node_info)
 
     def get_asset_key_for_source(self, source_name: str) -> AssetKey:
-        """For dbt sources with only one table name, return the asset key for the table.
+        """Returns the corresponding Dagster asset key for a dbt source with a singular table.
+
+        Args:
+            source_name (str): The name of the dbt source.
+
+        Raises:
+            DagsterInvalidInvocationError: If the source has more than one table.
+
+        Returns:
+            AssetKey: The corresponding Dagster asset key.
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            @asset(
-                key=manifest.get_asset_key_for_source("my_source")
-            )
-            def upstream_python_asset():
-                ...
+                from dagster import asset
+                from dagster_dbt import DbtManifest
+
+                manifest = DbtManifest.read("path/to/manifest.json")
+
+
+                @asset(key=manifest.get_asset_key_for_source("my_source"))
+                def upstream_python_asset():
+                    ...
         """
         asset_keys_by_output_name = self.get_asset_keys_by_output_name_for_source(source_name)
 
@@ -192,23 +312,37 @@ class DbtManifest:
         return list(asset_keys_by_output_name.values())[0]
 
     def get_asset_keys_by_output_name_for_source(self, source_name: str) -> Mapping[str, AssetKey]:
-        """This is a convenience method that makes it easy to define a multi-asset that generates
+        """Returns the corresponding Dagster asset keys for all tables in a dbt source.
+
+        This is a convenience method that makes it easy to define a multi-asset that generates
         all the tables for a given dbt source.
 
-        This function returns a mapping of the output name to output asset key for all tables
-        generated by a given dbt source.
+        Args:
+            source_name (str): The name of the dbt source.
+
+        Returns:
+            Mapping[str, AssetKey]: A mapping of the table name to corresponding Dagster asset key
+                for all tables in the given dbt source.
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            @multi_asset(
-                outs={
-                    name: AssetOut(key=asset_key)
-                    for name, asset_key in manifest.get_asset_keys_by_output_name_for_source("raw_data").items()
-                },
-            )
-            def upstream_python_asset():
-                ...
+                from dagster import AssetOut, multi_asset
+                from dagster_dbt import DbtManifest
+
+                manifest = DbtManifest.read("path/to/manifest.json")
+
+
+                @multi_asset(
+                    outs={
+                        name: AssetOut(key=asset_key)
+                        for name, asset_key in manifest.get_asset_keys_by_output_name_for_source(
+                            "raw_data"
+                        ).items()
+                    },
+                )
+                def upstream_python_asset():
+                    ...
 
         """
         check.str_param(source_name, "source_name")
@@ -228,14 +362,27 @@ class DbtManifest:
             output_name_fn(value): self.node_info_to_asset_key(value) for value in matching_nodes
         }
 
-    def get_asset_key_for_model(
-        self,
-        model_name: str,
-    ) -> AssetKey:
-        """For a dbt model, return the dagster asset key for the model.
+    def get_asset_key_for_model(self, model_name: str) -> AssetKey:
+        """Return the corresponding Dagster asset key for a dbt model.
 
         Args:
             model_name (str): The name of the dbt model.
+
+        Returns:
+            AssetKey: The corresponding Dagster asset key.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster import asset
+                from dagster_dbt import DbtManifest
+
+                manifest = DbtManifest.read("path/to/manifest.json")
+
+
+                @asset(non_argument_deps={manifest.get_asset_key_for_model("customers")})
+                def cleaned_customers():
+                    ...
         """
         check.str_param(model_name, "model_name")
 
@@ -257,9 +404,10 @@ class DbtManifest:
         dbt_select: str = "fqn:*",
         dbt_exclude: Optional[str] = None,
     ) -> AssetSelection:
-        """Create an asset selection for a dbt selection string.
+        """Build an asset selection for a dbt selection string.
 
-        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work for
+        more information.
 
         Args:
             dbt_select (str): A dbt selection string to specify a set of dbt resources.
@@ -267,6 +415,16 @@ class DbtManifest:
 
         Returns:
             AssetSelection: An asset selection for the selected dbt nodes.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtManifest
+
+                manifest = DbtManifest.read("path/to/manifest.json")
+
+                # Select the dbt assets that have the tag "foo".
+                my_selection = manifest.build_asset_selection(dbt_select="tag:foo")
         """
         return DbtManifestAssetSelection(
             manifest=self,
@@ -286,7 +444,8 @@ class DbtManifest:
     ) -> ScheduleDefinition:
         """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
 
-        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+        See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work for
+        more information.
 
         Args:
             job_name (str): The name of the job to materialize the dbt resources.
@@ -302,6 +461,19 @@ class DbtManifest:
 
         Returns:
             ScheduleDefinition: A definition to materialize the selected dbt resources on a cron schedule.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtManifest
+
+                manifest = DbtManifest.read("path/to/manifest.json")
+
+                daily_dbt_assets_schedule = manifest.build_schedule(
+                    job_name="all_dbt_assets",
+                    cron_schedule="0 0 * * *",
+                    dbt_select="fqn:*",
+                )
         """
         return ScheduleDefinition(
             cron_schedule=cron_schedule,
@@ -388,22 +560,18 @@ class DbtManifestAssetSelection(AssetSelection):
         select (str): A dbt selection string to specify a set of dbt resources.
         exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
 
-    Example:
+    Examples:
         .. code-block:: python
+
+            from dagster_dbt import DbtManifest, DbtManifestAssetSelection
 
             manifest = DbtManifest.read("path/to/manifest.json")
 
-            # Build the selection from the manifest.
-            # Select all dbt assets that have the tag "foo" and are in the path "marts/finance".
-            my_selection = manifest.build_asset_selection(
-                dbt_select="tag:foo,path:marts/finance",
-            )
+            # Build the selection from the manifest: select the dbt assets that have the tag "foo".
+            my_selection = manifest.build_asset_selection(dbt_select="tag:foo")
 
             # Or, manually build the same selection.
-            my_selection = DbtManifestAssetSelection(
-                manifest=manifest,
-                select="tag:foo,path:marts/finance",
-            )
+            my_selection = DbtManifestAssetSelection(manifest=manifest, select="tag:foo")
     """
 
     def __init__(
@@ -436,7 +604,13 @@ class DbtManifestAssetSelection(AssetSelection):
 
 @dataclass
 class DbtCliEventMessage:
-    """Represents a dbt CLI event."""
+    """The representation of a dbt CLI event.
+
+    Args:
+        raw_event (Dict[str, Any]): The raw event dictionary.
+            See https://docs.getdbt.com/reference/events-logging#structured-logging for more
+            information.
+    """
 
     raw_event: Dict[str, Any]
 
@@ -509,6 +683,15 @@ class DbtCliEventMessage:
 
 @dataclass
 class DbtCliTask:
+    """The representation of an invoked dbt command.
+
+    Args:
+        process (subprocess.Popen): The process running the dbt command.
+        manifest (DbtManifest): The dbt manifest wrapper.
+        project_dir (Path): The path to the dbt project.
+        target_path (Path): The path to the dbt target folder.
+    """
+
     process: subprocess.Popen
     manifest: DbtManifest
     project_dir: Path
@@ -563,6 +746,18 @@ class DbtCliTask:
 
         Returns:
             Sequence[DbtCliEventMessage]: A sequence of events from the dbt CLI process.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtCli, DbtManifest
+
+                manifest = DbtManifest.read(path="path/to/manifest.json")
+                dbt = DbtCli(project_dir="/path/to/dbt/project")
+
+                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+
+                dbt_cli_task.wait()
         """
         return list(self.stream_raw_events())
 
@@ -571,6 +766,19 @@ class DbtCliTask:
 
         Returns:
             bool: True, if the dbt CLI process returns with a zero exit code, and False otherwise.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtCli, DbtManifest
+
+                manifest = DbtManifest.read(path="path/to/manifest.json")
+                dbt = DbtCli(project_dir="/path/to/dbt/project")
+
+                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+
+                if dbt_cli_task.is_successful():
+                    ...
         """
         return self.process.wait() == 0
 
@@ -579,8 +787,20 @@ class DbtCliTask:
 
         Returns:
             Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
-                - AssetMaterializations for refables (e.g. models, seeds, snapshots.)
+                - Output for refables (e.g. models, seeds, snapshots.)
                 - AssetObservations for test results.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+
+                manifest = DbtManifest.read(path="target/manifest.json")
+
+
+                @dbt_assets(manifest=manifest)
+                def my_dbt_assets(dbt: DbtCli):
+                    yield from dbt.cli(["run"], manifest=manifest).stream()
         """
         for event in self.stream_raw_events():
             yield from event.to_default_asset_events(manifest=self.manifest)
@@ -620,13 +840,28 @@ class DbtCliTask:
     ) -> Dict[str, Any]:
         """Retrieve a dbt artifact from the target path.
 
-        See https://docs.getdbt.com/reference/artifacts/dbt-artifacts.
+        See https://docs.getdbt.com/reference/artifacts/dbt-artifacts for more information.
 
         Args:
             artifact (Union[Literal["manifest.json"], Literal["catalog.json"], Literal["run_results.json"], Literal["sources.json"]]): The name of the artifact to retrieve.
 
         Returns:
             Dict[str, Any]: The artifact as a dictionary.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtCli, DbtManifest
+
+                manifest = DbtManifest.read(path="path/to/manifest.json")
+                dbt = DbtCli(project_dir="/path/to/dbt/project")
+
+                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+                dbt_cli_task.wait()
+
+                # Retrieve the run_results.json artifact.
+                if dbt_cli_task.is_successful():
+                    run_results = dbt_cli_task.get_artifact("run_results.json")
         """
         artifact_path = os.path.join(self.project_dir, self.target_path, artifact)
         with open(artifact_path) as handle:
@@ -635,7 +870,34 @@ class DbtCliTask:
 
 @experimental
 class DbtCli(ConfigurableResource):
-    """A resource that can be used to execute dbt CLI commands."""
+    """A resource used to execute dbt CLI commands.
+
+    Attributes:
+        project_dir (Path): The path to the dbt project directory. This directory should contain a
+            `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more
+            information.
+        global_config (List[str]): A list of global flags configuration to pass to the dbt CLI
+            invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
+            configuration.
+        profile (Optional[str]): The profile from your dbt `profiles.yml` to use for execution. See
+            https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
+            information.
+        target (Optional[str]): The target from your dbt `profiles.yml` to use for execution. See
+            https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
+            information.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_dbt import DbtCli
+
+            dbt = DbtCli(
+                project_dir="/path/to/dbt/project",
+                global_config=["--no-use-colors"],
+                profile="jaffle_shop",
+                target="dev",
+            )
+    """
 
     project_dir: str = Field(
         ...,
@@ -709,6 +971,7 @@ class DbtCli(ConfigurableResource):
 
                 manifest = DbtManifest.read(path="target/manifest.json")
 
+
                 @dbt_assets(manifest=manifest)
                 def my_dbt_assets(dbt: DbtCli):
                     yield from dbt.cli(["run"], manifest=manifest).stream()
@@ -723,7 +986,8 @@ class DbtCli(ConfigurableResource):
             "DBT_LOG_FORMAT": "json",
             # The DBT_TARGET_PATH environment variable is set to a unique value for each dbt
             # invocation so that artifact paths are separated.
-            # See: https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
+            # See https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
+            # for more information.
             "DBT_TARGET_PATH": target_path,
         }
 
