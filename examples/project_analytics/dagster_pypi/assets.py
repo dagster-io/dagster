@@ -5,17 +5,13 @@ from dagster import DailyPartitionsDefinition, MetadataValue, asset
 from dagster_dbt import load_assets_from_dbt_project
 
 from .resources import (
-    DBT_PROFILE_DIR,
     DBT_PROJECT_DIR,
     HEX_PROJECT_ID,
     GithubResource,
     PyPiResource,
 )
 
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_DIR,
-    profiles_dir=DBT_PROFILE_DIR,
-)
+dbt_assets = load_assets_from_dbt_project(project_dir=DBT_PROJECT_DIR)
 
 START_DATE = "2023-04-10"
 

@@ -105,21 +105,13 @@ resource_def = {
         ),
         "pypi": PyPiLocalResource(input_file=os.path.join(FILE_PATH, "../data/pypi_downloads.csv")),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": DbtCli(
-            project_dir=DBT_PROJECT_DIR,
-            profiles_dir=DBT_PROFILE_DIR,
-            target="local",
-        ),
+        "dbt": DbtCli(project_dir=DBT_PROJECT_DIR, target="local"),
     },
     "PROD": {
         "io_manager": bigquery_pandas_io_manager,
         "github": GithubSteampipeResource(streampipe_conn=EnvVar("STEAMPIPE_CONN")),
         "pypi": PyPiBigQueryResource(table="bigquery-public-data.pypi.file_downloads"),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": DbtCli(
-            project_dir=DBT_PROJECT_DIR,
-            profiles_dir=DBT_PROFILE_DIR,
-            target="prod",
-        ),
+        "dbt": DbtCli(project_dir=DBT_PROJECT_DIR, target="prod"),
     },
 }

@@ -14,12 +14,10 @@ from dagster_duckdb_pandas import DuckDBPandasIOManager
 from assets_dbt_python.assets import forecasting, raw_data
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
-DBT_PROFILES_DIR = file_relative_path(__file__, "../dbt_project/config")
 
 # all assets live in the default dbt_schema
 dbt_assets = load_assets_from_dbt_project(
     DBT_PROJECT_DIR,
-    DBT_PROFILES_DIR,
     # prefix the output assets based on the database they live in plus the name of the schema
     key_prefix=["duckdb", "dbt_schema"],
     # prefix the source assets based on just the database
@@ -49,7 +47,7 @@ resources = {
     # this io_manager is responsible for storing/loading our pickled machine learning model
     "model_io_manager": FilesystemIOManager(),
     # this resource is used to execute dbt cli commands
-    "dbt": DbtCli(project_dir=DBT_PROJECT_DIR, profiles_dir=DBT_PROFILES_DIR),
+    "dbt": DbtCli(project_dir=DBT_PROJECT_DIR),
 }
 
 defs = Definitions(

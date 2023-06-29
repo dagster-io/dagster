@@ -12,8 +12,6 @@ from dagster_snowflake_pandas import SnowflakePandasIOManager
 from pandas import DataFrame
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
-DBT_PROFILES_DIR = file_relative_path(__file__, "../dbt_project/config")
-
 
 raw_country_populations = SourceAsset(
     "raw_country_populations",
@@ -39,7 +37,7 @@ def country_stats(country_populations: DataFrame, continent_stats: DataFrame) ->
     return result
 
 
-dbt_assets = load_assets_from_dbt_project(DBT_PROJECT_DIR, DBT_PROFILES_DIR)
+dbt_assets = load_assets_from_dbt_project(DBT_PROJECT_DIR)
 
 
 defs = Definitions(
@@ -52,6 +50,6 @@ defs = Definitions(
             database=EnvVar("SNOWFLAKE_DATABASE"),
             warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
         ),
-        "dbt": DbtCli(project_dir=DBT_PROJECT_DIR, profiles_dir=DBT_PROFILES_DIR),
+        "dbt": DbtCli(project_dir=DBT_PROJECT_DIR),
     },
 )
