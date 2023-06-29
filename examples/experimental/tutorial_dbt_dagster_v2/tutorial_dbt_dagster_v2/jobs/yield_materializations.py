@@ -1,5 +1,5 @@
 from dagster import AssetMaterialization, Output, job, op
-from dagster_dbt.cli import DbtCli, DbtManifest
+from dagster_dbt import DbtCli, DbtManifest
 
 from ..constants import MANIFEST_PATH
 

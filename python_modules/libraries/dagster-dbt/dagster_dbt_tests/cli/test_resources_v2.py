@@ -4,8 +4,12 @@ from typing import List, Optional
 
 import pytest
 from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue
-from dagster_dbt.cli import DbtCli, DbtCliEventMessage, DbtManifest
-from dagster_dbt.cli.resources_v2 import PARTIAL_PARSE_FILE_NAME
+from dagster_dbt.cli.resources_v2 import (
+    PARTIAL_PARSE_FILE_NAME,
+    DbtCli,
+    DbtCliEventMessage,
+    DbtManifest,
+)
 from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR

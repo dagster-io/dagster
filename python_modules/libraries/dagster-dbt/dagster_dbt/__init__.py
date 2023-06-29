@@ -43,6 +43,21 @@ from .version import __version__ as __version__
 # isort: split
 
 # ########################
+# ##### EXPERIMENTAL IMPORTS
+# ########################
+
+from .asset_decorator import dbt_assets as dbt_assets
+from .cli import (
+    DbtCli as DbtCli,
+    DbtCliEventMessage as DbtCliEventMessage,
+    DbtCliTask as DbtCliTask,
+    DbtManifest as DbtManifest,
+    DbtManifestAssetSelection as DbtManifestAssetSelection,
+)
+
+# isort: split
+
+# ########################
 # ##### DYNAMIC IMPORTS
 # ########################
 import importlib

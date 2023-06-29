@@ -8,5 +8,6 @@ from .resources_v2 import (
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliTask as DbtCliTask,
     DbtManifest as DbtManifest,
+    DbtManifestAssetSelection as DbtManifestAssetSelection,
 )
 from .types import DbtCliOutput as DbtCliOutput
