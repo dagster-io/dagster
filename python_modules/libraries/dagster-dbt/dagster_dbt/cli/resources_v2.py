@@ -6,12 +6,13 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dateutil.parser
 from dagster import (
     AssetKey,
     AssetObservation,
+    AssetSelection,
     ConfigurableResource,
     OpExecutionContext,
     Output,
@@ -19,7 +20,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.errors import DagsterInvalidInvocationError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
@@ -30,8 +31,10 @@ from ..asset_utils import (
     default_asset_key_fn,
     default_description_fn,
     default_metadata_fn,
+    is_non_asset_node,
     output_name_fn,
 )
+from ..utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
 logger = get_dagster_logger()
 
@@ -249,8 +252,6 @@ class DbtManifest:
         Returns:
             AssetSelection: An asset selection for the selected dbt nodes.
         """
-        from ..asset_selection import DbtManifestAssetSelection
-
         return DbtManifestAssetSelection(
             manifest=self,
             select=dbt_select,
@@ -317,6 +318,61 @@ class DbtManifest:
         )
 
         return union_selected_dbt_resources
+
+
+@experimental
+class DbtManifestAssetSelection(AssetSelection):
+    """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
+
+    Args:
+        manifest (DbtManifest): The dbt manifest wrapper.
+        select (str): A dbt selection string to specify a set of dbt resources.
+        exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+
+    Example:
+        .. code-block:: python
+
+            manifest = DbtManifest.read("path/to/manifest.json")
+
+            # Build the selection from the manifest.
+            # Select all dbt assets that have the tag "foo" and are in the path "marts/finance".
+            my_selection = manifest.build_asset_selection(
+                dbt_select="tag:foo,path:marts/finance",
+            )
+
+            # Or, manually build the same selection.
+            my_selection = DbtManifestAssetSelection(
+                manifest=manifest,
+                select="tag:foo,path:marts/finance",
+            )
+    """
+
+    def __init__(
+        self,
+        manifest: DbtManifest,
+        select: str = "fqn:*",
+        exclude: Optional[str] = None,
+    ) -> None:
+        self.manifest = check.inst_param(manifest, "manifest", DbtManifest)
+        self.select = check.str_param(select, "select")
+        self.exclude = check.opt_str_param(exclude, "exclude", default="")
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        dbt_nodes = self.manifest.node_info_by_dbt_unique_id
+
+        keys = set()
+        for unique_id in select_unique_ids_from_manifest(
+            select=self.select,
+            exclude=self.exclude,
+            manifest_json=self.manifest.raw_manifest,
+        ):
+            node_info = dbt_nodes[unique_id]
+            is_dbt_asset = node_info["resource_type"] in ASSET_RESOURCE_TYPES
+            if is_dbt_asset and not is_non_asset_node(node_info):
+                asset_key = self.manifest.node_info_to_asset_key(node_info)
+                keys.add(asset_key)
+
+        return keys
 
 
 @dataclass

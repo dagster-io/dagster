@@ -26,8 +26,6 @@ Assets (dbt Core)
 
 .. autofunction:: load_assets_from_dbt_manifest
 
-.. autoclass:: DbtManifestAssetSelection
-
 Ops (dbt Core)
 ==============
 
