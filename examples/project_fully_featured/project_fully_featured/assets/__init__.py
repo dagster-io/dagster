@@ -11,7 +11,6 @@ CORE = "core"
 ACTIVITY_ANALYTICS = "activity_analytics"
 RECOMMENDER = "recommender"
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
-DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
 
 core_assets = load_assets_from_package_module(package_module=core, group_name=CORE)
 

@@ -25,8 +25,7 @@ PG_DESTINATION_CONFIG = {
 
 AIRBYTE_CONFIG = {"host": "localhost", "port": "8000"}
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
-DBT_PROFILES_DIR = file_relative_path(__file__, "../../dbt_project/config")
-DBT_CONFIG = {"project_dir": DBT_PROJECT_DIR, "profiles_dir": DBT_PROFILES_DIR}
+DBT_CONFIG = {"project_dir": DBT_PROJECT_DIR}
 POSTGRES_CONFIG = {
     "con_string": get_conn_string(
         username=PG_DESTINATION_CONFIG["username"],
