@@ -234,7 +234,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def op(self) -> Node:
-        """Solid: The current op object.
+        """Node: The object representing the invoked op within the graph.
 
         :meta private:
 

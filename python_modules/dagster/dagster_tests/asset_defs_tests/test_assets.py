@@ -663,12 +663,6 @@ def test_asset_invocation_resource_errors():
     def asset_uses_resources(context):
         assert context.resources.used == "foo"
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "asset_uses_resources" has required resources, but no context was provided',
-    ):
-        asset_uses_resources(None)
-
     asset_uses_resources(build_asset_context())
 
     @asset(required_resource_keys={"foo"})

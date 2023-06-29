@@ -19,13 +19,13 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
-from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
@@ -58,8 +58,6 @@ from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_group_name
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import OpExecutionContext
-
     from .graph_definition import GraphDefinition
 
 
@@ -291,33 +289,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
-        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-        from dagster._core.execution.context.compute import OpExecutionContext
-
         from .graph_definition import GraphDefinition
 
+        # defer to GraphDefinition.__call__ for graph backed assets
         if isinstance(self.node_def, GraphDefinition):
             return self._node_def(*args, **kwargs)
-        op_def = self.op
-        provided_context: Optional[OpExecutionContext] = None
-        if len(args) > 0 and isinstance(args[0], OpExecutionContext):
-            provided_context = _build_invocation_context_with_included_resources(self, args[0])
-            new_args = [provided_context, *args[1:]]
-            return op_def(*new_args, **kwargs)
-        elif (
-            isinstance(op_def.compute_fn, DecoratedOpFunction)
-            and op_def.compute_fn.has_context_arg()
-        ):
-            context_param_name = get_function_params(op_def.compute_fn.decorated_fn)[0].name
-            if context_param_name in kwargs:
-                provided_context = _build_invocation_context_with_included_resources(
-                    self, cast(OpExecutionContext, kwargs[context_param_name])
-                )
-                new_kwargs = dict(kwargs)
-                new_kwargs[context_param_name] = provided_context
-                return op_def(*args, **new_kwargs)
 
-        return op_def(*args, **kwargs)
+        # invoke against self to allow assets def information to be used
+        return direct_invocation_result(self, *args, **kwargs)
 
     @public
     @experimental_param(param="resource_defs")
@@ -1296,43 +1275,6 @@ def _infer_keys_by_output_names(
         if output_name not in inferred_keys_by_output_names:
             inferred_keys_by_output_names[output_name] = AssetKey([output_name])
     return inferred_keys_by_output_names
-
-
-def _build_invocation_context_with_included_resources(
-    assets_def: AssetsDefinition,
-    context: "OpExecutionContext",
-) -> "OpExecutionContext":
-    from dagster._core.execution.context.invocation import (
-        UnboundOpExecutionContext,
-        build_op_context,
-    )
-
-    resource_defs = assets_def.resource_defs
-    invocation_resources = context.resources._asdict()
-    for resource_key in sorted(list(invocation_resources.keys())):
-        if resource_key in resource_defs:
-            raise DagsterInvalidInvocationError(
-                f"Error when invoking {assets_def}: resource '{resource_key}' "
-                "provided on both the definition and invocation context. Please "
-                "provide on only one or the other."
-            )
-    all_resources = merge_dicts(resource_defs, invocation_resources)
-
-    if isinstance(context, UnboundOpExecutionContext):
-        return build_op_context(
-            resources=all_resources,
-            config=context.op_config,
-            resources_config=context._resources_config,  # noqa: SLF001
-            instance=context._instance,  # noqa: SLF001
-            partition_key=context._partition_key,  # noqa: SLF001
-            partition_key_range=context._partition_key_range,  # noqa: SLF001
-            mapping_key=context._mapping_key,  # noqa: SLF001
-            _assets_def=assets_def,
-        )
-    else:
-        # If user is mocking OpExecutionContext, send it through (we don't know
-        # what modifications they might be making, and we don't want to override)
-        return context
 
 
 def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
