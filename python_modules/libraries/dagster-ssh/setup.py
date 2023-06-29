@@ -33,7 +33,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_ssh_tests*"]),
-    install_requires=["dagster==1.3.12", "sshtunnel", "paramiko"],
+    install_requires=["dagster==1.3.13", "sshtunnel", "paramiko"],
     extras_require={"test": ["cryptography==2.6.1", "pytest-sftpserver==1.2.0"]},
     zip_safe=False,
 )

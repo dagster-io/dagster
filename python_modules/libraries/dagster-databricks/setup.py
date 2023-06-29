@@ -34,8 +34,8 @@ setup(
     packages=find_packages(exclude=["dagster_databricks_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.3.12",
-        "dagster-pyspark==0.19.12",
+        "dagster==1.3.13",
+        "dagster-pyspark==0.19.13",
         "databricks-cli~=0.17",
         "databricks_api",  # Divest from this library in the future since it is unnecessary indirection.
     ],

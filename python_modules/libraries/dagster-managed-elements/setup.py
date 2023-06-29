@@ -33,7 +33,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_managed_elements_tests*"]),
-    install_requires=["dagster==1.3.12", "requests", "click_spinner"],
+    install_requires=["dagster==1.3.13", "requests", "click_spinner"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
