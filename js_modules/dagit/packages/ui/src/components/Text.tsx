@@ -15,7 +15,6 @@ export const Title = styled(Text)`
   font-size: 24px;
   font-weight: 600;
   line-height: 30px;
-  letter-spacing: -0.004px;
   -webkit-font-smoothing: antialiased;
 `;
 
@@ -30,7 +29,6 @@ export const Headline = styled(Text)`
   font-size: 18px;
   font-weight: 500;
   line-height: 24px;
-  letter-spacing: -0.003px;
   -webkit-font-smoothing: antialiased;
 `;
 
@@ -45,7 +43,6 @@ export const Subtitle1 = styled(Text)`
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
-  letter-spacing: -0.003px;
   -webkit-font-smoothing: antialiased;
 `;
 
@@ -53,7 +50,6 @@ export const Subtitle2 = styled(Text)`
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
-  letter-spacing: -0.002px;
   -webkit-font-smoothing: antialiased;
 `;
 
@@ -66,7 +62,6 @@ export const Body1 = styled(Text)`
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;
-  letter-spacing: -0.003px;
 `;
 
 export const Body2 = styled(Text)`
@@ -74,7 +69,6 @@ export const Body2 = styled(Text)`
   line-height: 20px;
   font-size: 14px;
   font-weight: 400;
-  letter-spacing: -0.002px;
 `;
 
 export const Caption = styled(Text)`
@@ -86,7 +80,6 @@ export const CaptionSubtitle = styled(Text)`
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
-  letter-spacing: -0.002px;
 `;
 
 export const Code = styled(Text)`
