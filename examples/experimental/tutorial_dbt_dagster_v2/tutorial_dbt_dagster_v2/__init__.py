@@ -4,9 +4,11 @@ from dagster_dbt.cli import DbtCli
 from .assets.build import my_dbt_assets
 from .constants import DBT_PROJECT_DIR
 from .jobs.yield_materializations import my_dbt_job
+from .schedules.define_schedules import daily_dbt_assets_schedule, hourly_staging_dbt_assets
 
 defs = Definitions(
     assets=[my_dbt_assets],
+    schedules=[daily_dbt_assets_schedule, hourly_staging_dbt_assets],
     jobs=[my_dbt_job],
     resources={
         "dbt": DbtCli(
