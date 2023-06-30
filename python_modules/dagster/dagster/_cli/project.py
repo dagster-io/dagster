@@ -11,6 +11,7 @@ from dagster._generate import (
     generate_repository,
 )
 from dagster._generate.download import AVAILABLE_EXAMPLES
+from dagster.version import __version__ as dagster_version
 
 
 @click.group(name="project")
@@ -146,7 +147,14 @@ def scaffold_command(name: str):
         "You can also find the available examples via `dagster project list-examples`."
     ),
 )
-def from_example_command(name: Optional[str], example: str):
+@click.option(
+    "--version",
+    type=click.STRING,
+    help="Which version of the example to download, defaults to same version as installed dagster.",
+    default=dagster_version,
+    show_default=True,
+)
+def from_example_command(name: Optional[str], example: str, version: str):
     name = name or example
     dir_abspath = os.path.abspath(name) + "/"
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
@@ -158,7 +166,7 @@ def from_example_command(name: Optional[str], example: str):
     else:
         os.mkdir(dir_abspath)
 
-    download_example_from_github(dir_abspath, example)
+    download_example_from_github(dir_abspath, example, version)
 
     click.echo(_styled_success_statement(name, dir_abspath))
 
