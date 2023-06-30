@@ -78,7 +78,7 @@ class UPathIOManager(MemoizableIOManager):
         return self.path_exists(self._get_path(context))
 
     def _with_extension(self, path: "UPath") -> "UPath":
-        return UPath(f"{path}{self.extension}") if self.extension else path
+        return path.with_suffix(path.suffix + self.extension) if self.extension else path
 
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> "UPath":
         if context.has_asset_key:
