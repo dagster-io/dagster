@@ -874,8 +874,8 @@ class DbtCliTask:
                 if dbt_cli_task.is_successful():
                     run_results = dbt_cli_task.get_artifact("run_results.json")
         """
-        artifact_path = os.path.join(self.project_dir, self.target_path, artifact)
-        with open(artifact_path) as handle:
+        artifact_path = self.target_path.joinpath(artifact)
+        with artifact_path.open() as handle:
             return json.loads(handle.read())
 
 
