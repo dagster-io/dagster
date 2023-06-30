@@ -1,6 +1,8 @@
 # TODO - for ease of initial review, putting all of these tests in a single file. After a review pass,
 # I can sort them out into the files that make sense for each test
 
+import re
+
 import pytest
 from dagster import (
     AssetKey,
@@ -204,12 +206,12 @@ def test_multi_asset_deps_via_assets_definition_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=(
+        match=re.escape(
             "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
             " Instead, specify dependencies on the assets created by the multi_asset via AssetKeys"
             " or strings."
             " For the multi_asset a_multi_asset, the available keys are: "
-            r"\{AssetKey\(\[\'asset_1\'\]\)\, AssetKey\(\[\'asset_2\'\]\)\}\."
+            "{AssetKey(['asset_1']), AssetKey(['asset_2'])}."
         ),
     ):
 
