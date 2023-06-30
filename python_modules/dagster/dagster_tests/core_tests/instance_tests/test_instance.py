@@ -16,7 +16,6 @@ from dagster import (
     job,
     op,
     reconstructable,
-    PartitionKeyRange,
 )
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
@@ -730,12 +729,8 @@ def test_get_status_by_partition(mock_get_and_update):
         "2023-06-01",
         "2023-06-02",
     ]
-    mock_cached_value.deserialize_failed_partition_subsets.return_value= [
-        "2023-06-15"
-    ]
-    mock_cached_value.deserialize_in_progress_partition_subsets.return_value = [
-        "2023-07-01"
-    ]
+    mock_cached_value.deserialize_failed_partition_subsets.return_value = ["2023-06-15"]
+    mock_cached_value.deserialize_in_progress_partition_subsets.return_value = ["2023-07-01"]
     mock_get_and_update.return_value = mock_cached_value
     with instance_for_test() as instance:
         partition_status = instance.get_status_by_partition(
