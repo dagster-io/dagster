@@ -683,7 +683,7 @@ class DbtCliEventMessage:
 
 
 @dataclass
-class DbtCliTask:
+class DbtCliInvocation:
     """The representation of an invoked dbt command.
 
     Args:
@@ -709,7 +709,7 @@ class DbtCliTask:
         project_dir: Path,
         target_path: Path,
         raise_on_error: bool,
-    ) -> "DbtCliTask":
+    ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
         #
@@ -965,7 +965,7 @@ class DbtCli(ConfigurableResource):
         raise_on_error: bool = True,
         manifest: DbtManifest,
         context: Optional[OpExecutionContext] = None,
-    ) -> DbtCliTask:
+    ) -> DbtCliInvocation:
         """Execute a dbt command.
 
         Args:
@@ -975,7 +975,7 @@ class DbtCli(ConfigurableResource):
             context (Optional[OpExecutionContext]): The execution context.
 
         Returns:
-            DbtCliTask: A task that can be used to retrieve the output of the dbt CLI command.
+            DbtCliInvocation: A task that can be used to retrieve the output of the dbt CLI command.
 
         Examples:
             .. code-block:: python
@@ -1029,7 +1029,7 @@ class DbtCli(ConfigurableResource):
         args = ["dbt"] + self.global_config + args + profile_args + selection_args
         project_dir = Path(self.project_dir).resolve(strict=True)
 
-        return DbtCliTask.run(
+        return DbtCliInvocation.run(
             args=args,
             env=env,
             manifest=manifest,

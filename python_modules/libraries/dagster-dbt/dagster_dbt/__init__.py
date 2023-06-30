@@ -50,7 +50,7 @@ from .asset_decorator import dbt_assets as dbt_assets
 from .cli import (
     DbtCli as DbtCli,
     DbtCliEventMessage as DbtCliEventMessage,
-    DbtCliTask as DbtCliTask,
+    DbtCliInvocation as DbtCliInvocation,
     DbtManifest as DbtManifest,
     DbtManifestAssetSelection as DbtManifestAssetSelection,
 )
