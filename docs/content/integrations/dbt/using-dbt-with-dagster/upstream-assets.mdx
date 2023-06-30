@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with dbt, part 3: Create and materialize upstream assets"
+title: "Using Dagster with dbt, part 3: Add assets upstream of your dbt models"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
-# Using dbt with Dagster, part three: Create and materialize upstream assets
+# Using dbt with Dagster, part three: Add assets upstream of your dbt models
 
 <Note>
   This is part three of the{" "}
@@ -15,151 +15,198 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project) and [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models).
 
-In this step, you'll:
+However, the tables at the root of the pipeline are static: they're [dbt seeds](https://docs.getdbt.com/docs/build/seeds), CSVs that are hardcoded into the dbt project. In a more realistic data pipeline, these tables would typically be ingested from some external data source, for example by using a tool like Airbyte or Fivetran, or by Python code.
 
-- [Create upstream Dagster assets](#step-1-create-upstream-dagster-assets)
-- [Supply an I/O manager to the assets](#step-2-supply-an-io-manager-to-the-assets)
-- [Materialize the assets using the Dagster UI](#step-3-materialize-the-assets-using-the-dagster-ui)
+These ingestion steps in the pipeline often don't make sense to define inside dbt, but they often still do make sense to define as Dagster software-defined assets. You can think of a Dagster software-defined asset as a more general version of a dbt model. A dbt model is one kind of asset, but another kind is one that's defined in Python, using Dagster's Python API.
+
+In this section, you'll replace the `raw_customers` dbt seed with a Dagster asset that represents it. You'll write Python code that populates this table by fetching data from the web. This will allow you to launch runs that first execute Python code to populate the `raw_customers` table and then invoke dbt to populate the downstream tables.
+
+You'll:
+
+- [Install the Pandas and DuckDB Python libraries](#step-1-install-the-pandas-and-duckdb-python-libraries)
+- [Create an upstream Dagster asset](#step-2-create-an-upstream-dagster-asset)
+- [In the dbt project, replace a seed with a source](#step-3-in-the-dbt-project-replace-a-seed-with-a-source)
+- [Materialize the assets using the Dagster UI](#step-4-materialize-the-assets-using-the-dagster-ui)
 
 ---
 
-## Step 1: Create upstream Dagster assets
+## Step 1: Install the Pandas and DuckDB Python libraries
 
-To fetch the data the dbt models require, we'll write two Dagster assets: one for `customers` and one for `orders`.
+The Dagster asset that you write will fetch data using [Pandas](https://pandas.pydata.org/) and write it out to your DuckDB warehouse using [DuckDB's Python API](https://duckdb.org/docs/api/python/overview.html). To use these, you'll need to install them:
 
-In `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py`:
+```shell
+pip install pandas duckdb
+```
 
-1. Replace the import section at the top of the file with the following:
+---
 
-   ```python
-   import pandas as pd
-   from dagster_dbt import load_assets_from_dbt_project
+## Step 2: Create an upstream Dagster asset
 
-   from dagster import asset, file_relative_path
-   ```
+To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that loads our dbt models, which we reviewed at the end of the [last section](/integrations/dbt/using-dbt-with-dagster/load-dbt-models#understand-the-python-code-in-your-dagster-project). Copy and paste this code into that file, replacing everything up to `dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))`:
 
-   In this step, we've added the `pandas` library and Dagster's `asset`.
+```python file=integrations/dbt/tutorial/upstream_assets/definitions.py startafter=start_python_assets endbefore=end_python_assets
+import os
+from pathlib import Path
 
-2. Add the following code **before** <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" />:
-
-   ```python
-   @asset(key_prefix=["jaffle_shop"])
-   def customers_raw() -> pd.DataFrame:
-       data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
-       return data
-
-   @asset(key_prefix=["jaffle_shop"])
-   def orders_raw() -> pd.DataFrame:
-       data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
-       return data
-   ```
-
-Let's take a closer look at the argument we've provided:
-
-- `key_prefix` - When the assets are materialized, Dagster will store them in DuckDB in the schema defined by the last value in `key_prefix`. In this case, that's `jaffle_shop`. The tables will have the same names as the assets that produced them, which are `customers_raw` and `orders_raw`.
-
-  Because these tables will become the source data for the `stg_customers.sql` and `stg_orders.sql` models in the dbt project, the names of the assets must match the table names specified in `/tutorial_template/jaffle_shop/models/sources.yml`, which you configured in [part one of this tutorial](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project#step-3-configure-dbt-model-data-sources).
-
-At this point, the `/tutorial_template/tutorial_dbt_dagster/assets/__init__.py` file should look like this:
-
-```python
+import duckdb
 import pandas as pd
-from dagster_dbt import load_assets_from_dbt_project
+from dagster_dbt import DbtCliResource, build_schedule_from_dbt_selection, dbt_assets
 
-from dagster import asset, file_relative_path
+from dagster import Definitions, OpExecutionContext, asset
 
-
-@asset(key_prefix=["jaffle_shop"])
-def customers_raw() -> pd.DataFrame:
-   data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
-   return data
+dbt_project_dir = Path(__file__).parent.joinpath("..", "..")
+duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
-@asset(key_prefix=["jaffle_shop"])
-def orders_raw() -> pd.DataFrame:
-   data = pd.read_csv("https://docs.dagster.io/assets/orders.csv")
-   return data
+@asset
+def raw_customers(context) -> None:
+    data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
+    connection = duckdb.connect(os.fspath(duckdb_database_path))
+    connection.execute("create schema if not exists jaffle_shop")
+    connection.execute(
+        "create or replace table jaffle_shop.raw_customers as select * from data"
+    )
+
+    # Log some metadata about the table we just wrote. It will show up in the UI.
+    context.add_output_metadata({"num_rows": data.shape[0]})
 
 
-DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
-DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
+dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+```
 
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+Let's review the changes we made:
+
+1. At the top, we added imports for `pandas` and `duckdb`, which we use for fetching data into a `DataFrame` and writing it to DuckDB.
+
+2. We added a `duckdb_database_path` variable, which holds the location of our DuckDB database. Remember that DuckDB databases are just regular files on the local filesystem. The path is the same path that we used when we configured our `profiles.yml` file. This variable is used in the implementations of the `raw_customers` asset.
+
+3. We added a definition for the `raw_customers` table by writing a function named `raw_customers` and decorating it with the <PyObject object="asset" decorator /> decorator. The implementation inside the function fetches data from the internet and writes it to a table in our DuckDB database. Similar to how running a dbt model executes a select statement, materializing this asset will execute this Python code.
+
+Finally, let's update the `assets` argument of our `Definitions` object, at the bottom of the file, to include the new asset we just defined:
+
+```python file=integrations/dbt/tutorial/upstream_assets/definitions.py startafter=start_defs endbefore=end_defs
+defs = Definitions(
+    assets=[raw_customers, jaffle_shop_dbt_assets],
+    schedules=schedules,
+    resources={
+        "dbt": dbt,
+    },
 )
 ```
 
 ---
 
-## Step 2: Supply an I/O manager to the assets
+## Step 3: In the dbt project, replace a seed with a source
 
-To materialize the assets, we need to tell Dagster how to handle the assets' inputs and outputs. We can do this using an [I/O manager](/concepts/io-management/io-managers).
+1. Because we're replacing it with a Dagster asset, we no longer need the dbt seed for `raw_customers`, so we can delete it:
 
-In this step, we'll supply the `duckdb_io_manager` to our assets. This resource is an I/O manager that, when assets are materialized, allows:
+   ```shell
+   cd ..
+   rm seeds/raw_customers.csv
+   ```
 
-- Upstream assets (`customers_raw`, `orders_raw`) to load data into DuckDB. In this example, the `duckdb_io_manager` uses <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasTypeHandler" /> to store the pandas DataFrames used in our assets as CSVs and load them into DuckDB.
-- Downstream assets to read data from DuckDB. We'll add the downstream asset in the next section.
+2. Instead, we want to tell dbt that `raw_customers` is a table that is defined outside of the dbt project. We can do that by defining it inside a [dbt source](https://docs.getdbt.com/docs/build/sources).
 
-In `/tutorial_template/tutorial_dbt_dagster/__init__.py`, replace its contents with the following:
+   Create a file called `sources.yml` inside the `models/` directory, and put this inside it:
 
-```python
-import os
+   ```yaml
+   version: 2
 
-from dagster_dbt import DbtCliResource
-from tutorial_dbt_dagster import assets
-from tutorial_dbt_dagster.assets import DBT_PROFILES, DBT_PROJECT_PATH
+   sources:
+     - name: jaffle_shop
+       tables:
+         - name: raw_customers
+           meta:
+             dagster:
+               asset_key: raw_customers
+   ```
 
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
+This is a standard dbt source definitions, with one addition: it includes metadata, under the `meta` property, that specifies the Dagster asset that it corresponds to. When Dagster reads the contents of the dbt project, it reads this metadata and draws the correspondence. For any dbt model that depends on this dbt source, Dagster then knows that the Dagster asset corresponding to the dbt model should depend on the Dagster asset corresponding to the source.
 
-from dagster import Definitions, load_assets_from_modules
+3. Then, update the model that depends on the `raw_customers` seed to instead depend on the source. Replace the contents of `model/staging/stg_customers.sql` with this:
 
+   ```sql
+   with source as (
 
-resources = {
-    "dbt": DbtCliResource(
-        project_dir=DBT_PROJECT_PATH,
-        profiles_dir=DBT_PROFILES,
-    ),
-    "io_manager": duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(DBT_PROJECT_PATH, "tutorial.duckdb")}
-    ),
-}
+       {#-
+       Use source instead of seed:
+       #}
+       select * from {{ source('jaffle_shop', 'raw_customers') }}
 
-defs = Definitions(assets=load_assets_from_modules([assets]), resources=resources)
-```
+   ),
+
+   renamed as (
+
+       select
+           id as customer_id,
+           first_name,
+           last_name
+
+       from source
+
+   )
+
+   select * from renamed
+   ```
 
 ---
 
-## Step 3: Materialize the assets using the Dagster UI
+## Step 4: Materialize the assets using the Dagster UI
 
-Now that you've created assets and resources, it's time to materialize the assets! Materializing an asset runs the op it contains and saves the results to persistent storage. In this tutorial, we're saving asset outputs to DuckDB.
+Now let's load our data pipeline in the UI to see what we've built:
 
-1. In the UI, click the **Reload definitions** button. This ensures that the UI picks up the changes you made in the previous steps.
+```shell
+cd jaffle_dagster/
 
-   At this point, the `customers_raw` and `orders_raw` assets should display above `stg_customers` and `stg_orders` as upstream dependencies:
+DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
+```
 
-   <Image
-   alt="Asset graph in the Dagster UI, showing dbt models and unmaterialized assets"
-   src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets-asset-graph-unmaterialized.png"
-   width={1089}
-   height={897}
-   />
+When you open the UI, you'll be looking at a job that contains only your dbt assets, with a link to the `raw_customers` asset.
 
-2. Click the **Materialize all** button near the top right corner of the page, which will launch a run to materialize the assets. When finished, the **Materialized** and **Latest Run** attributes in the asset will be populated:
+<!--
+![dbt job with link to upstream asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/job.png)
+-->
 
-   <Image
-   alt="Asset graph in the Dagster UI, showing materialized assets"
-   src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets-asset-graph-materialized.png"
-   width={1091}
-   height={896}
-   />
+<Image
+alt="dbt job with link to upstream asset"
+src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/job.png"
+width={2992}
+height={1704}
+/>
 
-After the run completes, you can:
+If you click on "default" under the "Asset groups" section in the left navigation pane, you'll get to a view that includes all your assets - the dbt ones and the `raw_customers` one.
 
-- Click the **asset** to open a sidebar containing info about the asset, including its last materialization stats and a link to view the [**Asset details** page](/concepts/webserver/ui#asset-details)
-- Click the ID of the **Latest Run** - in the above image, that's `651489a2` - in an asset to view the [**Run details**](/concepts/webserver/ui#run-details) page. This page contains detailed info about the run, including timing information, errors, and logs.
+<!--
+![Asset group with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/asset-group.png)
+-->
+
+<Image
+alt="Asset group with dbt models and Python asset"
+src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/asset-group.png"
+width={2992}
+height={1706}
+/>
+
+Click the **Materialize all** button. This will launch a run with two steps:
+
+- Run the `raw_customers` Python function to fetch data and write the `raw_customers` table to DuckDB.
+- Run all the dbt models using `dbt build`, like in the last section.
+
+If you click to view the run, you can see a graphical representation of these steps, along with logs.
+
+<!--
+![Run page for run with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/run-page.png)
+-->
+
+<Image
+alt="Run page for run with dbt models and Python asset"
+src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/run-page.png"
+width={2992}
+height={1708}
+/>
 
 ---
 
 ## What's next?
 
-At this point, you've built and materialized two upstream Dagster assets, providing source data to your dbt models. In the last section of the tutorial, we'll show you how to add a [downstream asset to the pipeline](/integrations/dbt/using-dbt-with-dagster/downstream-assets).
+At this point, you've built and materialized an upstream Dagster asset, providing source data to your dbt models. In the last section of the tutorial, we'll show you how to add a [downstream asset to the pipeline](/integrations/dbt/using-dbt-with-dagster/downstream-assets).
