@@ -1786,7 +1786,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_status_by_partition(
         self, asset_key: AssetKey, partitions_def: PartitionsDefinition, partition_keys: List[str]
-    ) -> Mapping[str, AssetPartitionStatus]:
+    ) -> Optional[Mapping[str, AssetPartitionStatus]]:
         """Get the current status of provided partition_keys.
 
         Args:
@@ -1795,7 +1795,7 @@ class DagsterInstance(DynamicPartitionsStore):
             partition_keys (List[str]):
 
         Returns:
-            Dict: status for each partition key
+            Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
 
         """
         from dagster._core.storage.partition_status_cache import (
@@ -1804,27 +1804,29 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
-        materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
-            partitions_def
-        )
-        failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def)
-        in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
-            partitions_def
-        )
 
-        status_by_partition = {}
+        if isinstance(cached_value, AssetStatusCacheValue):
+            materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
+                partitions_def
+            )
+            failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def)
+            in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
+                partitions_def
+            )
 
-        for partition_key in partition_keys:
-            if partition_key in in_progress_partitions:
-                status_by_partition[partition_key] = AssetPartitionStatus.IN_PROGRESS
-            elif partition_key in failed_partitions:
-                status_by_partition[partition_key] = AssetPartitionStatus.FAILED
-            elif partition_key in materialized_partitions:
-                status_by_partition[partition_key] = AssetPartitionStatus.MATERIALIZED
-            else:
-                status_by_partition[partition_key] = None
+            status_by_partition = {}
 
-        return status_by_partition
+            for partition_key in partition_keys:
+                if partition_key in in_progress_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.IN_PROGRESS
+                elif partition_key in failed_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.FAILED
+                elif partition_key in materialized_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.MATERIALIZED
+                else:
+                    status_by_partition[partition_key] = None
+
+            return status_by_partition
 
     @public
     @traced
