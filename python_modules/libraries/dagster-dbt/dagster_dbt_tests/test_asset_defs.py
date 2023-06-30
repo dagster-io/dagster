@@ -110,18 +110,12 @@ def test_runtime_metadata_fn(
     )
     assert_assets_match_project(dbt_assets)
 
-    assets_job = build_assets_job(
-        "assets_job",
-        dbt_assets,
-        resource_defs={
-            "dbt": dbt_cli_resource_factory(
-                project_dir=test_project_dir,
-                profiles_dir=dbt_config_dir,
-            )
-        },
+    dbt_resource = dbt_cli_resource_factory(
+        project_dir=test_project_dir, profiles_dir=dbt_config_dir
     )
+    assets_job = build_assets_job("assets_job", dbt_assets, resource_defs={"dbt": dbt_resource})
 
-    if dbt_cli_resource_factory == DbtCli:
+    if isinstance(dbt_resource, DbtCli):
         with pytest.raises(
             DagsterDbtError,
             match="The runtime_metadata_fn argument on the load_assets_from_dbt_manifest",
