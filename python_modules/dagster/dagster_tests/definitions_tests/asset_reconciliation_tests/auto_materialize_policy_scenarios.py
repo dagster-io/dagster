@@ -77,6 +77,7 @@ static_partitioned_eager_after_non_partitioned = [
     ),
 ]
 
+
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
 ) -> Sequence[AssetsDefinition]:
@@ -426,8 +427,8 @@ auto_materialize_policy_scenarios = {
             run_request(["C", "D"]),
         ],
         expected_conditions={
-            "C": { ParentMaterializedAutoMaterializeCondition() },
-            "D": { ParentMaterializedAutoMaterializeCondition() }
+            "C": {ParentMaterializedAutoMaterializeCondition()},
+            "D": {ParentMaterializedAutoMaterializeCondition()},
         },
     ),
 }
