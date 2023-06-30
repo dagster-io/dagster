@@ -289,10 +289,10 @@ def test_source_asset_versioned_asset():
     assert_same_versions(mat1, mat2, "abc")
 
 
-def test_source_asset_non_versioned_asset_non_argument_deps():
+def test_source_asset_non_versioned_asset_deps():
     source1 = SourceAsset("source1")
 
-    @asset(non_argument_deps={"source1"})
+    @asset(deps=[source1])
     def asset1():
         ...
 

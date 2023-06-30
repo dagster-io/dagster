@@ -1588,12 +1588,12 @@ def asset_1():
     yield Output(3)
 
 
-@asset(non_argument_deps={AssetKey("asset_1")})
+@asset(deps=[AssetKey("asset_1")])
 def asset_2():
     raise Exception("foo")
 
 
-@asset(non_argument_deps={AssetKey("asset_2")})
+@asset(deps=[AssetKey("asset_2")])
 def asset_3():
     yield Output(7)
 
@@ -1675,7 +1675,7 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
-@asset(non_argument_deps={AssetKey("diamond_source")})
+@asset(deps=[AssetKey("diamond_source")])
 def fresh_diamond_top():
     return 1
 
