@@ -10,6 +10,7 @@ from dagster_dbt.cli.resources_v2 import (
     DbtCliEventMessage,
     DbtManifest,
 )
+from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
@@ -27,7 +28,7 @@ def test_dbt_cli(global_config: List[str], command: str) -> None:
     dbt = DbtCli(project_dir=TEST_PROJECT_DIR, global_config=global_config)
     dbt_cli_task = dbt.cli([command], manifest=manifest)
 
-    list(dbt_cli_task.stream())
+    dbt_cli_task.wait()
 
     assert dbt_cli_task.process.args == ["dbt", *global_config, command]
     assert dbt_cli_task.is_successful()
@@ -37,6 +38,9 @@ def test_dbt_cli(global_config: List[str], command: str) -> None:
 def test_dbt_cli_failure() -> None:
     dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
     dbt_cli_task = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
+
+    with pytest.raises(DagsterDbtCliRuntimeError):
+        dbt_cli_task.wait()
 
     assert not dbt_cli_task.is_successful()
     assert dbt_cli_task.process.returncode == 2
