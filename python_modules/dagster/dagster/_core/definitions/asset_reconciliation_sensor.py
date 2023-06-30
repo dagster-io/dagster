@@ -7,6 +7,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    FrozenSet,
     Iterable,
     Mapping,
     NamedTuple,
@@ -679,40 +680,37 @@ def determine_asset_partitions_to_auto_materialize(
         can_reconcile_fn=can_reconcile_candidate,
     )
 
-    def get_unresolved_parent_asset_keys(candidate: AssetKeyPartitionKey) -> AbstractSet[AssetKey]:
-        """Returns the set of parent asset keys which would be unresolved if this candidate were
-        materialize this tick.
+    def get_waiting_on_asset_keys(candidate: AssetKeyPartitionKey) -> FrozenSet[AssetKey]:
+        """Returns the set of ancestor asset keys that must be materialized before this asset can be
+        materialized.
         """
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-        return {
-            parent.asset_key
-            for parent in asset_graph.get_parents_partitions(
-                instance_queryer,
-                instance_queryer.evaluation_time,
-                candidate.asset_key,
-                candidate.partition_key,
-            ).parent_partitions
-            if (
-                # parent will not be materialized this tick
-                not (
-                    _will_materialize_for_conditions(conditions_by_asset_partition.get(parent))
-                    # the parent must have the same partitioning / partition key to be materialized
-                    # alongside the candidate
-                    and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
-                    and parent.partition_key == candidate.partition_key
-                    # the parent must be in the same repository to be materialized alongside the candidate
-                    and (
-                        not isinstance(asset_graph, ExternalAssetGraph)
-                        or asset_graph.get_repository_handle(candidate.asset_key)
-                        == asset_graph.get_repository_handle(parent.asset_key)
-                    )
+        unreconciled_ancestors = set()
+        for parent in asset_graph.get_parents_partitions(
+            instance_queryer,
+            instance_queryer.evaluation_time,
+            candidate.asset_key,
+            candidate.partition_key,
+        ).parent_partitions:
+            # parent will not be materialized this tick
+            if not (
+                _will_materialize_for_conditions(conditions_by_asset_partition.get(parent))
+                # the parent must have the same partitioning / partition key to be materialized
+                # alongside the candidate
+                and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+                and parent.partition_key == candidate.partition_key
+                # the parent must be in the same repository to be materialized alongside the candidate
+                and (
+                    not isinstance(asset_graph, ExternalAssetGraph)
+                    or asset_graph.get_repository_handle(candidate.asset_key)
+                    == asset_graph.get_repository_handle(parent.asset_key)
                 )
-                and
-                # the parent is not currently reconciled
-                not instance_queryer.is_reconciled(asset_partition=parent)
-            )
-        }
+            ):
+                unreconciled_ancestors.update(
+                    instance_queryer.get_root_unreconciled_ancestors(asset_partition=parent)
+                )
+        return frozenset(unreconciled_ancestors)
 
     def conditions_for_candidate(
         candidate: AssetKeyPartitionKey,
@@ -741,8 +739,11 @@ def determine_asset_partitions_to_auto_materialize(
             conditions.add(ParentMaterializedAutoMaterializeCondition())
 
         # if the parents will not be resolved this tick
-        if get_unresolved_parent_asset_keys(candidate):
-            conditions.add(ParentOutdatedAutoMaterializeCondition())
+        waiting_on_asset_keys = get_waiting_on_asset_keys(candidate)
+        if waiting_on_asset_keys:
+            conditions.add(
+                ParentOutdatedAutoMaterializeCondition(waiting_on_asset_keys=waiting_on_asset_keys)
+            )
 
         if (
             # would be materialized
