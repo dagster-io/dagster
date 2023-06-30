@@ -686,7 +686,7 @@ def determine_asset_partitions_to_auto_materialize(
         """
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-        unresolved_parents = set()
+        unreconciled_ancestors = set()
         for parent in asset_graph.get_parents_partitions(
             instance_queryer,
             instance_queryer.evaluation_time,
@@ -707,10 +707,10 @@ def determine_asset_partitions_to_auto_materialize(
                     == asset_graph.get_repository_handle(parent.asset_key)
                 )
             ):
-                unresolved_parents.update(
-                    instance_queryer.to_be_materialized_before_reconciled(asset_partition=parent)
+                unreconciled_ancestors.update(
+                    instance_queryer.get_root_unreconciled_ancestors(asset_partition=parent)
                 )
-        return frozenset(unresolved_parents)
+        return frozenset(unreconciled_ancestors)
 
     def conditions_for_candidate(
         candidate: AssetKeyPartitionKey,

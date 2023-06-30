@@ -570,17 +570,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         }
 
     @cached_method
-    def to_be_materialized_before_reconciled(
+    def get_root_unreconciled_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
-        """Returns a set of upstream asset keys that must be materialized before the given asset
-        partition will be reconciled.
+        """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
+        of ancestors of this asset partition which are unreconciled for a reason other than that
+        one of their ancestors is unreconciled.
         """
         # always treat source assets as reconciled
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
         elif not self.asset_partition_has_materialization_or_observation(asset_partition):
-            # TODO: likely should recurse in this case as well
             return {asset_partition.asset_key}
 
         time_or_dynamic_partitioned = isinstance(
@@ -600,7 +600,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ).parent_partitions:
             parent_asset_partitions_by_key[parent.asset_key].append(parent)
 
-        to_be_materialized_before_reconciled = set()
+        root_unreconciled_ancestors = set()
         for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
@@ -615,7 +615,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     self.asset_partition_has_materialization_or_observation(parent)
                     for parent in parent_asset_partitions
                 ):
-                    to_be_materialized_before_reconciled.add(parent_key)
+                    root_unreconciled_ancestors.add(parent_key)
                 continue
 
             updated_parent_asset_partitions = self.get_asset_partitions_updated_after_cursor(
@@ -627,14 +627,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
             if updated_parent_asset_partitions:
                 # this asset has updated parents, so it must be materialized before it is reconciled
-                to_be_materialized_before_reconciled.add(asset_partition.asset_key)
+                root_unreconciled_ancestors.add(asset_partition.asset_key)
             # recurse over parents
             for parent in set(parent_asset_partitions) - updated_parent_asset_partitions:
-                to_be_materialized_before_reconciled.update(
-                    self.to_be_materialized_before_reconciled(asset_partition=parent)
+                root_unreconciled_ancestors.update(
+                    self.get_root_unreconciled_ancestors(asset_partition=parent)
                 )
 
-        return to_be_materialized_before_reconciled
+        return root_unreconciled_ancestors
 
     def is_reconciled(self, asset_partition: AssetKeyPartitionKey) -> bool:
         """Returns a boolean representing if the given `asset_partition` is currently reconciled.
@@ -643,4 +643,4 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         - One of its parents has been updated more recently than it has
         - One of its parents is unreconciled.
         """
-        return len(self.to_be_materialized_before_reconciled(asset_partition=asset_partition)) == 0
+        return len(self.get_root_unreconciled_ancestors(asset_partition=asset_partition)) == 0

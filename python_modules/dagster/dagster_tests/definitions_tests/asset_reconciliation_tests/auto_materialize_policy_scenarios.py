@@ -43,6 +43,14 @@ single_lazy_asset_with_freshness_policy = [
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
     )
 ]
+lopsided_vee = [
+    asset_def("root1"),
+    asset_def("root2"),
+    asset_def("A", ["root1"]),
+    asset_def("B", ["A"]),
+    asset_def("C", ["B"], auto_materialize_policy=AutoMaterializePolicy.eager()),
+    asset_def("D", ["root2", "C"], auto_materialize_policy=AutoMaterializePolicy.eager()),
+]
 
 time_partitioned_eager_after_non_partitioned = [
     asset_def("unpartitioned_root_a"),
@@ -68,7 +76,6 @@ static_partitioned_eager_after_non_partitioned = [
         auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=2),
     ),
 ]
-
 
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
@@ -377,5 +384,50 @@ auto_materialize_policy_scenarios = {
             run_request(asset_keys=["static_partitioned"], partition_key="a"),
             run_request(asset_keys=["static_partitioned"], partition_key="b"),
         ],
+    ),
+    "waiting_on_parents_materialize_condition": AssetReconciliationScenario(
+        assets=lopsided_vee,
+        asset_selection=AssetSelection.keys("C", "D"),
+        cursor_from=AssetReconciliationScenario(
+            assets=lopsided_vee,
+            asset_selection=AssetSelection.keys("C", "D"),
+            cursor_from=AssetReconciliationScenario(
+                assets=lopsided_vee,
+                asset_selection=AssetSelection.keys("C", "D"),
+                unevaluated_runs=[
+                    run(["root1", "root2", "A", "B", "C", "D"]),
+                    run(["root1", "root2"]),
+                ],
+                expected_run_requests=[],
+                expected_conditions={
+                    "D": {
+                        ParentMaterializedAutoMaterializeCondition(),
+                        ParentOutdatedAutoMaterializeCondition(
+                            # waiting on A to be materialized (pulling in the new version of root1)
+                            waiting_on_asset_keys=frozenset({AssetKey("A")})
+                        ),
+                    },
+                },
+            ),
+            unevaluated_runs=[run(["A"]), run(["root2"])],
+            expected_run_requests=[],
+            expected_conditions={
+                "D": {
+                    ParentMaterializedAutoMaterializeCondition(),
+                    ParentOutdatedAutoMaterializeCondition(
+                        # now waiting on B to be materialized (pulling in the new version of root1/A)
+                        waiting_on_asset_keys=frozenset({AssetKey("B")})
+                    ),
+                },
+            },
+        ),
+        unevaluated_runs=[run(["B"])],
+        expected_run_requests=[
+            run_request(["C", "D"]),
+        ],
+        expected_conditions={
+            "C": { ParentMaterializedAutoMaterializeCondition() },
+            "D": { ParentMaterializedAutoMaterializeCondition() }
+        },
     ),
 }
