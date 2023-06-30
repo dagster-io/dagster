@@ -36,7 +36,10 @@ from dagster._core.snap import (
     create_job_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster._core.storage.partition_status_cache import AssetPartitionStatus
+from dagster._core.storage.partition_status_cache import (
+    AssetPartitionStatus,
+    AssetStatusCacheValue,
+)
 from dagster._core.storage.sqlite_storage import (
     _event_logs_directory,
     _runs_directory,
@@ -724,7 +727,7 @@ def test_configurable_class_missing_methods():
 
 @patch("dagster._core.storage.partition_status_cache.get_and_update_asset_status_cache_value")
 def test_get_status_by_partition(mock_get_and_update):
-    mock_cached_value = MagicMock()
+    mock_cached_value = MagicMock(spec=AssetStatusCacheValue)
     mock_cached_value.deserialize_materialized_partition_subsets.return_value = [
         "2023-06-01",
         "2023-06-02",

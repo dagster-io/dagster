@@ -1800,6 +1800,7 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         from dagster._core.storage.partition_status_cache import (
             AssetPartitionStatus,
+            AssetStatusCacheValue,
             get_and_update_asset_status_cache_value,
         )
 
