@@ -59,12 +59,20 @@ class HookContext:
         self._resources = step_execution_context.scoped_resources_builder.build(
             self._required_resource_keys
         )
+        self._pipeline_execution_context = step_execution_context.plan_data.dagster_run
+
 
     @public
     @property
     def job_name(self) -> str:
         """The name of the job where this hook is being triggered."""
         return self._step_execution_context.job_name
+    
+    @public
+    @property
+    def job_tags(self) -> str:
+        """The tags of the job where this hook is being triggered"""
+        return self._pipeline_execution_context.tags
 
     @public
     @property
