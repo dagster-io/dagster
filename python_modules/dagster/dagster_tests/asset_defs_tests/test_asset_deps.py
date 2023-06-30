@@ -397,3 +397,22 @@ def test_bad_types():
         @asset(deps=[not_an_asset])
         def my_asset():
             return None
+
+
+def test_dep_via_deps_and_fn():
+    @asset
+    def the_upstream_asset():
+        return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "@op 'depends_on_upstream_asset' decorated function has parameter 'the_upstream_asset'"
+            " that is one of the input_defs of type 'Nothing' which should not be included since no"
+            " data will be passed for it."
+        ),
+    ):
+
+        @asset(deps=[the_upstream_asset])
+        def depends_on_upstream_asset(the_upstream_asset):
+            return None
