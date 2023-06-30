@@ -20,9 +20,16 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.with_resources import with_resources
 from dagster._utils import file_relative_path
-from dagster_dbt import DbtCliClientResource, dbt_cli_resource
+from dagster_dbt import (
+    DagsterDbtError,
+    DbtCli,
+    DbtCliClientResource,
+    DbtCliResource,
+    dbt_cli_resource,
+)
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
+from dagster_dbt.cli.utils import parse_run_results
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
 from dagster_duckdb import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
@@ -71,11 +78,12 @@ def test_load_from_manifest_json(prefix):
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
     assert_assets_match_project(dbt_assets, prefix)
 
-    dbt = MagicMock()
+    dbt = MagicMock(spec=DbtCliResource)
     dbt.get_run_results_json.return_value = run_results_json
     dbt.run.return_value = DbtOutput(run_results_json)
     dbt.build.return_value = DbtOutput(run_results_json)
     dbt.get_manifest_json.return_value = manifest_json
+    dbt._json_log_format = True  # noqa: SLF001
     assets_job = build_assets_job(
         "assets_job",
         dbt_assets,
@@ -112,19 +120,27 @@ def test_runtime_metadata_fn(
             )
         },
     )
-    result = assets_job.execute_in_process()
-    assert result.success
 
-    materializations = [
-        event.event_specific_data.materialization
-        for event in result.events_for_node(dbt_assets[0].op.name)
-        if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
-    assert len(materializations) == 4
-    assert materializations[0].metadata["op_name"] == MetadataValue.text(dbt_assets[0].op.name)
-    assert materializations[0].metadata["dbt_model"] == MetadataValue.text(
-        materializations[0].asset_key.path[-1]
-    )
+    if dbt_cli_resource_factory == DbtCli:
+        with pytest.raises(
+            DagsterDbtError,
+            match="The runtime_metadata_fn argument on the load_assets_from_dbt_manifest",
+        ):
+            assets_job.execute_in_process()
+    else:
+        result = assets_job.execute_in_process()
+        assert result.success
+
+        materializations = [
+            event.event_specific_data.materialization
+            for event in result.events_for_node(dbt_assets[0].op.name)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(materializations) == 4
+        assert materializations[0].metadata["op_name"] == MetadataValue.text(dbt_assets[0].op.name)
+        assert materializations[0].metadata["dbt_model"] == MetadataValue.text(
+            materializations[0].asset_key.path[-1]
+        )
 
 
 def test_fail_immediately(
@@ -147,6 +163,8 @@ def test_fail_immediately(
 
     if isinstance(good_dbt, DbtCliClientResource):
         assert good_dbt.with_replaced_resource_context(build_init_resource_context()).get_dbt_client().get_run_results_json()  # type: ignore
+    elif isinstance(good_dbt, DbtCli):
+        assert parse_run_results(test_project_dir)
     else:
         assert good_dbt(build_init_resource_context()).get_run_results_json()
 
@@ -157,6 +175,7 @@ def test_fail_immediately(
             "dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir,
                 profiles_dir="BAD PROFILES DIR",
+                profile="BAD PROFILE",
             )
         },
     ).execute_in_process(raise_on_error=False)
@@ -184,6 +203,9 @@ def test_basic(
     fail_test,
     json_log_format,
 ):
+    if not json_log_format and dbt_cli_resource_factory == DbtCli:
+        pytest.skip("DbtCli does not support json_log_format")
+
     # expected to emit json-formatted messages
     with capsys.disabled():
         dbt_assets = load_assets_from_dbt_project(
@@ -201,11 +223,13 @@ def test_basic(
             "dbt": dbt_cli_resource_factory(
                 project_dir=test_project_dir,
                 profiles_dir=dbt_config_dir,
-                vars={"fail_test": fail_test},
                 json_log_format=json_log_format,
             )
         },
-    ).execute_in_process(raise_on_error=False)
+    ).execute_in_process(
+        raise_on_error=False,
+        run_config={"ops": {dbt_assets[0].op.name: {"config": {"vars": {"fail_test": fail_test}}}}},
+    )
 
     assert result.success == (not fail_test)
     materializations = [
@@ -349,7 +373,7 @@ def test_partitions(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_co
     )
     assert result.success
 
-    with pytest.raises(DagsterDbtCliHandledRuntimeError):
+    with pytest.raises(DagsterDbtCliRuntimeError):
         result = materialize_to_memory(
             dbt_assets,
             partition_key="2022-01-02",
@@ -614,7 +638,7 @@ def test_subsetting(
             {"select": "sort_by_calories"},
             "sort_by_calories",
         ),
-        ({"full_refresh": True}, "ALL"),
+        ({"full-refresh": True}, "ALL"),
         ({"vars": {"my_var": "my_value", "another_var": 3, "a_third_var": True}}, "ALL"),
     ],
 )

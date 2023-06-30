@@ -75,7 +75,7 @@ class DbtManifest:
             manifest = DbtManifest.read(path="path/to/manifest.json")
     """
 
-    raw_manifest: Dict[str, Any]
+    raw_manifest: Mapping[str, Any]
 
     @classmethod
     def read(cls, path: str) -> "DbtManifest":
