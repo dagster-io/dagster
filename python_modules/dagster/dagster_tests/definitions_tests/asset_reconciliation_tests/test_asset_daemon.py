@@ -70,10 +70,12 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
 
     runs = daemon_not_paused_instance.get_runs()
 
-    inner_scenario = scenario
     expected_runs = 0
+    inner_scenario = scenario
     while inner_scenario is not None:
-        expected_runs += len(scenario.unevaluated_runs) + len(scenario.expected_run_requests)
+        expected_runs += len(inner_scenario.unevaluated_runs or []) + len(
+            inner_scenario.expected_run_requests or []
+        )
         inner_scenario = inner_scenario.cursor_from
 
     assert len(runs) == expected_runs
