@@ -47,6 +47,7 @@ from ..asset_utils import (
     is_non_asset_node,
     output_name_fn,
 )
+from ..errors import DagsterDbtCliRuntimeError
 from ..utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
 if TYPE_CHECKING:
@@ -690,12 +691,14 @@ class DbtCliTask:
         manifest (DbtManifest): The dbt manifest wrapper.
         project_dir (Path): The path to the dbt project.
         target_path (Path): The path to the dbt target folder.
+        raise_on_error (bool): Whether to raise an exception if the dbt command fails.
     """
 
     process: subprocess.Popen
     manifest: DbtManifest
     project_dir: Path
     target_path: Path
+    raise_on_error: bool
 
     @classmethod
     def run(
@@ -705,6 +708,7 @@ class DbtCliTask:
         manifest: DbtManifest,
         project_dir: Path,
         target_path: Path,
+        raise_on_error: bool,
     ) -> "DbtCliTask":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -739,6 +743,7 @@ class DbtCliTask:
             manifest=manifest,
             project_dir=project_dir,
             target_path=target_path,
+            raise_on_error=raise_on_error,
         )
 
     def wait(self) -> Sequence[DbtCliEventMessage]:
@@ -827,7 +832,13 @@ class DbtCliTask:
                 sys.stdout.flush()
 
         # Ensure that the dbt CLI process has completed.
-        self.process.wait()
+        if not self.is_successful() and self.raise_on_error:
+            raise DagsterDbtCliRuntimeError(
+                description=(
+                    f"The dbt CLI process failed with exit code {self.process.returncode}. Check"
+                    " the compute logs for the full information about the error."
+                )
+            )
 
     def get_artifact(
         self,
@@ -951,6 +962,7 @@ class DbtCli(ConfigurableResource):
         self,
         args: List[str],
         *,
+        raise_on_error: bool = True,
         manifest: DbtManifest,
         context: Optional[OpExecutionContext] = None,
     ) -> DbtCliTask:
@@ -958,6 +970,7 @@ class DbtCli(ConfigurableResource):
 
         Args:
             args (List[str]): The dbt CLI command to execute.
+            raise_on_error (bool): Whether to raise an exception if the dbt CLI command fails.
             manifest (DbtManifest): The dbt manifest wrapper.
             context (Optional[OpExecutionContext]): The execution context.
 
@@ -1022,4 +1035,5 @@ class DbtCli(ConfigurableResource):
             manifest=manifest,
             project_dir=project_dir,
             target_path=project_dir.joinpath(target_path),
+            raise_on_error=raise_on_error,
         )
