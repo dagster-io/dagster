@@ -56,10 +56,6 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster._core.storage.partition_status_cache import (
-    PartitionStatus,
-    get_and_update_asset_status_cache_value,
-)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -1799,6 +1795,11 @@ class DagsterInstance(DynamicPartitionsStore):
             Dict: status for each partition key
 
         """
+        from dagster._core.storage.partition_status_cache import (
+            PartitionStatus,
+            get_and_update_asset_status_cache_value,
+        )
+
         cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
         materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
             partitions_def
