@@ -2,9 +2,10 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster import resource
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
@@ -468,8 +469,36 @@ class DbtCliClient(DbtClient):
         return parse_manifest(project_dir, target_path)
 
 
+@deprecated
 class DbtCliResource(DbtCliClient):
-    pass
+    """Deprecated. Use `DbtCli` instead."""
+
+    def __init__(
+        self,
+        executable: str,
+        default_flags: Mapping[str, Any],
+        warn_error: bool,
+        ignore_handled_error: bool,
+        target_path: str,
+        logger: Optional[Any] = None,
+        docs_url: Optional[str] = None,
+        json_log_format: bool = True,
+        capture_logs: bool = True,
+        debug: bool = False,
+    ):
+        deprecation_warning("DbtCliResource", "1.5", "Use DbtCli instead.")
+
+        super().__init__(
+            default_flags=default_flags,
+            executable=executable,
+            warn_error=warn_error,
+            ignore_handled_error=ignore_handled_error,
+            target_path=target_path,
+            docs_url=docs_url,
+            json_log_format=json_log_format,
+            capture_logs=capture_logs,
+            debug=debug,
+        )
 
 
 class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObjectToOpContext):
@@ -512,6 +541,8 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
 def dbt_cli_resource(context) -> DbtCliClient:
     """This resource issues dbt CLI commands against a configured dbt project."""
     # all config options that are intended to be used as flags for dbt commands
+    deprecation_warning("dbt_cli_resource", "1.5", "Use DbtCli instead.")
+
     default_flags = {
         k: v for k, v in context.resource_config.items() if k not in COMMON_OPTION_KEYS
     }
