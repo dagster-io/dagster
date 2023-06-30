@@ -108,10 +108,13 @@ class UPathIOManager(MemoizableIOManager):
         return UPath(*context.get_identifier())
 
     def get_loading_input_log_message(self, path: "UPath") -> str:
-        return f"Loading file from: {path}"
+        return f"Loading file from: {path} using {self.__class__.__name__}..."
 
     def get_writing_output_log_message(self, path: "UPath") -> str:
-        return f"Writing file at: {path}"
+        return f"Writing file at: {path} using {self.__class__.__name__}..."
+
+    def get_loading_input_partition_log_message(self, path: "UPath", partition_key: str) -> str:
+        return f"Loading partition {partition_key} from {path} using {self.__class__.__name__}..."
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
         """Returns the I/O path for a given context.
@@ -119,6 +122,20 @@ class UPathIOManager(MemoizableIOManager):
         """
         path = self._get_path_without_extension(context)
         return self._with_extension(path)
+
+    def get_path_for_partition(
+        self, context: Union[InputContext, OutputContext], path: UPath, partition: str
+    ) -> UPath:
+        """Override this method if you want to use a different partitioning scheme
+        (for example, if the saving function handles partitioning instead).
+        The extension will be added later.
+
+        Args:
+            context (Union[InputContext, OutputContext]): The context for the I/O operation.
+            path (UPath): The path to the file or object.
+            partition (str): Formatted partition/multipartition key
+        """
+        return path / partition
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
@@ -144,8 +161,10 @@ class UPathIOManager(MemoizableIOManager):
 
         asset_path = self._get_path_without_extension(context)
         return {
-            partition_key: self._with_extension(asset_path / partition_key)
-            for partition_key in formatted_partition_keys
+            partition: self._with_extension(
+                self.get_path_for_partition(context, asset_path, partition)
+            )
+            for partition in formatted_partition_keys
         }
 
     def _get_multipartition_backcompat_paths(
@@ -193,14 +212,57 @@ class UPathIOManager(MemoizableIOManager):
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
 
-    def _load_multiple_inputs(self, context: InputContext) -> Dict[str, Any]:
-        # load multiple partitions
+    def _load_partition_from_path(
+        self, context: InputContext, path: "UPath", backcompat_path: Optional["UPath"] = None
+    ) -> Any:
+        """1. Try to load the partition from the normal path.
+        2. If it was not found, try to load it from the backcompat path.
+        3. If allow_missing_partitions metadata is True, skip the partition if it was not found in any of the paths.
+        Otherwise, raise an error.
+
+        Args:
+            path (UPath): The path to the partition.
+            backcompat_path (Optional[UPath]): The path to the partition in the backcompat location.
+
+        Returns:
+            Any: The object loaded from the partition.
+        """
+        partition_key = context.partition_key
         allow_missing_partitions = (
             context.metadata.get("allow_missing_partitions", False)
             if context.metadata is not None
             else False
         )
+        missing_partition_message = f"Couldn't load partition {partition_key} and skipped it "
+        "because the input metadata includes allow_missing_partitions=True"
 
+        try:
+            context.log.debug(self.get_loading_input_partition_log_message(path, partition_key))
+            obj = self.load_from_path(context=context, path=path)
+            return obj
+        except FileNotFoundError as e:
+            if backcompat_path is not None:
+                try:
+                    obj = self.load_from_path(context=context, path=path)
+                    context.log.debug(
+                        f"File not found at {path}. Loaded instead from backcompat path:"
+                        f" {backcompat_path}"
+                    )
+                    return obj
+                except FileNotFoundError as e:
+                    if allow_missing_partitions:
+                        context.log.debug(missing_partition_message)
+                        return None
+                    else:
+                        raise e
+            if allow_missing_partitions:
+                context.log.debug(missing_partition_message)
+                return None
+            else:
+                raise e
+
+    def _load_multiple_inputs(self, context: InputContext) -> Dict[str, Any]:
+        # load multiple partitions
         paths = self._get_paths_for_partitions(context)  # paths for normal partitions
         backcompat_paths = self._get_multipartition_backcompat_paths(
             context
@@ -208,48 +270,13 @@ class UPathIOManager(MemoizableIOManager):
 
         context.log.debug(f"Loading {len(paths)} partitions...")
 
-        def load_partition(partition_key: Union[str, MultiPartitionKey]):
-            path = paths[partition_key]
-            backcompat_path = backcompat_paths.get(partition_key)
-
-            # 1. We will first try to load the partition from the normal path.
-            # 2. If it is not found, we will try to load it from the backcompat path.
-            # 3. If allow_missing_partitions is True, we will skip the partition if it was not found in any of the paths.
-            # otherwise, we will raise an error.
-
-            missing_partition_message = f"Couldn't load partition {partition_key} and skipped it "
-            "because the input metadata includes allow_missing_partitions=True"
-
-            try:
-                context.log.debug(f"Loading partition from {path}...")
-                obj = self.load_from_path(context=context, path=path)
-                return obj
-            except FileNotFoundError as e:
-                if backcompat_path is not None:
-                    try:
-                        context.log.debug(
-                            "Loading from normal path failed. Loading partition from backcompat"
-                            f" {backcompat_path}..."
-                        )
-                        obj = self.load_from_path(context=context, path=path)
-                        return obj
-                    except FileNotFoundError as e:
-                        if allow_missing_partitions:
-                            context.log.debug(missing_partition_message)
-                            return None
-                        else:
-                            raise e
-                if allow_missing_partitions:
-                    context.log.debug(missing_partition_message)
-                    return None
-                else:
-                    raise e
-
         objs = {}
 
         if not inspect.iscoroutinefunction(self.load_from_path):
             for partition_key in context.asset_partition_keys:
-                obj = load_partition(partition_key)
+                obj = self._load_partition_from_path(
+                    context, paths[partition_key], backcompat_paths.get(partition_key)
+                )
                 if obj is not None:  # in case some partitions were skipped
                     objs[partition_key] = obj
             return objs
@@ -262,7 +289,13 @@ class UPathIOManager(MemoizableIOManager):
                 tasks = []
 
                 for partition_key in context.asset_partition_keys:
-                    tasks.append(loop.create_task(load_partition(partition_key)))
+                    tasks.append(
+                        loop.create_task(
+                            self._load_partition_from_path(
+                                context, paths[partition_key], backcompat_paths.get(partition_key)
+                            )
+                        )
+                    )
 
                 results = await asyncio.gather(*tasks)
 
