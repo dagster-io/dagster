@@ -125,6 +125,7 @@ class MakeConfigCacheable(BaseModel):
         keep_untouched = (cached_property,)
         # Ensure the class is serializable, for caching purposes
         frozen = True
+        extra = "forbid"
 
     def __setattr__(self, name: str, value: Any):
         # This is a hack to allow us to set attributes on the class that are not part of the
@@ -1778,8 +1779,11 @@ class SeparatedResourceParams(NamedTuple):
     non_resources: Dict[str, Any]
 
 
-def _is_annotated_as_resource_type(annotation: Type) -> bool:
+def _is_annotated_as_resource_type(annotation: Optional[Type]) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
+    if annotation is None:
+        return False
+
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None
     ) == ("resource_dependency",)
@@ -1795,7 +1799,7 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """
     keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
     data_with_annotation: List[Tuple[str, Any, Type]] = [
-        (k, v, keys_by_alias[k].annotation) for k, v in data.items() if k in keys_by_alias
+        (k, v, keys_by_alias[k].annotation if k in keys_by_alias else None) for k, v in data.items()
     ]
     out = SeparatedResourceParams(
         resources={k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)},

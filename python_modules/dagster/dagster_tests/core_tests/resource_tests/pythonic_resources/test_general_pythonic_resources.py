@@ -1082,3 +1082,11 @@ def test_telemetry_dagster_resource():
             return True
 
     assert MyResource(my_value="foo")._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_err_extra_params() -> None:
+    class MyResource(ConfigurableResource):
+        my_value: str
+
+    with pytest.raises(ValidationError):
+        MyResource(my_value="foo", extra_param="bar")
