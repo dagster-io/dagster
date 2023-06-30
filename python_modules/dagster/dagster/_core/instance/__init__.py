@@ -35,6 +35,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -42,8 +43,6 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value, PartitionStatus
-
 from dagster._core.log_manager import DagsterLogRecord
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -56,6 +55,10 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
     TagBucket,
+)
+from dagster._core.storage.partition_status_cache import (
+    PartitionStatus,
+    get_and_update_asset_status_cache_value,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -1782,8 +1785,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @public
     @traced
-    def get_status_by_partition(self, asset_key:AssetKey, partitions_def:PartitionsDefinition, partition_keys: List[str]) -> Dict:
-        """get the current status of provided partition_keys
+    def get_status_by_partition(
+        self, asset_key: AssetKey, partitions_def: PartitionsDefinition, partition_keys: List[str]
+    ) -> Dict:
+        """Get the current status of provided partition_keys.
 
         Args:
             asset_key (AssetKey):
@@ -1794,10 +1799,16 @@ class DagsterInstance(DynamicPartitionsStore):
             Dict: status for each partition key
 
         """
-        cached_value = get_and_update_asset_status_cache_value(self, asset_key,partitions_def)
-        materialized_partitions = cached_value.deserialize_materialized_partition_subsets(partitions_def).get_partition_keys()
-        failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def).get_partition_keys()
-        in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(partitions_def).get_partition_keys()
+        cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
+        materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
+            partitions_def
+        ).get_partition_keys()
+        failed_partitions = cached_value.deserialize_failed_partition_subsets(
+            partitions_def
+        ).get_partition_keys()
+        in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
+            partitions_def
+        ).get_partition_keys()
 
         status_by_partition = {}
 

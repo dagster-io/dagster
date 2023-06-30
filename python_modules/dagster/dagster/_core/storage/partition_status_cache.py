@@ -1,5 +1,6 @@
-from typing import Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 from enum import Enum
+from typing import Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
+
 from dagster import (
     AssetKey,
     DagsterEventType,
