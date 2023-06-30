@@ -879,7 +879,6 @@ class DbtCliInvocation:
             return json.loads(handle.read())
 
 
-@experimental
 class DbtCli(ConfigurableResource):
     """A resource used to execute dbt CLI commands.
 
