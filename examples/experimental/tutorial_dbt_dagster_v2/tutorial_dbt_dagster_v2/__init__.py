@@ -13,7 +13,7 @@ defs = Definitions(
     resources={
         "dbt": DbtCli(
             project_dir=DBT_PROJECT_DIR,
-            global_config=["--no-use-colors"],
+            global_config_flags=["--no-use-colors"],
             profile="jaffle_shop",
             target="dev",
         ),
