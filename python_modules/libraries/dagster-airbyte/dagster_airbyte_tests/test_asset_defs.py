@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import responses
 from dagster import (
@@ -265,13 +267,12 @@ def test_built_airbyte_asset_with_downstream_asset_errors():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=(
+        match=re.escape(
             "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
             " Instead, specify dependencies on the assets created by the multi_asset via AssetKeys"
             " or strings."
             " For the multi_asset airbyte_sync_12345, the available keys are: "
-            r"\{AssetKey\(\[\'some\'\, \'prefix\'\, \'bar\'\]\)\, AssetKey\(\[\'some\'\,"
-            r" \'prefix\'\, \'foo\'\]\)\}"
+            "{AssetKey(['some', 'prefix', 'bar']), AssetKey(['some', 'prefix', 'foo'])}"
         ),
     ):
 
