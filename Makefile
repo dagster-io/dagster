@@ -16,14 +16,14 @@
 black:
 	black --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
-    examples integration_tests helm python_modules .buildkite
+    docs examples integration_tests helm python_modules .buildkite
 	black --fast \
     examples/docs_snippets
 
 check_black:
 	black --check --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
-    examples integration_tests helm python_modules .buildkite
+    docs examples integration_tests helm python_modules .buildkite
 	black --check --fast \
     examples/docs_snippets
 
