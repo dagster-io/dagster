@@ -93,24 +93,30 @@ def _create_command_list(
     if debug:
         prefix += ["--debug"]
 
-    full_command = command.split(" ")
+    full_command = [*command.split(" "), *build_command_args_from_flags(flags_dict)]
+
+    return prefix + full_command
+
+
+def build_command_args_from_flags(flags_dict: Mapping[str, Any]) -> Sequence[str]:
+    result = []
     for flag, value in flags_dict.items():
         if not value:
             continue
 
-        full_command.append(f"--{flag}")
+        result.append(f"--{flag}")
 
         if isinstance(value, bool):
             pass
         elif isinstance(value, list):
             check.list_param(value, f"config.{flag}", of_type=str)
-            full_command += value
+            result += value
         elif isinstance(value, dict):
-            full_command.append(json.dumps(value))
+            result.append(json.dumps(value))
         else:
-            full_command.append(str(value))
+            result.append(str(value))
 
-    return prefix + full_command
+    return result
 
 
 def _core_execute_cli(
