@@ -887,7 +887,7 @@ class DbtCli(ConfigurableResource):
         project_dir (Path): The path to the dbt project directory. This directory should contain a
             `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more
             information.
-        global_config (List[str]): A list of global flags configuration to pass to the dbt CLI
+        global_config_flags (List[str]): A list of global flags configuration to pass to the dbt CLI
             invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
             configuration.
         profile (Optional[str]): The profile from your dbt `profiles.yml` to use for execution. See
@@ -904,7 +904,7 @@ class DbtCli(ConfigurableResource):
 
             dbt = DbtCli(
                 project_dir="/path/to/dbt/project",
-                global_config=["--no-use-colors"],
+                global_config_flags=["--no-use-colors"],
                 profile="jaffle_shop",
                 target="dev",
             )
@@ -918,7 +918,7 @@ class DbtCli(ConfigurableResource):
             " information."
         ),
     )
-    global_config: List[str] = Field(
+    global_config_flags: List[str] = Field(
         default=[],
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
@@ -1026,7 +1026,7 @@ class DbtCli(ConfigurableResource):
         if self.target:
             profile_args += ["--target", self.target]
 
-        args = ["dbt"] + self.global_config + args + profile_args + selection_args
+        args = ["dbt"] + self.global_config_flags + args + profile_args + selection_args
         project_dir = Path(self.project_dir).resolve(strict=True)
 
         return DbtCliTask.run(

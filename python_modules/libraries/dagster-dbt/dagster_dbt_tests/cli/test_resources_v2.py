@@ -22,15 +22,15 @@ manifest_path = f"{TEST_PROJECT_DIR}/manifest.json"
 manifest = DbtManifest.read(path=manifest_path)
 
 
-@pytest.mark.parametrize("global_config", [[], ["--debug"]])
+@pytest.mark.parametrize("global_config_flags", [[], ["--debug"]])
 @pytest.mark.parametrize("command", ["run", "parse"])
-def test_dbt_cli(global_config: List[str], command: str) -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, global_config=global_config)
+def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
+    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
     dbt_cli_task = dbt.cli([command], manifest=manifest)
 
     dbt_cli_task.wait()
 
-    assert dbt_cli_task.process.args == ["dbt", *global_config, command]
+    assert dbt_cli_task.process.args == ["dbt", *global_config_flags, command]
     assert dbt_cli_task.is_successful()
     assert dbt_cli_task.process.returncode == 0
 
