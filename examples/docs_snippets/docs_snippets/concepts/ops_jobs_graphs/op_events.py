@@ -132,27 +132,6 @@ def my_failure_op():
 
 # end_failure_op
 
-# start_failure_metadata_op
-from dagster import Failure, op
-
-
-@op
-def my_failure_metadata_op():
-    path = "/path/to/files"
-    my_files = get_files(path)
-    if len(my_files) == 0:
-        raise Failure(
-            description="No files to process",
-            metadata={
-                "filepath": MetadataValue.path(path),
-                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
-            },
-        )
-    return some_calculation(my_files)
-
-
-# end_failure_metadata_op
-
 # start_retry_op
 from dagster import RetryRequested, op
 
