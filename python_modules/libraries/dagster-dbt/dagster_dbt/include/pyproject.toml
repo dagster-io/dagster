@@ -1,0 +1,9 @@
+[project]
+name = "dbt_scaffold"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "dbt_scaffold.definitions"
