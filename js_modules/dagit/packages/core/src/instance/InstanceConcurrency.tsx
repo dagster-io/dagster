@@ -51,7 +51,7 @@ const RUNS_LIMIT = 25;
 
 const InstanceConcurrencyPage = React.memo(() => {
   useTrackPageView();
-  useDocumentTitle('Configuration');
+  useDocumentTitle('Concurrency');
   const {flagInstanceConcurrencyLimits} = useFeatureFlags();
 
   const {pageTitle} = React.useContext(InstancePageContext);
@@ -107,7 +107,7 @@ type DialogAction =
     }
   | undefined;
 
-const ConcurrencyLimits: React.FC<{
+export const ConcurrencyLimits: React.FC<{
   limits: ConcurrencyLimitFragment[];
   refetch: () => void;
 }> = ({limits, refetch}) => {
@@ -542,7 +542,7 @@ const ConcurrencyRunsDialog: React.FC<{
   );
 };
 
-const CONCURRENCY_LIMIT_FRAGMENT = gql`
+export const CONCURRENCY_LIMIT_FRAGMENT = gql`
   fragment ConcurrencyLimitFragment on ConcurrencyKeyInfo {
     concurrencyKey
     slotCount
@@ -551,7 +551,7 @@ const CONCURRENCY_LIMIT_FRAGMENT = gql`
   }
 `;
 
-const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
+export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
   query InstanceConcurrencyLimitsQuery {
     instance {
       id
