@@ -42,6 +42,8 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value, PartitionStatus
+
 from dagster._core.log_manager import DagsterLogRecord
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -1777,6 +1779,39 @@ class DagsterInstance(DynamicPartitionsStore):
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
+    @public
+    @traced
+    def get_status_by_partition(self, asset_key:AssetKey, partitions_def:PartitionsDefinition, partition_keys: List[str]) -> Dict:
+        """get the current status of provided partition_keys
+
+        Args:
+            asset_key (AssetKey):
+            partitions_def (PartitionsDefinition):
+            partition_keys (List[str]):
+
+        Returns:
+            Dict: status for each partition key
+
+        """
+        cached_value = get_and_update_asset_status_cache_value(self, asset_key,partitions_def)
+        materialized_partitions = cached_value.deserialize_materialized_partition_subsets(partitions_def).get_partition_keys()
+        failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def).get_partition_keys()
+        in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(partitions_def).get_partition_keys()
+
+        status_by_partition = {}
+
+        for partition_key in partition_keys:
+            if partition_key in in_progress_partitions:
+                status_by_partition[partition_key] = PartitionStatus.IN_PROGRESS
+            elif partition_key in failed_partitions:
+                status_by_partition[partition_key] = PartitionStatus.FAILED
+            elif partition_key in materialized_partitions:
+                status_by_partition[partition_key] = PartitionStatus.MATERIALIZED
+            else:
+                status_by_partition[partition_key] = None
+
+        return status_by_partition
 
     @public
     @traced
