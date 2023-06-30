@@ -55,7 +55,7 @@ In the Dagster UI, refresh your code location, observe the new asset, and materi
 
 By default, an asset loads its dependencies into memory when it materializes. However, there are situations where you would want to avoid doing this. If you're operating directly on data in storage, such as unzipping a zip file, you don't need to load the data into memory.
 
-To tell an asset not to load a dependency into memory when materializing, you can use the <PyObject object="asset" decorator /> decorator’s `non_argument_deps` parameter to establish the dependency instead of including it as an argument of the asset’s function definition.
+To tell an asset not to load a dependency into memory when materializing, you can use the <PyObject object="asset" decorator /> decorator’s `deps` parameter to establish the dependency instead of including it as an argument of the asset’s function definition.
 
 Copy the code below into `assets.py` to create a new asset called `stopwords_csv`:
 
@@ -63,7 +63,7 @@ Copy the code below into `assets.py` to create a new asset called `stopwords_csv
 import zipfile  # Note: remember to add imports to the top of the file
 
 
-@asset(non_argument_deps={"stopwords_zip"})
+@asset(deps=[stopwords_zip])
 def stopwords_csv() -> None:
     with zipfile.ZipFile("data/stopwords.zip", "r") as zip_ref:
         zip_ref.extractall("data")
@@ -84,7 +84,7 @@ import csv  # Note: Remember to add all new imports to the top
 
 
 @asset(
-    non_argument_deps={"stopwords_csv"},  # Addition: added the dependency
+    deps=[stopwords_csv],  # Addition: added the dependency
 )
 def most_frequent_words(topstories):
     # stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]

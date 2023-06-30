@@ -62,12 +62,12 @@ class MyIOManager(IOManager):
 Alternative example with an asset that handles its own I/O:
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetKey, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    non_argument_deps={"raw_events"},
+    deps=[AssetKey("raw_events")],
 )
 def events(context):
     (

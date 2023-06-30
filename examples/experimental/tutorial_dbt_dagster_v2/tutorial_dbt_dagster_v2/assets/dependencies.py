@@ -33,6 +33,6 @@ def clients_data(context):
     yield Output(value=pd.DataFrame(), output_name=output_names[1])
 
 
-@asset(non_argument_deps={my_dbt_assets.get_asset_key_for_model("customers")})
+@asset(deps=[my_dbt_assets.get_asset_key_for_model("customers")])
 def cleaned_customers() -> Any:
     return pd.DataFrame()
