@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: raw_data
-    schema: test_python_schema_raw_data
+    schema: raw_data
     tables:
       - name: events
         tags: ["events"]
