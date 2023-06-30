@@ -39,8 +39,8 @@ CACHEABLE_PARTITION_TYPES = (
 )
 
 
-class PartitionStatus(Enum):
-    """The status of partition."""
+class AssetPartitionStatus(Enum):
+    """The status of asset partition."""
 
     MATERIALIZED = "MATERIALIZED"
     IN_PROGRESS = "IN_PROGRESS"
