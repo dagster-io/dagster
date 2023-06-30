@@ -36,7 +36,7 @@ def test_get_explicit_asset_key_for_dbt_unique_id_() -> None:
 def test_asset_downstream_of_dbt_asset() -> None:
     upstream_asset_key = AssetKey(["orders"])
 
-    @asset(non_argument_deps={my_dbt_assets.get_asset_key_for_model("orders")})
+    @asset(deps=[my_dbt_assets.get_asset_key_for_model("orders")])
     def downstream_python_asset():
         ...
 
