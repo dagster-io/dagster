@@ -286,6 +286,11 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     self.graphql_ws_endpoint,
                     name="graphql-ws",
                 ),
+                Route(
+                    "/graphql/",
+                    lambda _: RedirectResponse(url="/graphql"),
+                    methods=["GET", "POST"],
+                ),
             ]
             + self.build_static_routes()
             + [

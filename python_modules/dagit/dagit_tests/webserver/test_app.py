@@ -112,6 +112,15 @@ def test_graphql_get(instance, test_client: TestClient):
     assert response.status_code == 400, response.text
 
 
+def test_graphql_trailing_slash(instance, test_client: TestClient):
+    # base case
+    response = test_client.get("/graphql/", params={"query": "{__typename}"}, allow_redirects=False)
+    assert response.status_code == 307, response.text
+
+    response = test_client.get("/graphql/", params={"query": "{__typename}"}, allow_redirects=True)
+    assert response.json() == {"data": {"__typename": "DagitQuery"}}
+
+
 def test_graphql_invalid_json(instance, test_client: TestClient):
     # base case
     response = test_client.post(
