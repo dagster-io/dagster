@@ -25,6 +25,9 @@ from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
 from sphinx.addnodes import versionmodified
 from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
+from sphinx.util import logging
+
+logger = logging.getLogger(__name__)
 
 
 def type_repr(config_type: ConfigType) -> str:
@@ -181,16 +184,30 @@ class DagsterClassDocumenter(ClassDocumenter):
         for alias in self.options.get("deprecated_aliases", []):
             self.add_line(f"ALIAS: {alias}", source_name)
 
+    def record_error(self, message: str) -> None:
+        if not hasattr(self.env, "dagster_errors"):
+            self.env.dagster_errors = []
+        self.env.dagster_errors.append(message)
+
     def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
         _, unfiltered_members = super().get_object_members(want_all)
         # Use form `is_public(self.object, attr_name) if possible, because to access a descriptor
         # object (returned by e.g. `@staticmethod`) you need to go in through
         # `self.object.__dict__`-- the value provided in the member list is _not_ the descriptor!
-        return False, [
+        filtered_members = [
             m
             for m in unfiltered_members
             if (m[0] in self.object.__dict__ and is_public(self.object, m[0]) or is_public(m[1]))
         ]
+        for member in filtered_members:
+            if member[0] != "__init__" and not member[1].__doc__:
+                msg = (
+                    f"Docstring not found for {self.object.__name__}.{member[0]}. "
+                    "All public methods and properties must have docstrings."
+                )
+                logger.info(msg)
+                self.record_error(msg)
+        return False, filtered_members
 
 
 # This is a hook that will be executed for every processed docstring. It modifies the lines of the
@@ -218,6 +235,16 @@ def substitute_deprecated_text(app, doctree, fromdocname):
         inline.replace(text, docutils.nodes.Text("Deprecated"))
 
 
+def check_custom_errors(app, _):
+    if hasattr(app.env, "dagster_errors"):
+        for error_msg in app.env.dagster_errors:
+            logger.info(error_msg)
+        raise Exception(
+            f"Bulid failed. Found {len(app.env.dagster_errors)} violations of docstring"
+            " requirements."
+        )
+
+
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
     app.add_autodocumenter(ConfigurableDocumenter)
@@ -225,6 +252,7 @@ def setup(app):
     app.add_autodocumenter(DagsterClassDocumenter, override=True)
     app.connect("autodoc-process-docstring", process_docstring)
     app.connect("doctree-resolved", substitute_deprecated_text)
+    app.connect("build-finished", check_custom_errors)
 
     return {
         "version": "0.1",

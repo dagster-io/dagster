@@ -276,16 +276,19 @@ class Output(Generic[T]):
     @public
     @property
     def value(self) -> Any:
+        """Any: The value returned by the compute function."""
         return self._value
 
     @public
     @property
     def output_name(self) -> str:
+        """str: Name of the corresponding :py:class:`Out`."""
         return self._output_name
 
     @public
     @property
     def data_version(self) -> Optional[DataVersion]:
+        """Optional[DataVersion]: A data version that was manually set on the `Output`."""
         return self._data_version
 
     def __eq__(self, other: object) -> bool:

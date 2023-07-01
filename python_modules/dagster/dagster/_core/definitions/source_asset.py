@@ -168,6 +168,11 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def op(self) -> OpDefinition:
+        """OpDefinition: The OpDefinition associated with the observation function of an observable
+        source asset.
+
+        Throws an error if the asset is not observable.
+        """
         check.invariant(
             isinstance(self.node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
@@ -177,6 +182,7 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def is_observable(self) -> bool:
+        """bool: Whether the asset is observable."""
         return self.node_def is not None
 
     def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
