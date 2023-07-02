@@ -430,6 +430,7 @@ from dagster._core.execution.context.input import (
     build_input_context as build_input_context,
 )
 from dagster._core.execution.context.invocation import (
+    OpInvocationContext as OpInvocationContext,
     build_asset_context as build_asset_context,
     build_op_context as build_op_context,
 )

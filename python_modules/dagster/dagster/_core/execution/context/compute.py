@@ -130,12 +130,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def op_config(self) -> Any:
-        """Any: The parsed config specific to this op."""
+        """Any: The config for this op."""
         return self._step_execution_context.op_config
 
     @property
     def dagster_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run."""
+        """DagsterRun: The current run."""
         return self._step_execution_context.dagster_run
 
     @property
@@ -165,17 +165,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             self._pdb = ForkedPdb()
 
         return self._pdb
-
-    @property
-    def file_manager(self):
-        """Deprecated access to the file manager.
-
-        :meta private:
-        """
-        raise DagsterInvalidPropertyError(
-            "You have attempted to access the file manager which has been moved to resources in"
-            " 0.10.0. Please access it via `context.resources.file_manager` instead."
-        )
 
     @public
     @property

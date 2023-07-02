@@ -1266,7 +1266,7 @@ def _build_invocation_context_with_included_resources(
     context: "OpExecutionContext",
 ) -> "OpExecutionContext":
     from dagster._core.execution.context.invocation import (
-        UnboundOpExecutionContext,
+        OpInvocationContext,
         build_op_context,
     )
 
@@ -1281,7 +1281,7 @@ def _build_invocation_context_with_included_resources(
             )
     all_resources = merge_dicts(resource_defs, invocation_resources)
 
-    if isinstance(context, UnboundOpExecutionContext):
+    if isinstance(context, OpInvocationContext):
         return build_op_context(
             resources=all_resources,
             config=context.op_config,

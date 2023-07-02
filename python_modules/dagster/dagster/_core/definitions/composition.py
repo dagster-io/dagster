@@ -430,7 +430,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs) -> Any:
-        from ..execution.context.invocation import UnboundOpExecutionContext
+        from ..execution.context.invocation import OpInvocationContext
         from .decorators.op_decorator import DecoratedOpFunction
         from .op_invocation import op_invocation_result
 
@@ -455,7 +455,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                         f"Compute function of {node_label} '{self.given_alias}' has context"
                         " argument, but no context was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
+                elif args[0] is not None and not isinstance(args[0], OpInvocationContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has context"
                         " argument, but no context was provided when invoking."
@@ -463,7 +463,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                 context = args[0]
                 return op_invocation_result(_self, context, *args[1:], **kwargs)
             else:
-                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
+                if len(args) > 0 and isinstance(args[0], OpInvocationContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has no context"
                         " argument, but context was provided when invoking."

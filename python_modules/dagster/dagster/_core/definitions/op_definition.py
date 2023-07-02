@@ -430,7 +430,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return [input_handle]
 
     def __call__(self, *args, **kwargs) -> Any:
-        from ..execution.context.invocation import UnboundOpExecutionContext
+        from ..execution.context.invocation import OpInvocationContext
         from .composition import is_in_composition
         from .decorators.op_decorator import DecoratedOpFunction
 
@@ -450,7 +450,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                         " no context was provided when invoking."
                     )
                 if len(args) > 0:
-                    if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
+                    if args[0] is not None and not isinstance(args[0], OpInvocationContext):
                         raise DagsterInvalidInvocationError(
                             f"Compute function of op '{self.name}' has context argument, "
                             "but no context was provided when invoking."
@@ -466,7 +466,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                             f"'{context_param_name}', but no value for '{context_param_name}' was "
                             f"found when invoking. Provided kwargs: {kwargs}"
                         )
-                    context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
+                    context = cast(OpInvocationContext, kwargs[context_param_name])
                     kwargs_sans_context = {
                         kwarg: val
                         for kwarg, val in kwargs.items()
@@ -476,8 +476,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
             else:
                 context = None
-                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-                    context = cast(UnboundOpExecutionContext, args[0])
+                if len(args) > 0 and isinstance(args[0], OpInvocationContext):
+                    context = cast(OpInvocationContext, args[0])
                     args = args[1:]
                 return op_invocation_result(self, context, *args, **kwargs)
 

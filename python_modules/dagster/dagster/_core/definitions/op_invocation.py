@@ -30,7 +30,7 @@ from .events import (
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import BoundOpExecutionContext, UnboundOpExecutionContext
+    from ..execution.context.invocation import OpInvocationContext
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
@@ -100,7 +100,7 @@ def _separate_args_and_kwargs(
 
 def op_invocation_result(
     op_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation[OpDefinition]"],
-    context: Optional["UnboundOpExecutionContext"],
+    context: Optional["OpInvocationContext"],
     *args,
     **kwargs,
 ) -> Any:
@@ -184,7 +184,7 @@ def op_invocation_result(
 
 
 def _check_invocation_requirements(
-    op_def: "OpDefinition", context: Optional["UnboundOpExecutionContext"]
+    op_def: "OpDefinition", context: Optional["OpInvocationContext"]
 ) -> None:
     """Ensure that provided context fulfills requirements of op definition.
 
@@ -214,7 +214,7 @@ def _check_invocation_requirements(
 
 
 def _resolve_inputs(
-    op_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", args, kwargs, context: "OpInvocationContext"
 ) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
@@ -318,7 +318,7 @@ def _resolve_inputs(
 
 
 def _type_check_output_wrapper(
-    op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", result: Any, context: "OpInvocationContext"
 ) -> Any:
     """Type checks and returns the result of a op.
 
@@ -426,7 +426,7 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    op_def: "OpDefinition", result: T, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", result: T, context: "OpInvocationContext"
 ) -> T:
     from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
 
@@ -437,7 +437,7 @@ def _type_check_function_output(
 
 
 def _type_check_output(
-    output_def: "OutputDefinition", output: T, context: "BoundOpExecutionContext"
+    output_def: "OutputDefinition", output: T, context: "OpInvocationContext"
 ) -> T:
     """Validates and performs core type check on a provided output.
 
