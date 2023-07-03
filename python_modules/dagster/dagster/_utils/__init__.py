@@ -641,6 +641,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 def traced(func: T_Callable) -> T_Callable:
     """A decorator that keeps track of how many times a function is called."""
 
+    @functools.wraps(func)
     def inner(*args, **kwargs):
         counter = traced_counter.get()
         if counter and isinstance(counter, Counter):
