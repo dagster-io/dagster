@@ -45,6 +45,8 @@ from .tasks import (
 )
 from .utils import get_task_definition_family, get_task_logs, task_definitions_match
 
+import time
+
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 RUNNING_STATUSES = [
@@ -79,6 +81,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        capacity_failure_strategy: Optional[Dict[str, Any]] = None,
+        fallback_capacity_provider_strategy: Optional[List[Dict[str, Any]]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -173,7 +177,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 )
 
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
-
+        
+        self.capacity_failure_strategy = check.opt_mapping_param(capacity_failure_strategy, "capacity_failure_strategy")
+        self.fallback_capacity_provider_strategy = check.opt_list_param(fallback_capacity_provider_strategy, "fallback_capacity_provider_strategy")
+        
         self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
 
         self._current_task_metadata = None
@@ -318,6 +325,47 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
+            "capacity_failure_strategy": Field(  # TODO
+                Permissive(
+                    {
+                        "max_retries": Field(
+                            int,
+                            is_required=False,
+                            default_value=5,
+                            description="Number of retries in case a capacity failure takes place"
+                        ),
+                        "retry_interval": Field(
+                            int,
+                            is_required=False,
+                            default_value=5,
+                            description="Interval between retries in case a capacity failure takes place (in seconds)"
+                        )
+                    }
+                ),
+                is_required=False,
+                description=(
+                    "Capacity failure strategy that allows you to set the number of retries"
+                    "and the interval between these retries (in seconds)"
+                ),
+            ),
+            "fallback_capacity_provider_strategy": Field(
+                Array(
+                    Permissive(
+                        {
+                            "capacityProvider": Field(
+                                str,
+                                is_required=True,
+                                description="Fallback capacity provider"
+                            )
+                        }
+                    ),
+                ),
+                is_required=False,
+                description=(
+                    "The fallback capacity provider strategy allows you to set a backup capacity provider for when"
+                    "there is insufficient capacity available in the region you are trying to launch your Fargate tasks"
+                ),
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -353,6 +401,82 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
         return run_args.get_command_args()
+
+    def _raise_task_failure(self, failures):
+        failure_messages = []
+        for failure in failures:
+            arn = failure.get("arn")
+            reason = failure.get("reason")
+            detail = failure.get("detail")
+
+            failure_message = (
+                "Task"
+                + (f" {arn}" if arn else "")
+                + " failed."
+                + (f" Failure reason: {reason}" if reason else "")
+                + (f" Failure details: {detail}" if detail else "")
+            )
+            failure_messages.append(failure_message)
+
+        raise Exception("\n".join(failure_messages) if failure_messages else "Task failed.")
+
+    def _run_task(self, run_task_kwargs, capacity_failure_strategy: Dict, fallback_capacity_provider_strategy: List):
+
+        # initialize parameters
+        retry_iterations = int(capacity_failure_strategy["max_retries"]) if capacity_failure_strategy else 0
+        retry_interval = int(capacity_failure_strategy["retry_interval"]) if capacity_failure_strategy else 0
+
+        # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
+        if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
+            del run_task_kwargs["launchType"]
+            
+        # fire off runs
+        for i in range(1 + retry_iterations):
+            response = self.ecs.run_task(**run_task_kwargs)
+            tasks = response["tasks"]
+            if not tasks:
+                failures = response["failures"]
+                if any(failure.get("reason") == "Capacity is unavailable at this time. Please try again later or in a different availability zone" for failure in failures):
+                    if i < retry_iterations:
+                        time.sleep(retry_interval)
+                        break
+                    if not fallback_capacity_provider_strategy:
+                         self._raise_task_failure(failures)
+                else:
+                    self._raise_task_failure(failures)
+            return tasks
+        
+        # change capacity provider
+        if fallback_capacity_provider_strategy:
+            run_task_kwargs["capacityProviderStrategy"] = fallback_capacity_provider_strategy
+
+            # check for launchType and capacityProviderStrategy again due to incompatability
+            if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
+                del run_task_kwargs["launchType"]
+            
+            response = self.ecs.run_task(**run_task_kwargs)
+            tasks = response["tasks"]
+            if not tasks:
+                failures = response["failures"]
+                self._raise_task_failure(failures)
+            return tasks
+
+    def _get_fallback_capacity_provider_strategy(self):
+        return self.fallback_capacity_provider_strategy
+    
+    def _get_capacity_failure_strategy(self, run):
+        capacity_failure_strategy = {}
+
+        capacity_failure_strategy_from_instance = self.capacity_failure_strategy
+        capacity_failure_strategy_from_tag = run.tags.get("ecs/capacity_failure_strategy")
+
+        # tag has highest priority
+        if capacity_failure_strategy_from_tag:
+            capacity_failure_strategy = json.loads(capacity_failure_strategy_from_tag)
+        elif capacity_failure_strategy_from_instance:
+            capacity_failure_strategy = capacity_failure_strategy_from_instance
+
+        return capacity_failure_strategy
 
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
@@ -411,33 +535,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
         run_task_kwargs.update(run_task_kwargs_from_run)
 
-        # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
-        if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
-            del run_task_kwargs["launchType"]
+        # get capacity failure strategy from dagster instance or tag
+        capacity_failure_strategy = self._get_capacity_failure_strategy(run)
 
-        # Run a task using the same network configuration as this processes's task.
-        response = self.ecs.run_task(**run_task_kwargs)
+        # get fallback capacity provider from dagster instance
+        fallback_capacity_provider_strategy = self._get_fallback_capacity_provider_strategy()
 
-        tasks = response["tasks"]
-
-        if not tasks:
-            failures = response["failures"]
-            failure_messages = []
-            for failure in failures:
-                arn = failure.get("arn")
-                reason = failure.get("reason")
-                detail = failure.get("detail")
-
-                failure_message = (
-                    "Task"
-                    + (f" {arn}" if arn else "")
-                    + " failed."
-                    + (f" Failure reason: {reason}" if reason else "")
-                    + (f" Failure details: {detail}" if detail else "")
-                )
-                failure_messages.append(failure_message)
-
-            raise Exception("\n".join(failure_messages) if failure_messages else "Task failed.")
+        tasks = self._run_task(
+            run_task_kwargs=run_task_kwargs, 
+            capacity_failure_strategy=capacity_failure_strategy, 
+            fallback_capacity_provider_strategy=fallback_capacity_provider_strategy
+        )
 
         arn = tasks[0]["taskArn"]
         cluster_arn = tasks[0]["clusterArn"]
