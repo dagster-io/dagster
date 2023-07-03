@@ -493,6 +493,9 @@ from dagster._core.storage.mem_io_manager import (
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
+from dagster._core.storage.partition_status_cache import (
+    AssetPartitionStatus as AssetPartitionStatus,
+)
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
     RootInputManagerDefinition as RootInputManagerDefinition,

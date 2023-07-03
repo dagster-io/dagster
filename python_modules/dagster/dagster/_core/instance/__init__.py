@@ -91,6 +91,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import (
         JobDefinition,
     )
+    from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
@@ -131,7 +132,10 @@ if TYPE_CHECKING:
         EventLogRecord,
         EventRecordsFilter,
     )
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+    from dagster._core.storage.partition_status_cache import (
+        AssetPartitionStatus,
+        AssetStatusCacheValue,
+    )
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.runs.base import RunGroupInfo
@@ -1777,6 +1781,53 @@ class DagsterInstance(DynamicPartitionsStore):
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
+    @public
+    @traced
+    def get_status_by_partition(
+        self, asset_key: AssetKey, partitions_def: PartitionsDefinition, partition_keys: List[str]
+    ) -> Optional[Mapping[str, AssetPartitionStatus]]:
+        """Get the current status of provided partition_keys.
+
+        Args:
+            asset_key (AssetKey):
+            partitions_def (PartitionsDefinition):
+            partition_keys (List[str]):
+
+        Returns:
+            Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
+
+        """
+        from dagster._core.storage.partition_status_cache import (
+            AssetPartitionStatus,
+            AssetStatusCacheValue,
+            get_and_update_asset_status_cache_value,
+        )
+
+        cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
+
+        if isinstance(cached_value, AssetStatusCacheValue):
+            materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
+                partitions_def
+            )
+            failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def)
+            in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
+                partitions_def
+            )
+
+            status_by_partition = {}
+
+            for partition_key in partition_keys:
+                if partition_key in in_progress_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.IN_PROGRESS
+                elif partition_key in failed_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.FAILED
+                elif partition_key in materialized_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.MATERIALIZED
+                else:
+                    status_by_partition[partition_key] = None
+
+            return status_by_partition
 
     @public
     @traced
