@@ -109,6 +109,304 @@ def test_default_launcher(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
     ecs.stop_task(task=task_arn)
 
+def test_fallback_strategy(ecs, instance_cm, workspace, job, external_job):
+    fallback_capacity_provider = [{'capacityProvider': 'FARGATE'}]
+    default_capacity_provider = [{'capacityProvider': 'FARGATE_SPOT'}]
+    
+    with instance_cm(
+        {
+            "fallback_capacity_provider_strategy": fallback_capacity_provider,
+            "run_task_kwargs": {
+                    "capacityProviderStrategy": default_capacity_provider,
+            }
+        },
+    ) as instance:
+        
+        ### Fallback from instance ###
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        # Test 1
+        def run_task_test_1(self=ecs, **kwargs):
+            # test 1: fallback, succeeded (fallback capacity provider strategy enabled)
+
+            if not hasattr(run_task_test_1, 'counter'):
+                run_task_test_1.counter = 1
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                        },
+                    ],
+                }
+            elif run_task_test_1.counter == 1:
+                service_response = {
+                    "tasks": [
+                        {
+                            "taskArn": "task-arn-1",
+                            "clusterArn": "cluster-arn-1",
+                            "capacityProviderStrategy": kwargs.get("capacityProviderStrategy")
+                        }
+                    ],
+                    "failures": [],
+                }
+            
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        instance.run_launcher.ecs.run_task = run_task_test_1
+        instance.launch_run(run.run_id, workspace)
+        tasks = ecs.list_tasks()["taskArns"]
+        assert len(tasks) == len(initial_tasks) + 1
+        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        assert task["capacityProviderStrategy"] == fallback_capacity_provider
+
+        # Test 2
+        def run_task_test_2(self=ecs, **kwargs):
+            # test 2: fallback, failure (fallback enabled)
+
+            service_response={
+                "tasks": [],
+                "failures": [
+                    {
+                        "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                    },
+                ],
+            }
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        instance.run_launcher.ecs.run_task = run_task_test_2
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+        assert ex.match("Task failed. Failure reason: Capacity is unavailable at this time. Please try again later or in a different availability zone")
+
+        # Test 3
+        def run_task_test_3(self=ecs, **kwargs):
+            # # test 3: failure (other than capacity unavailable)
+
+            service_response={
+                "tasks": [],
+                "failures": [
+                    {
+                        "reason": "Not capacity related failure"
+                    },
+                ],
+            }
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        instance.run_launcher.ecs.run_task = run_task_test_3
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+        assert ex.match("Task failed. Failure reason: Not capacity related failure")
+
+def test_capacity_failure_strategy(ecs, instance_cm, workspace, job, external_job):
+  
+    with instance_cm(
+        {
+            "capacity_failure_strategy": {
+                "max_retries": 1,
+                "retry_interval": 5
+            }
+        },
+    ) as instance:
+
+        ### Capacity failure strategy from instance ###
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        # Test 1
+        def run_task_test_1(self=ecs, **kwargs):
+            # test 1: retry, succeeded (max_retries = 1)
+
+            if not hasattr(run_task_test_1, 'counter'):
+                run_task_test_1.counter = 1
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                        },
+                    ],
+                }
+            elif run_task_test_1.counter == 1:
+                service_response={
+                    "tasks": [
+                        {
+                            "taskArn": "task-arn-1",
+                            "clusterArn": "cluster-arn-1",
+                        }
+                    ],
+                    "failures": [],
+                }
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        instance.run_launcher.ecs.run_task = run_task_test_1
+        instance.launch_run(run.run_id, workspace)
+        tasks = ecs.list_tasks()["taskArns"]
+        assert len(tasks) == len(initial_tasks) + 1
+
+        # Test 2
+        def run_task_test_2_4(self=ecs, **kwargs):
+            # test 2: retry, failure (max_retries = 1)
+            # test 4: retry, retry, failure (max_retries = 2)
+
+            service_response={
+                "tasks": [],
+                "failures": [
+                    {
+                        "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                    },
+                ],
+            }
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+        
+        instance.run_launcher.ecs.run_task = run_task_test_2_4
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+        assert ex.match("Task failed. Failure reason: Capacity is unavailable at this time. Please try again later or in a different availability zone")
+
+        ### Override capacity failure strategy with tags ###
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        instance.add_run_tags(
+            run.run_id,
+            {
+                "ecs/capacity_failure_strategy": json.dumps(
+                    {
+                        "max_retries": 2,
+                        "retry_interval": 5
+                    }
+                )
+            },
+        )
+
+        # Test 3
+        def run_task_test_3(self=ecs, **kwargs):
+            # test 3: retry, retry, succeeded (max_retries = 2)
+
+            if not hasattr(run_task_test_3, 'counter') or run_task_test_3.counter == 1:
+                if not hasattr(run_task_test_3, 'counter'):
+                    run_task_test_3.counter = 1
+                else:
+                    run_task_test_3.counter += 1
+                
+                service_response={
+                    "tasks": [],
+                    "failures": [
+                        {
+                            "reason": "Capacity is unavailable at this time. Please try again later or in a different availability zone"
+                        },
+                    ],
+                }
+            elif run_task_test_3.counter == 2:
+                service_response={
+                    "tasks": [
+                        {
+                            "taskArn": "task-arn-1",
+                            "clusterArn": "cluster-arn-1",
+                        }
+                    ],
+                    "failures": [],
+                }
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+        
+        instance.run_launcher.ecs.run_task = run_task_test_3
+        instance.launch_run(run.run_id, workspace)
+        tasks = ecs.list_tasks()["taskArns"]
+        assert len(tasks) == len(initial_tasks) + 2
+
+        # Test 4
+        instance.run_launcher.ecs.run_task = run_task_test_2_4
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+        assert ex.match("Task failed. Failure reason: Capacity is unavailable at this time. Please try again later or in a different availability zone")
+
+        # Test 5
+        def run_task_test_5(self=ecs, **kwargs):
+            # test 2: retry, retry, failure (max_retries = 2)
+
+            service_response={
+                "tasks": [],
+                "failures": [
+                    {
+                        "reason": "Not capacity related failure"
+                    },
+                ],
+            }
+            self.stubber.activate()
+            self.stubber.add_response(
+                method="run_task",
+                service_response=service_response,
+                expected_params={**kwargs},
+            )
+            response = self.client.run_task(**kwargs)
+            self.stubber.deactivate()
+            return response
+
+        instance.run_launcher.ecs.run_task = run_task_test_5
+        with pytest.raises(Exception) as ex:
+            instance.launch_run(run.run_id, workspace)
+        assert ex.match("Task failed. Failure reason: Not capacity related failure")
 
 def test_launcher_fargate_spot(
     ecs,
