@@ -28,7 +28,7 @@ from dagster_dbt import (
     dbt_cli_resource,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.cli.utils import parse_run_results
+from dagster_dbt.core.utils import parse_run_results
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
 from dagster_duckdb import build_duckdb_io_manager

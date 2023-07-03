@@ -1,6 +1,6 @@
 import pickle
 
-from dagster_dbt import DbtCliOutput
+from dagster_dbt.core.types import DbtCliOutput
 
 from ..test_types import DBT_RESULT_DICT
 

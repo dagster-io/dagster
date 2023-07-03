@@ -1,7 +1,7 @@
 from typing import List
 
 import pytest
-from dagster_dbt.cli.utils import _create_command_list
+from dagster_dbt.core.utils import _create_command_list
 
 
 @pytest.mark.parametrize(

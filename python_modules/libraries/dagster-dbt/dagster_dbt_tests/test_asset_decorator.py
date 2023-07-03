@@ -11,7 +11,7 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtManifest
+from dagster_dbt.core.resources_v2 import DbtManifest
 
 manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
 manifest = DbtManifest.read(path=manifest_path)
