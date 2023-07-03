@@ -314,8 +314,16 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
         expected_conditions={
-            "asset3": {ParentMaterializedAutoMaterializeCondition()},
-            "asset4": {ParentMaterializedAutoMaterializeCondition()},
+            "asset3": {
+                ParentMaterializedAutoMaterializeCondition(
+                    materialized_asset_keys=frozenset({AssetKey("asset1")})
+                )
+            },
+            "asset4": {
+                ParentMaterializedAutoMaterializeCondition(
+                    materialized_asset_keys=frozenset({AssetKey("asset1"), AssetKey("asset2")})
+                )
+            },
         },
     ),
     "auto_materialize_policy_diamond_one_side_updated": AssetReconciliationScenario(
@@ -331,7 +339,9 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[],
         expected_conditions={
             "asset4": {
-                ParentMaterializedAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    materialized_asset_keys=frozenset({AssetKey("asset1"), AssetKey("asset2")})
+                ),
                 ParentOutdatedAutoMaterializeCondition(
                     waiting_on_asset_keys=frozenset({AssetKey("asset3")})
                 ),
@@ -418,7 +428,11 @@ auto_materialize_policy_scenarios = {
                 expected_run_requests=[],
                 expected_conditions={
                     "D": {
-                        ParentMaterializedAutoMaterializeCondition(),
+                        ParentMaterializedAutoMaterializeCondition(
+                            materialized_asset_keys=frozenset(
+                                {AssetKey("root1"), AssetKey("root2")}
+                            )
+                        ),
                         ParentOutdatedAutoMaterializeCondition(
                             # waiting on A to be materialized (pulling in the new version of root1)
                             waiting_on_asset_keys=frozenset({AssetKey("A")})
@@ -430,7 +444,9 @@ auto_materialize_policy_scenarios = {
             expected_run_requests=[],
             expected_conditions={
                 "D": {
-                    ParentMaterializedAutoMaterializeCondition(),
+                    ParentMaterializedAutoMaterializeCondition(
+                        materialized_asset_keys=frozenset({AssetKey("root2"), AssetKey("A")})
+                    ),
                     ParentOutdatedAutoMaterializeCondition(
                         # now waiting on B to be materialized (pulling in the new version of root1/A)
                         waiting_on_asset_keys=frozenset({AssetKey("B")})
@@ -443,8 +459,16 @@ auto_materialize_policy_scenarios = {
             run_request(["C", "D"]),
         ],
         expected_conditions={
-            "C": {ParentMaterializedAutoMaterializeCondition()},
-            "D": {ParentMaterializedAutoMaterializeCondition()},
+            "C": {
+                ParentMaterializedAutoMaterializeCondition(
+                    materialized_asset_keys=frozenset({AssetKey("B")})
+                )
+            },
+            "D": {
+                ParentMaterializedAutoMaterializeCondition(
+                    materialized_asset_keys=frozenset({AssetKey("B"), AssetKey("root2")})
+                )
+            },
         },
     ),
     "no_auto_materialize_policy_to_missing_lazy": AssetReconciliationScenario(

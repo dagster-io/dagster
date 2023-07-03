@@ -747,12 +747,18 @@ def determine_asset_partitions_to_auto_materialize(
             )
         ):
             conditions.add(MissingAutoMaterializeCondition())
-
-        # if the parent has been updated
-        if auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
-            asset_partition=candidate
-        ):
-            conditions.add(ParentMaterializedAutoMaterializeCondition())
+        else:
+            # if the parent has been updated
+            if auto_materialize_policy.on_new_parent_data:
+                ancestors = instance_queryer.get_ancestors_missing_or_with_unreconciled_children(
+                    candidate
+                )
+                if ancestors:
+                    conditions.add(
+                        ParentMaterializedAutoMaterializeCondition(
+                            materialized_asset_keys=frozenset(ancestors)
+                        )
+                    )
 
         # if the parents will not be resolved this tick
         waiting_on_asset_keys = get_waiting_on_asset_keys(candidate)
