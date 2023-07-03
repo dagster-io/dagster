@@ -367,16 +367,28 @@ class GraphDefinition(NodeDefinition):
     @public
     @property
     def input_mappings(self) -> Sequence[InputMapping]:
+        """Input mappings for the graph.
+
+        An input mapping is a mapping from an input of the graph to an input of a child node.
+        """
         return self._input_mappings
 
     @public
     @property
     def output_mappings(self) -> Sequence[OutputMapping]:
+        """Output mappings for the graph.
+
+        An output mapping is a mapping from an output of the graph to an output of a child node.
+        """
         return self._output_mappings
 
     @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
+        """The config mapping for the graph, if present.
+
+        By specifying a config mapping function, you can override the configuration for the child nodes contained within a graph.
+        """
         return self._config_mapping
 
     @property
@@ -746,27 +758,73 @@ class GraphDefinition(NodeDefinition):
     @public
     @property
     def name(self) -> str:
+        """The name of the graph."""
         return super(GraphDefinition, self).name
 
     @public
     @property
     def tags(self) -> Mapping[str, str]:
+        """The tags associated with the graph."""
         return super(GraphDefinition, self).tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
+        """Aliases the graph with a new name.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.alias("my_graph_alias")
+        """
         return super(GraphDefinition, self).alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+        """Attaches the provided tags to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.tag({"my_tag": "my_value"})
+        """
         return super(GraphDefinition, self).tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        """Attaches the provided hooks to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.with_hooks({my_hook})
+        """
         return super(GraphDefinition, self).with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        """Attaches the provided retry policy to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.with_retry_policy(RetryPolicy(max_retries=5))
+        """
         return super(GraphDefinition, self).with_retry_policy(retry_policy)
 
     def resolve_input_to_destinations(
