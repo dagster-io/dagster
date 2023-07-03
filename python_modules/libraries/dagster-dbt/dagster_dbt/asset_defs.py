@@ -299,7 +299,7 @@ def _get_dbt_op(
     fqns_by_output_name: Mapping[str, List[str]],
     dbt_resource_key: str,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
+    context_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
@@ -336,8 +336,8 @@ def _get_dbt_op(
                 for output_name in context.selected_output_names
             ]
         # variables to pass into the command
-        if partition_key_to_vars_fn:
-            kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
+        if context_to_vars_fn:
+            kwargs["vars"] = context_to_vars_fn(context)
         # merge in any additional kwargs from the config
         kwargs = deep_merge_dicts(kwargs, context.op_config)
 
@@ -385,7 +385,7 @@ def _dbt_nodes_to_assets(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    context_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
@@ -444,7 +444,7 @@ def _dbt_nodes_to_assets(
         fqns_by_output_name=fqns_by_output_name,
         dbt_resource_key=dbt_resource_key,
         node_info_to_asset_key=node_info_to_asset_key,
-        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        context_to_vars_fn=context_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
         manifest_json=manifest_json,
     )
@@ -482,7 +482,7 @@ def load_assets_from_dbt_project(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    context_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
@@ -530,8 +530,8 @@ def load_assets_from_dbt_project(
             for this asset, rather than `dbt run`.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
-        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
-            partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
+        context_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+            context like context.partition_key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
@@ -584,7 +584,7 @@ def load_assets_from_dbt_project(
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
-        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        context_to_vars_fn=context_to_vars_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
@@ -609,7 +609,7 @@ def load_assets_from_dbt_manifest(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    context_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
@@ -656,8 +656,8 @@ def load_assets_from_dbt_manifest(
             for this asset, rather than `dbt run`.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
-        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
-            partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
+        context_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+            context like context.partition_key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
@@ -685,11 +685,11 @@ def load_assets_from_dbt_manifest(
     check.mapping_param(manifest_json, "manifest_json", key_type=str)
     if partitions_def:
         experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
-    if partition_key_to_vars_fn:
-        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
+    if context_to_vars_fn:
+        experimental_arg_warning("context_to_vars_fn", "load_assets_from_dbt_manifest")
         check.invariant(
             partitions_def is not None,
-            "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
+            "Cannot supply a `context_to_vars_fn` without a `partitions_def`.",
         )
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
@@ -734,7 +734,7 @@ def load_assets_from_dbt_manifest(
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
-        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        context_to_vars_fn=context_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
