@@ -12,6 +12,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentOutdatedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -41,6 +42,14 @@ single_lazy_asset_with_freshness_policy = [
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
     )
+]
+lopsided_vee = [
+    asset_def("root1"),
+    asset_def("root2"),
+    asset_def("A", ["root1"]),
+    asset_def("B", ["A"]),
+    asset_def("C", ["B"], auto_materialize_policy=AutoMaterializePolicy.eager()),
+    asset_def("D", ["root2", "C"], auto_materialize_policy=AutoMaterializePolicy.eager()),
 ]
 
 time_partitioned_eager_after_non_partitioned = [
@@ -162,8 +171,18 @@ auto_materialize_policy_scenarios = {
                     PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
                 )
             },
-            ("daily", "2013-01-05"): {ParentOutdatedAutoMaterializeCondition()},
-            ("daily", "2013-01-06"): {ParentOutdatedAutoMaterializeCondition()},
+            ("daily", "2013-01-05"): {
+                ParentOutdatedAutoMaterializeCondition(
+                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
+                ),
+                MissingAutoMaterializeCondition(),
+            },
+            ("daily", "2013-01-06"): {
+                ParentOutdatedAutoMaterializeCondition(
+                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
+                ),
+                MissingAutoMaterializeCondition(),
+            },
         },
     ),
     "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
@@ -283,6 +302,26 @@ auto_materialize_policy_scenarios = {
             "asset4": {ParentMaterializedAutoMaterializeCondition()},
         },
     ),
+    "auto_materialize_policy_diamond_one_side_updated": AssetReconciliationScenario(
+        assets=[
+            *diamond[0:3],
+            *with_auto_materialize_policy(
+                diamond[-1:],
+                AutoMaterializePolicy.eager(),
+            ),
+        ],
+        asset_selection=AssetSelection.keys("asset4"),
+        unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
+        expected_run_requests=[],
+        expected_conditions={
+            "asset4": {
+                ParentMaterializedAutoMaterializeCondition(),
+                ParentOutdatedAutoMaterializeCondition(
+                    waiting_on_asset_keys=frozenset({AssetKey("asset3")})
+                ),
+            },
+        },
+    ),
     "time_partitioned_after_partitioned_upstream_missing": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
         asset_selection=AssetSelection.keys("time_partitioned", "unpartitioned_downstream"),
@@ -346,5 +385,50 @@ auto_materialize_policy_scenarios = {
             run_request(asset_keys=["static_partitioned"], partition_key="a"),
             run_request(asset_keys=["static_partitioned"], partition_key="b"),
         ],
+    ),
+    "waiting_on_parents_materialize_condition": AssetReconciliationScenario(
+        assets=lopsided_vee,
+        asset_selection=AssetSelection.keys("C", "D"),
+        cursor_from=AssetReconciliationScenario(
+            assets=lopsided_vee,
+            asset_selection=AssetSelection.keys("C", "D"),
+            cursor_from=AssetReconciliationScenario(
+                assets=lopsided_vee,
+                asset_selection=AssetSelection.keys("C", "D"),
+                unevaluated_runs=[
+                    run(["root1", "root2", "A", "B", "C", "D"]),
+                    run(["root1", "root2"]),
+                ],
+                expected_run_requests=[],
+                expected_conditions={
+                    "D": {
+                        ParentMaterializedAutoMaterializeCondition(),
+                        ParentOutdatedAutoMaterializeCondition(
+                            # waiting on A to be materialized (pulling in the new version of root1)
+                            waiting_on_asset_keys=frozenset({AssetKey("A")})
+                        ),
+                    },
+                },
+            ),
+            unevaluated_runs=[run(["A"]), run(["root2"])],
+            expected_run_requests=[],
+            expected_conditions={
+                "D": {
+                    ParentMaterializedAutoMaterializeCondition(),
+                    ParentOutdatedAutoMaterializeCondition(
+                        # now waiting on B to be materialized (pulling in the new version of root1/A)
+                        waiting_on_asset_keys=frozenset({AssetKey("B")})
+                    ),
+                },
+            },
+        ),
+        unevaluated_runs=[run(["B"])],
+        expected_run_requests=[
+            run_request(["C", "D"]),
+        ],
+        expected_conditions={
+            "C": {ParentMaterializedAutoMaterializeCondition()},
+            "D": {ParentMaterializedAutoMaterializeCondition()},
+        },
     ),
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.3.13 (core) / 0.19.13 (libraries)
+
+### Bugfixes
+
+- Fixes a bug in `dagster project from-example` that was preventing it from downloading examples correctly.
+
 # 1.3.12 (core) / 0.19.12 (libraries)
 
 ### New

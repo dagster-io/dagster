@@ -70,11 +70,15 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
 
     runs = daemon_not_paused_instance.get_runs()
 
-    assert len(runs) == len(
-        scenario.expected_run_requests
-        + scenario.unevaluated_runs
-        + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-    )
+    expected_runs = 0
+    inner_scenario = scenario
+    while inner_scenario is not None:
+        expected_runs += len(inner_scenario.unevaluated_runs or []) + len(
+            inner_scenario.expected_run_requests or []
+        )
+        inner_scenario = inner_scenario.cursor_from
+
+    assert len(runs) == expected_runs
 
     for run in runs:
         assert run.status == DagsterRunStatus.SUCCESS

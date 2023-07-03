@@ -1,6 +1,5 @@
 from dagster import OpExecutionContext, Output
-from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtCli, DbtManifest
+from dagster_dbt import DbtCli, DbtManifest, dbt_assets
 from dateutil import parser
 
 from ..constants import MANIFEST_PATH

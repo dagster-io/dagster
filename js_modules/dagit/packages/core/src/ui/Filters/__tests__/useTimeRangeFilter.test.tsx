@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import moment from 'moment-timezone';
 import React from 'react';
 
+import {browserTimezone} from '../../../app/time/browserTimezone';
 import {
   calculateTimeRanges,
   useTimeRangeFilter,
@@ -72,7 +73,7 @@ describe('useTimeRangeFilter', () => {
     });
     filter = result.current;
 
-    const {timeRanges} = calculateTimeRanges(mockFilterProps.timezone);
+    const {timeRanges} = calculateTimeRanges(browserTimezone());
     expect(filter.state).toEqual(timeRanges.YESTERDAY.range);
   });
 });

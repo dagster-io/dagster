@@ -2,7 +2,6 @@ from .asset_defs import (
     load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
     load_assets_from_dbt_project as load_assets_from_dbt_project,
 )
-from .asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .cli import (
     DbtCliClientResource as DbtCliClientResource,
     DbtCliOutput as DbtCliOutput,
@@ -40,6 +39,21 @@ from .ops import (
 )
 from .types import DbtOutput as DbtOutput
 from .version import __version__ as __version__
+
+# isort: split
+
+# ########################
+# ##### EXPERIMENTAL IMPORTS
+# ########################
+
+from .asset_decorator import dbt_assets as dbt_assets
+from .cli import (
+    DbtCli as DbtCli,
+    DbtCliEventMessage as DbtCliEventMessage,
+    DbtCliInvocation as DbtCliInvocation,
+    DbtManifest as DbtManifest,
+    DbtManifestAssetSelection as DbtManifestAssetSelection,
+)
 
 # isort: split
 
