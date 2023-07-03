@@ -20,7 +20,7 @@ class UPathIOManager(MemoizableIOManager):
     Features:
      - handles partitioned assets
      - handles loading a single upstream partition
-     - handles loading multiple upstream partitions (with respect to <PyObject object="PartitionMapping" />)
+     - handles loading multiple upstream partitions (with respect to :py:class:`PartitionMapping`)
      - the `get_metadata` method can be customized to add additional metadata to the output
      - the `allow_missing_partitions` metadata value can be set to `True` to skip missing partitions
        (the default behavior is to raise an error)
