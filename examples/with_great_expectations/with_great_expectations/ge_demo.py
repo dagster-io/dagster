@@ -1,12 +1,16 @@
-from dagster import job, op
+from dagster import Config, job, op
 from dagster._utils import file_relative_path
-from dagster_ge.factory import ge_data_context, ge_validation_op_factory
+from dagster_ge.factory import ge_validation_op_factory
 from pandas import read_csv
 
 
+class GEOpConfig(Config):
+    csv_path: str = file_relative_path(__file__, "./data/succeed.csv")
+
+
 @op
-def read_in_datafile(csv_path):
-    return read_csv(csv_path)
+def read_in_datafile(config: GEOpConfig):
+    return read_csv(config.csv_path)
 
 
 @op
@@ -34,23 +38,7 @@ payroll_expectations = ge_validation_op_factory(
 
 
 # start_ge_demo_marker_job
-@job(
-    resource_defs={"ge_data_context": ge_data_context},
-    config={
-        "resources": {
-            "ge_data_context": {
-                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
-            }
-        },
-        "ops": {
-            "read_in_datafile": {
-                "inputs": {
-                    "csv_path": {"value": file_relative_path(__file__, "./data/succeed.csv")}
-                }
-            }
-        },
-    },
-)
+@job
 def payroll_data():
     output_df = read_in_datafile()
 

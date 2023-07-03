@@ -1,4 +1,5 @@
 from dagster import ConfigurableResource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 from slack_sdk.web.client import WebClient
 
@@ -43,11 +44,16 @@ class SlackResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> WebClient:
         """Returns a ``slack_sdk.WebClient`` for interacting with the Slack API."""
         return WebClient(self.token)
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=SlackResource.to_config_schema(),
 )

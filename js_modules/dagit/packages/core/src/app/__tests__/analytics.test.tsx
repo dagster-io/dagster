@@ -1,8 +1,8 @@
-import {act, render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as React from 'react';
-import {Route, Switch} from 'react-router-dom';
+import {MemoryRouter, Route, Switch} from 'react-router-dom';
 
-import {TestProvider} from '../../testing/TestProvider';
 import {AnalyticsContext, GenericAnalytics, useTrackEvent, useTrackPageView} from '../analytics';
 
 describe('Analytics', () => {
@@ -28,19 +28,17 @@ describe('Analytics', () => {
       jest.useFakeTimers();
       const mockAnalytics = createMockAnalytics();
 
-      await act(async () => {
-        render(
-          <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
-            <Test mockAnalytics={mockAnalytics}>
-              <Switch>
-                <Route path="/foo/:bar?">
-                  <Page />
-                </Route>
-              </Switch>
-            </Test>
-          </TestProvider>,
-        );
-      });
+      render(
+        <MemoryRouter initialEntries={['/foo/hello']}>
+          <Test mockAnalytics={mockAnalytics}>
+            <Switch>
+              <Route path="/foo/:bar?">
+                <Page />
+              </Route>
+            </Switch>
+          </Test>
+        </MemoryRouter>,
+      );
 
       jest.advanceTimersByTime(400);
       const {page} = mockAnalytics;
@@ -62,27 +60,24 @@ describe('Analytics', () => {
     };
 
     it('tracks events, e.g. button clicks', async () => {
+      const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
       jest.useFakeTimers();
       const mockAnalytics = createMockAnalytics();
 
-      await act(async () => {
-        await render(
-          <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
-            <Test mockAnalytics={mockAnalytics}>
-              <Switch>
-                <Route path="/foo/:bar?">
-                  <Page />
-                </Route>
-              </Switch>
-            </Test>
-          </TestProvider>,
-        );
-      });
+      render(
+        <MemoryRouter initialEntries={['/foo/hello']}>
+          <Test mockAnalytics={mockAnalytics}>
+            <Switch>
+              <Route path="/foo/:bar?">
+                <Page />
+              </Route>
+            </Switch>
+          </Test>
+        </MemoryRouter>,
+      );
 
       const button = screen.getByRole('button');
-      await act(() => {
-        button.click();
-      });
+      await user.click(button);
 
       const {track} = mockAnalytics;
       expect(track).toHaveBeenCalledTimes(1);
@@ -104,21 +99,19 @@ describe('Analytics', () => {
       const mockAnalytics = createMockAnalytics();
       const overrideAnalytics = createMockAnalytics();
 
-      await act(async () => {
-        render(
-          <TestProvider routerProps={{initialEntries: ['/foo/hello']}}>
-            <Test mockAnalytics={mockAnalytics}>
-              <Test mockAnalytics={overrideAnalytics}>
-                <Switch>
-                  <Route path="/foo/:bar?">
-                    <Page />
-                  </Route>
-                </Switch>
-              </Test>
+      render(
+        <MemoryRouter initialEntries={['/foo/hello']}>
+          <Test mockAnalytics={mockAnalytics}>
+            <Test mockAnalytics={overrideAnalytics}>
+              <Switch>
+                <Route path="/foo/:bar?">
+                  <Page />
+                </Route>
+              </Switch>
             </Test>
-          </TestProvider>,
-        );
-      });
+          </Test>
+        </MemoryRouter>,
+      );
 
       jest.advanceTimersByTime(400);
       await waitFor(() => {

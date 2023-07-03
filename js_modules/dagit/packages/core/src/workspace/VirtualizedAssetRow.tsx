@@ -6,7 +6,7 @@ import styled from 'styled-components/macro';
 
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {MISSING_LIVE_DATA, toGraphId} from '../asset-graph/Utils';
+import {MISSING_LIVE_DATA, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
@@ -19,6 +19,7 @@ import {AssetComputeKindTag} from '../graph/OpTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {testId} from '../testing/testId';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {RepoAddress} from './types';
@@ -76,7 +77,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   };
 
   return (
-    <Row $height={height} $start={start}>
+    <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
       <RowGrid
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         $showRepoColumn={showRepoColumn}
@@ -277,14 +278,15 @@ export function useLiveDataOrLatestMaterializationDebounced(
   type: 'folder' | 'asset' | 'asset_non_sda',
 ) {
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
+  const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
   const {liveDataByNode} = useLiveDataForAssetKeys(type === 'asset' ? debouncedKeys : []);
 
   const {data: nonSDAData} = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(
     SINGLE_NON_SDA_ASSET_QUERY,
     {
-      skip: type !== 'asset_non_sda' || debouncedKeys.length === 0,
-      variables: {input: debouncedKeys[0]},
+      skip: type !== 'asset_non_sda' || !debouncedKey,
+      variables: {input: debouncedKey},
     },
   );
 
@@ -299,17 +301,20 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
-    return liveDataByNode[toGraphId({path})];
+    return liveDataByNode[toGraphId({path})]!;
   }
+
   if (type === 'asset_non_sda') {
     return {
       ...MISSING_LIVE_DATA,
       lastMaterialization:
-        nonSDAData?.assetOrError.__typename === 'Asset'
+        nonSDAData?.assetOrError.__typename === 'Asset' &&
+        nonSDAData.assetOrError.assetMaterializations[0]
           ? nonSDAData.assetOrError.assetMaterializations[0]
           : null,
     };
   }
+
   return null;
 }
 

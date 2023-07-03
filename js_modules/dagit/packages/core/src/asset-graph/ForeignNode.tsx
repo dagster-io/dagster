@@ -9,7 +9,7 @@ import {ASSET_LINK_NAME_MAX_LENGTH} from './layout';
 export const AssetNodeLink: React.FC<{
   assetKey: {path: string[]};
 }> = React.memo(({assetKey}) => {
-  const label = assetKey.path[assetKey.path.length - 1];
+  const label = assetKey.path[assetKey.path.length - 1]!;
   return (
     <AssetNodeLinkContainer>
       <Icon name="open_in_new" color={Colors.Link} />

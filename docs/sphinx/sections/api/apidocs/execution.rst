@@ -73,6 +73,10 @@ Contexts
   :members:
   :inherited-members:
 
+.. autoclass:: AssetExecutionContext
+  :members:
+  :inherited-members:
+
 .. autofunction:: build_op_context
 
 .. autoclass:: TypeCheckContext

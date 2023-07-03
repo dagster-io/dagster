@@ -6,6 +6,7 @@ from dagster import (
     AssetIn,
     AssetSelection,
     Field,
+    FilesystemIOManager,
     In,
     List,
     Out,
@@ -13,7 +14,6 @@ from dagster import (
     String,
     asset,
     define_asset_job,
-    fs_io_manager,
     graph,
     job,
     mem_io_manager,
@@ -82,7 +82,7 @@ def test_nb_op(name, **kwargs):
 
 common_resource_defs = {
     "output_notebook_io_manager": local_output_notebook_io_manager,
-    "io_manager": fs_io_manager,  # TODO check if necessary
+    "io_manager": FilesystemIOManager(),  # TODO check if necessary
 }
 
 hello_world = test_nb_op("hello_world", outs={})
@@ -96,7 +96,7 @@ def hello_world_job():
 @job(
     resource_defs={
         "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def hello_world_job_struct_resource() -> None:
@@ -382,7 +382,7 @@ def filepicklelist_resource(init_context):
     resource_defs={
         "list": filepicklelist_resource,
         "output_notebook_io_manager": local_output_notebook_io_manager,
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def resource_job():
@@ -393,7 +393,7 @@ def resource_job():
     resource_defs={
         "list": filepicklelist_resource,
         "output_notebook_io_manager": local_output_notebook_io_manager,
-        "io_manager": fs_io_manager,
+        "io_manager": FilesystemIOManager(),
     }
 )
 def resource_with_exception_job():

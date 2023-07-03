@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import logging
 import math
 import multiprocessing
 import os
@@ -10,6 +12,7 @@ import time
 import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
@@ -197,6 +200,7 @@ class DagsterApiServer(DagsterApiServicer):
     def __init__(
         self,
         server_termination_event: ThreadingEventType,
+        logger: logging.Logger,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         heartbeat: bool = False,
         heartbeat_timeout: int = 30,
@@ -221,6 +225,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
+        self._logger = logger
 
         self._mp_ctx = multiprocessing.get_context("spawn")
 
@@ -257,15 +262,18 @@ class DagsterApiServer(DagsterApiServicer):
         #  - When using an integration that spins up gRPC servers (for example, the Dagster Helm
         #    chart or the deploy_docker example)
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._exit_stack = ExitStack()
 
         try:
             if inject_env_vars_from_instance:
+                from dagster._cli.utils import get_instance_for_cli
+
                 # If arguments indicate it wants to load env vars, use the passed-in instance
                 # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
-                with DagsterInstance.from_ref(
-                    instance_ref
-                ) if instance_ref else DagsterInstance.get() as instance:
-                    instance.inject_env_vars(location_name)
+                self._instance = self._exit_stack.enter_context(
+                    get_instance_for_cli(instance_ref=instance_ref)
+                )
+                self._instance.inject_env_vars(location_name)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
@@ -277,6 +285,7 @@ class DagsterApiServer(DagsterApiServicer):
                 raise
             self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
+            self._logger.exception("Error while importing code")
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
@@ -298,9 +307,13 @@ class DagsterApiServer(DagsterApiServicer):
         self.__cleanup_thread.start()
 
     def cleanup(self) -> None:
+        # In case ShutdownServer was not called
+        self._shutdown_once_executions_finish_event.set()
         if self.__heartbeat_thread:
             self.__heartbeat_thread.join()
         self.__cleanup_thread.join()
+
+        self._exit_stack.close()
 
     def _heartbeat_thread(self, heartbeat_timeout: float) -> None:
         while True:
@@ -700,6 +713,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except:
+            self._logger.exception("Failed to shut down server")
             return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
@@ -992,14 +1006,13 @@ class DagsterGrpcServer:
         )
 
         server_termination_thread.daemon = True
-
         server_termination_thread.start()
 
-        self.server.wait_for_termination()
-
-        server_termination_thread.join()
-
-        self._api_servicer.cleanup()
+        try:
+            self.server.wait_for_termination()
+        finally:
+            self._api_servicer.cleanup()
+            server_termination_thread.join()
 
 
 class CouldNotStartServerProcess(Exception):
@@ -1038,7 +1051,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
 
 def open_server_process(
-    instance_ref: InstanceRef,
+    instance_ref: Optional[InstanceRef],
     port: Optional[int],
     socket: Optional[str],
     location_name: Optional[str] = None,
@@ -1051,14 +1064,13 @@ def open_server_process(
     cwd: Optional[str] = None,
     log_level: str = "INFO",
     env: Optional[Dict[str, str]] = None,
+    inject_env_vars_from_instance: bool = True,
+    container_image: Optional[str] = None,
+    container_context: Optional[dict[str, Any]] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.opt_int_param(max_workers, "max_workers")
-
-    from dagster._core.test_utils import get_mocked_system_timezone
-
-    mocked_system_timezone = get_mocked_system_timezone()
 
     executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
 
@@ -1072,13 +1084,14 @@ def open_server_process(
         *(["--heartbeat"] if heartbeat else []),
         *(["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else []),
         *(["--fixed-server-id", fixed_server_id] if fixed_server_id else []),
-        *(["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else []),
         *(["--log-level", log_level]),
         # only use the Python environment if it has been explicitly set in the workspace,
         *(["--use-python-environment-entry-point"] if executable_path else []),
-        *(["--inject-env-vars-from-instance"]),
-        *(["--instance-ref", serialize_value(instance_ref)]),
+        *(["--inject-env-vars-from-instance"] if inject_env_vars_from_instance else []),
+        *(["--instance-ref", serialize_value(instance_ref)] if instance_ref else []),
         *(["--location-name", location_name] if location_name else []),
+        *(["--container-image", container_image] if container_image else []),
+        *(["--container-context", json.dumps(container_context)] if container_context else []),
     ]
 
     if loadable_target_origin:
@@ -1105,18 +1118,8 @@ def open_server_process(
 
 
 def _open_server_process_on_dynamic_port(
-    instance_ref: InstanceRef,
-    location_name: Optional[str] = None,
     max_retries: int = 10,
-    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
-    max_workers: Optional[int] = None,
-    heartbeat: bool = False,
-    heartbeat_timeout: int = 30,
-    fixed_server_id: Optional[str] = None,
-    startup_timeout: int = 20,
-    cwd: Optional[str] = None,
-    log_level: str = "INFO",
-    env: Optional[Dict[str, str]] = None,
+    **kwargs,
 ) -> Tuple[Optional[Popen[str]], Optional[int]]:
     server_process = None
     retries = 0
@@ -1124,21 +1127,7 @@ def _open_server_process_on_dynamic_port(
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
-            server_process = open_server_process(
-                instance_ref=instance_ref,
-                location_name=location_name,
-                port=port,
-                socket=None,
-                loadable_target_origin=loadable_target_origin,
-                max_workers=max_workers,
-                heartbeat=heartbeat,
-                heartbeat_timeout=heartbeat_timeout,
-                fixed_server_id=fixed_server_id,
-                startup_timeout=startup_timeout,
-                cwd=cwd,
-                log_level=log_level,
-                env=env,
-            )
+            server_process = open_server_process(port=port, socket=None, **kwargs)
         except CouldNotBindGrpcServerToAddress:
             pass
 
@@ -1150,7 +1139,7 @@ def _open_server_process_on_dynamic_port(
 class GrpcServerProcess:
     def __init__(
         self,
-        instance_ref: InstanceRef,
+        instance_ref: Optional[InstanceRef],
         location_name: Optional[str] = None,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         force_port: bool = False,
@@ -1164,6 +1153,9 @@ class GrpcServerProcess:
         log_level: str = "INFO",
         env: Optional[Dict[str, str]] = None,
         wait_on_exit=False,
+        inject_env_vars_from_instance: bool = True,
+        container_image: Optional[str] = None,
+        container_context: Optional[Dict[str, Any]] = None,
     ):
         self.port = None
         self.socket = None
@@ -1204,6 +1196,9 @@ class GrpcServerProcess:
                 cwd=cwd,
                 log_level=log_level,
                 env=env,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                container_image=container_image,
+                container_context=container_context,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1222,6 +1217,9 @@ class GrpcServerProcess:
                 cwd=cwd,
                 log_level=log_level,
                 env=env,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                container_image=container_image,
+                container_context=container_context,
             )
 
         if server_process is None:

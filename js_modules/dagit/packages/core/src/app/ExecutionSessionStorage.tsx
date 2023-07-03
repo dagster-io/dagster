@@ -4,9 +4,9 @@ import * as React from 'react';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
-  LaunchpadSessionPipelineFragment,
   LaunchpadSessionPartitionSetsFragment,
-} from '../launchpad/types/LaunchpadRoot.types';
+  LaunchpadSessionPipelineFragment,
+} from '../launchpad/types/LaunchpadAllowedRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -64,7 +64,7 @@ export function applyRemoveSession(data: IStorageData, key: string) {
   delete next.sessions[key];
   if (next.current === key) {
     const remaining = Object.keys(next.sessions);
-    next.current = remaining[idx] || remaining[idx - 1] || remaining[0];
+    next.current = remaining[idx] || remaining[idx - 1] || remaining[0]!;
   }
   return next;
 }
@@ -74,7 +74,7 @@ export function applyChangesToSession(
   key: string,
   changes: IExecutionSessionChanges,
 ) {
-  const saved = data.sessions[key];
+  const saved = data.sessions[key]!;
   if (changes.runConfigYaml && changes.runConfigYaml !== saved.runConfigYaml && saved.runId) {
     changes.configChangedSinceRun = true;
   }
@@ -131,7 +131,7 @@ const buildValidator = (initial: Partial<IExecutionSession> = {}) => (json: any)
   }
 
   if (!data.sessions[data.current]) {
-    data.current = Object.keys(data.sessions)[0];
+    data.current = Object.keys(data.sessions)[0]!;
   }
 
   return data;
@@ -189,7 +189,7 @@ export const useInvalidateConfigsForRepo = () => {
           const data: IStorageData | undefined = getJSONForKey(key);
           if (data) {
             const withBase = Object.keys(data.sessions).filter(
-              (sessionKey) => data.sessions[sessionKey].base !== null,
+              (sessionKey) => data.sessions[sessionKey]!.base !== null,
             );
             if (withBase.length) {
               const withUpdates = withBase.reduce(
@@ -214,6 +214,8 @@ export const useInvalidateConfigsForRepo = () => {
 export const useInitialDataForMode = (
   pipeline: LaunchpadSessionPipelineFragment,
   partitionSets: LaunchpadSessionPartitionSetsFragment,
+  rootDefaultYaml: string | undefined,
+  shouldPopulateWithDefaults: boolean,
 ) => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
@@ -226,19 +228,27 @@ export const useInitialDataForMode = (
     // `default` preset
     if (presetsForMode.length === 1 && (isAssetJob || partitionSetsForMode.length === 0)) {
       return {
-        base: {presetName: presetsForMode[0].name, tags: null},
-        runConfigYaml: presetsForMode[0].runConfigYaml,
+        base: {presetName: presetsForMode[0]!.name, tags: null},
+        runConfigYaml: presetsForMode[0]!.runConfigYaml,
       };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
       return {
-        base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null, tags: null},
+        base: {partitionsSetName: partitionSetsForMode[0]!.name, partitionName: null, tags: null},
+        runConfigYaml: rootDefaultYaml,
       };
     }
 
-    return {};
-  }, [isAssetJob, isJob, partitionSetsForMode, presets]);
+    return shouldPopulateWithDefaults ? {runConfigYaml: rootDefaultYaml} : {};
+  }, [
+    isAssetJob,
+    isJob,
+    partitionSetsForMode,
+    presets,
+    rootDefaultYaml,
+    shouldPopulateWithDefaults,
+  ]);
 };
 
 export const allStoredSessions = () => {

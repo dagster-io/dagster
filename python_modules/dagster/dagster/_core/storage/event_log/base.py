@@ -28,6 +28,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
 from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -377,6 +378,24 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, event_type: DagsterEventType
+    ) -> Mapping[str, int]:
+        pass
+
+    @abstractmethod
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: AssetKey,
+        event_type: DagsterEventType,
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        pass
+
+    @abstractmethod
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey
     ) -> Mapping[str, Tuple[str, int]]:
@@ -411,3 +430,52 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def is_run_sharded(self) -> bool:
         """Indicates that the EventLogStoarge is sharded."""
         return False
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        """Indicates that the EventLogStorage supports global concurrency limits."""
+        return False
+
+    @abstractmethod
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
+        """Allocate concurrency slots for the given concurrency key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_keys(self) -> Set[str]:
+        """Get the set of concurrency limited keys."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
+        """Get concurrency info for key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ) -> ConcurrencyClaimStatus:
+        """Claim concurrency slots for step."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        """Claim concurrency slots for step."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_concurrency_run_ids(self) -> Set[str]:
+        """Get a list of run_ids that are occupying or waiting for a concurrency key slot."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        """Frees concurrency slots for a given run."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
+        """Frees concurrency slots for a given run/step."""
+        raise NotImplementedError()

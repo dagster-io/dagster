@@ -1,10 +1,12 @@
 import {IconName} from '@dagster-io/ui';
-import {render, fireEvent, act, waitFor} from '@testing-library/react';
+import {render, act, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
+import userEvent from '@testing-library/user-event';
 // eslint-disable-next-line no-restricted-imports
 import moment from 'moment-timezone';
 import React from 'react';
 
+import {browserTimezone} from '../../../app/time/browserTimezone';
 import {
   calculateTimeRanges,
   useTimeRangeFilter,
@@ -25,7 +27,6 @@ jest.mock('react-dates', () => {
 const mockFilterProps = {
   name: 'Test Filter',
   icon: 'date' as IconName,
-  timezone: 'UTC',
   initialState: [null, null] as TimeRangeState,
 };
 
@@ -72,7 +73,7 @@ describe('useTimeRangeFilter', () => {
     });
     filter = result.current;
 
-    const {timeRanges} = calculateTimeRanges(mockFilterProps.timezone);
+    const {timeRanges} = calculateTimeRanges(browserTimezone());
     expect(filter.state).toEqual(timeRanges.YESTERDAY.range);
   });
 });
@@ -89,7 +90,7 @@ describe('CustomTimeRangeFilterDialog', () => {
     expect(getByText('Select a date range')).toBeInTheDocument();
   });
 
-  it('should apply custom date range', () => {
+  it('should apply custom date range', async () => {
     const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
     let filter = result.current;
 
@@ -109,7 +110,7 @@ describe('CustomTimeRangeFilterDialog', () => {
     });
 
     // Click apply button
-    fireEvent.click(getByText('Apply'));
+    await userEvent.click(getByText('Apply'));
     filter = result.current;
 
     expect(filter.state).toEqual([startDate.valueOf(), endDate.valueOf()]);
@@ -125,7 +126,7 @@ describe('CustomTimeRangeFilterDialog', () => {
     );
 
     // Click cancel button
-    fireEvent.click(getByText('Cancel'));
+    await userEvent.click(getByText('Cancel'));
     filter = result.current;
 
     await waitFor(() => {

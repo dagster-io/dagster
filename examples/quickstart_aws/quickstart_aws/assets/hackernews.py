@@ -5,7 +5,8 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import MetadataValue, OpExecutionContext, asset
+from dagster import AssetExecutionContext, MetadataValue, asset
+from dagster_aws.s3 import S3Resource
 from wordcloud import STOPWORDS, WordCloud
 
 
@@ -22,7 +23,7 @@ def hackernews_topstory_ids() -> pd.DataFrame:
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
-    context: OpExecutionContext, hackernews_topstory_ids: pd.DataFrame
+    context: AssetExecutionContext, hackernews_topstory_ids: pd.DataFrame
 ) -> pd.DataFrame:
     """Get items based on story ids from the HackerNews items endpoint. It may take 1-2 minutes to fetch all 500 items.
 
@@ -50,9 +51,11 @@ def hackernews_topstories(
     return df
 
 
-@asset(group_name="hackernews", compute_kind="Plot", required_resource_keys={"s3"})
+@asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(
-    context: OpExecutionContext, hackernews_topstories: pd.DataFrame
+    context: AssetExecutionContext,
+    s3: S3Resource,
+    hackernews_topstories: pd.DataFrame,
 ) -> None:
     """Exploratory analysis: Generate a word cloud from the current top 500 HackerNews top stories.
     Embed the plot into a Markdown metadata for quick view.
@@ -78,11 +81,9 @@ def hackernews_topstories_word_cloud(
 
     # Also, upload the image to S3
     bucket_name = os.environ.get("S3_BUCKET")
-    bucket_location = context.resources.s3.get_bucket_location(Bucket=bucket_name)[
-        "LocationConstraint"
-    ]
+    bucket_location = s3.get_client().get_bucket_location(Bucket=bucket_name)["LocationConstraint"]
     file_name = "hackernews_topstories_word_cloud.png"
-    context.resources.s3.upload_fileobj(buffer, bucket_name, file_name)
+    s3.get_client().upload_fileobj(buffer, bucket_name, file_name)
     s3_path = f"https://s3.{bucket_location}.amazonaws.com/{bucket_name}/{file_name}"
     context.add_output_metadata(
         {

@@ -136,6 +136,25 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
         )
 
 
+class DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(DagsterError):
+    """Indicates that you have attempted to construct a Pythonic config or resource class with a DagsterType
+    annotated field.
+    """
+
+    def __init__(
+        self,
+        config_class_name: str,
+        field_name: Optional[str],
+        **kwargs,
+    ):
+        self.field_name = field_name
+        super(DagsterInvalidDagsterTypeInPythonicConfigDefinitionError, self).__init__(
+            f"""Error defining Dagster config class '{config_class_name}' on field '{field_name}'. DagsterTypes cannot be used to annotate a config type. DagsterType is meant only for type checking and coercion in op and asset inputs and outputs.
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}""",
+            **kwargs,
+        )
+
+
 CONFIG_ERROR_VERBIAGE = """
 This value can be a:
     - Field
@@ -643,6 +662,12 @@ class DagsterUnknownPartitionError(DagsterError):
 
 class DagsterUndefinedDataVersionError(DagsterError):
     """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """
+
+
+class DagsterAssetBackfillDataLoadError(DagsterError):
+    """Indicates that an asset backfill is now unloadable. May happen when (1) a code location containing
+    targeted assets is unloadable or (2) and asset or an asset's partitions definition has been removed.
     """
 
 

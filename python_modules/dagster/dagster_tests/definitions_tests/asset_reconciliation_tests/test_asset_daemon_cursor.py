@@ -17,6 +17,10 @@ def test_asset_reconciliation_cursor_evaluation_id():
         """[20, ["a"], {"my_asset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]"""
     )
 
+    assert (
+        AssetReconciliationCursor.get_evaluation_id_from_serialized(backcompat_serialized) is None
+    )
+
     asset_graph = AssetGraph.from_assets([my_asset])
     c = AssetReconciliationCursor.from_serialized(backcompat_serialized, asset_graph)
 
@@ -24,7 +28,7 @@ def test_asset_reconciliation_cursor_evaluation_id():
         20,
         {AssetKey("a")},
         {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
-        None,
+        0,
     )
 
     c2 = c.with_updates(
@@ -34,3 +38,5 @@ def test_asset_reconciliation_cursor_evaluation_id():
     serdes_c2 = AssetReconciliationCursor.from_serialized(c2.serialize(), asset_graph)
     assert serdes_c2 == c2
     assert serdes_c2.evaluation_id == 1
+
+    assert AssetReconciliationCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1

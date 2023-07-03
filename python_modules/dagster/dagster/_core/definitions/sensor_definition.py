@@ -378,7 +378,7 @@ RawSensorEvaluationFunctionReturn = Union[
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
-SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, RunRequest]]]
+SensorEvaluationFunction: TypeAlias = Callable[..., Sequence[Union[SkipReason, RunRequest]]]
 
 
 def get_context_param_name(fn: Callable) -> Optional[str]:
@@ -486,7 +486,7 @@ class SensorDefinition(IHasInternalInit):
         """
         return SensorDefinition.dagster_internal_init(
             name=self.name,
-            evaluation_fn=self._evaluation_fn,
+            evaluation_fn=self._raw_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
             job_name=None,  # if original init was passed job name, was resolved to a job
@@ -494,7 +494,7 @@ class SensorDefinition(IHasInternalInit):
             job=new_jobs[0] if len(new_jobs) == 1 else None,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
-            required_resource_keys=self.required_resource_keys,
+            required_resource_keys=self._raw_required_resource_keys,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -570,7 +570,7 @@ class SensorDefinition(IHasInternalInit):
             SensorEvaluationFunction,
             Callable[
                 [SensorEvaluationContext],
-                Iterator[Union[SkipReason, RunRequest, DagsterRunReaction]],
+                List[Union[SkipReason, RunRequest, DagsterRunReaction]],
             ],
         ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
@@ -596,10 +596,10 @@ class SensorDefinition(IHasInternalInit):
                 " the decorated function"
             ),
         )
-        self._required_resource_keys = (
-            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            or resource_arg_names
+        self._raw_required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
         )
+        self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
 
     @staticmethod
     def dagster_internal_init(
@@ -700,7 +700,7 @@ class SensorDefinition(IHasInternalInit):
         """
         context = check.inst_param(context, "context", SensorEvaluationContext)
 
-        result = list(self._evaluation_fn(context))
+        result = self._evaluation_fn(context)
 
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
@@ -976,22 +976,34 @@ def wrap_sensor_evaluation(
         context_param = (
             {context_param_name_if_present: context} if context_param_name_if_present else {}
         )
-        result = fn(**context_param, **resource_args_populated)
+        raw_evaluation_result = fn(**context_param, **resource_args_populated)
 
-        if inspect.isgenerator(result) or isinstance(result, list):
-            for item in result:
-                yield item
-        elif isinstance(result, (SkipReason, RunRequest, SensorResult)):
-            yield result
-
-        elif result is not None:
-            raise Exception(
-                (
-                    "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                    "{result} of type {type_}.  Should only return SkipReason or "
+        def check_returned_scalar(scalar):
+            if isinstance(scalar, (SkipReason, RunRequest, SensorResult)):
+                return scalar
+            elif scalar is not None:
+                raise Exception(
+                    f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason or "
                     "RunRequest objects."
-                ).format(sensor_name=sensor_name, result=result, type_=type(result))
-            )
+                )
+
+        if inspect.isgenerator(raw_evaluation_result):
+            result = []
+            try:
+                while True:
+                    result.append(next(raw_evaluation_result))
+            except StopIteration as e:
+                # captures the case where the evaluation function has a yield and also returns a
+                # value
+                if e.value is not None:
+                    result.append(check_returned_scalar(e.value))
+
+            return result
+        elif isinstance(raw_evaluation_result, list):
+            return raw_evaluation_result
+        else:
+            return [check_returned_scalar(raw_evaluation_result)]
 
     return _wrapped_fn
 

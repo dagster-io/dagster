@@ -1,7 +1,9 @@
 import {gql} from '@apollo/client';
 import {
   Box,
+  ButtonLink,
   CursorHistoryControls,
+  Icon,
   NonIdealState,
   Page,
   Tag,
@@ -23,17 +25,19 @@ import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
   RunFilterToken,
+  useRunsFilterInput,
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {AnchorButton} from '../ui/AnchorButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {
@@ -43,7 +47,12 @@ import {
 import {useJobTitle} from './useJobTitle';
 
 const PAGE_SIZE = 25;
-const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
+const ENABLED_FILTERS: RunFilterTokenType[] = [
+  'status',
+  'tag',
+  'created_date_before',
+  'created_date_after',
+];
 
 interface Props {
   repoAddress?: RepoAddress;
@@ -113,6 +122,12 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   );
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const {button, activeFiltersJsx} = useRunsFilterInput({
+    enabledFilters: ENABLED_FILTERS,
+    tokens: filterTokens,
+    onChange: setFilterTokens,
+    loading: queryResult.loading,
+  });
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
@@ -130,34 +145,60 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 </Box>
               );
             }
+
             const runs = pipelineRunsOrError.results;
+
             const displayed = runs.slice(0, PAGE_SIZE);
             const {hasNextCursor, hasPrevCursor} = paginationProps;
+
             return (
               <>
-                <Box
-                  flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-                  padding={{top: 8, horizontal: 24}}
-                >
-                  <Box flex={{direction: 'row', gap: 8}}>
-                    {permanentTokens.map(({token, value}) => (
-                      <Tag key={token}>{`${token}:${value}`}</Tag>
-                    ))}
-                  </Box>
-                  <QueryRefreshCountdown refreshState={refreshState} />
-                </Box>
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={displayed}
                     onAddTag={onAddTag}
                     actionBarComponents={
-                      <RunsFilterInput
-                        enabledFilters={ENABLED_FILTERS}
-                        tokens={filterTokens}
-                        onChange={setFilterTokens}
-                        loading={queryResult.loading}
-                      />
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          justifyContent: 'space-between',
+                          grow: 1,
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                        margin={{right: 8}}
+                      >
+                        {button}
+                        <QueryRefreshCountdown refreshState={refreshState} />
+                      </Box>
                     }
+                    belowActionBarComponents={
+                      <>
+                        {permanentTokens.map(({token, value}) => (
+                          <Tag key={token}>{`${token}:${value}`}</Tag>
+                        ))}
+                        {activeFiltersJsx.length ? (
+                          <>
+                            {activeFiltersJsx}
+                            <ButtonLink
+                              onClick={() => {
+                                setFilterTokens([]);
+                              }}
+                            >
+                              Clear all
+                            </ButtonLink>
+                          </>
+                        ) : null}
+                      </>
+                    }
+                    emptyState={() => (
+                      <EmptyState
+                        repoAddress={repoAddress}
+                        anyFilter={filterTokens.length > 0}
+                        jobName={pipelineName}
+                        jobPath={pipelinePath}
+                      />
+                    )}
                   />
                 </StickyTableContainer>
                 {hasNextCursor || hasPrevCursor ? (
@@ -171,6 +212,70 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
         </Loading>
       </Page>
     </RunsQueryRefetchContext.Provider>
+  );
+};
+
+interface EmptyStateProps {
+  repoAddress: RepoAddress | null;
+  jobName: string;
+  jobPath: string;
+  anyFilter: boolean;
+}
+
+const EmptyState = (props: EmptyStateProps) => {
+  const {repoAddress, anyFilter, jobName, jobPath} = props;
+
+  const repo = useRepository(repoAddress);
+  const isAssetJob = isThisThingAnAssetJob(repo, jobName);
+
+  const description = () => {
+    if (!repoAddress) {
+      return <div>You have not launched any runs for this job.</div>;
+    }
+
+    if (isAssetJob) {
+      return (
+        <Box flex={{direction: 'column', gap: 12}}>
+          <div>
+            {anyFilter
+              ? 'There are no matching runs for these filters.'
+              : 'You have not materialized any assets with this job yet.'}
+          </div>
+          <div>
+            <AnchorButton
+              icon={<Icon name="materialization" />}
+              to={workspacePathFromAddress(repoAddress, `/jobs/${jobPath}`)}
+            >
+              Materialize an asset
+            </AnchorButton>
+          </div>
+        </Box>
+      );
+    }
+
+    return (
+      <Box flex={{direction: 'column', gap: 12}}>
+        <div>
+          {anyFilter
+            ? 'There are no matching runs for these filters.'
+            : 'You have not launched any runs for this job yet.'}
+        </div>
+        <div>
+          <AnchorButton
+            icon={<Icon name="add_circle" />}
+            to={workspacePathFromAddress(repoAddress, `/jobs/${jobPath}/playground`)}
+          >
+            Launch a run
+          </AnchorButton>
+        </div>
+      </Box>
+    );
+  };
+
+  return (
+    <Box padding={{vertical: 64}}>
+      <NonIdealState icon="run" title="No runs found" description={description()} />
+    </Box>
   );
 };
 

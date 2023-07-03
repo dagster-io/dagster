@@ -247,10 +247,10 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             asset_graph = context.repository_def.asset_graph
-            instance_queryer = CachingInstanceQueryer(context.instance, evaluation_time)
-            data_time_resolver = CachingDataTimeResolver(
-                instance_queryer=instance_queryer, asset_graph=asset_graph
+            instance_queryer = CachingInstanceQueryer(
+                context.instance, asset_graph, evaluation_time
             )
+            data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
             monitored_keys = asset_selection.resolve(asset_graph)
 
             # get the previous status from the cursor

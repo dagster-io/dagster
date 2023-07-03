@@ -93,8 +93,15 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   const ValueWrapper = ({children}: {children: React.ReactNode}) =>
     tag.link ? <Link to={tag.link}>{children}</Link> : <>{children}</>;
 
+  const tooltipValue = displayedKey ? `${displayedKey}: ${displayValue}` : displayValue;
+
   const tagElement = (
-    <Tag intent={isDagsterTag ? 'none' : 'primary'} interactive icon={icon || undefined}>
+    <Tag
+      intent={isDagsterTag ? 'none' : 'primary'}
+      interactive
+      icon={icon || undefined}
+      tooltipText={tooltipValue}
+    >
       {displayedKey ? (
         <span>
           {displayedKey}: <ValueWrapper>{displayValue}</ValueWrapper>

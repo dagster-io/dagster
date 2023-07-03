@@ -45,7 +45,7 @@ export class SVGMonospaceText extends React.PureComponent<
 
     if (allowTwoLines) {
       const parts = text.split('_');
-      while (parts.length && line1.length + parts[0].length <= lineChars) {
+      while (parts.length && line1.length + parts[0]!.length <= lineChars) {
         line1 += parts.shift() + (parts.length > 0 ? '_' : '');
       }
       line2 = clipToLength(parts.join('_'), lineChars);

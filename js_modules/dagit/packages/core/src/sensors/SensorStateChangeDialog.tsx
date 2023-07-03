@@ -110,8 +110,7 @@ export const SensorStateChangeDialog = (props: Props) => {
     }
 
     dispatch({type: 'start'});
-    for (let ii = 0; ii < sensors.length; ii++) {
-      const sensor = sensors[ii];
+    for (const sensor of sensors) {
       if (openWithIntent === 'start') {
         await start(sensor);
       } else {

@@ -9,6 +9,7 @@ import {
   Select,
   MenuItem,
   Caption,
+  TextInput,
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -22,13 +23,12 @@ import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNode'
 import {displayNameForAssetKey, toGraphId} from '../asset-graph/Utils';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
-import {ASSET_CATALOG_TABLE_QUERY, AssetGroupSuggest} from '../assets/AssetsCatalogTable';
+import {ASSET_CATALOG_TABLE_QUERY} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../assets/types/AssetsCatalogTable.types';
-import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -52,13 +52,31 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   );
   const refreshState = useQueryRefreshAtInterval(query, FIFTEEN_SECONDS);
 
-  const {assets, groupedAssets} = React.useMemo(() => {
+  const groupedAssetsUnfiltered = React.useMemo(() => {
     if (query.data?.assetsOrError.__typename === 'AssetConnection') {
       const assets = query.data.assetsOrError.nodes;
-      return {assets, groupedAssets: groupAssets(assets)};
+      return groupAssets(assets);
     }
-    return {assets: [], groupedAssets: []};
+    return [];
   }, [query.data?.assetsOrError]);
+
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'q',
+    decode: (qs) => (qs.searchQuery ? JSON.parse(qs.searchQuery) : ''),
+    encode: (searchQuery) => ({searchQuery: searchQuery ? JSON.stringify(searchQuery) : undefined}),
+  });
+
+  const groupedAssets = React.useMemo(() => {
+    if (searchValue === '') {
+      return groupedAssetsUnfiltered;
+    }
+    return groupedAssetsUnfiltered.filter((group) => {
+      return (
+        (group.groupName || UNGROUPED_ASSETS).toLowerCase().includes(searchValue.toLowerCase()) ||
+        group.repositoryName.toLowerCase().includes(searchValue.toLowerCase())
+      );
+    });
+  }, [groupedAssetsUnfiltered, searchValue]);
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -101,7 +119,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           <VirtualHeaderRow />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const group = groupedAssets[index];
+              const group = groupedAssets[index]!;
               return <VirtualRow key={key} start={start} height={size} group={group} />;
             })}
           </Inner>
@@ -109,12 +127,6 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
       </Box>
     );
   }
-
-  const [searchGroup, setSearchGroup] = useQueryPersistedState<AssetGroupSelector | null>({
-    queryKey: 'g',
-    decode: (qs) => (qs.group ? JSON.parse(qs.group) : null),
-    encode: (group) => ({group: group ? JSON.stringify(group) : undefined}),
-  });
 
   return (
     <>
@@ -125,7 +137,13 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           flex={{alignItems: 'center', gap: 12, grow: 0}}
         >
           <TabButton selected="assets" />
-          <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
+          <TextInput
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+            }}
+            placeholder="Filter asset groups…"
+          />
         </Box>
       </div>
       {content()}
@@ -142,7 +160,7 @@ function groupAssets(assets: Assets) {
   const groups: Record<
     string,
     {
-      groupName: string;
+      groupName: string | null;
       repositoryName: string;
       assets: Assets;
     }
@@ -155,12 +173,13 @@ function groupAssets(assets: Assets) {
     const groupName = asset.definition.groupName;
     const repositoryName = asset.definition.repository.name;
     const key = `${groupName}||${repositoryName}`;
-    groups[key] = groups[key] || {
+    const target = groups[key] || {
       groupName,
       repositoryName,
-      assets: [],
+      assets: [] as Assets,
     };
-    groups[key].assets.push(asset);
+    target.assets.push(asset);
+    groups[key] = target;
   });
   return Object.values(groups);
 }
@@ -192,6 +211,7 @@ function VirtualHeaderRow() {
   );
 }
 
+const UNGROUPED_ASSETS = 'Ungrouped Assets';
 type RowProps = {
   height: number;
   start: number;
@@ -284,12 +304,16 @@ function VirtualRow({height, start, group}: RowProps) {
           <Box flex={{direction: 'column', gap: 2}}>
             <Box flex={{direction: 'row', gap: 8}}>
               <Icon name="asset_group" />
-              <Link
-                style={{fontWeight: 700}}
-                to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
-              >
-                {group.groupName}
-              </Link>
+              {group.groupName ? (
+                <Link
+                  style={{fontWeight: 700}}
+                  to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
+                >
+                  {group.groupName}
+                </Link>
+              ) : (
+                UNGROUPED_ASSETS
+              )}
             </Box>
             <div {...containerProps}>
               <RepositoryLinkWrapper maxWidth={viewport.width}>

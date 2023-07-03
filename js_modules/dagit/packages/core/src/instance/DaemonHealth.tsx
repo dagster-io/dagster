@@ -92,8 +92,8 @@ export const DaemonHealth = (props: Props) => {
                 )}
                 <Trace>
                   <Group direction="column" spacing={12}>
-                    <div>{errors[page].message}</div>
-                    <div>{errors[page].stack}</div>
+                    <div>{errors[page]?.message}</div>
+                    <div>{errors[page]?.stack}</div>
                   </Group>
                 </Trace>
               </Group>

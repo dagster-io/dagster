@@ -31,6 +31,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -83,6 +84,18 @@ def test_op_invocation_none_arg():
 
     result = basic_op(None)
     assert result == 5
+
+
+def test_op_invocation_lifecycle():
+    @op
+    def basic_op(context):
+        return 5
+
+    with build_op_context() as context:
+        pass
+
+    # Verify dispose was called on the instance
+    assert context.instance.run_storage._held_conn.closed  # noqa
 
 
 def test_op_invocation_context_arg():
@@ -1239,9 +1252,13 @@ def test_multipartitioned_time_window_asset_invocation():
     def my_asset(context):
         time_window = TimeWindow(
             start=pendulum.instance(
-                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+                datetime(year=2020, month=1, day=1),
+                tz=get_time_partitions_def(partitions_def).timezone,
             ),
-            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+            end=pendulum.instance(
+                datetime(year=2020, month=1, day=2),
+                tz=get_time_partitions_def(partitions_def).timezone,
+            ),
         )
         assert context.asset_partitions_time_window_for_output() == time_window
         return 1

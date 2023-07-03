@@ -2607,7 +2607,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     result = job.execute_in_process()
 
     assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
-    assert result.output_for_node("foo_subset_53118", "h") == 12
+    assert result.output_for_node("foo_3", "h") == 12
 
 
 def test_subset_cycle_resolution_complex():

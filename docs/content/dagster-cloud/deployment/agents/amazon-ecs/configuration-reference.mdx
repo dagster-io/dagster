@@ -67,6 +67,11 @@ locations:
             environment:
               - name: ECS_FARGATE
                 value: true
+        server_ecs_tags:
+          - key: MyEcsTagKey
+            value: MyEcsTagValue
+        run_ecs_tags:
+          - key: MyEcsTagKeyWithoutValue
 ```
 
 ### Environment variables and secrets
@@ -158,7 +163,12 @@ user_code_launcher:
     mount_points:
       - <List of mountPoints to pass into register_task_definition>
     volumes:
-      - <List of volumes to pass into register_tastk_definition>
+      - <List of volumes to pass into register_task_definition>
+    server_ecs_tags:
+      - key: MyEcsTagKey
+        value: MyEcsTagValue
+    run_ecs_tags:
+      - key: MyEcsTagKeyWithoutValue
 ```
 
 ### dagster_cloud_api properties
@@ -277,5 +287,13 @@ user_code_launcher:
   <ReferenceTableItem
   propertyName="config.volumes">
   Additional volumes to include in the task definition. If set, should be a list of dictionaries matching the volumes argument to <code>register_task_definition</code> in boto3.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.server_ecs_tags">
+  Additional ECS tags to include in the service for each code location. If set, must be a list of dictionaries, each with a <code>key</code> key and optional <code>value</code> key.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.run_ecs_tags">
+  Additional ECS tags to include in the task for each run. If set, must be a list of dictionaries, each with a <code>key</code> key and optional <code>value</code> key.
   </ReferenceTableItem>
 </ReferenceTable>

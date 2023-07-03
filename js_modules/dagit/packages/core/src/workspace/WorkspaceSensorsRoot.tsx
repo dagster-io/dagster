@@ -13,6 +13,8 @@ import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStat
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
+import {useFilters} from '../ui/Filters';
+import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -36,6 +38,10 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     defaults: {search: ''},
   });
 
+  const runningStateFilter = useInstigationStatusFilter();
+  const filters = React.useMemo(() => [runningStateFilter], [runningStateFilter]);
+  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
+
   const queryResultOverview = useQuery<WorkspaceSensorsQuery, WorkspaceSensorsQueryVariables>(
     WORKSPACE_SENSORS_QUERY,
     {
@@ -57,10 +63,19 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     return [];
   }, [data]);
 
+  const {state: runningState} = runningStateFilter;
+  const filteredByRunningState = React.useMemo(() => {
+    return runningState.size
+      ? sensors.filter(({sensorState}) => runningState.has(sensorState.status))
+      : sensors;
+  }, [sensors, runningState]);
+
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return sensors.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
-  }, [sensors, sanitizedSearch]);
+    return filteredByRunningState.filter(({name}) =>
+      name.toLocaleLowerCase().includes(searchToLower),
+    );
+  }, [filteredByRunningState, sanitizedSearch]);
 
   const anySensorsVisible = filteredBySearch.length > 0;
 
@@ -159,13 +174,16 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
         queryData={queryResultOverview}
       />
       <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Filter by sensor name…"
-          style={{width: '340px'}}
-        />
+        <Box flex={{direction: 'row', gap: 12}}>
+          {filterButton}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Filter by sensor name…"
+            style={{width: '340px'}}
+          />
+        </Box>
         <Tooltip
           content="You do not have permission to start or stop these sensors"
           canShow={anySensorsVisible && !viewerHasAnyInstigationPermission}
@@ -175,6 +193,15 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
           <SensorBulkActionMenu sensors={checkedSensors} onDone={() => refreshState.refetch()} />
         </Tooltip>
       </Box>
+      {activeFiltersJsx.length ? (
+        <Box
+          padding={{vertical: 8, horizontal: 24}}
+          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          flex={{direction: 'row', gap: 8}}
+        >
+          {activeFiltersJsx}
+        </Box>
+      ) : null}
       {loading && !data ? (
         <Box padding={64}>
           <Spinner purpose="page" />

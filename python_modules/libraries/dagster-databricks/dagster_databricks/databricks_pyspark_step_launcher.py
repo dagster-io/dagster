@@ -2,6 +2,7 @@ import gzip
 import io
 import os.path
 import pickle
+import sys
 import tempfile
 import time
 import zlib
@@ -14,6 +15,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.execution.plan.external_step import (
@@ -58,6 +60,7 @@ DAGSTER_SYSTEM_ENV_VARS = {
 }
 
 
+@dagster_maintained_resource
 @resource(
     {
         "run_config": define_databricks_submit_run_config(),
@@ -272,6 +275,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             ).decode()
             log.info(f"Captured stdout for step {step_key}:")
             log.info(stdout)
+            sys.stdout.write(stdout)
         except Exception as e:
             log.error(
                 f"Encountered exception {e} when attempting to load stdout logs for step"
@@ -283,6 +287,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             ).decode()
             log.info(f"Captured stderr for step {step_key}:")
             log.info(stderr)
+            sys.stderr.write(stderr)
         except Exception as e:
             log.error(
                 f"Encountered exception {e} when attempting to load stderr logs for step"

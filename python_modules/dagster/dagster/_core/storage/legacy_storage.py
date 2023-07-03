@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializ
 from dagster._core.event_api import EventHandlerFn
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
@@ -483,6 +484,26 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys, after_cursor
         )
 
+    def get_latest_storage_id_by_partition(
+        self, asset_key: "AssetKey", event_type: "DagsterEventType"
+    ) -> Mapping[str, int]:
+        return self._storage.event_log_storage.get_latest_storage_id_by_partition(
+            asset_key, event_type
+        )
+
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: "AssetKey",
+        event_type: "DagsterEventType",
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        return self._storage.event_log_storage.get_latest_tags_by_partition(
+            asset_key, event_type, tag_keys, asset_partitions, before_cursor, after_cursor
+        )
+
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: "AssetKey"
     ) -> Mapping[str, Tuple[str, int]]:
@@ -544,6 +565,36 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_records_for_run(
             run_id, cursor, of_type, limit, ascending
         )
+
+    def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
+        return self._storage.event_log_storage.set_concurrency_slots(concurrency_key, num)
+
+    def get_concurrency_keys(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_keys()
+
+    def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
+        return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
+
+    def claim_concurrency_slot(
+        self, concurrency_key: str, run_id: str, step_key: str, priority: Optional[int] = None
+    ) -> ConcurrencyClaimStatus:
+        return self._storage.event_log_storage.claim_concurrency_slot(
+            concurrency_key, run_id, step_key, priority
+        )
+
+    def check_concurrency_claim(self, concurrency_key: str, run_id: str, step_key: str):
+        return self._storage.event_log_storage.check_concurrency_claim(
+            concurrency_key, run_id, step_key
+        )
+
+    def get_concurrency_run_ids(self) -> Set[str]:
+        return self._storage.event_log_storage.get_concurrency_run_ids()
+
+    def free_concurrency_slots_for_run(self, run_id: str) -> None:
+        return self._storage.event_log_storage.free_concurrency_slots_for_run(run_id)
+
+    def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
+        return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
@@ -666,6 +717,9 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
             asset_key, limit, cursor
         )
+
+    def purge_asset_evaluations(self, before: float):
+        return self._storage.schedule_storage.purge_asset_evaluations(before)
 
     def upgrade(self) -> None:
         return self._storage.schedule_storage.upgrade()

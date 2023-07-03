@@ -1,6 +1,7 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
+import {Box} from '../Box';
 import {Button, JoinedButtons} from '../Button';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
@@ -170,3 +171,19 @@ export const Joined = () => {
     </Group>
   );
 };
+
+export function LoadingStates() {
+  return (
+    <Box flex={{direction: 'row', gap: 12}}>
+      <Button loading={true} icon={<Icon name="wysiwyg" />}>
+        Test
+      </Button>
+      <Button loading={true} icon={<Icon name="close" />} rightIcon={<Icon name="cached" />}>
+        Test
+      </Button>
+      <Button loading={true} rightIcon={<Icon name="wysiwyg" />}>
+        Test
+      </Button>
+    </Box>
+  );
+}

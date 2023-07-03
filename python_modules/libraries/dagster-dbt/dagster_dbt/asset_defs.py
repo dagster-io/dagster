@@ -52,9 +52,11 @@ from dagster_dbt.asset_utils import (
     get_asset_deps,
     get_deps,
 )
-from dagster_dbt.cli.resources import DbtCliResource
+from dagster_dbt.cli.resources import DbtCliClient
+from dagster_dbt.cli.resources_v2 import DbtCli, DbtManifest
 from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.cli.utils import build_command_args_from_flags, execute_cli
+from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
@@ -95,20 +97,25 @@ def _load_manifest_for_project(
         return json.load(f), cli_output
 
 
-def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
+def _can_stream_events(dbt_resource: Union[DbtCliClient, DbtCli]) -> bool:
     """Check if the installed dbt version supports streaming events."""
     import dbt.version
     from packaging import version
 
-    return (
-        version.parse(dbt.version.__version__) >= version.parse("1.4.0")
-        and dbt_resource._json_log_format  # noqa: SLF001
-    )
+    if version.parse(dbt.version.__version__) >= version.parse("1.4.0"):
+        # The json log format is required for streaming events. DbtCli always uses this format, but
+        # DbtCliClient has an option to disable it.
+        if isinstance(dbt_resource, DbtCli):
+            return True
+        else:
+            return dbt_resource._json_log_format  # noqa: SLF001
+    else:
+        return False
 
 
 def _batch_event_iterator(
     context: OpExecutionContext,
-    dbt_resource: DbtCliResource,
+    dbt_resource: DbtCliClient,
     use_build_command: bool,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     runtime_metadata_fn: Optional[
@@ -119,6 +126,9 @@ def _batch_event_iterator(
     """Yields events for a dbt cli invocation. Waits until the entire command has completed before
     emitting outputs.
     """
+    # clean up any run results from the last run
+    dbt_resource.remove_run_results_json()
+
     dbt_output: Optional[DbtOutput] = None
     try:
         if use_build_command:
@@ -222,26 +232,49 @@ def _events_for_structured_json_line(
 
 def _stream_event_iterator(
     context: OpExecutionContext,
-    dbt_resource: DbtCliResource,
+    dbt_resource: Union[DbtCli, DbtCliClient],
     use_build_command: bool,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
     kwargs: Dict[str, Any],
+    manifest_json: Mapping[str, Any],
 ) -> Iterator[Union[AssetObservation, Output]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
     emitted.
     """
-    manifest_json = check.not_none(dbt_resource.get_manifest_json())
+    if isinstance(dbt_resource, DbtCliClient):
+        for parsed_json_line in dbt_resource.cli_stream_json(
+            command="build" if use_build_command else "run",
+            **kwargs,
+        ):
+            yield from _events_for_structured_json_line(
+                parsed_json_line,
+                context,
+                node_info_to_asset_key,
+                runtime_metadata_fn,
+                manifest_json,
+            )
+    else:
+        if runtime_metadata_fn is not None:
+            raise DagsterDbtError(
+                "The runtime_metadata_fn argument on the load_assets_from_dbt_manifest and"
+                " load_assets_from_dbt_project functions is not supported when using the DbtCli"
+                " resource. Use the @dbt_assets decorator instead if you want control over what"
+                " metadata is yielded at runtime."
+            )
 
-    for parsed_json_line in dbt_resource.cli_stream_json(
-        command="build" if use_build_command else "run",
-        **kwargs,
-    ):
-        yield from _events_for_structured_json_line(
-            parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json
+        class CustomDbtManifest(DbtManifest):
+            @classmethod
+            def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
+                return node_info_to_asset_key(node_info)
+
+        cli_output = dbt_resource.cli(
+            args=["build" if use_build_command else "run", *build_command_args_from_flags(kwargs)],
+            manifest=CustomDbtManifest(raw_manifest=manifest_json),
         )
+        yield from cli_output.stream()
 
 
 class DbtOpConfig(PermissiveConfig):
@@ -270,6 +303,7 @@ def _get_dbt_op(
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
+    manifest_json: Mapping[str, Any],
 ):
     @op(
         name=op_name,
@@ -279,9 +313,15 @@ def _get_dbt_op(
         required_resource_keys={dbt_resource_key},
     )
     def _dbt_op(context, config: DbtOpConfig):
-        dbt_resource = getattr(context.resources, dbt_resource_key)
-        # clean up any run results from the last run
-        dbt_resource.remove_run_results_json()
+        dbt_resource: Union[DbtCli, DbtCliClient] = getattr(context.resources, dbt_resource_key)
+        check.inst(
+            dbt_resource,
+            (DbtCli, DbtCliClient),
+            (
+                "Resource with key 'dbt_resource_key' must be a DbtCli or DbtCliClient object,"
+                f" but is a {type(dbt_resource)}"
+            ),
+        )
 
         kwargs: Dict[str, Any] = {}
         # in the case that we're running everything, opt for the cleaner selection string
@@ -309,8 +349,14 @@ def _get_dbt_op(
                 node_info_to_asset_key,
                 runtime_metadata_fn,
                 kwargs,
+                manifest_json=manifest_json,
             )
         else:
+            if not isinstance(dbt_resource, DbtCliClient):
+                check.failed(
+                    "Chose batch event iterator, but it only works with DbtCliClient, and"
+                    f" resource has type {type(dbt_resource)}"
+                )
             yield from _batch_event_iterator(
                 context,
                 dbt_resource,
@@ -330,6 +376,7 @@ def _dbt_nodes_to_assets(
     selected_unique_ids: AbstractSet[str],
     project_id: str,
     dbt_resource_key: str,
+    manifest_json: Mapping[str, Any],
     op_name: Optional[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
@@ -382,9 +429,10 @@ def _dbt_nodes_to_assets(
     )
 
     # prevent op name collisions between multiple dbt multi-assets
-    op_name = op_name or f"run_dbt_{project_id}"
-    if select != "fqn:*" or exclude:
-        op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+    if not op_name:
+        op_name = f"run_dbt_{project_id}"
+        if select != "fqn:*" or exclude:
+            op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
 
     dbt_op = _get_dbt_op(
         op_name=op_name,
@@ -398,6 +446,7 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
+        manifest_json=manifest_json,
     )
 
     return AssetsDefinition(
@@ -691,6 +740,7 @@ def load_assets_from_dbt_manifest(
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
+        manifest_json=manifest_json,
     )
     dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:

@@ -247,7 +247,14 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               <Spinner purpose="section" />
             </Box>
           ) : allResultsJsx.length ? (
-            <Container ref={parentRef} style={{maxHeight: '500px', overflowY: 'auto'}}>
+            <Container
+              ref={parentRef}
+              style={{
+                maxHeight: '500px',
+                overflowY: 'auto',
+                width: selectedFilter?.menuWidth || 'auto',
+              }}
+            >
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, end, start}) => {
                   return (
@@ -314,7 +321,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
   return (
     <ShortcutHandler
       shortcutLabel="F"
-      shortcutFilter={(e) => e.code === 'KeyF'}
+      shortcutFilter={(e) =>
+        e.code === 'KeyF' && !(e.metaKey || e.ctrlKey || e.altKey || e.shiftKey)
+      }
       onShortcut={() => setIsOpen((isOpen) => !isOpen)}
     >
       <PopoverStyle />
@@ -332,7 +341,7 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
         canEscapeKeyClose
         popoverClassName="filter-dropdown"
         isOpen={isOpen}
-        position="bottom"
+        placement="bottom-start"
         onClosing={() => {
           prevOpenRef.current = false;
         }}
@@ -427,7 +436,6 @@ const SlashShortcut = styled.div`
 
 const PopoverStyle = createGlobalStyle`
   .filter-dropdown.filter-dropdown.filter-dropdown.filter-dropdown {
-    margin-left: 16px !important;
     border-radius: 8px;
     max-width: 100%;
     overflow: hidden;

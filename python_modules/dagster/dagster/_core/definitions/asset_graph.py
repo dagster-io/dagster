@@ -33,12 +33,29 @@ from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
-from .partition_mapping import PartitionMapping, infer_partition_mapping
+from .partition_mapping import PartitionMapping, UpstreamPartitionsResult, infer_partition_mapping
 from .source_asset import SourceAsset
-from .time_window_partitions import TimeWindowPartitionsDefinition
+from .time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    get_time_partition_key,
+    get_time_partitions_def,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+
+
+class ParentsPartitionsResult(NamedTuple):
+    """Represents the result of mapping an asset partition to its upstream parent partitions.
+
+    parent_partitions (AbstractSet[AssetKeyPartitionKey]): The existent parent partitions that are
+        upstream of the asset partition. Filters out nonexistent partitions.
+    required_but_nonexistent_parents_partitions (AbstractSet[AssetKeyPartitionKey]): The required
+        upstream asset partitions that were mapped to but do not exist.
+    """
+
+    parent_partitions: AbstractSet[AssetKeyPartitionKey]
+    required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
 class AssetGraph:
@@ -278,24 +295,40 @@ class AssetGraph:
         current_time: datetime,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> ParentsPartitionsResult:
         """Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
         """
-        result: Set[AssetKeyPartitionKey] = set()
+        valid_parent_partitions: Set[AssetKeyPartitionKey] = set()
+        required_but_nonexistent_parent_partitions: Set[AssetKeyPartitionKey] = set()
         for parent_asset_key in self.get_parents(asset_key):
             if self.is_partitioned(parent_asset_key):
-                for parent_partition_key in self.get_parent_partition_keys_for_child(
+                mapped_partitions_result = self.get_parent_partition_keys_for_child(
                     partition_key,
                     parent_asset_key,
                     asset_key,
                     dynamic_partitions_store=dynamic_partitions_store,
                     current_time=current_time,
-                ):
-                    result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))
+                )
+
+                valid_parent_partitions.update(
+                    {
+                        AssetKeyPartitionKey(parent_asset_key, valid_partition)
+                        for valid_partition in mapped_partitions_result.partitions_subset.get_partition_keys()
+                    }
+                )
+                required_but_nonexistent_parent_partitions.update(
+                    {
+                        AssetKeyPartitionKey(parent_asset_key, invalid_partition)
+                        for invalid_partition in mapped_partitions_result.required_but_nonexistent_partition_keys
+                    }
+                )
             else:
-                result.add(AssetKeyPartitionKey(parent_asset_key))
-        return result
+                valid_parent_partitions.add(AssetKeyPartitionKey(parent_asset_key))
+
+        return ParentsPartitionsResult(
+            valid_parent_partitions, required_but_nonexistent_parent_partitions
+        )
 
     def get_parent_partition_keys_for_child(
         self,
@@ -304,7 +337,7 @@ class AssetGraph:
         child_asset_key: AssetKey,
         dynamic_partitions_store: DynamicPartitionsStore,
         current_time: datetime,
-    ) -> Sequence[str]:
+    ) -> UpstreamPartitionsResult:
         """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
@@ -331,17 +364,17 @@ class AssetGraph:
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
-        parent_partition_key_subset = partition_mapping.get_upstream_partitions_for_partitions(
-            cast(PartitionsDefinition, child_partitions_def)
-            .empty_subset()
-            .with_partition_keys([partition_key])
+
+        return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+            cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
+                [partition_key]
+            )
             if partition_key
             else None,
             upstream_partitions_def=parent_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
         )
-        return list(parent_partition_key_subset.get_partition_keys())
 
     def is_source(self, asset_key: AssetKey) -> bool:
         return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys
@@ -659,30 +692,35 @@ class ToposortedPriorityQueue:
 
         def _sort_key_for_time_window_partition(
             partitions_def: TimeWindowPartitionsDefinition,
+            time_partition_key: str,
         ) -> float:
             # A sort key such that time window partitions are sorted from oldest to newest
             return pendulum.instance(
-                datetime.strptime(cast(str, asset_partition.partition_key), partitions_def.fmt),
+                datetime.strptime(time_partition_key, partitions_def.fmt),
                 tz=partitions_def.timezone,
             ).timestamp()
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            if partitions_def is not None and isinstance(
-                partitions_def, TimeWindowPartitionsDefinition
-            ):
-                # sort self dependencies from oldest to newest, as older partitions must exist before
-                # new ones can execute
-                partition_sort_key = _sort_key_for_time_window_partition(partitions_def)
-            else:
+            time_partitions_def = get_time_partitions_def(partitions_def)
+            if time_partitions_def is None:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
                 )
+
+            # sort self dependencies from oldest to newest, as older partitions must exist before
+            # new ones can execute
+            partition_sort_key = _sort_key_for_time_window_partition(
+                time_partitions_def,
+                get_time_partition_key(partitions_def, asset_partition.partition_key),
+            )
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
             # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
             # than older ones
-            partition_sort_key = -1 * _sort_key_for_time_window_partition(partitions_def)
+            partition_sort_key = -1 * _sort_key_for_time_window_partition(
+                partitions_def, cast(str, asset_partition.partition_key)
+            )
         else:
             partition_sort_key = None
 

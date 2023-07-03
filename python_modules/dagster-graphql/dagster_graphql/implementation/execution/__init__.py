@@ -10,7 +10,7 @@ from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
-from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
@@ -106,7 +106,7 @@ def terminate_pipeline_execution(
     else:
         assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
 
-    can_cancel_run = run.status == DagsterRunStatus.STARTED or run.status == DagsterRunStatus.QUEUED
+    can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
     valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 

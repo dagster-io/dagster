@@ -1,12 +1,23 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading, useViewport} from '@dagster-io/ui';
+import {
+  Box,
+  Button,
+  Dialog,
+  Icon,
+  Tooltip,
+  Colors,
+  Subheading,
+  useViewport,
+  NonIdealState,
+  Spinner,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
-import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -32,34 +43,73 @@ export const OpJobPartitionsView: React.FC<{
   repoAddress: RepoAddress;
 }> = ({partitionSetName, repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const queryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
+  const {data, loading} = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
     {
       variables: {partitionSetName, repositorySelector},
     },
   );
 
+  if (!data) {
+    if (loading) {
+      return (
+        <Box padding={32} flex={{direction: 'column', alignItems: 'center'}}>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <Spinner purpose="body-text" />
+            <div>Loading partitions…</div>
+          </Box>
+        </Box>
+      );
+    }
+
+    return (
+      <Box padding={32}>
+        <NonIdealState
+          icon="error"
+          title="An error occurred"
+          description="An unexpected error occurred."
+        />
+      </Box>
+    );
+  }
+
+  const {partitionSetOrError} = data;
+  if (partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
+    return (
+      <Box padding={32}>
+        <NonIdealState
+          icon="search"
+          title="Partition set not found"
+          description={partitionSetOrError.message}
+        />
+      </Box>
+    );
+  }
+
+  if (partitionSetOrError.__typename === 'PythonError') {
+    return (
+      <Box padding={32}>
+        <PythonErrorInfo error={partitionSetOrError} />
+      </Box>
+    );
+  }
+
+  if (partitionSetOrError.partitionsOrError.__typename === 'PythonError') {
+    return (
+      <Box padding={32}>
+        <PythonErrorInfo error={partitionSetOrError.partitionsOrError} />
+      </Box>
+    );
+  }
+
+  const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
+
   return (
-    <Loading queryResult={queryResult}>
-      {({partitionSetOrError}) => {
-        if (
-          partitionSetOrError.__typename !== 'PartitionSet' ||
-          partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-        ) {
-          return null;
-        }
-
-        const partitionNames = partitionSetOrError.partitionsOrError.results.map(({name}) => name);
-
-        return (
-          <OpJobPartitionsViewContent
-            partitionNames={partitionNames}
-            partitionSet={partitionSetOrError}
-            repoAddress={repoAddress}
-          />
-        );
-      }}
-    </Loading>
+    <OpJobPartitionsViewContent
+      partitionNames={partitionNames}
+      partitionSet={partitionSetOrError}
+      repoAddress={repoAddress}
+    />
   );
 };
 
@@ -73,13 +123,13 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
         return;
       }
       const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
-      const lastRun = sortedRuns[sortedRuns.length - 1];
+      const lastRun = sortedRuns[sortedRuns.length - 1]!;
       stepDurationData[p.name] = {};
       runDurationData[p.name] =
         lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
 
       lastRun.stepStats.forEach((s) => {
-        stepDurationData[p.name][s.stepKey] = [
+        stepDurationData[p.name]![s.stepKey] = [
           s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
         ];
       });
@@ -89,7 +139,7 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
   }, [partitions]);
 }
 
-const OpJobPartitionsViewContent: React.FC<{
+export const OpJobPartitionsViewContent: React.FC<{
   partitionNames: string[];
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
@@ -141,6 +191,13 @@ const OpJobPartitionsViewContent: React.FC<{
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
+  const {partitionStatusesOrError} = partitionSet;
+  const partitionStatuses = React.useMemo(() => {
+    return partitionStatusesOrError.__typename === 'PartitionStatuses'
+      ? partitionStatusesOrError.results
+      : [];
+  }, [partitionStatusesOrError]);
+
   const {runStatusData, runDurationData} = React.useMemo(() => {
     // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
     // rather than looking at the duration of the most recent run returned in `partitions` above
@@ -148,17 +205,14 @@ const OpJobPartitionsViewContent: React.FC<{
     const runStatusData: {[name: string]: RunStatus} = {};
     const runDurationData: {[name: string]: number | undefined} = {};
 
-    (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
-      ? partitionSet.partitionStatusesOrError.results
-      : []
-    ).forEach((p) => {
+    partitionStatuses.forEach((p) => {
       runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
       if (selectedPartitions.includes(p.partitionName)) {
         runDurationData[p.partitionName] = p.runDuration || undefined;
       }
     });
     return {runStatusData, runDurationData};
-  }, [partitionSet, selectedPartitions]);
+  }, [partitionStatuses, selectedPartitions]);
 
   const health = React.useMemo(() => {
     return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
@@ -207,12 +261,12 @@ const OpJobPartitionsViewContent: React.FC<{
               icon={<Icon name="add_circle" />}
               active={showBackfillSetup}
             >
-              Launch backfill...
+              Launch backfill…
             </Button>
           ) : (
             <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
               <Button icon={<Icon name="add_circle" />} disabled>
-                Launch backfill...
+                Launch backfill…
               </Button>
             </Tooltip>
           )}
@@ -348,6 +402,10 @@ const PARTITIONS_STATUS_QUERY = gql`
         id
         ...OpJobPartitionSet
       }
+      ... on PartitionSetNotFoundError {
+        message
+      }
+      ...PythonErrorFragment
     }
   }
 
@@ -361,6 +419,7 @@ const PARTITIONS_STATUS_QUERY = gql`
           name
         }
       }
+      ...PythonErrorFragment
     }
     partitionStatusesOrError {
       ... on PartitionStatuses {

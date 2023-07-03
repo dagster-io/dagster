@@ -27,7 +27,7 @@ import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetStale} from './Stale';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
@@ -41,7 +41,8 @@ import {
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
-  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey};
+  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey}
+  | {type: 'pureAll'};
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -134,13 +135,15 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
   });
 
   if (liveDataForStale) {
-    const missingOrStale = assets.filter((a) =>
-      isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
+    const missingOrStale = assets.filter(
+      (a) =>
+        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
+        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
     );
 
     options.push({
       assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Propagate changes${countOrBlank(missingOrStale)}`,
+      label: `Materialize changed and missing${countOrBlank(missingOrStale)}`,
       hasMaterializePermission,
       icon: <Icon name="changes_present" />,
     });
@@ -159,7 +162,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   const [isOpen, setIsOpen] = React.useState(false);
 
   const options = optionsForButton(scope, liveDataForStale);
-  const firstOption = options[0];
+  const firstOption = options[0]!;
   const hasMaterializePermission = firstOption.hasMaterializePermission;
 
   const {MaterializeButton} = useLaunchPadHooks();
@@ -208,13 +211,6 @@ export const LaunchAssetExecutionButton: React.FC<{
           position="bottom-right"
           content={
             <Menu>
-              <MenuItem
-                text="Open in launchpad"
-                icon={<Icon name="open_in_new" />}
-                onClick={(e: React.MouseEvent<any>) => {
-                  onClick(firstOption.assetKeys, e, true);
-                }}
-              />
               {options.slice(1).map((option) => (
                 <MenuItem
                   key={option.label}
@@ -224,6 +220,13 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
+              <MenuItem
+                text="Open launchpad"
+                icon={<Icon name="open_in_new" />}
+                onClick={(e: React.MouseEvent<any>) => {
+                  onClick(firstOption.assetKeys, e, true);
+                }}
+              />
             </Menu>
           }
         >
@@ -403,11 +406,17 @@ async function stateForLaunchingAssets(
   );
 
   if (!inSameRepo || !inSameOrNoPartitionSpace || !jobName) {
+    if (!partitionDefinition) {
+      return {type: 'error', error: ERROR_INVALID_ASSET_SELECTION};
+    }
     const anchorAsset = getAnchorAssetForPartitionMappedBackfill(assets);
     if (!anchorAsset) {
       return {
-        type: 'error',
-        error: ERROR_INVALID_ASSET_SELECTION,
+        type: 'partitions',
+        assets,
+        target: {type: 'pureAll'},
+        upstreamAssetKeys: [],
+        repoAddress,
       };
     }
     return {
@@ -426,8 +435,8 @@ async function stateForLaunchingAssets(
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
       pipelineName: jobName,
-      repositoryName: assets[0].repository.name,
-      repositoryLocationName: assets[0].repository.location.name,
+      repositoryName: assets[0]!.repository.name,
+      repositoryLocationName: assets[0]!.repository.location.name,
     },
   });
   const pipeline = resourceResult.data.pipelineOrError;
@@ -441,7 +450,7 @@ async function stateForLaunchingAssets(
 
   const partitionSetName = partitionSets.results[0]?.name;
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
-  const resources = pipeline.modes[0].resources.filter((r) =>
+  const resources = pipeline.modes[0]!.resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
   );
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
@@ -471,7 +480,7 @@ async function stateForLaunchingAssets(
       },
     };
   }
-  if (partitionDefinition) {
+  if (partitionDefinition && partitionSetName) {
     return {
       type: 'partitions',
       assets,
@@ -521,6 +530,7 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
   // the anchor asset but we do it alphabetically so that it is deterministic.
   const first = partitionedRoots[0];
   if (
+    first &&
     !partitionedRoots.every((r) =>
       partitionDefinitionsEqual(first.partitionDefinition!, r.partitionDefinition!),
     )

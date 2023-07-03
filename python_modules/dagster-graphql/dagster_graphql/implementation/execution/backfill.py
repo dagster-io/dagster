@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
 import pendulum
@@ -28,6 +28,33 @@ if TYPE_CHECKING:
         GrapheneResumeBackfillSuccess,
     )
     from ...schema.errors import GraphenePartitionSetNotFoundError
+
+
+def _assert_permission_for_asset_graph(
+    graphene_info: "ResolveInfo",
+    asset_graph: ExternalAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
+) -> None:
+    if asset_selection:
+        repo_handles = [
+            asset_graph.get_repository_handle(asset_key) for asset_key in asset_selection
+        ]
+    else:
+        repo_handles = asset_graph.repository_handles_by_key.values()
+
+    location_names = set(
+        repo_handle.code_location_origin.location_name for repo_handle in repo_handles
+    )
+
+    if not location_names:
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+    else:
+        for location_name in location_names:
+            assert_permission_for_location(graphene_info, permission, location_name)
 
 
 def create_and_launch_partition_backfill(
@@ -137,21 +164,9 @@ def create_and_launch_partition_backfill(
 
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
-        location_names = set(
-            repo_handle.code_location_origin.location_name
-            for repo_handle in asset_graph.repository_handles_by_key.values()
+        _assert_permission_for_asset_graph(
+            graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
         )
-
-        if not location_names:
-            assert_permission(
-                graphene_info,
-                Permissions.LAUNCH_PARTITION_BACKFILL,
-            )
-        else:
-            for location_name in location_names:
-                assert_permission_for_location(
-                    graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
-                )
 
         backfill = PartitionBackfill.from_asset_partitions(
             asset_graph=asset_graph,
@@ -161,7 +176,9 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             partition_names=backfill_params.get("partitionNames"),
             dynamic_partitions_store=CachingInstanceQueryer(
-                graphene_info.context.instance, utc_datetime_from_timestamp(backfill_timestamp)
+                graphene_info.context.instance,
+                asset_graph,
+                utc_datetime_from_timestamp(backfill_timestamp),
             ),
             all_partitions=backfill_params.get("allPartitions", False),
         )
@@ -183,13 +200,28 @@ def cancel_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    partition_set_origin = check.not_none(backfill.partition_set_origin)
-    location_name = partition_set_origin.selector.location_name
-    assert_permission_for_location(
-        graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
-    )
+    if backfill.serialized_asset_backfill_data:
+        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        _assert_permission_for_asset_graph(
+            graphene_info,
+            asset_graph,
+            backfill.asset_selection,
+            Permissions.CANCEL_PARTITION_BACKFILL,
+        )
+        graphene_info.context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.CANCELING)
+        )
 
-    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+    else:
+        partition_set_origin = check.not_none(backfill.partition_set_origin)
+        location_name = partition_set_origin.selector.location_name
+        assert_permission_for_location(
+            graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
+        )
+        graphene_info.context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.CANCELED)
+        )
+
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
 
 

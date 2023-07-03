@@ -27,7 +27,6 @@ export const TickLogDialog: React.FC<{
 }> = ({tick, instigationSelector, onClose}) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
     variables: {instigationSelector, timestamp: tick.timestamp},
-    partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
 

@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
 )
 from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -688,14 +689,14 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    conditions=[],
+                    partition_subsets_by_condition=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    conditions=[MissingAutoMaterializeCondition()],
+                    partition_subsets_by_condition=[(MissingAutoMaterializeCondition(), None)],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -724,7 +725,7 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_one"),
-                    conditions=[],
+                    partition_subsets_by_condition=[],
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
@@ -763,7 +764,12 @@ class TestScheduleStorage:
             asset_evaluations=[
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    conditions=[(MissingAutoMaterializeCondition(), subset.serialize())],
+                    partition_subsets_by_condition=[
+                        (
+                            MissingAutoMaterializeCondition(),
+                            SerializedPartitionsSubset.from_subset(subset, partitions_def, None),
+                        )
+                    ],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -779,5 +785,47 @@ class TestScheduleStorage:
         assert res[0].evaluation_id == 10
         assert res[0].evaluation.num_requested == 1
 
-        assert res[0].evaluation.conditions[0][0] == MissingAutoMaterializeCondition()
-        assert partitions_def.deserialize_subset(res[0].evaluation.conditions[0][1]) == subset
+        assert (
+            res[0].evaluation.partition_subsets_by_condition[0][0]
+            == MissingAutoMaterializeCondition()
+        )
+        assert (
+            res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)
+        )
+        assert (
+            partitions_def.deserialize_subset(
+                res[0].evaluation.partition_subsets_by_condition[0][1].serialized_subset
+            )
+            == subset
+        )
+
+    def test_purge_asset_evaluations(self, storage):
+        if not self.can_purge():
+            pytest.skip("Storage cannot purge")
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 1
+
+        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 0

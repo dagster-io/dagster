@@ -68,7 +68,7 @@ export const AssetMaterializationGraphs: React.FC<{
                 <AssetValueGraph
                   label={label}
                   width="100%"
-                  data={graphDataByMetadataLabel[label]}
+                  data={graphDataByMetadataLabel[label]!}
                   xHover={xHover}
                   onHoverX={(x) => x !== xHover && setXHover(x)}
                 />
@@ -138,13 +138,20 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
   );
 
   const append = (label: string, {x, y}: {x: number | string; y: number}) => {
-    series[label] = series[label] || {minX: 0, maxX: 0, minY: 0, maxY: 0, values: [], xAxis};
+    const target: AssetValueGraphData = series[label] || {
+      minY: 0,
+      maxY: 0,
+      minXNumeric: 0,
+      maxXNumeric: 0,
+      values: [],
+      xAxis,
+    };
 
     if (xAxis === 'partition') {
       // If the xAxis is partition keys, the graph may only contain one value for each partition.
       // If the existing sample for the partition was null, replace it. Otherwise take the
       // most recent value.
-      const existingForPartition = series[label].values.find((v) => v.x === x);
+      const existingForPartition = target.values.find((v) => v.x === x);
       if (existingForPartition) {
         if (!isNaN(y)) {
           existingForPartition.y = y;
@@ -152,11 +159,13 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
         return;
       }
     }
-    series[label].values.push({
-      xNumeric: typeof x === 'number' ? x : series[label].values.length,
+    target.values.push({
+      xNumeric: typeof x === 'number' ? x : target.values.length,
       x,
       y,
     });
+
+    series[label] = target;
   };
 
   for (const {partition, latest} of datapoints) {

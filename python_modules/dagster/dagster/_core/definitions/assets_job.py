@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -16,6 +17,7 @@ from typing import (
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
@@ -34,6 +36,7 @@ from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition, default_job_io_manager
+from .metadata import RawMetadataValue
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition
@@ -116,8 +119,10 @@ def build_assets_job(
         Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -229,9 +234,11 @@ def build_assets_job(
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
+        metadata=metadata,
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
+        hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
 
@@ -245,6 +252,7 @@ def build_source_asset_observation_job(
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that observes the given source assets.
@@ -331,6 +339,7 @@ def build_source_asset_observation_job(
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
+        hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
 

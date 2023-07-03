@@ -88,7 +88,7 @@ I/O managers are provided through the [resources](/concepts/resources) system wh
 
 ### Applying I/O managers to assets
 
-By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the configuration and methods in <PyObject object="FilesystemIOManager" />.
+By default, materializing an asset named `my_asset` will pickle it to a local file named `my_asset`. The directory that file lives underneath is determined by the rules in <PyObject object="FilesytemIOManager" />.
 
 [I/O managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store such as s3. You can use one of Dagster's [built-in I/O managers](#built-in-io-managers), or you can write your own.
 
@@ -251,7 +251,7 @@ defs = Definitions(
 
 By default, all the inputs and outputs in a job use the same I/O manager. This I/O manager is determined by the <PyObject module="dagster" object="ResourceDefinition" /> provided for the `"io_manager"` resource key. `"io_manager"` is a resource key that Dagster reserves specifically for this purpose.
 
-Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="FileSystemIOManager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
+Here’s how to specify that all op outputs are stored using the <PyObject module="dagster" object="FilesystemIOManager" />, which pickles outputs and stores them on the local filesystem. It stores files in a directory with the run ID in the path, so that outputs from prior runs will never be overwritten.
 
 ```python file=/concepts/io_management/default_io_manager.py
 from dagster import FilesystemIOManager, job, op
@@ -276,7 +276,7 @@ def my_job():
 
 Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
 
-To select the I/O manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting I/O managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
+To select the I/O manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting I/O managers in your job. In this example, the output of `op_1` will go to `FilesystemIOManager` and the output of `op_2` will go to `ConfigurablePickledObjectS3IOManager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
 from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
@@ -427,9 +427,9 @@ from typing import Dict
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    OpExecutionContext,
     asset,
     materialize,
 )
@@ -441,7 +441,7 @@ daily_partitions = DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
 
 
 @asset(partitions_def=hourly_partitions)
-def upstream_asset(context: OpExecutionContext) -> pd.DataFrame:
+def upstream_asset(context: AssetExecutionContext) -> pd.DataFrame:
     return pd.DataFrame({"date": [context.partition_key]})
 
 

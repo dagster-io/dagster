@@ -293,12 +293,6 @@ def get_asset_observations(
     return [event_record.event_log_entry for event_record in event_records]
 
 
-def get_asset_run_ids(graphene_info: "ResolveInfo", asset_key: AssetKey) -> Sequence[str]:
-    check.inst_param(asset_key, "asset_key", AssetKey)
-    instance = graphene_info.context.instance
-    return instance.run_ids_for_asset_key(asset_key)
-
-
 def get_assets_for_run_id(graphene_info: "ResolveInfo", run_id: str) -> Sequence["GrapheneAsset"]:
     from ..schema.pipelines.pipeline import GrapheneAsset
 

@@ -812,6 +812,16 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     @property
+    def code_server_reload_timeout(self) -> int:
+        return self.code_server_settings.get(
+            "reload_timeout", DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
+
+    @property
+    def wait_for_local_code_server_processes_on_shutdown(self) -> bool:
+        return self.code_server_settings.get("wait_for_local_processes_on_shutdown", False)
+
+    @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
         return self.run_monitoring_settings.get("max_resume_run_attempts", 0)
 
@@ -1813,6 +1823,16 @@ class DagsterInstance(DynamicPartitionsStore):
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
+
+    @traced
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, event_type: DagsterEventType
+    ) -> Mapping[str, int]:
+        """Fetch the latest materialzation storage id for each partition for a given asset key.
+
+        Returns a mapping of partition to storage id.
+        """
+        return self._event_storage.get_latest_storage_id_by_partition(asset_key, event_type)
 
     @public
     @traced

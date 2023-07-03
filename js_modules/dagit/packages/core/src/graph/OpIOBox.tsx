@@ -170,7 +170,7 @@ export function metadataForCompositeParentIO(
   return {
     edges,
     title,
-    jumpTargetOp: edges.length === 1 ? edges[0].a : null,
+    jumpTargetOp: edges.length === 1 ? edges[0]!.a : null,
   };
 }
 
@@ -187,7 +187,7 @@ export function metadataForIO(
     const others = invocation.inputs.find((i) => i.definition.name === item.name)!.dependsOn;
     if (others.length) {
       title += `\n\nFrom:\n` + others.map(titleOfIO).join('\n');
-      jumpTargetOp = others.length === 1 ? others[0].solid.name : null;
+      jumpTargetOp = others.length === 1 ? others[0]!.solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_IN});
@@ -203,7 +203,7 @@ export function metadataForIO(
     const others = output.dependedBy;
     if (others.length) {
       title += '\n\nUsed By:\n' + others.map((o) => titleOfIO(o)).join('\n');
-      jumpTargetOp = others.length === 1 ? others[0].solid.name : null;
+      jumpTargetOp = others.length === 1 ? others[0]!.solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_OUT});

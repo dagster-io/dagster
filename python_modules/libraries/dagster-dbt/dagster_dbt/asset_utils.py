@@ -4,6 +4,7 @@ from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, Optional, S
 
 from dagster import (
     AssetKey,
+    AssetOut,
     AutoMaterializePolicy,
     FreshnessPolicy,
     In,
@@ -24,11 +25,20 @@ from .utils import input_name_fn, output_name_fn
 
 def default_asset_key_fn(node_info: Mapping[str, Any]) -> AssetKey:
     """Get the asset key for a dbt node.
-    By default:
+
+    By default, if the dbt node has a Dagster asset key configured in its metadata, then that is
+    parsed and used.
+
+    Otherwise:
         dbt sources: a dbt source's key is the union of its source name and its table name
         dbt models: a dbt model's key is the union of its model name and any schema configured on
-    the model itself.
+            the model itself.
     """
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    asset_key_config = dagster_metadata.get("asset_key", [])
+    if asset_key_config:
+        return AssetKey(asset_key_config)
+
     if node_info["resource_type"] == "source":
         components = [node_info["source_name"], node_info["name"]]
     else:
@@ -61,7 +71,18 @@ def default_metadata_fn(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is subdirectory that it resides in."""
+    """Get the group name for a dbt node.
+
+    By default, if a Dagster group is configured in the metadata for the node, use that.
+
+    Otherwise, a node's group name is subdirectory that it resides in.
+    """
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+
+    dagster_group = dagster_metadata.get("group")
+    if dagster_group:
+        return dagster_group
+
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:
@@ -70,7 +91,22 @@ def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
 
 
 def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-    freshness_policy_config = node_info["config"].get("dagster_freshness_policy")
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    freshness_policy_config = dagster_metadata.get("freshness_policy", {})
+
+    freshness_policy = _legacy_freshness_policy_fn(freshness_policy_config)
+    if freshness_policy:
+        return freshness_policy
+
+    # TODO: Remove this legacy configuration in 0.20.0
+    legacy_freshness_policy_config = node_info["config"].get("dagster_freshness_policy", {})
+
+    return _legacy_freshness_policy_fn(legacy_freshness_policy_config)
+
+
+def _legacy_freshness_policy_fn(
+    freshness_policy_config: Mapping[str, Any]
+) -> Optional[FreshnessPolicy]:
     if freshness_policy_config:
         return FreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
@@ -83,10 +119,27 @@ def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[Freshn
 def default_auto_materialize_policy_fn(
     node_info: Mapping[str, Any]
 ) -> Optional[AutoMaterializePolicy]:
-    auto_materialize_policy = node_info["config"].get("dagster_auto_materialize_policy", {})
-    if auto_materialize_policy.get("type") == "eager":
+    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
+
+    auto_materialize_policy = _auto_materialize_policy_fn(auto_materialize_policy_config)
+    if auto_materialize_policy:
+        return auto_materialize_policy
+
+    # TODO: Remove this legacy configuration in 0.20.0
+    legacy_auto_materialize_policy_config = node_info["config"].get(
+        "dagster_auto_materialize_policy", {}
+    )
+
+    return _auto_materialize_policy_fn(legacy_auto_materialize_policy_config)
+
+
+def _auto_materialize_policy_fn(
+    auto_materialize_policy_config: Mapping[str, Any]
+) -> Optional[AutoMaterializePolicy]:
+    if auto_materialize_policy_config.get("type") == "eager":
         return AutoMaterializePolicy.eager()
-    elif auto_materialize_policy.get("type") == "lazy":
+    elif auto_materialize_policy_config.get("type") == "lazy":
         return AutoMaterializePolicy.lazy()
     return None
 
@@ -99,6 +152,12 @@ def default_description_fn(node_info: Mapping[str, Any], display_raw_sql: bool =
     if display_raw_sql:
         description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
     return "\n\n".join(filter(None, description_sections))
+
+
+def default_code_version_fn(node_info: Mapping[str, Any]) -> str:
+    return hashlib.sha1(
+        (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
+    ).hexdigest()
 
 
 ###################
@@ -141,7 +200,8 @@ def get_deps(
             if is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
-                queue = parent_node_info.get("depends_on", {}).get("nodes", [])
+                # make a copy to avoid mutating the actual dictionary
+                queue = list(parent_node_info.get("depends_on", {}).get("nodes", []))
                 while queue:
                     candidate_parent_id = queue.pop()
                     if candidate_parent_id in visited:
@@ -164,6 +224,51 @@ def get_deps(
     }
 
     return frozen_asset_deps
+
+
+def get_dbt_multi_asset_args(
+    dbt_nodes: Mapping[str, Any],
+    deps: Mapping[str, FrozenSet[str]],
+    io_manager_key: Optional[str] = None,
+) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]],]:
+    """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
+    non_argument_deps: Set[AssetKey] = set()
+    outs: Dict[str, AssetOut] = {}
+    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+
+    for unique_id, parent_unique_ids in deps.items():
+        node_info = dbt_nodes[unique_id]
+
+        output_name = output_name_fn(node_info)
+        asset_key = default_asset_key_fn(node_info)
+
+        outs[output_name] = AssetOut(
+            key=asset_key,
+            dagster_type=Nothing,
+            io_manager_key=io_manager_key,
+            description=default_description_fn(node_info, display_raw_sql=False),
+            is_required=False,
+            metadata=default_metadata_fn(node_info),
+            group_name=default_group_fn(node_info),
+            code_version=default_code_version_fn(node_info),
+            freshness_policy=default_freshness_policy_fn(node_info),
+            auto_materialize_policy=default_auto_materialize_policy_fn(node_info),
+        )
+
+        # Translate parent unique ids to internal asset deps and non argument dep
+        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
+        for parent_unique_id in parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_asset_key = default_asset_key_fn(parent_node_info)
+
+            # Add this parent as an internal dependency
+            output_internal_deps.add(parent_asset_key)
+
+            # Mark this parent as an input if it has no dependencies
+            if parent_unique_id not in deps:
+                non_argument_deps.add(parent_asset_key)
+
+    return non_argument_deps, outs, internal_asset_deps
 
 
 def get_asset_deps(
@@ -223,9 +328,7 @@ def get_asset_deps(
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
-                code_version=hashlib.sha1(
-                    (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
-                ).hexdigest(),
+                code_version=default_code_version_fn(node_info),
             ),
         )
 

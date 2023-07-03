@@ -22,13 +22,13 @@ from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_selection import get_graph_subset
+from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.types.dagster_type import Nothing
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
     ExperimentalWarning,
@@ -236,6 +236,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._selected_asset_keys,
             partition_mappings=self._partition_mappings,
+            partitions_def=self._partitions_def,
         )
 
     @staticmethod
@@ -783,6 +784,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
+        metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -804,6 +807,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
         group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
+        )
+        descriptions_by_key = check.opt_mapping_param(
+            descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
+        )
+        metadata_by_key = check.opt_mapping_param(
+            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
         )
 
         if group_names_by_key:
@@ -878,7 +887,15 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
-            for key, description in self._descriptions_by_key.items()
+            for key, description in descriptions_by_key.items()
+        }
+
+        if not metadata_by_key:
+            metadata_by_key = self.metadata_by_key
+
+        replaced_metadata_by_key = {
+            output_asset_key_replacements.get(key, key): metadata
+            for key, metadata in metadata_by_key.items()
         }
 
         return __class__.dagster_internal_init(
@@ -916,72 +933,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 **replaced_group_names_by_key,
                 **group_names_by_key,
             },
-            metadata_by_key={
-                output_asset_key_replacements.get(key, key): value
-                for key, value in self.metadata_by_key.items()
-            },
+            metadata_by_key=replaced_metadata_by_key,
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
-        )
-
-    def _subset_op_backed_asset(
-        self, asset_subselection: AbstractSet[AssetKey]
-    ) -> "AssetsDefinition":
-        """Creates a new AssetsDefinition which will only materialize the given asset keys. In some
-        cases, this subset will have a new set of root assets, which were previously produced within
-        the subset itself. In this case, we will create new inputs for those assets, and generate a
-        new copy of the op with the new inputs.
-        """
-        # the set of keys that are not selected but are upstream of the selected keys
-        input_keys = {
-            dep_key for key in asset_subselection for dep_key in self.asset_deps[key]
-        }.difference(asset_subselection)
-        ins = {}
-
-        input_names_by_key = {v: k for k, v in self.keys_by_input_name.items()}
-        output_names_by_key = {v: k for k, v in self.keys_by_output_name.items()}
-        op_valid = True
-        for input_key in input_keys:
-            input_name = input_names_by_key.get(input_key)
-            if input_name is None:
-                # there is no input existing for this key, meaning this is something that is produced
-                # within the op if it is not subsetted. this requires us to create a new input, and
-                # therefore a new copy of the underlying op.
-                op_valid = False
-                output_name = output_names_by_key[input_key]
-                ins[output_name] = In(Nothing)
-                input_names_by_key[input_key] = output_name
-            else:
-                # just copy over existing input
-                ins[input_name] = self.op.ins[input_name]
-
-        # must create a new copy of the op
-        if op_valid:
-            op_def = self.op
-        else:
-            # create a hash of the selected keys to generate a unique name for this subsetted op
-            suffix = hashlib.md5((str(list(sorted(asset_subselection)))).encode()).hexdigest()[-5:]
-            op_def = self.op.with_replaced_properties(
-                name=f"{self.op.name}_subset_{suffix}", ins=ins
-            )
-
-        return AssetsDefinition.dagster_internal_init(
-            keys_by_input_name={**{v: k for k, v in input_names_by_key.items()}},
-            # keep track of the original mapping
-            keys_by_output_name=self.node_keys_by_output_name,
-            node_def=op_def,
-            partitions_def=self.partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
-            can_subset=self.can_subset,
-            selected_asset_keys=asset_subselection,
-            resource_defs=self.resource_defs,
-            group_names_by_key=self.group_names_by_key,
-            metadata_by_key=self.metadata_by_key,
-            freshness_policies_by_key=self.freshness_policies_by_key,
-            auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-            descriptions_by_key=self.descriptions_by_key,
         )
 
     def _subset_graph_backed_asset(
@@ -1082,7 +1037,23 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
         else:
             # multi_asset subsetting
-            return self._subset_op_backed_asset(asset_subselection)
+            return AssetsDefinition.dagster_internal_init(
+                # keep track of the original mapping
+                keys_by_input_name=self._keys_by_input_name,
+                keys_by_output_name=self._keys_by_output_name,
+                node_def=self.node_def,
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+                asset_deps=self._asset_deps,
+                can_subset=self.can_subset,
+                selected_asset_keys=asset_subselection,
+                resource_defs=self.resource_defs,
+                group_names_by_key=self.group_names_by_key,
+                metadata_by_key=self.metadata_by_key,
+                freshness_policies_by_key=self.freshness_policies_by_key,
+                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
+                descriptions_by_key=self.descriptions_by_key,
+            )
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -1367,20 +1338,50 @@ def _validate_self_deps(
     input_keys: Iterable[AssetKey],
     output_keys: Iterable[AssetKey],
     partition_mappings: Mapping[AssetKey, PartitionMapping],
+    partitions_def: Optional[PartitionsDefinition],
 ) -> None:
     output_keys_set = set(output_keys)
     for input_key in input_keys:
         if input_key in output_keys_set:
             if input_key in partition_mappings:
                 partition_mapping = partition_mappings[input_key]
+                time_window_partition_mapping = get_self_dep_time_window_partition_mapping(
+                    partition_mapping, partitions_def
+                )
                 if (
-                    isinstance(partition_mapping, TimeWindowPartitionMapping)
-                    and (partition_mapping.start_offset or 0) < 0
-                    and (partition_mapping.end_offset or 0) < 0
+                    time_window_partition_mapping is not None
+                    and (time_window_partition_mapping.start_offset or 0) < 0
+                    and (time_window_partition_mapping.end_offset or 0) < 0
                 ):
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are time-partitioned and each"
-                " partition depends on earlier partitions"
+                "Assets can only depend on themselves if they are:\n(a) time-partitioned and each"
+                " partition depends on earlier partitions\n(b) multipartitioned, with one time"
+                " dimension that depends on earlier time partitions"
             )
+
+
+def get_self_dep_time_window_partition_mapping(
+    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+) -> Optional[TimeWindowPartitionMapping]:
+    """Returns a time window partition mapping dimension of the provided partition mapping,
+    if exists.
+    """
+    if isinstance(partition_mapping, TimeWindowPartitionMapping):
+        return partition_mapping
+    elif isinstance(partition_mapping, MultiPartitionMapping):
+        if not isinstance(partitions_def, MultiPartitionsDefinition):
+            return None
+
+        time_partition_mapping = partition_mapping.downstream_mappings_by_upstream_dimension.get(
+            partitions_def.time_window_dimension.name
+        )
+
+        if time_partition_mapping is None or not isinstance(
+            time_partition_mapping.partition_mapping, TimeWindowPartitionMapping
+        ):
+            return None
+
+        return time_partition_mapping.partition_mapping
+    return None

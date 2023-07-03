@@ -33,6 +33,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_graphql_tests*"]),
+    include_package_data=True,
     install_requires=[
         f"dagster{pin}",
         "graphene>=3",

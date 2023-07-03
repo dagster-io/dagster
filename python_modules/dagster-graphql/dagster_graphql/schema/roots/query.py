@@ -23,7 +23,7 @@ from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
-    GrapheneAutoMaterializeAssetEvaluationRecord,
+    GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
 )
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
@@ -469,9 +469,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Provides fields for testing behavior",
     )
 
-    autoMaterializeAssetEvaluations = graphene.Field(
-        non_null_list(GrapheneAutoMaterializeAssetEvaluationRecord),
-        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+    autoMaterializeAssetEvaluationsOrError = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the auto materialization evaluation records for all assets.",
@@ -987,13 +987,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_test(self, _):
         return GrapheneTestFields()
 
-    def resolve_autoMaterializeAssetEvaluations(
+    def resolve_autoMaterializeAssetEvaluationsOrError(
         self,
         graphene_info: ResolveInfo,
         assetKey: GrapheneAssetKeyInput,
         limit: int,
-        cursor: Optional[str],
+        cursor: Optional[str] = None,
     ):
         return fetch_auto_materialize_asset_evaluations(
-            instance=graphene_info.context.instance, asset_key=assetKey, cursor=cursor, limit=limit
+            graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
         )

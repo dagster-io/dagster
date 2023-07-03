@@ -98,10 +98,19 @@ export const BackfillRow = ({
       );
       return {counts, statuses: null};
     }
-    const statuses = data.partitionBackfillOrError.partitionStatuses.results;
+    const statuses = data.partitionBackfillOrError.partitionStatuses?.results;
     const counts = countBy(statuses, (k) => k.runStatus);
     return {counts, statuses};
   }, [data]);
+
+  const canCancelRuns = React.useMemo(() => {
+    if (counts) {
+      const queuedCount = counts[RunStatus.QUEUED] || 0;
+      const startedCount = counts[RunStatus.STARTED] || 0;
+      return queuedCount > 0 || startedCount > 0;
+    }
+    return false;
+  }, [counts]);
 
   return (
     <tr>
@@ -147,7 +156,7 @@ export const BackfillRow = ({
       </td>
       <td>
         {backfill.isValidSerialization ? (
-          counts ? (
+          counts && statuses ? (
             <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
           ) : (
             <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
@@ -162,9 +171,7 @@ export const BackfillRow = ({
           onResumeBackfill={onResumeBackfill}
           onTerminateBackfill={onTerminateBackfill}
           onShowStepStatus={onShowStepStatus}
-          canCancelRuns={
-            counts ? counts[RunStatus.QUEUED] > 0 || counts[RunStatus.STARTED] > 0 : false
-          }
+          canCancelRuns={canCancelRuns}
         />
       </td>
     </tr>
@@ -200,7 +207,8 @@ const BackfillMenu = ({
         <Menu>
           {backfill.hasCancelPermission ? (
             <>
-              {backfill.numCancelable > 0 ? (
+              {(backfill.isAssetBackfill && backfill.status === BulkActionStatus.REQUESTED) ||
+              backfill.numCancelable > 0 ? (
                 <MenuItem
                   text="Cancel backfill submission"
                   icon="cancel"
@@ -287,9 +295,9 @@ const BackfillRunStatus = ({
     />
   ) : (
     <RunStatusTagsWithCounts
-      succeededCount={partitionCounts[RunStatus.SUCCESS]}
-      inProgressCount={partitionCounts[RunStatus.STARTED]}
-      failedCount={partitionCounts[RunStatus.FAILURE]}
+      succeededCount={partitionCounts[RunStatus.SUCCESS] || 0}
+      inProgressCount={partitionCounts[RunStatus.STARTED] || 0}
+      failedCount={partitionCounts[RunStatus.FAILURE] || 0}
     />
   );
 };
@@ -464,6 +472,8 @@ export const BackfillStatusTag = ({
         return <Tag intent="primary">In progress</Tag>;
       }
       return <Tag intent="warning">Incomplete</Tag>;
+    case BulkActionStatus.CANCELING:
+      return <Tag>Canceling</Tag>;
   }
 };
 

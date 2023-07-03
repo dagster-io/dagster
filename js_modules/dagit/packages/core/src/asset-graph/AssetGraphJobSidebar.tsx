@@ -22,7 +22,6 @@ export const AssetGraphJobSidebar: React.FC<{
   const queryResult = useQuery<AssetGraphSidebarQuery, AssetGraphSidebarQueryVariables>(
     ASSET_GRAPH_JOB_SIDEBAR,
     {
-      partialRefetch: true,
       variables: {pipelineSelector},
     },
   );

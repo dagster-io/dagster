@@ -152,7 +152,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
-        const args = mockFn.mock.calls[0][0];
+        const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
             levels: 'critical|error|event|info|warning',
@@ -165,7 +165,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
-        const args = mockFn.mock.calls[0][0];
+        const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
             levels: 'critical|event',
@@ -178,7 +178,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
-        const args = mockFn.mock.calls[0][0];
+        const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
             levels: '',

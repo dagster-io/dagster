@@ -25,15 +25,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
 
     example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
 
-    # TODO: these tests were failing to install due to using editable install dagster and published
-    # dagster-cloud.
-    example_packages_filtered = [
-        pkg
-        for pkg in example_packages
-        if pkg.directory not in ["examples/assets_dbt_python", "examples/assets_modern_data_stack"]
-    ]
-
-    return _build_steps_from_package_specs(example_packages_filtered)
+    return _build_steps_from_package_specs(example_packages)
 
 
 def build_library_packages_steps() -> List[BuildkiteStep]:
@@ -276,9 +268,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/assets_dbt_python",
-    ),
-    PackageSpec(
         "examples/assets_smoke_test",
     ),
     PackageSpec(
@@ -330,6 +319,31 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_11,
         ],
     ),
+    # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
+    PackageSpec(
+        "examples/assets_modern_data_stack",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/assets_dbt_python",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_aws",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_etl",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_gcp",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_snowflake",
+        pytest_tox_factors=["pypi"],
+    ),
 ]
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
@@ -342,7 +356,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "cli_tests",
             "core_tests",
-            "storage_tests_old_sqlalchemy",
+            "storage_tests_sqlalchemy_1_3",
+            "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests_old_pendulum",
@@ -380,6 +395,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "sqlite_instance_multi_location",
             "sqlite_instance_managed_grpc_env",
             "sqlite_instance_deployed_grpc_env",
+            "sqlite_instance_code_server_cli_grpc_env",
             "graphql_python_client",
             "postgres-graphql_context_variants",
             "postgres-instance_multi_location",
@@ -396,6 +412,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                         # due to https://github.com/grpc/grpc/issues/31885
                         "sqlite_instance_managed_grpc_env",
                         "sqlite_instance_deployed_grpc_env",
+                        "sqlite_instance_code_server_cli_grpc_env",
                         "sqlite_instance_multi_location",
                         "postgres-instance_multi_location",
                         "postgres-instance_managed_grpc_env",
@@ -405,6 +422,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                 else []
             )
         ),
+        timeout_in_minutes=30,
     ),
     PackageSpec(
         "python_modules/dagster-test",

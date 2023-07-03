@@ -948,6 +948,10 @@ class TestRunStorage:
 
         snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)
         fetched_ep_snapshot = storage.get_execution_plan_snapshot(snapshot_id)
+
+        # idempotent
+        assert storage.add_execution_plan_snapshot(ep_snapshot) == snapshot_id
+
         assert fetched_ep_snapshot
         assert serialize_pp(fetched_ep_snapshot) == serialize_pp(ep_snapshot)
         assert storage.has_execution_plan_snapshot(snapshot_id)
@@ -1198,6 +1202,16 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
+        wrong_job = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            job_name="bar_job",
+            status=DagsterRunStatus.SUCCESS,
+            tags={
+                PARTITION_NAME_TAG: "ignorable",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(wrong_job)
         partition_data = storage.get_run_partition_data(
             runs_filter=RunsFilter(
                 job_name="foo_job",

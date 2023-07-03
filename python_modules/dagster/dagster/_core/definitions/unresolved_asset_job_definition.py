@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
@@ -10,15 +10,18 @@ from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
+from .metadata import RawMetadataValue
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
         AssetsDefinition,
         AssetSelection,
         ExecutorDefinition,
+        HookDefinition,
         JobDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        ResourceDefinition,
         SourceAsset,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
@@ -38,8 +41,10 @@ class UnresolvedAssetJobDefinition(
             ),
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
+            ("metadata", Optional[Mapping[str, RawMetadataValue]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
             ("executor_def", Optional["ExecutorDefinition"]),
+            ("hooks", Optional[AbstractSet["HookDefinition"]]),
         ],
     )
 ):
@@ -52,12 +57,15 @@ class UnresolvedAssetJobDefinition(
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
+        hooks: Optional[AbstractSet["HookDefinition"]] = None,
     ):
         from dagster._core.definitions import (
             AssetSelection,
             ExecutorDefinition,
+            HookDefinition,
             PartitionsDefinition,
         )
         from dagster._core.definitions.run_config import convert_config_input
@@ -69,10 +77,12 @@ class UnresolvedAssetJobDefinition(
             config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
+            metadata=check.opt_mapping_param(metadata, "metadata"),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
             executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
+            hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
         )
 
     def run_request_for_partition(
@@ -160,6 +170,7 @@ class UnresolvedAssetJobDefinition(
         source_assets: Optional[Sequence["SourceAsset"]] = None,
         default_executor_def: Optional["ExecutorDefinition"] = None,
         asset_graph: Optional["InternalAssetGraph"] = None,
+        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
 
@@ -230,9 +241,12 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
+            metadata=self.metadata,
             asset_selection=selected_asset_keys,
             partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
+            hooks=self.hooks,
+            resource_defs=resource_defs,
         )
 
 
@@ -244,8 +258,10 @@ def define_asset_job(
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
+    hooks: Optional[AbstractSet["HookDefinition"]] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
@@ -289,6 +305,10 @@ def define_asset_job(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        metadata (Optional[Mapping[str, RawMetadataValue]]): Arbitrary metadata about the job.
+            Keys are displayed string labels, and values are one of the following: string, float,
+            int, JSON-serializable dict, JSON-serializable list, and one of the data classes
+            returned by a MetadataValue static method.
         description (Optional[str]):
             A description for the Job.
         partitions_def (Optional[PartitionsDefinition]):
@@ -369,6 +389,8 @@ def define_asset_job(
         config=config,
         description=description,
         tags=tags,
+        metadata=metadata,
         partitions_def=partitions_def,
         executor_def=executor_def,
+        hooks=hooks,
     )

@@ -298,17 +298,6 @@ class TimeWindowPartitionsDefinition(
             )
         return partition_def_str
 
-    def __eq__(self, other):
-        return (
-            isinstance(other, TimeWindowPartitionsDefinition)
-            and pendulum.instance(self.start, tz=self.timezone).timestamp()
-            == pendulum.instance(other.start, tz=other.timezone).timestamp()
-            and self.timezone == other.timezone
-            and self.fmt == other.fmt
-            and self.end_offset == other.end_offset
-            and self.cron_schedule == other.cron_schedule
-        )
-
     def __repr__(self):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
         # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
@@ -1809,3 +1798,45 @@ def has_one_dimension_time_window_partitioning(
             return True
 
     return False
+
+
+def get_time_partitions_def(
+    partitions_def: Optional[PartitionsDefinition],
+) -> Optional[TimeWindowPartitionsDefinition]:
+    """For a given PartitionsDefinition, return the associated TimeWindowPartitionsDefinition if it
+    exists.
+    """
+    from .multi_dimensional_partitions import MultiPartitionsDefinition
+
+    if partitions_def is None:
+        return None
+    elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        return partitions_def
+    elif isinstance(
+        partitions_def, MultiPartitionsDefinition
+    ) and has_one_dimension_time_window_partitioning(partitions_def):
+        return cast(
+            TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
+        )
+    else:
+        return None
+
+
+def get_time_partition_key(
+    partitions_def: Optional[PartitionsDefinition], partition_key: Optional[str]
+) -> str:
+    from .multi_dimensional_partitions import MultiPartitionsDefinition
+
+    if partitions_def is None or partition_key is None:
+        check.failed(
+            "Cannot get time partitions key from when partitions def is None or partition key is"
+            " None"
+        )
+    elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        return partition_key
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
+        return partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+            partitions_def.time_window_dimension.name
+        ]
+    else:
+        check.failed(f"Cannot get time partition from non-time partitions def {partitions_def}")

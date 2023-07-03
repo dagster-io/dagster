@@ -10,14 +10,14 @@ import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedA
 import {buildRepoAddress} from './buildRepoAddress';
 
 type Row =
-  | {type: 'asset'; path: string[]; asset: AssetTableFragment}
-  | {type: 'folder'; path: string[]; assets: AssetTableFragment[]};
+  | {type: 'asset'; path: string[]; displayKey: string; asset: AssetTableFragment}
+  | {type: 'folder'; path: string[]; displayKey: string; assets: AssetTableFragment[]};
 
 interface Props {
   headerCheckbox: React.ReactNode;
   prefixPath: string[];
-  groups: {[path: string]: AssetTableFragment[]};
-  checkedPaths: Set<string>;
+  groups: {[displayKey: string]: AssetTableFragment[]};
+  checkedDisplayKeys: Set<string>;
   onToggleFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onWipe: (assets: AssetKeyInput[]) => void;
   showRepoColumn: boolean;
@@ -29,7 +29,7 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
     headerCheckbox,
     prefixPath,
     groups,
-    checkedPaths,
+    checkedDisplayKeys,
     onToggleFactory,
     onWipe,
     showRepoColumn,
@@ -49,11 +49,12 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   const rows: Row[] = React.useMemo(() => {
-    return Object.keys(groups).map((key) => {
-      const path = [...prefixPath, ...JSON.parse(key)];
-      const assets = groups[key];
-      const isFolder = assets.length > 1 || path.join('/') !== assets[0].key.path.join('/');
-      return isFolder ? {type: 'folder', path, assets} : {type: 'asset', path, asset: assets[0]};
+    return Object.entries(groups).map(([displayKey, assets]) => {
+      const path = [...prefixPath, ...JSON.parse(displayKey)];
+      const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
+      return isFolder
+        ? {type: 'folder', path, displayKey, assets}
+        : {type: 'asset', path, displayKey, asset: assets[0]!};
     });
   }, [prefixPath, groups]);
 
@@ -63,8 +64,7 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
         <VirtualizedAssetCatalogHeader headerCheckbox={headerCheckbox} view={view} />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
-            const row: Row = rows[index];
-            const path = JSON.stringify(row.path);
+            const row: Row = rows[index]!;
             const rowType = () => {
               if (row.type === 'folder') {
                 return 'folder';
@@ -94,8 +94,8 @@ export const VirtualizedAssetTable: React.FC<Props> = (props) => {
                 showRepoColumn={showRepoColumn}
                 height={size}
                 start={start}
-                checked={checkedPaths.has(path)}
-                onToggleChecked={onToggleFactory(path)}
+                checked={checkedDisplayKeys.has(row.displayKey)}
+                onToggleChecked={onToggleFactory(row.displayKey)}
                 onWipe={() => onWipe(wipeableAssets.map((a) => a.key))}
               />
             );

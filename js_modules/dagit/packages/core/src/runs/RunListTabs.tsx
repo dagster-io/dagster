@@ -1,22 +1,24 @@
-import {gql} from '@apollo/client';
-import {Tabs, TokenizingFieldValue} from '@dagster-io/ui';
+import {gql, useQuery} from '@apollo/client';
+import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {RunStatus} from '../graphql/types';
+import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {TabLink} from '../ui/TabLink';
+import {AnchorButton} from '../ui/AnchorButton';
 
-import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
+import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
   switch (selected) {
     case 'all':
       return 'Runs | All runs';
-    case 'done':
-      return 'Runs | Done';
+    case 'failed':
+      return 'Runs | Failed';
     case 'in-progress':
       return 'Runs | In progress';
     case 'queued':
@@ -28,12 +30,27 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
   }
 };
 
-interface Props {
-  queuedCount: number | null;
-  inProgressCount: number | null;
-}
+export const useRunListTabs = (filter: RunsFilter = {}) => {
+  const queryResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
+    RUN_TABS_COUNT_QUERY,
+    {
+      variables: {
+        queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
+        inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
+      },
+    },
+  );
 
-export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgressCount}) => {
+  const {data: countData} = queryResult;
+  const {queuedCount, inProgressCount} = React.useMemo(() => {
+    return {
+      queuedCount:
+        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
+      inProgressCount:
+        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
+    };
+  }, [countData]);
+
   const [filterTokens] = useQueryPersistedRunFilters();
   const selectedTab = useSelectedRunsTab(filterTokens);
 
@@ -45,26 +62,53 @@ export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgress
     return runsPathWithFilters([...statusTokens, ...tokensMinusStatus]);
   };
 
-  return (
-    <Tabs selectedTabId={selectedTab} id="run-tabs">
-      <TabLink title="All runs" to={urlForStatus([])} id="all" />
-      <TabLink
-        title="Queued"
-        count={queuedCount ?? 'indeterminate'}
+  const tabs = (
+    <JoinedButtons>
+      <ActivatableButton to={urlForStatus([])} id="all" $active={selectedTab === 'all'}>
+        All runs
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(queuedStatuses))}
         id="queued"
-      />
-      <TabLink
-        title="In progress"
-        count={inProgressCount ?? 'indeterminate'}
+        $active={selectedTab === 'queued'}
+      >
+        Queued ({queuedCount ?? 'indeterminate'})
+      </ActivatableButton>
+      <ActivatableButton
         to={urlForStatus(Array.from(inProgressStatuses))}
         id="in-progress"
-      />
-      <TabLink title="Done" to={urlForStatus(Array.from(doneStatuses))} id="done" />
-      <TabLink title="Scheduled" to="/runs/scheduled" id="scheduled" />
-    </Tabs>
+        $active={selectedTab === 'in-progress'}
+      >
+        In progress ({inProgressCount ?? 'indeterminate'})
+      </ActivatableButton>
+      <ActivatableButton
+        to={urlForStatus(Array.from(failedStatuses))}
+        id="failed"
+        $active={selectedTab === 'failed'}
+      >
+        Failed
+      </ActivatableButton>
+      <ActivatableButton
+        title="Scheduled"
+        to="/runs/scheduled"
+        id="scheduled"
+        $active={selectedTab === 'scheduled'}
+      >
+        Scheduled
+      </ActivatableButton>
+    </JoinedButtons>
   );
-});
+
+  return {tabs, queryResult};
+};
+
+export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
+  ${(props) =>
+    props.$active &&
+    `
+    background: ${Colors.Gray200};
+  `}
+`;
 
 export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
@@ -87,8 +131,8 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   if (isEqual(inProgressStatuses, statusTokens)) {
     return 'in-progress';
   }
-  if (isEqual(doneStatuses, statusTokens)) {
-    return 'done';
+  if (isEqual(failedStatuses, statusTokens)) {
+    return 'failed';
   }
   return 'all';
 };

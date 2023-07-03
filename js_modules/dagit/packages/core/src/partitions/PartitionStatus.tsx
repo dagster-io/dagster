@@ -30,7 +30,7 @@ type PartitionStatusHealthSourceAssets = {
   ranges: Range[];
 };
 export type PartitionStatusHealthSourceOps = {
-  runStatusForPartitionKey: (partitionKey: string, partitionIdx: number) => RunStatus;
+  runStatusForPartitionKey: (partitionKey: string, partitionIdx: number) => RunStatus | undefined;
 };
 
 export type PartitionStatusHealthSource =
@@ -257,8 +257,8 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
                 left: 0,
                 width: indexToPct(
                   Math.min(
-                    partitionNames.indexOf(selected[selected.length - 1]),
-                    partitionNames.indexOf(selected[0]),
+                    partitionNames.indexOf(selected[selected.length - 1]!),
+                    partitionNames.indexOf(selected[0]!),
                   ),
                 ),
                 height: small ? 14 : 24,
@@ -268,14 +268,14 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
               style={{
                 left: `min(calc(100% - 3px), ${indexToPct(
                   Math.min(
-                    partitionNames.indexOf(selected[0]),
-                    partitionNames.indexOf(selected[selected.length - 1]),
+                    partitionNames.indexOf(selected[0]!),
+                    partitionNames.indexOf(selected[selected.length - 1]!),
                   ),
                 )})`,
                 width: indexToPct(
                   Math.abs(
-                    partitionNames.indexOf(selected[selected.length - 1]) -
-                      partitionNames.indexOf(selected[0]),
+                    partitionNames.indexOf(selected[selected.length - 1]!) -
+                      partitionNames.indexOf(selected[0]!),
                   ) + 1,
                 ),
                 height: small ? 14 : 24,
@@ -289,8 +289,8 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
                   partitionNames.length -
                     1 -
                     Math.max(
-                      partitionNames.indexOf(selected[selected.length - 1]),
-                      partitionNames.indexOf(selected[0]),
+                      partitionNames.indexOf(selected[selected.length - 1]!),
+                      partitionNames.indexOf(selected[0]!),
                     ),
                 ),
                 height: small ? 14 : 24,
@@ -349,8 +349,8 @@ function splitColorSegments(partitionNames: string[], segments: ColorSegment[]):
   for (const segment of segments) {
     for (let idx = segment.start.idx; idx <= segment.end.idx; idx++) {
       result.push({
-        start: {idx, key: partitionNames[idx]},
-        end: {idx, key: partitionNames[idx]},
+        start: {idx, key: partitionNames[idx]!},
+        end: {idx, key: partitionNames[idx]!},
         label: segment.label,
         style: segment.style,
       });
@@ -368,10 +368,17 @@ function assetHealthToColorSegments(ranges: Range[]) {
   }));
 }
 
+const statusToBackgroundColor = (status: RunStatus | undefined) => {
+  if (status === undefined) {
+    return Colors.Gray600;
+  }
+  return status === RunStatus.NOT_STARTED ? Colors.Gray200 : RUN_STATUS_COLORS[status];
+};
+
 function opRunStatusToColorRanges(
   partitionNames: string[],
   splitPartitions: boolean,
-  runStatusForKey: (partitionKey: string, partitionIdx: number) => RunStatus,
+  runStatusForKey: (partitionKey: string, partitionIdx: number) => RunStatus | undefined,
 ) {
   const spans = splitPartitions
     ? partitionNames.map((name, idx) => ({
@@ -381,14 +388,17 @@ function opRunStatusToColorRanges(
       }))
     : assembleIntoSpans(partitionNames, runStatusForKey);
 
-  return spans.map((s) => ({
-    label: runStatusToBackfillStateString(s.status),
-    start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
-    end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
-    style: {
-      background: s.status === RunStatus.NOT_STARTED ? Colors.Gray200 : RUN_STATUS_COLORS[s.status],
-    },
-  }));
+  return spans.map((s) => {
+    const label = s.status ? runStatusToBackfillStateString(s.status) : 'Unknown';
+    return {
+      label,
+      start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
+      end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
+      style: {
+        background: statusToBackgroundColor(s.status),
+      },
+    };
+  });
 }
 
 const SelectionSpansContainer = styled.div`

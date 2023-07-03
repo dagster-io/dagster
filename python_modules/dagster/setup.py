@@ -25,6 +25,10 @@ def get_version() -> str:
     return version["__version__"]
 
 
+# grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
+GRPC_VERSION_FLOOR = "1.44.0"
+
+
 setup(
     name="dagster",
     version=get_version(),
@@ -72,14 +76,10 @@ setup(
         "PyYAML>=5.1",
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
-        "alembic>=1.2.1,!=1.6.3,!=1.7.0,<1.11.0",
+        "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         "croniter>=0.3.34",
-        # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-        # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
-        # (except on python 3.11, where newer versions are required just to install the grpcio package)
-        "grpcio>=1.44.0,<1.48.0; python_version<'3.11'",
-        "grpcio>=1.44.0; python_version>='3.11'",
-        "grpcio-health-checking>=1.44.0",
+        f"grpcio>={GRPC_VERSION_FLOOR}",
+        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
         "pendulum",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
@@ -92,7 +92,7 @@ setup(
         "tomli",
         "tqdm",
         "typing_extensions>=4.4.0",
-        "sqlalchemy>=1.0,<2.0.0",
+        "sqlalchemy>=1.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
         'psutil >= 1.0; platform_system=="Windows"',
@@ -100,14 +100,15 @@ setup(
         'pywin32 != 226; platform_system=="Windows"',
         "docstring-parser",
         "universal_pathlib",
-        "pydantic",
+        # https://github.com/pydantic/pydantic/issues/5821
+        "pydantic != 1.10.7,<2.0.0",
     ],
     extras_require={
         "docker": ["docker"],
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
             "docker",
-            "grpcio-tools>=1.44.0",  # related to above grpcio pins
+            f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
             "objgraph",
             "pytest-cov==2.10.1",

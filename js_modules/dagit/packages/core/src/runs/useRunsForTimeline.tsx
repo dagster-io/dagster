@@ -180,7 +180,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       return {...accum, [job.key]: Math.min(...startTimes)};
     }, {} as {[jobKey: string]: number});
 
-    return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
+    return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);
 
   return React.useMemo(

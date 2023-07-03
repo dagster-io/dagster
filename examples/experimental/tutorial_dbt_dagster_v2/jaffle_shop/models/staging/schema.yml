@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: raw_data
+    tables:
+      - name: raw_inventory
+        meta:
+          dagster:
+            asset_key: ["dagster", "raw_inventory"]
+  - name: clients_data
+    tables:
+      - name: names
+      - name: history
+
+models:
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_orders
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+
+  - name: stg_payments
+    columns:
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
+      - name: payment_method
+        tests:
+          - accepted_values:
+              values: ['credit_card', 'coupon', 'bank_transfer', 'gift_card']

@@ -4,6 +4,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Mapping, Optional
 
+import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 from typing_extensions import Self
 from watchdog.events import PatternMatchingEventHandler
@@ -88,7 +89,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             db_revision, head_revision = check_alembic_revision(alembic_config, connection)
             if not (db_revision and head_revision):
                 SqlEventLogStorageMetadata.create_all(engine)
-                engine.execute("PRAGMA journal_mode=WAL;")
+                connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
@@ -100,11 +101,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     @contextmanager
     def _connect(self):
         engine = create_engine(self._conn_string, poolclass=NullPool)
-        conn = engine.connect()
-        try:
-            yield conn
-        finally:
-            conn.close()
+        with engine.connect() as conn:
+            with conn.begin():
+                yield conn
 
     def run_connection(self, run_id: Optional[str]) -> SqlDbConnection:
         return self._connect()
@@ -145,6 +144,10 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
 
         self._watchers[run_id][callback] = cursor
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
 
     def on_modified(self):
         keys = [

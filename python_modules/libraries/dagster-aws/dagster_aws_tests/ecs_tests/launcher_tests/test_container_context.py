@@ -89,6 +89,14 @@ def test_merge(
         "ephemeral_storage": 25,
     }
 
+    assert merged.server_ecs_tags == [
+        {"key": "BAZ", "value": "QUUX"},
+        {
+            "key": "FOO",  # no value
+        },
+    ]
+    assert merged.run_ecs_tags == [{"key": "GHI"}, {"key": "ABC", "value": "DEF"}]
+
     assert merged.task_role_arn == "other-task-role"
     assert merged.execution_role_arn == "other-fake-execution-role"
 

@@ -1,7 +1,9 @@
 import {MockedResponse, MockedProvider} from '@apollo/client/testing';
-import {fireEvent, render, waitFor} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
+import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
 import {
   AUTOMATERIALIZE_PAUSED_QUERY,
   SET_AUTOMATERIALIZE_PAUSED_MUTATION,
@@ -10,20 +12,9 @@ import {GetAutoMaterializePausedQuery} from '../../assets/types/AutomaterializeD
 import {buildDaemonStatus, buildInstance} from '../../graphql/types';
 import {DaemonList} from '../DaemonList';
 
-let mockResolveConfirmation = (_any: any) => {};
-beforeEach(() => {
-  mockResolveConfirmation = (_any: any) => {
-    throw new Error('No confirmation mock defined');
-  };
-});
-
-jest.mock('../../app/CustomConfirmationProvider', () => ({
-  useConfirmation: () => {
-    return async () => {
-      await new Promise((resolve) => {
-        mockResolveConfirmation = resolve;
-      });
-    };
+jest.mock('../../app/Permissions', () => ({
+  useUnscopedPermissions: () => {
+    return {permissions: {canToggleAutoMaterialize: true}};
   },
 }));
 
@@ -99,30 +90,28 @@ describe('DaemonList', () => {
       }),
     };
 
-    const {findByRole} = render(
+    render(
       <MockedProvider mocks={[autoMaterializePausedMock(false), setAutoMaterializePausedMock]}>
-        <DaemonList daemonStatuses={mockDaemons} />
+        <CustomConfirmationProvider>
+          <DaemonList daemonStatuses={mockDaemons} />
+        </CustomConfirmationProvider>
       </MockedProvider>,
     );
 
-    const switchButton = await findByRole('checkbox');
+    const switchButton = await screen.findByRole('checkbox');
     expect(switchButton).toBeChecked();
+    expect(switchButton).toBeEnabled();
 
-    fireEvent.click(switchButton);
+    await userEvent.click(switchButton);
+    expect(setAutoMaterializePausedMock.result).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(setAutoMaterializePausedMock.result).not.toHaveBeenCalled());
-
-    await waitFor(() => {
-      expect(() => {
-        // Confirmation required
-        mockResolveConfirmation(0);
-      }).not.toThrow();
-    });
+    const confirmButton = await screen.findByRole('button', {name: /confirm/i});
+    await userEvent.click(confirmButton);
 
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
 
-  it('turns ob Auto-materializing', async () => {
+  it('turns on Auto-materializing', async () => {
     const setAutoMaterializePausedMock = {
       request: {
         query: SET_AUTOMATERIALIZE_PAUSED_MUTATION,
@@ -133,26 +122,19 @@ describe('DaemonList', () => {
       }),
     };
 
-    const {findByRole} = render(
+    render(
       <MockedProvider mocks={[autoMaterializePausedMock(true), setAutoMaterializePausedMock]}>
-        <DaemonList daemonStatuses={mockDaemons} />
+        <CustomConfirmationProvider>
+          <DaemonList daemonStatuses={mockDaemons} />
+        </CustomConfirmationProvider>
       </MockedProvider>,
     );
 
-    const switchButton = await findByRole('checkbox');
+    const switchButton = await screen.findByRole('checkbox');
     expect(switchButton).not.toBeChecked();
+    expect(switchButton).toBeEnabled();
 
-    fireEvent.click(switchButton);
-
-    await waitFor(() => expect(setAutoMaterializePausedMock.result).not.toHaveBeenCalled());
-
-    await waitFor(() => {
-      expect(() => {
-        // Confirmation required
-        mockResolveConfirmation(0);
-      }).toThrow();
-    });
-
+    await userEvent.click(switchButton);
     await waitFor(() => expect(setAutoMaterializePausedMock.result).toHaveBeenCalled());
   });
 });

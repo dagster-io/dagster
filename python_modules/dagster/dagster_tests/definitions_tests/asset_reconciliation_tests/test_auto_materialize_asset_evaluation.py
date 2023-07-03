@@ -22,6 +22,7 @@ def test_num_requested():
         asset_graph=asset_graph,
         asset_key=AssetKey("my_asset"),
         conditions_by_asset_partition={},
+        dynamic_partitions_store=None,
     )
     assert e1.num_requested == 0
     assert e1.num_skipped == 0
@@ -33,6 +34,7 @@ def test_num_requested():
         conditions_by_asset_partition={
             AssetKeyPartitionKey(AssetKey("my_asset"), "a"): {MissingAutoMaterializeCondition()}
         },
+        dynamic_partitions_store=None,
     )
 
     assert e2.num_requested == 1
@@ -48,6 +50,7 @@ def test_num_requested():
                 ParentOutdatedAutoMaterializeCondition(),
             }
         },
+        dynamic_partitions_store=None,
     )
     assert e3.num_requested == 0
     assert e3.num_skipped == 1
@@ -65,6 +68,7 @@ def test_num_requested():
                 MissingAutoMaterializeCondition(),
             },
         },
+        dynamic_partitions_store=None,
     )
     assert e4.num_requested == 1
     assert e4.num_skipped == 1

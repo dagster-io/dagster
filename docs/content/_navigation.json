@@ -61,6 +61,10 @@
         "path": "/tutorial/managing-your-own-io"
       },
       {
+        "title": "Part 8: Connecting to external services",
+        "path": "/tutorial/connecting-to-external-services"
+      },
+      {
         "title": "Next steps",
         "path": "/tutorial/next-steps"
       }
@@ -455,7 +459,7 @@
                 "path": "/dagster-cloud/account/managing-users/managing-user-roles-permissions"
               },
               {
-                "title": "Setting up SSO",
+                "title": "SSO and provisioning",
                 "children": [
                   {
                     "title": "Azure Active Directory",
@@ -467,7 +471,16 @@
                   },
                   {
                     "title": "Okta",
-                    "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+                    "children": [
+                      {
+                        "title": "SSO",
+                        "path": "/dagster-cloud/account/authentication/okta/saml-sso"
+                      },
+                      {
+                        "title": "SCIM provisioning",
+                        "path": "/dagster-cloud/account/authentication/okta/scim-provisioning"
+                      }
+                    ]
                   },
                   {
                     "title": "OneLogin",
@@ -603,19 +616,19 @@
             "children": [
               {
                 "title": "Part 1: Set up dbt project",
-                "path": "/integrations/dbt/using-dbt-with-dagster/part-one"
+                "path": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project"
               },
               {
                 "title": "Part 2: Load dbt models as assets",
-                "path": "/integrations/dbt/using-dbt-with-dagster/part-two"
+                "path": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models"
               },
               {
                 "title": "Part 3: Create & materialize upstream assets",
-                "path": "/integrations/dbt/using-dbt-with-dagster/part-three"
+                "path": "/integrations/dbt/using-dbt-with-dagster/upstream-assets"
               },
               {
                 "title": "Part 4: Create & materialize a downstream asset",
-                "path": "/integrations/dbt/using-dbt-with-dagster/part-four"
+                "path": "/integrations/dbt/using-dbt-with-dagster/downstream-assets"
               }
             ]
           },
@@ -821,6 +834,10 @@
           {
             "title": "Building machine learning pipelines",
             "path": "/guides/dagster/ml-pipeline"
+          },
+          {
+            "title": "Managing machine learning models with Dagster",
+            "path": "/guides/dagster/managing-ml"
           },
           {
             "title": "Exploring a Dagster project",

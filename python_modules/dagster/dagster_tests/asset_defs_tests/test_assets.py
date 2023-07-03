@@ -122,6 +122,74 @@ def test_retain_group():
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
 
 
+def test_with_replaced_description() -> None:
+    @multi_asset(
+        outs={
+            "foo": AssetOut(description="foo"),
+            "bar": AssetOut(description="bar"),
+            "baz": AssetOut(description="baz"),
+        }
+    )
+    def abc():
+        ...
+
+    assert abc.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+        AssetKey("baz"): "baz",
+    }
+
+    # If there's no replacement description for the asset key, the original description is retained.
+    replaced = abc.with_attributes(descriptions_by_key={})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar",
+        AssetKey("baz"): "baz",
+    }
+
+    # Otherwise, use the replaced description.
+    replaced = abc.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
+    assert replaced.descriptions_by_key == {
+        AssetKey("foo"): "foo",
+        AssetKey("bar"): "bar_prime",
+        AssetKey("baz"): "baz",
+    }
+
+
+def test_with_replaced_metadata() -> None:
+    @multi_asset(
+        outs={
+            "foo": AssetOut(metadata={"foo": "foo"}),
+            "bar": AssetOut(metadata={"bar": "bar"}),
+            "baz": AssetOut(metadata={"baz": "baz"}),
+        }
+    )
+    def abc():
+        ...
+
+    assert abc.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+    # If there's no replacement metadata for the asset key, the original metadata is retained.
+    replaced = abc.with_attributes(metadata_by_key={})
+    assert replaced.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+    # Otherwise, use the replaced description.
+    replaced = abc.with_attributes(metadata_by_key={AssetKey(["bar"]): {"bar": "bar_prime"}})
+    assert replaced.metadata_by_key == {
+        AssetKey("foo"): {"foo": "foo"},
+        AssetKey("bar"): {"bar": "bar_prime"},
+        AssetKey("baz"): {"baz": "baz"},
+    }
+
+
 def test_retain_freshness_policy():
     fp = FreshnessPolicy(maximum_lag_minutes=24.5)
 
@@ -405,6 +473,25 @@ def test_asset_with_io_manager_def():
         return MyIOManager()
 
     @asset(io_manager_def=the_io_manager)
+    def the_asset():
+        pass
+
+    result = materialize([the_asset])
+    assert result.success
+    assert events == ["entered for the_asset"]
+
+
+def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
+    events = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            events.append(f"entered for {context.step_key}")
+
+        def load_input(self, _context):
+            pass
+
+    @asset(io_manager_def=MyIOManager())
     def the_asset():
         pass
 
@@ -1389,3 +1476,13 @@ def test_asset_takes_bare_resource():
     defs = Definitions(assets=[blah])
     defs.get_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
+
+
+def test_asset_key_with_prefix():
+    assert AssetKey("foo").with_prefix("prefix") == AssetKey(["prefix", "foo"])
+    assert AssetKey("foo").with_prefix(["prefix_one", "prefix_two"]) == AssetKey(
+        ["prefix_one", "prefix_two", "foo"]
+    )
+
+    with pytest.raises(CheckError):
+        AssetKey("foo").with_prefix(1)

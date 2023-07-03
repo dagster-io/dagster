@@ -2,7 +2,9 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, 
 
 import pydantic
 from pydantic import Field
-from typing_extensions import dataclass_transform, get_origin
+from typing_extensions import Annotated, dataclass_transform, get_origin
+
+from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
 from .utils import safe_is_subclass
 
@@ -51,7 +53,29 @@ class LateBoundTypesForResourceTypeChecking:
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-class BaseResourceMeta(pydantic.main.ModelMetaclass):
+class BaseConfigMeta(pydantic.main.ModelMetaclass):
+    def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
+        annotations = namespaces.get("__annotations__", {})
+
+        # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
+        # being created
+        # Any user-created Config class will have DagsterType loaded by the time it's created, so this
+        # will only affect the base Config classes (where this error won't be an issue)
+        try:
+            from dagster._core.types.dagster_type import DagsterType
+
+            for field in annotations:
+                if isinstance(annotations[field], DagsterType):
+                    raise DagsterInvalidDagsterTypeInPythonicConfigDefinitionError(name, field)
+
+        except ImportError:
+            pass
+
+        return super().__new__(cls, name, bases, namespaces, **kwargs)
+
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+class BaseResourceMeta(BaseConfigMeta):
     """Custom metaclass for Resource and PartialResource. This metaclass is responsible for
     transforming the type annotations on the class so that Pydantic constructor-time validation
     does not error when users provide partially configured resources to resource params.
@@ -86,7 +110,7 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
                     # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
-                    annotations[field] = Any
+                    annotations[field] = Annotated[Any, "resource_dependency"]
                 elif safe_is_subclass(
                     annotations[field], LateBoundTypesForResourceTypeChecking.get_resource_type()
                 ):
@@ -94,8 +118,12 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
                     # and a Resource for Pydantic's sake, so that a user can pass in a partially
                     # configured resource.
                     base = annotations[field]
-                    annotations[field] = Union[
-                        LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base
+                    annotations[field] = Annotated[
+                        Union[
+                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
+                            base,
+                        ],
+                        "resource_dependency",
                     ]
 
         namespaces["__annotations__"] = annotations

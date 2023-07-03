@@ -18,7 +18,11 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    DataVersion,
+    DataVersionsByPartition,
+)
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -41,7 +45,11 @@ from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
     validate_group_name,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidObservationError,
+)
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 from dagster._utils.merger import merge_dicts
@@ -90,7 +98,7 @@ class SourceAsset(ResourceAddable):
         key: CoercibleToAssetKey,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[IOManagerDefinition] = None,
+        io_manager_def: Optional[object] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
@@ -104,12 +112,9 @@ class SourceAsset(ResourceAddable):
         _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
-
-        if partitions_def is not None and observe_fn is not None:
-            raise DagsterInvalidDefinitionError(
-                "Cannot specify a `partitions_def` for an observable source asset."
-            )
+        from dagster._core.execution.build_resources import (
+            wrap_resources_for_execution,
+        )
 
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "SourceAsset.__new__")
@@ -121,26 +126,24 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.resource_defs = wrap_resources_for_execution(
-            dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        )
-        self._io_manager_def = check.opt_inst_param(
-            io_manager_def, "io_manager_def", IOManagerDefinition
-        )
-        if self._io_manager_def:
+
+        resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        if io_manager_def:
             if not io_manager_key:
                 io_manager_key = self.key.to_python_identifier("io_manager")
 
             if (
-                io_manager_key in self.resource_defs
-                and self.resource_defs[io_manager_key] != io_manager_def
+                io_manager_key in resource_defs_dict
+                and resource_defs_dict[io_manager_key] != io_manager_def
             ):
                 raise DagsterInvalidDefinitionError(
                     f"Provided conflicting definitions for io manager key '{io_manager_key}'."
                     " Please provide only one definition per key."
                 )
 
-            self.resource_defs[io_manager_key] = self._io_manager_def
+            resource_defs_dict[io_manager_key] = io_manager_def
+
+        self.resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
         self.io_manager_key = check.opt_str_param(io_manager_key, "io_manager_key")
         self.partitions_def = check.opt_inst_param(
@@ -190,24 +193,49 @@ class SourceAsset(ResourceAddable):
         def fn(context: OpExecutionContext):
             resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
             resource_kwargs = {key: getattr(context.resources, key) for key in resource_kwarg_keys}
-            data_version = (
+            observe_fn_return_value = (
                 observe_fn(context, **resource_kwargs)
                 if observe_fn_has_context
                 else observe_fn(**resource_kwargs)
             )
 
-            check.inst(
-                data_version,
-                DataVersion,
-                "Source asset observation function must return a DataVersion",
-            )
-            tags = {DATA_VERSION_TAG: data_version.value}
-            context.log_event(
-                AssetObservation(
-                    asset_key=self.key,
-                    tags=tags,
+            if isinstance(observe_fn_return_value, DataVersion):
+                if self.partitions_def is not None:
+                    raise DagsterInvalidObservationError(
+                        f"{self.key} is partitioned, so its observe function should return a"
+                        " DataVersionsByPartition, not a DataVersion"
+                    )
+
+                context.log_event(
+                    AssetObservation(
+                        asset_key=self.key,
+                        tags={DATA_VERSION_TAG: observe_fn_return_value.value},
+                    )
                 )
-            )
+            elif isinstance(observe_fn_return_value, DataVersionsByPartition):
+                if self.partitions_def is None:
+                    raise DagsterInvalidObservationError(
+                        f"{self.key} is not partitioned, so its observe function should return a"
+                        " DataVersion, not a DataVersionsByPartition"
+                    )
+
+                for (
+                    partition_key,
+                    data_version,
+                ) in observe_fn_return_value.data_versions_by_partition.items():
+                    context.log_event(
+                        AssetObservation(
+                            asset_key=self.key,
+                            tags={DATA_VERSION_TAG: data_version.value},
+                            partition=partition_key,
+                        )
+                    )
+            else:
+                raise DagsterInvalidObservationError(
+                    f"Observe function for {self.key} must return a DataVersion or"
+                    " DataVersionsByPartition, but returned a value of type"
+                    f" {type(observe_fn_return_value)}"
+                )
 
         return DecoratedOpFunction(fn)
 

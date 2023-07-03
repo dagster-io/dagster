@@ -1,8 +1,8 @@
 import tempfile
 
 from dagster import (
+    FilesystemIOManager,
     ResourceDefinition,
-    fs_io_manager,
     load_assets_from_package_module,
     materialize,
     mem_io_manager,
@@ -20,7 +20,7 @@ def test_download():
         result = materialize(
             load_assets_from_package_module(core),
             resources={
-                "io_manager": fs_io_manager.configured({"base_dir": temp_dir}),
+                "io_manager": FilesystemIOManager(base_dir=temp_dir),
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
                 "parquet_io_manager": LocalPartitionedParquetIOManager(

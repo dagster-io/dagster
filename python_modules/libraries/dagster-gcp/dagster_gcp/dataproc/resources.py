@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping, Optional
 import dagster._check as check
 import yaml
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
@@ -157,6 +158,18 @@ class DataprocClient:
 
 
 class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    """Resource for connecting to a Dataproc cluster.
+
+    Example:
+        .. code-block::
+
+            @asset
+            def my_asset(dataproc: DataprocResource):
+                with dataproc.get_client() as client:
+                    # client is a dagster_gcp.DataprocClient
+                    ...
+    """
+
     project_id: str = Field(
         description=(
             "Required. Project ID for the project which the client acts on behalf of. Will be"
@@ -197,6 +210,10 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             " cluster_config_json_path, or cluster_config_dict may be provided."
         ),
     )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
         with open(path, "r", encoding="utf8") as f:
@@ -248,6 +265,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         return self.get_client()
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=define_dataproc_create_cluster_config(),
     description="Manage a Dataproc cluster resource",

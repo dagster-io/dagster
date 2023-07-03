@@ -1,3 +1,4 @@
+import contextlib
 import glob
 import logging
 import os
@@ -36,6 +37,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,
@@ -168,7 +170,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
                     if not (db_revision and head_revision):
                         SqlEventLogStorageMetadata.create_all(engine)
-                        connection.execute("PRAGMA journal_mode=WAL;")
+                        connection.execute(db.text("PRAGMA journal_mode=WAL;"))
                         stamp_alembic_rev(alembic_config, connection)
 
                 break
@@ -212,12 +214,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
-            conn = engine.connect()
-
-            try:
-                yield conn
-            finally:
-                conn.close()
+            with engine.connect() as conn:
+                with conn.begin():
+                    yield conn
             engine.dispose()
 
     def run_connection(self, run_id: Optional[str] = None) -> Any:
@@ -288,7 +287,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
@@ -370,15 +369,22 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.delete_events_for_run(conn, run_id)
 
     def wipe(self) -> None:
-        # should delete all the run-sharded dbs as well as the index db
+        # should delete all the run-sharded db files and drop the contents of the index
         for filename in (
             glob.glob(os.path.join(self._base_dir, "*.db"))
             + glob.glob(os.path.join(self._base_dir, "*.db-wal"))
             + glob.glob(os.path.join(self._base_dir, "*.db-shm"))
         ):
-            os.unlink(filename)
+            if (
+                not filename.endswith(f"{INDEX_SHARD_NAME}.db")
+                and not filename.endswith(f"{INDEX_SHARD_NAME}.db-wal")
+                and not filename.endswith(f"{INDEX_SHARD_NAME}.db-shm")
+            ):
+                with contextlib.suppress(FileNotFoundError):
+                    os.unlink(filename)
 
         self._initialized_dbs = set()
+        self._wipe_index()
 
     def _delete_mirrored_events_for_asset_key(self, asset_key: AssetKey) -> None:
         with self.index_connection() as conn:
@@ -425,6 +431,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     @property
     def is_run_sharded(self) -> bool:
         return True
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return False
 
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):

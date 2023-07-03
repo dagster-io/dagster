@@ -4,16 +4,18 @@ from typing import NamedTuple, Optional, cast
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.backcompat import (
+    experimental_arg_warning,
+)
 
 
 @whitelist_for_serdes
@@ -21,7 +23,11 @@ class TimeWindowPartitionMapping(
     PartitionMapping,
     NamedTuple(
         "_TimeWindowPartitionMapping",
-        [("start_offset", PublicAttr[int]), ("end_offset", PublicAttr[int])],
+        [
+            ("start_offset", PublicAttr[int]),
+            ("end_offset", PublicAttr[int]),
+            ("allow_nonexistent_upstream_partitions", PublicAttr[bool]),
+        ],
     ),
 ):
     """The default mapping between two TimeWindowPartitionsDefinitions.
@@ -54,6 +60,12 @@ class TimeWindowPartitionMapping(
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
             upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+        allow_nonexistent_upstream_partitions (bool): Defaults to false. If true, does not
+            raise an error when mapped upstream partitions fall outside the start-end time window of the
+            partitions def. For example, if the upstream partitions def starts on "2023-01-01" but
+            the downstream starts on "2022-01-01", setting this bool to true would return no
+            partition keys when get_upstream_partitions_for_partitions is called with "2022-06-01".
+            When set to false, would raise an error.
 
     Examples:
         .. code-block:: python
@@ -78,56 +90,45 @@ class TimeWindowPartitionMapping(
                 ...
     """
 
-    def __new__(cls, start_offset: int = 0, end_offset: int = 0):
+    def __new__(
+        cls,
+        start_offset: int = 0,
+        end_offset: int = 0,
+        allow_nonexistent_upstream_partitions: bool = False,
+    ):
+        if allow_nonexistent_upstream_partitions:
+            experimental_arg_warning(
+                "allow_nonexistent_upstream_partitions", "TimeWindowPartitionMapping.__init__"
+            )
+
         return super(TimeWindowPartitionMapping, cls).__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
             end_offset=check.int_param(end_offset, "end_offset"),
+            allow_nonexistent_upstream_partitions=check.bool_param(
+                allow_nonexistent_upstream_partitions,
+                "allow_nonexistent_upstream_partitions",
+            ),
         )
 
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-    def get_upstream_partitions_for_partitions(
+    def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        """Returns the partitions in the upstream asset that map to the given downstream partitions.
-
-        Raises an error if upstream partitions do not exist at the given current_time, fetching the
-        current time if not provided.
-        """
+    ) -> UpstreamPartitionsResult:
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
-        if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("upstream_partitions_def must be a TimeWindowPartitionsDefinition")
-
         return self._map_partitions(
-            cast(TimeWindowPartitionsDefinition, downstream_partitions_subset.partitions_def),
+            downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
-            raise_on_non_existent_partition=True,
+            start_offset=self.start_offset,
+            end_offset=self.end_offset,
             current_time=current_time,
         )
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -141,32 +142,41 @@ class TimeWindowPartitionMapping(
         Filters for partitions that exist at the given current_time, fetching the current time
         if not provided.
         """
-        if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")
-
-        if not isinstance(upstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("upstream_partitions_subset must be a TimeWindowPartitionsSubset")
-
         return self._map_partitions(
-            cast(TimeWindowPartitionsDefinition, upstream_partitions_subset.partitions_def),
+            upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
-            -self.start_offset,
-            -self.end_offset,
-            raise_on_non_existent_partition=False,
+            end_offset=-self.start_offset,
+            start_offset=-self.end_offset,
             current_time=current_time,
-        )
+        ).partitions_subset
 
     def _map_partitions(
         self,
-        from_partitions_def: TimeWindowPartitionsDefinition,
-        to_partitions_def: TimeWindowPartitionsDefinition,
-        from_partitions_subset: TimeWindowPartitionsSubset,
+        from_partitions_def: PartitionsDefinition,
+        to_partitions_def: Optional[PartitionsDefinition],
+        from_partitions_subset: PartitionsSubset,
         start_offset: int,
         end_offset: int,
-        raise_on_non_existent_partition: bool,
         current_time: Optional[datetime] = None,
-    ) -> TimeWindowPartitionsSubset:
+    ) -> UpstreamPartitionsResult:
+        """Maps the partitions in from_partitions_subset to partitions in to_partitions_def.
+
+        If partitions in from_partitions_subset represent time windows that do not exist in
+        to_partitions_def, raises an error if raise_error_on_invalid_mapped_partition is True.
+        Otherwise, filters out the partitions that do not exist in to_partitions_def and returns
+        the filtered subset, also returning a bool indicating whether there were mapped time windows
+        that did not exist in to_partitions_def.
+        """
+        if not isinstance(from_partitions_subset, TimeWindowPartitionsSubset):
+            check.failed("from_partitions_subset must be a TimeWindowPartitionsSubset")
+
+        if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
+
+        if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("to_partitions_def must be a TimeWindowPartitionsDefinition")
+
         if (start_offset != 0 or end_offset != 0) and (
             from_partitions_def.cron_schedule != to_partitions_def.cron_schedule
         ):
@@ -183,7 +193,7 @@ class TimeWindowPartitionMapping(
 
         # skip fancy mapping logic in the simple case
         if from_partitions_def == to_partitions_def and start_offset == 0 and end_offset == 0:
-            return from_partitions_subset
+            return UpstreamPartitionsResult(from_partitions_subset, [])
 
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
@@ -227,6 +237,7 @@ class TimeWindowPartitionMapping(
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
 
         filtered_time_windows = []
+        required_but_nonexistent_partition_keys = set()
 
         for time_window in time_windows:
             if (
@@ -235,24 +246,48 @@ class TimeWindowPartitionMapping(
                 and time_window.start <= last_window.start
                 and time_window.end >= first_window.end
             ):
-                window_end = min(time_window.end, last_window.end)
                 window_start = max(time_window.start, first_window.start)
+                window_end = min(time_window.end, last_window.end)
                 filtered_time_windows.append(TimeWindow(window_start, window_end))
 
-        if raise_on_non_existent_partition:
-            if filtered_time_windows != time_windows:
-                raise DagsterInvalidInvocationError(
-                    f"Provided time windows {time_windows} contain invalid time windows for"
-                    f" partitions definition {to_partitions_def}"
-                )
+            if self.allow_nonexistent_upstream_partitions:
+                # If allowed to have nonexistent upstream partitions, do not consider
+                # out of range partitions to be invalid
+                continue
+            else:
+                invalid_time_window = None
+                if not (first_window and last_window) or (
+                    time_window.start < first_window.start and time_window.end > last_window.end
+                ):
+                    invalid_time_window = time_window
+                elif time_window.start < first_window.start:
+                    invalid_time_window = TimeWindow(
+                        time_window.start, min(time_window.end, first_window.start)
+                    )
+                elif time_window.end > last_window.end:
+                    invalid_time_window = TimeWindow(
+                        max(time_window.start, last_window.end), time_window.end
+                    )
 
-        return TimeWindowPartitionsSubset(
-            to_partitions_def,
-            num_partitions=sum(
-                len(to_partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in filtered_time_windows
+                if invalid_time_window:
+                    required_but_nonexistent_partition_keys.update(
+                        set(
+                            to_partitions_def.get_partition_keys_in_time_window(
+                                time_window=invalid_time_window
+                            )
+                        )
+                    )
+
+        return UpstreamPartitionsResult(
+            TimeWindowPartitionsSubset(
+                to_partitions_def,
+                num_partitions=sum(
+                    len(to_partitions_def.get_partition_keys_in_time_window(time_window))
+                    for time_window in filtered_time_windows
+                ),
+                included_time_windows=filtered_time_windows,
             ),
-            included_time_windows=filtered_time_windows,
+            sorted(list(required_but_nonexistent_partition_keys)),
         )
 
 

@@ -300,6 +300,11 @@ dagster-user-deployments:
       #   - "dagster_test.test_project.test_jobs.repo"
       #   - "-a"
       #   - "define_demo_execution_repo"
+      #
+      # The `dagsterApiGrpcArgs` key can also be replaced with `codeServerArgs` to use a new
+      # experimental `dagster code-server start` command instead of `dagster api grpc`, which takes
+      # identical arguments but can reload its definitions from within the Dagster UI without
+      # needing to restart the user code deployment pod.
       dagsterApiGrpcArgs:
         - "--python-file"
         - "/example_project/example_repo/repo.py"
@@ -390,7 +395,7 @@ dagster-user-deployments:
         periodSeconds: 20
         timeoutSeconds: 3
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 15  # Allow roughly 300 seconds to start up by default
 
       # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
       # enable startup probes.
@@ -1115,6 +1120,9 @@ dagsterDaemon:
     # to allow more sensors to run in parallel, but may require allocating more resources to the
     # daemon.
     numWorkers: 4
+    # Uncomment to use a threadpool to submit runs from a single sensor tick in parallel. Can be
+    # used to decrease latency when a sensor emits multiple run requests within a single tick.
+    # numSubmitWorkers: 4
 
   schedules:
     # Whether to evaluate schedules using an asynchronous thread pool, allowing schedules
@@ -1124,6 +1132,9 @@ dagsterDaemon:
     # to allow more schedules to run in parallel, but may require allocating more resources to the
     # daemon.
     numWorkers: 4
+    # Uncomment to use a threadpool to submit runs from a single schedule tick in parallel. Can be
+    # used to decrease latency when a schedule emits multiple run requests within a single tick.
+    # numSubmitWorkers: 4
 
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See
@@ -1306,3 +1317,14 @@ retention:
       skipped: 7
       started: -1
       success: -1
+####################################################################################################
+# Additional fields on the instance to configure that aren't already determined by a key above.
+# See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.
+####################################################################################################
+# Example:
+#
+# additionalInstanceConfig:
+#   auto_materialize: # See: https://docs.dagster.io/deployment/dagster-instance#auto-materialize
+#     run_tags:
+#       key: value
+additionalInstanceConfig: {}

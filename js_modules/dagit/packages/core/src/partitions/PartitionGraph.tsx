@@ -108,15 +108,15 @@ export const PartitionGraph = ({
 
       if (stepDataByPartition) {
         const stepDataByKey = stepDataByPartition[partitionName];
-        Object.keys(stepDataByKey || {}).forEach((stepKey) => {
-          if (hiddenStepKeys?.includes(stepKey) || !stepDataByKey[stepKey]) {
+        Object.entries(stepDataByKey || {}).forEach(([stepKey, step]) => {
+          if (hiddenStepKeys?.includes(stepKey) || !step) {
             return;
           }
           (stepData as any)[stepKey] = [
             ...((stepData as any)[stepKey] || []),
             {
               x: partitionName,
-              y: !hidden ? stepDataByKey[stepKey] : undefined,
+              y: !hidden ? step : undefined,
             },
           ];
         });

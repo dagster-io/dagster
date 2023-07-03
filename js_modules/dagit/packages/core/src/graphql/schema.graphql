@@ -713,6 +713,7 @@ type FreshnessPolicy {
 
 type AutoMaterializePolicy {
   policyType: AutoMaterializePolicyType!
+  maxMaterializationsPerMinute: Int
 }
 
 enum AutoMaterializePolicyType {
@@ -2133,6 +2134,18 @@ type Instance {
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
+  concurrencyLimits: [ConcurrencyKeyInfo!]!
+}
+
+type ConcurrencyKeyInfo {
+  concurrencyKey: String!
+  slotCount: Int!
+  activeSlotCount: Int!
+  activeRunIds: [String!]!
+  pendingStepCount: Int!
+  pendingStepRunIds: [String!]!
+  assignedStepCount: Int!
+  assignedStepRunIds: [String!]!
 }
 
 type RunLauncher {
@@ -2433,7 +2446,7 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
-  partitionStatuses: PartitionStatuses!
+  partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
   isAssetBackfill: Boolean!
   assetBackfillData: AssetBackfillData
@@ -2447,6 +2460,7 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
+  CANCELING
 }
 
 type AssetBackfillData {
@@ -2898,11 +2912,11 @@ type DagitQuery {
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
   shouldShowNux: Boolean!
   test: TestFields
-  autoMaterializeAssetEvaluations(
-    assetKey: AssetKeyInput
+  autoMaterializeAssetEvaluationsOrError(
+    assetKey: AssetKeyInput!
     limit: Int!
     cursor: String
-  ): [AutoMaterializeAssetEvaluationRecord!]!
+  ): AutoMaterializeAssetEvaluationRecordsOrError
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3032,6 +3046,15 @@ type TestFields {
   alwaysException: String
 }
 
+union AutoMaterializeAssetEvaluationRecordsOrError =
+    AutoMaterializeAssetEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+
+type AutoMaterializeAssetEvaluationRecords {
+  records: [AutoMaterializeAssetEvaluationRecord!]!
+  currentEvaluationId: Int
+}
+
 type AutoMaterializeAssetEvaluationRecord {
   id: ID!
   evaluationId: Int!
@@ -3040,6 +3063,7 @@ type AutoMaterializeAssetEvaluationRecord {
   numDiscarded: Int!
   conditions: [AutoMaterializeCondition!]!
   timestamp: Float!
+  runIds: [String!]!
 }
 
 union AutoMaterializeCondition =
@@ -3048,13 +3072,16 @@ union AutoMaterializeCondition =
   | ParentMaterializedAutoMaterializeCondition
   | MissingAutoMaterializeCondition
   | ParentOutdatedAutoMaterializeCondition
+  | MaxMaterializationsExceededAutoMaterializeCondition
 
 type FreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 interface AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 enum AutoMaterializeDecisionType {
@@ -3063,20 +3090,43 @@ enum AutoMaterializeDecisionType {
   DISCARD
 }
 
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
 type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
 }
 
 type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
+}
+
+type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
+  decisionType: AutoMaterializeDecisionType!
+  partitionKeysOrError: PartitionKeysOrError
+}
+
+type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
+  message: String!
 }
 
 type DagitMutation {
@@ -3129,6 +3179,8 @@ type DagitMutation {
     repositorySelector: RepositorySelector!
   ): AddDynamicPartitionResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
+  setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
+  freeConcurrencySlotsForRun(runId: String!): Boolean!
 }
 
 input ReexecutionParams {

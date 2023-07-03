@@ -131,6 +131,7 @@ from dagster._core.definitions.configurable import configured as configured
 from dagster._core.definitions.data_version import (
     DataProvenance as DataProvenance,
     DataVersion as DataVersion,
+    DataVersionsByPartition as DataVersionsByPartition,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
@@ -412,7 +413,10 @@ from dagster._core.execution.api import (
     execute_job as execute_job,
 )
 from dagster._core.execution.build_resources import build_resources as build_resources
-from dagster._core.execution.context.compute import OpExecutionContext as OpExecutionContext
+from dagster._core.execution.context.compute import (
+    AssetExecutionContext as AssetExecutionContext,
+    OpExecutionContext as OpExecutionContext,
+)
 from dagster._core.execution.context.hook import (
     HookContext as HookContext,
     build_hook_context as build_hook_context,

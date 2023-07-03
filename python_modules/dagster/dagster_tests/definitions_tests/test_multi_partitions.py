@@ -3,11 +3,14 @@ from datetime import datetime
 import pendulum
 import pytest
 from dagster import (
+    AssetIn,
     AssetKey,
     DagsterEventType,
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
     DynamicPartitionsDefinition,
     EventRecordsFilter,
+    IdentityPartitionMapping,
     IOManager,
     MultiPartitionKey,
     StaticPartitionsDefinition,
@@ -17,7 +20,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
@@ -469,9 +472,13 @@ def test_context_partition_time_window():
     def my_asset(context):
         time_window = TimeWindow(
             start=pendulum.instance(
-                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+                datetime(year=2020, month=1, day=1),
+                tz=get_time_partitions_def(partitions_def).timezone,
             ),
-            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+            end=pendulum.instance(
+                datetime(year=2020, month=1, day=2),
+                tz=get_time_partitions_def(partitions_def).timezone,
+            ),
         )
         assert context.partition_time_window == time_window
         assert context.asset_partitions_time_window_for_output() == time_window
@@ -510,3 +517,64 @@ def test_context_invalid_partition_time_window():
         multipartitioned_job.execute_in_process(
             partition_key=MultiPartitionKey({"static2": "b", "static": "a"})
         )
+
+
+def test_multipartitions_self_dependency():
+    from dagster import MultiPartitionMapping, PartitionKeyRange, TimeWindowPartitionMapping
+
+    @asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+            }
+        ),
+        ins={
+            "a": AssetIn(
+                partition_mapping=MultiPartitionMapping(
+                    {
+                        "time": DimensionPartitionMapping(
+                            "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        ),
+                        "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                    }
+                )
+            )
+        },
+    )
+    def a(a):
+        return 1
+
+    first_partition_key = MultiPartitionKey({"time": "2020-01-01", "abc": "a"})
+    second_partition_key = MultiPartitionKey({"time": "2020-01-02", "abc": "a"})
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context):
+            assert context.asset_key.path[-1] == "a"
+            if context.partition_key == first_partition_key:
+                assert context.asset_partition_keys == []
+                assert context.has_asset_partitions
+            else:
+                assert context.partition_key == second_partition_key
+                assert context.asset_partition_keys == [first_partition_key]
+                assert context.asset_partition_key == first_partition_key
+                assert context.asset_partition_key_range == PartitionKeyRange(
+                    first_partition_key, first_partition_key
+                )
+                assert context.has_asset_partitions
+
+    resources = {"io_manager": MyIOManager()}
+
+    materialize(
+        [a],
+        partition_key=first_partition_key,
+        resources=resources,
+    )
+    materialize(
+        [a],
+        partition_key=second_partition_key,
+        resources=resources,
+    )

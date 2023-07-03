@@ -19,21 +19,25 @@ from dagster import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
     AssetBackfillStatus,
     execute_asset_backfill_iteration_inner,
+    get_canceling_asset_backfill_iteration_data,
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconciliation_scenario import (
     do_run,
 )
 from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
+    multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
     two_assets_in_sequence_fan_in_partitions,
@@ -99,7 +103,8 @@ scenarios = {
         non_partitioned_after_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
     ),
     "partitioned_after_non_partitioned": scenario(
-        partitioned_after_non_partitioned, create_pendulum_time(year=2020, month=1, day=7, hour=4)
+        partitioned_after_non_partitioned,
+        create_pendulum_time(year=2020, month=1, day=7, hour=4),
     ),
     "unpartitioned_after_dynamic_asset": scenario(unpartitioned_after_dynamic_asset),
     "two_dynamic_assets": scenario(two_dynamic_assets),
@@ -120,6 +125,9 @@ scenarios = {
         target_root_partition_keys=[
             "2013-01-07-05:00",
         ],
+    ),
+    "multipartitioned_self_dependency": scenario(
+        multipartitioned_self_dependency, create_pendulum_time(year=2020, month=1, day=7, hour=4)
     ),
 }
 
@@ -169,6 +177,35 @@ def test_from_asset_partitions_target_subset(
         },
         asset_graph=asset_graph,
     )
+
+
+def _single_backfill_iteration(
+    backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
+) -> AssetBackfillData:
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id, backfill_data, asset_graph, instance
+    )
+
+    backfill_data = result.backfill_data
+
+    for run_request in result.run_requests:
+        asset_keys = run_request.asset_selection
+        assert asset_keys is not None
+
+        assets = assets_by_repo_name[
+            asset_graph.get_repository_handle(asset_keys[0]).repository_name
+        ]
+
+        do_run(
+            all_assets=assets,
+            asset_keys=asset_keys,
+            partition_key=run_request.partition_key,
+            instance=instance,
+            failed_asset_keys=[],
+            tags=run_request.tags,
+        )
+
+    return backfill_data
 
 
 @pytest.mark.parametrize("some_or_all", ["all", "some"])
@@ -354,7 +391,9 @@ def execute_asset_backfill_iteration_consume_generator(
     for result in execute_asset_backfill_iteration_inner(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
-        instance=instance,
+        instance_queryer=CachingInstanceQueryer(
+            instance, asset_graph, asset_backfill_data.backfill_start_time
+        ),
         asset_graph=asset_graph,
         run_tags={},
         backfill_start_time=asset_backfill_data.backfill_start_time,
@@ -414,11 +453,13 @@ def run_backfill_to_completion(
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
             assert asset_partition not in fail_and_downstream_asset_partitions
 
-            for parent_asset_partition in asset_graph.get_parents_partitions(
+            parent_partitions_result = asset_graph.get_parents_partitions(
                 instance,
                 backfill_data.backfill_start_time,
                 *asset_partition,
-            ):
+            )
+
+            for parent_asset_partition in parent_partitions_result.parent_partitions:
                 if (
                     parent_asset_partition in backfill_data.target_subset
                     and parent_asset_partition not in backfill_data.materialized_subset
@@ -707,3 +748,111 @@ def test_asset_backfill_selects_only_existent_partitions():
         upstream_hourly_partitioned_asset.key
     ).get_partition_keys() == ["2023-01-09-00:00"]
     assert len(target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key)) == 0
+
+
+def test_asset_backfill_throw_error_on_invalid_upstreams():
+    @asset(partitions_def=DailyPartitionsDefinition("2023-06-01"))
+    def june_asset():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-05-01"))
+    def may_asset(
+        june_asset,
+    ):
+        return june_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            june_asset,
+            may_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=["2023-05-10"],
+        asset_graph=asset_graph,
+        asset_selection=[
+            may_asset.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=pendulum.datetime(2023, 5, 15, 0, 0, 0),
+    )
+
+    instance = DagsterInstance.ephemeral()
+    with pytest.raises(DagsterInvariantViolationError, match="depends on invalid partition keys"):
+        run_backfill_to_completion(asset_graph, assets_by_repo_name, backfill_data, [], instance)
+
+
+def test_asset_backfill_cancellation():
+    instance = DagsterInstance.ephemeral()
+
+    @asset(partitions_def=HourlyPartitionsDefinition("2023-01-01-00:00"))
+    def upstream_hourly_partitioned_asset():
+        return 1
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+    def downstream_daily_partitioned_asset(
+        upstream_hourly_partitioned_asset,
+    ):
+        return upstream_hourly_partitioned_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_hourly_partitioned_asset,
+            downstream_daily_partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    backfill_id = "dummy_backfill_id"
+    backfill_start_time = pendulum.datetime(2023, 1, 9, 0, 0, 0)
+    asset_selection = [
+        upstream_hourly_partitioned_asset.key,
+        downstream_daily_partitioned_asset.key,
+    ]
+    targeted_partitions = ["2023-01-09-00:00"]
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=targeted_partitions,
+        asset_selection=asset_selection,
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_time=backfill_start_time,
+    )
+
+    _single_backfill_iteration(
+        backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+
+    assert len(instance.get_runs()) == 1
+
+    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_time)
+
+    canceling_backfill_data = None
+    for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
+        backfill_id,
+        asset_backfill_data,
+        instance_queryer,
+        asset_graph,
+        backfill_start_time,
+    ):
+        pass
+
+    assert isinstance(canceling_backfill_data, AssetBackfillData)
+
+    assert canceling_backfill_data.have_all_requested_runs_finished() is True
+    assert (
+        canceling_backfill_data.materialized_subset.get_partitions_subset(
+            upstream_hourly_partitioned_asset.key
+        ).get_partition_keys()
+        == targeted_partitions
+    )
+    assert (
+        canceling_backfill_data.materialized_subset.get_partitions_subset(
+            downstream_daily_partitioned_asset.key
+        ).get_partition_keys()
+        == []
+    )

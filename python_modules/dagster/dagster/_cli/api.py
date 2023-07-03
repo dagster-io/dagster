@@ -5,7 +5,6 @@ import os
 import sys
 import threading
 import zlib
-from contextlib import ExitStack
 from typing import Any, Callable, Optional, cast
 
 import click
@@ -30,7 +29,6 @@ from dagster._core.origin import (
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.server import DagsterApiServer
@@ -38,8 +36,10 @@ from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_job_from_origin
-from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+
+from .utils import get_instance_for_cli
 
 
 @click.group(name="api", hidden=True)
@@ -61,11 +61,7 @@ def execute_run_command(input_json):
     with capture_interrupts():
         args = deserialize_value(input_json, ExecuteRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
 
             def send_to_buffer(event):
@@ -166,11 +162,7 @@ def resume_run_command(input_json):
     with capture_interrupts():
         args = deserialize_value(input_json, ResumeRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
 
             def send_to_buffer(event):
@@ -342,11 +334,7 @@ def execute_step_command(input_json, compressed_input_json):
 
         args = deserialize_value(input_json, ExecuteStepArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
+        with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             dagster_run = instance.get_run_by_id(args.run_id)
 
             buff = []
@@ -561,20 +549,12 @@ def _execute_step_command_body(
     ),
 )
 @click.option(
-    "--override-system-timezone",
-    type=click.STRING,
-    required=False,
-    help=(
-        "[INTERNAL] This option should generally not be used by users. Override the system "
-        "timezone for tests."
-    ),
-)
-@click.option(
     "--log-level",
-    type=click.STRING,
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    show_default=True,
     required=False,
-    default="INFO",
-    help="Level at which to log output from the gRPC server process",
+    default="info",
+    help="Level at which to log output from the code server process",
 )
 @click.option(
     "--container-image",
@@ -624,7 +604,6 @@ def grpc_command(
     heartbeat_timeout=30,
     lazy_load_user_code=False,
     fixed_server_id=None,
-    override_system_timezone=None,
     log_level="INFO",
     use_python_environment_entry_point=False,
     container_image=None,
@@ -634,8 +613,6 @@ def grpc_command(
     inject_env_vars_from_instance=False,
     **kwargs,
 ):
-    from dagster._core.test_utils import mock_system_timezone
-
     check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 
     check.invariant(
@@ -653,8 +630,10 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    configure_loggers(log_level=coerce_valid_log_level(log_level))
-    logger = logging.getLogger("dagster")
+    setup_interrupt_handlers()
+
+    configure_loggers(log_level=log_level.upper())
+    logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 
@@ -687,65 +666,62 @@ def grpc_command(
             package_name=kwargs["package_name"],
         )
 
-    with ExitStack() as exit_stack:
-        if override_system_timezone:
-            exit_stack.enter_context(mock_system_timezone(override_system_timezone))
+    server_termination_event = threading.Event()
+    api_servicer = DagsterApiServer(
+        server_termination_event=server_termination_event,
+        logger=logger,
+        loadable_target_origin=loadable_target_origin,
+        heartbeat=heartbeat,
+        heartbeat_timeout=heartbeat_timeout,
+        lazy_load_user_code=lazy_load_user_code,
+        fixed_server_id=fixed_server_id,
+        entry_point=(
+            get_python_environment_entry_point(sys.executable)
+            if use_python_environment_entry_point
+            else DEFAULT_DAGSTER_ENTRY_POINT
+        ),
+        container_image=container_image,
+        container_context=(
+            json.loads(container_context) if container_context is not None else None
+        ),
+        inject_env_vars_from_instance=inject_env_vars_from_instance,
+        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+        location_name=location_name,
+    )
 
-        server_termination_event = threading.Event()
-        api_servicer = DagsterApiServer(
-            server_termination_event=server_termination_event,
-            loadable_target_origin=loadable_target_origin,
-            heartbeat=heartbeat,
-            heartbeat_timeout=heartbeat_timeout,
-            lazy_load_user_code=lazy_load_user_code,
-            fixed_server_id=fixed_server_id,
-            entry_point=(
-                get_python_environment_entry_point(sys.executable)
-                if use_python_environment_entry_point
-                else DEFAULT_DAGSTER_ENTRY_POINT
-            ),
-            container_image=container_image,
-            container_context=(
-                json.loads(container_context) if container_context is not None else None
-            ),
-            inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
-            location_name=location_name,
-        )
+    server = DagsterGrpcServer(
+        server_termination_event=server_termination_event,
+        dagster_api_servicer=api_servicer,
+        port=port,
+        socket=socket,
+        host=host,
+        max_workers=max_workers,
+    )
 
-        server = DagsterGrpcServer(
-            server_termination_event=server_termination_event,
-            dagster_api_servicer=api_servicer,
-            port=port,
-            socket=socket,
-            host=host,
-            max_workers=max_workers,
-        )
+    code_desc = " "
+    if loadable_target_origin:
+        if loadable_target_origin.python_file:
+            code_desc = f" for file {loadable_target_origin.python_file} "
+        elif loadable_target_origin.package_name:
+            code_desc = f" for package {loadable_target_origin.package_name} "
+        elif loadable_target_origin.module_name:
+            code_desc = f" for module {loadable_target_origin.module_name} "
 
-        code_desc = " "
-        if loadable_target_origin:
-            if loadable_target_origin.python_file:
-                code_desc = f" for file {loadable_target_origin.python_file} "
-            elif loadable_target_origin.package_name:
-                code_desc = f" for package {loadable_target_origin.package_name} "
-            elif loadable_target_origin.module_name:
-                code_desc = f" for module {loadable_target_origin.module_name} "
+    server_desc = (
+        f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code server{code_desc}in process {os.getpid()}"
+    )
 
-        server_desc = (
-            f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
-            if port
-            else f"Dagster code server{code_desc}in process {os.getpid()}"
-        )
+    logger.info("Started %s", server_desc)
 
-        logger.info("Started %s", server_desc)
-
-        try:
-            server.serve()
-        except KeyboardInterrupt:
-            # Terminate cleanly on interrupt
-            logger.info("Code server was interrupted")
-        finally:
-            logger.info("Shutting down %s", server_desc)
+    try:
+        server.serve()
+    except KeyboardInterrupt:
+        # Terminate cleanly on interrupt
+        logger.info("Code server was interrupted")
+    finally:
+        logger.info("Shutting down %s", server_desc)
 
 
 @api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")

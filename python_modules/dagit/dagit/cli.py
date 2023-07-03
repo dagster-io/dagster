@@ -6,7 +6,7 @@ from typing import Optional
 import click
 import dagster._check as check
 import uvicorn
-from dagster._cli.utils import get_instance_for_service
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
@@ -15,7 +15,9 @@ from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArg
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import (
+    IWorkspaceProcessContext,
+)
 from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
@@ -156,10 +158,10 @@ def dagit(
     configure_loggers()
     logger = logging.getLogger("dagit")
 
-    with get_instance_for_service(
-        "dagit",
+    with get_possibly_temporary_instance_for_cli(
+        cli_command="dagit",
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
-        logger_fn=logger.info,
+        logger=logger,
     ) as instance:
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout, db_pool_recycle)
@@ -187,14 +189,14 @@ async def _lifespan(app):
 
 
 def host_dagit_ui_with_workspace_process_context(
-    workspace_process_context: WorkspaceProcessContext,
+    workspace_process_context: IWorkspaceProcessContext,
     host: Optional[str],
     port: Optional[int],
     path_prefix: str,
     log_level: str,
 ):
     check.inst_param(
-        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+        workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
     )
     host = check.opt_str_param(host, "host", "127.0.0.1")
     check.opt_int_param(port, "port")

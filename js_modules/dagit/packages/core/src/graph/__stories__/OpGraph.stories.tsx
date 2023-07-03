@@ -31,7 +31,7 @@ function buildEdge(descriptor: string): Edge {
     throw new Error(`Cannot parse ${descriptor}`);
   }
   const [_, fromOp, fromIO, toOp, toIO] = match;
-  return {fromOp, fromIO, toOp, toIO};
+  return {fromOp: fromOp!, fromIO: fromIO!, toOp: toOp!, toIO: toIO!};
 }
 
 function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], edges: Edge[]) {
@@ -147,7 +147,7 @@ export const Tagged = () => {
   const ops = buildBasicDAG();
 
   ['ipynb', 'sql', 'verylongtypename', 'story'].forEach((kind, idx) =>
-    ops[idx].definition.metadata.push({
+    ops[idx]!.definition.metadata.push({
       key: 'kind',
       value: kind,
       __typename: 'MetadataItemDefinition',
@@ -186,22 +186,22 @@ export const Composite = () => {
     inputMappings: [
       {
         __typename: 'InputMapping',
-        definition: composite.definition.inputDefinitions[0],
+        definition: composite.definition.inputDefinitions[0]!,
         mappedInput: {
           __typename: 'Input',
-          solid: childOps[0],
-          definition: childOps[0].definition.inputDefinitions[0],
+          solid: childOps[0]!,
+          definition: childOps[0]!.definition.inputDefinitions[0]!,
         },
       },
     ],
     outputMappings: [
       {
         __typename: 'OutputMapping',
-        definition: composite.definition.outputDefinitions[0],
+        definition: composite.definition.outputDefinitions[0]!,
         mappedOutput: {
           __typename: 'Output',
-          solid: childOps[1],
-          definition: childOps[1].definition.outputDefinitions[0],
+          solid: childOps[1]!,
+          definition: childOps[1]!.definition.outputDefinitions[0]!,
         },
       },
     ],

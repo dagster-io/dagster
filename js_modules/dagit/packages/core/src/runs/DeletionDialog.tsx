@@ -117,8 +117,7 @@ export const DeletionDialog = (props: Props) => {
     dispatch({type: 'start'});
 
     const runList = Object.keys(state.frozenRuns);
-    for (let ii = 0; ii < runList.length; ii++) {
-      const runId = runList[ii];
+    for (const runId of runList) {
       const {data} = await destroy({variables: {runId}});
 
       if (data?.deletePipelineRun.__typename === 'DeletePipelineRunSuccess') {

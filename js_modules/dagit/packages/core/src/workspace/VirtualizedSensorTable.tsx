@@ -44,7 +44,7 @@ export const VirtualizedSensorTable = ({
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: SensorInfo = sensors[index];
+              const row: SensorInfo = sensors[index]!;
               const sensorKey = makeSensorKey(repoAddress, row.name);
               return (
                 <VirtualizedSensorRow

@@ -3,10 +3,18 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "dagster.dagit.migrate" . | quote }}
+  annotations:
+    {{- range $key, $value := .Values.dagit.annotations }}
+    {{ $key }}: {{ $value | squote }}
+    {{- end }}
 spec:
   template:
     metadata:
       name: {{ include "dagster.dagit.migrate" . | quote }}
+      annotations:
+        {{- range $key, $value := .Values.dagit.annotations }}
+        {{ $key }}: {{ $value | squote }}
+        {{- end }}
     spec:
       imagePullSecrets: {{ .Values.imagePullSecrets | toYaml | nindent 8 }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}

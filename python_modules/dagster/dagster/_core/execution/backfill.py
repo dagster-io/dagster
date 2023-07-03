@@ -6,9 +6,7 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.errors import (
-    DagsterDefinitionChangedDeserializationError,
-)
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DynamicPartitionsStore
@@ -30,6 +28,7 @@ class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELING = "CANCELING"
     CANCELED = "CANCELED"
 
     @staticmethod
@@ -225,6 +224,11 @@ class PartitionBackfill(
             return self.partition_names
 
     def get_num_cancelable(self) -> int:
+        """This method is only valid for job backfills. It eturns the number of partitions that are have
+        not yet been requested by the backfill.
+
+        For asset backfills, returns 0.
+        """
         if self.is_asset_backfill:
             return 0
 

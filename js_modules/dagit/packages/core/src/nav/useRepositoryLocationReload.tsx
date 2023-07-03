@@ -1,4 +1,4 @@
-import {ApolloClient, gql, useApolloClient, useQuery} from '@apollo/client';
+import {ApolloClient, ApolloError, gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
@@ -121,8 +121,11 @@ export const useRepositoryLocationReload = ({
           return;
         }
 
+        type LocationEntryType = typeof workspace.locationEntries[number];
         const locationMap = Object.fromEntries(workspace.locationEntries.map((e) => [e.id, e]));
-        const matches = state.pollLocationIds.map((id) => locationMap[id]).filter(Boolean);
+        const matches = state.pollLocationIds
+          .map((id) => locationMap[id])
+          .filter((location): location is LocationEntryType => !!location);
         const missingId = state.pollLocationIds.find((id) => !locationMap[id]);
 
         if (missingId) {
@@ -310,13 +313,24 @@ const RELOAD_WORKSPACE_MUTATION = gql`
 
 export const buildReloadFnForLocation = (location: string) => {
   return async (client: ApolloClient<any>): Promise<Action> => {
-    const {data} = await client.mutate<
-      ReloadRepositoryLocationMutation,
-      ReloadRepositoryLocationMutationVariables
-    >({
-      mutation: RELOAD_REPOSITORY_LOCATION_MUTATION,
-      variables: {location},
-    });
+    let data;
+    try {
+      const result = await client.mutate<
+        ReloadRepositoryLocationMutation,
+        ReloadRepositoryLocationMutationVariables
+      >({
+        mutation: RELOAD_REPOSITORY_LOCATION_MUTATION,
+        variables: {location},
+      });
+      data = result.data;
+    } catch (e) {
+      // The `mutate` Promise has rejected due to an error, probably an http error.
+      return {
+        type: 'error',
+        error: {message: e instanceof ApolloError ? e.message : 'An unexpected error occurred'},
+        errorLocationId: location,
+      };
+    }
 
     if (data?.reloadRepositoryLocation.__typename === 'WorkspaceLocationEntry') {
       // If the mutation occurs successfully, begin polling.

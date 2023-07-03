@@ -10,7 +10,7 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
   React.InputHTMLAttributes<HTMLInputElement>,
   HTMLInputElement
 > & {
-  icon: 'error' | 'no-results' | 'spinner' | IconName;
+  icon?: 'error' | 'no-results' | 'spinner' | IconName;
   title: string;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -42,14 +42,16 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
         <Spinner purpose="section" />
       ) : icon === 'no-results' ? (
         <Icon name="search" size={48} color={Colors.Gray400} />
-      ) : (
+      ) : icon ? (
         <Icon name={icon} size={48} color={Colors.Gray400} />
-      )}
+      ) : null}
       <Box
         flex={{
           gap: 8,
           direction: 'column',
           alignItems: 'flex-start',
+          shrink: 1,
+          grow: 1,
         }}
       >
         {title && <Subheading style={{color: Colors.Gray900}}>{title}</Subheading>}

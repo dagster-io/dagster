@@ -106,7 +106,7 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
     if (!parts) {
       continue;
     }
-    const [, parentsClause, itemName, descendentsClause] = parts;
+    const [, parentsClause = '', itemName = '', descendentsClause = ''] = parts;
 
     const itemsMatching = items.filter((s) => {
       if (isPlannedDynamicStep(itemName.replace(/\"/g, ''))) {

@@ -28,27 +28,36 @@ class AutoMaterializePolicy(
 ):
     """An AutoMaterializePolicy specifies how Dagster should attempt to keep an asset up-to-date.
 
-    There are two main modes of reconciliation: eager and lazy.
+    There are two main kinds of auto-materialize policies: eager and lazy. In essence, an asset with
+    an eager policy will try to immediately materialize after upstream changes, while an asset with
+    a lazy policy will only materialize when necessary in order to satisfy the relevant
+    FreshnessPolicies.
 
-    Regardless of this selection an asset / partition will never be materialized if any of its
-    parents are missing.
-
-    For eager reconciliation, an asset / partition will be (re)materialized when:
-
-    - it is missing
-    - it has a freshness policy that requires more up-to-date data
-    - any of its descendants have a freshness policy that require more up-to-date data
-    - any of its parent assets / partitions have been updated more recently than it has
-
-    For lazy reconciliation, an asset / partition will be (re)materialized when:
+    For an asset / partition of an asset with an _eager_ policy to be auto-materialized, at least
+    one of the following must be true:
 
     - it is missing
     - it has a freshness policy that requires more up-to-date data
     - any of its descendants have a freshness policy that require more up-to-date data
+    - any of its parent assets / partitions have newer data
 
-    In essence, an asset with eager reconciliation will always incorporate the most up-to-date
-    version of its parents, while an asset with lazy reconciliation will only update when necessary
-    in order to stay in line with the relevant FreshnessPolicies.
+    For an asset / partition of an asset with a _lazy_ policy to be auto-materialized, at least one
+    of the following must be true:
+
+    - it has a freshness policy that requires more up-to-date data
+    - any of its descendants have a freshness policy that require more up-to-date data
+
+    If an asset / partition meets the above criteria, then it will be auto-materialized only if none
+    of the following are true:
+
+    - any of its parent assets / partitions are missing
+    - any of its ancestor assets / partitions have ancestors of their own with newer data
+
+    Lastly, the `max_materializations_per_minute` parameter, which is set to 1 by default,
+    rate-limits the number of auto-materializations that can occur for a particular asset within
+    a short time interval. This mainly matters for partitioned assets. Its purpose is to provide a
+    safeguard against "surprise backfills", where user-error causes auto-materialize to be
+    accidentally triggered for large numbers of partitions at once.
 
     **Warning:**
 
@@ -118,7 +127,7 @@ class AutoMaterializePolicy(
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
-            on_missing=True,
+            on_missing=False,
             on_new_parent_data=False,
             for_freshness=True,
             time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,

@@ -85,7 +85,7 @@ export const SchedulesNextTicks: React.FC<{
     const minMaxTimestamp = Math.min(
       ...futureTickSchedules.map(
         (schedule) =>
-          schedule.futureTicks.results[schedule.futureTicks.results.length - 1].timestamp!,
+          schedule.futureTicks.results[schedule.futureTicks.results.length - 1]!.timestamp!,
       ),
     );
 
@@ -322,7 +322,7 @@ const NextTickDialog: React.FC<{
     setSelectedRunRequest,
   ] = React.useState<ScheduleFutureTickRunRequestFragment | null>(
     evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
-      ? evaluationResult.runRequests[0]
+      ? evaluationResult.runRequests[0]!
       : null,
   );
 
@@ -337,7 +337,7 @@ const NextTickDialog: React.FC<{
       evaluationResult.runRequests &&
       evaluationResult.runRequests.length === 1
     ) {
-      setSelectedRunRequest(evaluationResult.runRequests[0]);
+      setSelectedRunRequest(evaluationResult.runRequests[0]!);
     }
   }, [evaluationResult]);
 

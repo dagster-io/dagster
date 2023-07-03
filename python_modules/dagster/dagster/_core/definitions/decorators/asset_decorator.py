@@ -25,7 +25,6 @@ from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import (
     ExperimentalWarning,
@@ -38,7 +37,7 @@ from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
-from ..events import AssetKey, CoercibleToAssetKeyPrefix
+from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
 from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
@@ -66,7 +65,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
-    io_manager_def: Optional[IOManagerDefinition] = ...,
+    io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -78,6 +77,7 @@ def asset(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -94,7 +94,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
-    io_manager_def: Optional[IOManagerDefinition] = None,
+    io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -106,6 +106,7 @@ def asset(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -141,7 +142,7 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
-        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager used for
+        io_manager_def (Optional[object]): (Experimental) The IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
@@ -181,8 +182,6 @@ def asset(
     """
 
     def create_asset():
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
-
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
@@ -192,8 +191,9 @@ def asset(
             description=description,
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,
-            resource_defs=wrap_resources_for_execution(resource_defs),
-            io_manager=io_manager_def or io_manager_key,
+            resource_defs=resource_defs,
+            io_manager_key=io_manager_key,
+            io_manager_def=io_manager_def,
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
             partitions_def=partitions_def,
@@ -204,6 +204,7 @@ def asset(
             auto_materialize_policy=auto_materialize_policy,
             retry_policy=retry_policy,
             code_version=code_version,
+            key=key,
         )
 
     if compute_fn is not None:
@@ -242,8 +243,9 @@ class _Asset:
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
         required_resource_keys: Optional[Set[str]] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        io_manager: Optional[Union[str, IOManagerDefinition]] = None,
+        resource_defs: Optional[Mapping[str, object]] = None,
+        io_manager_key: Optional[str] = None,
+        io_manager_def: Optional[object] = None,
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -254,6 +256,7 @@ class _Asset:
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
+        key: Optional[CoercibleToAssetKey] = None,
     ):
         self.name = name
 
@@ -267,7 +270,8 @@ class _Asset:
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
         )
-        self.io_manager = io_manager
+        self.io_manager_key = io_manager_key
+        self.io_manager_def = io_manager_def
         self.config_schema = config_schema
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
@@ -281,23 +285,58 @@ class _Asset:
         self.auto_materialize_policy = auto_materialize_policy
         self.code_version = code_version
 
+        if (name or key_prefix) and key:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify a name or key prefix for an asset when the key argument is"
+                " provided."
+            )
+
+        self.key = AssetKey.from_coercible(key) if key is not None else None
+
     def __call__(self, fn: Callable) -> AssetsDefinition:
-        from dagster._config.pythonic_config import validate_resource_annotated_function
+        from dagster._config.pythonic_config import (
+            validate_resource_annotated_function,
+        )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
         asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
 
-        out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+        out_asset_key = (
+            AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+            if not self.key
+            else self.key
+        )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
 
             bare_required_resource_keys = set(self.required_resource_keys)
-            resource_defs_keys = set(self.resource_defs.keys())
+
+            resource_defs_dict = self.resource_defs
+            resource_defs_keys = set(resource_defs_dict.keys())
             decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
+
+            io_manager_key = self.io_manager_key
+            if self.io_manager_def:
+                if not io_manager_key:
+                    io_manager_key = out_asset_key.to_python_identifier("io_manager")
+
+                if (
+                    io_manager_key in self.resource_defs
+                    and self.resource_defs[io_manager_key] != self.io_manager_def
+                ):
+                    raise DagsterInvalidDefinitionError(
+                        f"Provided conflicting definitions for io manager key '{io_manager_key}'."
+                        " Please provide only one definition per key."
+                    )
+
+                resource_defs_dict[io_manager_key] = self.io_manager_def
+
+            wrapped_resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
             check.param_invariant(
                 len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
@@ -307,16 +346,7 @@ class _Asset:
                 ),
             )
 
-            if isinstance(self.io_manager, str):
-                io_manager_key = cast(str, self.io_manager)
-            elif self.io_manager is not None:
-                io_manager_def = check.inst_param(
-                    self.io_manager, "io_manager", IOManagerDefinition
-                )
-                io_manager_key = out_asset_key.to_python_identifier("io_manager")
-                self.resource_defs[io_manager_key] = cast(ResourceDefinition, io_manager_def)
-            else:
-                io_manager_key = DEFAULT_IO_MANAGER_KEY
+            io_manager_key = cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
 
             out = Out(
                 metadata=self.metadata or {},
@@ -361,7 +391,7 @@ class _Asset:
             node_def=op,
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
-            resource_defs=self.resource_defs,
+            resource_defs=wrapped_resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
             freshness_policies_by_key={out_asset_key: self.freshness_policy}
             if self.freshness_policy
@@ -402,6 +432,10 @@ def multi_asset(
     Each argument to the decorated function references an upstream asset that this asset depends on.
     The name of the argument designates the name of the upstream asset.
 
+    You can set I/O managers keys, auto-materialize policies, freshness policies, group names, etc.
+    on an individual asset within the multi-asset by attaching them to the :py:class:`AssetOut`
+    corresponding to that asset in the `outs` parameter.
+
     Args:
         name (Optional[str]): The name of the op.
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
@@ -437,6 +471,34 @@ def multi_asset(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
+
+    Examples:
+        .. code-block:: python
+
+            # Use IO managers to handle I/O:
+            @multi_asset(
+                outs={
+                    "my_string_asset": AssetOut(),
+                    "my_int_asset": AssetOut(),
+                }
+            )
+            def my_function(upstream_asset: int):
+                result = upstream_asset + 1
+                return str(result), result
+
+            # Handle I/O on your own:
+            @multi_asset(
+                outs={
+                    "asset1": AssetOut(),
+                    "asset2": AssetOut(),
+                },
+                non_argument_deps={"asset0"},
+            )
+            def my_function():
+                asset0_value = load(path="asset0")
+                asset1_result, asset2_result = do_some_transformation(asset0_value)
+                write(asset1_result, path="asset1")
+                write(asset2_result, path="asset2")
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 

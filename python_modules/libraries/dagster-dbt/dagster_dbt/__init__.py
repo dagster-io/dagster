@@ -1,10 +1,7 @@
-from dagster._core.libraries import DagsterLibraryRegistry
-
 from .asset_defs import (
     load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
     load_assets_from_dbt_project as load_assets_from_dbt_project,
 )
-from .asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .cli import (
     DbtCliClientResource as DbtCliClientResource,
     DbtCliOutput as DbtCliOutput,
@@ -29,7 +26,6 @@ from .errors import (
     DagsterDbtCliUnexpectedOutputError as DagsterDbtCliUnexpectedOutputError,
     DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
     DagsterDbtError as DagsterDbtError,
-    DagsterDbtRpcUnexpectedPollOutputError as DagsterDbtRpcUnexpectedPollOutputError,
 )
 from .ops import (
     dbt_build_op as dbt_build_op,
@@ -41,15 +37,92 @@ from .ops import (
     dbt_snapshot_op as dbt_snapshot_op,
     dbt_test_op as dbt_test_op,
 )
-from .rpc import (
-    DbtRpcOutput as DbtRpcOutput,
-    DbtRpcResource as DbtRpcResource,
-    DbtRpcSyncResource as DbtRpcSyncResource,
-    dbt_rpc_resource as dbt_rpc_resource,
-    dbt_rpc_sync_resource as dbt_rpc_sync_resource,
-    local_dbt_rpc_resource as local_dbt_rpc_resource,
-)
 from .types import DbtOutput as DbtOutput
 from .version import __version__ as __version__
 
+# isort: split
+
+# ########################
+# ##### EXPERIMENTAL IMPORTS
+# ########################
+
+from .asset_decorator import dbt_assets as dbt_assets
+from .cli import (
+    DbtCli as DbtCli,
+    DbtCliEventMessage as DbtCliEventMessage,
+    DbtCliInvocation as DbtCliInvocation,
+    DbtManifest as DbtManifest,
+    DbtManifestAssetSelection as DbtManifestAssetSelection,
+)
+
+# isort: split
+
+# ########################
+# ##### DYNAMIC IMPORTS
+# ########################
+import importlib
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple
+
+from dagster._core.libraries import DagsterLibraryRegistry
+from dagster._utils.backcompat import deprecation_warning
+from typing_extensions import Final
+
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
+
+if TYPE_CHECKING:
+    ##### EXAMPLE
+    # from dagster.some.module import (
+    #     Foo as Foo,
+    # )
+
+    ##### Deprecating dbt-rpc
+    from .errors import (
+        DagsterDbtRpcUnexpectedPollOutputError as DagsterDbtRpcUnexpectedPollOutputError,
+    )
+    from .rpc import (
+        DbtRpcResource as DbtRpcResource,
+        DbtRpcSyncResource as DbtRpcSyncResource,
+        dbt_rpc_resource as dbt_rpc_resource,
+        dbt_rpc_sync_resource as dbt_rpc_sync_resource,
+        local_dbt_rpc_resource as local_dbt_rpc_resource,
+    )
+
+_DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
+    ##### EXAMPLE
+    # "Foo": (
+    #     "dagster.some.module",
+    #     "1.1.0",  # breaking version
+    #     "Use Bar instead.",
+    # ),
+    ##### Deprecating dbt-rpc
+    **{
+        value: (
+            module,
+            "0.20.0",
+            "dbt-rpc is deprecated: https://github.com/dbt-labs/dbt-rpc.",
+        )
+        for value, module in [
+            ("DbtRpcOutput", "dagster_dbt.rpc"),
+            ("DbtRpcResource", "dagster_dbt.rpc"),
+            ("DbtRpcSyncResource", "dagster_dbt.rpc"),
+            ("dbt_rpc_resource", "dagster_dbt.rpc"),
+            ("dbt_rpc_sync_resource", "dagster_dbt.rpc"),
+            ("local_dbt_rpc_resource", "dagster_dbt.rpc"),
+            ("DagsterDbtRpcUnexpectedPollOutputError", "dagster_dbt.errors"),
+        ]
+    },
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _DEPRECATED:
+        module, breaking_version, additional_warn_text = _DEPRECATED[name]
+        value = getattr(importlib.import_module(module), name)
+        deprecation_warning(name, breaking_version, additional_warn_text)
+        return value
+    else:
+        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+def __dir__() -> Sequence[str]:
+    return [*globals(), *_DEPRECATED.keys()]

@@ -33,7 +33,7 @@ export const VirtualizedJobTable: React.FC<Props> = ({repoAddress, jobs}) => {
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: Job = jobs[index];
+              const row: Job = jobs[index]!;
               return (
                 <VirtualizedJobRow
                   key={key}

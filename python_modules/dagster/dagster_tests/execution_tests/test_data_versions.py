@@ -34,7 +34,7 @@ from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance_for_test import instance_for_test
 from typing_extensions import Literal
@@ -878,7 +878,7 @@ def test_get_data_provenance_inside_op():
         return Output(1, data_version=DataVersion("foo"))
 
     @asset(config_schema={"check_provenance": Field(bool, default_value=False)})
-    def asset2(context: OpExecutionContext, asset1):
+    def asset2(context: AssetExecutionContext, asset1):
         if context.op_config["check_provenance"]:
             provenance = context.get_asset_provenance(AssetKey("asset2"))
             assert provenance

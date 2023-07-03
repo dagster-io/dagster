@@ -61,8 +61,8 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
         if (!destination) {
           return <g key={mappedInput.solid.name} />;
         }
-        const sourcePort = parentLayout.inputs[definition.name].port;
-        const trgtPort = destination.inputs[mappedInput.definition.name].port;
+        const sourcePort = parentLayout.inputs[definition.name]!.port;
+        const trgtPort = destination.inputs[mappedInput.definition.name]!.port;
 
         return (
           <MappingLine
@@ -81,8 +81,8 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
         if (!destination) {
           return <g key={mappedOutput.solid.name} />;
         }
-        const sourcePort = parentLayout.outputs[definition.name].port;
-        const trgtPort = destination.outputs[mappedOutput.definition.name].port;
+        const sourcePort = parentLayout.outputs[definition.name]!.port;
+        const trgtPort = destination.outputs[mappedOutput.definition.name]!.port;
 
         return (
           <MappingLine
@@ -111,8 +111,8 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
                   labelAttachment="top"
                   label={titleOfIO(dependsOn)}
                   minified={minified}
-                  layout={parentLayout.dependsOn[titleOfIO(dependsOn)]}
-                  target={parentLayout.inputs[input.name].port}
+                  layout={parentLayout.dependsOn[titleOfIO(dependsOn)]!}
+                  target={parentLayout.inputs[input.name]!.port}
                   onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
                 />
               ))}
@@ -141,8 +141,8 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
                   labelAttachment="bottom"
                   label={titleOfIO(dependedBy)}
                   minified={minified}
-                  layout={parentLayout.dependedBy[titleOfIO(dependedBy)]}
-                  target={parentLayout.outputs[output.name].port}
+                  layout={parentLayout.dependedBy[titleOfIO(dependedBy)]!}
+                  target={parentLayout.outputs[output.name]!.port}
                   onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
                 />
               ))}

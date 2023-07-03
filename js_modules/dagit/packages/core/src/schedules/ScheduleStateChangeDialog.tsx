@@ -110,8 +110,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     }
 
     dispatch({type: 'start'});
-    for (let ii = 0; ii < schedules.length; ii++) {
-      const schedule = schedules[ii];
+    for (const schedule of schedules) {
       if (openWithIntent === 'start') {
         await start(schedule);
       } else {

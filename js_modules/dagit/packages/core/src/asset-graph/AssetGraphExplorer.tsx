@@ -142,11 +142,11 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
-  const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
+  const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
-  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
 
   const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
   const allDefinitionsForMaterialize = applyingEmptyDefault
@@ -175,26 +175,31 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       let nextOpsNameSelection = token;
 
       if (e.shiftKey || e.metaKey) {
+        // Meta key adds the node you clicked to your existing selection
         let tokensToAdd = [token];
-        if (e.shiftKey && lastSelectedNode && node) {
-          const tokensInRange = opsInRange({
-            graph: assetGraphData,
-            from: lastSelectedNode,
-            to: node,
-          });
-          if (tokensInRange.length) {
-            tokensToAdd = tokensInRange;
+
+        // Shift key adds the nodes between the node you clicked and your existing selection.
+        // To better support clicking a bunch of leaves and extending selection, we try to reach
+        // the new node from each node in your current selection until we find a path.
+        if (e.shiftKey && selectedGraphNodes.length && node) {
+          const reversed = [...selectedGraphNodes].reverse();
+          for (const from of reversed) {
+            const tokensInRange = assetKeyTokensInRange({from, to: node, graph: assetGraphData});
+            if (tokensInRange.length) {
+              tokensToAdd = tokensInRange;
+              break;
+            }
           }
         }
 
-        const existing = explorerPath.opNames[0].split(',');
+        const existing = explorerPath.opNames[0]!.split(',');
         nextOpsNameSelection = (existing.includes(token)
           ? without(existing, token)
           : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
-      const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]];
+      const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]!];
       if (nextCenter) {
         viewportEl.current?.zoomToSVGCoords(nextCenter.bounds.x, nextCenter.bounds.y, true);
       }
@@ -258,7 +263,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     const node = nextId && assetGraphData.nodes[nextId];
     if (node && viewportEl.current) {
       onSelectNode(e, node.assetKey, node);
-      viewportEl.current.zoomToSVGBox(layout.nodes[nextId].bounds, true);
+      viewportEl.current.zoomToSVGBox(layout.nodes[nextId]!.bounds, true);
     }
   };
 
@@ -332,7 +337,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
                     ))}
 
                   {Object.values(layout.nodes).map(({id, bounds}) => {
-                    const graphNode = assetGraphData.nodes[id];
+                    const graphNode = assetGraphData.nodes[id]!;
                     const path = JSON.parse(id);
                     if (allowGroupsOnlyZoomLevel && scale < GROUPS_ONLY_SCALE) {
                       return;
@@ -480,7 +485,7 @@ const graphDirectionOf = ({
     const node = stack.pop()!;
 
     const downstream = [...Object.keys(graph.downstream[node.id] || {})]
-      .map((n) => graph.nodes[n])
+      .map((n) => graph.nodes[n]!)
       .filter(Boolean);
     if (downstream.some((d) => d.id === to.id)) {
       return 'downstream';
@@ -490,7 +495,7 @@ const graphDirectionOf = ({
   return 'upstream';
 };
 
-const opsInRange = (
+const assetKeyTokensInRange = (
   {graph, from, to}: {graph: GraphData; from: GraphNode; to: GraphNode},
   seen: string[] = [],
 ) => {
@@ -498,7 +503,7 @@ const opsInRange = (
     return [];
   }
   if (from.id === to.id) {
-    return [...to.definition.opNames];
+    return [tokenForAssetKey(to.definition.assetKey)];
   }
 
   if (seen.length === 0 && graphDirectionOf({graph, from, to}) === 'upstream') {
@@ -506,7 +511,7 @@ const opsInRange = (
   }
 
   const downstream = [...Object.keys(graph.downstream[from.id] || {})]
-    .map((n) => graph.nodes[n])
+    .map((n) => graph.nodes[n]!)
     .filter(Boolean);
 
   const ledToTarget: string[] = [];
@@ -515,10 +520,11 @@ const opsInRange = (
     if (seen.includes(node.id)) {
       continue;
     }
-    const result: string[] = opsInRange({graph, from: node, to}, [...seen, from.id]);
+    const result: string[] = assetKeyTokensInRange({graph, from: node, to}, [...seen, from.id]);
     if (result.length) {
-      ledToTarget.push(...from.definition.opNames, ...result);
+      ledToTarget.push(tokenForAssetKey(from.definition.assetKey), ...result);
     }
   }
+
   return uniq(ledToTarget);
 };

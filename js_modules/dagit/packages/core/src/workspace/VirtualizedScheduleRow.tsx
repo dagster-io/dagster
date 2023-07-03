@@ -213,7 +213,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           ) : null}
         </RowCell>
         <RowCell>
-          {scheduleData?.scheduleState.ticks.length ? (
+          {scheduleData?.scheduleState.ticks[0] ? (
             <div>
               <TickTag
                 tick={scheduleData.scheduleState.ticks[0]}
@@ -225,7 +225,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           )}
         </RowCell>
         <RowCell>
-          {scheduleData?.scheduleState && scheduleData?.scheduleState.runs.length > 0 ? (
+          {scheduleData?.scheduleState && scheduleData?.scheduleState.runs[0] ? (
             <LastRunSummary
               run={scheduleData.scheduleState.runs[0]}
               name={name}

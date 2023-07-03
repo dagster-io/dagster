@@ -6,10 +6,10 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
     MetadataUserInput,
 )
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
-from dagster._core.storage.io_manager import IOManagerDefinition
 
 
 @overload
@@ -24,11 +24,12 @@ def observable_source_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     metadata: Optional[MetadataUserInput] = None,
     io_manager_key: Optional[str] = None,
-    io_manager_def: Optional[IOManagerDefinition] = None,
+    io_manager_def: Optional[object] = None,
     description: Optional[str] = None,
     group_name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> "_ObservableSourceAsset":
     ...
 
@@ -41,11 +42,12 @@ def observable_source_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     metadata: Optional[MetadataUserInput] = None,
     io_manager_key: Optional[str] = None,
-    io_manager_def: Optional[IOManagerDefinition] = None,
+    io_manager_def: Optional[object] = None,
     description: Optional[str] = None,
     group_name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
 
@@ -74,6 +76,8 @@ def observable_source_asset(
         resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource
             definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in
             the `io_manager_def` argument.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the asset.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
     """
     if observe_fn is not None:
@@ -89,6 +93,7 @@ def observable_source_asset(
         group_name,
         required_resource_keys,
         resource_defs,
+        partitions_def,
     )
 
 
@@ -99,11 +104,12 @@ class _ObservableSourceAsset:
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         metadata: Optional[MetadataUserInput] = None,
         io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[IOManagerDefinition] = None,
+        io_manager_def: Optional[object] = None,
         description: Optional[str] = None,
         group_name: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ):
         self.name = name
         if isinstance(key_prefix, str):
@@ -118,6 +124,7 @@ class _ObservableSourceAsset:
         self.group_name = group_name
         self.required_resource_keys = required_resource_keys
         self.resource_defs = resource_defs
+        self.partitions_def = partitions_def
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
         source_asset_name = self.name or observe_fn.__name__
@@ -144,4 +151,5 @@ class _ObservableSourceAsset:
             _required_resource_keys=resolved_resource_keys,
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
+            partitions_def=self.partitions_def,
         )

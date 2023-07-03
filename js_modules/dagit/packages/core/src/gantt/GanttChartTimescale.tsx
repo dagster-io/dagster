@@ -6,9 +6,18 @@ import {formatElapsedTime} from '../app/Util';
 
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
-const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
-const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
-const msToSubsecondLabel = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+const ONE_MIN = 60 * 1000;
+const ONE_HOUR = 60 * 60 * 1000;
+
+// If we're zoomed in to second or minute resolution but showing large values,
+// switch to the "1:00:05" format used elsewhere in Dagit.
+const subsecondResolutionLabel = (ms: number) =>
+  ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(1)}s`;
+const secondResolutionLabel = (ms: number) =>
+  ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(0)}s`;
+const minuteResolutionLabel = (ms: number) =>
+  ms > 59 * ONE_MIN ? formatElapsedTime(ms) : `${Math.round(ms / ONE_MIN)}m`;
+const hourResolutionLabel = (ms: number) => `${Math.round(ms / ONE_HOUR)}h`;
 
 // We want to gracefully transition the tick marks shown as you zoom, but it's
 // nontrivial to programatically pick good intervals. (500ms => 1s => 5s, etc.)
@@ -18,55 +27,62 @@ const msToSubsecondLabel = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 // We use the first configuration that places ticks at least 80 pixels apart
 // at the rendered scale.
 //
-const TICK_LABEL_WIDTH = 56;
 const TICK_CONFIG = [
   {
     tickIntervalMs: 0.5 * 1000,
-    tickLabels: msToSubsecondLabel,
+    tickLabels: subsecondResolutionLabel,
   },
   {
     tickIntervalMs: 1 * 1000,
-    tickLabels: msToSecondLabel,
+    tickLabels: secondResolutionLabel,
   },
   {
     tickIntervalMs: 5 * 1000,
-    tickLabels: msToSecondLabel,
+    tickLabels: secondResolutionLabel,
   },
   {
     tickIntervalMs: 10 * 1000,
-    tickLabels: msToSecondLabel,
+    tickLabels: secondResolutionLabel,
   },
   {
     tickIntervalMs: 30 * 1000,
-    tickLabels: msToSecondLabel,
+    tickLabels: secondResolutionLabel,
   },
   {
     tickIntervalMs: 60 * 1000,
-    tickLabels: msToSecondLabel,
+    tickLabels: secondResolutionLabel,
   },
   {
     tickIntervalMs: 2 * 60 * 1000,
-    tickLabels: msToMinuteLabel,
+    tickLabels: minuteResolutionLabel,
   },
   {
     tickIntervalMs: 5 * 60 * 1000,
-    tickLabels: msToMinuteLabel,
+    tickLabels: minuteResolutionLabel,
   },
   {
     tickIntervalMs: 10 * 60 * 1000,
-    tickLabels: msToMinuteLabel,
+    tickLabels: minuteResolutionLabel,
   },
   {
     tickIntervalMs: 20 * 60 * 1000,
-    tickLabels: msToMinuteLabel,
+    tickLabels: minuteResolutionLabel,
   },
   {
     tickIntervalMs: 60 * 60 * 1000,
-    tickLabels: msToMinuteLabel,
+    tickLabels: hourResolutionLabel,
+  },
+  {
+    tickIntervalMs: 3 * 60 * 60 * 1000,
+    tickLabels: hourResolutionLabel,
   },
   {
     tickIntervalMs: 6 * 60 * 60 * 1000,
-    tickLabels: msToMinuteLabel,
+    tickLabels: hourResolutionLabel,
+  },
+  {
+    tickIntervalMs: 12 * 60 * 60 * 1000,
+    tickLabels: hourResolutionLabel,
   },
 ];
 
@@ -79,6 +95,10 @@ interface GanttChartTimescaleProps {
   highlightedMs: number[];
 }
 
+const TICKS_ROW_HEIGHT = 32;
+const TICK_LABEL_WIDTH = 56;
+const MIN_PX_BETWEEN_TICKS = 80;
+
 export const GanttChartTimescale = ({
   scale,
   viewport,
@@ -88,26 +108,29 @@ export const GanttChartTimescale = ({
   layoutSize,
 }: GanttChartTimescaleProps) => {
   const transform = `translate(${LEFT_INSET - viewport.left}px)`;
-  const ticks: React.ReactChild[] = [];
-  const lines: React.ReactChild[] = [];
+  const ticks: React.ReactNode[] = [];
+  const lines: React.ReactNode[] = [];
 
   const pxPerMs = scale;
-  const tickConfig = TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > 80);
+  const tickConfig = TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > MIN_PX_BETWEEN_TICKS);
   if (tickConfig) {
     const {tickIntervalMs, tickLabels} = tickConfig;
     const pxPerTick = tickIntervalMs * pxPerMs;
-    const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
 
-    for (let x = firstTickX; x < firstTickX + viewport.width; x += pxPerTick) {
-      if (x - viewport.left < 10) {
+    let tickMs = Math.floor(viewport.left / pxPerTick) * tickIntervalMs;
+    let tickX = tickMs * pxPerMs;
+
+    while (tickX < viewport.left + viewport.width) {
+      tickMs += tickIntervalMs;
+      tickX += pxPerTick;
+      if (tickX - viewport.left < 10) {
         continue;
       }
-      const ms = x / pxPerMs;
-      const key = `${ms.toFixed(2)}`;
-      const label = tickLabels(ms);
-      lines.push(<div className="line" key={key} style={{left: x, transform}} />);
+      const key = `${tickMs.toFixed(2)}`;
+      const label = tickLabels(tickMs);
+      lines.push(<div className="line" key={key} style={{left: tickX, transform}} />);
       ticks.push(
-        <div className="tick" key={key} style={{left: x - TICK_LABEL_WIDTH / 2, transform}}>
+        <div className="tick" key={key} style={{left: tickX - TICK_LABEL_WIDTH / 2, transform}}>
           {label}
         </div>,
       );
@@ -123,12 +146,12 @@ export const GanttChartTimescale = ({
             key="highlight-duration"
             className="tick duration"
             style={{
-              left: (highlightedMs[0] - startMs) * pxPerMs + 2,
-              width: (highlightedMs[1] - highlightedMs[0]) * pxPerMs - 2,
+              left: (highlightedMs[0]! - startMs) * pxPerMs + 2,
+              width: (highlightedMs[1]! - highlightedMs[0]!) * pxPerMs - 2,
               transform,
             }}
           >
-            {formatElapsedTime(highlightedMs[1] - highlightedMs[0])}
+            {formatElapsedTime(highlightedMs[1]! - highlightedMs[0]!)}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {
@@ -142,7 +165,7 @@ export const GanttChartTimescale = ({
               className="tick highlight"
               style={{left: timeX + labelOffset, transform}}
             >
-              {msToSubsecondLabel(ms - startMs)}
+              {subsecondResolutionLabel(ms - startMs)}
             </div>
           );
         })}
@@ -170,8 +193,6 @@ export const GanttChartTimescale = ({
     </TimescaleContainer>
   );
 };
-
-const TICKS_ROW_HEIGHT = 32;
 
 const TimescaleContainer = styled.div`
   width: 100%;

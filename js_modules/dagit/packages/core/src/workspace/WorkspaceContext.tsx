@@ -34,6 +34,8 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
+type SetVisibleOrHiddenFn = (repoAddresses: RepoAddress[]) => void;
+
 type WorkspaceState = {
   error: PythonErrorFragment | null;
   loading: boolean;
@@ -42,7 +44,9 @@ type WorkspaceState = {
   visibleRepos: DagsterRepoOption[];
 
   refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
-  toggleVisible: (repoAddresses: RepoAddress[]) => void;
+  toggleVisible: SetVisibleOrHiddenFn;
+  setVisible: SetVisibleOrHiddenFn;
+  setHidden: SetVisibleOrHiddenFn;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
@@ -212,7 +216,7 @@ const useWorkspaceState = (): WorkspaceState => {
     return {error: null, allRepos};
   }, [workspaceOrError]);
 
-  const [visibleRepos, toggleVisible] = useVisibleRepos(allRepos);
+  const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
 
   return {
     refetch,
@@ -222,19 +226,26 @@ const useWorkspaceState = (): WorkspaceState => {
     allRepos,
     visibleRepos,
     toggleVisible,
+    setVisible,
+    setHidden,
   };
 };
 
 /**
- * useVisibleRepos vends `[reposForKeys, toggleVisible]` and internally mirrors the current
- * selection into localStorage so that the default selection in new browser windows
- * is the repo currently active in your session.
+ * useVisibleRepos returns `{reposForKeys, toggleVisible, setVisible, setHidden}` and internally
+ * mirrors the current selection into localStorage so that the default selection in new browser
+ * windows is the repo currently active in your session.
  */
 const validateHiddenKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
 
 const useVisibleRepos = (
   allRepos: DagsterRepoOption[],
-): [DagsterRepoOption[], WorkspaceState['toggleVisible']] => {
+): {
+  visibleRepos: DagsterRepoOption[];
+  toggleVisible: SetVisibleOrHiddenFn;
+  setVisible: SetVisibleOrHiddenFn;
+  setHidden: SetVisibleOrHiddenFn;
+} => {
   const {basePath} = React.useContext(AppContext);
 
   const [oldHiddenKeys, setOldHiddenKeys] = useStateWithStorage<string[]>(
@@ -245,6 +256,8 @@ const useVisibleRepos = (
     basePath + ':' + HIDDEN_REPO_KEYS,
     validateHiddenKeys,
   );
+
+  const hiddenKeysJSON = JSON.stringify([...hiddenKeys.sort()]);
 
   // TODO: Remove this logic eventually...
   const migratedOldHiddenKeys = React.useRef(false);
@@ -273,16 +286,41 @@ const useVisibleRepos = (
     [setHiddenKeys],
   );
 
-  const visibleOptions = React.useMemo(() => {
+  const setVisible = React.useCallback(
+    (repoAddresses: RepoAddress[]) => {
+      const keysToShow = new Set(
+        repoAddresses.map((repoAddress) => `${repoAddress.name}:${repoAddress.location}`),
+      );
+      setHiddenKeys((current) => {
+        return current?.filter((key) => !keysToShow.has(key));
+      });
+    },
+    [setHiddenKeys],
+  );
+
+  const setHidden = React.useCallback(
+    (repoAddresses: RepoAddress[]) => {
+      const keysToHide = new Set(
+        repoAddresses.map((repoAddress) => `${repoAddress.name}:${repoAddress.location}`),
+      );
+      setHiddenKeys((current) => {
+        const updatedSet = new Set([...(current || []), ...keysToHide]);
+        return Array.from(updatedSet);
+      });
+    },
+    [setHiddenKeys],
+  );
+
+  const visibleRepos = React.useMemo(() => {
     // If there's only one repo, skip the local storage check -- we have to show this one.
     if (allRepos.length === 1) {
       return allRepos;
-    } else {
-      return allRepos.filter((o) => !hiddenKeys.includes(getRepositoryOptionHash(o)));
     }
-  }, [allRepos, hiddenKeys]);
+    const hiddenKeys = new Set(JSON.parse(hiddenKeysJSON));
+    return allRepos.filter((o) => !hiddenKeys.has(getRepositoryOptionHash(o)));
+  }, [allRepos, hiddenKeysJSON]);
 
-  return [visibleOptions, toggleVisible];
+  return {visibleRepos, toggleVisible, setVisible, setHidden};
 };
 
 // Public
@@ -322,7 +360,7 @@ export const findRepositoryAmongOptions = (
 export const useActivePipelineForName = (pipelineName: string, snapshotId?: string) => {
   const {options} = useRepositoryOptions();
   const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
-  if (reposWithMatch.length) {
+  if (reposWithMatch[0]) {
     const match = reposWithMatch[0];
     return match.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
   }
@@ -334,6 +372,16 @@ export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobNam
     (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
   );
   return !!pipelineOrJob?.isJob;
+};
+
+export const isThisThingAnAssetJob = (
+  repo: DagsterRepoOption | null,
+  pipelineOrJobName: string,
+) => {
+  const pipelineOrJob = repo?.repository.pipelines.find(
+    (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
+  );
+  return !!pipelineOrJob?.isAssetJob;
 };
 
 export const buildPipelineSelector = (

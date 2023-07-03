@@ -3,12 +3,14 @@ import logging  # noqa: F401; used by mock in string form
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import List, Optional, Sequence, Tuple, cast
 
 import mock
 import pendulum
 import pytest
+import sqlalchemy as db
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -38,8 +40,10 @@ from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import (
     AssetMaterializationPlannedData,
+    AssetObservationData,
     DagsterEvent,
     DagsterEventType,
     EngineEventData,
@@ -72,6 +76,7 @@ from dagster._legacy import build_assets_job
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
+from dagster._utils.concurrency import ConcurrencySlotStatus
 
 TEST_TIMEOUT = 5
 
@@ -267,7 +272,7 @@ def _synthesize_events(
 
 def _fetch_all_events(configured_storage, run_id=None):
     with configured_storage.run_connection(run_id=run_id) as conn:
-        res = conn.execute("SELECT event from event_logs")
+        res = conn.execute(db.text("SELECT event from event_logs"))
         return res.fetchall()
 
 
@@ -2023,6 +2028,232 @@ class TestEventLogStorage:
                     )
                     assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
+    def test_get_latest_storage_ids_by_partition(self, storage, instance):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id = make_new_run_id()
+
+        def _assert_storage_matches(expected):
+            assert (
+                storage.get_latest_storage_id_by_partition(
+                    a, DagsterEventType.ASSET_MATERIALIZATION
+                )
+                == expected
+            )
+
+        def _store_partition_event(asset_key, partition) -> int:
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=asset_key, partition=partition)
+                        ),
+                    ),
+                )
+            )
+            # get the storage id of the materialization we just stored
+            return storage.get_event_records(
+                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION),
+                limit=1,
+                ascending=False,
+            )[0].storage_id
+
+        with create_and_delete_test_runs(instance, [run_id]):
+            latest_storage_ids = {}
+            # no events
+            _assert_storage_matches(latest_storage_ids)
+
+            # p1 materialized
+            latest_storage_ids["p1"] = _store_partition_event(a, "p1")
+            _assert_storage_matches(latest_storage_ids)
+
+            # p2 materialized
+            latest_storage_ids["p2"] = _store_partition_event(a, "p2")
+            _assert_storage_matches(latest_storage_ids)
+
+            # unrelated asset materialized
+            _store_partition_event(b, "p1")
+            _store_partition_event(b, "p2")
+            _assert_storage_matches(latest_storage_ids)
+
+            # p1 re materialized
+            latest_storage_ids["p1"] = _store_partition_event(a, "p1")
+            _assert_storage_matches(latest_storage_ids)
+
+            # p2 materialized
+            latest_storage_ids["p3"] = _store_partition_event(a, "p3")
+            _assert_storage_matches(latest_storage_ids)
+
+            if self.can_wipe():
+                storage.wipe_asset(a)
+                latest_storage_ids = {}
+                _assert_storage_matches(latest_storage_ids)
+
+                latest_storage_ids["p1"] = _store_partition_event(a, "p1")
+                _assert_storage_matches(latest_storage_ids)
+
+    @pytest.mark.parametrize(
+        "dagster_event_type",
+        [DagsterEventType.ASSET_OBSERVATION, DagsterEventType.ASSET_MATERIALIZATION],
+    )
+    def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id = make_new_run_id()
+
+        def _store_partition_event(asset_key, partition, tags) -> int:
+            if dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION:
+                dagster_event = DagsterEvent(
+                    dagster_event_type.value,
+                    "nonce",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key=asset_key, partition=partition, tags=tags)
+                    ),
+                )
+            else:
+                dagster_event = DagsterEvent(
+                    dagster_event_type.value,
+                    "nonce",
+                    event_specific_data=AssetObservationData(
+                        AssetObservation(asset_key=asset_key, partition=partition, tags=tags)
+                    ),
+                )
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=dagster_event,
+                )
+            )
+            # get the storage id of the materialization we just stored
+            return storage.get_event_records(
+                EventRecordsFilter(dagster_event_type),
+                limit=1,
+                ascending=False,
+            )[0].storage_id
+
+        with create_and_delete_test_runs(instance, [run_id]):
+            # no events
+            assert (
+                storage.get_latest_tags_by_partition(
+                    a, dagster_event_type, tag_keys=["dagster/a", "dagster/b"]
+                )
+                == {}
+            )
+
+            # p1 materialized
+            _store_partition_event(a, "p1", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # p2 materialized
+            _store_partition_event(a, "p2", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # unrelated asset materialized
+            t1 = _store_partition_event(b, "p1", tags={"dagster/a": "...", "dagster/b": "..."})
+            _store_partition_event(b, "p2", tags={"dagster/a": "...", "dagster/b": "..."})
+
+            # p1 re materialized
+            _store_partition_event(a, "p1", tags={"dagster/a": "2", "dagster/b": "2"})
+
+            # p3 materialized
+            _store_partition_event(a, "p3", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # no valid tag keys
+            assert (
+                storage.get_latest_tags_by_partition(a, dagster_event_type, tag_keys=["foo"]) == {}
+            )
+
+            # subset of existing tag keys
+            assert storage.get_latest_tags_by_partition(
+                a, dagster_event_type, tag_keys=["dagster/a"]
+            ) == {
+                "p1": {"dagster/a": "2"},
+                "p2": {"dagster/a": "1"},
+                "p3": {"dagster/a": "1"},
+            }
+
+            # superset of existing tag keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b", "dagster/c"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # subset of existing partition keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+            }
+
+            # superset of existing partition keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1", "p2", "p3", "p4"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # before p1 rematerialized and p3 existed
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                before_cursor=t1,
+            ) == {
+                "p1": {"dagster/a": "1", "dagster/b": "1"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # shouldn't include p2's materialization
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                after_cursor=t1,
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            if self.can_wipe():
+                storage.wipe_asset(a)
+                assert (
+                    storage.get_latest_tags_by_partition(
+                        a,
+                        dagster_event_type,
+                        tag_keys=["dagster/a", "dagster/b"],
+                    )
+                    == {}
+                )
+                _store_partition_event(a, "p1", tags={"dagster/a": "3", "dagster/b": "3"})
+                assert storage.get_latest_tags_by_partition(
+                    a, dagster_event_type, tag_keys=["dagster/a", "dagster/b"]
+                ) == {
+                    "p1": {"dagster/a": "3", "dagster/b": "3"},
+                }
+
     def test_get_latest_asset_partition_materialization_attempts_without_materializations(
         self, storage, instance
     ):
@@ -3350,3 +3581,308 @@ class TestEventLogStorage:
         assert storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo")
         assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
+
+    def test_concurrency(self, storage):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id_one = make_new_run_id()
+        run_id_two = make_new_run_id()
+        run_id_three = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        # initially there are no concurrency limited keys
+        assert storage.get_concurrency_keys() == set()
+
+        # fill concurrency slots
+        storage.set_concurrency_slots("foo", 3)
+        storage.set_concurrency_slots("bar", 1)
+
+        # now there are two concurrency limited keys
+        assert storage.get_concurrency_keys() == {"foo", "bar"}
+
+        assert claim("foo", run_id_one, "step_1") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id_two, "step_2") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id_one, "step_3") == ConcurrencySlotStatus.CLAIMED
+        assert claim("bar", run_id_two, "step_4") == ConcurrencySlotStatus.CLAIMED
+
+        # next claim should be blocked
+        assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.BLOCKED
+        assert claim("bar", run_id_three, "step_6") == ConcurrencySlotStatus.BLOCKED
+
+        # free single slot, one in each concurrency key: foo, bar
+        storage.free_concurrency_slots_for_run(run_id_two)
+        # try to claim again
+        assert claim("foo", run_id_three, "step_5") == ConcurrencySlotStatus.CLAIMED
+        assert claim("bar", run_id_three, "step_6") == ConcurrencySlotStatus.CLAIMED
+        # new claims should be blocked
+        assert claim("foo", run_id_three, "step_7") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id_three, "step_8") == ConcurrencySlotStatus.BLOCKED
+
+    def test_concurrency_priority(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        if self.can_wipe():
+            storage.wipe()
+
+        storage.set_concurrency_slots("foo", 5)
+        storage.set_concurrency_slots("bar", 1)
+
+        # fill all the slots
+        assert claim("foo", run_id, "step_1") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_2") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_3") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_4") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "step_5") == ConcurrencySlotStatus.CLAIMED
+
+        # next claims should be blocked
+        assert claim("foo", run_id, "a", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "b", 2) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c", 0) == ConcurrencySlotStatus.BLOCKED
+
+        # free up a slot
+        storage.free_concurrency_slot_for_step(run_id, "step_1")
+
+        # a new step trying to claim foo should also be blocked
+        assert claim("foo", run_id, "d", 0) == ConcurrencySlotStatus.BLOCKED
+
+        # the claim calls for all the previously blocked steps should all remain blocked, except for
+        # the highest priority one
+        assert claim("foo", run_id, "a", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "b", 2) == ConcurrencySlotStatus.CLAIMED
+
+        # free up another slot
+        storage.free_concurrency_slot_for_step(run_id, "step_2")
+
+        # the claim calls for all the previously blocked steps should all remain blocked, except for
+        # the oldest of the zero priority pending steps
+        assert claim("foo", run_id, "c", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d", 0) == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "a", 0) == ConcurrencySlotStatus.CLAIMED
+
+        # b, c remain of the previous set of pending steps
+        # freeing up 3 slots means that trying to claim a new slot should go through, even though
+        # b and c have not claimed a slot yet (whilst being assigned)
+        storage.free_concurrency_slot_for_step(run_id, "step_3")
+        storage.free_concurrency_slot_for_step(run_id, "step_4")
+        storage.free_concurrency_slot_for_step(run_id, "step_5")
+
+        assert claim("foo", run_id, "e") == ConcurrencySlotStatus.CLAIMED
+
+    def test_concurrency_allocate_from_pending(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        storage.set_concurrency_slots("foo", 1)
+
+        # fill
+        assert claim("foo", run_id, "a") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "b") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "e") == ConcurrencySlotStatus.BLOCKED
+
+        # there is only one claimed slot, the rest are pending
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
+
+        # all the pending slots should not be assigned
+        assert storage.check_concurrency_claim("foo", run_id, "b").assigned_timestamp is None
+        assert storage.check_concurrency_claim("foo", run_id, "c").assigned_timestamp is None
+        assert storage.check_concurrency_claim("foo", run_id, "d").assigned_timestamp is None
+        assert storage.check_concurrency_claim("foo", run_id, "e").assigned_timestamp is None
+
+        # now, allocate enough slots for all the pending rows
+        storage.set_concurrency_slots("foo", 5)
+
+        # there is still only one claimed slot, the rest are pending (but now assigned)
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+        assert foo_info.active_run_ids == {run_id}
+
+        assert storage.check_concurrency_claim("foo", run_id, "b").assigned_timestamp is not None
+        assert storage.check_concurrency_claim("foo", run_id, "c").assigned_timestamp is not None
+        assert storage.check_concurrency_claim("foo", run_id, "d").assigned_timestamp is not None
+        assert storage.check_concurrency_claim("foo", run_id, "e").assigned_timestamp is not None
+
+    def test_invalid_concurrency_limit(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        with pytest.raises(DagsterInvalidInvocationError):
+            storage.set_concurrency_slots("foo", -1)
+
+        with pytest.raises(DagsterInvalidInvocationError):
+            storage.set_concurrency_slots("foo", 1001)
+
+    def test_slot_downsize(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        # set concurrency slots
+        storage.set_concurrency_slots("foo", 5)
+
+        # fill em partially up
+        assert claim("foo", run_id, "a") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "b") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "c") == ConcurrencySlotStatus.CLAIMED
+
+        storage.set_concurrency_slots("foo", 1)
+
+        assert storage.check_concurrency_claim("foo", run_id, "a").is_claimed
+        assert storage.check_concurrency_claim("foo", run_id, "b").is_claimed
+        assert storage.check_concurrency_claim("foo", run_id, "c").is_claimed
+        foo_info = storage.get_concurrency_info("foo")
+
+        # the slot count is 1, but the active slot count is 3 and will remain so until the slots
+        # are freed
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 3
+
+    def test_slot_upsize(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
+            return claim_status.slot_status
+
+        # set concurrency slots
+        storage.set_concurrency_slots("foo", 1)
+
+        # fill em partially up
+        assert claim("foo", run_id, "a") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "b") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "c") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "d") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "e") == ConcurrencySlotStatus.BLOCKED
+
+        assert storage.check_concurrency_claim("foo", run_id, "a").is_claimed
+        assert not storage.check_concurrency_claim("foo", run_id, "b").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "c").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "d").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "e").is_assigned
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 1
+        assert foo_info.pending_step_count == 4
+        assert foo_info.assigned_step_count == 1  # the claimed step is assigned
+
+        storage.set_concurrency_slots("foo", 4)
+
+        assert storage.check_concurrency_claim("foo", run_id, "a").is_claimed
+        assert storage.check_concurrency_claim("foo", run_id, "b").is_assigned
+        assert storage.check_concurrency_claim("foo", run_id, "c").is_assigned
+        assert storage.check_concurrency_claim("foo", run_id, "d").is_assigned
+        assert not storage.check_concurrency_claim("foo", run_id, "e").is_assigned
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 4
+        assert foo_info.active_slot_count == 1
+        assert foo_info.pending_step_count == 1
+        assert foo_info.assigned_step_count == 4
+
+    def test_concurrency_run_ids(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_wipe():
+            # this test requires wiping
+            pytest.skip(
+                "storage does not support reading run ids for the purpose of freeing concurrency"
+                " slots"
+            )
+
+        storage.wipe()
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+
+        storage.set_concurrency_slots("foo", 1)
+
+        storage.claim_concurrency_slot("foo", one, "a")
+        storage.claim_concurrency_slot("foo", two, "b")
+        storage.claim_concurrency_slot("foo", one, "c")
+
+        storage.get_concurrency_run_ids() == {one, two}
+        storage.free_concurrency_slots_for_run(one)
+        storage.get_concurrency_run_ids() == {two}
+
+    def test_threaded_concurrency(self, storage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if self.can_wipe():
+            storage.wipe()
+
+        TOTAL_TIMEOUT_TIME = 30
+
+        run_id = make_new_run_id()
+
+        storage.set_concurrency_slots("foo", 5)
+
+        def _occupy_slot(key: str):
+            start = time.time()
+            claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+            while time.time() < start + TOTAL_TIMEOUT_TIME:
+                if claim_status.slot_status == ConcurrencySlotStatus.CLAIMED:
+                    break
+                else:
+                    claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+                    time.sleep(0.05)
+            storage.free_concurrency_slot_for_step(run_id, key)
+
+        start = time.time()
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(_occupy_slot, str(i)) for i in range(100)]
+            while not all(f.done() for f in futures) and time.time() < start + TOTAL_TIMEOUT_TIME:
+                time.sleep(0.1)
+
+            foo_info = storage.get_concurrency_info("foo")
+            assert foo_info.slot_count == 5
+            assert foo_info.active_slot_count == 0
+            assert foo_info.pending_step_count == 0
+            assert foo_info.assigned_step_count == 0
+
+            assert all(f.done() for f in futures)

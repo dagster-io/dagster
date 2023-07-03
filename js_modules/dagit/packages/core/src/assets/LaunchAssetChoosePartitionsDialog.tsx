@@ -58,6 +58,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
+import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {
   executionParamsForAssetJob,
@@ -96,7 +97,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0].assetKey);
+      : displayNameForAssetKey(props.assets[0]!.assetKey);
 
   const title = `Launch runs to materialize ${displayName}`;
 
@@ -158,6 +159,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const assetHealthLoading = assetHealth.length === 0;
 
   const displayedHealth = React.useMemo(() => {
+    if (target.type === 'pureAll') {
+      return mergedAssetHealth([]);
+    }
     if (target.type === 'job' || assetHealthLoading) {
       return mergedAssetHealth(assetHealth);
     }
@@ -167,11 +171,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const displayedBaseAsset =
     target.type === 'job'
       ? partitionedAssets[0]
-      : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey));
+      : target.type === 'pureWithAnchorAsset'
+      ? partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))
+      : null;
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
-  const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
+  const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = React.useState(false);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
@@ -217,7 +223,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
-    target.type === 'pureWithAnchorAsset' || (!launchWithRangesAsTags && keysFiltered.length !== 1);
+    ['pureWithAnchorAsset', 'pureAll'].includes(target.type) ||
+    (!launchWithRangesAsTags && keysFiltered.length !== 1);
 
   React.useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
@@ -228,7 +235,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   }, [launchWithRangesAsTags]);
 
   React.useEffect(() => {
-    target.type === 'pureWithAnchorAsset' && setMissingFailedOnly(false);
+    ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
   }, [target]);
 
   const onLaunch = async () => {
@@ -274,7 +281,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           repositoryName: repoAddress.name,
         },
         partitionSetName: target.partitionSetName,
-        partitionName: keysFiltered[0].partitionKey,
+        partitionName: keysFiltered[0]!.partitionKey,
       },
     });
 
@@ -311,11 +318,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
       allTags.push({
         key: DagsterTag.AssetPartitionRangeStart,
-        value: keysInSelection[0].partitionKey,
+        value: keysInSelection[0]!.partitionKey,
       });
       allTags.push({
         key: DagsterTag.AssetPartitionRangeEnd,
-        value: keysInSelection[keysInSelection.length - 1].partitionKey,
+        value: keysInSelection[keysInSelection.length - 1]!.partitionKey,
       });
     }
 
@@ -336,31 +343,40 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   };
 
   const onLaunchAsBackfill = async () => {
-    const selectorIfJobPage: LaunchBackfillParams['selector'] | undefined =
-      'jobName' in target && !isHiddenAssetGroupJob(target.jobName)
+    const backfillParams: LaunchBackfillParams =
+      target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
-            partitionSetName: target.partitionSetName,
-            repositorySelector: {
-              repositoryLocationName: repoAddress.location,
-              repositoryName: repoAddress.name,
+            tags,
+            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            partitionNames: keysFiltered.map((k) => k.partitionKey),
+            fromFailure: false,
+            selector: {
+              partitionSetName: target.partitionSetName,
+              repositorySelector: {
+                repositoryLocationName: repoAddress.location,
+                repositoryName: repoAddress.name,
+              },
             },
           }
-        : undefined;
+        : target.type === 'pureAll'
+        ? {
+            tags,
+            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            allPartitions: true,
+          }
+        : {
+            tags,
+            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+            partitionNames: keysFiltered.map((k) => k.partitionKey),
+            fromFailure: false,
+          };
 
     const {data: launchBackfillData} = await client.mutate<
       LaunchPartitionBackfillMutation,
       LaunchPartitionBackfillMutationVariables
     >({
       mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
-      variables: {
-        backfillParams: {
-          selector: selectorIfJobPage,
-          assetSelection: assets.map((a) => ({path: a.assetKey.path})),
-          partitionNames: keysFiltered.map((k) => k.partitionKey),
-          fromFailure: false,
-          tags,
-        },
-      },
+      variables: {backfillParams},
     });
 
     if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
@@ -401,7 +417,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         data-testid={testId('launch-button')}
         intent="primary"
         onClick={onLaunch}
-        disabled={keysFiltered.length === 0}
+        disabled={target.type === 'pureAll' ? false : keysFiltered.length === 0}
         loading={launching}
       >
         {launching
@@ -425,77 +441,109 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           selections={selections}
           setSelections={setSelections}
         />
-        <ToggleableSection
-          title={<Subheading>Partition selection</Subheading>}
-          isInitiallyOpen={true}
-        >
-          {target.type === 'pureWithAnchorAsset' && (
+        {target.type === 'pureAll' ? (
+          <ToggleableSection
+            isInitiallyOpen={true}
+            title={
+              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                <Subheading>Partition selection</Subheading>
+                <span>All partitions</span>
+              </Box>
+            }
+          >
             <Box
-              flex={{alignItems: 'center', gap: 8}}
-              padding={{top: 12, horizontal: 24}}
-              data-testid={testId('anchor-asset-label')}
-            >
-              <Icon name="asset" />
-              <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
-            </Box>
-          )}
-          {selections.map((range, idx) => (
-            <Box
-              key={range.dimension.name}
-              border={{
-                side: 'bottom',
-                width: 1,
-                color: Colors.KeylineGray,
-              }}
               padding={{vertical: 12, horizontal: 24}}
+              data-testid={testId('pure-all-partitions-only')}
             >
-              <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
-                <Icon name="partition" />
-                {range.dimension.name}
-              </Box>
-              <Box>
-                Select partitions to materialize.{' '}
-                {range.dimension.type === PartitionDefinitionType.TIME_WINDOW
-                  ? 'Click and drag to select a range on the timeline.'
-                  : null}
-              </Box>
-              <DimensionRangeWizard
-                partitionKeys={range.dimension.partitionKeys}
-                health={{
-                  ranges: displayedHealth.rangesForSingleDimension(
-                    idx,
-                    selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
-                  ),
-                }}
-                dimensionType={range.dimension.type}
-                selected={range.selectedKeys}
-                setSelected={(selectedKeys) =>
-                  setSelections((selections) =>
-                    selections.map((r) =>
-                      r.dimension === range.dimension ? {...r, selectedKeys} : r,
-                    ),
-                  )
-                }
-                partitionDefinitionName={
-                  displayedPartitionDefinition?.name ||
-                  displayedBaseAsset?.partitionDefinition?.dimensionTypes.find(
-                    (d) => d.name === range.dimension.name,
-                  )?.dynamicPartitionsDefinitionName
-                }
-                repoAddress={repoAddress}
-                refetch={refetch}
+              <Alert
+                key="alert"
+                intent="info"
+                title="The root assets of this selection have different partition definitions. To backfill a specific partition or partition range, select a subset of the assets."
               />
-
-              {target.type === 'pureWithAnchorAsset' && (
-                <Alert
-                  key="alert"
-                  intent="info"
-                  title="Dagster will materialize all partitions downstream of the selected partitions for the selected assets, using separate runs as needed."
-                />
-              )}
             </Box>
-          ))}
-        </ToggleableSection>
+          </ToggleableSection>
+        ) : (
+          <ToggleableSection
+            isInitiallyOpen={true}
+            title={
+              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                <Subheading>Partition selection</Subheading>
+                {target.type === 'pureWithAnchorAsset' ? (
+                  <span /> // we won't know until runtime
+                ) : (
+                  <span>{partitionCountString(keysInSelection.length)}</span>
+                )}
+              </Box>
+            }
+          >
+            {target.type === 'pureWithAnchorAsset' && (
+              <Box
+                flex={{alignItems: 'center', gap: 8}}
+                padding={{top: 12, horizontal: 24}}
+                data-testid={testId('anchor-asset-label')}
+              >
+                <Icon name="asset" />
+                <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
+              </Box>
+            )}
+            {selections.map((range, idx) => (
+              <Box
+                key={range.dimension.name}
+                border={{
+                  side: 'bottom',
+                  width: 1,
+                  color: Colors.KeylineGray,
+                }}
+                padding={{vertical: 12, horizontal: 24}}
+              >
+                <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
+                  <Icon name="partition" />
+                  {range.dimension.name}
+                </Box>
+                <Box>
+                  Select partitions to materialize.{' '}
+                  {range.dimension.type === PartitionDefinitionType.TIME_WINDOW
+                    ? 'Click and drag to select a range on the timeline.'
+                    : null}
+                </Box>
+                <DimensionRangeWizard
+                  partitionKeys={range.dimension.partitionKeys}
+                  health={{
+                    ranges: displayedHealth.rangesForSingleDimension(
+                      idx,
+                      selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
+                    ),
+                  }}
+                  dimensionType={range.dimension.type}
+                  selected={range.selectedKeys}
+                  setSelected={(selectedKeys) =>
+                    setSelections((selections) =>
+                      selections.map((r) =>
+                        r.dimension === range.dimension ? {...r, selectedKeys} : r,
+                      ),
+                    )
+                  }
+                  partitionDefinitionName={
+                    displayedPartitionDefinition?.name ||
+                    displayedBaseAsset?.partitionDefinition?.dimensionTypes.find(
+                      (d) => d.name === range.dimension.name,
+                    )?.dynamicPartitionsDefinitionName
+                  }
+                  repoAddress={repoAddress}
+                  refetch={refetch}
+                />
+
+                {target.type === 'pureWithAnchorAsset' && (
+                  <Alert
+                    key="alert"
+                    intent="info"
+                    title="Dagster will materialize all partitions downstream of the selected partitions for the selected assets, using separate runs as needed."
+                  />
+                )}
+              </Box>
+            ))}
+          </ToggleableSection>
+        )}
         <ToggleableSection
           title={
             <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
@@ -679,7 +727,7 @@ const UpstreamUnavailableWarning: React.FC<{
 
   const upstreamUnavailableSpans =
     selections.length === 1
-      ? assembleIntoSpans(selections[0].selectedKeys, upstreamUnavailable).filter(
+      ? assembleIntoSpans(selections[0]!.selectedKeys, upstreamUnavailable).filter(
           (s) => s.status === true,
         )
       : [];
@@ -692,8 +740,9 @@ const UpstreamUnavailableWarning: React.FC<{
     if (selections.length > 1) {
       throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
     }
+    const selection = selections[0]!;
     setSelections([
-      {...selections[0], selectedKeys: reject(selections[0].selectedKeys, upstreamUnavailable)},
+      {...selection, selectedKeys: reject(selection.selectedKeys, upstreamUnavailable)},
     ]);
   };
 
@@ -704,7 +753,7 @@ const UpstreamUnavailableWarning: React.FC<{
       description={
         <>
           {upstreamUnavailableSpans
-            .map((span) => stringForSpan(span, selections[0].selectedKeys))
+            .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {
             ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
@@ -723,6 +772,7 @@ export const LAUNCH_ASSET_WARNINGS_QUERY = gql`
   query LaunchAssetWarningsQuery($upstreamAssetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $upstreamAssetKeys) {
       id
+      isSource
       assetKey {
         path
       }
@@ -771,6 +821,7 @@ const Warnings: React.FC<{
       (upstreamAssets || [])
         .filter(
           (a) =>
+            !a.isSource &&
             a.partitionDefinition &&
             displayedPartitionDefinition &&
             partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition),

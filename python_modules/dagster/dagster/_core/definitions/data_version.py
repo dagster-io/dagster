@@ -20,7 +20,7 @@ from typing import (
 from typing_extensions import Final
 
 from dagster import _check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, experimental
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -60,6 +60,31 @@ class DataVersion(
         return super(DataVersion, cls).__new__(
             cls,
             value=check.str_param(value, "value"),
+        )
+
+
+@experimental
+class DataVersionsByPartition(
+    NamedTuple(
+        "_DataVersionsByPartition", [("data_versions_by_partition", Mapping[str, DataVersion])]
+    )
+):
+    def __new__(
+        cls,
+        data_versions_by_partition: Mapping[str, Union[str, DataVersion]],
+    ):
+        check.dict_param(
+            data_versions_by_partition,
+            "data_versions_by_partition",
+            key_type=str,
+            value_type=(str, DataVersion),
+        )
+        return super(DataVersionsByPartition, cls).__new__(
+            cls,
+            data_versions_by_partition={
+                partition: DataVersion(version) if isinstance(version, str) else version
+                for partition, version in data_versions_by_partition.items()
+            },
         )
 
 

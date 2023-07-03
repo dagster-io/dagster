@@ -1,11 +1,16 @@
 from gzip import GzipFile
+from typing import Any, Optional
 
 import click
 from dagster import (
     DagsterInstance,
 )
 from dagster._core.debug import DebugRunPayload
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import (
+    BaseWorkspaceRequestContext,
+    IWorkspaceProcessContext,
+    WorkspaceRequestContext,
+)
 from dagster._serdes.serdes import deserialize_value
 
 from .cli import (
@@ -14,6 +19,49 @@ from .cli import (
     host_dagit_ui_with_workspace_process_context,
 )
 from .version import __version__
+
+
+class DagitDebugWorkspaceProcessContext(IWorkspaceProcessContext):
+    """IWorkspaceProcessContext that works with an ephemeral instance, which is needed
+    for dagit-debug to work (a regular WorkspaceProcessContext will fail when it tries
+    to call .get_ref() on the instance when spinning up a code server).
+    """
+
+    def __init__(
+        self,
+        instance: DagsterInstance,
+    ):
+        self._instance = instance
+
+    def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
+        return WorkspaceRequestContext(
+            instance=self._instance,
+            workspace_snapshot={},
+            process_context=self,
+            version=__version__,
+            source=source,
+            read_only=False,
+        )
+
+    @property
+    def version(self) -> str:
+        return __version__
+
+    def refresh_code_location(self, name: str) -> None:
+        raise NotImplementedError
+
+    def reload_code_location(self, name: str) -> None:
+        raise NotImplementedError
+
+    def reload_workspace(self) -> None:
+        pass
+
+    def refresh_workspace(self) -> None:
+        pass
+
+    @property
+    def instance(self) -> DagsterInstance:
+        return self._instance
 
 
 @click.command(
@@ -44,7 +92,7 @@ def dagit_debug_command(input_files, port):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-    with WorkspaceProcessContext(instance, None, version=__version__) as workspace_process_context:
+    with DagitDebugWorkspaceProcessContext(instance) as workspace_process_context:
         host_dagit_ui_with_workspace_process_context(
             workspace_process_context=workspace_process_context,
             port=port,

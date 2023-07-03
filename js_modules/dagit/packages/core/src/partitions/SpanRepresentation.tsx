@@ -6,14 +6,15 @@ import {
 export function assembleIntoSpans<T>(keys: string[], keyTestFn: (key: string, idx: number) => T) {
   const spans: {startIdx: number; endIdx: number; status: T}[] = [];
 
-  for (let ii = 0; ii < keys.length; ii++) {
-    const status = keyTestFn(keys[ii], ii);
-    if (!spans.length || spans[spans.length - 1].status !== status) {
+  keys.forEach((key, ii) => {
+    const status = keyTestFn(key, ii);
+    const lastSpan = spans[spans.length - 1];
+    if (!lastSpan || lastSpan.status !== status) {
       spans.push({startIdx: ii, endIdx: ii, status});
     } else {
-      spans[spans.length - 1].endIdx = ii;
+      lastSpan.endIdx = ii;
     }
-  }
+  });
 
   return spans;
 }
@@ -22,7 +23,7 @@ export function stringForSpan(
   {startIdx, endIdx}: {startIdx: number; endIdx: number},
   all: string[],
 ) {
-  return startIdx === endIdx ? all[startIdx] : `[${all[startIdx]}...${all[endIdx]}]`;
+  return startIdx === endIdx ? all[startIdx]! : `[${all[startIdx]!}...${all[endIdx]!}]`;
 }
 
 export function allPartitionsSpan({partitionKeys}: {partitionKeys: string[]}) {
@@ -35,16 +36,16 @@ export function allPartitionsRange({
   partitionKeys: string[];
 }): PartitionDimensionSelectionRange {
   return {
-    start: {idx: 0, key: partitionKeys[0]},
-    end: {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]},
+    start: {idx: 0, key: partitionKeys[0]!},
+    end: {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]!},
   };
 }
 
-export function spanTextToSelections(
+export function spanTextToSelectionsOrError(
   allPartitionKeys: string[],
   text: string,
   skipPartitionKeyValidation?: boolean, // This is used by Dynamic Partitions as a workaround to be able to select a newly added partition before the partition health data is refetched
-): Omit<PartitionDimensionSelection, 'dimension'> {
+): Error | Omit<PartitionDimensionSelection, 'dimension'> {
   const terms = text.split(',').map((s) => s.trim());
   const result: Omit<PartitionDimensionSelection, 'dimension'> = {
     selectedKeys: [],
@@ -58,15 +59,15 @@ export function spanTextToSelections(
     const rangeMatch = /^\[(.*)\.\.\.(.*)\]$/g.exec(term);
     if (rangeMatch) {
       const [, start, end] = rangeMatch;
-      const allStartIdx = allPartitionKeys.indexOf(start);
-      const allEndIdx = allPartitionKeys.indexOf(end);
+      const allStartIdx = allPartitionKeys.indexOf(start!);
+      const allEndIdx = allPartitionKeys.indexOf(end!);
       if (allStartIdx === -1 || allEndIdx === -1) {
-        throw new Error(`Could not find partitions for provided range: ${start}...${end}`);
+        return new Error(`Could not find partitions for provided range: ${start}...${end}`);
       }
       result.selectedKeys.push(...allPartitionKeys.slice(allStartIdx, allEndIdx + 1));
       result.selectedRanges.push({
-        start: {idx: allStartIdx, key: allPartitionKeys[allStartIdx]},
-        end: {idx: allEndIdx, key: allPartitionKeys[allEndIdx]},
+        start: {idx: allStartIdx, key: allPartitionKeys[allStartIdx]!},
+        end: {idx: allEndIdx, key: allPartitionKeys[allEndIdx]!},
       });
     } else if (term.includes('*')) {
       const [prefix, suffix] = term.split('*');
@@ -75,30 +76,30 @@ export function spanTextToSelections(
       const close = (end: number) => {
         result.selectedKeys.push(...allPartitionKeys.slice(start, end + 1));
         result.selectedRanges.push({
-          start: {idx: start, key: allPartitionKeys[start]},
-          end: {idx: end, key: allPartitionKeys[end]},
+          start: {idx: start, key: allPartitionKeys[start]!},
+          end: {idx: end, key: allPartitionKeys[end]!},
         });
         start = -1;
       };
 
       // todo bengotow: Was this change correct??
-      for (let idx = 0; idx < allPartitionKeys.length; idx++) {
-        const match =
-          allPartitionKeys[idx].startsWith(prefix) && allPartitionKeys[idx].endsWith(suffix);
+      allPartitionKeys.forEach((key, idx) => {
+        const match = key.startsWith(prefix!) && key.endsWith(suffix!);
         if (match && start === -1) {
           start = idx;
         }
         if (!match && start !== -1) {
           close(idx);
         }
-      }
+      });
+
       if (start !== -1) {
         close(allPartitionKeys.length - 1);
       }
     } else {
       const idx = allPartitionKeys.indexOf(term);
       if (idx === -1 && !skipPartitionKeyValidation) {
-        throw new Error(`Could not find partition: ${term}`);
+        return new Error(`Could not find partition: ${term}`);
       }
       result.selectedKeys.push(term);
       result.selectedRanges.push({

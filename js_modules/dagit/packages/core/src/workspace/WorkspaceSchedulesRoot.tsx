@@ -13,6 +13,8 @@ import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStat
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
+import {useFilters} from '../ui/Filters';
+import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -36,6 +38,10 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     defaults: {search: ''},
   });
 
+  const runningStateFilter = useInstigationStatusFilter();
+  const filters = React.useMemo(() => [runningStateFilter], [runningStateFilter]);
+  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
+
   const queryResultOverview = useQuery<WorkspaceSchedulesQuery, WorkspaceSchedulesQueryVariables>(
     WORKSPACE_SCHEDULES_QUERY,
     {
@@ -57,10 +63,19 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     return [];
   }, [data]);
 
+  const {state: runningState} = runningStateFilter;
+  const filteredByRunningState = React.useMemo(() => {
+    return runningState.size
+      ? schedules.filter(({scheduleState}) => runningState.has(scheduleState.status))
+      : schedules;
+  }, [schedules, runningState]);
+
   const filteredBySearch = React.useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return schedules.filter(({name}) => name.toLocaleLowerCase().includes(searchToLower));
-  }, [schedules, sanitizedSearch]);
+    return filteredByRunningState.filter(({name}) =>
+      name.toLocaleLowerCase().includes(searchToLower),
+    );
+  }, [filteredByRunningState, sanitizedSearch]);
 
   const anySchedulesVisible = filteredBySearch.length > 0;
 
@@ -159,16 +174,19 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         queryData={queryResultOverview}
       />
       <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
-        <TextInput
-          icon="search"
-          value={searchValue}
-          onChange={(e) => {
-            setSearchValue(e.target.value);
-            onToggleAll(false);
-          }}
-          placeholder="Filter by schedule name…"
-          style={{width: '340px'}}
-        />
+        <Box flex={{direction: 'row', gap: 12}}>
+          {filterButton}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+              onToggleAll(false);
+            }}
+            placeholder="Filter by schedule name…"
+            style={{width: '340px'}}
+          />
+        </Box>
         <Tooltip
           content="You do not have permission to start or stop these schedules"
           canShow={anySchedulesVisible && !viewerHasAnyInstigationPermission}
@@ -181,6 +199,15 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
           />
         </Tooltip>
       </Box>
+      {activeFiltersJsx.length ? (
+        <Box
+          padding={{vertical: 8, horizontal: 24}}
+          border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+          flex={{direction: 'row', gap: 8}}
+        >
+          {activeFiltersJsx}
+        </Box>
+      ) : null}
       {loading && !data ? (
         <Box padding={64}>
           <Spinner purpose="page" />

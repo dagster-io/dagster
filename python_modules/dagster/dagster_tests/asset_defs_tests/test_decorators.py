@@ -8,8 +8,12 @@ from dagster import (
     AssetOut,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
     FreshnessPolicy,
+    IdentityPartitionMapping,
     In,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
     Nothing,
     OpExecutionContext,
     Out,
@@ -26,6 +30,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._check import CheckError
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -750,34 +755,86 @@ def test_multi_asset_retry_policy():
     assert my_asset.op.retry_policy == retry_policy
 
 
-def test_invalid_self_dep():
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @asset
-        def a(a):
-            del a
-
-    with pytest.raises(DagsterInvalidDefinitionError):
+@pytest.mark.parametrize(
+    "partitions_def,partition_mapping",
+    [
+        (None, None),
+        (DailyPartitionsDefinition(start_date="2020-01-01"), TimeWindowPartitionMapping()),
+        (
+            DailyPartitionsDefinition(start_date="2020-01-01"),
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=0),
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            None,
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            MultiPartitionMapping({}),
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            MultiPartitionMapping(
+                {
+                    "time": DimensionPartitionMapping(
+                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
+                    ),
+                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                }
+            ),
+        ),
+    ],
+)
+def test_invalid_self_dep(partitions_def, partition_mapping):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can only depend on themselves if"
+    ):
 
         @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-            ins={"b": AssetIn(partition_mapping=TimeWindowPartitionMapping())},
+            partitions_def=partitions_def,
+            ins={"b": AssetIn(partition_mapping=partition_mapping)},
         )
         def b(b):
             del b
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+
+@ignore_warning('"MultiPartitionMapping" is an experimental class')
+def test_invalid_self_dep_no_time_dimension():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+    partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping("123", IdentityPartitionMapping()),
+            "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+        }
+    )
+    with pytest.raises(CheckError, match="Expected exactly one time window partitioned dimension"):
 
         @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-            ins={
-                "c": AssetIn(
-                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
-                )
-            },
+            partitions_def=partitions_def,
+            ins={"b": AssetIn(partition_mapping=partition_mapping)},
         )
-        def c(c):
-            del c
+        def b(b):
+            del b
 
 
 def test_asset_in_nothing():
@@ -1067,3 +1124,52 @@ def test_multi_asset_with_auto_materialize_policy():
         AssetKey("o2"): AutoMaterializePolicy.eager(),
         AssetKey("o3"): AutoMaterializePolicy.lazy(),
     }
+
+
+@pytest.mark.parametrize(
+    "key,expected_key",
+    [
+        (
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+        ),
+        ("the_asset", AssetKey(["the_asset"])),
+        (["prefix", "the_asset"], AssetKey(["prefix", "the_asset"])),
+        (("prefix", "the_asset"), AssetKey(["prefix", "the_asset"])),
+    ],
+)
+def test_asset_key_provided(key, expected_key):
+    @asset(key=key)
+    def foo():
+        return 1
+
+    assert foo.key == expected_key
+
+
+def test_error_on_asset_key_provided():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", key_prefix="foo")
+        def one():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo")
+        def two():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo", key_prefix="bar")
+        def three():
+            ...

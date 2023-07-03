@@ -1,8 +1,10 @@
+import functools
 import logging
 from contextlib import ExitStack
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterator,
     Mapping,
@@ -125,6 +127,8 @@ class RunStatusSensorContext:
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
         logger: Optional[logging.Logger] = None,
         partition_key: Optional[str] = None,
+        _resources: Optional[Resources] = None,
+        _cm_scope_entered: bool = False,
     ) -> None:
         self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
@@ -136,8 +140,8 @@ class RunStatusSensorContext:
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resource_defs
-        self._resources = None
-        self._cm_scope_entered = False
+        self._resources = _resources
+        self._cm_scope_entered = _cm_scope_entered
 
     def for_run_failure(self) -> "RunFailureSensorContext":
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
@@ -148,6 +152,9 @@ class RunStatusSensorContext:
             instance=self._instance,
             logger=self._logger,
             partition_key=self._partition_key,
+            resource_defs=self._resource_defs,
+            _resources=self._resources,
+            _cm_scope_entered=self._cm_scope_entered,
         )
 
     @property
@@ -461,8 +468,17 @@ def run_failure_sensor(
             request_job=request_job,
             request_jobs=request_jobs,
         )
-        def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())  # fmt: skip
+        @functools.wraps(fn)
+        def _run_failure_sensor(*args, **kwargs) -> Any:
+            args_modified = [
+                arg.for_run_failure() if isinstance(arg, RunStatusSensorContext) else arg
+                for arg in args
+            ]
+            kwargs_modified = {
+                k: v.for_run_failure() if isinstance(v, RunStatusSensorContext) else v
+                for k, v in kwargs.items()
+            }
+            return fn(*args_modified, **kwargs_modified)
 
         return _run_failure_sensor
 

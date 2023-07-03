@@ -2,11 +2,9 @@ import copy
 import logging
 import sys
 import traceback
-from contextlib import contextmanager
 from typing import Mapping, NamedTuple, Optional
 
 import coloredlogs
-import pendulum
 
 import dagster._check as check
 import dagster._seven as seven
@@ -206,13 +204,6 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def _mockable_formatTime(record, datefmt=None):
-    """Uses pendulum.now to determine the logging time, causing pendulum
-    mocking to affect the logger timestamp in tests.
-    """
-    return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
-
-
 def default_format_string():
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -223,17 +214,6 @@ def default_date_format_string():
 
 def define_default_formatter():
     return logging.Formatter(default_format_string(), default_date_format_string())
-
-
-@contextmanager
-def quieten(quiet=True, level=logging.WARNING):
-    if quiet:
-        logging.disable(level)
-    try:
-        yield
-    finally:
-        if quiet:
-            logging.disable(logging.NOTSET)
 
 
 def configure_loggers(handler="default", log_level="INFO"):
@@ -273,10 +253,6 @@ def configure_loggers(handler="default", log_level="INFO"):
     }
 
     logging.config.dictConfig(LOGGING_CONFIG)
-
-    if handler == "default":
-        for name in ["dagster", "dagit"]:
-            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
 
 
 def create_console_logger(name, level):

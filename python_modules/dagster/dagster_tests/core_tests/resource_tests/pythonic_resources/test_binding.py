@@ -239,7 +239,8 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
     assert out_txt == ["definitions says: hello, world!"]
 
 
-def test_bind_resource_to_instigator() -> None:
+@pytest.mark.parametrize("include_job_in_definitions", [True, False])
+def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     out_txt = []
 
     class WriterResource(ConfigurableResource):
@@ -266,7 +267,7 @@ def test_bind_resource_to_instigator() -> None:
 
     # Bind the resource to the job at definition time and validate that it works
     defs = Definitions(
-        jobs=[hello_world_job],
+        jobs=[hello_world_job] if include_job_in_definitions else [],
         schedules=[hello_world_schedule],
         sensors=[hello_world_sensor],
         resources={

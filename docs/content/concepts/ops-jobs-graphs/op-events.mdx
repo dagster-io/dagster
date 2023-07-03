@@ -264,10 +264,9 @@ Dagster also provides some op-specific exception classes, which can be raised to
 
 ### Failures
 
-<PyObject object="Failure" /> exceptions may be raised to indicate that an op has
-failed in an unrecoverable way, and that execution should stop. This may be useful
-if, in the body of your op, you detect an issue that would not raise an error on
-its own, but would still cause problems if the execution were to continue.
+A <PyObject object="Failure" /> is a kind of [Exception](https://docs.python.org/3/tutorial/errors.html#exceptions) that contains metadata that can be interpreted by the Dagster framework. Like any Exception raised inside an op, it indicates that the op has failed in an unrecoverable way, and that execution should stop.
+
+A <PyObject object="Failure" /> can include a dictionary with structured <PyObject object="MetadataValue"/> values, which will be rendered in the UI according to their type. It also has an `allow_retries` argument that can be used to bypass the op's retry policy.
 
 ```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_failure_op endbefore=end_failure_op
 from dagster import Failure, op
@@ -275,29 +274,6 @@ from dagster import Failure, op
 
 @op
 def my_failure_op():
-    path = "/path/to/files"
-    my_files = get_files(path)
-    if len(my_files) == 0:
-        raise Failure(
-            description="No files to process",
-            metadata={
-                "filepath": MetadataValue.path(path),
-                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
-            },
-        )
-    return some_calculation(my_files)
-```
-
-#### Attaching Metadata to Failures
-
-As is the case with many Dagster-provided classes, you can attach a dictionary with <PyObject object="MetadataValue"/> values, denoting an arbitrary set of metadata relevant to the failure.
-
-```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_failure_metadata_op endbefore=end_failure_metadata_op
-from dagster import Failure, op
-
-
-@op
-def my_failure_metadata_op():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:

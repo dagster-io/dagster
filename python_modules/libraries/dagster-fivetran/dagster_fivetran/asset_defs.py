@@ -26,7 +26,6 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -134,7 +133,6 @@ def _build_fivetran_assets(
     return [_assets]
 
 
-@experimental
 def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
@@ -415,7 +413,6 @@ def _clean_name(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
-@experimental
 def load_assets_from_fivetran_instance(
     fivetran: Union[FivetranResource, ResourceDefinition],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -476,7 +473,7 @@ def load_assets_from_fivetran_instance(
         )
         fivetran_assets = load_assets_from_fivetran_instance(
             fivetran_instance,
-            connection_filter=lambda meta: "snowflake" in meta.name,
+            connector_filter=lambda meta: "snowflake" in meta.name,
         )
     """
     if isinstance(key_prefix, str):

@@ -31,10 +31,11 @@ from dagster._core.execution.context.system import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
-from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
+from .instance_concurrency_context import InstanceConcurrencyContext
 from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan
 from .step import ExecutionStep
@@ -42,6 +43,9 @@ from .step import ExecutionStep
 
 def _default_sort_key(step: ExecutionStep) -> float:
     return int(step.tags.get(PRIORITY_TAG, 0)) * -1
+
+
+CONCURRENCY_CLAIM_BLOCKED_INTERVAL = 1
 
 
 class ActiveExecution:
@@ -54,12 +58,14 @@ class ActiveExecution:
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
+        instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
         )
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         self._retry_state = self._plan.known_state.get_retry_state()
+        self._instance_concurrency_context = instance_concurrency_context
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
@@ -123,7 +129,10 @@ class ActiveExecution:
         return self
 
     def __exit__(
-        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> None:
         self._context_guard = False
 
@@ -132,21 +141,12 @@ class ActiveExecution:
             return
 
         if not self.is_complete:
-            pending_action = (
-                self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
-            )
-            state_str = "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
-                in_flight_str=f"\nSteps still in flight: {self._in_flight}"
-                if self._in_flight
-                else "",
-                pending_str=f"\nSteps pending processing: {self._pending.keys()}"
-                if self._pending
-                else "",
-                action_str=f"\nSteps pending action: {pending_action}" if pending_action else "",
-                retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
-                if self._waiting_to_retry
-                else "",
-            )
+            # generate the state string before exiting the concurrency context
+            state_str = self._pending_state_str()
+        else:
+            state_str = ""
+
+        if not self.is_complete:
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
                     f"Execution was interrupted before completing the execution plan. {state_str}"
@@ -170,6 +170,29 @@ class ActiveExecution:
                     " process.\nThis was likely caused by losing communication with the process"
                     " performing step execution.".format(step_list=self._unknown_state)
                 )
+
+    def _pending_state_str(self) -> str:
+        assert not self.is_complete
+        pending_action = (
+            self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
+        )
+        return "{pending_str}{in_flight_str}{action_str}{retry_str}{claim_str}".format(
+            in_flight_str=f"\nSteps still in flight: {self._in_flight}" if self._in_flight else "",
+            pending_str=f"\nSteps pending processing: {self._pending.keys()}"
+            if self._pending
+            else "",
+            action_str=f"\nSteps pending action: {pending_action}" if pending_action else "",
+            retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
+            if self._waiting_to_retry
+            else "",
+            claim_str=(
+                "\nSteps waiting to claim:"
+                f" {self._instance_concurrency_context.pending_claim_steps()}"
+            )
+            if self._instance_concurrency_context
+            and self._instance_concurrency_context.has_pending_claims()
+            else "",
+        )
 
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
@@ -247,26 +270,38 @@ class ActiveExecution:
             self._executable.append(key)
             del self._waiting_to_retry[key]
 
-    def sleep_til_ready(self) -> None:
+    def sleep_interval(self):
         now = time.time()
-        sleep_amt = min([ready_at - now for ready_at in self._waiting_to_retry.values()])
+        intervals = []
+        if self._waiting_to_retry:
+            for t in self._waiting_to_retry.values():
+                intervals.append(t - now)
+        if (
+            self._instance_concurrency_context
+            and self._instance_concurrency_context.has_pending_claims()
+        ):
+            intervals.append(
+                self._instance_concurrency_context.interval_to_next_pending_claim_check()
+            )
+        if intervals:
+            return min(intervals)
+
+        return 0
+
+    def sleep_til_ready(self) -> None:
+        sleep_amt = self.sleep_interval()
         if sleep_amt > 0:
             time.sleep(sleep_amt)
 
-    def get_next_step(self) -> ExecutionStep:
+    def get_next_step(self) -> Optional[ExecutionStep]:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
         steps = self.get_steps_to_execute(limit=1)
-        step = None
 
-        if steps:
-            step = steps[0]
-        elif self._waiting_to_retry:
-            self.sleep_til_ready()
-            step = self.get_next_step()
+        if not steps:
+            return None
 
-        check.invariant(step is not None, "Unexpected ActiveExecution state")
-        return step  # type: ignore  # (possible none)
+        return steps[0]
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
         step = self._plan.get_step_by_key(step_key)
@@ -289,10 +324,10 @@ class ActiveExecution:
             key=self._sort_key_fn,
         )
 
-        tag_concurrency_limits_counter = None
+        run_scoped_concurrency_limits_counter = None
         if self._tag_concurrency_limits:
             in_flight_steps = [self.get_step_by_key(key) for key in self._in_flight]
-            tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
+            run_scoped_concurrency_limits_counter = TagConcurrencyLimitsCounter(
                 self._tag_concurrency_limits,
                 in_flight_steps,
             )
@@ -309,11 +344,24 @@ class ActiveExecution:
             ):
                 break
 
-            if tag_concurrency_limits_counter:
-                if tag_concurrency_limits_counter.is_blocked(step):
+            if run_scoped_concurrency_limits_counter:
+                if run_scoped_concurrency_limits_counter.is_blocked(step):
                     continue
 
-                tag_concurrency_limits_counter.update_counters_with_launched_item(step)
+            if run_scoped_concurrency_limits_counter:
+                run_scoped_concurrency_limits_counter.update_counters_with_launched_item(step)
+
+            step_concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG)
+            if step_concurrency_key and self._instance_concurrency_context:
+                try:
+                    priority = int(step.tags.get(PRIORITY_TAG, 0))
+                except ValueError:
+                    priority = 0
+
+                if not self._instance_concurrency_context.claim(
+                    step_concurrency_key, step.key, priority
+                ):
+                    continue
 
             batch.append(step)
 
@@ -457,6 +505,8 @@ class ActiveExecution:
         step_key = cast(str, dagster_event.step_key)
         if dagster_event.is_step_failure:
             self.mark_failed(step_key)
+            if self._instance_concurrency_context:
+                self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_resource_init_failure:
             # Resources are only initialized without a step key in the
             # in-process case, and resource initalization happens before the
@@ -466,8 +516,12 @@ class ActiveExecution:
                 "Resource init failure was reported during execution without a step key.",
             )
             self.mark_failed(step_key)
+            if self._instance_concurrency_context:
+                self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_step_success:
             self.mark_success(step_key)
+            if self._instance_concurrency_context:
+                self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_step_skipped:
             # Skip events are generated by this class. They should not be sent via handle_event
             raise DagsterInvariantViolationError(
@@ -521,6 +575,10 @@ class ActiveExecution:
             and len(self._pending_retry) == 0
             and len(self._pending_abandon) == 0
             and len(self._waiting_to_retry) == 0
+            and (
+                not self._instance_concurrency_context
+                or not self._instance_concurrency_context.has_pending_claims()
+            )
         )
 
     @property

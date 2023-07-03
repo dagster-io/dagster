@@ -42,7 +42,7 @@ export type SingleBackfillQuery = {
             runId: string | null;
             runStatus: Types.RunStatus | null;
           }>;
-        };
+        } | null;
       }
     | {__typename: 'PythonError'};
 };

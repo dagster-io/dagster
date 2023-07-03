@@ -16,6 +16,7 @@ from dagster import (
     resource,
 )
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dateutil import parser
 from pydantic import Field
@@ -56,6 +57,10 @@ class FivetranResource(ConfigurableResource):
         default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @property
     def _auth(self) -> HTTPBasicAuth:
@@ -391,6 +396,7 @@ class FivetranResource(ConfigurableResource):
         return FivetranOutput(connector_details=final_details, schema_config=schema_config)
 
 
+@dagster_maintained_resource
 @resource(config_schema=FivetranResource.to_config_schema())
 def fivetran_resource(context: InitResourceContext) -> FivetranResource:
     """This resource allows users to programatically interface with the Fivetran REST API to launch

@@ -75,10 +75,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
             else dbt_cloud_resource_def
         )
+
         self._dbt_cloud: DbtCloudClient = (
-            dbt_cloud_resource_def.with_resource_context(
-                build_init_resource_context()
-            ).get_dbt_client()  # type: ignore
+            dbt_cloud_resource_def.process_config_and_initialize().get_dbt_client()
             if isinstance(dbt_cloud_resource_def, DbtCloudClientResource)
             else dbt_cloud_resource_def(build_init_resource_context())
         )

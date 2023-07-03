@@ -20,6 +20,7 @@ from dagster_graphql.test.utils import (
     GqlResult,
     define_out_of_process_context,
     execute_dagster_graphql,
+    main_repo_location_name,
 )
 
 GET_PARTITION_BACKFILLS_QUERY = """
@@ -148,6 +149,36 @@ def test_launch_asset_backfill_read_only_context():
             assert (
                 launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
                 == "UnauthorizedError"
+            )
+
+        location_name = main_repo_location_name()
+
+        # context with per-location permissions on the specific location succeeds
+        with define_out_of_process_context(
+            __file__,
+            "get_repo",
+            instance,
+            read_only=True,
+            read_only_locations={location_name: False},  # not read-only in this specific location
+        ) as read_only_context:
+            assert read_only_context.read_only
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                read_only_context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            assert launch_backfill_result
+            assert launch_backfill_result.data
+
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "LaunchBackfillSuccess"
             )
 
 
@@ -291,14 +322,9 @@ def test_launch_asset_backfill():
             )
             assert not single_backfill_result.errors
             assert single_backfill_result.data
-            partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
-                "partitionStatuses"
-            ]["results"]
-            assert len(partition_status_results) == 2
-            assert {
-                partition_status_result["partitionName"]
-                for partition_status_result in partition_status_results
-            } == {"a", "b"}
+            assert (
+                single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
+            )
 
 
 def test_remove_partitions_defs_after_backfill():
@@ -346,14 +372,9 @@ def test_remove_partitions_defs_after_backfill():
             )
             assert not single_backfill_result.errors
             assert single_backfill_result.data
-            partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
-                "partitionStatuses"
-            ]["results"]
-            assert len(partition_status_results) == 0
-            assert {
-                partition_status_result["partitionName"]
-                for partition_status_result in partition_status_results
-            } == set()
+            assert (
+                single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
+            )
 
 
 def test_launch_asset_backfill_with_non_partitioned_asset():

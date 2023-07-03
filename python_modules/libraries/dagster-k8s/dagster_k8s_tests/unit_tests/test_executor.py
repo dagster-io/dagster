@@ -2,10 +2,9 @@ import json
 from unittest import mock
 
 import pytest
-from dagster import execute_job, job, op
+from dagster import job, op
 from dagster._config import process_config, resolve_to_config_type
 from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
@@ -135,13 +134,57 @@ def python_origin_with_container_context():
     )
 
 
-def test_requires_k8s_launcher_fail():
-    with instance_for_test() as instance:
-        with pytest.raises(
-            DagsterUnmetExecutorRequirementsError,
-            match="This engine is only compatible with a K8sRunLauncher",
-        ):
-            execute_job(reconstructable(bar), instance=instance, raise_on_error=True)
+@pytest.fixture
+def mock_load_incluster_config():
+    with mock.patch("kubernetes.config.load_incluster_config") as the_mock:
+        yield the_mock
+
+
+@pytest.fixture
+def mock_load_kubeconfig_file():
+    with mock.patch("kubernetes.config.load_kube_config") as the_mock:
+        yield the_mock
+
+
+def test_executor_init_without_k8s_run_launcher(
+    mock_load_incluster_config, mock_load_kubeconfig_file
+):
+    with instance_for_test() as instance:  # no k8s run launcher
+        _get_executor(
+            instance,
+            reconstructable(bar),
+            {},
+        )
+        mock_load_incluster_config.assert_called()
+        mock_load_kubeconfig_file.assert_not_called()
+
+
+def test_executor_init_without_k8s_run_launcher_with_config(
+    mock_load_incluster_config, mock_load_kubeconfig_file
+):
+    with instance_for_test() as instance:  # no k8s run launcher
+        _get_executor(
+            instance,
+            reconstructable(bar),
+            {"load_incluster_config": False, "kubeconfig_file": "hello_file.py"},
+        )
+        mock_load_incluster_config.assert_not_called()
+        mock_load_kubeconfig_file.assert_called_with("hello_file.py")
+
+
+def test_executor_init_without_k8s_run_launcher_with_default_kubeconfig(
+    mock_load_incluster_config, mock_load_kubeconfig_file
+):
+    with instance_for_test() as instance:  # no k8s run launcher
+        _get_executor(
+            instance,
+            reconstructable(bar),
+            {
+                "load_incluster_config": False,
+            },
+        )
+        mock_load_incluster_config.assert_not_called()
+        mock_load_kubeconfig_file.assert_called_with(None)
 
 
 def _get_executor(instance, job_def, executor_config=None):
@@ -191,7 +234,53 @@ def _step_handler_context(job_def, dagster_run, instance, executor):
     )
 
 
-def test_executor_init(k8s_run_launcher_instance):
+def test_executor_init_override_in_cluster_config(
+    k8s_run_launcher_instance,
+    mock_load_incluster_config,
+    mock_load_kubeconfig_file,
+):
+    k8s_run_launcher_instance.run_launcher
+    mock_load_kubeconfig_file.reset_mock()
+    _get_executor(
+        k8s_run_launcher_instance,
+        reconstructable(bar),
+        {
+            "env_vars": ["FOO_TEST"],
+            "scheduler_name": "my-scheduler",
+            "load_incluster_config": True,
+            "kubeconfig_file": None,
+        },
+    )
+    mock_load_incluster_config.assert_called()
+    mock_load_kubeconfig_file.assert_not_called()
+
+
+def test_executor_init_override_kubeconfig_file(
+    k8s_run_launcher_instance,
+    mock_load_incluster_config,
+    mock_load_kubeconfig_file,
+):
+    k8s_run_launcher_instance.run_launcher
+    mock_load_kubeconfig_file.reset_mock()
+    _get_executor(
+        k8s_run_launcher_instance,
+        reconstructable(bar),
+        {
+            "env_vars": ["FOO_TEST"],
+            "scheduler_name": "my-scheduler",
+            "kubeconfig_file": "fake_file",
+        },
+    )
+    mock_load_incluster_config.assert_not_called()
+    mock_load_kubeconfig_file.assert_called_with("fake_file")
+
+
+def test_executor_init(
+    k8s_run_launcher_instance,
+    mock_load_incluster_config,
+    mock_load_kubeconfig_file,
+    kubeconfig_file,
+):
     resources = {
         "requests": {"memory": "64Mi", "cpu": "250m"},
         "limits": {"memory": "128Mi", "cpu": "500m"},
@@ -206,6 +295,9 @@ def test_executor_init(k8s_run_launcher_instance):
             "scheduler_name": "my-scheduler",
         },
     )
+
+    mock_load_incluster_config.assert_not_called()
+    mock_load_kubeconfig_file.assert_called_with(kubeconfig_file)
 
     run = create_run_for_test(
         k8s_run_launcher_instance,

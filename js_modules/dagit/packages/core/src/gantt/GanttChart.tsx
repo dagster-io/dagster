@@ -251,9 +251,9 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   );
 
   const animate = React.useCallback(() => {
-    setNowMs(Date.now());
+    setNowMs(props.overrideNowTime || Date.now());
     animationRequest.current = requestAnimationFrame(animate);
-  }, []);
+  }, [props.overrideNowTime]);
 
   const exitedAt = metadata?.exitedAt;
 
@@ -747,7 +747,7 @@ const GanttChartContainer = styled.div`
       border: 1px solid ${Colors.Gray800};
     }
     &.dynamic {
-      filter: brightness(125%);
+      filter: brightness(115%);
     }
 
     ${SpinnerWrapper} {

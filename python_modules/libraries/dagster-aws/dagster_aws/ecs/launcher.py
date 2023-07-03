@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import uuid
 import warnings
 from collections import namedtuple
 from typing import Any, Dict, List, Mapping, Optional, Sequence
@@ -9,6 +10,7 @@ import boto3
 from botocore.exceptions import ClientError
 from dagster import (
     Array,
+    DagsterRunStatus,
     Field,
     Noneable,
     Permissive,
@@ -25,6 +27,7 @@ from dagster._core.launcher.base import (
     WorkerStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import RUN_WORKER_ID_TAG
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
@@ -40,7 +43,7 @@ from .tasks import (
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from .utils import get_task_logs, sanitize_family, task_definitions_match
+from .utils import get_task_definition_family, get_task_logs, task_definitions_match
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -75,6 +78,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
+        run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -169,6 +173,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 )
 
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
+
+        self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -325,11 +331,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         tags = {
             "ecs/task_arn": task_arn,
             "ecs/cluster": cluster,
+            RUN_WORKER_ID_TAG: str(uuid.uuid4().hex)[0:6],
         }
         self._instance.add_run_tags(run_id, tags)
 
-    def build_ecs_tags_for_run_task(self, run):
-        return [{"key": "dagster/run_id", "value": run.run_id}]
+    def build_ecs_tags_for_run_task(self, run, container_context: EcsContainerContext):
+        if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
+            raise Exception("Cannot override system ECS tag: dagster/run_id")
+
+        return [{"key": "dagster/run_id", "value": run.run_id}, *container_context.run_ecs_tags]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -340,6 +350,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         memory = tags.get("ecs/memory")
 
         return Tags(arn, cluster, cpu, memory)
+
+    def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
+        return run_args.get_command_args()
 
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
@@ -365,7 +378,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
-        command = args.get_command_args()
+        command = self._get_command_args(args, context)
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
@@ -392,7 +405,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         }
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
-            *self.build_ecs_tags_for_run_task(run),
+            *self.build_ecs_tags_for_run_task(run, container_context),
         ]
 
         run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
@@ -527,9 +540,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self._current_task
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
-        return sanitize_family(
-            run.external_job_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
-        )
+        return get_task_definition_family("run", check.not_none(run.external_job_origin))
 
     def _get_container_name(self, container_context) -> str:
         return container_context.container_name or self.container_name
@@ -692,21 +703,36 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
+    @property
+    def include_cluster_info_in_failure_messages(self):
+        return True
+
+    def _is_transient_startup_failure(self, run, task):
+        if not task.get("stoppedReason"):
+            return False
+        return (
+            run.status == DagsterRunStatus.STARTING
+            and "Timeout waiting for network interface provisioning to complete"
+            in task.get("stoppedReason")
+        )
+
     def check_run_worker_health(self, run: DagsterRun):
+        run_worker_id = run.tags.get(RUN_WORKER_ID_TAG)
+
         tags = self._get_run_tags(run.run_id)
         container_context = EcsContainerContext.create_for_run(run, self)
 
         if not (tags.arn and tags.cluster):
-            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "", run_worker_id=run_worker_id)
 
         tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
         if not tasks:
-            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "", run_worker_id=run_worker_id)
 
         t = tasks[0]
 
         if t.get("lastStatus") in RUNNING_STATUSES:
-            return CheckRunHealthResult(WorkerStatus.RUNNING)
+            return CheckRunHealthResult(WorkerStatus.RUNNING, run_worker_id=run_worker_id)
         elif t.get("lastStatus") in STOPPED_STATUSES:
             failed_containers = []
             for c in t.get("containers"):
@@ -717,6 +743,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     container_str = "Containers"
                 else:
                     container_str = "Container"
+
+                failure_text = []
+
+                if self.include_cluster_info_in_failure_messages:
+                    failure_text.append(
+                        f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
+                        f" reason: {t.get('stoppedReason')}."
+                        + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
+                    )
 
                 logs = []
 
@@ -735,22 +770,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         )
                     )
 
-                logs_text = (
-                    ("Task logs:\n" + "\n".join(logs))
-                    if logs
-                    else "Check the logs for the failed task for details."
-                )
+                if logs:
+                    failure_text.append("Run worker logs:\n" + "\n".join(logs))
 
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
-                    (
-                        f"ECS task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
-                        f" reason: {t.get('stoppedReason')}."
-                        f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                        f" {logs_text}"
-                    ),
+                    "\n\n".join(failure_text),
+                    transient=self._is_transient_startup_failure(run, t),
+                    run_worker_id=run_worker_id,
                 )
 
-            return CheckRunHealthResult(WorkerStatus.SUCCESS)
+            return CheckRunHealthResult(WorkerStatus.SUCCESS, run_worker_id=run_worker_id)
 
-        return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")
+        return CheckRunHealthResult(
+            WorkerStatus.UNKNOWN, "ECS task health status is unknown.", run_worker_id=run_worker_id
+        )

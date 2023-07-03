@@ -251,8 +251,8 @@ function selectionWithSlice(
     selectedKeys: dim.partitionKeys.slice(start, end + 1),
     selectedRanges: [
       {
-        start: {idx: start, key: dim.partitionKeys[start]},
-        end: {idx: end, key: dim.partitionKeys[end]},
+        start: {idx: start, key: dim.partitionKeys[start]!},
+        end: {idx: end, key: dim.partitionKeys[end]!},
       },
     ],
   };
@@ -669,7 +669,7 @@ describe('usePartitionHealthData utilities', () => {
       const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
 
       expect(
-        keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 5)]),
+        keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0]!, 0, 5)]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
         [AssetPartitionStatus.FAILED]: 2,
@@ -678,7 +678,7 @@ describe('usePartitionHealthData utilities', () => {
       });
 
       expect(
-        keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 2)]),
+        keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0]!, 0, 2)]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
         [AssetPartitionStatus.MISSING]: 3,
@@ -690,8 +690,8 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
-          selectionWithSlice(two.dimensions[0], 0, 5),
-          selectionWithSlice(two.dimensions[1], 0, 4),
+          selectionWithSlice(two.dimensions[0]!, 0, 5),
+          selectionWithSlice(two.dimensions[1]!, 0, 4),
         ]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -702,8 +702,8 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
-          selectionWithSlice(two.dimensions[0], 0, 3),
-          selectionWithSlice(two.dimensions[1], 0, 3),
+          selectionWithSlice(two.dimensions[0]!, 0, 3),
+          selectionWithSlice(two.dimensions[1]!, 0, 3),
         ]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -713,8 +713,8 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
-          selectionWithSlice(two.dimensions[0], 0, 5),
-          selectionWithSlice(two.dimensions[1], 4, 4),
+          selectionWithSlice(two.dimensions[0]!, 0, 5),
+          selectionWithSlice(two.dimensions[1]!, 4, 4),
         ]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -727,8 +727,8 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(twoEmpty, [
-          selectionWithSlice(twoEmpty.dimensions[0], 0, 5),
-          selectionWithSlice(twoEmpty.dimensions[1], 0, 4),
+          selectionWithSlice(twoEmpty.dimensions[0]!, 0, 5),
+          selectionWithSlice(twoEmpty.dimensions[1]!, 0, 4),
         ]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),

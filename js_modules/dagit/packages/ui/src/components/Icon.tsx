@@ -21,6 +21,7 @@ import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
 import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
 import backfill from '../icon-svgs/backfill.svg';
+import bar_chart from '../icon-svgs/bar-chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
@@ -68,6 +69,7 @@ import graph_upstream from '../icon-svgs/graph_upstream.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
+import infinity from '../icon-svgs/infinity.svg';
 import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
 import layers from '../icon-svgs/layers.svg';
@@ -223,6 +225,7 @@ export const Icons = {
   assignment,
   assignment_turned_in,
   attach_file,
+  bar_chart,
   bolt,
   cached,
   cancel,
@@ -246,6 +249,7 @@ export const Icons = {
   filter_alt,
   folder_open,
   forum,
+  infinity,
   info,
   history,
   history_toggle_off,

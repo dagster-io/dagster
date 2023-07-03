@@ -4,9 +4,9 @@ from typing import Dict
 import pandas as pd
 
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    OpExecutionContext,
     asset,
     materialize,
 )
@@ -18,7 +18,7 @@ daily_partitions = DailyPartitionsDefinition(start_date=f"{start:%Y-%m-%d}")
 
 
 @asset(partitions_def=hourly_partitions)
-def upstream_asset(context: OpExecutionContext) -> pd.DataFrame:
+def upstream_asset(context: AssetExecutionContext) -> pd.DataFrame:
     return pd.DataFrame({"date": [context.partition_key]})
 
 

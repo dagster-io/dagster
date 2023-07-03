@@ -1,4 +1,6 @@
+import os
 import re
+import tempfile
 from typing import Any, Mapping, Optional
 
 import pytest
@@ -13,6 +15,7 @@ from dagster import (
     reconstructable,
 )
 from dagster._check import CheckError
+from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
 from dagster._core.definitions import build_assets_job
 from dagster._core.errors import (
@@ -25,7 +28,6 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster._core.secrets.env_file import EnvFileLoader
 from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
@@ -45,6 +47,7 @@ from dagster._core.test_utils import (
     create_run_for_test,
     environ,
     instance_for_test,
+    new_cwd,
 )
 from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._serdes import ConfigurableClass
@@ -139,7 +142,7 @@ def test_unified_storage_env_var(tmpdir):
 
 def test_custom_secrets_manager():
     with instance_for_test() as instance:
-        assert isinstance(instance._secrets_loader, EnvFileLoader)  # noqa: SLF001
+        assert instance._secrets_loader is None  # noqa: SLF001
 
     with instance_for_test(
         overrides={
@@ -567,6 +570,44 @@ def test_dagster_home_not_dir():
             match=re.escape(f'$DAGSTER_HOME "{dirname}" is not a directory or does not exist.'),
         ):
             DagsterInstance.get()
+
+
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows paths formatted differently")
+def test_dagster_env_vars_from_dotenv_file():
+    with tempfile.TemporaryDirectory() as working_dir, tempfile.TemporaryDirectory() as dagster_home:
+        # Create a dagster.yaml file in the dagster_home folder that requires SQLITE_STORAGE_BASE_DIR to be set
+        # (and DAGSTER_HOME to be set in order to find the dagster.yaml file)
+        with open(os.path.join(dagster_home, "dagster.yaml"), "w", encoding="utf8") as fd:
+            yaml.dump(
+                {
+                    "storage": {
+                        "sqlite": {
+                            "base_dir": {"env": "SQLITE_STORAGE_BASE_DIR"},
+                        }
+                    }
+                },
+                fd,
+                default_flow_style=False,
+            )
+
+        with new_cwd(working_dir):
+            with environ({"DAGSTER_HOME": None}):
+                # without .env file with a DAGSTER_HOME, loading fails
+                with pytest.raises(DagsterHomeNotSetError):
+                    with get_instance_for_cli():
+                        pass
+
+                storage_dir = os.path.join(dagster_home, "my_storage")
+                # with DAGSTER_HOME and SQLITE_STORAGE_BASE_DIR set in a .env file, DagsterInstacne succeeds
+                with open(os.path.join(working_dir, ".env"), "w", encoding="utf8") as fd:
+                    fd.write(f"DAGSTER_HOME={dagster_home}\n")
+                    fd.write(f"SQLITE_STORAGE_BASE_DIR={storage_dir}\n")
+
+                with get_instance_for_cli() as instance:
+                    assert (
+                        _runs_directory(str(storage_dir))
+                        in instance.run_storage._conn_string  # noqa: SLF001
+                    )
 
 
 class TestInstanceSubclass(DagsterInstance):

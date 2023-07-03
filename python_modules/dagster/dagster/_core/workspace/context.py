@@ -1,3 +1,4 @@
+import logging
 import sys
 import threading
 import time
@@ -33,7 +34,10 @@ from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.host_representation.origin import GrpcServerCodeLocationOrigin
+from dagster._core.host_representation.origin import (
+    GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -193,8 +197,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
         return entry.origin.is_shutdown_supported if entry else False
 
     def reload_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
-        # This method reloads the location on the process context, and returns a new
-        # request context created from the updated process context
+        # This method signals to the remote gRPC server that it should reload its
+        # code, and returns a new request context created from the updated process context
         self.process_context.reload_code_location(name)
         return self.process_context.create_request_context()
 
@@ -308,6 +312,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         version: Optional[str],
         source: Optional[object],
         read_only: bool,
+        read_only_locations: Optional[Mapping[str, bool]] = None,
     ):
         self._instance = instance
         self._workspace_snapshot = workspace_snapshot
@@ -315,6 +320,9 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._version = version
         self._source = source
         self._read_only = read_only
+        self._read_only_locations = check.opt_mapping_param(
+            read_only_locations, "read_only_locations"
+        )
         self._checked_permissions: Set[str] = set()
 
     @property
@@ -350,6 +358,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return get_user_permissions(self._read_only)
 
     def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
+        if location_name in self._read_only_locations:
+            return get_location_scoped_user_permissions(self._read_only_locations[location_name])
         return get_location_scoped_user_permissions(self._read_only)
 
     def has_permission(self, permission: str) -> bool:
@@ -405,6 +415,12 @@ class IWorkspaceProcessContext(ABC):
 
     @abstractmethod
     def reload_workspace(self) -> None:
+        """Reload the code in each code location."""
+        pass
+
+    @abstractmethod
+    def refresh_workspace(self) -> None:
+        """Refresh the snapshots for each code location, without reloading the underlying code."""
         pass
 
     @property
@@ -453,13 +469,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         self._version = version
 
-        # Guards changes to _location_dict, _location_error_dict, and _location_origin_dict
+        # Guards changes to _location_entry_dict, _watch_thread_shutdown_events and _watch_threads
         self._lock = threading.Lock()
-
-        # Only ever set up by main thread
         self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
         self._watch_threads: Dict[str, threading.Thread] = {}
 
+        self._state_subscribers_lock = threading.Lock()
         self._state_subscriber_id_iter = count()
         self._state_subscribers: Dict[int, LocationStateSubscriber] = {}
         self.add_state_subscriber(LocationStateSubscriber(self._location_state_events_handler))
@@ -471,17 +486,21 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         else:
             self._grpc_server_registry = self._stack.enter_context(
                 GrpcServerRegistry(
-                    instance=self._instance,
+                    instance_ref=self._instance.get_ref(),
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
+                    wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
                 )
             )
 
         self._location_entry_dict: Dict[str, CodeLocationEntry] = {}
         self._update_workspace(
-            {origin.location_name: self._load_location(origin) for origin in self._origins}
+            {
+                origin.location_name: self._load_location(origin, reload=False)
+                for origin in self._origins
+            }
         )
 
     @property
@@ -494,33 +513,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> int:
         token = next(self._state_subscriber_id_iter)
-        self._state_subscribers[token] = subscriber
+        with self._state_subscribers_lock:
+            self._state_subscribers[token] = subscriber
         return token
 
     def rm_state_subscriber(self, token: int) -> None:
-        if token in self._state_subscribers:
-            del self._state_subscribers[token]
-
-    def _create_location_from_origin(self, origin: CodeLocationOrigin) -> Optional[CodeLocation]:
-        if not self._grpc_server_registry.supports_origin(origin):
-            return origin.create_location()
-        else:
-            endpoint = (
-                self._grpc_server_registry.reload_grpc_endpoint(origin)
-                if self._grpc_server_registry.supports_reload
-                else self._grpc_server_registry.get_grpc_endpoint(origin)
-            )
-
-            return GrpcServerCodeLocation(
-                origin=origin,
-                server_id=endpoint.server_id,
-                port=endpoint.port,
-                socket=endpoint.socket,
-                host=endpoint.host,
-                heartbeat=True,
-                watch_server=False,
-                grpc_server_registry=self._grpc_server_registry,
-            )
+        with self._state_subscribers_lock:
+            if token in self._state_subscribers:
+                del self._state_subscribers[token]
 
     @property
     def instance(self) -> DagsterInstance:
@@ -543,8 +543,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def _send_state_event_to_subscribers(self, event: LocationStateChangeEvent) -> None:
         check.inst_param(event, "event", LocationStateChangeEvent)
-        for subscriber in self._state_subscribers.values():
-            subscriber.handle_event(event)
+        with self._state_subscribers_lock:
+            for subscriber in self._state_subscribers.values():
+                subscriber.handle_event(event)
 
     def _start_watch_thread(self, origin: GrpcServerCodeLocationOrigin) -> None:
         from dagster._grpc.server_watcher import create_grpc_watch_thread
@@ -578,12 +579,32 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
-    def _load_location(self, origin: CodeLocationOrigin) -> CodeLocationEntry:
+    def _load_location(self, origin: CodeLocationOrigin, reload: bool) -> CodeLocationEntry:
         location_name = origin.location_name
         location = None
         error = None
         try:
-            location = self._create_location_from_origin(origin)
+            if isinstance(origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+                endpoint = (
+                    self._grpc_server_registry.reload_grpc_endpoint(origin)
+                    if reload
+                    else self._grpc_server_registry.get_grpc_endpoint(origin)
+                )
+                location = GrpcServerCodeLocation(
+                    origin=origin,
+                    server_id=endpoint.server_id,
+                    port=endpoint.port,
+                    socket=endpoint.socket,
+                    host=endpoint.host,
+                    heartbeat=True,
+                    watch_server=False,
+                    grpc_server_registry=self._grpc_server_registry,
+                )
+            else:
+                location = (
+                    origin.reload_location(self.instance) if reload else origin.create_location()
+                )
+
         except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             warnings.warn(
@@ -635,8 +656,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             )
 
     def reload_code_location(self, name: str) -> None:
-        # Can be called from a background thread
-        new = self._load_location(self._location_entry_dict[name].origin)
+        new = self._load_location(self._location_entry_dict[name].origin, reload=True)
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
@@ -646,9 +666,17 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         with self._lock:
             self._location_entry_dict[name].origin.shutdown_server()
 
+    def refresh_workspace(self) -> None:
+        updated_locations = {
+            origin.location_name: self._load_location(origin, reload=False)
+            for origin in self._origins
+        }
+        self._update_workspace(updated_locations)
+
     def reload_workspace(self) -> None:
         updated_locations = {
-            origin.location_name: self._load_location(origin) for origin in self._origins
+            origin.location_name: self._load_location(origin, reload=True)
+            for origin in self._origins
         }
         self._update_workspace(updated_locations)
 
@@ -701,7 +729,19 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # re-attach a subscriber
             # In case of a location error, just reload the handle in order to update the workspace
             # with the correct error messages
-            self.reload_code_location(event.location_name)
+            logging.getLogger("dagit").info(
+                f"Received {event.event_type} event for location {event.location_name}, refreshing"
+            )
+            self.refresh_code_location(event.location_name)
+
+    def refresh_code_location(self, name: str) -> None:
+        # This method reloads Dagit's copy of the code from the remote gRPC server without
+        # restarting it, and returns a new request context created from the updated process context
+        new = self._load_location(self._location_entry_dict[name].origin, reload=False)
+        with self._lock:
+            # Relying on GC to clean up the old location once nothing else
+            # is referencing it
+            self._location_entry_dict[name] = new
 
     def __enter__(self):
         return self

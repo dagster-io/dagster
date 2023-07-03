@@ -1,13 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {
-  render,
-  fireEvent,
-  waitFor,
-  screen,
-  act,
-  getByText,
-  getAllByText,
-} from '@testing-library/react';
+import {render, waitFor, screen, getByText, getAllByText} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
@@ -19,6 +12,7 @@ import {
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
   buildPartitionKeyRange,
+  buildPythonError,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
 import {BACKFILL_DETAILS_QUERY, BackfillPage, PartitionSelection} from '../BackfillPage';
@@ -83,25 +77,20 @@ const mocks = [
 
 describe('BackfillPage', () => {
   it('renders the loading state', async () => {
-    const {getByText} = await act(() => {
-      return render(
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
-          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-            <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={mocks}>
-                <BackfillPage />
-              </MockedProvider>
-            </Route>
-          </MemoryRouter>
-        </AnalyticsContext.Provider>,
-      );
-    });
+    render(
+      <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+          <Route path="/backfills/:backfillId">
+            <MockedProvider mocks={mocks}>
+              <BackfillPage />
+            </MockedProvider>
+          </Route>
+        </MemoryRouter>
+      </AnalyticsContext.Provider>,
+    );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('page-loading-indicator')).toBeInTheDocument();
-    });
-
-    await waitFor(() => getByText('assetA'));
+    expect(await screen.findByTestId('page-loading-indicator')).toBeInTheDocument();
+    expect(await screen.findByText('assetA')).toBeVisible();
   });
 
   it('renders the error state', async () => {
@@ -114,49 +103,44 @@ describe('BackfillPage', () => {
         result: {
           data: {
             __typename: 'CloudDagitQuery',
-            partitionBackfillOrError: {
-              __typename: 'PythonError',
+            partitionBackfillOrError: buildPythonError({
               message: 'An error occurred',
-            },
+            }),
           },
         },
       },
     ];
 
-    const {getByText} = await act(() => {
-      return render(
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
-          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-            <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={errorMocks}>
-                <BackfillPage />
-              </MockedProvider>
-            </Route>
-          </MemoryRouter>
-        </AnalyticsContext.Provider>,
-      );
-    });
+    const {getByText} = render(
+      <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+          <Route path="/backfills/:backfillId">
+            <MockedProvider mocks={errorMocks}>
+              <BackfillPage />
+            </MockedProvider>
+          </Route>
+        </MemoryRouter>
+      </AnalyticsContext.Provider>,
+    );
 
     await waitFor(() => expect(getByText('An error occurred')).toBeVisible());
   });
 
   it('renders the loaded state', async () => {
-    await act(() =>
-      render(
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
-          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-            <Route path="/backfills/:backfillId">
-              <MockedProvider mocks={mocks}>
-                <BackfillPage />
-              </MockedProvider>
-            </Route>
-          </MemoryRouter>
-        </AnalyticsContext.Provider>,
-      ),
+    render(
+      <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+          <Route path="/backfills/:backfillId">
+            <MockedProvider mocks={mocks}>
+              <BackfillPage />
+            </MockedProvider>
+          </Route>
+        </MemoryRouter>
+      </AnalyticsContext.Provider>,
     );
 
     // Check if the loaded content is displayed
-    const detailRow = await waitFor(() => screen.getByTestId('backfill-page-details'));
+    const detailRow = await screen.findByTestId('backfill-page-details');
 
     expect(screen.getByText('Partition Selection')).toBeVisible();
     expect(screen.getByText('Asset name')).toBeVisible();
@@ -164,7 +148,7 @@ describe('BackfillPage', () => {
     expect(getByText(detailRow, 'Jan 1, 1970, 12:16:40 AM')).toBeVisible();
     expect(getByText(detailRow, 'In Progress')).toBeVisible();
 
-    const assetARow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetA'));
+    const assetARow = await screen.findByTestId('backfill-asset-row-assetA');
     // Check if the correct data is displayed
     expect(getByText(assetARow, 'assetA')).toBeVisible();
     expect(getByText(assetARow, '33')).toBeVisible(); // numPartitionsTargeted
@@ -172,7 +156,7 @@ describe('BackfillPage', () => {
     expect(getByText(assetARow, '11')).toBeVisible(); // numPartitionsMaterialized
     expect(getByText(assetARow, '0')).toBeVisible(); // numPartitionsFailed
 
-    const assetBRow = await waitFor(() => screen.getByTestId('backfill-asset-row-assetB'));
+    const assetBRow = await screen.findByTestId('backfill-asset-row-assetB');
     expect(getByText(assetBRow, 'assetB')).toBeVisible();
     expect(getByText(assetBRow, 'Completed')).toBeVisible();
     expect(getAllByText(assetBRow, '-').length).toBe(3);
@@ -181,10 +165,8 @@ describe('BackfillPage', () => {
 
 describe('PartitionSelection', () => {
   it('renders the targeted partitions when rootAssetTargetedPartitions is provided and length <= 3', async () => {
-    const {getByText} = await act(() =>
-      render(
-        <PartitionSelection numPartitions={3} rootAssetTargetedPartitions={['1', '2', '3']} />,
-      ),
+    const {getByText} = render(
+      <PartitionSelection numPartitions={3} rootAssetTargetedPartitions={['1', '2', '3']} />,
     );
 
     expect(getByText('1')).toBeInTheDocument();
@@ -193,13 +175,11 @@ describe('PartitionSelection', () => {
   });
 
   it('renders the targeted partitions in a dialog when rootAssetTargetedPartitions is provided and length > 3', async () => {
-    const {getByText} = await act(() =>
-      render(
-        <PartitionSelection numPartitions={4} rootAssetTargetedPartitions={['1', '2', '3', '4']} />,
-      ),
+    const {getByText} = render(
+      <PartitionSelection numPartitions={4} rootAssetTargetedPartitions={['1', '2', '3', '4']} />,
     );
 
-    fireEvent.click(getByText('4 partitions'));
+    await userEvent.click(getByText('4 partitions'));
 
     expect(getByText('1')).toBeInTheDocument();
     expect(getByText('2')).toBeInTheDocument();
@@ -208,39 +188,35 @@ describe('PartitionSelection', () => {
   });
 
   it('renders the single targeted range when rootAssetTargetedRanges is provided and length === 1', async () => {
-    const {getByText} = await act(() =>
-      render(
-        <PartitionSelection
-          numPartitions={1}
-          rootAssetTargetedRanges={[buildPartitionKeyRange({start: '1', end: '2'})]}
-        />,
-      ),
+    const {getByText} = render(
+      <PartitionSelection
+        numPartitions={1}
+        rootAssetTargetedRanges={[buildPartitionKeyRange({start: '1', end: '2'})]}
+      />,
     );
 
     expect(getByText('1...2')).toBeInTheDocument();
   });
 
   it('renders the targeted ranges in a dialog when rootAssetTargetedRanges is provided and length > 1', async () => {
-    const {getByText} = await act(() =>
-      render(
-        <PartitionSelection
-          numPartitions={2}
-          rootAssetTargetedRanges={[
-            buildPartitionKeyRange({start: '1', end: '2'}),
-            buildPartitionKeyRange({start: '3', end: '4'}),
-          ]}
-        />,
-      ),
+    const {getByText} = render(
+      <PartitionSelection
+        numPartitions={2}
+        rootAssetTargetedRanges={[
+          buildPartitionKeyRange({start: '1', end: '2'}),
+          buildPartitionKeyRange({start: '3', end: '4'}),
+        ]}
+      />,
     );
 
-    fireEvent.click(getByText('2 partitions'));
+    await userEvent.click(getByText('2 partitions'));
 
     expect(getByText('1...2')).toBeInTheDocument();
     expect(getByText('3...4')).toBeInTheDocument();
   });
 
   it('renders the numPartitions in a ButtonLink when neither rootAssetTargetedPartitions nor rootAssetTargetedRanges are provided', async () => {
-    const {getByText} = await act(() => render(<PartitionSelection numPartitions={2} />));
+    const {getByText} = render(<PartitionSelection numPartitions={2} />);
 
     expect(getByText('2 partitions')).toBeInTheDocument();
   });

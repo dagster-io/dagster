@@ -141,7 +141,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
               <Description description={inputDef.description} />
-              <OpEdges title="Mapped to:" items={inputMappings[inputDef.name]} />
+              <OpEdges title="Mapped to:" items={inputMappings[inputDef.name]!} />
             </SectionItemContainer>
           ))}
         </Box>
@@ -157,7 +157,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>
-              <OpEdges title="Mapped from:" items={outputMappings[outputDef.name]} />
+              <OpEdges title="Mapped from:" items={outputMappings[outputDef.name]!} />
               <Description description={outputDef.description} />
             </SectionItemContainer>
           ))}

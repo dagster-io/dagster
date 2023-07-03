@@ -5,6 +5,7 @@ from typing import Optional
 import jwt
 import requests
 from dagster import ConfigurableResource, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
 
@@ -180,6 +181,10 @@ class GithubResource(ConfigurableResource):
         ),
     )
 
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
     def get_client(self) -> GithubClient:
         return GithubClient(
             client=requests.Session(),
@@ -190,6 +195,7 @@ class GithubResource(ConfigurableResource):
         )
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=GithubResource.to_config_schema(),
     description="This resource is for connecting to Github",

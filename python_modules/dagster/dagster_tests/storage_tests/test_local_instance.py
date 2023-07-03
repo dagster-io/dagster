@@ -262,9 +262,10 @@ def test_threaded_ephemeral_instance(caplog):
                 with DagsterInstance.ephemeral() as instance:
                     instance.get_runs_count()  # call run storage
                     instance.all_asset_keys()  # call event log storage
+                    instance.root_directory  # access TemporaryDirectory
                     shared_instance.get_runs_count()
                     shared_instance.all_asset_keys()
-
+                    shared_instance.root_directory
                 return True
 
             with ThreadPoolExecutor(
@@ -281,21 +282,6 @@ def test_threaded_ephemeral_instance(caplog):
             )
     finally:
         gc.enable()
-
-
-def test_threadsafe_ephemeral_instance():
-    n = 25
-    with DagsterInstance.ephemeral() as shared:
-
-        def _run(_):
-            shared.root_directory
-            with DagsterInstance.ephemeral() as instance:
-                instance.root_directory
-            return True
-
-        with ThreadPoolExecutor(max_workers=n) as executor:
-            results = executor.map(_run, range(n))
-            assert all(results)
 
 
 def test_threadsafe_local_temp_instance():

@@ -8,7 +8,11 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterLaunchFailedError,
+    DagsterUserCodeProcessError,
+)
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import (
@@ -178,6 +182,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             client.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
         )
+
+        if res.serializable_error_info:
+            raise DagsterUserCodeProcessError.from_error_info(res.serializable_error_info)
+
         return res.success
 
     def join(self, timeout=30):

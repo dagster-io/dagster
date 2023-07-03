@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from google.cloud import bigquery
 from pydantic import Field
 
@@ -48,12 +49,16 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         default=None,
         description=(
             "GCP authentication credentials. If provided, a temporary file will be created"
-            " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
+            " with the credentials and ``GOOGLE_APPLICATION_CREDENTIALS`` will be set to the"
             " temporary file. To avoid issues with newlines in the keys, you must base64"
             " encode the key. You can retrieve the base64 encoded key with this shell"
-            " command: cat $GOOGLE_AUTH_CREDENTIALS | base64"
+            " command: ``cat $GOOGLE_AUTH_CREDENTIALS | base64``"
         ),
     )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     @contextmanager
     def get_client(self) -> Iterator[bigquery.Client]:
@@ -82,6 +87,7 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             yield client
 
 
+@dagster_maintained_resource
 @resource(
     config_schema=BigQueryResource.to_config_schema(),
     description="Dagster resource for connecting to BigQuery",

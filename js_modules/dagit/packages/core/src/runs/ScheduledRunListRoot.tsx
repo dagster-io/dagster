@@ -1,11 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
+import {Page, Alert, ButtonLink, Colors, Group, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useMergedRefresh,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -16,36 +20,39 @@ import {
 } from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
-import {RunsPageHeader} from './RunsPageHeader';
-import {ScheduledRunListRoot as ScheduledRunListRootNew} from './ScheduledRunsListRoot.new';
+import {useRunListTabs} from './RunListTabs';
 import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
 } from './types/ScheduledRunListRoot.types';
 
 export const ScheduledRunListRoot = () => {
-  const {flagRunsTableFiltering} = useFeatureFlags();
-  return flagRunsTableFiltering ? <ScheduledRunListRootNew /> : <ScheduledRunListRootImpl />;
-};
-
-export const ScheduledRunListRootImpl = () => {
   useTrackPageView();
   useDocumentTitle('Runs | Scheduled');
 
   const queryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
     SCHEDULED_RUNS_LIST_QUERY,
     {
-      partialRefetch: true,
       notifyOnNetworkStatusChange: true,
     },
   );
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
+  const {tabs, queryResult: runQueryResult} = useRunListTabs();
+  const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
+  const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
+
   return (
     <Page>
-      <RunsPageHeader refreshStates={[refreshState]} />
-      <Loading queryResult={queryResult}>
+      <Box
+        flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
+        padding={{vertical: 8, left: 24, right: 12}}
+      >
+        {tabs}
+        <QueryRefreshCountdown refreshState={combinedRefreshState} />
+      </Box>
+      <Loading queryResult={queryResult} allowStaleData>
         {(result) => {
           const {repositoriesOrError, instance} = result;
           if (repositoriesOrError.__typename === 'PythonError') {

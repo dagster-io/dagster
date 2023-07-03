@@ -302,7 +302,6 @@ export const TickHistoryTimeline = ({
     JOB_TICK_HISTORY_QUERY,
     {
       variables: {instigationSelector, limit: 15},
-      partialRefetch: true,
       notifyOnNetworkStatusChange: true,
     },
   );

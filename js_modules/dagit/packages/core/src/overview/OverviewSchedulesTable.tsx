@@ -88,7 +88,7 @@ export const OverviewScheduleTable = ({
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: RowType = flattened[index];
+              const row: RowType = flattened[index]!;
               const type = row!.type;
               if (type === 'header') {
                 return (
