@@ -18,7 +18,7 @@ from ..conftest import TEST_PROJECT_DIR
 pytest.importorskip("dbt.version", minversion="1.4")
 
 
-manifest_path = f"{TEST_PROJECT_DIR}/manifest.json"
+manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
 manifest = DbtManifest.read(path=manifest_path)
 
 

@@ -78,11 +78,11 @@ class DbtManifest:
     raw_manifest: Mapping[str, Any]
 
     @classmethod
-    def read(cls, path: str) -> "DbtManifest":
+    def read(cls, path: Union[str, os.PathLike]) -> "DbtManifest":
         """Read the file path to a dbt manifest and create a DbtManifest object.
 
         Args:
-            path(str): The path to the dbt manifest.json file.
+            path(Union[str, os.PathLike]): The path to the dbt manifest.json file.
 
         Returns:
             DbtManifest: A DbtManifest object.
@@ -884,7 +884,7 @@ class DbtCli(ConfigurableResource):
     """A resource used to execute dbt CLI commands.
 
     Attributes:
-        project_dir (Path): The path to the dbt project directory. This directory should contain a
+        project_dir (str): The path to the dbt project directory. This directory should contain a
             `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more
             information.
         global_config_flags (List[str]): A list of global flags configuration to pass to the dbt CLI

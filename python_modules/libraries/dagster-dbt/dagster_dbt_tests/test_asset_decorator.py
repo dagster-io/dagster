@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import AbstractSet, Any, Mapping, Optional
 
 import pytest
@@ -7,17 +8,16 @@ from dagster import (
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
-    file_relative_path,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.cli import DbtManifest
 
-manifest_path = file_relative_path(__file__, "sample_manifest.json")
+manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
 manifest = DbtManifest.read(path=manifest_path)
 
-test_dagster_metadata_manifest_path = file_relative_path(
-    __file__, "dbt_projects/test_dagster_metadata/manifest.json"
+test_dagster_metadata_manifest_path = Path(__file__).parent.joinpath(
+    "dbt_projects", "test_dagster_metadata", "manifest.json"
 )
 test_dagster_metadata_manifest = DbtManifest.read(path=test_dagster_metadata_manifest_path)
 
