@@ -325,7 +325,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
-            "capacity_failure_strategy": Field(  # TODO
+            "capacity_failure_strategy": Field(
                 Permissive(
                     {
                         "max_retries": Field(
