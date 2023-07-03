@@ -43,14 +43,11 @@ setup(
     packages=find_packages(exclude=["dagit_tests*"]),
     include_package_data=True,
     install_requires=[
-        # cli
-        f"dagster{pin}",
         f"dagster-webserver{pin}",
-        f"dagster-graphql{pin}",
     ],
     extras_require={
-        "notebook": ["nbconvert"],  # notebooks support
-        "test": ["starlette[full]"],  # TestClient deps in full
+        "notebook": [f"dagster-webserver[notebook]{pin}"],  # notebooks support
+        "test": [f"dagster-webserver[test]{pin}"],  # TestClient deps in full
     },
     entry_points={
         "console_scripts": [
