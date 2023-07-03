@@ -316,6 +316,7 @@ export const AssetPartitions: React.FC<Props> = ({
                       />
                     </Menu>
                   }
+                  position="bottom-left"
                 >
                   <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
                     <Icon name="sort_by_alpha" color={Colors.Gray400} />
