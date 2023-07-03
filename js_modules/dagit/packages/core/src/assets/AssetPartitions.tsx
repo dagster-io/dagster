@@ -256,7 +256,7 @@ export const AssetPartitions: React.FC<Props> = ({
                         text={
                           <Tooltip content="The order in which partitions were created">
                             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Created sorting</span>
+                              <span>Creation sort</span>
                               <Icon name="info" />
                             </Box>
                           </Tooltip>
@@ -275,7 +275,7 @@ export const AssetPartitions: React.FC<Props> = ({
                         text={
                           <Tooltip content="The order in which partitions were created, reversed">
                             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Reverse created sorting</span>
+                              <span>Reverse creation sort</span>
                               <Icon name="info" />
                             </Box>
                           </Tooltip>
@@ -291,7 +291,7 @@ export const AssetPartitions: React.FC<Props> = ({
                         data-testId={testId('sort-reverse-creation')}
                       />
                       <MenuItem
-                        text="Alphabetical sorting"
+                        text="Alphabetical sort"
                         active={SortType.ALPHABETICAL === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
@@ -303,7 +303,7 @@ export const AssetPartitions: React.FC<Props> = ({
                         data-testId={testId('sort-alphabetical')}
                       />
                       <MenuItem
-                        text="Reverse alphabetical sorting"
+                        text="Reverse alphabetical sort"
                         active={SortType.REVERSE_ALPHABETICAL === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
