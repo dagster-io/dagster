@@ -237,6 +237,10 @@ def run_step_from_ref(
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
 
+    # Note: This is a patch that enables using DynamicPartitionsDefinitions with step launchers in the specific case where:
+    # 1. The external step operates on a single dynamic partition.
+    # 2. No dynamic partitions are added in this external step.
+    # A more complete solution would require including all dynamic partitions on the StepRunRef object.
     if step_context.has_partition_key:
         partitions_def = next(
             step_context.partitions_def_for_output(output_name=output_name)
