@@ -5,7 +5,7 @@ import pytest
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli.resources_v2 import DbtManifest
+from dagster_dbt.core.resources_v2 import DbtManifest
 
 manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
 manifest = DbtManifest.read(path=manifest_path)

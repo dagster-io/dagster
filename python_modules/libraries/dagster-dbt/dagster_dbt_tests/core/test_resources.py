@@ -2,7 +2,7 @@ import json
 
 from dagster._core.definitions.decorators import op
 from dagster._core.execution.context.invocation import build_op_context
-from dagster_dbt import dbt_cli_resource
+from dagster_dbt.core.resources import dbt_cli_resource
 
 
 def get_dbt_resource(project_dir, profiles_dir, **kwargs):

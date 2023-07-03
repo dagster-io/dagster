@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import pytest
 from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue
-from dagster_dbt.cli.resources_v2 import (
+from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCli,
     DbtCliEventMessage,

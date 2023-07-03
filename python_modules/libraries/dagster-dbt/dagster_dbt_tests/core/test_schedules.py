@@ -4,7 +4,7 @@ from typing import Mapping, Optional
 import pytest
 from dagster import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster_dbt.cli.resources_v2 import DbtManifest, DbtManifestAssetSelection
+from dagster_dbt.core.resources_v2 import DbtManifest, DbtManifestAssetSelection
 
 manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
 manifest = DbtManifest.read(path=manifest_path)
