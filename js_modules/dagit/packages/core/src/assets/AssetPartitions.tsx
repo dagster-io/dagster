@@ -1,4 +1,14 @@
-import {Box, Colors, Icon, Menu, MenuItem, Popover, Spinner, Subheading} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+  Subheading,
+  Tooltip,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -243,7 +253,14 @@ export const AssetPartitions: React.FC<Props> = ({
                   content={
                     <Menu>
                       <MenuItem
-                        text="Original sorting"
+                        text={
+                          <Tooltip content="The order in which partitions were created">
+                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                              <span>Created sorting</span>
+                              <Icon name="info" />
+                            </Box>
+                          </Tooltip>
+                        }
                         active={SortType.CREATION === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
@@ -255,7 +272,14 @@ export const AssetPartitions: React.FC<Props> = ({
                         data-testId={testId('sort-creation')}
                       />
                       <MenuItem
-                        text="Reverse original sorting"
+                        text={
+                          <Tooltip content="The order in which partitions were created, reversed">
+                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                              <span>Reverse created sorting</span>
+                              <Icon name="info" />
+                            </Box>
+                          </Tooltip>
+                        }
                         active={SortType.REVERSE_CREATION === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
