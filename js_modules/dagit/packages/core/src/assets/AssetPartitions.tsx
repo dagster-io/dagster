@@ -51,8 +51,8 @@ const DISPLAYED_STATUSES = [
 ].sort();
 
 enum SortType {
-  ORIGINAL,
-  REVERSE_ORIGINAL,
+  CREATION,
+  REVERSE_CREATION,
   ALPHABETICAL,
   REVERSE_ALPHABETICAL,
 }
@@ -244,27 +244,27 @@ export const AssetPartitions: React.FC<Props> = ({
                     <Menu>
                       <MenuItem
                         text="Original sorting"
-                        active={SortType.ORIGINAL === sortType}
+                        active={SortType.CREATION === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
                             const copy = [...sorts];
-                            copy[idx] = SortType.ORIGINAL;
+                            copy[idx] = SortType.CREATION;
                             return copy;
                           });
                         }}
-                        data-testId={testId('sort-original')}
+                        data-testId={testId('sort-creation')}
                       />
                       <MenuItem
                         text="Reverse original sorting"
-                        active={SortType.REVERSE_ORIGINAL === sortType}
+                        active={SortType.REVERSE_CREATION === sortType}
                         onClick={() => {
                           setSortTypes((sorts) => {
                             const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_ORIGINAL;
+                            copy[idx] = SortType.REVERSE_CREATION;
                             return copy;
                           });
                         }}
-                        data-testId={testId('sort-reverse-original')}
+                        data-testId={testId('sort-reverse-creation')}
                       />
                       <MenuItem
                         text="Alphabetical sorting"
@@ -342,9 +342,9 @@ const alphabeticalCollator = new Intl.Collator(navigator.language, {sensitivity:
 
 function sortResults(results: string[], sortType: SortType) {
   switch (sortType) {
-    case SortType.ORIGINAL:
+    case SortType.CREATION:
       return results;
-    case SortType.REVERSE_ORIGINAL:
+    case SortType.REVERSE_CREATION:
       return [...results].reverse();
     case SortType.ALPHABETICAL:
       return [...results].sort(alphabeticalCollator.compare);
@@ -356,7 +356,7 @@ function sortResults(results: string[], sortType: SortType) {
 function getSort(sortTypes: Array<SortType>, idx: number, definitionType: PartitionDefinitionType) {
   return sortTypes[idx] === undefined
     ? definitionType === PartitionDefinitionType.TIME_WINDOW
-      ? SortType.REVERSE_ORIGINAL
-      : SortType.ORIGINAL
+      ? SortType.REVERSE_CREATION
+      : SortType.CREATION
     : sortTypes[idx]!;
 }
