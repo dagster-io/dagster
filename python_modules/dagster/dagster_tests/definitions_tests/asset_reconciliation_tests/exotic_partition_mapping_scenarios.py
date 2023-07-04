@@ -324,11 +324,11 @@ exotic_partition_mapping_scenarios = {
         assets=unpartitioned_downstream_of_asymmetric_time_assets_in_series,
         unevaluated_runs=[
             run(["asset1"], partition_key)
-            for partition_key in [f"2023-01-0{str(x)}" for x in range(5, 9)]
+            for partition_key in [f"2023-01-0{x}" for x in range(5, 9)]
         ]
         + [
             run(["asset2"], partition_key)
-            for partition_key in [f"2023-01-0{str(x)}" for x in range(1, 9)]
+            for partition_key in [f"2023-01-0{x}" for x in range(1, 9)]
         ],
         current_time=create_pendulum_time(2023, 1, 9, 0),
         expected_run_requests=[run_request(asset_keys=["unpartitioned"])],

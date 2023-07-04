@@ -1047,8 +1047,8 @@ class DefaultPartitionsSubset(PartitionsSubset[T_str]):
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, DefaultPartitionsSubset)
-            and self._partitions_def == other._partitions_def  # noqa: SLF001
-            and self._subset == other._subset  # noqa: SLF001
+            and self._partitions_def == other._partitions_def
+            and self._subset == other._subset
         )
 
     def __len__(self) -> int:

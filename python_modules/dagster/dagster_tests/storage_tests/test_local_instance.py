@@ -264,10 +264,10 @@ def test_threaded_ephemeral_instance(caplog):
                 with DagsterInstance.ephemeral() as instance:
                     instance.get_runs_count()  # call run storage
                     instance.all_asset_keys()  # call event log storage
-                    instance.root_directory  # access TemporaryDirectory
+                    assert instance.root_directory  # access TemporaryDirectory
                     shared_instance.get_runs_count()
                     shared_instance.all_asset_keys()
-                    shared_instance.root_directory
+                    assert shared_instance.root_directory
                 return True
 
             with ThreadPoolExecutor(
