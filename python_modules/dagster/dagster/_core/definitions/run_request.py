@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -15,7 +16,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
-    from dagster._core.definitions.utils import validate_tags
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
