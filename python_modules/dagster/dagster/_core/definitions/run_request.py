@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.definitions.utils import validate_tags
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
@@ -100,7 +101,7 @@ class RunRequest(
         [
             ("run_key", PublicAttr[Optional[str]]),
             ("run_config", PublicAttr[Mapping[str, Any]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
+            ("tags", PublicAttr[Mapping[str, Any]]),
             ("job_name", PublicAttr[Optional[str]]),
             ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
             ("stale_assets_only", PublicAttr[bool]),
@@ -119,7 +120,7 @@ class RunRequest(
         run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
             a :py:class:`PartitionedConfig`, this value will override replace the config
             provided by it.
-        tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
+        tags (Optional[Dict[str, Any]]): A dictionary of tags (string key-value pairs) to attach
             to the launched run.
         job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
@@ -135,7 +136,7 @@ class RunRequest(
         cls,
         run_key: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
@@ -149,7 +150,7 @@ class RunRequest(
             run_config=check.opt_mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
             ),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            tags=validate_tags(check.opt_mapping_param(tags, "tags", key_type=str), allow_reserved=False),
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
