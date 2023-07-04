@@ -150,7 +150,9 @@ class RunRequest(
             run_config=check.opt_mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
             ),
-            tags=validate_tags(check.opt_mapping_param(tags, "tags", key_type=str), allow_reserved=False),
+            tags=validate_tags(
+                check.opt_mapping_param(tags, "tags", key_type=str), allow_reserved_tags=False
+            ),
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
