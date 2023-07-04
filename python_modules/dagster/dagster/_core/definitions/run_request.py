@@ -101,7 +101,7 @@ class RunRequest(
         [
             ("run_key", PublicAttr[Optional[str]]),
             ("run_config", PublicAttr[Mapping[str, Any]]),
-            ("tags", PublicAttr[Mapping[str, Any]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
             ("job_name", PublicAttr[Optional[str]]),
             ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
             ("stale_assets_only", PublicAttr[bool]),
