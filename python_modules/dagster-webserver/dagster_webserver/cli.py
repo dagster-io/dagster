@@ -186,7 +186,7 @@ def dagster_webserver(
         logger=logger,
     ) as instance:
         # Allow the instance components to change behavior in the context of a long running server process
-        instance.optimize_for_dagster_webserver(db_statement_timeout, db_pool_recycle)
+        instance.optimize_for_webserver(db_statement_timeout, db_pool_recycle)
 
         with get_workspace_process_context_from_kwargs(
             instance,

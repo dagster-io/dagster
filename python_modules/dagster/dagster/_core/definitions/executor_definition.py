@@ -444,7 +444,7 @@ def _check_intra_process_job(job: IJob) -> None:
             "You have attempted to use an executor that uses multiple processes with the job"
             f' "{job.get_definition().name}" that is not reconstructable. Job must be loaded in a'
             " way that allows dagster to reconstruct them in a new process. This means: \n  *"
-            " using the file, module, or repository.yaml arguments of"
+            " using the file, module, or workspace.yaml arguments of"
             " dagster-webserver/dagster-graphql/dagster\n  * loading the job through the"
             " reconstructable() function\n"
         )
