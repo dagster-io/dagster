@@ -66,7 +66,7 @@ If you make any changes to your dbt project that change the structure of the pro
 
 ---
 
-## Using the DbtCliClientResource for dbt CLI commands
+## Using the DbtCli for dbt CLI commands
 
 <Note>
   Check out{" "}
@@ -76,16 +76,16 @@ If you make any changes to your dbt project that change the structure of the pro
   to see this concept in context.
 </Note>
 
-Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="DbtCliClientResource" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
+Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="DbtCli" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
 
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="DbtCliClientResource" /> API docs.
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="DbtCli" /> API docs.
 
 You can configure this resource and add it to your dbt assets by doing the following:
 
 ```python startafter=start_dbt_cli_resource endbefore=end_dbt_cli_resource file=/integrations/dbt/dbt.py dedent=4
 import os
 
-from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_project
+from dagster_dbt import DbtCli, load_assets_from_dbt_project
 
 from dagster import with_resources
 
@@ -94,12 +94,7 @@ DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
 
 dbt_assets = with_resources(
     load_assets_from_dbt_project(DBT_PROJECT_PATH),
-    {
-        "dbt": DbtCliClientResource(
-            project_dir=DBT_PROJECT_PATH,
-            target=DBT_TARGET,
-        )
-    },
+    {"dbt": DbtCli(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET)},
 )
 ```
 
@@ -304,16 +299,14 @@ class PandasIOManager(ConfigurableIOManager):
 Once the I/O manager is defined, you can supply it like any other resource when calling <PyObject object="with_resources"/> :
 
 ```python startafter=start_input_manager_resources endbefore=end_input_manager_resources file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import DbtCliClientResource, load_assets_from_dbt_project
+from dagster_dbt import DbtCli, load_assets_from_dbt_project
 
 from dagster import with_resources
 
 dbt_assets = with_resources(
     load_assets_from_dbt_project(...),
     {
-        "dbt": DbtCliClientResource(
-            project_dir="path/to/dbt_project",
-        ),
+        "dbt": DbtCli(project_dir="path/to/dbt_project"),
         "pandas_df_manager": PandasIOManager(connection_str=...),
     },
 )
