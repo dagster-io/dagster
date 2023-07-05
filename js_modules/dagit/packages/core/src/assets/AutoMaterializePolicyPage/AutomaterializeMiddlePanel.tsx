@@ -97,6 +97,49 @@ export const AutomaterializeMiddlePanel = ({
     ) as Record<ConditionType, string[]>;
   }, [selectedEvaluation]);
 
+  const conditionsByType: Record<
+    ConditionType,
+    AutoMateralizeWithConditionFragment[]
+  > = React.useMemo(() => {
+    const conditions = selectedEvaluation?.conditions;
+    if (!conditions?.length) {
+      return {} as Record<ConditionType, AutoMateralizeWithConditionFragment[]>;
+    }
+
+    const conditionsMap = conditions.reduce((acc, condition) => {
+      const {__typename} = condition;
+      if (!acc[__typename]) {
+        acc[__typename] = [];
+      }
+      acc[__typename].push(condition);
+      return acc;
+    }, {} as Record<ConditionType, AutoMateralizeWithConditionFragment[]>);
+
+    return Object.fromEntries(
+      Object.entries(conditionsMap).map(([conditionType, conditions]) => {
+        return [conditionType as ConditionType, conditions];
+      }),
+    ) as Record<ConditionType, AutoMateralizeWithConditionFragment[]>;
+  }, [selectedEvaluation]);
+
+  const getWaitingOnAssetKeys = function (
+    parentOutdatedConditions: AutoMateralizeWithConditionFragment[] | undefined,
+  ): AssetKey[] {
+    if (!parentOutdatedConditions?.length) {
+      return [] as AssetKey[];
+    }
+
+    const assetKeys = [] as AssetKey[];
+    for (const condition of parentOutdatedConditions) {
+      if (condition.__typename !== 'ParentOutdatedAutoMaterializeCondition') {
+        throw new Error(`Unexpected condition type ${condition.__typename}`);
+      }
+      const {waitingOnAssetKeys} = condition;
+      assetKeys.push(...(waitingOnAssetKeys || []));
+    }
+    return assetKeys;
+  };
+
   const conditionResults = React.useMemo(() => new Set(Object.keys(conditionToPartitions)), [
     conditionToPartitions,
   ]);
@@ -218,6 +261,9 @@ export const AutomaterializeMiddlePanel = ({
           type="skip"
           assetHasDefinedPartitions={assetHasDefinedPartitions}
           partitionKeys={conditionToPartitions['ParentOutdatedAutoMaterializeCondition']}
+          waitingOnAssetKeys={getWaitingOnAssetKeys(
+            conditionsByType['ParentOutdatedAutoMaterializeCondition'],
+          )}
         />
       </CollapsibleSection>
       <CollapsibleSection header="Discard conditions met">
@@ -286,6 +332,7 @@ const Condition = ({
   type,
   partitionKeys,
   assetHasDefinedPartitions,
+  waitingOnAssetKeys,
 }: {
   text: React.ReactNode;
   met: boolean;
@@ -293,6 +340,7 @@ const Condition = ({
   type: 'materialization' | 'skip' | 'discard';
   partitionKeys: string[] | undefined;
   assetHasDefinedPartitions: boolean;
+  waitingOnAssetKeys?: AssetKey[];
 }) => {
   const activeColor = React.useMemo(() => {
     switch (type) {
@@ -313,7 +361,10 @@ const Condition = ({
       </CenterAlignedRow>
       {assetHasDefinedPartitions ? (
         partitionKeys?.length ? (
-          <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} />
+          <AutomaterializeRequestedPartitionsLink
+            partitionKeys={partitionKeys}
+            waitingOnAssetKeys={waitingOnAssetKeys}
+          />
         ) : (
           <div style={{color: Colors.Gray400}}>&ndash;</div>
         )

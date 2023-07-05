@@ -68,6 +68,7 @@ export type GetEvaluationsQuery = {
             | {
                 __typename: 'ParentOutdatedAutoMaterializeCondition';
                 decisionType: Types.AutoMaterializeDecisionType;
+                waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
                 partitionKeysOrError:
                   | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
                   | {__typename: 'PartitionSubsetDeserializationError'}
@@ -132,6 +133,7 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
     | {
         __typename: 'ParentOutdatedAutoMaterializeCondition';
         decisionType: Types.AutoMaterializeDecisionType;
+        waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         partitionKeysOrError:
           | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
           | {__typename: 'PartitionSubsetDeserializationError'}
@@ -188,6 +190,7 @@ export type AutoMateralizeWithConditionFragment_ParentMaterializedAutoMaterializ
 export type AutoMateralizeWithConditionFragment_ParentOutdatedAutoMaterializeCondition_ = {
   __typename: 'ParentOutdatedAutoMaterializeCondition';
   decisionType: Types.AutoMaterializeDecisionType;
+  waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   partitionKeysOrError:
     | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
     | {__typename: 'PartitionSubsetDeserializationError'}

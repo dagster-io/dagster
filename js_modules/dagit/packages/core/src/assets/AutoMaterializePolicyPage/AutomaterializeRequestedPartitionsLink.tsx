@@ -28,13 +28,20 @@ import {
   RunStatusAndPartitionKeyQueryVariables,
   RunStatusAndTagsFragment,
 } from './types/AutomaterializeRequestedPartitionsLink.types';
+import {AssetNodeLink} from '../../asset-graph/ForeignNode';
+import {AssetKey} from '../types';
 
 interface Props {
   runIds?: string[];
   partitionKeys: string[];
+  waitingOnAssetKeys?: AssetKey[] | undefined;
 }
 
-export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: Props) => {
+export const AutomaterializeRequestedPartitionsLink = ({
+  runIds,
+  partitionKeys,
+  waitingOnAssetKeys,
+}: Props) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [queryString, setQueryString] = React.useState('');
   const queryLowercase = queryString.toLocaleLowerCase();
@@ -65,7 +72,10 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
     return runIds ? (
       <PartitionAndRunList runIds={runIds} partitionKeys={filteredPartitionKeys} />
     ) : (
-      <VirtualizedPartitionList partitionKeys={partitionKeys} />
+      <VirtualizedPartitionList
+        partitionKeys={partitionKeys}
+        waitingOnAssetKeys={waitingOnAssetKeys}
+      />
     );
   };
 
@@ -216,9 +226,14 @@ const NoMatchesEmptyState = ({queryString}: {queryString: string}) => {
 interface VirtualizedListProps {
   partitionKeys: string[];
   runsByPartitionKey?: Record<string, RunStatusAndTagsFragment>;
+  waitingOnAssetKeys?: AssetKey[] | undefined;
 }
 
-const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: VirtualizedListProps) => {
+const VirtualizedPartitionList = ({
+  partitionKeys,
+  runsByPartitionKey,
+  waitingOnAssetKeys,
+}: VirtualizedListProps) => {
   const container = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -231,46 +246,61 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
   const showRunTag = !!runsByPartitionKey;
+  const waitingOn = waitingOnAssetKeys?.map((key) => {
+    return (
+      <>
+        <AssetNodeLink key={key.path.join('.')} assetKey={key} />
+        &nbsp;
+      </>
+    );
+  });
 
   return (
-    <Container ref={container} style={{padding: '8px 24px'}}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const partitionKey = partitionKeys[index]!;
-          const runForPartition = runsByPartitionKey ? runsByPartitionKey[partitionKey] : null;
+    <>
+      <div style={{padding: '8px 24px'}}>
+        <h3>Waiting on</h3>
+        {waitingOn}
+        <h3>Partitions</h3>
+      </div>
+      <Container ref={container} style={{padding: '8px 24px'}}>
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const partitionKey = partitionKeys[index]!;
+            const runForPartition = runsByPartitionKey ? runsByPartitionKey[partitionKey] : null;
 
-          return (
-            <Row $height={size} $start={start} key={key}>
-              <Box
-                style={{height: '100%'}}
-                flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-                border={
-                  index < partitionKeys.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
-              >
-                <div>{partitionKeys[index]}</div>
-                {showRunTag ? (
-                  <div>
-                    {runForPartition ? (
-                      <TagLink to={`/runs/${runForPartition.id}`}>
-                        <RunStatusTagWithID
-                          runId={runForPartition.id}
-                          status={runForPartition.status}
-                        />
-                      </TagLink>
-                    ) : (
-                      <Tag>Run not found</Tag>
-                    )}
-                  </div>
-                ) : null}
-              </Box>
-            </Row>
-          );
-        })}
-      </Inner>
-    </Container>
+            return (
+              <Row $height={size} $start={start} key={key}>
+                <Box
+                  style={{height: '100%'}}
+                  flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                  border={
+                    index < partitionKeys.length - 1
+                      ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
+                      : null
+                  }
+                >
+                  <div>{partitionKeys[index]}</div>
+                  {showRunTag ? (
+                    <div>
+                      {runForPartition ? (
+                        <TagLink to={`/runs/${runForPartition.id}`}>
+                          <RunStatusTagWithID
+                            runId={runForPartition.id}
+                            status={runForPartition.status}
+                          />
+                        </TagLink>
+                      ) : (
+                        <Tag>Run not found</Tag>
+                      )}
+                    </div>
+                  ) : null}
+                </Box>
+              </Row>
+            );
+          })}
+        </Inner>
+      </Container>
+    </>
   );
 };
 
