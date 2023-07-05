@@ -6,6 +6,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
 import pytest
+from fsspec.asyn import AsyncFileSystem
+from pydantic import (
+    Field as PydanticField,
+    PrivateAttr,
+)
+from upath import UPath
+
 from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
@@ -28,17 +35,14 @@ from dagster import (
     build_output_context,
     io_manager,
     materialize,
+    DagsterInvariantViolationError,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
-from pydantic import (
-    Field as PydanticField,
-    PrivateAttr,
-)
-from upath import UPath
+
 
 
 class DummyIOManager(UPathIOManager):
@@ -452,6 +456,31 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
                 data = await file.read()
 
         return json.loads(data)
+
+    @staticmethod
+    def get_async_filesystem(path: "Path") -> AsyncFileSystem:
+        """A helper method, is useful inside an async `load_from_path`.
+        The returned `fsspec` FileSystem will have async IO methods.
+        https://filesystem-spec.readthedocs.io/en/latest/async.html.
+        """
+        if isinstance(path, Path) and not isinstance(path, UPath):
+            try:
+                from morefs.asyn_local import AsyncLocalFileSystem  # type: ignore
+
+                return AsyncLocalFileSystem()
+            except ImportError as e:
+                raise RuntimeError(
+                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
+                    " filesystem"
+                ) from e
+        elif isinstance(path, UPath):
+            kwargs = path._kwargs.copy()  # noqa
+            kwargs["asynchronous"] = True
+            return path._default_accessor(path._url, **kwargs)._fs  # noqa
+        else:
+            raise DagsterInvariantViolationError(
+                f"Path type {type(path)} is not supported by the UPathIOManager"
+            )
 
 
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])

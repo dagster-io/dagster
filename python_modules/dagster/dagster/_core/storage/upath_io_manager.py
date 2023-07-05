@@ -4,8 +4,9 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Union
 
+from fsspec import AbstractFileSystem
 from fsspec.asyn import AsyncFileSystem
-from upath import UPath
+from fsspec.implementations.local import LocalFileSystem
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -16,6 +17,12 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 
 class UPathIOManager(MemoizableIOManager):
@@ -50,6 +57,35 @@ class UPathIOManager(MemoizableIOManager):
     @abstractmethod
     def load_from_path(self, context: InputContext, path: "UPath") -> Any:
         """Child classes should override this method to load the object from the filesystem."""
+
+    @property
+    def fs(self) -> AbstractFileSystem:
+        """
+        Utility function to get the IOManager filesystem.
+        Returns:
+            AbstractFileSystem: fsspec filesystem
+
+        """
+        if isinstance(self._base_path, UPath):
+            return self._base_path.fs
+        elif isinstance(self._base_path, Path):
+            return LocalFileSystem()
+        else:
+            raise ValueError(f"Unsupported base_path type: {type(self._base_path)}")
+
+    @property
+    def storage_options(self) -> Dict[str, Any]:
+        """
+        Utility function to get the fsspec storage_options which are often consumed by various I/O functions.
+        Returns:
+            Dict[str, Any]: fsspec storage_options
+        """
+        if isinstance(self._base_path, UPath):
+            return self._base_path._kwargs.copy()
+        elif isinstance(self._base_path, Path):
+            return {}
+        else:
+            raise ValueError(f"Unsupported base_path type: {type(self._base_path)}")
 
     def get_metadata(
         self,
@@ -122,7 +158,7 @@ class UPathIOManager(MemoizableIOManager):
         return self._with_extension(path)
 
     def get_path_for_partition(
-        self, context: Union[InputContext, OutputContext], path: UPath, partition: str
+        self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
     ) -> UPath:
         """Override this method if you want to use a different partitioning scheme
         (for example, if the saving function handles partitioning instead).
@@ -132,6 +168,9 @@ class UPathIOManager(MemoizableIOManager):
             context (Union[InputContext, OutputContext]): The context for the I/O operation.
             path (UPath): The path to the file or object.
             partition (str): Formatted partition/multipartition key
+
+        Returns:
+            UPath: The path to the file with the partition key appended.
         """
         return path / partition
 
@@ -365,31 +404,6 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
-
-    @staticmethod
-    def get_async_filesystem(path: "Path") -> AsyncFileSystem:
-        """A helper method for the `UPathIOManager` end-user, is useful inside an async `load_from_path`.
-        The returned `fsspec` FileSystem will have async IO methods.
-        https://filesystem-spec.readthedocs.io/en/latest/async.html.
-        """
-        if isinstance(path, Path) and not isinstance(path, UPath):
-            try:
-                from morefs.asyn_local import AsyncLocalFileSystem
-
-                return AsyncLocalFileSystem()
-            except ImportError as e:
-                raise RuntimeError(
-                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
-                    " filesystem"
-                ) from e
-        elif isinstance(path, UPath):
-            kwargs = path._kwargs.copy()  # noqa
-            kwargs["asynchronous"] = True
-            return path._default_accessor(path._url, **kwargs)._fs  # noqa
-        else:
-            raise DagsterInvariantViolationError(
-                f"Path type {type(path)} is not supported by the UPathIOManager"
-            )
 
 
 def is_dict_type(type_obj) -> bool:
