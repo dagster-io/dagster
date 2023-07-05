@@ -685,7 +685,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         }
     ]
 
-    repository_credentials = ("fake-secret-arn",)
+    repository_credentials = "fake-secret-arn"
 
     # You can provide a family or a task definition ARN
     with instance_cm(

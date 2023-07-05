@@ -79,7 +79,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
-        repository_credentials: Optional[str] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -110,10 +109,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             self.task_definition_dict = task_definition or {}
 
         self.container_name = container_name
-
-        self.repository_credentials = check.opt_str_param(
-            repository_credentials, "repository_credentials"
-        )
 
         self.secrets = check.opt_list_param(secrets, "secrets")
 
@@ -217,6 +212,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("volumes")
+
+    @property
+    def repository_credentials(self) -> Optional[Sequence[Mapping[str, Any]]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("repository_credentials")
 
     @property
     def run_sidecar_containers(self) -> Optional[Sequence[Mapping[str, Any]]]:
