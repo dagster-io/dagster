@@ -214,7 +214,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self.task_definition_dict.get("volumes")
 
     @property
-    def repository_credentials(self) -> Optional[Sequence[Mapping[str, Any]]]:
+    def repository_credentials(self) -> Optional[str]:
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("repository_credentials")
