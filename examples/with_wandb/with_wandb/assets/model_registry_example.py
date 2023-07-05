@@ -1,5 +1,5 @@
 import wandb
-from dagster import AssetExecutionContext, AssetIn, asset
+from dagster import AssetIn, Config, asset
 
 MODEL_NAME = "my_model"
 
@@ -21,15 +21,19 @@ def write_model() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
     return wandb.Artifact(MODEL_NAME, "model")
 
 
+class PromoteBestModelToProductionConfig(Config):
+    model_registry: str
+
+
 @asset(
     compute_kind="wandb",
     name="registered-model",
     ins={"artifact": AssetIn(asset_key=MODEL_NAME)},
     output_required=False,
-    config_schema={"model_registry": str},
 )
 def promote_best_model_to_production(
-    context: AssetExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
+    artifact: wandb.wandb_sdk.wandb_artifacts.Artifact,
+    config: PromoteBestModelToProductionConfig,
 ):
     """Example that links a model stored in a W&B Artifact to the Model Registry.
 
@@ -40,6 +44,6 @@ def promote_best_model_to_production(
     # In a real scenario you would evaluate model performance
     performance_is_better = True  # for simplicity we always promote the new model
     if performance_is_better:
-        model_registry = context.op_config["model_registry"]
+        model_registry = config.model_registry
         # promote the model to production
         artifact.link(target_path=model_registry, aliases=["production"])
