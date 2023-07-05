@@ -545,7 +545,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     }
 
 
-def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, Any]:
     used_dagster_resources = []
     used_custom_resources = False
 
@@ -561,8 +561,8 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
             used_custom_resources = True
 
     return {
-        "dagster_resources": str(used_dagster_resources),
-        "has_custom_resources": str(used_custom_resources),
+        "dagster_resources": used_dagster_resources,
+        "has_custom_resources": used_custom_resources,
     }
 
 
