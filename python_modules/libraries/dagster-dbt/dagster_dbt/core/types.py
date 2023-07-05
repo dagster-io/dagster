@@ -1,13 +1,18 @@
 from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
+from dagster._annotations import deprecated
 
 from ..types import DbtOutput
 
 
+@deprecated
 class DbtCliOutput(DbtOutput):
     """The results of executing a dbt command, along with additional metadata about the dbt CLI
     process that was run.
+
+    This class is deprecated, because it's only produced by methods of the DbtCliResource class,
+    which is deprecated in favor of DbtCli.
 
     Note that users should not construct instances of this class directly. This class is intended
     to be constructed from the JSON output of dbt commands.
