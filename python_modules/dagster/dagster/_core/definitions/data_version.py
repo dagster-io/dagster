@@ -25,9 +25,11 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph
-    from dagster._core.definitions.events import AssetKey
+    from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 class UnknownValue:
@@ -282,6 +284,7 @@ class CachingStaleStatusResolver:
     """
 
     _instance: "DagsterInstance"
+    _instance_queryer: Optional["CachingInstanceQueryer"]
     _asset_graph: Optional["AssetGraph"]
     _asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
 
@@ -293,6 +296,7 @@ class CachingStaleStatusResolver:
         from dagster._core.definitions.asset_graph import AssetGraph
 
         self._instance = instance
+        self._instance_queryer = None
         if isinstance(asset_graph, AssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -341,7 +345,7 @@ class CachingStaleStatusResolver:
         dependency_keys = self.asset_graph.get_parents(key)
 
         # only used if no provenance available
-        materialization = check.not_none(self._get_latest_materialization_event(key=key))
+        materialization = check.not_none(self._get_latest_data_version_record(key=key))
         materialization_time = materialization.timestamp
 
         if provenance:
@@ -405,7 +409,7 @@ class CachingStaleStatusResolver:
             # provenance is on all newer materializations. If dep is a source, then we'll never
             # provide a stale reason here.
             elif not self.asset_graph.is_source(dep_key):
-                dep_materialization = self._get_latest_materialization_event(key=dep_key)
+                dep_materialization = self._get_latest_data_version_record(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
                     yield StaleCause(key, StaleCauseCategory.DATA, "has a new input", dep_key)
@@ -450,24 +454,28 @@ class CachingStaleStatusResolver:
             self._asset_graph = check.not_none(self._asset_graph_load_fn)()
         return self._asset_graph
 
-    @cached_method
-    def _get_current_data_version(self, *, key: AssetKey) -> DataVersion:
-        is_source = self.asset_graph.is_source(key)
-        event = self._instance.get_latest_data_version_record(
-            key,
-            is_source,
-        )
-        if event is None and is_source:
-            return DEFAULT_DATA_VERSION
-        elif event is None:
-            return NULL_DATA_VERSION
-        else:
-            data_version = extract_data_version_from_entry(event.event_log_entry)
-            return data_version or DEFAULT_DATA_VERSION
+    # This is lazily constructed because it depends on the asset graph, which needs to be lazily
+    # constructed for GQL performance reasons.
+    @property
+    def instance_queryer(self) -> "CachingInstanceQueryer":
+        from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+        if self._instance_queryer is None:
+            self._instance_queryer = CachingInstanceQueryer(self._instance, self.asset_graph)
+        return self._instance_queryer
 
     @cached_method
-    def _get_latest_materialization_event(self, *, key: AssetKey) -> Optional[EventLogEntry]:
-        return self._instance.get_latest_materialization_event(key)
+    def _get_current_data_version(self, *, key: AssetKey) -> DataVersion:
+        # Currently we can only use asset records, which are fetched in one shot, for non-source
+        # assets. This is because the most recent AssetObservation is not stored on the AssetRecord.
+        record = self._get_latest_data_version_record(key=key)
+        if self.asset_graph.is_source(key) and record is None:
+            return DEFAULT_DATA_VERSION
+        elif record is None:
+            return NULL_DATA_VERSION
+        else:
+            data_version = extract_data_version_from_entry(record.event_log_entry)
+            return data_version or DEFAULT_DATA_VERSION
 
     @cached_method
     def _is_current_data_version_user_provided(self, *, key: AssetKey) -> bool:
@@ -479,11 +487,11 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_current_data_provenance(self, *, key: AssetKey) -> Optional[DataProvenance]:
-        materialization = self._get_latest_materialization_event(key=key)
-        if materialization is None:
+        record = self._get_latest_data_version_record(key=key)
+        if record is None:
             return None
         else:
-            return extract_data_provenance_from_entry(materialization)
+            return extract_data_provenance_from_entry(record.event_log_entry)
 
     @cached_method
     def _is_partitioned_or_downstream(self, *, key: AssetKey) -> bool:
@@ -508,3 +516,28 @@ class CachingStaleStatusResolver:
         else:
             deps = self.asset_graph.get_parents(key)
             return len(deps) == 0 or any(self._is_volatile(key=dep_key) for dep_key in deps)
+
+    @cached_method
+    def _get_latest_data_version_event(
+        self, *, key: AssetKey
+    ) -> Optional[Union["AssetMaterialization", "AssetObservation"]]:
+        record = self._get_latest_data_version_record(key=key)
+        if record:
+            entry = record.event_log_entry
+            return entry.asset_materialization or entry.asset_observation
+        else:
+            return None
+
+    @cached_method
+    def _get_latest_data_version_record(self, key: AssetKey) -> Optional["EventLogRecord"]:
+        from dagster._core.definitions.events import AssetKeyPartitionKey
+
+        # If an asset record is cached, all of its ancestors have already been cached.
+        if not self.asset_graph.is_source(
+            key
+        ) and not self.instance_queryer.has_cached_asset_record(key):
+            ancestors = self.asset_graph.get_ancestors(key, include_self=True)
+            self.instance_queryer.prefetch_asset_records(ancestors)
+        return self.instance_queryer.get_latest_materialization_or_observation_record(
+            asset_partition=AssetKeyPartitionKey(key)
+        )

@@ -95,10 +95,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 )
             )
 
-    def prefetch_asset_records(self, asset_keys: Sequence[AssetKey]):
+    def prefetch_asset_records(self, asset_keys: Iterable[AssetKey]):
         """For performance, batches together queries for selected assets."""
-        # get all asset records for the selected assets
-        asset_records = self.instance.get_asset_records(asset_keys)
+        keys_to_fetch = set(asset_keys) - set(self._asset_record_cache.keys())
+        if len(keys_to_fetch) == 0:
+            return
+        # get all asset records for selected assets that aren't already cached
+        asset_records = self.instance.get_asset_records(list(keys_to_fetch))
         for asset_record in asset_records:
             self._asset_record_cache[asset_record.asset_entry.asset_key] = asset_record
         for key in asset_keys:
@@ -108,6 +111,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
     # ASSET RECORDS / STORAGE IDS
     ####################
+
+    def has_cached_asset_record(self, asset_key: AssetKey) -> bool:
+        return asset_key in self._asset_record_cache
 
     def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
         if asset_key not in self._asset_record_cache:
