@@ -607,9 +607,80 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if previous_versions.get(asset_partition) != version
         }
 
+    @cached_method
+    def get_root_unreconciled_ancestors(
+        self, *, asset_partition: AssetKeyPartitionKey
+    ) -> AbstractSet[AssetKey]:
+        """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
+        of ancestors of this asset partition which are unreconciled for a reason other than that
+        one of their ancestors is unreconciled.
+        """
+        # always treat source assets as reconciled
+        if self.asset_graph.is_source(asset_partition.asset_key):
+            return set()
+        elif not self.asset_partition_has_materialization_or_observation(asset_partition):
+            return {asset_partition.asset_key}
+
+        time_or_dynamic_partitioned = isinstance(
+            self.asset_graph.get_partitions_def(asset_partition.asset_key),
+            (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
+        )
+
+        parent_asset_partitions_by_key: Dict[AssetKey, List[AssetKeyPartitionKey]] = defaultdict(
+            list
+        )
+
+        for parent in self.asset_graph.get_parents_partitions(
+            dynamic_partitions_store=self,
+            current_time=self._evaluation_time,
+            asset_key=asset_partition.asset_key,
+            partition_key=asset_partition.partition_key,
+        ).parent_partitions:
+            parent_asset_partitions_by_key[parent.asset_key].append(parent)
+
+        root_unreconciled_ancestors = set()
+        for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
+            # ignore non-observable source parents
+            if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
+                parent_key
+            ):
+                continue
+
+            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
+            # for existence of upstream materialization, do not worry about timestamps
+            if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
+                if not all(
+                    self.asset_partition_has_materialization_or_observation(parent)
+                    for parent in parent_asset_partitions
+                ):
+                    root_unreconciled_ancestors.add(parent_key)
+                continue
+
+            updated_parent_asset_partitions = self.get_asset_partitions_updated_after_cursor(
+                asset_key=parent_key,
+                asset_partitions=parent_asset_partitions,
+                after_cursor=self.get_latest_materialization_or_observation_storage_id(
+                    asset_partition
+                ),
+            )
+            if updated_parent_asset_partitions:
+                # this asset has updated parents, so it must be materialized before it is reconciled
+                root_unreconciled_ancestors.add(asset_partition.asset_key)
+            # recurse over parents
+            for parent in set(parent_asset_partitions) - updated_parent_asset_partitions:
+                root_unreconciled_ancestors.update(
+                    self.get_root_unreconciled_ancestors(asset_partition=parent)
+                )
+
+        return root_unreconciled_ancestors
+
+    @cached_method
     def get_ancestors_missing_or_with_unreconciled_children(
         self, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
+        """Return the set of ancestors of the given asset partition which are either missing or have been materialized
+        but have unreconciled children.
+        """
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
         if not self.asset_partition_has_materialization_or_observation(asset_partition):
