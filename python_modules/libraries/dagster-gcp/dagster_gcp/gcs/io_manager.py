@@ -58,6 +58,10 @@ class PickledObjectGCSIOManager(UPathIOManager):
     def _uri_for_path(self, path: UPath) -> str:
         return f"gs://{self.bucket}/{path}"
 
+    def make_directory(self, path: UPath) -> None:
+        # It is not necessary to create directories in GCP
+        return None
+
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         bytes_obj = self.bucket_obj.blob(str(path)).download_as_bytes()
         return pickle.loads(bytes_obj)
