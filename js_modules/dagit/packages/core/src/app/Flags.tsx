@@ -12,6 +12,7 @@ export const FeatureFlag = {
   flagInstanceConcurrencyLimits: 'flagInstanceConcurrencyLimits' as const,
   flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
+  flagHorizontalDAGs: 'flagHorizontalDAGs' as const,
   flagAutoLoadDefaults: 'flagAutoLoadDefaults' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
