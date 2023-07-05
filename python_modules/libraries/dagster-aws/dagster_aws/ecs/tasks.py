@@ -28,6 +28,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("runtime_platform", Mapping[str, Any]),
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
+            ("repository_credentials", Optional[str]),
         ],
     )
 ):
@@ -54,6 +55,7 @@ class DagsterEcsTaskDefinitionConfig(
         runtime_platform: Optional[Mapping[str, Any]] = None,
         mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        repository_credentials: Optional[str] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -74,6 +76,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_mapping_param(runtime_platform, "runtime_platform"),
             check.opt_sequence_param(mount_points, "mount_points"),
             check.opt_sequence_param(volumes, "volumes"),
+            check.opt_str_param(repository_credentials, "repository_credentials"),
         )
 
     def task_definition_dict(self):
@@ -96,6 +99,7 @@ class DagsterEcsTaskDefinitionConfig(
                     ({"secrets": self.secrets} if self.secrets else {}),
                     ({"environment": self.environment} if self.environment else {}),
                     ({"mountPoints": self.mount_points} if self.mount_points else {}),
+                    ({"repositoryCredentials": { "credentialsParameter": self.repository_credentials }} if self.repository_credentials else {}),
                 ),
                 *self.sidecars,
             ],
@@ -157,6 +161,7 @@ class DagsterEcsTaskDefinitionConfig(
             runtime_platform=task_definition_dict.get("runtimePlatform"),
             mount_points=container_definition.get("mountPoints"),
             volumes=task_definition_dict.get("volumes"),
+            repository_credentials=container_definition.get("repositoryCredentials", {}).get("credentialsParameter"),
         )
 
 
@@ -194,6 +199,7 @@ def get_task_definition_dict_from_current_task(
     mount_points=None,
     volumes=None,
     additional_sidecars=None,
+    repository_credentials=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -238,6 +244,7 @@ def get_task_definition_dict_from_current_task(
         "image": image,
         "entryPoint": [],
         "command": command if command else [],
+        **({"repositoryCredentials": {"credentialsParameter": repository_credentials} } if repository_credentials else {}),
         **({"secrets": secrets} if secrets else {}),
         **({} if include_sidecars else {"dependsOn": []}),
     }

@@ -79,6 +79,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        repository_credentials: Optional[str] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -110,6 +111,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         self.container_name = container_name
 
+        self.repository_credentials = check.opt_str_param(repository_credentials, "repository_credentials")
+        
         self.secrets = check.opt_list_param(secrets, "secrets")
 
         self.env_vars = check.opt_list_param(env_vars, "env_vars")
@@ -601,6 +604,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     runtime_platform=runtime_platform,
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    repository_credentials=container_context.repository_credentials,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -622,6 +626,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     additional_sidecars=container_context.run_sidecar_containers,
+                    repository_credentials=container_context.repository_credentials,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

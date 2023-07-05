@@ -113,6 +113,8 @@ def test_merge(
         },
     ]
 
+    assert merged.repository_credentials == "fake-secret-arn"
+
     assert merged.volumes == [
         {
             "name": "myOtherEfsVolume",
