@@ -31,6 +31,7 @@ jobs:
         if: ${{ github.event.pull_request }}
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files
