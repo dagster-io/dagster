@@ -2399,6 +2399,7 @@ export type ParentOutdatedAutoMaterializeCondition = AutoMaterializeConditionWit
   __typename: 'ParentOutdatedAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
   partitionKeysOrError: Maybe<PartitionKeysOrError>;
+  waitingOnAssetKeys: Maybe<Array<AssetKey>>;
 };
 
 export type Partition = {
@@ -8560,6 +8561,10 @@ export const buildParentOutdatedAutoMaterializeCondition = (
         : relationshipsToOmit.has('PartitionKeys')
         ? ({} as PartitionKeys)
         : buildPartitionKeys({}, relationshipsToOmit),
+    waitingOnAssetKeys:
+      overrides && overrides.hasOwnProperty('waitingOnAssetKeys')
+        ? overrides.waitingOnAssetKeys!
+        : [],
   };
 };
 

@@ -6,7 +6,10 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     AutoMaterializeAssetEvaluation,
 )
-from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
+from dagster._core.definitions.auto_materialize_condition import (
+    MissingAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
+)
 from dagster._core.definitions.partition import (
     SerializedPartitionsSubset,
 )
@@ -39,6 +42,11 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                             ... on Error {
                                 message
                             }
+                        }
+                    }
+                    ... on ParentOutdatedAutoMaterializeCondition {
+                        waitingOnAssetKeys {
+                            path
                         }
                     }
                 }
@@ -80,6 +88,20 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     num_skipped=0,
                     num_discarded=0,
                 ),
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_three"),
+                    partition_subsets_by_condition=[
+                        (
+                            ParentOutdatedAutoMaterializeCondition(
+                                waiting_on_asset_keys=frozenset([AssetKey("asset_two")])
+                            ),
+                            None,
+                        )
+                    ],
+                    num_requested=0,
+                    num_skipped=1,
+                    num_discarded=0,
+                ),
             ],
         )
 
@@ -114,6 +136,32 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                                 "__typename": "MissingAutoMaterializeCondition",
                                 "decisionType": "MATERIALIZE",
                                 "partitionKeysOrError": None,
+                            }
+                        ],
+                    }
+                ],
+                "currentEvaluationId": None,
+            }
+        }
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_three"]}, "limit": 10, "cursor": None},
+        )
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {
+                        "numRequested": 0,
+                        "numSkipped": 1,
+                        "numDiscarded": 0,
+                        "conditions": [
+                            {
+                                "__typename": "ParentOutdatedAutoMaterializeCondition",
+                                "decisionType": "SKIP",
+                                "partitionKeysOrError": None,
+                                "waitingOnAssetKeys": [{"path": ["asset_two"]}],
                             }
                         ],
                     }
