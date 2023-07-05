@@ -903,6 +903,8 @@ class SqlRunStorage(RunStorage):
             for row in rows:
                 if not row["partition"] or row["partition"] in _partition_data_by_partition:
                     continue
+                if DagsterRunStatus[row["status"]] == DagsterRunStatus.CANCELED:
+                    continue
 
                 _partition_data_by_partition[row["partition"]] = RunPartitionData(
                     run_id=row["run_id"],
@@ -921,6 +923,8 @@ class SqlRunStorage(RunStorage):
                 run = self._row_to_run(row)
                 partition = run.tags.get(PARTITION_NAME_TAG)
                 if not partition or partition in _partition_data_by_partition:
+                    continue
+                if run.status == DagsterRunStatus.CANCELED:
                     continue
 
                 _partition_data_by_partition[partition] = RunPartitionData(

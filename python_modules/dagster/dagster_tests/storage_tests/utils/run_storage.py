@@ -1202,6 +1202,26 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
+        three_canceled = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            job_name="foo_job",
+            status=DagsterRunStatus.CANCELED,
+            tags={
+                PARTITION_NAME_TAG: "three",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(three_canceled)
+        four_canceled = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            job_name="foo_job",
+            status=DagsterRunStatus.CANCELED,
+            tags={
+                PARTITION_NAME_TAG: "four",
+                PARTITION_SET_TAG: "foo_set",
+            },
+        )
+        storage.add_run(four_canceled)
         wrong_job = TestRunStorage.build_run(
             run_id=make_new_run_id(),
             job_name="bar_job",
