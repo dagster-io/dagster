@@ -562,7 +562,7 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
 
     return {
         "dagster_resources": used_dagster_resources,
-        "has_custom_resources": used_custom_resources,
+        "has_custom_resources": str(used_custom_resources),
     }
 
 
