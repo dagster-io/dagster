@@ -22,9 +22,8 @@ from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 if TYPE_CHECKING:
-    from upath import UPath
     from typing_extensions import Literal
-
+    from upath import UPath
 
 
 class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemIOManager"]):

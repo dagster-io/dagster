@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper
 from subprocess import Popen
 from time import sleep
-from typing import Iterator, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._core.errors import DagsterError

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, NamedTuple, Optional, Sequence, Union
+from typing import Any, List, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
 

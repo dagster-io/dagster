@@ -17,7 +17,7 @@ from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple, cast
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
