@@ -161,6 +161,9 @@ ignore = [
   # readable.
   "E731",
 
+  # (try-except-in-loop) we use this pattern in many places and the performance impact is negligible
+  "PERF203",
+
   # (no concatenation) Existing codebase has many concatentations, no reason to disallow them.
   "RUF005",
 
@@ -176,6 +179,9 @@ ignore = [
   "D205",  # (blank line after summary)
   "D417",  # (missing arg in docstring)
 
+  # (assorted perf rules) We have a lot of violations, enable when autofix is available
+  "PERF401",  # (manual-list-comprehension)
+  "PERF402",  # (manual-list-copy)
 ]
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
@@ -197,14 +203,17 @@ select = [
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
 
-  # (pycodestyle) use all pycodestyle rules
+  # (pycodestyle) pycodestyle rules
   "E",
 
-  # (pyflakes) use all pyflakes rules
+  # (pyflakes) pyflakes rules
   "F",
 
   # (isort) detect improperly sorted imports
   "I001",
+
+  # (performance) perflint rules
+  "PERF",
 
   # (pylint) use all pylint rules from categories "Convention", "Error", and "Warning" (ruff
   # currently implements only a subset of pylint's rules)
