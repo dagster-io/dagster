@@ -284,7 +284,9 @@ class EcsContainerContext(
             ),
             server_ecs_tags=check.opt_sequence_param(server_ecs_tags, "server_ecs_tags"),
             run_ecs_tags=check.opt_sequence_param(run_ecs_tags, "run_tags"),
-            repository_credentials=check.opt_str_param(repository_credentials, "repository_credentials"),
+            repository_credentials=check.opt_str_param(
+                repository_credentials, "repository_credentials"
+            ),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -339,7 +341,7 @@ class EcsContainerContext(
                     volumes=run_launcher.volumes,
                     run_sidecar_containers=run_launcher.run_sidecar_containers,
                     run_ecs_tags=run_launcher.run_ecs_tags,
-                    repository_credentials=run_launcher.repository_credentials
+                    repository_credentials=run_launcher.repository_credentials,
                 )
             )
 

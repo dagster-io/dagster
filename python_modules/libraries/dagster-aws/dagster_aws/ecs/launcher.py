@@ -111,8 +111,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         self.container_name = container_name
 
-        self.repository_credentials = check.opt_str_param(repository_credentials, "repository_credentials")
-        
+        self.repository_credentials = check.opt_str_param(
+            repository_credentials, "repository_credentials"
+        )
+
         self.secrets = check.opt_list_param(secrets, "secrets")
 
         self.env_vars = check.opt_list_param(env_vars, "env_vars")
