@@ -1078,9 +1078,9 @@ def test_multi_asset_sensor_partition_mapping():
 
     @multi_asset_sensor(monitored_assets=[july_daily_partitions.key])
     def asset_sensor(context):
-        for partition_key, _ in context.latest_materialization_records_by_partition(
+        for partition_key in context.latest_materialization_records_by_partition(
             july_daily_partitions.key
-        ).items():
+        ).keys():
             for downstream_partition in context.get_downstream_partition_keys(
                 partition_key,
                 to_asset_key=downstream_daily_partitions.key,
@@ -1425,7 +1425,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
                 get_partition_key_from_ordered_record(record) for record in ordered_records
             ] == ["2022-07-01", "2022-07-04", "2022-07-02"]
 
-            for _, event_log_entry in records_dict.items():
+            for event_log_entry in records_dict.values():
                 context.advance_cursor({july_asset.key: event_log_entry})
 
     with instance_for_test() as instance:
