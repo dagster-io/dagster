@@ -26,7 +26,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
-    HourlyPartitionsDefinition,
     get_time_partitions_def,
 )
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -46,7 +45,12 @@ from .decorators.sensor_decorator import sensor
 from .freshness_based_auto_materialize import (
     determine_asset_partitions_to_auto_materialize_for_freshness,
 )
-from .partition import PartitionsDefinition, PartitionsSubset, ScheduleType, SerializedPartitionsSubset
+from .partition import (
+    PartitionsDefinition,
+    PartitionsSubset,
+    ScheduleType,
+    SerializedPartitionsSubset,
+)
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
