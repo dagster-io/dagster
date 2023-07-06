@@ -10,7 +10,7 @@ setup(
         "matplotlib",
         "seaborn",
         "pandera",
-        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
+        "pandas",
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
