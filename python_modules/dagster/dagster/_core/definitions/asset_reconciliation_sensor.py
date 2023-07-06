@@ -984,7 +984,7 @@ def build_asset_reconciliation_sensor(
         minimum_interval_seconds (Optional[int]): The minimum amount of time that should elapse between sensor invocations.
         description (Optional[str]): A description for the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         run_tags (Optional[Mapping[str, str]): Dictionary of tags to pass to the RunRequests launched by this sensor
 
     Returns:

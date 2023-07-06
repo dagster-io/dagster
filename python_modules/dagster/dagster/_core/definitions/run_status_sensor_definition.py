@@ -437,7 +437,7 @@ def run_failure_sensor(
             monitored by this failure sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): The job a RunRequest should
             execute if yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]): (experimental)
@@ -509,7 +509,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
             execute if yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
@@ -895,7 +895,7 @@ def run_status_sensor(
             monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)

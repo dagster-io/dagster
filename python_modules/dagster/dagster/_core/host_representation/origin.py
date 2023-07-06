@@ -162,7 +162,7 @@ class InProcessCodeLocationOrigin(
     CodeLocationOrigin,
 ):
     """Identifies a repository location constructed in the same process. Primarily
-    used in tests, since Dagster system processes like Dagit and the daemon do not
+    used in tests, since Dagster system processes like the webserver and daemon do not
     load user code in the same process.
     """
 
@@ -263,7 +263,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         self,
         instance: "DagsterInstance",
     ) -> Iterator["GrpcServerCodeLocation"]:
-        from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
+        from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
 
         from .code_location import GrpcServerCodeLocation
         from .grpc_server_registry import GrpcServerRegistry
@@ -271,7 +271,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
             reload_interval=0,
-            heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+            heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=(
                 instance.code_server_process_startup_timeout
                 if instance

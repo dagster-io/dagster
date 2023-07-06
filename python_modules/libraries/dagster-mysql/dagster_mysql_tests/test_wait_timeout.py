@@ -7,7 +7,7 @@ from dagster_mysql.run_storage import MySQLRunStorage
 
 def retry_connect(conn_string: str, num_retries: int = 5, pool_recycle=-1):
     storage = MySQLRunStorage.create_clean_storage(conn_string)
-    storage.optimize_for_dagit(-1, pool_recycle=pool_recycle)
+    storage.optimize_for_webserver(-1, pool_recycle=pool_recycle)
 
     with storage.connect() as conn:
         conn.execute(db.text("SET SESSION wait_timeout = 2;"))
