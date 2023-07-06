@@ -84,7 +84,7 @@ cron-descriptor==1.4.0
 croniter==1.4.1
 cryptography==39.0.2
 cycler==0.11.0
--e python_modules/dagit
+-e python_modules/dagster-webserver
 -e python_modules/dagster
 -e python_modules/libraries/dagster-airbyte
 -e python_modules/libraries/dagster-airflow

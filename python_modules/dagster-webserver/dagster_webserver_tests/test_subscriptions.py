@@ -5,13 +5,13 @@ from unittest import mock
 
 import objgraph
 import pytest
-from dagit.graphql import GraphQLWS
-from dagit.webserver import DagitWebserver
 from dagster import job, op
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget
 from dagster._utils import file_relative_path
+from dagster_webserver.graphql import GraphQLWS
+from dagster_webserver.webserver import DagsterWebserver
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -45,7 +45,7 @@ def create_asgi_client(instance):
         version="",
         read_only=True,
     ) as process_context:
-        yield TestClient(DagitWebserver(process_context).create_asgi_app())
+        yield TestClient(DagsterWebserver(process_context).create_asgi_app())
 
 
 def send_subscription_message(ws, op, payload=None):
@@ -104,7 +104,7 @@ def test_event_log_subscription():
     reason="Inconsistent GC on the async_generator in 3.7",
 )
 def test_event_log_subscription_chunked():
-    with instance_for_test() as instance, environ({"DAGIT_EVENT_LOAD_CHUNK_SIZE": "2"}):
+    with instance_for_test() as instance, environ({"DAGSTER_WEBSERVER_EVENT_LOAD_CHUNK_SIZE": "2"}):
         run = example_job.execute_in_process(instance=instance)
         assert run.success
         assert run.run_id

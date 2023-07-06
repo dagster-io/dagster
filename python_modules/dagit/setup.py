@@ -43,16 +43,16 @@ setup(
     packages=find_packages(exclude=["dagit_tests*"]),
     include_package_data=True,
     install_requires=[
-        # cli
-        "click>=7.0,<9.0",
-        f"dagster{pin}",
-        f"dagster-graphql{pin}",
-        "starlette",
-        "uvicorn[standard]",
+        f"dagster-webserver{pin}",
     ],
     extras_require={
-        "notebook": ["nbconvert"],  # notebooks support
-        "test": ["starlette[full]"],  # TestClient deps in full
+        "notebook": [f"dagster-webserver[notebook]{pin}"],  # notebooks support
+        "test": [f"dagster-webserver[test]{pin}"],  # TestClient deps in full
     },
-    entry_points={"console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]},
+    entry_points={
+        "console_scripts": [
+            "dagit = dagster_webserver.cli:main",
+            "dagit-debug = dagster_webserver.debug:main",
+        ]
+    },
 )
