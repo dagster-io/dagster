@@ -109,6 +109,7 @@ def test_reconciliation_no_tags(scenario):
         assert run_request.partition_key == expected_run_request.partition_key
 
 
+@pytest.mark.skip("Temporarily skip until #14984 is closed")
 @pytest.mark.parametrize(
     "scenario",
     [

@@ -294,9 +294,9 @@ exotic_partition_mapping_scenarios = {
         expected_run_requests=[
             run_request(
                 asset_keys=["asset1"],
-                partition_key=MultiPartitionKey({"time": "2020-01-01", "abc": static_partition}),
+                partition_key=MultiPartitionKey({"time": key_tuple[0], "abc": key_tuple[1]}),
             )
-            for static_partition in ["a", "b", "c"]
+            for key_tuple in [("2020-01-01", "a"), ("2020-01-01", "b"), ("2020-01-01", "c")]
         ],
         current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
     ),
