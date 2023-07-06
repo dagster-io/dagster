@@ -176,7 +176,19 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 
     # Create a mapping of job id to a version of the job with the resource defs bound
     unsatisfied_job_to_resource_bound_job = {
-        id(job): job.with_top_level_resources({**job.resource_defs, **resource_defs})
+        id(job): job.with_top_level_resources(
+            {
+                **resource_defs,
+                **job.resource_defs,
+                # special case for IO manager - the job-level IO manager does not take precedence
+                # if it is the default and a top-level IO manager is provided
+                **(
+                    {"io_manager": resource_defs["io_manager"]}
+                    if _io_manager_needs_replacement(job, resource_defs)
+                    else {}
+                ),
+            }
+        )
         for job in jobs
         if job in unsatisfied_jobs
     }
