@@ -5,6 +5,7 @@ from dagster import (
     PartitionKeyRange,
     StaticPartitionsDefinition,
 )
+from dagster._core.definitions.auto_materialize_condition import MaxMaterializationsExceededAutoMaterializeCondition, MissingAutoMaterializeCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
@@ -177,6 +178,33 @@ partition_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset1"], partition_key="2013-01-06"),
         ],
+    ),
+    "one_asset_daily_partitions_never_materialized_respect_discards": AssetReconciliationScenario(
+        assets=one_asset_daily_partitions,
+        cursor_from=AssetReconciliationScenario(
+        assets=one_asset_daily_partitions,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=27, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key="2013-01-27"),
+        ],
+        expected_conditions={
+            ("asset1", "2013-01-27"): {
+                MissingAutoMaterializeCondition()
+            },
+            **{
+                ("asset1", f"2013-01-{i:02}"): {
+                    MissingAutoMaterializeCondition(),
+                    MaxMaterializationsExceededAutoMaterializeCondition(),
+                }
+                for i in range(27)
+            }
+        }
+    ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=27, hour=5),
+        # should be no new run requests as all the prior partitions were discarded
+        expected_run_requests=[ ],
     ),
     "one_asset_daily_partitions_two_years_never_materialized": AssetReconciliationScenario(
         assets=one_asset_daily_partitions,
