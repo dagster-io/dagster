@@ -125,6 +125,23 @@ def test_string_typed_input_and_output():
     assert add_one.output_defs[0].dagster_type.unique_name == "Int"
 
 
+def _make_foo():
+    class Foo:
+        pass
+
+    def foo(x: "Foo") -> "Foo":
+        return x
+
+    return foo
+
+
+def test_invalid_string_typed_input():
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='Failed to resolve type annotation "Foo"'
+    ):
+        op(_make_foo())
+
+
 def test_wrapped_input_and_output_lambda():
     @op
     def add_one(nums: List[int]) -> Optional[List[int]]:
