@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
@@ -341,7 +341,6 @@ class DagsterRunReaction(
         )
 
 
-@experimental
 class SensorResult(
     NamedTuple(
         "_SensorResult",

@@ -39,7 +39,6 @@ from dagster._utils import xor
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
-    experimental_arg_warning,
 )
 from dagster._utils.cached_method import cached_method
 
@@ -390,7 +389,7 @@ class DynamicPartitionsDefinition(
     `instance.delete_dynamic_partition` methods.
 
     Args:
-        name (Optional[str]): (Experimental) The name of the partitions definition.
+        name (Optional[str]): The name of the partitions definition.
         partition_fn (Optional[Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]]):
             A function that returns the current set of partitions. This argument is deprecated and
             will be removed in 2.0.0.
@@ -417,9 +416,6 @@ class DynamicPartitionsDefinition(
     ):
         partition_fn = check.opt_callable_param(partition_fn, "partition_fn")
         name = check.opt_str_param(name, "name")
-
-        if name:
-            experimental_arg_warning("name", "DynamicPartitionsDefinition.__new__")
 
         if partition_fn:
             deprecation_warning(
