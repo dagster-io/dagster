@@ -11,17 +11,16 @@ const statusToIntent = (status: RunStatus) => {
   switch (status) {
     case RunStatus.QUEUED:
     case RunStatus.NOT_STARTED:
+    case RunStatus.CANCELED:
     case RunStatus.MANAGED:
-    case RunStatus.CANCELING:
       return 'none';
     case RunStatus.SUCCESS:
       return 'success';
-    case RunStatus.STARTING:
-      return 'none';
     case RunStatus.FAILURE:
-    case RunStatus.CANCELED:
       return 'danger';
+    case RunStatus.STARTING:
     case RunStatus.STARTED:
+    case RunStatus.CANCELING:
       return 'primary';
     default:
       return assertUnreachable(status);
@@ -56,7 +55,9 @@ const runStatusToString = (status: RunStatus) => {
 export const runStatusToBackfillStateString = (status: RunStatus) => {
   switch (status) {
     case RunStatus.CANCELED:
+      return 'Canceled';
     case RunStatus.CANCELING:
+      return 'Canceling';
     case RunStatus.FAILURE:
       return 'Failed';
     case RunStatus.STARTING:
@@ -80,10 +81,10 @@ export const RUN_STATUS_COLORS = {
   MANAGED: Colors.Gray400,
   STARTED: Colors.Blue500,
   STARTING: Colors.Blue500,
+  CANCELING: Colors.Blue500,
   SUCCESS: Colors.Green500,
   FAILURE: Colors.Red500,
-  CANCELING: Colors.Red500,
-  CANCELED: Colors.Red500,
+  CANCELED: Colors.Gray400,
 
   // Not technically a RunStatus, but useful.
   SCHEDULED: Colors.Blue200,
