@@ -63,7 +63,7 @@ export const AssetAutomaterializePolicyPage = ({
   });
 
   const selectedEvaluation = React.useMemo(() => {
-    if (selectedEvaluationId) {
+    if (selectedEvaluationId !== undefined) {
       const found = evaluationsIncludingEmpty.find(
         (evaluation) => evaluation.evaluationId === selectedEvaluationId,
       );
