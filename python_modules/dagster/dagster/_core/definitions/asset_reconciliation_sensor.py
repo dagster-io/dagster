@@ -847,9 +847,11 @@ def reconcile(
     target_asset_keys: AbstractSet[AssetKey],
     instance: "DagsterInstance",
     cursor: AssetReconciliationCursor,
-    run_tags: Optional[Mapping[str, str]],
+    auto_materialize_run_tags: Optional[Mapping[str, str]],
+    auto_observe_run_tags: Optional[Mapping[str, str]],
     auto_observe: bool,
 ) -> Tuple[
+    Sequence[RunRequest],
     Sequence[RunRequest],
     AssetReconciliationCursor,
     Sequence[AutoMaterializeAssetEvaluation],
@@ -918,24 +920,22 @@ def reconcile(
         if auto_observe
         else []
     )
-    run_requests = [
-        *build_run_requests(
-            asset_partitions={
-                asset_partition
-                for asset_partition, conditions in conditions_by_asset_partition.items()
-                if _will_materialize_for_conditions(conditions)
-            },
-            asset_graph=asset_graph,
-            run_tags=run_tags,
-        ),
-        *auto_observe_run_requests,
-    ]
+    auto_materialize_run_requests = build_run_requests(
+        asset_partitions={
+            asset_partition
+            for asset_partition, conditions in conditions_by_asset_partition.items()
+            if _will_materialize_for_conditions(conditions)
+        },
+        asset_graph=asset_graph,
+        run_tags=run_tags,
+    )
 
     return (
-        run_requests,
+        auto_materialize_run_requests,
+        auto_observe_run_requests,
         cursor.with_updates(
             latest_storage_id=latest_storage_id,
-            run_requests=run_requests,
+            run_requests=[*auto_materialize_run_requests, *auto_observe_run_requests],
             asset_graph=asset_graph,
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
@@ -1163,7 +1163,7 @@ def build_asset_reconciliation_sensor(
                 ),
             )
 
-        run_requests, updated_cursor, _ = reconcile(
+        auto_materialize_run_requests, _, updated_cursor, _ = reconcile(
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             instance=context.instance,
@@ -1173,7 +1173,7 @@ def build_asset_reconciliation_sensor(
         )
 
         context.update_cursor(updated_cursor.serialize())
-        return run_requests
+        return auto_materialize_run_requests
 
     return _sensor
 
