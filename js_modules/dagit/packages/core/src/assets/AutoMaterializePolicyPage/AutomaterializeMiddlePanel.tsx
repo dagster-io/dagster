@@ -97,9 +97,12 @@ export const AutomaterializeMiddlePanel = ({
     ) as Record<ConditionType, string[]>;
   }, [selectedEvaluation]);
 
-  const conditionResults = React.useMemo(() => new Set(Object.keys(conditionToPartitions)), [
-    conditionToPartitions,
-  ]);
+  const conditionResults = React.useMemo(() => {
+    if (assetHasDefinedPartitions) {
+      return new Set(Object.keys(conditionToPartitions));
+    }
+    return new Set(selectedEvaluation?.conditions?.map((condition) => condition.__typename) || []);
+  }, [assetHasDefinedPartitions, conditionToPartitions, selectedEvaluation]);
 
   if (loading && !data) {
     return (
