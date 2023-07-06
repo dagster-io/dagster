@@ -7,7 +7,7 @@ export type LaunchAssetWarningsQueryVariables = Types.Exact<{
 }>;
 
 export type LaunchAssetWarningsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;

@@ -273,7 +273,7 @@ export const ReleasesWorkspace: MockedResponse<LaunchAssetLoaderQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery' as const,
+      __typename: 'Query' as const,
       assetNodes: assetNodes as any[],
       assetNodeDefinitionCollisions: [],
     },

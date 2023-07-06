@@ -9,7 +9,7 @@ export type PreviewConfigQueryVariables = Types.Exact<{
 }>;
 
 export type PreviewConfigQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   isPipelineConfigValid:
     | {__typename: 'InvalidSubsetError'; message: string}
     | {__typename: 'PipelineConfigValidationValid'}
@@ -125,7 +125,7 @@ export type PipelineExecutionConfigSchemaQueryVariables = Types.Exact<{
 }>;
 
 export type PipelineExecutionConfigSchemaQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   runConfigSchemaOrError:
     | {__typename: 'InvalidSubsetError'}
     | {__typename: 'ModeNotFoundError'; message: string}

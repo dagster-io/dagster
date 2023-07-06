@@ -13,7 +13,7 @@ export type ConcurrencyLimitFragment = {
 export type InstanceConcurrencyLimitsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type InstanceConcurrencyLimitsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instance: {
     __typename: 'Instance';
     id: string;
@@ -32,17 +32,14 @@ export type SetConcurrencyLimitMutationVariables = Types.Exact<{
   limit: Types.Scalars['Int'];
 }>;
 
-export type SetConcurrencyLimitMutation = {
-  __typename: 'DagitMutation';
-  setConcurrencyLimit: boolean;
-};
+export type SetConcurrencyLimitMutation = {__typename: 'Mutation'; setConcurrencyLimit: boolean};
 
 export type FreeConcurrencySlotsForRunMutationVariables = Types.Exact<{
   runId: Types.Scalars['String'];
 }>;
 
 export type FreeConcurrencySlotsForRunMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   freeConcurrencySlotsForRun: boolean;
 };
 
@@ -52,7 +49,7 @@ export type RunsForConcurrencyKeyQueryVariables = Types.Exact<{
 }>;
 
 export type RunsForConcurrencyKeyQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {

@@ -7,7 +7,7 @@ export type AssetsCatalogRootQueryVariables = Types.Exact<{
 }>;
 
 export type AssetsCatalogRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetOrError:
     | {__typename: 'Asset'; id: string; key: {__typename: 'AssetKey'; path: Array<string>}}
     | {__typename: 'AssetNotFoundError'};

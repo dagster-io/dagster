@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type InstanceWarningQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type InstanceWarningQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instance: {
     __typename: 'Instance';
     id: string;

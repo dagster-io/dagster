@@ -7,7 +7,7 @@ export type PartitionStepStatusPipelineQueryVariables = Types.Exact<{
 }>;
 
 export type PartitionStepStatusPipelineQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineSnapshotOrError:
     | {__typename: 'PipelineNotFoundError'}
     | {

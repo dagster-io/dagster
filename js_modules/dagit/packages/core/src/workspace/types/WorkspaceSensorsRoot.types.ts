@@ -7,7 +7,7 @@ export type WorkspaceSensorsQueryVariables = Types.Exact<{
 }>;
 
 export type WorkspaceSensorsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   repositoryOrError:
     | {
         __typename: 'PythonError';

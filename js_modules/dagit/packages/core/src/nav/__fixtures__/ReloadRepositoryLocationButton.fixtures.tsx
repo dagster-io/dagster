@@ -11,7 +11,7 @@ export const buildPermissionsQuery = (canReload: boolean): MockedResponse<Permis
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         unscopedPermissions: [],
         workspaceOrError: buildWorkspace({
           locationEntries: [

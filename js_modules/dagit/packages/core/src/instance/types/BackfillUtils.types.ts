@@ -7,7 +7,7 @@ export type ResumeBackfillMutationVariables = Types.Exact<{
 }>;
 
 export type ResumeBackfillMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   resumePartitionBackfill:
     | {
         __typename: 'PythonError';
@@ -28,7 +28,7 @@ export type LaunchPartitionBackfillMutationVariables = Types.Exact<{
 }>;
 
 export type LaunchPartitionBackfillMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   launchPartitionBackfill:
     | {__typename: 'ConflictingExecutionParamsError'; message: string}
     | {__typename: 'InvalidOutputError'; stepKey: string; invalidOutputName: string}
