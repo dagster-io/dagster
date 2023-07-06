@@ -95,16 +95,13 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         num_discarded = 0
 
         for conditions in conditions_by_asset_partition.values():
-            if not conditions:
-                continue
-            decision_types = {condition.decision_type for condition in conditions}
-            if AutoMaterializeDecisionType.DISCARD in decision_types:
-                num_discarded += 1
-            elif AutoMaterializeDecisionType.SKIP in decision_types:
-                num_skipped += 1
-            else:
-                check.invariant(AutoMaterializeDecisionType.MATERIALIZE in decision_types)
+            decision_type = _decision_type_for_conditions(conditions)
+            if decision_type == AutoMaterializeDecisionType.MATERIALIZE:
                 num_requested += 1
+            elif decision_type == AutoMaterializeDecisionType.SKIP:
+                num_skipped += 1
+            elif decision_type == AutoMaterializeDecisionType.DISCARD:
+                num_discarded += 1
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
@@ -215,7 +212,9 @@ class AssetReconciliationCursor(NamedTuple):
     def with_updates(
         self,
         latest_storage_id: Optional[int],
-        run_requests: Sequence[RunRequest],
+        conditions_by_asset_partition: Mapping[
+            AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
+        ],
         newly_materialized_root_asset_keys: AbstractSet[AssetKey],
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
         evaluation_id: int,
@@ -227,15 +226,25 @@ class AssetReconciliationCursor(NamedTuple):
         requested_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
         requested_non_partitioned_root_assets: Set[AssetKey] = set()
 
-        for run_request in run_requests:
-            for asset_key in cast(Iterable[AssetKey], run_request.asset_selection):
-                if not asset_graph.has_non_source_parents(asset_key):
-                    if run_request.partition_key:
-                        requested_root_partitions_by_asset_key[asset_key].add(
-                            run_request.partition_key
-                        )
-                    else:
-                        requested_non_partitioned_root_assets.add(asset_key)
+        for asset_partition, conditions in conditions_by_asset_partition.items():
+            if (
+                # only consider root assets
+                not asset_graph.has_non_source_parents(asset_partition.asset_key)
+                # which were discarded or materialized
+                and (
+                    _decision_type_for_conditions(conditions)
+                    in (
+                        AutoMaterializeDecisionType.DISCARD,
+                        AutoMaterializeDecisionType.MATERIALIZE,
+                    )
+                )
+            ):
+                if asset_partition.partition_key:
+                    requested_root_partitions_by_asset_key[asset_partition.asset_key].add(
+                        asset_partition.partition_key
+                    )
+                else:
+                    requested_non_partitioned_root_assets.add(asset_partition.asset_key)
 
         result_materialized_or_requested_root_partitions_by_asset_key = {
             **self.materialized_or_requested_root_partitions_by_asset_key
@@ -529,15 +538,29 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
+def _decision_type_for_conditions(
+    conditions: Optional[AbstractSet[AutoMaterializeCondition]],
+) -> Optional[AutoMaterializeDecisionType]:
+    """Based on a set of conditions, determine the resulting decision."""
+    if not conditions:
+        return None
+    condition_decision_types = {condition.decision_type for condition in conditions}
+    # precedence of decisions
+    for decision_type in [
+        AutoMaterializeDecisionType.SKIP,
+        AutoMaterializeDecisionType.DISCARD,
+        AutoMaterializeDecisionType.MATERIALIZE,
+    ]:
+        if decision_type in condition_decision_types:
+            return decision_type
+    return None
+
+
 def _will_materialize_for_conditions(
     conditions: Optional[AbstractSet[AutoMaterializeCondition]],
 ) -> bool:
     """Based on a set of conditions, determine if the asset will be materialized."""
-    conditions = conditions or set()
-    return len(conditions) > 0 and all(
-        condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-        for condition in conditions
-    )
+    return _decision_type_for_conditions(conditions) == AutoMaterializeDecisionType.MATERIALIZE
 
 
 def determine_asset_partitions_to_auto_materialize(
@@ -805,7 +828,7 @@ def reconcile(
         run_requests,
         cursor.with_updates(
             latest_storage_id=latest_storage_id,
-            run_requests=run_requests,
+            conditions_by_asset_partition=conditions_by_asset_partition,
             asset_graph=asset_graph,
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
