@@ -198,10 +198,8 @@ class AssetReconciliationCursor(NamedTuple):
     ) -> Iterable[str]:
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
-        handled_subset = (
-            self.handled_root_partitions_by_asset_key.get(
-                asset_key, partitions_def.empty_subset()
-            )
+        handled_subset = self.handled_root_partitions_by_asset_key.get(
+            asset_key, partitions_def.empty_subset()
         )
 
         return handled_subset.get_partition_keys_not_in_subset(
@@ -246,15 +244,11 @@ class AssetReconciliationCursor(NamedTuple):
                 else:
                     handled_non_partitioned_root_assets.add(asset_partition.asset_key)
 
-        result_handled_root_partitions_by_asset_key = {
-            **self.handled_root_partitions_by_asset_key
-        }
+        result_handled_root_partitions_by_asset_key = {**self.handled_root_partitions_by_asset_key}
         for asset_key in set(newly_materialized_root_partitions_by_asset_key.keys()) | set(
             handled_root_partitions_by_asset_key.keys()
         ):
-            prior_materialized_partitions = (
-                self.handled_root_partitions_by_asset_key.get(asset_key)
-            )
+            prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(asset_key)
             if prior_materialized_partitions is None:
                 prior_materialized_partitions = cast(
                     PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
@@ -326,18 +320,15 @@ class AssetReconciliationCursor(NamedTuple):
             try:
                 # in the case that the partitions def has changed, we may not be able to deserialize
                 # the corresponding subset. in this case, we just use an empty subset
-                handled_root_partitions_by_asset_key[
-                    key
-                ] = partitions_def.deserialize_subset(serialized_subset)
+                handled_root_partitions_by_asset_key[key] = partitions_def.deserialize_subset(
+                    serialized_subset
+                )
             except:
-                handled_root_partitions_by_asset_key[
-                    key
-                ] = partitions_def.empty_subset()
+                handled_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
         return cls(
             latest_storage_id=latest_storage_id,
             handled_root_asset_keys={
-                AssetKey.from_user_string(key_str)
-                for key_str in serialized_handled_root_asset_keys
+                AssetKey.from_user_string(key_str) for key_str in serialized_handled_root_asset_keys
             },
             handled_root_partitions_by_asset_key=handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
