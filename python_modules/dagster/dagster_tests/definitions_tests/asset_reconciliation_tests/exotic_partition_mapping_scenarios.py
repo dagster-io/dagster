@@ -9,6 +9,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
@@ -94,6 +95,7 @@ multipartitioned_self_dependency = [
                 }
             )
         },
+        auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=3),
     )
 ]
 
@@ -292,9 +294,9 @@ exotic_partition_mapping_scenarios = {
         expected_run_requests=[
             run_request(
                 asset_keys=["asset1"],
-                partition_key=MultiPartitionKey({"time": key_tuple[0], "abc": key_tuple[1]}),
+                partition_key=MultiPartitionKey({"time": "2020-01-01", "abc": static_partition}),
             )
-            for key_tuple in [("2020-01-01", "a"), ("2020-01-01", "b"), ("2020-01-01", "c")]
+            for static_partition in ["a", "b", "c"]
         ],
         current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
     ),
@@ -303,8 +305,9 @@ exotic_partition_mapping_scenarios = {
         unevaluated_runs=[
             single_asset_run(
                 asset_key="asset1",
-                partition_key=MultiPartitionKey({"time": "2020-01-01", "abc": "a"}),
+                partition_key=MultiPartitionKey({"time": "2020-01-01", "abc": static_partition}),
             )
+            for static_partition in ["a", "b", "c"]
         ],
         cursor_from=AssetReconciliationScenario(
             assets=multipartitioned_self_dependency,
@@ -313,8 +316,9 @@ exotic_partition_mapping_scenarios = {
         expected_run_requests=[
             run_request(
                 asset_keys=["asset1"],
-                partition_key=MultiPartitionKey({"time": "2020-01-02", "abc": "a"}),
+                partition_key=MultiPartitionKey({"time": "2020-01-02", "abc": static_partition}),
             )
+            for static_partition in ["a", "b", "c"]
         ],
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
     ),

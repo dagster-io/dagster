@@ -145,15 +145,14 @@ auto_materialize_policy_scenarios = {
             )
         ],
     ),
-    "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
             AutoMaterializePolicy(
                 on_missing=True,
                 for_freshness=True,
                 on_new_parent_data=True,
-                time_window_partition_scope_minutes=24 * 2 * 60,
-                max_materializations_per_minute=None,
+                max_materializations_per_minute=42,
             ),
         ),
         unevaluated_runs=[],
@@ -161,14 +160,23 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-05-10:00", end="2013-01-07-03:00")
             )
         ],
         expected_conditions={
             **{
                 ("hourly", p): {MissingAutoMaterializeCondition()}
                 for p in hourly_partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                    PartitionKeyRange(start="2013-01-05-10:00", end="2013-01-07-03:00")
+                )
+            },
+            **{
+                ("hourly", p): {
+                    MaxMaterializationsExceededAutoMaterializeCondition(),
+                    MissingAutoMaterializeCondition(),
+                }
+                for p in hourly_partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-09:00")
                 )
             },
             ("daily", "2013-01-05"): {
@@ -185,15 +193,14 @@ auto_materialize_policy_scenarios = {
             },
         },
     ),
-    "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
+    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
             AutoMaterializePolicy(
                 on_missing=True,
                 for_freshness=True,
                 on_new_parent_data=False,
-                time_window_partition_scope_minutes=24 * 2 * 60,
-                max_materializations_per_minute=None,
+                max_materializations_per_minute=10,
             ),
         ),
         unevaluated_runs=[],
@@ -201,7 +208,7 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-06-18:00", end="2013-01-07-03:00")
             )
         ],
     ),
@@ -224,7 +231,6 @@ auto_materialize_policy_scenarios = {
                 on_missing=True,
                 on_new_parent_data=True,
                 for_freshness=False,
-                time_window_partition_scope_minutes=None,
                 max_materializations_per_minute=1,
             ),
         ),
@@ -260,7 +266,6 @@ auto_materialize_policy_scenarios = {
                 on_missing=True,
                 on_new_parent_data=True,
                 for_freshness=False,
-                time_window_partition_scope_minutes=None,
                 max_materializations_per_minute=5,
             ),
         ),

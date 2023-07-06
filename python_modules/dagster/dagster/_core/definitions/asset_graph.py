@@ -711,8 +711,8 @@ class ToposortedPriorityQueue:
             ).timestamp()
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
+        time_partitions_def = get_time_partitions_def(partitions_def)
         if self._asset_graph.has_self_dependency(asset_key):
-            time_partitions_def = get_time_partitions_def(partitions_def)
             if time_partitions_def is None:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
@@ -725,11 +725,12 @@ class ToposortedPriorityQueue:
                 time_partitions_def,
                 get_time_partition_key(partitions_def, asset_partition.partition_key),
             )
-        elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        elif isinstance(time_partitions_def, TimeWindowPartitionsDefinition):
             # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
             # than older ones
             partition_sort_key = -1 * _sort_key_for_time_window_partition(
-                partitions_def, cast(str, asset_partition.partition_key)
+                time_partitions_def,
+                get_time_partition_key(partitions_def, asset_partition.partition_key),
             )
         else:
             partition_sort_key = None
