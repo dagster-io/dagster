@@ -97,7 +97,7 @@ def test_reconcile():
     asset_graph = AssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()
 
-    auto_materialize_run_requests, auto_observe_run_requests, cursor, _ = reconcile(
+    run_requests, cursor = reconcile(
         auto_observe=True,
         asset_graph=asset_graph,
         target_asset_keys=set(),
@@ -105,7 +105,6 @@ def test_reconcile():
         cursor=AssetReconciliationCursor.empty(),
         run_tags={},
     )
-    assert len(auto_materialize_run_requests) == 0
-    assert len(auto_observe_run_requests) == 1
-    assert auto_observe_run_requests[0].asset_selection == [AssetKey("asset1")]
+    assert len(run_requests) == 1
+    assert run_requests[0] is False
     assert cursor.last_observe_request_timestamp_by_asset_key[AssetKey(["asset1"])] > 0

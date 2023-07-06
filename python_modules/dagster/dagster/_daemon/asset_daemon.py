@@ -104,12 +104,7 @@ class AssetDaemon(IntervalDaemon):
             else AssetReconciliationCursor.empty()
         )
 
-        (
-            auto_materialize_run_requests,
-            auto_observe_run_requests,
-            new_cursor,
-            evaluations,
-        ) = reconcile(
+        run_requests, new_cursor, evaluations = reconcile(
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             instance=instance,
