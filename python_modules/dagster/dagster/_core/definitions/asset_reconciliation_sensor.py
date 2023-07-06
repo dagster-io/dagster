@@ -46,7 +46,7 @@ from .decorators.sensor_decorator import sensor
 from .freshness_based_auto_materialize import (
     determine_asset_partitions_to_auto_materialize_for_freshness,
 )
-from .partition import PartitionsDefinition, PartitionsSubset, SerializedPartitionsSubset
+from .partition import PartitionsDefinition, PartitionsSubset, ScheduleType, SerializedPartitionsSubset
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
@@ -153,7 +153,7 @@ def get_implicit_auto_materialize_policy(
         time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
         if time_partitions_def is None:
             max_materializations_per_minute = None
-        elif isinstance(time_partitions_def, HourlyPartitionsDefinition):
+        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
             max_materializations_per_minute = 24
         else:
             max_materializations_per_minute = 1
