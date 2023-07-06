@@ -93,24 +93,7 @@ In your `assets.py`, make a new asset called `signups`. In this asset, you'll us
 Copy and paste the code below into the appropriate sections of your `asset.py`.
 
 ```python file=/tutorial/connecting/assets/assets.py startafter=start_add_signsup_asset endbefore=end_add_signsup_asset
-from .resources.data_generator import DataGeneratorResource
-
-# ...
-
-
-@asset
-def signups(hackernews_api: DataGeneratorResource):
-    signups = pd.DataFrame(hackernews_api.get_signups())
-
-    return Output(
-        value=signups,
-        metadata={
-            "Record Count": len(signups),
-            "Preview": MetadataValue.md(signups.head().to_markdown()),
-            "Earliest Signup": signups["registered_at"].min(),
-            "Latest Signup": signups["registered_at"].max(),
-        },
-    )
+ENOENT: no such file or directory, open '/Users/tim/Documents/dagster/examples/docs_snippets/docs_snippets/tutorial/connecting/assets/assets.py'
 ```
 
 Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `2`: one for the asset using it and another for the job using this asset. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.
