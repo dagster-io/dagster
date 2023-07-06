@@ -32,6 +32,9 @@ def create_dagster_webserver_cli():
     return dagster_webserver
 
 
+# If the user runs `dagit` from the command line, we update this to "dagit"
+WEBSERVER_LOGGER_NAME = "dagster-webserver"
+
 DEFAULT_WEBSERVER_HOST = "127.0.0.1"
 DEFAULT_WEBSERVER_PORT = 3000
 
@@ -169,7 +172,7 @@ def dagster_webserver(
         os.environ["PYTHONWARNINGS"] = "ignore"
 
     configure_loggers()
-    logger = logging.getLogger("dagster-webserver")
+    logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     if sys.argv[0].endswith("dagit"):
         logger.warning(
@@ -202,7 +205,9 @@ async def _lifespan(app):
     try:
         yield
     except asyncio.exceptions.CancelledError:
-        logging.getLogger("dagster-webserver").info("Server for dagster-webserver was shut down.")
+        logging.getLogger(WEBSERVER_LOGGER_NAME).info(
+            f"Server for {WEBSERVER_LOGGER_NAME} was shut down."
+        )
         # Expected error when dagster-webserver is terminated by CTRL-C, suppress
         pass
 
@@ -221,7 +226,7 @@ def host_dagster_ui_with_workspace_process_context(
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
 
-    logger = logging.getLogger("dagster-webserver")
+    logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     app = create_app_from_workspace_process_context(
         workspace_process_context, path_prefix, lifespan=_lifespan
@@ -253,6 +258,10 @@ cli = create_dagster_webserver_cli()
 
 
 def main():
+    # We only ever update this variable here. It is used to set the logger name as "dagit" if the
+    # user invokes "dagit" on the command line.
+    global WEBSERVER_LOGGER_NAME  # noqa: PLW0603
+
     # Click does not support passing multiple env var prefixes, so for backcompat we will convert any
     # DAGIT_* env vars to their DAGSTER_WEBSERVER_* equivalents here. Remove this in 2.0.
     for key, val in os.environ.items():
@@ -260,6 +269,9 @@ def main():
             new_key = "DAGSTER_WEBSERVER_" + key[6:]
             if new_key not in os.environ:
                 os.environ[new_key] = val
+
+    if sys.argv[0].endswith("dagit"):
+        WEBSERVER_LOGGER_NAME = "dagster_webserver"
 
     # click magic
     cli(auto_envvar_prefix="DAGSTER_WEBSERVER")
