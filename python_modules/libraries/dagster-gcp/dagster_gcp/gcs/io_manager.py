@@ -38,6 +38,10 @@ class PickledObjectGCSIOManager(UPathIOManager):
         if self.bucket_obj.blob(key).exists():
             self.bucket_obj.blob(key).delete()
 
+    def make_directory(self, path: UPath) -> None:
+        # It is necessary to not create directories in GCS
+        return None
+
     def path_exists(self, path: UPath) -> bool:
         key = str(path)
         blobs = self.client.list_blobs(self.bucket, prefix=key)
