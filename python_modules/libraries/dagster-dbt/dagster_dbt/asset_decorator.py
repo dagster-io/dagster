@@ -4,7 +4,7 @@ from dagster import AssetsDefinition, PartitionsDefinition, multi_asset
 from dagster._annotations import experimental
 
 from .asset_utils import get_dbt_multi_asset_args, get_deps
-from .cli.resources_v2 import DbtManifest
+from .core.resources_v2 import DbtManifest
 from .utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
 

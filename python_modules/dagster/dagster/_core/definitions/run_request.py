@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -119,7 +120,7 @@ class RunRequest(
         run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
             a :py:class:`PartitionedConfig`, this value will override replace the config
             provided by it.
-        tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
+        tags (Optional[Dict[str, Any]]): A dictionary of tags (string key-value pairs) to attach
             to the launched run.
         job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
@@ -135,7 +136,7 @@ class RunRequest(
         cls,
         run_key: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
@@ -149,7 +150,7 @@ class RunRequest(
             run_config=check.opt_mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
             ),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            tags=validate_tags(check.opt_mapping_param(tags, "tags", key_type=str)),
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey

@@ -2,12 +2,6 @@ from .asset_defs import (
     load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
     load_assets_from_dbt_project as load_assets_from_dbt_project,
 )
-from .cli import (
-    DbtCliClientResource as DbtCliClientResource,
-    DbtCliOutput as DbtCliOutput,
-    DbtCliResource as DbtCliResource,
-    dbt_cli_resource as dbt_cli_resource,
-)
 from .cloud import (
     DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,
@@ -16,6 +10,12 @@ from .cloud import (
     dbt_cloud_resource as dbt_cloud_resource,
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
+)
+from .core import (
+    DbtCliClientResource as DbtCliClientResource,
+    DbtCliOutput as DbtCliOutput,
+    DbtCliResource as DbtCliResource,
+    dbt_cli_resource as dbt_cli_resource,
 )
 from .dbt_resource import DbtResource as DbtResource
 from .errors import (
@@ -47,7 +47,7 @@ from .version import __version__ as __version__
 # ########################
 
 from .asset_decorator import dbt_assets as dbt_assets
-from .cli import (
+from .core import (
     DbtCli as DbtCli,
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliInvocation as DbtCliInvocation,

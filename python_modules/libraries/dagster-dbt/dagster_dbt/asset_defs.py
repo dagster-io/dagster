@@ -52,10 +52,10 @@ from dagster_dbt.asset_utils import (
     get_asset_deps,
     get_deps,
 )
-from dagster_dbt.cli.resources import DbtCliClient
-from dagster_dbt.cli.resources_v2 import DbtCli, DbtManifest
-from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import build_command_args_from_flags, execute_cli
+from dagster_dbt.core.resources import DbtCliClient
+from dagster_dbt.core.resources_v2 import DbtCli, DbtManifest
+from dagster_dbt.core.types import DbtCliOutput
+from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
 from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (

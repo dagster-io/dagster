@@ -5170,6 +5170,7 @@ __metadata:
     html-react-parser: ^2.0.0
     image-size: ^0.9.7
     jest: ^27.5.1
+    lodash: ^4.17.21
     mdast-util-toc: ^5.1.0
     new-github-issue-url: ^0.2.1
     next: 12

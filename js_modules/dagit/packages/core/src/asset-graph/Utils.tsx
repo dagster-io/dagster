@@ -1,5 +1,6 @@
-import {pathVerticalDiagonal} from '@vx/shape';
+import {pathVerticalDiagonal, pathHorizontalStep} from '@vx/shape';
 
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {Maybe, RunStatus, StaleCauseCategory, StaleStatus} from '../graphql/types';
 
 import {
@@ -116,12 +117,20 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = pathVerticalDiagonal({
-  source: (s: any) => s.source,
-  target: (s: any) => s.target,
-  x: (s: any) => s.x,
-  y: (s: any) => s.y,
-});
+export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
+  ? pathHorizontalStep({
+      percent: 0.5,
+      source: (s: any) => s.source,
+      target: (s: any) => s.target,
+      x: (s: any) => s.x,
+      y: (s: any) => s.y,
+    })
+  : pathVerticalDiagonal({
+      source: (s: any) => s.source,
+      target: (s: any) => s.target,
+      x: (s: any) => s.x,
+      y: (s: any) => s.y,
+    });
 
 export interface LiveDataForNode {
   stepKey: string;

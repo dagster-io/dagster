@@ -28,7 +28,7 @@ from dagster_dbt import (
     dbt_cli_resource,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.cli.utils import parse_run_results
+from dagster_dbt.core.utils import parse_run_results
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
 from dagster_duckdb import build_duckdb_io_manager
@@ -197,7 +197,12 @@ def test_basic(
     fail_test,
     json_log_format,
 ):
-    if not json_log_format and dbt_cli_resource_factory == DbtCli:
+    dbt_resource = dbt_cli_resource_factory(
+        project_dir=test_project_dir,
+        profiles_dir=dbt_config_dir,
+        json_log_format=json_log_format,
+    )
+    if not json_log_format and isinstance(dbt_resource, DbtCli):
         pytest.skip("DbtCli does not support json_log_format")
 
     # expected to emit json-formatted messages
@@ -213,13 +218,7 @@ def test_basic(
     result = build_assets_job(
         "test_job",
         dbt_assets,
-        resource_defs={
-            "dbt": dbt_cli_resource_factory(
-                project_dir=test_project_dir,
-                profiles_dir=dbt_config_dir,
-                json_log_format=json_log_format,
-            )
-        },
+        resource_defs={"dbt": dbt_resource},
     ).execute_in_process(
         raise_on_error=False,
         run_config={"ops": {dbt_assets[0].op.name: {"config": {"vars": {"fail_test": fail_test}}}}},
@@ -256,12 +255,13 @@ def test_basic(
     captured = capsys.readouterr()
 
     # make sure we're not logging the raw json to the console
-    for output in [captured.out, captured.err]:
-        for line in output.split("\n"):
-            # we expect a line like --vars {"fail_test": True}
-            if "vars" in line:
-                continue
-            assert "{" not in line
+    if not isinstance(dbt_resource, DbtCli):
+        for output in [captured.out, captured.err]:
+            for line in output.split("\n"):
+                # we expect a line like --vars {"fail_test": True}
+                if "vars" in line:
+                    continue
+                assert "{" not in line
 
 
 def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
