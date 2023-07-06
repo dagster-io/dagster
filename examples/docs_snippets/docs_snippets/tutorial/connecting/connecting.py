@@ -30,7 +30,7 @@ io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
 duckdb_io_manager = fs_io_manager.configured({"base_dir": "/tmp/dagster"})
 
 # start_add_resource
-from .resources import DataGeneratorResource
+from .resources.data_generator import DataGeneratorResource
 
 # ...
 
