@@ -1,6 +1,3 @@
-# TODO - for ease of initial review, putting all of these tests in a single file. After a review pass,
-# I can sort them out into the files that make sense for each test
-
 import re
 
 import pytest
@@ -37,7 +34,7 @@ def test_single_asset_deps_via_assets_definition():
         return None
 
     assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing()
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -54,7 +51,7 @@ def test_single_asset_deps_via_string():
         return None
 
     assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing()
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -71,7 +68,7 @@ def test_single_asset_deps_via_asset_key():
         return None
 
     assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing()
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -95,9 +92,9 @@ def test_single_asset_deps_via_mixed_types():
         return None
 
     assert len(downstream.input_names) == 3
-    assert downstream.op.ins["via_definition"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert downstream.op.ins["via_string"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert downstream.op.ins["via_asset_key"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert downstream.op.ins["via_definition"].dagster_type.is_nothing()
+    assert downstream.op.ins["via_string"].dagster_type.is_nothing()
+    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing()
 
     res = materialize(
         [via_definition, via_string, via_asset_key, downstream],
@@ -121,15 +118,15 @@ def test_multi_asset_deps_via_string():
         return None
 
     assert len(depends_on_one_sub_asset.input_names) == 1
-    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing()
 
     @asset(deps=["asset_1", "asset_2"])
     def depends_on_both_sub_assets():
         return None
 
     assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing()
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing()
 
     res = materialize(
         [a_multi_asset, depends_on_one_sub_asset, depends_on_both_sub_assets],
@@ -153,15 +150,15 @@ def test_multi_asset_deps_via_key():
         return None
 
     assert len(depends_on_one_sub_asset.input_names) == 1
-    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing()
 
     @asset(deps=[AssetKey("asset_1"), AssetKey("asset_2")])
     def depends_on_both_sub_assets():
         return None
 
     assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing()
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing()
 
     res = materialize(
         [a_multi_asset, depends_on_one_sub_asset, depends_on_both_sub_assets],
@@ -185,8 +182,8 @@ def test_multi_asset_deps_via_mixed_types():
         return None
 
     assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing()
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing()
 
     res = materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -230,7 +227,7 @@ def test_multi_asset_downstream_deps_via_assets_definition():
         return None, None
 
     assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing()
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -247,7 +244,7 @@ def test_multi_asset_downstream_deps_via_string():
         return None, None
 
     assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing()
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -264,7 +261,7 @@ def test_multi_asset_downstream_deps_via_asset_key():
         return None, None
 
     assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing()
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -291,9 +288,9 @@ def test_multi_asset_downstream_deps_via_mixed_types():
         return None, None
 
     assert len(downstream.input_names) == 3
-    assert downstream.op.ins["via_definition"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert downstream.op.ins["via_string"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert downstream.op.ins["via_asset_key"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert downstream.op.ins["via_definition"].dagster_type.is_nothing()
+    assert downstream.op.ins["via_string"].dagster_type.is_nothing()
+    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing()
 
     res = materialize(
         [via_definition, via_string, via_asset_key, downstream],
@@ -310,7 +307,7 @@ def test_source_asset_deps_via_assets_definition():
         return None
 
     assert len(depends_on_source_asset.input_names) == 1
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing()
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -324,7 +321,7 @@ def test_source_asset_deps_via_string():
         return None
 
     assert len(depends_on_source_asset.input_names) == 1
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing()
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -338,7 +335,7 @@ def test_source_asset_deps_via_key():
         return None
 
     assert len(depends_on_source_asset.input_names) == 1
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing()
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -360,7 +357,7 @@ def test_interop():
         assert value_asset == 1
 
     assert len(interop_asset.input_names) == 2
-    assert interop_asset.op.ins["no_value_asset"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert interop_asset.op.ins["no_value_asset"].dagster_type.is_nothing()
     assert interop_asset.op.ins["value_asset"].dagster_type.kind == DagsterTypeKind.SCALAR
 
     res = materialize(
@@ -389,11 +386,7 @@ def test_bad_types():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=(
-            "Cannot pass an instance of type <class"
-            " 'dagster_tests.asset_defs_tests.test_asset_deps.test_bad_types.<locals>.NotAnAsset'>"
-            " to deps parameter of @asset"
-        ),
+        match=(r"Cannot pass an instance of type .*" " to deps parameter of @asset"),
     ):
 
         @asset(deps=[not_an_asset])
@@ -408,6 +401,7 @@ def test_dep_via_deps_and_fn():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
+        # this is a known bad error experience. TODO - update the error to be helpful
         match=(
             "@op 'depends_on_upstream_asset' decorated function has parameter 'the_upstream_asset'"
             " that is one of the input_defs of type 'Nothing' which should not be included since no"
