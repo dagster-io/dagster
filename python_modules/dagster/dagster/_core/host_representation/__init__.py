@@ -1,4 +1,4 @@
-"""This subpackage contains all classes that host processes (e.g. dagit)
+"""This subpackage contains all classes that host processes (e.g. dagster-webserver)
 use to manipulate and represent definitions that are resident
 in user processes and containers.  e.g. ExternalPipeline.
 

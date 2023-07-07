@@ -7,7 +7,7 @@ export type WorkspaceGraphsQueryVariables = Types.Exact<{
 }>;
 
 export type WorkspaceGraphsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   repositoryOrError:
     | {
         __typename: 'PythonError';

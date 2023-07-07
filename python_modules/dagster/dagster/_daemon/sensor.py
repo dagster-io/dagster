@@ -380,7 +380,7 @@ def execute_sensor_iteration(
                 logger.warning(
                     f"Sensor {sensor_name} was started from a location "
                     f"{location_name} that can no longer be found in the workspace. "
-                    "You can turn off this sensor in the Dagit UI from the Status tab."
+                    "You can turn off this sensor in the Dagster UI from the Status tab."
                 )
             elif not check.not_none(  # checked above
                 workspace_snapshot[location_name].code_location
@@ -388,13 +388,13 @@ def execute_sensor_iteration(
                 logger.warning(
                     f"Could not find repository {repo_name} in location {location_name} to "
                     + f"run sensor {sensor_name}. If this repository no longer exists, you can "
-                    + "turn off the sensor in the Dagit UI from the Status tab.",
+                    + "turn off the sensor in the Dagster UI from the Status tab.",
                 )
             else:
                 logger.warning(
                     (
                         f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
-                        "sensor no longer exists, you can turn it off in the Dagit UI from the "
+                        "sensor no longer exists, you can turn it off in the Dagster UI from the "
                         "Status tab."
                     ),
                 )

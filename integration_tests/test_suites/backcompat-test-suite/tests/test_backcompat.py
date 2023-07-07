@@ -202,7 +202,7 @@ def graphql_client(
         ],
     ):
         result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
-        assert result.json().get("dagit_version")
+        assert result.json().get("dagster_webserver_version") or result.json().get("dagit_version")
         yield DagsterGraphQLClient(dagit_host, port_number=3000)
 
 

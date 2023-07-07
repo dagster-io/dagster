@@ -478,6 +478,7 @@ def container_context_config(configured_secret: Secret) -> Mapping[str, Any]:
                 }
             ],
             "run_ecs_tags": [{"key": "ABC", "value": "DEF"}],  # with value
+            "repository_credentials": "fake-secret-arn",
         },
     }
 
@@ -539,6 +540,7 @@ def other_container_context_config(other_configured_secret):
                     "key": "GHI",
                 }
             ],
+            "repository_credentials": "fake-secret-arn",
         },
     }
 

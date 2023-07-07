@@ -1,9 +1,11 @@
 import os
 import subprocess
 
+import dbt.version
 import pytest
 from dagster._utils import file_relative_path, pushd
-from dagster_dbt import DbtCliClientResource, dbt_cli_resource
+from dagster_dbt import DbtCli, DbtCliClientResource, dbt_cli_resource
+from packaging import version
 
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
@@ -12,7 +14,7 @@ DBT_CONFIG_DIR = TEST_PROJECT_DIR
 TEST_DBT_TARGET_DIR = os.path.join(TEST_PROJECT_DIR, "target_test")
 
 TEST_PYTHON_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_python_test_project")
-DBT_PYTHON_CONFIG_DIR = os.path.join(TEST_PYTHON_PROJECT_DIR, "dbt_config")
+DBT_PYTHON_CONFIG_DIR = TEST_PYTHON_PROJECT_DIR
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -51,12 +53,27 @@ def dbt_python_config_dir():
     scope="session",
     params=[
         "legacy",
-        "pythonic",
+        "DbtCliClientResource",
+        pytest.param(
+            "DbtCli",
+            marks=pytest.mark.skipif(
+                version.parse(dbt.version.__version__) < version.parse("1.4.0"),
+                reason="DbtCli resource only supports dbt 1.4+",
+            ),
+        ),
     ],
 )
 def dbt_cli_resource_factory(request):
-    if request.param == "pythonic":
-        return DbtCliClientResource
+    if request.param == "DbtCliClientResource":
+        return lambda **kwargs: DbtCliClientResource(
+            project_dir=kwargs["project_dir"],
+            profiles_dir=kwargs.get("profiles_dir"),
+            json_log_format=kwargs.get("json_log_format", True),
+        )
+    elif request.param == "DbtCli":
+        return lambda **kwargs: DbtCli(
+            project_dir=kwargs["project_dir"], profile=kwargs.get("profile")
+        )
     else:
         return lambda **kwargs: dbt_cli_resource.configured(kwargs)
 

@@ -176,6 +176,10 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     def has_prefix(self, prefix: Sequence[str]) -> bool:
         return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
 
+    def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
+        prefix = key_prefix_from_coercible(prefix)
+        return AssetKey(list(prefix) + list(self.path))
+
 
 class AssetKeyPartitionKey(NamedTuple):
     """An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
@@ -472,7 +476,7 @@ class AssetMaterialization(
     framework.
 
     Op authors should use these events to organize metadata about the side effects of their
-    computations, enabling tooling like the Assets dashboard in Dagit.
+    computations, enabling tooling like the Assets dashboard in the Dagster UI.
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across

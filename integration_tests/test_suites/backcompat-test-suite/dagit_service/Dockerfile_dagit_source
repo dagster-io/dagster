@@ -7,13 +7,14 @@ WORKDIR /tmp
 RUN pip install \
     -e python_modules/dagster \
     -e python_modules/dagster-graphql \
+    -e python_modules/dagster-webserver \
     -e python_modules/dagit \
     -e python_modules/libraries/dagster-postgres \
     -e python_modules/libraries/dagster-docker
 
 
 # Ensure all dagster installs were local
-RUN ! (pip list --exclude-editable | grep -e dagster -e dagit)
+RUN ! (pip list --exclude-editable | grep -e dagster -e dagster-webserver)
 
 
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/

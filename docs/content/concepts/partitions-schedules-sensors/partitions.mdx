@@ -132,14 +132,6 @@ result = materialize(
 
 #### Dynamically partitioned assets
 
-<Experimental />
-
-<Note>
-  This feature is <strong>experimental</strong>. Until this feature is marked as
-  stable, further migrations may be required and partition history is not
-  guaranteed to be retained.
-</Note>
-
 Sometimes you don't know the set of partitions ahead of time when you're defining your assets. For example, maybe you want to add a new partition every time a new data file lands in a directory, or every time you want to experiment with a new set of hyperparameters. In these cases, you can use a <PyObject object="DynamicPartitionsDefinition"/>.
 
 The <PyObject object="DynamicPartitionsDefinition" /> class accepts a name argument, representing the name of the partition set:

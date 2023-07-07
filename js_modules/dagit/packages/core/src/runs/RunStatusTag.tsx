@@ -1,4 +1,4 @@
-import {Box, Colors, Popover, Tag} from '@dagster-io/ui';
+import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -73,6 +73,7 @@ export const runStatusToBackfillStateString = (status: RunStatus) => {
       return assertUnreachable(status);
   }
 };
+
 export const RUN_STATUS_COLORS = {
   QUEUED: Colors.Blue200,
   NOT_STARTED: Colors.Gray600,
@@ -95,6 +96,17 @@ export const RunStatusTag = (props: {status: RunStatus}) => {
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
         <div>{runStatusToString(status)}</div>
+      </Box>
+    </Tag>
+  );
+};
+
+export const RunStatusTagWithID = ({runId, status}: {runId: string; status: RunStatus}) => {
+  return (
+    <Tag intent={statusToIntent(status)}>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+        <RunStatusIndicator status={status} size={10} />
+        <CaptionMono>{runId.slice(0, 8)}</CaptionMono>
       </Box>
     </Tag>
   );

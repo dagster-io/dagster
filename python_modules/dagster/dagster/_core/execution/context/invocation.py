@@ -684,12 +684,13 @@ def build_op_context(
     Args:
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
             either values or resource definitions.
-        config (Optional[Any]): The op config to provide to the context.
+        op_config (Optional[Mapping[str, Any]]): The config to provide to the op.
+        resources_config (Optional[Mapping[str, Any]]): The config to provide to the resources.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
+        partition_key (Optional[str]): String value representing partition key to execute with.
         mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic
             output. Can be accessed using ``context.get_mapping_key()``.
-        partition_key (Optional[str]): String value representing partition key to execute with.
         _assets_def (Optional[AssetsDefinition]): Internal argument that populates the op's assets
             definition, not meant to be populated by users.
 
@@ -719,4 +720,45 @@ def build_op_context(
         partition_key=check.opt_str_param(partition_key, "partition_key"),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         assets_def=check.opt_inst_param(_assets_def, "_assets_def", AssetsDefinition),
+    )
+
+
+def build_asset_context(
+    resources: Optional[Mapping[str, Any]] = None,
+    resources_config: Optional[Mapping[str, Any]] = None,
+    asset_config: Optional[Mapping[str, Any]] = None,
+    instance: Optional[DagsterInstance] = None,
+    partition_key: Optional[str] = None,
+):
+    """Builds asset execution context from provided parameters.
+
+    ``build_asset_context`` can be used as either a function or context manager. If there is a
+    provided resource that is a context manager, then ``build_asset_context`` must be used as a
+    context manager. This function can be used to provide the context argument when directly
+    invoking an asset.
+
+    Args:
+        resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
+            either values or resource definitions.
+        resources_config (Optional[Mapping[str, Any]]): The config to provide to the resources.
+        asset_config (Optional[Mapping[str, Any]]): The config to provide to the asset.
+        instance (Optional[DagsterInstance]): The dagster instance configured for the context.
+            Defaults to DagsterInstance.ephemeral().
+        partition_key (Optional[str]): String value representing partition key to execute with.
+
+    Examples:
+        .. code-block:: python
+
+            context = build_asset_context()
+            asset_to_invoke(context)
+
+            with build_asset_context(resources={"foo": context_manager_resource}) as context:
+                asset_to_invoke(context)
+    """
+    return build_op_context(
+        op_config=asset_config,
+        resources=resources,
+        resources_config=resources_config,
+        partition_key=partition_key,
+        instance=instance,
     )

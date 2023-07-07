@@ -41,8 +41,6 @@ STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
 OP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
 
-PRESET_NAME_TAG = f"{SYSTEM_TAG_PREFIX}preset_name"
-
 GRPC_INFO_TAG = f"{HIDDEN_TAG_PREFIX}grpc_info"
 
 SCHEDULED_EXECUTION_TIME_TAG = f"{HIDDEN_TAG_PREFIX}scheduled_execution_time"

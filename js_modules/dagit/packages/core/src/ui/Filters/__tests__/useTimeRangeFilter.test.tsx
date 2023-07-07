@@ -26,7 +26,6 @@ jest.mock('react-dates', () => {
 const mockFilterProps = {
   name: 'Test Filter',
   icon: 'date' as IconName,
-  timezone: 'UTC',
   initialState: [null, null] as TimeRangeState,
 };
 
@@ -73,7 +72,7 @@ describe('useTimeRangeFilter', () => {
     });
     filter = result.current;
 
-    const {timeRanges} = calculateTimeRanges(mockFilterProps.timezone);
+    const {timeRanges} = calculateTimeRanges('UTC');
     expect(filter.state).toEqual(timeRanges.YESTERDAY.range);
   });
 });

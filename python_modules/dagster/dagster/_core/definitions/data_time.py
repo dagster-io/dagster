@@ -25,7 +25,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     get_input_event_pointer_tag,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -191,15 +191,11 @@ class CachingDataTimeResolver:
                 before_cursor = None
 
             if before_cursor is not None:
-                if parent_key in self.asset_graph.source_asset_keys:
-                    parent_record = self.instance_queryer.get_observation_record(
-                        asset_key=parent_key, before_cursor=before_cursor
+                parent_record = (
+                    self._instance_queryer.get_latest_materialization_or_observation_record(
+                        AssetKeyPartitionKey(parent_key), before_cursor=before_cursor
                     )
-                else:
-                    parent_record = self._instance_queryer.get_latest_materialization_record(
-                        parent_key, before_cursor=before_cursor
-                    )
-
+                )
                 if parent_record is not None:
                     upstream_records[parent_key] = parent_record
 
@@ -462,32 +458,35 @@ class CachingDataTimeResolver:
         record: EventLogRecord,
         current_time: Optional[datetime.datetime] = None,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-        """Method to enable calculating the timestamps of materializations of upstream assets
-        which were relevant to a given AssetMaterialization. These timestamps can be calculated relative
-        to any upstream asset keys.
+        """Method to enable calculating the timestamps of materializations or observations of
+        upstream assets which were relevant to a given AssetMaterialization. These timestamps can
+        be calculated relative to any upstream asset keys.
 
         The heart of this functionality is a recursive method which takes a given asset materialization
         and finds the most recent materialization of each of its parents which happened *before* that
         given materialization event.
         """
-        if record.asset_key is None or record.asset_materialization is None:
+        event = record.asset_materialization or record.asset_observation
+        if record.asset_key is None or event is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with a materialization event and an"
-                " asset_key."
+                "Can only calculate data times for records with a materialization / observation "
+                "event and an asset_key."
             )
 
         return self._calculate_data_time_by_key(
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
-            record_tags=make_hashable(record.asset_materialization.tags or {}),
+            record_tags=make_hashable(event.tags or {}),
             current_time=current_time or pendulum.now("UTC"),
         )
 
     def get_current_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
     ) -> Optional[datetime.datetime]:
-        latest_record = self.instance_queryer.get_latest_materialization_record(asset_key)
+        latest_record = self.instance_queryer.get_latest_materialization_or_observation_record(
+            AssetKeyPartitionKey(asset_key)
+        )
         if latest_record is None:
             return None
 

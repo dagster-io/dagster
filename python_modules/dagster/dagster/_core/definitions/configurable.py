@@ -79,7 +79,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -124,7 +124,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -264,7 +264,7 @@ def configured(
     * :py:class:`ResourceDefinition`
     * :py:class:`OpDefinition`
 
-    Using ``configured`` may result in config values being displayed in Dagit,
+    Using ``configured`` may result in config values being displayed in the Dagster UI,
     so it is not recommended to use this API with sensitive values, such as
     secrets.
 

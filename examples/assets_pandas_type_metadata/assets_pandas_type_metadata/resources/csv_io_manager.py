@@ -84,5 +84,5 @@ def pandas_columns_to_markdown(dataframe: pd.DataFrame) -> str:
         | ---- | ---- |
     """
         )
-        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.iteritems()])
+        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.items()])
     )

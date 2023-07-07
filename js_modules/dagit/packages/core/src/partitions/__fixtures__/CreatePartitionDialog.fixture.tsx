@@ -27,7 +27,7 @@ export function buildCreatePartitionFixture({
     },
     result: jest.fn(() => ({
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         addDynamicPartition: {
           __typename: 'AddDynamicPartitionSuccess',
           partitionsDefName: partitionKey,
@@ -52,7 +52,7 @@ export function buildCreatePartitionMutation({
     },
     result: jest.fn(() => ({
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         addDynamicPartition: data,
       },
     })),

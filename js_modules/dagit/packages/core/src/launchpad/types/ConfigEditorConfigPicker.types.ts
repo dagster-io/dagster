@@ -9,7 +9,7 @@ export type ConfigPartitionsQueryVariables = Types.Exact<{
 }>;
 
 export type ConfigPartitionsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   partitionSetOrError:
     | {
         __typename: 'PartitionSet';
@@ -49,7 +49,7 @@ export type ConfigPartitionSelectionQueryVariables = Types.Exact<{
 }>;
 
 export type ConfigPartitionSelectionQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   partitionSetOrError:
     | {
         __typename: 'PartitionSet';

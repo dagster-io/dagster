@@ -1,5 +1,6 @@
-import {pathVerticalDiagonal} from '@vx/shape';
+import {pathVerticalDiagonal, pathHorizontalStep} from '@vx/shape';
 
+import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {Maybe, RunStatus, StaleCauseCategory, StaleStatus} from '../graphql/types';
 
 import {
@@ -116,12 +117,20 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = pathVerticalDiagonal({
-  source: (s: any) => s.source,
-  target: (s: any) => s.target,
-  x: (s: any) => s.x,
-  y: (s: any) => s.y,
-});
+export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
+  ? pathHorizontalStep({
+      percent: 0.5,
+      source: (s: any) => s.source,
+      target: (s: any) => s.target,
+      x: (s: any) => s.x,
+      y: (s: any) => s.y,
+    })
+  : pathVerticalDiagonal({
+      source: (s: any) => s.source,
+      target: (s: any) => s.target,
+      x: (s: any) => s.x,
+      y: (s: any) => s.y,
+    });
 
 export interface LiveDataForNode {
   stepKey: string;
@@ -203,7 +212,7 @@ export const buildLiveDataForNode = (
     lastObservation,
     staleStatus: assetNode.staleStatus,
     staleCauses: assetNode.staleCauses,
-    stepKey: assetNode.opNames[0]!,
+    stepKey: stepKeyForAsset(assetNode),
     freshnessInfo: assetNode.freshnessInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
@@ -218,6 +227,13 @@ export function tokenForAssetKey(key: {path: string[]}) {
 
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
+}
+
+export function stepKeyForAsset(definition: {opNames: string[]}) {
+  // Used for linking to the run with this step highlighted. We only support highlighting
+  // a single step, so just use the first one.
+  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
+  return firstOp || '';
 }
 
 export const itemWithAssetKey = (key: {path: string[]}) => {

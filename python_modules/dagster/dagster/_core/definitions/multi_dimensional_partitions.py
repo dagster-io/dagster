@@ -477,7 +477,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     ) -> int:
         # Static partitions definitions can contain duplicate keys (will throw error in 1.3.0)
         # In the meantime, relying on get_num_partitions to handle duplicates to display
-        # correct counts in Dagit
+        # correct counts in the Dagster UI.
         dimension_counts = [
             dim.partitions_def.get_num_partitions(
                 current_time=current_time, dynamic_partitions_store=dynamic_partitions_store

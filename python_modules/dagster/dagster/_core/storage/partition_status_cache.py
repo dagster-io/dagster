@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import (
@@ -36,6 +37,14 @@ CACHEABLE_PARTITION_TYPES = (
     StaticPartitionsDefinition,
     DynamicPartitionsDefinition,
 )
+
+
+class AssetPartitionStatus(Enum):
+    """The status of asset partition."""
+
+    MATERIALIZED = "MATERIALIZED"
+    IN_PROGRESS = "IN_PROGRESS"
+    FAILED = "FAILED"
 
 
 def is_cacheable_partition_type(partitions_def: PartitionsDefinition) -> bool:

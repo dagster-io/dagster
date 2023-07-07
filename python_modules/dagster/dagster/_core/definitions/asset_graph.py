@@ -39,7 +39,6 @@ from .time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
     get_time_partitions_def,
-    has_one_dimension_time_window_partitioning,
 )
 
 if TYPE_CHECKING:
@@ -212,8 +211,18 @@ class AssetGraph:
         return self._asset_dep_graph["downstream"][asset_key]
 
     def get_parents(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all assets that the given asset depends on."""
-        return self._asset_dep_graph["upstream"][asset_key]
+        """Returns all first-order dependencies of an asset."""
+        return self._asset_dep_graph["upstream"].get(asset_key) or set()
+
+    def get_ancestors(
+        self, asset_key: AssetKey, include_self: bool = False
+    ) -> AbstractSet[AssetKey]:
+        """Returns all nth-order dependencies of an asset."""
+        ancestors = {asset_key} if include_self else set()
+        parents = self.get_parents(asset_key) - {asset_key}  # remove self-dependencies
+        return ancestors.union(
+            *[self.get_ancestors(parent, include_self=True) for parent in parents]
+        )
 
     def get_children_partitions(
         self,
@@ -703,9 +712,8 @@ class ToposortedPriorityQueue:
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if self._asset_graph.has_self_dependency(asset_key):
-            if partitions_def is None or not has_one_dimension_time_window_partitioning(
-                partitions_def
-            ):
+            time_partitions_def = get_time_partitions_def(partitions_def)
+            if time_partitions_def is None:
                 check.failed(
                     "Assets with self-dependencies must have time-window partitions, but"
                     f" {asset_key} does not."
@@ -714,7 +722,7 @@ class ToposortedPriorityQueue:
             # sort self dependencies from oldest to newest, as older partitions must exist before
             # new ones can execute
             partition_sort_key = _sort_key_for_time_window_partition(
-                get_time_partitions_def(partitions_def),
+                time_partitions_def,
                 get_time_partition_key(partitions_def, asset_partition.partition_key),
             )
         elif isinstance(partitions_def, TimeWindowPartitionsDefinition):

@@ -37,7 +37,7 @@ from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
-from ..events import AssetKey, CoercibleToAssetKeyPrefix
+from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
 from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
@@ -77,6 +77,7 @@ def asset(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -105,6 +106,7 @@ def asset(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -144,7 +146,7 @@ def asset(
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
@@ -202,6 +204,7 @@ def asset(
             auto_materialize_policy=auto_materialize_policy,
             retry_policy=retry_policy,
             code_version=code_version,
+            key=key,
         )
 
     if compute_fn is not None:
@@ -253,6 +256,7 @@ class _Asset:
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
+        key: Optional[CoercibleToAssetKey] = None,
     ):
         self.name = name
 
@@ -281,6 +285,14 @@ class _Asset:
         self.auto_materialize_policy = auto_materialize_policy
         self.code_version = code_version
 
+        if (name or key_prefix) and key:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify a name or key prefix for an asset when the key argument is"
+                " provided."
+            )
+
+        self.key = AssetKey.from_coercible(key) if key is not None else None
+
     def __call__(self, fn: Callable) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
             validate_resource_annotated_function,
@@ -292,7 +304,11 @@ class _Asset:
 
         asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
 
-        out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+        out_asset_key = (
+            AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+            if not self.key
+            else self.key
+        )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
@@ -432,7 +448,7 @@ def multi_asset(
             if it does not. If not set, Dagster will accept any config provided for the op.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the underlying op.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
             that all assets produced by a multi_asset depend on all assets that are consumed by that
             multi asset. If this default is not correct, you pass in a map of output names to a

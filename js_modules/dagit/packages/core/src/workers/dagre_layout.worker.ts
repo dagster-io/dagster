@@ -21,15 +21,15 @@ self.addEventListener('message', (event) => {
   switch (data.type) {
     case 'layoutOpGraph': {
       import('../graph/layout').then(({layoutOpGraph}) => {
-        const {ops, parentOp} = data;
-        self.postMessage(layoutOpGraph(ops, parentOp));
+        const {ops, opts} = data;
+        self.postMessage(layoutOpGraph(ops, opts));
       });
       break;
     }
     case 'layoutAssetGraph': {
       import('../asset-graph/layout').then(({layoutAssetGraph}) => {
-        const {graphData} = data;
-        self.postMessage(layoutAssetGraph(graphData));
+        const {graphData, opts} = data;
+        self.postMessage(layoutAssetGraph(graphData, opts));
       });
     }
   }

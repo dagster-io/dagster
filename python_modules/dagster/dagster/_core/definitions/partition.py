@@ -39,7 +39,6 @@ from dagster._utils import xor
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
-    experimental_arg_warning,
 )
 from dagster._utils.cached_method import cached_method
 
@@ -63,9 +62,9 @@ T_PartitionsDefinition = TypeVar(
     covariant=True,
 )
 
-# Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
+# In the Dagster UI users can select partition ranges following the format '2022-01-13...2022-01-14'
 # "..." is an invalid substring in partition keys
-# The other escape characters are characters that may not display in Dagit
+# The other escape characters are characters that may not display in the Dagster UI.
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 
@@ -176,11 +175,13 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[T_str]:
-        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
-
         keys_exist = {
-            partition_key_range.start: partition_key_range.start in partition_keys,
-            partition_key_range.end: partition_key_range.end in partition_keys,
+            partition_key_range.start: self.has_partition_key(
+                partition_key_range.start, dynamic_partitions_store=dynamic_partitions_store
+            ),
+            partition_key_range.end: self.has_partition_key(
+                partition_key_range.end, dynamic_partitions_store=dynamic_partitions_store
+            ),
         }
         if not all(keys_exist.values()):
             raise DagsterInvalidInvocationError(
@@ -189,6 +190,12 @@ class PartitionsDefinition(ABC, Generic[T_str]):
                 {list(key for key in keys_exist if keys_exist[key] is False)}"""
             )
 
+        # in the simple case, simply return the single key in the range
+        if partition_key_range.start == partition_key_range.end:
+            return [cast(T_str, partition_key_range.start)]
+
+        # defer this call as it is potentially expensive
+        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
         return partition_keys[
             partition_keys.index(partition_key_range.start) : partition_keys.index(
                 partition_key_range.end
@@ -335,7 +342,7 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
     ) -> int:
         # We don't currently throw an error when a duplicate partition key is defined
         # in a static partitions definition, though we will at 1.3.0.
-        # This ensures that partition counts are correct in Dagit.
+        # This ensures that partition counts are correct in the Dagster UI.
         return len(set(self.get_partition_keys(current_time, dynamic_partitions_store)))
 
 
@@ -382,7 +389,7 @@ class DynamicPartitionsDefinition(
     `instance.delete_dynamic_partition` methods.
 
     Args:
-        name (Optional[str]): (Experimental) The name of the partitions definition.
+        name (Optional[str]): The name of the partitions definition.
         partition_fn (Optional[Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]]):
             A function that returns the current set of partitions. This argument is deprecated and
             will be removed in 2.0.0.
@@ -409,9 +416,6 @@ class DynamicPartitionsDefinition(
     ):
         partition_fn = check.opt_callable_param(partition_fn, "partition_fn")
         name = check.opt_str_param(name, "name")
-
-        if name:
-            experimental_arg_warning("name", "DynamicPartitionsDefinition.__new__")
 
         if partition_fn:
             deprecation_warning(
@@ -477,8 +481,8 @@ class DynamicPartitionsDefinition(
             if dynamic_partitions_store is None:
                 check.failed(
                     "The instance is not available to load partitions. You may be seeing this error"
-                    " when using dynamic partitions with a version of dagit or dagster-cloud that"
-                    " is older than 1.1.18."
+                    " when using dynamic partitions with a version of dagster-webserver or"
+                    " dagster-cloud that is older than 1.1.18."
                 )
 
             return dynamic_partitions_store.get_dynamic_partitions(
@@ -497,8 +501,8 @@ class DynamicPartitionsDefinition(
             if dynamic_partitions_store is None:
                 check.failed(
                     "The instance is not available to load partitions. You may be seeing this error"
-                    " when using dynamic partitions with a version of dagit or dagster-cloud that"
-                    " is older than 1.1.18."
+                    " when using dynamic partitions with a version of dagster-webserver or"
+                    " dagster-cloud that is older than 1.1.18."
                 )
 
             return dynamic_partitions_store.has_dynamic_partition(
@@ -708,7 +712,7 @@ def static_partitioned_config(
     change over time, the list of valid partition keys does not.
 
     This has performance advantages over `dynamic_partitioned_config` in terms of loading different
-    partition views in Dagit.
+    partition views in the Dagster UI.
 
     The decorated function takes in a partition key and returns a valid run config for a particular
     target job.

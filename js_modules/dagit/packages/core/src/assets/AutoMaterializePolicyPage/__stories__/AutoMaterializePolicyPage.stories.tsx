@@ -20,7 +20,7 @@ export const EmptyState = () => {
         Evaluations.Single(),
       ]}
     >
-      <AssetAutomaterializePolicyPage assetKey={{path}} />
+      <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
     </MockedProvider>
   );
 };
@@ -34,7 +34,7 @@ export const Errors = () => {
         Evaluations.Errors(path, true),
       ]}
     >
-      <AssetAutomaterializePolicyPage assetKey={{path}} />
+      <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
     </MockedProvider>
   );
 };
@@ -82,7 +82,7 @@ export const Controlled = () => {
               />
             </JoinedButtons>
           </Box>
-          <AssetAutomaterializePolicyPage assetKey={{path}} />
+          <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
         </div>
       </MockedProvider>
     </div>

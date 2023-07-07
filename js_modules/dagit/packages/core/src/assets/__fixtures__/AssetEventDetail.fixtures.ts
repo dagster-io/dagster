@@ -220,7 +220,7 @@ export const MaterializationUpstreamDataFullMock: MockedResponse<AssetMaterializ
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset_1"]',
@@ -263,7 +263,7 @@ export const MaterializationUpstreamDataEmptyMock: MockedResponse<AssetMateriali
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset_1"]',
@@ -283,10 +283,11 @@ export const buildAssetPartitionDetailMock = (
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset_1"]',
+        opNames: ['a_different_step'],
         assetMaterializations: [MaterializationEventFull, MaterializationEventOlder],
         assetObservations: [
           BasicObservationEvent,

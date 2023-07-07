@@ -2567,3 +2567,64 @@ def test_settings():
     settings = {"use_threads": True, "num_workers": 4}
     with instance_for_test(overrides={"schedules": settings}) as thread_inst:
         assert thread_inst.get_settings("schedules") == settings
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_schedule_mutation(
+    instance: DagsterInstance,
+    workspace_one: WorkspaceProcessContext,
+    workspace_two: WorkspaceProcessContext,
+    executor: ThreadPoolExecutor,
+):
+    repo_one = next(
+        iter(workspace_one.create_request_context().get_workspace_snapshot().values())
+    ).code_location.get_repository(  # type: ignore
+        "the_repo"
+    )
+    repo_two = next(
+        iter(workspace_two.create_request_context().get_workspace_snapshot().values())
+    ).code_location.get_repository(  # type: ignore
+        "the_repo"
+    )
+    schedule_one = repo_one.get_external_schedule("simple_schedule")
+    origin_one = schedule_one.get_external_origin()
+    assert schedule_one.cron_schedule == "0 2 * * *"
+    schedule_two = repo_two.get_external_schedule("simple_schedule")
+    origin_two = schedule_two.get_external_origin()
+    assert schedule_two.cron_schedule == "0 1 * * *"
+
+    assert schedule_one.selector_id == schedule_two.selector_id
+
+    freeze_datetime = create_pendulum_time(year=2023, month=2, day=1, tz="UTC")
+    with pendulum.test(freeze_datetime):
+        # start the schedule at 12:00 AM, it is scheduled to go at 2:00 AM
+        instance.start_schedule(schedule_one)
+        evaluate_schedules(workspace_one, executor, pendulum.now("UTC"))
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(origin_one.get_id(), schedule_one.selector_id)
+        assert len(ticks) == 0
+
+    freeze_datetime = freeze_datetime.add(hours=1, minutes=59)
+    with pendulum.test(freeze_datetime):
+        # now check the schedule at 1:59 AM, where the schedule is not to fire until 2:00 AM
+        evaluate_schedules(workspace_one, executor, pendulum.now("UTC"))
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(origin_one.get_id(), schedule_one.selector_id)
+        assert len(ticks) == 0
+
+    freeze_datetime = freeze_datetime.add(minutes=1)
+    with pendulum.test(freeze_datetime):
+        # Now change the schedule to be at 1:00 AM.  It should not generate a tick because we last
+        # evaluated at 1:59AM and it is now 2:00 AM. We expect the new schedule to wait until
+        # tomorrow to create a new tick.
+        evaluate_schedules(workspace_two, executor, pendulum.now("UTC"))
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(origin_two.get_id(), schedule_two.selector_id)
+        assert len(ticks) == 0
+
+    freeze_datetime = freeze_datetime.add(hours=23)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_two, executor, pendulum.now("UTC"))
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(origin_two.get_id(), schedule_two.selector_id)
+        assert len(ticks) == 1

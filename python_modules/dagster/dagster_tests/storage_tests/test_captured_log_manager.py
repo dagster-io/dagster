@@ -33,8 +33,7 @@ class TestLocalCapturedLogManager(TestCapturedLogManager):
 
 class ExternalTestComputeLogManager(NoOpComputeLogManager):
     """Test compute log manager that does not actually capture logs, but generates an external url
-    to be shown within Dagit
-    .
+    to be shown within the Dagster UI.
     """
 
     @classmethod

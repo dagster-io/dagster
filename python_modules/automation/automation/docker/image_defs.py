@@ -94,13 +94,16 @@ def k8s_example_editable_cm(cwd: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def k8s_dagit_editable_cm(cwd: str) -> Iterator[None]:
-    print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
+def k8s_webserver_editable_cm(cwd: str) -> Iterator[None]:
+    print(
+        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster UI"
+        " !!!!\n"
+    )
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
         ],
         cwd,
     ):
@@ -108,13 +111,13 @@ def k8s_dagit_editable_cm(cwd: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def k8s_dagit_example_cm(cwd: str) -> Iterator[None]:
+def k8s_webserver_example_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
             "python_modules/libraries/dagster-aws",
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
         ],
         cwd,
     ):
@@ -158,12 +161,15 @@ def user_code_example_editable_cm(cwd: str) -> Iterator[None]:
 
 @contextlib.contextmanager
 def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
-    print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
+    print(
+        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster"
+        " UI!!!!\n"
+    )
     with copy_directories(
         get_core_k8s_dirs()
         + [
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
             "python_modules/libraries/dagster-aws",
         ],
         cwd,
@@ -173,12 +179,15 @@ def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
 
 @contextlib.contextmanager
 def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
-    print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
+    print(
+        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster"
+        " UI!!!!\n"
+    )
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
             "python_modules/libraries/dagster-aws",
         ],
         cwd,
@@ -190,8 +199,8 @@ def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
 CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
     "k8s-example": k8s_example_cm,
     "k8s-example-editable": k8s_example_editable_cm,
-    "k8s-dagit-editable": k8s_dagit_editable_cm,
-    "k8s-dagit-example": k8s_dagit_example_cm,
+    "k8s-dagit-editable": k8s_webserver_editable_cm,
+    "k8s-dagit-example": k8s_webserver_example_cm,
     "k8s-celery-worker-editable": k8s_celery_worker_editable_cm,
     "user-code-example": user_code_example_cm,
     "user-code-example-editable": user_code_example_editable_cm,

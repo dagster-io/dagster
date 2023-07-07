@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Sequence
+from typing import Optional, Sequence
 
 import click
 
@@ -11,6 +11,7 @@ from dagster._generate import (
     generate_repository,
 )
 from dagster._generate.download import AVAILABLE_EXAMPLES
+from dagster.version import __version__ as dagster_version
 
 
 @click.group(name="project")
@@ -133,7 +134,6 @@ def scaffold_command(name: str):
 )
 @click.option(
     "--name",
-    required=True,
     type=click.STRING,
     help="Name of the new Dagster project",
 )
@@ -147,16 +147,26 @@ def scaffold_command(name: str):
         "You can also find the available examples via `dagster project list-examples`."
     ),
 )
-def from_example_command(name: str, example: str):
-    dir_abspath = os.path.abspath(name)
+@click.option(
+    "--version",
+    type=click.STRING,
+    help="Which version of the example to download, defaults to same version as installed dagster.",
+    default=dagster_version,
+    show_default=True,
+)
+def from_example_command(name: Optional[str], example: str, version: str):
+    name = name or example
+    dir_abspath = os.path.abspath(name) + "/"
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
             click.style(f"The directory {dir_abspath} already exists. ", fg="red")
             + "\nPlease delete the contents of this path or choose another location."
         )
         sys.exit(1)
+    else:
+        os.mkdir(dir_abspath)
 
-    download_example_from_github(dir_abspath, example)
+    download_example_from_github(dir_abspath, example, version)
 
     click.echo(_styled_success_statement(name, dir_abspath))
 

@@ -214,6 +214,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self.task_definition_dict.get("volumes")
 
     @property
+    def repository_credentials(self) -> Optional[str]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("repository_credentials")
+
+    @property
     def run_sidecar_containers(self) -> Optional[Sequence[Mapping[str, Any]]]:
         if not self.task_definition_dict:
             return None
@@ -601,6 +607,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     runtime_platform=runtime_platform,
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    repository_credentials=container_context.repository_credentials,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -622,6 +629,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     additional_sidecars=container_context.run_sidecar_containers,
+                    repository_credentials=container_context.repository_credentials,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

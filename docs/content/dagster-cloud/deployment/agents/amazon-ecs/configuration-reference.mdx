@@ -72,6 +72,7 @@ locations:
             value: MyEcsTagValue
         run_ecs_tags:
           - key: MyEcsTagKeyWithoutValue
+        repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
 ### Environment variables and secrets
@@ -169,6 +170,7 @@ user_code_launcher:
         value: MyEcsTagValue
     run_ecs_tags:
       - key: MyEcsTagKeyWithoutValue
+    repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
 ### dagster_cloud_api properties
@@ -296,4 +298,9 @@ user_code_launcher:
   propertyName="config.run_ecs_tags">
   Additional ECS tags to include in the task for each run. If set, must be a list of dictionaries, each with a <code>key</code> key and optional <code>value</code> key.
   </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.repository_credentials">
+  Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see https://docs.aws.amazon.com/AmazonECS/latest/userguide/private-auth.html.
+  </ReferenceTableItem>
+
 </ReferenceTable>

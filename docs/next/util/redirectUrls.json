@@ -689,5 +689,25 @@
     "source": "/guides/dagster/scheduling-assets",
     "destination": "/concepts/assets/asset-auto-execution",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-one",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-two",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-three",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/dbt/using-dbt-with-dagster/part-four",
+    "destination": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
+    "statusCode": 302
   }
 ]

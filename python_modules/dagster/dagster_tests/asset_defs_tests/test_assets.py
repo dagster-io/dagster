@@ -20,7 +20,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
-    build_op_context,
+    build_asset_context,
     define_asset_job,
     fs_io_manager,
     graph,
@@ -586,7 +586,9 @@ def test_asset_invocation_resource_overrides():
         assert context.resources.foo == "foo_resource"
         assert context.resources.bar == "bar_resource"
 
-    asset_reqs_resources(build_op_context(resources={"foo": "foo_resource", "bar": "bar_resource"}))
+    asset_reqs_resources(
+        build_asset_context(resources={"foo": "foo_resource", "bar": "bar_resource"})
+    )
 
     @asset(
         resource_defs={
@@ -602,7 +604,7 @@ def test_asset_invocation_resource_overrides():
         DagsterInvalidInvocationError,
         match="resource 'foo' provided on both the definition and invocation context.",
     ):
-        asset_resource_overrides(build_op_context(resources={"foo": "override_foo"}))
+        asset_resource_overrides(build_asset_context(resources={"foo": "override_foo"}))
 
 
 def test_asset_invocation_resource_errors():
@@ -622,7 +624,7 @@ def test_asset_invocation_resource_errors():
     ):
         asset_uses_resources(None)
 
-    asset_uses_resources(build_op_context())
+    asset_uses_resources(build_asset_context())
 
     @asset(required_resource_keys={"foo"})
     def required_key_not_provided(_):
@@ -634,7 +636,7 @@ def test_asset_invocation_resource_errors():
             "resource with key 'foo' required by op 'required_key_not_provided' was not provided."
         ),
     ):
-        required_key_not_provided(build_op_context())
+        required_key_not_provided(build_asset_context())
 
 
 def test_multi_asset_resources_execution():
@@ -1476,3 +1478,13 @@ def test_asset_takes_bare_resource():
     defs = Definitions(assets=[blah])
     defs.get_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
+
+
+def test_asset_key_with_prefix():
+    assert AssetKey("foo").with_prefix("prefix") == AssetKey(["prefix", "foo"])
+    assert AssetKey("foo").with_prefix(["prefix_one", "prefix_two"]) == AssetKey(
+        ["prefix_one", "prefix_two", "foo"]
+    )
+
+    with pytest.raises(CheckError):
+        AssetKey("foo").with_prefix(1)

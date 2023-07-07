@@ -38,8 +38,8 @@ def debug_cli():
     This can be used to send a file to someone like the Dagster team who doesn't have direct access
     to your instance to allow them to view the events and details of a specific run.
 
-    Debug files can be viewed using `dagit-debug` cli.
-    Debug files can also be downloaded from dagit.
+    Debug files can be viewed using `dagster-webserver-debug` cli.
+    Debug files can also be downloaded from the Dagster UI.
     """
 
 

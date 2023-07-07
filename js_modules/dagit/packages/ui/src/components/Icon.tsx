@@ -21,6 +21,7 @@ import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
 import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
 import backfill from '../icon-svgs/backfill.svg';
+import bar_chart from '../icon-svgs/bar-chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
@@ -40,6 +41,7 @@ import content_copy from '../icon-svgs/content_copy.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
+import dot from '../icon-svgs/dot.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
@@ -224,6 +226,7 @@ export const Icons = {
   assignment,
   assignment_turned_in,
   attach_file,
+  bar_chart,
   bolt,
   cached,
   cancel,
@@ -235,6 +238,7 @@ export const Icons = {
   content_copy,
   delete: deleteSVG,
   done,
+  dot,
   download_for_offline,
   dynamic_feed,
   drag_handle,

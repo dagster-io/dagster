@@ -69,7 +69,7 @@ export const tabCSS = css<TabStyleProps>`
   }
 
   & ${IconWrapper} {
-    color: ${({selected, disabled}) =>
+    background: ${({selected, disabled}) =>
       selected ? Colors.Blue500 : disabled ? Colors.Gray300 : ''};
   }
 

@@ -31,6 +31,7 @@
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test
+-e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
 -e python_modules/libraries/dagster-aws[test]

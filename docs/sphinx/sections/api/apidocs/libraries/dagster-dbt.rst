@@ -7,7 +7,7 @@ etc. in a single workflow. Dagster's software-defined asset abstractions make it
 data assets that depend on specific dbt models, or to define the computation required to compute
 the sources that your dbt models depend on.
 
-Related guides: `Visualize and orchestrate assets in dbt Core </integrations/dbt>`_ and
+Related documentation pages: `dbt </integrations/dbt>`_ and
 `dbt Cloud <integrations/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
@@ -25,8 +25,6 @@ Assets (dbt Core)
 .. autofunction:: load_assets_from_dbt_project
 
 .. autofunction:: load_assets_from_dbt_manifest
-
-.. autoclass:: DbtManifestAssetSelection
 
 Ops (dbt Core)
 ==============
@@ -53,8 +51,13 @@ more advanced use cases, we suggest building your own ops which directly interac
 Resources (dbt Core)
 ====================
 
-CLI Resources
--------------
+CLI Resource
+------------
+
+.. autoclass:: DbtCli
+
+Deprecated CLI Resource
+-----------------------
 
 .. autoclass:: DbtCliResource
 

@@ -8,7 +8,7 @@ export type PartitionsStatusQueryVariables = Types.Exact<{
 }>;
 
 export type PartitionsStatusQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   partitionSetOrError:
     | {
         __typename: 'PartitionSet';

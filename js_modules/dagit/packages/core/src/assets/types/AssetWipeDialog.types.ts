@@ -7,7 +7,7 @@ export type AssetWipeMutationVariables = Types.Exact<{
 }>;
 
 export type AssetWipeMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   wipeAssets:
     | {__typename: 'AssetNotFoundError'}
     | {

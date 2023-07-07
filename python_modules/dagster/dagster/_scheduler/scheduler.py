@@ -49,6 +49,12 @@ if TYPE_CHECKING:
     from dagster._daemon.daemon import DaemonIterator
 
 
+# how often do we update the job row in the database with the last iteration timestamp.  This
+# creates a checkpoint so that if the cron schedule changes, we don't try to backfill schedule ticks
+# from the start of the schedule, just since the last recorded iteration interval.
+LAST_RECORDED_ITERATION_INTERVAL_SECONDS = 3600
+
+
 class _ScheduleLaunchContext:
     def __init__(
         self,
@@ -277,7 +283,7 @@ def launch_scheduled_runs(
                 logger.warning(
                     f"Schedule {schedule_name} was started from a location "
                     f"{code_location_name} that can no longer be found in the workspace. You can "
-                    "turn off this schedule in the Dagit UI from the Status tab."
+                    "turn off this schedule in the Dagster UI from the Status tab."
                 )
             elif not check.not_none(  # checked in case above
                 workspace_snapshot[code_location_origin.location_name].code_location
@@ -285,14 +291,14 @@ def launch_scheduled_runs(
                 logger.warning(
                     f"Could not find repository {repo_name} in location {code_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
-                    + "turn off the schedule in the Dagit UI from the Status tab.",
+                    + "turn off the schedule in the Dagster UI from the Status tab.",
                 )
             else:
                 logger.warning(
                     (
                         f"Could not find schedule {schedule_name} in repository {repo_name}. If"
-                        " this schedule no longer exists, you can turn it off in the Dagit UI from"
-                        " the Status tab."
+                        " this schedule no longer exists, you can turn it off in the Dagster UI"
+                        " from the Status tab."
                     ),
                 )
 
@@ -438,7 +444,7 @@ def launch_scheduled_runs_for_schedule_iterator(
         latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
-    start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
+    start_timestamp_utc: float = instigator_data.start_timestamp or 0
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -446,21 +452,22 @@ def launch_scheduled_runs_for_schedule_iterator(
             and latest_tick.failure_count <= max_tick_retries
         ):
             # Scheduler was interrupted while performing this tick, re-do it
-            start_timestamp_utc = (
-                max(start_timestamp_utc, latest_tick.timestamp)
-                if start_timestamp_utc
-                else latest_tick.timestamp
+            start_timestamp_utc = max(
+                start_timestamp_utc,
+                latest_tick.timestamp,
+                instigator_data.last_iteration_timestamp or 0.0,
             )
         else:
-            start_timestamp_utc = (
-                max(start_timestamp_utc, latest_tick.timestamp + 1)
-                if start_timestamp_utc
-                else latest_tick.timestamp + 1
+            start_timestamp_utc = max(
+                start_timestamp_utc,
+                latest_tick.timestamp + 1,
+                instigator_data.last_iteration_timestamp or 0.0,
             )
     else:
-        start_timestamp_utc = instigator_data.start_timestamp
-
-    start_timestamp_utc = check.not_none(start_timestamp_utc)
+        start_timestamp_utc = max(
+            start_timestamp_utc,
+            instigator_data.last_iteration_timestamp or 0.0,
+        )
 
     schedule_name = external_schedule.name
 
@@ -483,6 +490,14 @@ def launch_scheduled_runs_for_schedule_iterator(
     if not tick_times:
         if log_verbose_checks:
             logger.info(f"No new tick times to evaluate for {schedule_name}")
+
+        _log_iteration_timestamp(
+            instance,
+            schedule_state,
+            schedule_state_lock,
+            instigator_data,
+            end_datetime_utc.timestamp(),
+        )
         return
 
     if not external_schedule.partition_set_name and len(tick_times) > 1:
@@ -573,6 +588,15 @@ def launch_scheduled_runs_for_schedule_iterator(
                     )
                     yield error_data
                     return
+
+    # now log the iteration timestamp
+    _log_iteration_timestamp(
+        instance,
+        schedule_state,
+        schedule_state_lock,
+        instigator_data,
+        end_datetime_utc.timestamp(),
+    )
 
 
 def _check_for_debug_crash(
@@ -854,3 +878,36 @@ def _create_scheduler_run(
         if run_request.asset_selection
         else None,
     )
+
+
+def _log_iteration_timestamp(
+    instance: DagsterInstance,
+    schedule_state: InstigatorState,
+    schedule_state_lock: threading.Lock,
+    instigator_data: ScheduleInstigatorData,
+    iteration_timestamp: float,
+):
+    # Utility function that logs iteration timestamps for schedules that are running, to record a
+    # successful iteration, regardless of whether or not a tick was processed or not.  This is so
+    # that when a cron schedule changes, we can modify the evaluation "start time" from the moment
+    # that the schedule was turned on to the last time that the schedule was processed in a valid
+    # state (even in between ticks).
+
+    # Rather than logging every single iteration, we log every hour.  This means that if the cron
+    # schedule changes to run to a time that is less than an hour ago, when the code location is
+    # deployed, a tick might be registered for that time, with a run kicking off.
+    if (
+        not instigator_data.last_iteration_timestamp
+        or instigator_data.last_iteration_timestamp + LAST_RECORDED_ITERATION_INTERVAL_SECONDS
+        < iteration_timestamp
+    ):
+        with schedule_state_lock:
+            instance.update_instigator_state(
+                schedule_state.with_data(
+                    ScheduleInstigatorData(
+                        cron_schedule=instigator_data.cron_schedule,
+                        start_timestamp=instigator_data.start_timestamp,
+                        last_iteration_timestamp=iteration_timestamp,
+                    )
+                )
+            )

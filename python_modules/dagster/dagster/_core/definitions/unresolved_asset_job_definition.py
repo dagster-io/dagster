@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         JobDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        ResourceDefinition,
         SourceAsset,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
@@ -169,6 +170,7 @@ class UnresolvedAssetJobDefinition(
         source_assets: Optional[Sequence["SourceAsset"]] = None,
         default_executor_def: Optional["ExecutorDefinition"] = None,
         asset_graph: Optional["InternalAssetGraph"] = None,
+        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
 
@@ -244,6 +246,7 @@ class UnresolvedAssetJobDefinition(
             partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,
+            resource_defs=resource_defs,
         )
 
 
@@ -291,7 +294,7 @@ def define_asset_job(
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
-            The values provided will be viewable and editable in the Dagit playground, so be
+            The values provided will be viewable and editable in the Dagster UI, so be
             careful with secrets.
 
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is

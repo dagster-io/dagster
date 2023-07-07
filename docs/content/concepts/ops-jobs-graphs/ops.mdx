@@ -73,7 +73,7 @@ Both definitions have a few important properties:
 
 #### Inputs
 
-Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or stubbed (hardcoded) using config.
+Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or [stubbed (hardcoded) using config](/concepts/io-management/unconnected-inputs#loading-a-built-in-dagster-type-from-config).
 
 The most common way to define inputs is just to add arguments to the decorated function:
 

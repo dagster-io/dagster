@@ -429,7 +429,10 @@ from dagster._core.execution.context.input import (
     InputContext as InputContext,
     build_input_context as build_input_context,
 )
-from dagster._core.execution.context.invocation import build_op_context as build_op_context
+from dagster._core.execution.context.invocation import (
+    build_asset_context as build_asset_context,
+    build_op_context as build_op_context,
+)
 from dagster._core.execution.context.logger import InitLoggerContext as InitLoggerContext
 from dagster._core.execution.context.output import (
     OutputContext as OutputContext,
@@ -493,6 +496,9 @@ from dagster._core.storage.mem_io_manager import (
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
+from dagster._core.storage.partition_status_cache import (
+    AssetPartitionStatus as AssetPartitionStatus,
+)
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
     RootInputManagerDefinition as RootInputManagerDefinition,

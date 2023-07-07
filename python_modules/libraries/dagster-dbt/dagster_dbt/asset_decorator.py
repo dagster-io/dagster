@@ -4,7 +4,7 @@ from dagster import AssetsDefinition, PartitionsDefinition, multi_asset
 from dagster._annotations import experimental
 
 from .asset_utils import get_dbt_multi_asset_args, get_deps
-from .cli.resources_v2 import DbtManifest
+from .core.resources_v2 import DbtManifest
 from .utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
 
@@ -34,9 +34,15 @@ def dbt_assets(
     Examples:
         .. code-block:: python
 
-            @dbt_multi_asset(manifest=manifest)
-            def my_dbt_assets(dbt: ResourceParam["DbtCliClient"]):
-                yield from dbt.cli(["run"])
+            from dagster import OpExecutionContext
+            from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+
+            manifest = DbtManifest.read(path="target/manifest.json")
+
+
+            @dbt_assets(manifest=manifest)
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
+                yield from dbt.cli(["build"], manifest=manifest, context=context).stream()
     """
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest.raw_manifest

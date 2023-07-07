@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type SearchPrimaryQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type SearchPrimaryQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   workspaceOrError:
     | {
         __typename: 'PythonError';
@@ -59,7 +59,7 @@ export type SearchPrimaryQuery = {
 export type SearchSecondaryQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type SearchSecondaryQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetsOrError:
     | {
         __typename: 'AssetConnection';

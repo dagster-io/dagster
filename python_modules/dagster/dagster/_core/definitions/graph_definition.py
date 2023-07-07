@@ -367,16 +367,28 @@ class GraphDefinition(NodeDefinition):
     @public
     @property
     def input_mappings(self) -> Sequence[InputMapping]:
+        """Input mappings for the graph.
+
+        An input mapping is a mapping from an input of the graph to an input of a child node.
+        """
         return self._input_mappings
 
     @public
     @property
     def output_mappings(self) -> Sequence[OutputMapping]:
+        """Output mappings for the graph.
+
+        An output mapping is a mapping from an output of the graph to an output of a child node.
+        """
         return self._output_mappings
 
     @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
+        """The config mapping for the graph, if present.
+
+        By specifying a config mapping function, you can override the configuration for the child nodes contained within a graph.
+        """
         return self._config_mapping
 
     @property
@@ -580,7 +592,7 @@ class GraphDefinition(NodeDefinition):
 
                 If a dictionary is provided, then it must conform to the standard config schema, and
                 it will be used as the job's run config for the job whenever the job is executed.
-                The values provided will be viewable and editable in the Dagit playground, so be
+                The values provided will be viewable and editable in the Dagster UI, so be
                 careful with secrets.
 
                 If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
@@ -590,14 +602,14 @@ class GraphDefinition(NodeDefinition):
                 If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
                 values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
-                Dagit playground, so be careful with secrets.
+                Dagster UI, so be careful with secrets.
             tags (Optional[Mapping[str, Any]]):
                 Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
             metadata (Optional[Mapping[str, RawMetadataValue]]):
-                Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+                Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI.
                 Keys must be strings, and values must be python primitive types or one of the provided
                 MetadataValue types
             logger_defs (Optional[Mapping[str, LoggerDefinition]]):
@@ -746,27 +758,73 @@ class GraphDefinition(NodeDefinition):
     @public
     @property
     def name(self) -> str:
+        """The name of the graph."""
         return super(GraphDefinition, self).name
 
     @public
     @property
     def tags(self) -> Mapping[str, str]:
+        """The tags associated with the graph."""
         return super(GraphDefinition, self).tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
+        """Aliases the graph with a new name.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.alias("my_graph_alias")
+        """
         return super(GraphDefinition, self).alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+        """Attaches the provided tags to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.tag({"my_tag": "my_value"})
+        """
         return super(GraphDefinition, self).tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        """Attaches the provided hooks to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.with_hooks({my_hook})
+        """
         return super(GraphDefinition, self).with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        """Attaches the provided retry policy to the graph immutably.
+
+        Can only be used in the context of a :py:func:`@graph <graph>`, :py:func:`@job <job>`, or :py:func:`@asset_graph <asset_graph>` decorated function.
+
+        **Examples:**
+            .. code-block:: python
+
+                @job
+                def do_it_all():
+                    my_graph.with_retry_policy(RetryPolicy(max_retries=5))
+        """
         return super(GraphDefinition, self).with_retry_policy(retry_policy)
 
     def resolve_input_to_destinations(

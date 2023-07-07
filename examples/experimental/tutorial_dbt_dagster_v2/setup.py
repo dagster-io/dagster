@@ -9,5 +9,5 @@ setup(
         "dbt-core>=1.4.0",
         "dbt-duckdb",
     ],
-    extras_require={"dev": ["dagit"]},
+    extras_require={"dev": ["dagster-webserver"]},
 )
