@@ -44,6 +44,7 @@ class ExternalAssetGraph(AssetGraph):
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
+        auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -56,6 +57,7 @@ class ExternalAssetGraph(AssetGraph):
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
+            auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._materialization_job_names_by_key = job_names_by_key
@@ -116,12 +118,12 @@ class ExternalAssetGraph(AssetGraph):
         repo_handles_by_key = {
             node.asset_key: repo_handle
             for repo_handle, node in repo_handle_external_asset_nodes
-            if not node.is_source
+            if not node.is_source or node.is_observable
         }
         job_names_by_key = {
             node.asset_key: node.job_names
             for _, node in repo_handle_external_asset_nodes
-            if not node.is_source
+            if not node.is_source or node.is_observable
         }
         code_versions_by_key = {
             node.asset_key: node.code_version
@@ -134,12 +136,17 @@ class ExternalAssetGraph(AssetGraph):
         }
 
         is_observable_by_key = {key: False for key in all_non_source_keys}
+        auto_observe_interval_minutes_by_key = {}
 
         for repo_handle, node in repo_handle_external_asset_nodes:
             if node.is_source:
                 # We need to set this even if the node is a regular asset in another code location.
                 # `is_observable` will only ever be consulted in the source asset context.
                 is_observable_by_key[node.asset_key] = node.is_observable
+                auto_observe_interval_minutes_by_key[
+                    node.asset_key
+                ] = node.auto_observe_interval_minutes
+
                 if node.asset_key in all_non_source_keys:
                     # one location's source is another location's non-source
                     continue
@@ -190,6 +197,7 @@ class ExternalAssetGraph(AssetGraph):
             job_names_by_key=job_names_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
+            auto_observe_interval_minutes_by_key=auto_observe_interval_minutes_by_key,
         )
 
     @property
