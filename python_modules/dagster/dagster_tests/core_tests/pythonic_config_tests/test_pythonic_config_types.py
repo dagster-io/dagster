@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Dict, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import pytest
 from dagster import (
@@ -17,7 +17,7 @@ from dagster._config.pythonic_config import Config, ConfigurableResource, Permis
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
+from pydantic import Field, ValidationError
 from typing_extensions import Literal
 
 
@@ -915,3 +915,143 @@ def test_to_config_dict_combined_with_cached_method() -> None:
     obj = ConfigWithCachedMethod(a_string="bar")
     obj.a_string_cached()
     assert obj._convert_to_config_dictionary() == {"a_string": "bar"}  # noqa: SLF001
+
+
+def test_tuple_basic() -> None:
+    class AnOpConfig(Config):
+        a_tuple: Tuple[int, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_tuple == (1, 2)
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, 2]}}}})
+    assert executed["yes"]
+
+    assert AnOpConfig(a_tuple=(1, 2)).a_tuple == (1, 2)
+    assert AnOpConfig(a_tuple=(1, 2))._convert_to_config_dictionary() == {  # noqa: SLF001
+        "a_tuple": [1, 2]
+    }
+
+    with pytest.raises(ValidationError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, 2, 3]}}}}
+        )
+
+
+def test_tuple_mixed_type() -> None:
+    class AnOpConfig(Config):
+        a_tuple: Tuple[int, str]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_tuple == (1, "foo")
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, "foo"]}}}})
+    assert executed["yes"]
+
+    assert AnOpConfig(a_tuple=(1, "foo")).a_tuple == (1, "foo")
+    assert AnOpConfig(a_tuple=(1, "foo"))._convert_to_config_dictionary() == {  # noqa: SLF001
+        "a_tuple": [1, "foo"]
+    }
+
+    with pytest.raises(ValidationError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"a_tuple": ["false", "foo"]}}}}
+        )
+
+
+def test_tuple_nested() -> None:
+    class AnOpConfig(Config):
+        a_tuple: Tuple[int, Tuple[int, int, str]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_tuple == (1, (2, 3, "foo"))
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, [2, 3, "foo"]]}}}}
+    )
+    assert executed["yes"]
+
+    assert AnOpConfig(a_tuple=(1, (2, 3, "foo"))).a_tuple == (1, (2, 3, "foo"))
+    config = AnOpConfig(a_tuple=(1, (2, 3, "foo")))
+    assert config._convert_to_config_dictionary() == {"a_tuple": [1, [2, 3, "foo"]]}  # noqa: SLF001
+
+    with pytest.raises(ValidationError):
+        a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, 2]}}}})
+
+
+def test_optional_tuple() -> None:
+    class AnOpConfig(Config):
+        a_tuple: Optional[Tuple[int, int]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert config.a_tuple == (1, 2) or config.a_tuple is None
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, 2]}}}})
+    assert executed["yes"]
+
+    assert AnOpConfig(a_tuple=(1, 2)).a_tuple == (1, 2)
+    assert AnOpConfig(a_tuple=(1, 2))._convert_to_config_dictionary() == {  # noqa: SLF001
+        "a_tuple": [1, 2]
+    }
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": None}}}})
+    assert executed["yes"]
+
+    assert AnOpConfig(a_tuple=None).a_tuple is None
+    assert AnOpConfig(a_tuple=None)._convert_to_config_dictionary() == {}  # noqa: SLF001
+
+
+def test_tuple_containing_none() -> None:
+    class AnOpConfig(Config):
+        a_tuple: Tuple[int, Optional[int]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert config.a_tuple == (1, None)
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_tuple": [1, None]}}}})
+    assert executed["yes"]
+
+    assert AnOpConfig(a_tuple=(1, None)).a_tuple == (1, None)
+    assert AnOpConfig(a_tuple=(1, None))._convert_to_config_dictionary() == {  # noqa: SLF001
+        "a_tuple": [1, None]
+    }
