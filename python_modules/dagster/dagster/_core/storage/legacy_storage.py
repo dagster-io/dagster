@@ -467,7 +467,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_asset_keys(prefix, limit, cursor)
 
     def get_latest_materialization_events(
-        self, asset_keys: Sequence["AssetKey"]
+        self, asset_keys: Iterable["AssetKey"]
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._storage.event_log_storage.get_latest_materialization_events(asset_keys)
 
