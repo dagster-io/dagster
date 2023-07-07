@@ -2,6 +2,7 @@ import logging
 import os
 from unittest import mock
 
+import pytest
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -219,7 +220,8 @@ def test_tunnel_with_string_key(ssh_mock) -> None:
         )
 
 
-def test_ssh_sftp(sftpserver) -> None:
+@pytest.mark.parametrize("ssh_resource_obj", [sshresource, SSHResource.configure_at_launch()])
+def test_ssh_sftp(sftpserver, ssh_resource_obj) -> None:
     tmp_path = get_system_temp_directory()
     readme_file = os.path.join(tmp_path, "readme.txt")
 
@@ -238,7 +240,7 @@ def test_ssh_sftp(sftpserver) -> None:
     with sftpserver.serve_content({"a_dir": {"readme.txt": "hello, world"}}):
         result = wrap_op_in_graph_and_execute(
             sftp_solid_get,
-            resources={"ssh_resource": sshresource},
+            resources={"ssh_resource": ssh_resource_obj},
             run_config={
                 "ops": {
                     "sftp_solid_get": {
