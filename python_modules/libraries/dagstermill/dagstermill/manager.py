@@ -180,7 +180,7 @@ class Manager:
             if dagster_run.parent_run_id:
                 known_state = KnownExecutionState.build_for_reexecution(
                     instance=instance,
-                    parent_run=instance.get_run_by_id(dagster_run.parent_run_id)
+                    parent_run=instance.get_run_by_id(dagster_run.parent_run_id),
                 )
             self.context = DagstermillRuntimeExecutionContext(
                 job_context=job_context,
@@ -195,9 +195,9 @@ class Manager:
                 step_context=cast(
                     StepExecutionContext,
                     job_context.for_step(
-                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key))
+                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key)),
+                        known_state=known_state,
                     ),
-                    known_state=known_state
                 ),
             )
 
