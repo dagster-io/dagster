@@ -225,7 +225,7 @@ def _create_repository_using_definitions_args(
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-):
+) -> RepositoryDefinition:
     check.opt_iterable_param(
         assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
     )
@@ -401,6 +401,12 @@ class Definitions:
             executor=executor,
             loggers=loggers,
         )
+
+    @staticmethod
+    def from_repository(repo: RepositoryDefinition) -> "Definitions":
+        defs = Definitions()
+        defs._created_pending_or_normal_repo = repo  # noqa: SLF001
+        return defs
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:

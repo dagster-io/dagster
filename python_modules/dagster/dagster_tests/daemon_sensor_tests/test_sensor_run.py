@@ -172,6 +172,9 @@ def simple_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
 
+    assert context.defs is not None
+    assert context.defs.get_job_def("the_job") is not None
+
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
