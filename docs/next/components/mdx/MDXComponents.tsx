@@ -10,7 +10,7 @@ import path from 'path';
 import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
 import {PersistentTabContext} from 'components/PersistentTabContext';
-import NextImage from 'next/image';
+import NextImage from 'next/legacy/image';
 import NextLink from 'next/link';
 import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
