@@ -1,8 +1,12 @@
 import {Colors, Box, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {AssetKey} from '../types';
+
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
+import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
+import {WaitingOnPartitionAssetKeysLink} from './WaitingOnPartitionAssetKeysLink';
 import {AutoMateralizeWithConditionFragment} from './types/GetEvaluationsQuery.types';
 
 export type ConditionType = AutoMateralizeWithConditionFragment['__typename'];
@@ -37,14 +41,18 @@ const Condition = ({text, met, type, rightElement}: ConditionProps) => {
   );
 };
 
-interface ConditionsWithPartitionsProps extends ConditionsProps {
+interface ConditionsWithPartitionsProps {
+  conditionResults: Set<ConditionType>;
+  maxMaterializationsPerMinute: number;
   conditionToPartitions: Record<ConditionType, string[]>;
+  parentOutdatedWaitingOnAssetKeys: Record<string, AssetKey[]>;
 }
 
 export const ConditionsWithPartitions = ({
   conditionResults,
   conditionToPartitions,
   maxMaterializationsPerMinute,
+  parentOutdatedWaitingOnAssetKeys,
 }: ConditionsWithPartitionsProps) => {
   const buildRightElement = (partitionKeys: string[]) => {
     if (partitionKeys?.length) {
@@ -96,9 +104,13 @@ export const ConditionsWithPartitions = ({
           text="Waiting on upstream data"
           met={conditionResults.has('ParentOutdatedAutoMaterializeCondition')}
           type="skip"
-          rightElement={buildRightElement(
-            conditionToPartitions['ParentOutdatedAutoMaterializeCondition'],
-          )}
+          rightElement={
+            Object.keys(parentOutdatedWaitingOnAssetKeys).length > 0 ? (
+              <WaitingOnPartitionAssetKeysLink
+                assetKeysByPartition={parentOutdatedWaitingOnAssetKeys}
+              />
+            ) : null
+          }
         />
       </CollapsibleSection>
       <CollapsibleSection header="Discard conditions met">
@@ -122,11 +134,13 @@ export const ConditionsWithPartitions = ({
 interface ConditionsProps {
   conditionResults: Set<ConditionType>;
   maxMaterializationsPerMinute: number;
+  parentOutdatedWaitingOnAssetKeys: AssetKey[];
 }
 
 export const ConditionsNoPartitions = ({
   conditionResults,
   maxMaterializationsPerMinute,
+  parentOutdatedWaitingOnAssetKeys,
 }: ConditionsProps) => {
   return (
     <>
@@ -159,6 +173,11 @@ export const ConditionsNoPartitions = ({
           text="Waiting on upstream data"
           met={conditionResults.has('ParentOutdatedAutoMaterializeCondition')}
           type="skip"
+          rightElement={
+            parentOutdatedWaitingOnAssetKeys.length ? (
+              <WaitingOnAssetKeysLink assetKeys={parentOutdatedWaitingOnAssetKeys} />
+            ) : null
+          }
         />
       </CollapsibleSection>
       <CollapsibleSection header="Discard conditions met">
