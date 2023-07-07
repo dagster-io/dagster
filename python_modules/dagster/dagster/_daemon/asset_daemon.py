@@ -12,7 +12,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
+from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG, AUTO_OBSERVE_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
@@ -109,7 +109,11 @@ class AssetDaemon(IntervalDaemon):
             target_asset_keys=target_asset_keys,
             instance=instance,
             cursor=cursor,
-            run_tags=None,
+            materialize_run_tags={
+                AUTO_MATERIALIZE_TAG: "true",
+                **instance.auto_materialize_run_tags,
+            },
+            observe_run_tags={AUTO_OBSERVE_TAG: "true"},
             auto_observe=True,
         )
 
@@ -120,20 +124,16 @@ class AssetDaemon(IntervalDaemon):
 
             asset_keys = check.not_none(run_request.asset_selection)
 
-            run = submit_asset_run(
-                run_request,
-                instance,
-                workspace,
-                asset_graph,
-                {AUTO_MATERIALIZE_TAG: "true", **instance.auto_materialize_run_tags},
-            )
+            run = submit_asset_run(run_request, instance, workspace, asset_graph)
 
             # add run id to evaluations
             for asset_key in asset_keys:
-                evaluation = evaluations_by_asset_key[asset_key]
-                evaluations_by_asset_key[asset_key] = evaluation._replace(
-                    run_ids=evaluation.run_ids | {run.run_id}
-                )
+                # asset keys for observation runs don't have evaluations
+                if asset_key in evaluations_by_asset_key:
+                    evaluation = evaluations_by_asset_key[asset_key]
+                    evaluations_by_asset_key[asset_key] = evaluation._replace(
+                        run_ids=evaluation.run_ids | {run.run_id}
+                    )
 
         instance.daemon_cursor_storage.set_cursor_values({CURSOR_KEY: new_cursor.serialize()})
 
@@ -153,7 +153,6 @@ def submit_asset_run(
     instance: DagsterInstance,
     workspace: IWorkspace,
     asset_graph: ExternalAssetGraph,
-    extra_tags,
 ) -> DagsterRun:
     asset_keys = check.not_none(run_request.asset_selection)
     check.invariant(len(asset_keys) > 0)
@@ -179,8 +178,6 @@ def submit_asset_run(
         )
     )
 
-    tags = {**run_request.tags, **extra_tags}
-
     external_execution_plan = code_location.get_external_execution_plan(
         external_job,
         run_request.run_config,
@@ -200,7 +197,7 @@ def submit_asset_run(
         op_selection=None,
         root_run_id=None,
         parent_run_id=None,
-        tags=tags,
+        tags=run_request.tags,
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,

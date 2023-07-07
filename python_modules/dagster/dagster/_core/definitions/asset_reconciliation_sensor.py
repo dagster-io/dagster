@@ -847,7 +847,8 @@ def reconcile(
     target_asset_keys: AbstractSet[AssetKey],
     instance: "DagsterInstance",
     cursor: AssetReconciliationCursor,
-    run_tags: Optional[Mapping[str, str]],
+    materialize_run_tags: Optional[Mapping[str, str]],
+    observe_run_tags: Optional[Mapping[str, str]],
     auto_observe: bool,
 ) -> Tuple[
     Sequence[RunRequest],
@@ -914,6 +915,7 @@ def reconcile(
             asset_graph=asset_graph,
             last_observe_request_timestamp_by_asset_key=cursor.last_observe_request_timestamp_by_asset_key,
             current_timestamp=observe_request_timestamp,
+            run_tags=observe_run_tags,
         )
         if auto_observe
         else []
@@ -926,7 +928,7 @@ def reconcile(
                 if _will_materialize_for_conditions(conditions)
             },
             asset_graph=asset_graph,
-            run_tags=run_tags,
+            run_tags=materialize_run_tags,
         ),
         *auto_observe_run_requests,
     ]
@@ -1168,7 +1170,8 @@ def build_asset_reconciliation_sensor(
             target_asset_keys=target_asset_keys,
             instance=context.instance,
             cursor=cursor,
-            run_tags=run_tags,
+            materialize_run_tags=run_tags,
+            observe_run_tags=None,
             auto_observe=False,
         )
 
@@ -1182,6 +1185,7 @@ def get_auto_observe_run_requests(
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
     current_timestamp: float,
     asset_graph: AssetGraph,
+    run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     assets_to_auto_observe: Set[AssetKey] = set()
     for asset_key in asset_graph.source_asset_keys:
@@ -1198,7 +1202,7 @@ def get_auto_observe_run_requests(
             assets_to_auto_observe.add(asset_key)
 
     return [
-        RunRequest(asset_selection=list(asset_keys))
+        RunRequest(asset_selection=list(asset_keys), tags=run_tags)
         for asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe)
         if len(asset_keys) > 0
     ]

@@ -21,7 +21,9 @@ def asset2():
     return DataVersion("5")
 
 
-@observable_source_asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+@observable_source_asset(
+    auto_observe_interval_minutes=30, partitions_def=StaticPartitionsDefinition(["a", "b", "c"])
+)
 def partitioned_observable_source_asset():
     return DataVersionsByPartition({"b": "1", "c": "5"})
 
