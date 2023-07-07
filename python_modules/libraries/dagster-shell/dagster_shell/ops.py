@@ -60,6 +60,26 @@ class ShellOpConfig(Config):
     out=Out(str),
 )
 def shell_op(context: OpExecutionContext, shell_command, config: ShellOpConfig):
+    """This op executes a shell command it receives as input.
+    This op is suitable for uses where the command to execute is generated dynamically by
+    upstream ops. If you know the command to execute at job construction time,
+    consider ``shell_command_op`` instead.
+
+    Args:
+        shell_command: The shell command to be executed
+        config (ShellOpConfig): A ShellOpConfig object specifying configuration options
+
+    Examples:
+        .. code-block:: python
+
+            @op
+            def create_shell_command():
+                return "echo hello world!"
+
+            @graph
+            def echo_graph():
+                shell_op(create_shell_command())
+    """
     output, return_code = execute(
         shell_command=shell_command, log=context.log, **config.to_execute_params()
     )
@@ -83,9 +103,24 @@ def create_shell_command_op(
     at job construction time. If you'd like to construct shell commands dynamically during
     job execution and pass them between ops, you should use ``shell_op`` instead.
 
+    The resulting op can take a single ``start`` argument that is a
+    `Nothing dependency <https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies>`__
+    to allow you to run ops before the shell op.
+
     Examples:
         .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_op.py
            :language: python
+
+        .. code-block:: python
+
+            @op
+            def run_before_shell_op():
+                do_some_work()
+
+            @graph
+            def my_graph():
+                my_echo_op = create_shell_command_op("echo hello world!", name="echo_op")
+                my_echo_op(start=run_before_shell_op())
 
 
     Args:
@@ -143,10 +178,25 @@ def create_shell_script_op(shell_script_path, name="create_shell_script_op", ins
     You might consider using :func:`@graph <dagster.graph>` to wrap this op
     in the cases where you'd like to configure the shell op with different config fields.
 
+    If no ``ins`` are passed then the resulting op can take a single ``start`` argument that is a
+    `Nothing dependency <https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies>`__
+    to allow you to run ops before the shell op.
+
 
     Examples:
         .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_op.py
            :language: python
+
+        .. code-block:: python
+
+            @op
+            def run_before_shell_op():
+                do_some_work()
+
+            @graph
+            def my_graph():
+                my_echo_op = create_shell_script_op(file_relative_path(__file__, "hello_world.sh"), name="echo_op")
+                my_echo_op(start=run_before_shell_op())
 
 
     Args:
