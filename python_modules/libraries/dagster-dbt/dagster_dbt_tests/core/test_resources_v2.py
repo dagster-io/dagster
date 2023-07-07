@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import List, Optional
 
 import pytest
-from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue
+from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue, materialize
+from dagster_dbt import dbt_assets
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCli,
@@ -11,7 +12,6 @@ from dagster_dbt.core.resources_v2 import (
     DbtManifest,
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
-from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -128,61 +128,55 @@ def test_dbt_with_partial_parse() -> None:
     )
 
 
-def test_dbt_cli_subsetted_execution(mocker: MockerFixture) -> None:
-    mock_context = mocker.MagicMock()
-    mock_selected_output_names = ["least_caloric", "sort_by_calories"]
-
-    type(mock_context.op).tags = mocker.PropertyMock(return_value={})
-    type(mock_context).selected_output_names = mocker.PropertyMock(
-        return_value=mock_selected_output_names
-    )
-
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_task = dbt.cli(["run"], manifest=manifest, context=mock_context)
-
-    dbt_cli_task.wait()
-
-    assert dbt_cli_task.process.args == [
-        "dbt",
-        "run",
-        "--select",
-        (
+def test_dbt_cli_subsetted_execution() -> None:
+    @dbt_assets(
+        manifest=manifest,
+        select=(
             "fqn:dagster_dbt_test_project.subdir.least_caloric"
             " fqn:dagster_dbt_test_project.sort_by_calories"
         ),
-    ]
-    assert dbt_cli_task.process.returncode is not None
+    )
+    def my_dbt_assets(context):
+        dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+        dbt_cli_task = dbt.cli(["run"], context=context)
+
+        dbt_cli_task.wait()
+
+        assert dbt_cli_task.process.args == [
+            "dbt",
+            "run",
+            "--select",
+            (
+                "fqn:dagster_dbt_test_project.subdir.least_caloric"
+                " fqn:dagster_dbt_test_project.sort_by_calories"
+            ),
+        ]
+        assert dbt_cli_task.process.returncode is not None
+
+        yield from dbt_cli_task.stream()
+
+    assert materialize([my_dbt_assets]).success
 
 
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
-def test_dbt_cli_default_selection(mocker: MockerFixture, exclude: Optional[str]) -> None:
-    mock_context = mocker.MagicMock()
-    mock_selected_output_names = ["least_caloric", "sort_by_calories"]
+def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
+    @dbt_assets(manifest=manifest, exclude=exclude)
+    def my_dbt_assets(context):
+        dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+        dbt_cli_task = dbt.cli(["run"], context=context)
 
-    type(mock_context.op).tags = mocker.PropertyMock(
-        return_value={
-            "dagster-dbt/select": "fqn:*",
-            **({"dagster-dbt/exclude": exclude} if exclude else {}),
-        }
-    )
-    type(mock_context).selected_output_names = mocker.PropertyMock(
-        return_value=mock_selected_output_names
-    )
-    mock_context.assets_def.node_keys_by_output_name.__len__.return_value = len(
-        mock_selected_output_names
-    )
+        dbt_cli_task.wait()
 
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_task = dbt.cli(["run"], manifest=manifest, context=mock_context)
+        expected_args = ["dbt", "run", "--select", "fqn:*"]
+        if exclude:
+            expected_args += ["--exclude", exclude]
 
-    dbt_cli_task.wait()
+        assert dbt_cli_task.process.args == expected_args
+        assert dbt_cli_task.process.returncode is not None
 
-    expected_args = ["dbt", "run", "--select", "fqn:*"]
-    if exclude:
-        expected_args += ["--exclude", exclude]
+        yield from dbt_cli_task.stream()
 
-    assert dbt_cli_task.process.args == expected_args
-    assert dbt_cli_task.process.returncode is not None
+    assert materialize([my_dbt_assets]).success
 
 
 @pytest.mark.parametrize(

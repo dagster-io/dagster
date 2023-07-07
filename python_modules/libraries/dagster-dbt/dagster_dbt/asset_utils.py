@@ -1,6 +1,17 @@
 import hashlib
 import textwrap
-from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, Optional, Set, Tuple
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+)
 
 from dagster import (
     AssetKey,
@@ -17,6 +28,11 @@ from dagster import (
 from dagster._utils.merger import merge_dicts
 
 from .utils import input_name_fn, output_name_fn
+
+if TYPE_CHECKING:
+    from dagster_dbt.core.resources_v2 import DbtManifest
+
+MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 
 ###################
 # DEFAULT FUNCTIONS
@@ -229,8 +245,9 @@ def get_deps(
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     deps: Mapping[str, FrozenSet[str]],
-    io_manager_key: Optional[str] = None,
-) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]],]:
+    io_manager_key: Optional[str],
+    manifest: "DbtManifest",
+) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
     """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
     non_argument_deps: Set[AssetKey] = set()
     outs: Dict[str, AssetOut] = {}
@@ -248,7 +265,10 @@ def get_dbt_multi_asset_args(
             io_manager_key=io_manager_key,
             description=default_description_fn(node_info, display_raw_sql=False),
             is_required=False,
-            metadata=default_metadata_fn(node_info),
+            metadata={  # type: ignore
+                **default_metadata_fn(node_info),
+                MANIFEST_METADATA_KEY: manifest,
+            },
             group_name=default_group_fn(node_info),
             code_version=default_code_version_fn(node_info),
             freshness_policy=default_freshness_policy_fn(node_info),

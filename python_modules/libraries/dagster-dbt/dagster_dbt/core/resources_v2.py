@@ -41,6 +41,7 @@ from pydantic import Field
 from typing_extensions import Literal
 
 from ..asset_utils import (
+    MANIFEST_METADATA_KEY,
     default_asset_key_fn,
     default_description_fn,
     default_metadata_fn,
@@ -804,8 +805,8 @@ class DbtCliInvocation:
 
 
                 @dbt_assets(manifest=manifest)
-                def my_dbt_assets(dbt: DbtCli):
-                    yield from dbt.cli(["run"], manifest=manifest).stream()
+                def my_dbt_assets(context, dbt: DbtCli):
+                    yield from dbt.cli(["run"], context=context).stream()
         """
         for event in self.stream_raw_events():
             yield from event.to_default_asset_events(manifest=self.manifest)
@@ -962,7 +963,7 @@ class DbtCli(ConfigurableResource):
         args: List[str],
         *,
         raise_on_error: bool = True,
-        manifest: DbtManifest,
+        manifest: Optional[DbtManifest] = None,
         context: Optional[OpExecutionContext] = None,
     ) -> DbtCliInvocation:
         """Execute a dbt command.
@@ -985,8 +986,8 @@ class DbtCli(ConfigurableResource):
 
 
                 @dbt_assets(manifest=manifest)
-                def my_dbt_assets(dbt: DbtCli):
-                    yield from dbt.cli(["run"], manifest=manifest).stream()
+                def my_dbt_assets(context, dbt: DbtCli):
+                    yield from dbt.cli(["run"], context=context).stream()
         """
         target_path = self._get_unique_target_path(context=context)
         env = {
@@ -1003,10 +1004,28 @@ class DbtCli(ConfigurableResource):
             "DBT_TARGET_PATH": target_path,
         }
 
+        if manifest is None:
+            if context is None:
+                check.failed("Either a context or a manifest argument must be provided")
+            assets_def = context.assets_def
+            if assets_def is None:
+                check.failed(
+                    "Must provide a value for the manifest argument if not executing as part of"
+                    " @dbt_assets"
+                )
+            manifest = (
+                (assets_def.metadata_by_key or {}).get(next(iter(assets_def.keys))) or {}
+            ).get(MANIFEST_METADATA_KEY)
+            if not isinstance(manifest, DbtManifest):
+                check.failed(
+                    "Must provide a value for the manifest argument if not executing as part of"
+                    " @dbt_assets"
+                )
+
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
         selection_args: List[str] = []
-        if context and manifest:
+        if context:
             logger.info(
                 "A context and manifest were provided to the dbt CLI client. Selection arguments to"
                 " dbt will automatically be interpreted from the execution environment."
