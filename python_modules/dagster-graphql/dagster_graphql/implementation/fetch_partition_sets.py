@@ -12,7 +12,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
 )
-from dagster._core.storage.dagster_run import RunPartitionData, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -229,6 +229,7 @@ def get_partition_set_partition_statuses(
 
     run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
         runs_filter=RunsFilter(
+            statuses=[status for status in DagsterRunStatus if status != DagsterRunStatus.CANCELED],
             tags={
                 PARTITION_SET_TAG: partition_set_name,
                 REPOSITORY_LABEL_TAG: repository_handle.get_external_origin().get_label(),
