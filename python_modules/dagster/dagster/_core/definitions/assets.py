@@ -1356,9 +1356,10 @@ def _validate_self_deps(
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are:\n(a) time-partitioned and each"
-                " partition depends on earlier partitions\n(b) multipartitioned, with one time"
-                " dimension that depends on earlier time partitions"
+                f'Asset "{input_key.to_user_string()}" depends on itself. Assets can only depend'
+                " on themselves if they are:\n(a) time-partitioned and each partition depends on"
+                " earlier partitions\n(b) multipartitioned, with one time dimension that depends"
+                " on earlier time partitions"
             )
 
 
