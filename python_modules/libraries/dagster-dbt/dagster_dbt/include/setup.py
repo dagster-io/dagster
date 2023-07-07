@@ -2,6 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="dbt_scaffold",
+    version="0.0.1",
     packages=find_packages(),
     install_requires=[
         "dagster",
@@ -9,5 +10,5 @@ setup(
         "dagster-dbt",
         "dbt-core>=1.4.0",
     ],
-    extras_require={"dev": ["dagit"]},
+    extras_require={"dev": ["dagster-webserver"]},
 )

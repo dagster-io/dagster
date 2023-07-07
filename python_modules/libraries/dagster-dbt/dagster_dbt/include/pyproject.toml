@@ -1,6 +1,3 @@
-[project]
-name = "dbt_scaffold"
-
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"

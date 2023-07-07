@@ -4,7 +4,7 @@ from dagster import Definitions
 
 from dagster_dbt import DbtCli, DbtManifest, dbt_assets
 
-dbt_project_dir = Path(__file__).parent.joinpath("..", "jaffle_shop")
+dbt_project_dir = Path(__file__).parent.joinpath("..", "..")
 dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 dbt_manifest = DbtManifest.read(path=dbt_manifest_path)
 
@@ -17,7 +17,7 @@ def build_dbt_project(dbt: DbtCli):
 schedules = [
     dbt_manifest.build_schedule(
         job_name="materialize_dbt_models",
-        cron_schedule="0 0 0 * *",
+        cron_schedule="0 0 * * *",
     )
 ]
 
