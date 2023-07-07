@@ -8,7 +8,7 @@ export type JobMetadataQueryVariables = Types.Exact<{
 }>;
 
 export type JobMetadataQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineOrError:
     | {__typename: 'InvalidSubsetError'}
     | {

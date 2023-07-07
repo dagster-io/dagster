@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type InstanceHealthForBackfillsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type InstanceHealthForBackfillsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instance: {
     __typename: 'Instance';
     id: string;
@@ -41,7 +41,7 @@ export type InstanceBackfillsQueryVariables = Types.Exact<{
 }>;
 
 export type InstanceBackfillsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   partitionBackfillsOrError:
     | {
         __typename: 'PartitionBackfills';

@@ -429,7 +429,10 @@ from dagster._core.execution.context.input import (
     InputContext as InputContext,
     build_input_context as build_input_context,
 )
-from dagster._core.execution.context.invocation import build_op_context as build_op_context
+from dagster._core.execution.context.invocation import (
+    build_asset_context as build_asset_context,
+    build_op_context as build_op_context,
+)
 from dagster._core.execution.context.logger import InitLoggerContext as InitLoggerContext
 from dagster._core.execution.context.output import (
     OutputContext as OutputContext,

@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type OverviewJobsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type OverviewJobsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   workspaceOrError:
     | {
         __typename: 'PythonError';

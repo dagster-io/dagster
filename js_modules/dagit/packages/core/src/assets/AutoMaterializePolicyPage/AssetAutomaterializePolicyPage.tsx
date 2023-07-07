@@ -63,16 +63,17 @@ export const AssetAutomaterializePolicyPage = ({
   });
 
   const selectedEvaluation = React.useMemo(() => {
-    if (selectedEvaluationId) {
-      const found = evaluationsIncludingEmpty.find(
-        (evaluation) => evaluation.evaluationId === selectedEvaluationId,
-      );
-      if (found) {
-        return found;
-      }
+    // If we're looking at the most recent slice and have not selected an evaluation ID,
+    // default to the first item in the list. Otherwise, don't assume that we should
+    // automatically select the first item -- an evaluation on another page might be our
+    // active evaluation ID.
+    if (selectedEvaluationId === undefined && isFirstPage) {
+      return evaluationsIncludingEmpty[0];
     }
-    return evaluationsIncludingEmpty[0];
-  }, [selectedEvaluationId, evaluationsIncludingEmpty]);
+    return evaluationsIncludingEmpty.find(
+      (evaluation) => evaluation.evaluationId === selectedEvaluationId,
+    );
+  }, [selectedEvaluationId, isFirstPage, evaluationsIncludingEmpty]);
 
   const [maxMaterializationsPerMinute, setMaxMaterializationsPerMinute] = React.useState(1);
 
@@ -110,9 +111,8 @@ export const AssetAutomaterializePolicyPage = ({
             <AutomaterializeMiddlePanel
               assetKey={assetKey}
               assetHasDefinedPartitions={assetHasDefinedPartitions}
-              key={selectedEvaluation?.evaluationId || ''}
+              selectedEvaluationId={selectedEvaluationId}
               maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-              selectedEvaluation={selectedEvaluation}
             />
           </Box>
         </Box>

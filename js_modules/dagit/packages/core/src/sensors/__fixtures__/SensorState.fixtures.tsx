@@ -65,7 +65,7 @@ export const buildStartKansasSuccess = (delay = 0): MockedResponse<StartSensorMu
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         startSensor: buildSensor({
           sensorState: buildInstigationState({
             status: InstigationStatus.RUNNING,
@@ -91,7 +91,7 @@ export const buildStartLouisianaSuccess = (delay = 0): MockedResponse<StartSenso
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         startSensor: buildSensor({
           sensorState: buildInstigationState({
             status: InstigationStatus.RUNNING,
@@ -117,7 +117,7 @@ export const buildStartLouisianaError = (delay = 0): MockedResponse<StartSensorM
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         startSensor: buildUnauthorizedError({
           message: 'lol u cannot',
         }),
@@ -138,7 +138,7 @@ export const buildStopMinnesotaSuccess = (delay = 0): MockedResponse<StopRunning
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         stopSensor: buildStopSensorMutationResult({
           instigationState: buildInstigationState({
             status: InstigationStatus.STOPPED,
@@ -161,7 +161,7 @@ export const buildStopOregonSuccess = (delay = 0): MockedResponse<StopRunningSen
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         stopSensor: buildStopSensorMutationResult({
           instigationState: buildInstigationState({
             status: InstigationStatus.STOPPED,
@@ -184,7 +184,7 @@ export const buildStopOregonError = (delay = 0): MockedResponse<StopRunningSenso
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         stopSensor: buildUnauthorizedError({
           message: 'lol u cannot',
         }),

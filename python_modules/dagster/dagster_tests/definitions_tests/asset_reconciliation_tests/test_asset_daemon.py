@@ -6,6 +6,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
+from .auto_observe_scenarios import auto_observe_scenarios
 from .multi_code_location_scenarios import multi_code_location_scenarios
 from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 
@@ -42,7 +43,11 @@ def test_reconcile_with_external_asset_graph(scenario_item, instance):
         assert run_request.partition_key == expected_run_request.partition_key
 
 
-daemon_scenarios = {**auto_materialize_policy_scenarios, **multi_code_location_scenarios}
+daemon_scenarios = {
+    **auto_materialize_policy_scenarios,
+    **multi_code_location_scenarios,
+    **auto_observe_scenarios,
+}
 
 
 @pytest.fixture

@@ -14,16 +14,16 @@ from dagster._core.workspace.context import (
 from dagster._serdes.serdes import deserialize_value
 
 from .cli import (
-    DEFAULT_DAGIT_HOST,
-    DEFAULT_DAGIT_PORT,
-    host_dagit_ui_with_workspace_process_context,
+    DEFAULT_WEBSERVER_HOST,
+    DEFAULT_WEBSERVER_PORT,
+    host_dagster_ui_with_workspace_process_context,
 )
 from .version import __version__
 
 
-class DagitDebugWorkspaceProcessContext(IWorkspaceProcessContext):
+class WebserverDebugWorkspaceProcessContext(IWorkspaceProcessContext):
     """IWorkspaceProcessContext that works with an ephemeral instance, which is needed
-    for dagit-debug to work (a regular WorkspaceProcessContext will fail when it tries
+    for `dagster-webserver debug` to work (a regular WorkspaceProcessContext will fail when it tries
     to call .get_ref() on the instance when spinning up a code server).
     """
 
@@ -66,17 +66,17 @@ class DagitDebugWorkspaceProcessContext(IWorkspaceProcessContext):
 
 @click.command(
     name="debug",
-    help="Load dagit with an ephemeral instance loaded from a dagster debug export file.",
+    help="Load webserver with an ephemeral instance loaded from a dagster debug export file.",
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
 @click.option(
     "--port",
     "-p",
     type=click.INT,
-    help=f"Port to run server on, default is {DEFAULT_DAGIT_PORT}",
-    default=DEFAULT_DAGIT_PORT,
+    help=f"Port to run server on, default is {DEFAULT_WEBSERVER_PORT}",
+    default=DEFAULT_WEBSERVER_PORT,
 )
-def dagit_debug_command(input_files, port):
+def webserver_debug_command(input_files, port):
     debug_payloads = []
     for input_file in input_files:
         click.echo(f"Loading {input_file} ...")
@@ -92,15 +92,15 @@ def dagit_debug_command(input_files, port):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-    with DagitDebugWorkspaceProcessContext(instance) as workspace_process_context:
-        host_dagit_ui_with_workspace_process_context(
+    with WebserverDebugWorkspaceProcessContext(instance) as workspace_process_context:
+        host_dagster_ui_with_workspace_process_context(
             workspace_process_context=workspace_process_context,
             port=port,
-            host=DEFAULT_DAGIT_HOST,
+            host=DEFAULT_WEBSERVER_HOST,
             path_prefix="",
             log_level="debug",
         )
 
 
 def main():
-    dagit_debug_command()
+    webserver_debug_command()

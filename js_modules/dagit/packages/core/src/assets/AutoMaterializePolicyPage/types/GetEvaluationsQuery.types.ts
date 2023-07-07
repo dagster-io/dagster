@@ -9,7 +9,7 @@ export type GetEvaluationsQueryVariables = Types.Exact<{
 }>;
 
 export type GetEvaluationsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   autoMaterializeAssetEvaluationsOrError:
     | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | {

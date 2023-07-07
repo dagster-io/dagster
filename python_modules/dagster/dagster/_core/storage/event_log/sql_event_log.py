@@ -210,7 +210,7 @@ class SqlEventLogStorage(EventLogStorage):
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
         # event creation, we want to extend this functionality to ensure that assets with any event
         # (observation, materialization, or materialization planned) yielded with timestamp
-        # > wipe timestamp display in Dagit.
+        # > wipe timestamp display in the Dagster UI.
 
         # As of the following PRs, we update last_materialization_timestamp to store the timestamp
         # of the latest asset observation, materialization, or materialization_planned that has occurred.

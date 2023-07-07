@@ -5,7 +5,7 @@ locally (over UDS on MacOS and Unix, and over a local port on Windows) and when 
 remote Dagster user proceses (e.g., containers).
 
 The GRPC layer is not intended to supplant the dagster-graphql layer, which should still be used to
-drive web frontends like dagit.
+drive web frontends like the Dagster UI.
 """
 
 from .client import (

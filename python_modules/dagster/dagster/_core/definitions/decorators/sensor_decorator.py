@@ -61,7 +61,7 @@ def sensor(
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
             the sensor condition is met. This can be provided instead of specifying a job.
     """
@@ -128,7 +128,7 @@ def asset_sensor(
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
 
 
     Example:
@@ -246,7 +246,7 @@ def multi_asset_sensor(
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
     """

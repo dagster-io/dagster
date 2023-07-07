@@ -7,7 +7,7 @@ export type SnapshotQueryVariables = Types.Exact<{
 }>;
 
 export type SnapshotQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineSnapshotOrError:
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PipelineSnapshot'; id: string; parentSnapshotId: string | null}

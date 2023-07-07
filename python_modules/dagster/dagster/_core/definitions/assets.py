@@ -1011,8 +1011,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             # materialize the unselected asset.
             #
             # Thus, we include unselected assets that may be accidentally materialized in
-            # keys_by_output_name and asset_deps so that Dagit can populate an warning when this
-            # occurs. This is the same behavior as multi-asset subsetting.
+            # keys_by_output_name and asset_deps so that the webserver can populate an warning when
+            # this occurs. This is the same behavior as multi-asset subsetting.
 
             subsetted_asset_deps = {
                 out_asset_key: set(self._keys_by_input_name.values())
@@ -1356,9 +1356,10 @@ def _validate_self_deps(
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are:\n(a) time-partitioned and each"
-                " partition depends on earlier partitions\n(b) multipartitioned, with one time"
-                " dimension that depends on earlier time partitions"
+                f'Asset "{input_key.to_user_string()}" depends on itself. Assets can only depend'
+                " on themselves if they are:\n(a) time-partitioned and each partition depends on"
+                " earlier partitions\n(b) multipartitioned, with one time dimension that depends"
+                " on earlier time partitions"
             )
 
 

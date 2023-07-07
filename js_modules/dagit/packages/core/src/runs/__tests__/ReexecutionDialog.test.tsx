@@ -18,7 +18,7 @@ const buildLaunchPipelineReexecutionSuccessMock = (
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       launchPipelineReexecution: {
         __typename: 'LaunchRunSuccess',
         run: {
@@ -42,7 +42,7 @@ const buildLaunchPipelineReexecutionErrorMock = (
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       launchPipelineReexecution: {
         __typename: 'PythonError',
         errorChain: [],

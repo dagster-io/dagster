@@ -7,7 +7,7 @@ export type LatestRunTagQueryVariables = Types.Exact<{
 }>;
 
 export type LatestRunTagQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}

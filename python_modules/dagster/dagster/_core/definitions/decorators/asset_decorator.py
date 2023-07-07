@@ -146,7 +146,7 @@ def asset(
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
@@ -448,7 +448,7 @@ def multi_asset(
             if it does not. If not set, Dagster will accept any config provided for the op.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the underlying op.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
             that all assets produced by a multi_asset depend on all assets that are consumed by that
             multi asset. If this default is not correct, you pass in a map of output names to a

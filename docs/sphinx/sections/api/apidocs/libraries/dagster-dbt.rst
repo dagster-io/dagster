@@ -51,8 +51,13 @@ more advanced use cases, we suggest building your own ops which directly interac
 Resources (dbt Core)
 ====================
 
-CLI Resources
--------------
+CLI Resource
+------------
+
+.. autoclass:: DbtCli
+
+Deprecated CLI Resource
+-----------------------
 
 .. autoclass:: DbtCliResource
 

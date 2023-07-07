@@ -79,7 +79,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.migrate()
         self.optimize()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(

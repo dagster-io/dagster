@@ -112,7 +112,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagit, hold an open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)

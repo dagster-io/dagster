@@ -331,7 +331,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
                 CURSOR_KEY: AssetReconciliationCursor.empty()
-                .with_updates(0, {}, set(), {}, 42, None)  # type: ignore
+                .with_updates(0, {}, set(), {}, 42, None, [], 0)  # type: ignore
                 .serialize()
             }
         )

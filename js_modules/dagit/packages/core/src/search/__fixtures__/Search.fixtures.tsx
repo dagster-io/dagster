@@ -26,7 +26,7 @@ export const buildPrimarySearch = (delay = 0): MockedResponse<SearchPrimaryQuery
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         workspaceOrError: buildWorkspace({
           locationEntries: [
             buildWorkspaceLocationEntry({
@@ -84,7 +84,7 @@ export const buildPrimarySearchStatic = (delay = 0): MockedResponse<SearchPrimar
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         workspaceOrError: buildWorkspace({
           locationEntries: [
             buildWorkspaceLocationEntry({
@@ -158,7 +158,7 @@ export const buildSecondarySearch = (
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         assetsOrError: buildAssetConnection({
           // This array manually builds up `Asset` objects because it is too expensive
           // to run the builders for many thousands of objects.
@@ -192,7 +192,7 @@ export const buildSecondarySearchStatic = (delay = 0): MockedResponse<SearchSeco
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         assetsOrError: buildAssetConnection({
           nodes: [
             buildAsset({

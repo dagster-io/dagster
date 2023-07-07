@@ -151,11 +151,11 @@ from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
-class GrapheneDagitQuery(graphene.ObjectType):
+class GrapheneQuery(graphene.ObjectType):
     """The root for all queries to retrieve data from the Dagster instance."""
 
     class Meta:
-        name = "DagitQuery"
+        name = "Query"
 
     version = graphene.Field(
         graphene.NonNull(graphene.String),

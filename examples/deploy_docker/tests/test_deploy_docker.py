@@ -134,7 +134,7 @@ def test_deploy_docker():
 
             try:
                 sanity_check = requests.get(f"http://{dagit_host}:3000/dagit_info")
-                assert "dagit" in sanity_check.text
+                assert "dagster_webserver" in sanity_check.text
                 break
             except requests.exceptions.ConnectionError:
                 pass

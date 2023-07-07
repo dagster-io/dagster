@@ -200,6 +200,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
         ref={this.viewportEl}
         key={jobName}
         maxZoom={1.2}
+        defaultZoom="zoom-to-fit"
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}
         graphHeight={layout.height}

@@ -11,5 +11,5 @@ setup(
         "apache-airflow-providers-cncf-kubernetes>=4.4.0",
         "apache-airflow-providers-docker>=3.1.0",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

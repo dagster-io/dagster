@@ -10,7 +10,7 @@ export type GetScheduleQueryVariables = Types.Exact<{
 }>;
 
 export type GetScheduleQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   scheduleOrError:
     | {__typename: 'PythonError'; message: string; stack: Array<string>}
     | {__typename: 'Schedule'; id: string; name: string; potentialTickTimestamps: Array<number>}
@@ -23,7 +23,7 @@ export type ScheduleDryRunMutationVariables = Types.Exact<{
 }>;
 
 export type ScheduleDryRunMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   scheduleDryRun:
     | {
         __typename: 'DryRunInstigationTick';

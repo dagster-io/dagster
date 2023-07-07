@@ -476,7 +476,7 @@ class AssetMaterialization(
     framework.
 
     Op authors should use these events to organize metadata about the side effects of their
-    computations, enabling tooling like the Assets dashboard in Dagit.
+    computations, enabling tooling like the Assets dashboard in the Dagster UI.
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across

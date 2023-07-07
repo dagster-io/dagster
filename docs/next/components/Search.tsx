@@ -1,4 +1,5 @@
 import {DocSearchModal, useDocSearchKeyboardEvents} from '@docsearch/react';
+import debounce from 'lodash/debounce';
 import Head from 'next/head';
 import Link from 'next/link';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -22,9 +23,30 @@ function Hit({hit, children}) {
   return <a onClick={onClick}>{children}</a>;
 }
 
+// Set up docs search dark launch. As the user types into the search dialog input,
+// perform a debounced query to retrieve results.
+const handleDarkSearch = debounce(async (e: InputEvent) => {
+  const node = e.target;
+  if (node instanceof HTMLInputElement && node.closest('.search-container')) {
+    const query = node.value;
+    if (query) {
+      const response = await fetch('/api/search', {
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({query}),
+        method: 'POST',
+      });
+      if (process.env.NODE_ENV === 'development') {
+        const result = await response.json();
+        console.log(result);
+      }
+    }
+  }
+}, 300);
+
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
   const searchButtonRef = useRef();
+
   const [initialQuery, setInitialQuery] = useState(null);
   const [browserDetected, setBrowserDetected] = useState(false);
   const [actionKey, setActionKey] = useState(ACTION_KEY_DEFAULT);
@@ -52,6 +74,13 @@ export function Search() {
     onInput,
     searchButtonRef,
   });
+
+  useEffect(() => {
+    document.addEventListener('input', handleDarkSearch);
+    return () => {
+      document.removeEventListener('input', handleDarkSearch);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined') {
@@ -116,66 +145,68 @@ export function Search() {
       </button>
       {isOpen &&
         createPortal(
-          <DocSearchModal
-            initialQuery={initialQuery}
-            initialScrollY={window.scrollY}
-            searchParameters={{
-              distinct: 1,
-            }}
-            onClose={onClose}
-            indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME}
-            apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
-            appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
-            navigator={{
-              navigate({itemUrl}) {
-                setIsOpen(false);
-                window.location.href = itemUrl;
-              },
-            }}
-            hitComponent={Hit}
-            transformItems={(items) => {
-              return items.map((item) => {
-                // We transform the absolute URL into a relative URL to
-                // leverage Next's preloading.
-                const a = document.createElement('a');
-                a.href = item.url;
+          <div className="search-container">
+            <DocSearchModal
+              initialQuery={initialQuery}
+              initialScrollY={window.scrollY}
+              searchParameters={{
+                distinct: 1,
+              }}
+              onClose={onClose}
+              indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME}
+              apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
+              appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
+              navigator={{
+                navigate({itemUrl}) {
+                  setIsOpen(false);
+                  window.location.href = itemUrl;
+                },
+              }}
+              hitComponent={Hit}
+              transformItems={(items) => {
+                return items.map((item) => {
+                  // We transform the absolute URL into a relative URL to
+                  // leverage Next's preloading.
+                  const a = document.createElement('a');
+                  a.href = item.url;
 
-                const hash = a.hash === '#content-wrapper' ? '' : a.hash;
+                  const hash = a.hash === '#content-wrapper' ? '' : a.hash;
 
-                let url = `${a.pathname}${hash}`;
+                  let url = `${a.pathname}${hash}`;
 
-                // Handle URLs for GitHub Discussions which are external links
-                if (a.pathname.startsWith('/dagster-io/dagster/discussions/')) {
-                  url = a.pathname.replace(
-                    '/dagster-io/dagster/discussions',
-                    'https://github.com/dagster-io/dagster/discussions',
-                  );
-                }
+                  // Handle URLs for GitHub Discussions which are external links
+                  if (a.pathname.startsWith('/dagster-io/dagster/discussions/')) {
+                    url = a.pathname.replace(
+                      '/dagster-io/dagster/discussions',
+                      'https://github.com/dagster-io/dagster/discussions',
+                    );
+                  }
 
-                return {
-                  ...item,
-                  url,
-                };
-              });
-            }}
-            resultsFooterComponent={({state}) => {
-              return (
-                <Link
-                  href={{
-                    pathname: '/searchpage',
-                    query: {query: encodeURIComponent(state.query)},
-                  }}
-                >
-                  <a
-                    onClick={() => setIsOpen(false)}
-                    className="justify-center flex mt-3 text-gray-500"
+                  return {
+                    ...item,
+                    url,
+                  };
+                });
+              }}
+              resultsFooterComponent={({state}) => {
+                return (
+                  <Link
+                    href={{
+                      pathname: '/searchpage',
+                      query: {query: encodeURIComponent(state.query)},
+                    }}
                   >
-                    See all {state.context.nbHits} search results
-                  </a>
-                </Link>
-              );
-            }}
-          />,
+                    <a
+                      onClick={() => setIsOpen(false)}
+                      className="justify-center flex mt-3 text-gray-500"
+                    >
+                      See all {state.context.nbHits} search results
+                    </a>
+                  </Link>
+                );
+              }}
+            />
+          </div>,
           document.body,
         )}
     </>

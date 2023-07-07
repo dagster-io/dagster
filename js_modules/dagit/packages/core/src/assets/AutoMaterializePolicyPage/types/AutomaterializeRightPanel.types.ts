@@ -7,7 +7,7 @@ export type GetPolicyInfoQueryVariables = Types.Exact<{
 }>;
 
 export type GetPolicyInfoQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodeOrError:
     | {
         __typename: 'AssetNode';

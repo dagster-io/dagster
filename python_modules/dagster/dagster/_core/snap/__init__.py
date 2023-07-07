@@ -9,7 +9,7 @@ This will have a number of uses, but the most immediately germane are:
 will enable, in the short term, for the user to be able to go to a historical
 run and view the meta information at that point in time.
 2) Access metadata about dagster artifiacts that are resident in an external
-process or container. For example, dagit uses these classes load and represent
+process or container. For example, dagster-webserver uses these classes to load and represent
 metadata from user repositories that reside in different processes.
 
 There are a few varietals of classes:
@@ -24,7 +24,7 @@ snapshot data for fast access.
 3) "Active Data". These classes are serializable but not meant to be persisted.
 For example we do not persist preset configuration blocks since config
 can contain sensitive information. However this information needs to be
-communicated between user repositories and host processes such as dagit.
+communicated between user repositories and host processes such as dagster-webserver.
 
 """
 

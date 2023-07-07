@@ -46,7 +46,7 @@ export const buildWorkspaceQueryWithZeroLocations = (): MockedResponse<RootWorks
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         workspaceOrError: buildWorkspace({
           locationEntries: [],
         }),
@@ -63,7 +63,7 @@ export const buildWorkspaceQueryWithOneLocation = (): MockedResponse<RootWorkspa
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         workspaceOrError: buildWorkspace({
           locationEntries: [
             buildWorkspaceLocationEntry({
@@ -92,7 +92,7 @@ export const buildWorkspaceQueryWithThreeLocations = (): MockedResponse<RootWork
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         workspaceOrError: buildWorkspace({
           locationEntries: [
             buildWorkspaceLocationEntry({
@@ -146,7 +146,7 @@ export const buildWorkspaceQueryWithOneLocationAndAssetGroup = (): MockedRespons
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         workspaceOrError: buildWorkspace({
           locationEntries: [
             buildWorkspaceLocationEntry({

@@ -26,7 +26,7 @@ import {
 import {PAGE_SIZE} from '../useEvaluationsQueryResult';
 
 export function buildQueryMock<
-  TQuery extends {__typename: 'DagitQuery'},
+  TQuery extends {__typename: 'Query'},
   TVariables extends Record<string, any>
 >({
   query,
@@ -44,7 +44,7 @@ export function buildQueryMock<
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         ...data,
       } as TQuery,
     },

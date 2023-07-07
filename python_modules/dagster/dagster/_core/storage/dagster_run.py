@@ -377,7 +377,7 @@ class DagsterRun(
         repository_tags = {}
         if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
-            # per-repository filtering of runs from dagit.
+            # per-repository filtering of runs from the Dagster UI.
             repository_tags[
                 REPOSITORY_LABEL_TAG
             ] = self.external_job_origin.external_repository_origin.get_label()

@@ -59,7 +59,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file insqliteve
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     This is the default event log storage when none is specified in the ``dagster.yaml``.
@@ -176,7 +176,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 break
             except (db_exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
                 # This is SQLite-specific handling for concurrency issues that can arise when
-                # multiple processes (e.g. the dagit process and user code process) contend with
+                # multiple processes (e.g. the dagster-webserver process and user code process) contend with
                 # each other to init the db. When we hit the following errors, we know that another
                 # process is on the case and we should retry.
                 err_msg = str(exc)

@@ -6,7 +6,7 @@ from dagster._core.telemetry import log_workspace_stats
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from starlette.applications import Starlette
 
-from .webserver import DagitWebserver
+from .webserver import DagsterWebserver
 
 
 def create_app_from_workspace_process_context(
@@ -31,7 +31,7 @@ def create_app_from_workspace_process_context(
 
     log_workspace_stats(instance, workspace_process_context)
 
-    return DagitWebserver(
+    return DagsterWebserver(
         workspace_process_context,
         path_prefix,
     ).create_asgi_app(**kwargs)

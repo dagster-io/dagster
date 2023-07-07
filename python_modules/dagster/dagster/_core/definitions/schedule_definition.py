@@ -506,7 +506,7 @@ class ScheduleDefinition(IHasInternalInit):
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 

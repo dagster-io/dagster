@@ -60,7 +60,7 @@ export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'qtpussca',
         isAssetBackfill: true,
@@ -127,7 +127,7 @@ export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedRespo
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'tclwoggv',
         partitionStatusCounts: [
@@ -172,7 +172,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'sjqzcfhe',
         partitionStatuses: buildPartitionStatuses({
@@ -244,7 +244,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionBackfillOrError: {
         id: 'pwgcpiwc',
         partitionStatuses: {
@@ -370,7 +370,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,

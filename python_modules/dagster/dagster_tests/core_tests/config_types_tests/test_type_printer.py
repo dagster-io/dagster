@@ -244,8 +244,8 @@ def define_solid_for_test_type(name, config):
     return a_op
 
 
-# launch in dagit with this command:
-# dagit -f test_type_printer.py -n define_test_type_pipeline
+# launch in UI with this command:
+# dagster dev -f test_type_printer.py -n define_test_type_pipeline
 def define_test_type_pipeline():
     return GraphDefinition(
         name="test_type_pipeline",

@@ -806,7 +806,7 @@ class JobDefinition(IHasInternalInit):
             sub_graph = get_graph_subset(self.graph, op_selection)
 
             # if explicit config was passed the config_mapping that resolves the defaults implicitly is
-            # very unlikely to work. The job will still present the default config in dagit.
+            # very unlikely to work. The job will still present the default config in the Dagster UI.
             config = (
                 None
                 if self.run_config is not None
