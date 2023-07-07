@@ -81,6 +81,7 @@ class HookContext:
     @public
     @property
     def instance(self) -> "DagsterInstance":
+        """The instance configured to run the current job."""
         return self._step_execution_context.instance
 
     @property

@@ -130,6 +130,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def op_config(self) -> Any:
+        """Any: The parsed config specific to this op."""
         return self._step_execution_context.op_config
 
     @property
