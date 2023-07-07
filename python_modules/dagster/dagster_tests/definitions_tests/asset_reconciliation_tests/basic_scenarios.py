@@ -194,7 +194,7 @@ basic_scenarios = {
             },
             "asset4": {
                 ParentMaterializedAutoMaterializeCondition(
-                    materialized_asset_keys=frozenset([AssetKey("asset1")])
+                    materialized_asset_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")])
                 )
             },
         },

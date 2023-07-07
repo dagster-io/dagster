@@ -750,13 +750,13 @@ def determine_asset_partitions_to_auto_materialize(
         else:
             # if the parent has been updated
             if auto_materialize_policy.on_new_parent_data:
-                ancestors = instance_queryer.get_ancestors_missing_or_with_unreconciled_children(
-                    candidate
+                parents = instance_queryer.get_missing_or_updated_or_going_to_update_parents(
+                    asset_partition=candidate
                 )
-                if ancestors:
+                if parents:
                     conditions.add(
                         ParentMaterializedAutoMaterializeCondition(
-                            materialized_asset_keys=frozenset(ancestors)
+                            materialized_asset_keys=frozenset(parents)
                         )
                     )
 
