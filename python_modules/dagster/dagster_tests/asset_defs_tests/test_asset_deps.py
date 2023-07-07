@@ -204,9 +204,6 @@ def test_multi_asset_deps_via_assets_definition_fails():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-            " Instead, specify dependencies on the assets created by the multi_asset via AssetKeys"
-            " or strings."
             " For the multi_asset a_multi_asset, the available keys are: "
             "{AssetKey(['asset_1']), AssetKey(['asset_2'])}."
         ),
