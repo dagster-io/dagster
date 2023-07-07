@@ -8,7 +8,7 @@ altair==4.2.2
 amqp==5.1.1
 aniso8601==9.0.1
 ansiwrap==0.8.4
-anyio==3.7.0
+anyio==3.7.1
 apache-airflow==2.6.2
 apache-airflow-providers-apache-spark==4.1.1
 apache-airflow-providers-cncf-kubernetes==7.1.0
@@ -50,8 +50,8 @@ bitmath==1.3.3.1
 bleach==6.0.0
 blinker==1.6.2
 bokeh==3.2.0
-boto3==1.26.160
-botocore==1.29.161
+boto3==1.28.0
+botocore==1.31.0
 buildkite-test-collector==0.1.7
 cached-property==1.5.2
 cachelib==0.9.0
@@ -84,7 +84,7 @@ cron-descriptor==1.4.0
 croniter==1.4.1
 cryptography==39.0.2
 cycler==0.11.0
--e python_modules/dagster-webserver
+-e python_modules/dagit
 -e python_modules/dagster
 -e python_modules/libraries/dagster-airbyte
 -e python_modules/libraries/dagster-airflow
@@ -135,8 +135,9 @@ cycler==0.11.0
 -e python_modules/dagster-test
 -e python_modules/libraries/dagster-twilio
 -e python_modules/libraries/dagster-wandb
+-e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
-dask==2023.6.0
+dask==2023.6.1
 dask-jobqueue==0.8.2
 dask-kubernetes==2022.9.0
 dask-yarn==0.9
@@ -155,7 +156,7 @@ Deprecated==1.2.14
 -e examples/development_to_production
 dill==0.3.6
 distlib==0.3.6
-distributed==2023.6.0
+distributed==2023.6.1
 dnspython==2.3.0
 docker==5.0.3
 docker-image-py==0.1.12
@@ -166,11 +167,11 @@ docutils==0.20.1
 duckdb==0.8.1
 email-validator==1.3.1
 entrypoints==0.4
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
 execnet==1.9.0
 executing==1.2.0
 expandvars==0.9.0
-fastavro==1.7.4
+fastavro==1.8.0
 fastdiff==0.3.0
 fastjsonschema==2.17.1
 -e examples/feature_graph_backed_assets
@@ -194,14 +195,14 @@ future==0.18.3
 gitdb==4.0.10
 GitPython==3.1.31
 google-api-core==2.11.1
-google-api-python-client==2.90.0
+google-api-python-client==2.92.0
 google-auth==2.21.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==1.0.0
-google-cloud-bigquery==3.11.2
-google-cloud-bigquery-storage==2.20.0
-google-cloud-core==2.3.2
-google-cloud-storage==2.9.0
+google-cloud-bigquery==3.11.3
+google-cloud-bigquery-storage==2.22.0
+google-cloud-core==2.3.3
+google-cloud-storage==2.10.0
 google-crc32c==1.5.0
 google-resumable-media==2.5.0
 googleapis-common-protos==1.59.1
@@ -210,7 +211,7 @@ graphene==3.2.2
 graphql-core==3.2.3
 graphql-relay==3.2.0
 graphviz==0.20.1
-great-expectations==0.17.1
+great-expectations==0.17.2
 grpcio==1.56.0
 grpcio-health-checking==1.56.0
 grpcio-status==1.56.0
@@ -220,7 +221,7 @@ h11==0.14.0
 hologram==0.0.16
 httpcore==0.16.3
 httplib2==0.22.0
-httptools==0.5.0
+httptools==0.6.0
 httpx==0.23.3
 humanfriendly==10.0
 idna==3.4
@@ -229,10 +230,10 @@ importlib-metadata==6.7.0
 importlib-resources==5.12.0
 inflection==0.5.1
 iniconfig==2.0.0
-ipykernel==6.23.3
+ipykernel==6.24.0
 ipython==8.14.0
 ipython-genutils==0.2.0
-ipywidgets==8.0.6
+ipywidgets==8.0.7
 iso8601==2.0.0
 isodate==0.6.1
 isoduration==20.11.0
@@ -240,18 +241,19 @@ itsdangerous==2.1.2
 jedi==0.18.2
 Jinja2==3.1.2
 jmespath==1.0.1
-joblib==1.2.0
+joblib==1.3.1
 jsonpatch==1.33
 jsonpointer==2.4
 jsonref==1.1.0
-jsonschema==4.17.3
+jsonschema==4.18.0
+jsonschema-specifications==2023.6.1
 jupyter-events==0.6.3
 jupyter_client==7.4.9
 jupyter_core==5.3.1
-jupyter_server==2.6.0
+jupyter_server==2.7.0
 jupyter_server_terminals==0.4.4
 jupyterlab-pygments==0.2.2
-jupyterlab-widgets==3.0.7
+jupyterlab-widgets==3.0.8
 jwt==1.3.1
 kiwisolver==1.4.4
 kombu==5.3.1
@@ -275,7 +277,7 @@ marshmallow-enum==1.5.1
 marshmallow-oneofschema==3.0.1
 marshmallow-sqlalchemy==0.26.1
 mashumaro==3.6
-matplotlib==3.7.1
+matplotlib==3.7.2
 matplotlib-inline==0.1.3
 mbstrdecoder==1.1.3
 mdit-py-plugins==0.4.0
@@ -316,7 +318,7 @@ orjson==3.9.1
 oscrypto==1.3.0
 overrides==7.3.1
 packaging==23.1
-pandas==2.0.2
+pandas==2.0.3
 pandas-gbq==0.19.2
 pandas-stubs==2.0.2.230605
 pandera==0.15.1
@@ -334,17 +336,17 @@ pathvalidate==3.0.0
 pendulum==2.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
-Pillow==9.5.0
+Pillow==10.0.0
 pkginfo==1.9.6
 platformdirs==2.6.2
 plotly==5.15.0
 pluggy==1.2.0
-polars==0.18.4
+polars==0.18.6
 portalocker==2.7.0
 prison==0.2.1
 progressbar2==4.2.0
 prometheus-client==0.17.0
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.39
 proto-plus==1.22.3
 protobuf==4.23.3
 psutil==5.9.5
@@ -358,17 +360,16 @@ pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycparser==2.21
 pycryptodomex==3.18.0
-pydantic==1.10.9
+pydantic==1.10.11
 pydata-google-auth==1.8.0
 pyflakes==3.0.1
 Pygments==2.15.1
 PyJWT==2.7.0
 PyNaCl==1.5.0
 pyOpenSSL==23.2.0
-pyparsing==3.1.0
+pyparsing==3.0.9
 pypd==1.1.0
-pyright==1.1.298
-pyrsistent==0.19.3
+pyright==1.1.316
 pyspark==3.4.1
 pytablereader==0.31.4
 pytest==7.0.1
@@ -395,6 +396,7 @@ pyzmq==25.1.0
 querystring-parser==1.2.4
 ratelimiter==1.2.0.post0
 readme-renderer==40.0
+referencing==0.29.1
 regex==2023.6.3
 requests==2.31.0
 requests-file==1.5.1
@@ -406,16 +408,17 @@ rfc3339-validator==0.1.4
 rfc3986==1.5.0
 rfc3986-validator==0.1.1
 rich==13.4.2
-rich_argparse==1.1.1
+rich-argparse==1.2.0
+rpds-py==0.8.8
 rsa==4.9
 ruamel.yaml==0.17.17
 s3transfer==0.6.1
 scikit-learn==1.2.2
-scipy==1.11.0
+scipy==1.11.1
 scrapbook==0.5.0
 seaborn==0.12.2
 Send2Trash==1.8.2
-sentry-sdk==1.26.0
+sentry-sdk==1.27.1
 setproctitle==1.3.2
 shellingham==1.5.0.post1
 six==1.16.0
@@ -429,7 +432,7 @@ snowflake-connector-python==3.0.4
 snowflake-sqlalchemy==1.4.7
 sortedcontainers==2.4.0
 soupsieve==2.4.1
-SQLAlchemy==1.4.48
+SQLAlchemy==1.4.49
 SQLAlchemy-JSONField==1.0.1.post0
 SQLAlchemy-Utils==0.41.1
 sqlparse==0.4.3
@@ -460,7 +463,7 @@ tqdm==4.65.0
 traitlets==5.9.0
 -e examples/tutorial_dbt_dagster
 -e examples/tutorial_notebook_assets
-twilio==8.3.0
+twilio==8.4.0
 twine==1.15.0
 typeguard==4.0.0
 typepy==1.3.1
@@ -510,7 +513,7 @@ webencodings==0.5.1
 websocket-client==1.6.1
 websockets==10.4
 Werkzeug==2.2.3
-widgetsnbextension==4.0.7
+widgetsnbextension==4.0.8
 -e examples/with_airflow
 -e examples/with_great_expectations
 -e examples/with_pyspark

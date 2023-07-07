@@ -321,7 +321,7 @@ def test_no_err_builtin_annotations():
         return [{"hello": "world"}]
 
     @asset
-    def the_other_asset(context, the_asset: list[dict[str, str]], foo: ResourceParam[str]):  # type: ignore  # (python <3.9 compat)
+    def the_other_asset(context, the_asset: list[dict[str, str]], foo: ResourceParam[str]):  # type: ignore
         assert context.resources.foo == "blah"
         assert foo == "blah"
         assert the_asset == [{"hello": "world"}]

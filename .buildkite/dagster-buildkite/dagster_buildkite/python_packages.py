@@ -24,7 +24,7 @@ class PythonPackage:
 
         self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
         self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
-        self.name = distribution.get_name()  # type: ignore[attr-defined]
+        self.name = distribution.get_name()
 
     @property
     def install_requires(self) -> Set[Requirement]:

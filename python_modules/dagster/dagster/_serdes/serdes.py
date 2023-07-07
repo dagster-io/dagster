@@ -600,7 +600,7 @@ class SetToSequenceFieldSerializer(FieldSerializer):
 def serialize_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    **json_kwargs: object,
+    **json_kwargs: Any,
 ) -> str:
     """Serialize an object to a JSON string.
 
