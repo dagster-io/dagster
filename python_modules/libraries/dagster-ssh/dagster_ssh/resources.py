@@ -116,8 +116,8 @@ class SSHResource(ConfigurableResource):
                     self.key_file = identify_file[0]
 
     @property
-    def log(self):
-        return self._logger
+    def log(self) -> logging.Logger:
+        return check.not_none(self._logger)
 
     def get_connection(self) -> SSHClient:
         """Opens a SSH connection to the remote host.
@@ -195,7 +195,7 @@ class SSHResource(ConfigurableResource):
                 ssh_proxy=self._host_proxy,
                 local_bind_address=local_bind_address,
                 remote_bind_address=(remote_host, remote_port),
-                logger=self._logger,  # type: ignore
+                logger=self._logger,
             )
         else:
             client = SSHTunnelForwarder(
@@ -207,7 +207,7 @@ class SSHResource(ConfigurableResource):
                 local_bind_address=local_bind_address,
                 remote_bind_address=(remote_host, remote_port),
                 host_pkey_directories=[],
-                logger=self._logger,  # type: ignore
+                logger=self._logger,
             )
 
         return client
