@@ -402,7 +402,7 @@ class _Asset:
             asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
-            metadata_by_key=None,  # not supported for now
+            metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
         )
 
@@ -632,6 +632,11 @@ def multi_asset(
             for input_name, asset_in in (ins or {}).items()
             if asset_in.partition_mapping is not None
         }
+        metadata_by_key = {
+            keys_by_output_name[output_name]: out.metadata
+            for output_name, out in outs.items()
+            if out.metadata is not None
+        }
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
@@ -647,7 +652,7 @@ def multi_asset(
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
-            metadata_by_key=None,  # not supported for now
+            metadata_by_key=metadata_by_key,
         )
 
     return inner
