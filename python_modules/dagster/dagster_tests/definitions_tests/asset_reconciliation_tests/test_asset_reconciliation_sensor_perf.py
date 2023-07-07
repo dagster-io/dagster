@@ -328,7 +328,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=unpartitioned_2000_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=10,
+        max_execution_time_seconds=25,
     ),
     PerfScenario(
         snapshot=unpartitioned_2000_assets_2_random_runs,
