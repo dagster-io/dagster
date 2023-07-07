@@ -18,6 +18,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -34,6 +35,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -1751,7 +1753,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         return self._event_storage.get_latest_materialization_events(asset_keys)
 
@@ -2645,3 +2647,32 @@ class DagsterInstance(DynamicPartitionsStore):
             materialization = next(iter(materializations), None)
 
         return materialization or observation
+
+    @public
+    def get_latest_materialization_code_versions(
+        self, asset_keys: Iterable[AssetKey]
+    ) -> Mapping[AssetKey, Optional[str]]:
+        """Returns the code version used for the latest materialization of each of the provided
+        assets.
+
+        Args:
+            asset_keys (Iterable[AssetKey]): The asset keys to find latest materialization code
+                versions for.
+
+        Returns:
+            Mapping[AssetKey, Optional[str]]: A dictionary with a key for each of the provided asset
+                keys. The values will be None if the asset has no materializations. If an asset does
+                not have a code version explicitly assigned to its definitions, but was
+                materialized, Dagster assigns the run ID as its code version.
+        """
+        result: Dict[AssetKey, Optional[str]] = {}
+        latest_materialization_events = self.get_latest_materialization_events(asset_keys)
+        for asset_key in asset_keys:
+            event_log_entry = latest_materialization_events.get(asset_key)
+            if event_log_entry is None:
+                result[asset_key] = None
+            else:
+                data_provenance = extract_data_provenance_from_entry(event_log_entry)
+                result[asset_key] = data_provenance.code_version if data_provenance else None
+
+        return result

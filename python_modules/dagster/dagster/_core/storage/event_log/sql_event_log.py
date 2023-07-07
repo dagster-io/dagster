@@ -1202,9 +1202,9 @@ class SqlEventLogStorage(EventLogStorage):
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
-        check.sequence_param(asset_keys, "asset_keys", AssetKey)
+        check.iterable_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         return {
             asset_key: event_log_record.event_log_entry if event_log_record is not None else None
