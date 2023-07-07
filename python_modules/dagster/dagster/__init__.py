@@ -233,6 +233,7 @@ from dagster._core.definitions.metadata import (
     NullMetadataValue as NullMetadataValue,
     PathMetadataValue as PathMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
+    PythonObjectMetadataValue as PythonObjectMetadataValue,
     TableMetadataValue as TableMetadataValue,
     TableSchemaMetadataValue as TableSchemaMetadataValue,
     TextMetadataValue as TextMetadataValue,

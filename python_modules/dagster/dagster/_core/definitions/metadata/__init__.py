@@ -334,6 +334,37 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
+    def python_object(value: object) -> "PythonObjectMetadataValue":
+        """Static constructor for a metadata value wrapping an arbitrary Python object as
+        :py:class:`PythonObjectMetadataValue`. Can be used as the value type for the
+        `metadata` parameter for supported events.
+
+        Unlike other kinds of metadata values, this won't be displayed in the UI or stored in the
+        database. The main use for this is to allow an arbitrary Python object to ride along with a
+        job or asset definition, to be used in the same Python process as that job or asset
+        definition.
+
+        Example:
+            .. code-block:: python
+
+                class Something():
+                    ...
+
+                @asset(
+                    metadata={
+                        "some_obj": MetadataValue.python_object(Something()),
+                    }
+                )
+                def my_asset():
+                    ...
+
+        Args:
+            value (object): The python object.
+        """
+        return PythonObjectMetadataValue(value)
+
+    @public
+    @staticmethod
     def float(value: float) -> "FloatMetadataValue":
         """Static constructor for a metadata value wrapping a float as
         :py:class:`FloatMetadataValue`. Can be used as the value type for the `metadata`
@@ -712,6 +743,32 @@ class PythonArtifactMetadataValue(
         return self
 
 
+class PythonObjectMetadataValue(
+    NamedTuple(
+        "_PythonObjectMetadataValue",
+        [("python_object", PublicAttr[object])],
+    ),
+    MetadataValue["PythonArtifactMetadataValue"],
+):
+    """Container class for an arbitrary Python object.
+
+    Unlike other kinds of metadata values, this won't be displayed in the UI or stored in the
+    database. The main use for this is to allow an arbitrary Python object to ride along with a job
+    or asset definition, to be used in the same Python process as that job or asset definition.
+
+    Args:
+        python_object (str): The Python object.
+    """
+
+    def __new__(cls, python_object: object):
+        return super(PythonObjectMetadataValue, cls).__new__(cls, python_object)
+
+    @public
+    @property
+    def value(self) -> object:
+        return self.python_object
+
+
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
 class FloatMetadataValue(
     NamedTuple(
@@ -918,7 +975,10 @@ class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None
 
 
 class MetadataFieldSerializer(FieldSerializer):
-    """Converts between metadata dict (new) and metadata entries list (old)."""
+    """Converts between metadata dict (new) and metadata entries list (old).
+
+    Also strips out the unserializable metadata type PythonObjectMetadataValue.
+    """
 
     storage_name = "metadata_entries"
     loaded_name = "metadata"
@@ -939,6 +999,7 @@ class MetadataFieldSerializer(FieldSerializer):
                 "description": None,
             }
             for k, v in metadata_dict.items()
+            if not isinstance(v, PythonObjectMetadataValue)
         ]
 
     def unpack(

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import NamedTuple
 
 import pytest
 from dagster import (
@@ -13,6 +14,7 @@ from dagster import (
     NullMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
+    PythonObjectMetadataValue,
     TextMetadataValue,
     UrlMetadataValue,
     job,
@@ -22,7 +24,9 @@ from dagster._check import CheckError
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
     DagsterInvalidMetadata,
+    MetadataFieldSerializer,
     TableMetadataValue,
     normalize_metadata,
 )
@@ -35,6 +39,7 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
+from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
@@ -58,6 +63,7 @@ def test_metadata_asset_materialization():
                 "float": 0.1,
                 "path": MetadataValue.path(Path("/a/b.csv")),
                 "python": MetadataValue.python_artifact(MetadataValue),
+                "python_object": MetadataValue.python_object(object()),
             },
         )
 
@@ -75,7 +81,7 @@ def test_metadata_asset_materialization():
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    assert len(materialization.metadata) == 6
+    assert len(materialization.metadata) == 7
     entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
@@ -83,6 +89,7 @@ def test_metadata_asset_materialization():
     assert entry_map["float"] == FloatMetadataValue
     assert entry_map["path"] == PathMetadataValue
     assert entry_map["python"] == PythonArtifactMetadataValue
+    assert entry_map["python_object"] == PythonObjectMetadataValue
 
 
 def test_metadata_asset_observation():
@@ -382,3 +389,34 @@ def test_snapshot_arbitrary_metadata():
     assert build_node_defs_snapshot(
         Definitions(assets=[foo_asset]).get_implicit_global_asset_job_def()
     )
+
+
+def test_python_object_metadata_asset_definition():
+    obj = object()
+    metadata_value = MetadataValue.python_object(obj)
+
+    @asset(metadata={"python_object": metadata_value})
+    def asset1():
+        ...
+
+    assert asset1.metadata_by_key[asset1.key]["python_object"] == metadata_value
+
+
+def test_python_object_metadata_serialization():
+    """PythonObjectMetadataValues should not get serialized."""
+
+    @whitelist_for_serdes(field_serializers={"metadata": MetadataFieldSerializer})
+    class SerializableType(NamedTuple):
+        metadata: ArbitraryMetadataMapping
+
+    serialized_value = serialize_value(
+        SerializableType(
+            metadata={
+                "fruit": MetadataValue.text("apple"),
+                "python_object": MetadataValue.python_object(object()),
+            }
+        )
+    )
+    assert deserialize_value(serialized_value, SerializableType).metadata == {
+        "fruit": MetadataValue.text("apple")
+    }
