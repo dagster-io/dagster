@@ -203,7 +203,7 @@ class StepDelegatingExecutor(Executor):
                                 "Executor received termination signal, forwarding to steps",
                                 EngineEventData.interrupted(list(running_steps.keys())),
                             )
-                            for _, step in running_steps.items():
+                            for step in running_steps.values():
                                 list(
                                     self._step_handler.terminate_step(
                                         self._get_step_handler_context(
@@ -264,7 +264,7 @@ class StepDelegatingExecutor(Executor):
                         curr_time - last_check_step_health_time
                     ).total_seconds() >= self._check_step_health_interval_seconds:
                         last_check_step_health_time = curr_time
-                        for _, step in running_steps.items():
+                        for step in running_steps.values():
                             step_context = plan_context.for_step(step)
 
                             try:

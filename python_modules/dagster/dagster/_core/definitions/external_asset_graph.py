@@ -179,7 +179,7 @@ class ExternalAssetGraph(AssetGraph):
                 downstream[upstream_key].add(asset_key)
 
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-        for _, asset_keys in asset_keys_by_atomic_execution_unit_id.items():
+        for asset_keys in asset_keys_by_atomic_execution_unit_id.values():
             if len(asset_keys) > 1:
                 for asset_key in asset_keys:
                     required_multi_asset_sets_by_key[asset_key] = asset_keys

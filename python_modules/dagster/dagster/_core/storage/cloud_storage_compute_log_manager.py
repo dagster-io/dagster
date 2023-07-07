@@ -387,7 +387,7 @@ class PollingComputeLogSubscriptionManager:
             if shutdown_event.is_set():
                 return
             # need to do something smarter here that keeps track of updates
-            for _, subscriptions in self._subscriptions.items():
+            for subscriptions in self._subscriptions.values():
                 for subscription in subscriptions:
                     if shutdown_event.is_set():
                         return
