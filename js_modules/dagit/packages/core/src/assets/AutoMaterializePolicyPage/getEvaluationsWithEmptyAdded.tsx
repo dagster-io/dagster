@@ -15,11 +15,17 @@ export const getEvaluationsWithEmptyAdded = ({
   isFirstPage,
   isLastPage,
 }: Config) => {
-  if (isLoading || !currentEvaluationId) {
+  if (isLoading) {
     return [];
   }
+
   const evalsWithSkips = [];
-  let current = isFirstPage ? currentEvaluationId : evaluations[0]?.evaluationId || 1;
+
+  let current =
+    isFirstPage && currentEvaluationId !== null
+      ? currentEvaluationId
+      : evaluations[0]?.evaluationId || 1;
+
   evaluations.forEach((evaluation, i) => {
     const prevEvaluation = evaluations[i - 1];
     if (evaluation.evaluationId !== current) {
@@ -34,15 +40,17 @@ export const getEvaluationsWithEmptyAdded = ({
     evalsWithSkips.push(evaluation);
     current = evaluation.evaluationId - 1;
   });
-  if (isLastPage && current > 0) {
+
+  if (isLastPage) {
     const lastEvaluation = evaluations[evaluations.length - 1];
     evalsWithSkips.push({
       __typename: 'no_conditions_met' as const,
       evaluationId: current,
-      amount: current - 0,
+      amount: current,
       endTimestamp: lastEvaluation?.timestamp ? lastEvaluation?.timestamp - 60 : ('now' as const),
       startTimestamp: 0,
     });
   }
+
   return evalsWithSkips;
 };
