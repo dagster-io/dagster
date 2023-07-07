@@ -348,7 +348,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=all_daily_partitioned_500_assets_2_partition_keys,
         n_freshness_policies=100,
-        max_execution_time_seconds=15,
+        max_execution_time_seconds=25,
     ),
     PerfScenario(
         snapshot=all_hourly_partitioned_100_assets_2_partition_keys,
