@@ -53,6 +53,7 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
+            "dagster-dbt = dagster_dbt.cli.app:app",
         ]
     },
     zip_safe=False,
