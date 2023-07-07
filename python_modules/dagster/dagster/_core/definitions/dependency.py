@@ -668,7 +668,9 @@ class DependencyDefinition(
     def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
 
+    @public
     def is_fan_in(self) -> bool:
+        """Return True if the dependency is fan-in (always False for DependencyDefinition)."""
         return False
 
     def get_op_dependencies(self) -> Sequence["DependencyDefinition"]:
@@ -753,16 +755,20 @@ class MultiDependencyDefinition(
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
+        """Return the list of :py:class:`DependencyDefinition` contained by this object."""
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     @public
     def is_fan_in(self) -> bool:
+        """Return `True` if the dependency is fan-in (always True for MultiDependencyDefinition)."""
         return True
 
     @public
     def get_dependencies_and_mappings(
         self,
     ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+        """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects.
+        """
         return self.dependencies
 
 

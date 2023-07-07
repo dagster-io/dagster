@@ -128,6 +128,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     @public
     @property
     def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
+        """Callable that takes an :py:class:`InitExecutorContext` and returns an instance of
+        :py:class:`Executor`.
+        """
         return self._executor_creation_fn
 
     def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
