@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetKey,
@@ -23,7 +23,6 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_dimension_from_partition_tag,
@@ -31,6 +30,10 @@ from dagster._core.storage.tags import (
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
+
+if TYPE_CHECKING:
+    from dagster._core.storage.event_log.base import AssetRecord
+
 
 CACHEABLE_PARTITION_TYPES = (
     TimeWindowPartitionsDefinition,
@@ -548,7 +551,7 @@ def get_and_update_asset_status_cache_value(
     asset_key: AssetKey,
     partitions_def: Optional[PartitionsDefinition] = None,
     dynamic_partitions_loader: Optional[DynamicPartitionsStore] = None,
-    asset_record: Optional[AssetRecord] = None,
+    asset_record: Optional["AssetRecord"] = None,
 ) -> Optional[AssetStatusCacheValue]:
     asset_record = asset_record or next(
         iter(instance.get_asset_records(asset_keys=[asset_key])), None
