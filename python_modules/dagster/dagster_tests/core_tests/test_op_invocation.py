@@ -31,6 +31,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -42,6 +43,8 @@ from dagster._core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.invocation import build_asset_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -1287,3 +1290,22 @@ def test_multipartitioned_time_window_asset_invocation():
         partition_key="a|a",
     )
     static_multipartitioned_asset(context)
+
+
+def test_partition_range_asset_invocation():
+    partitions_def = DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
+
+    @asset(partitions_def=partitions_def)
+    def foo(context: AssetExecutionContext):
+        keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
+        return {k: True for k in keys}
+
+    context = build_op_context(
+        partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
+    )
+    assert foo(context) == {"2023-01-01": True, "2023-01-02": True}
+
+    context = build_asset_context(
+        partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),
+    )
+    assert foo(context) == {"2023-01-01": True, "2023-01-02": True}

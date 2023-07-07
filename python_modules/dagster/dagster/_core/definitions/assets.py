@@ -1288,6 +1288,7 @@ def _build_invocation_context_with_included_resources(
             resources_config=context._resources_config,  # noqa: SLF001
             instance=context._instance,  # noqa: SLF001
             partition_key=context._partition_key,  # noqa: SLF001
+            partition_key_range=context._partition_key_range,  # noqa: SLF001
             mapping_key=context._mapping_key,  # noqa: SLF001
             _assets_def=assets_def,
         )
