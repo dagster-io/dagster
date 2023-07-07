@@ -12,7 +12,7 @@ class AutoMaterializePolicyType(Enum):
 
 
 @experimental
-@whitelist_for_serdes(old_fields={"time_window_partition_scope_minutes": None})
+@whitelist_for_serdes(old_fields={"time_window_partition_scope_minutes": 1e-6})
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
