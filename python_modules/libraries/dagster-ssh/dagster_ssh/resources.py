@@ -80,7 +80,7 @@ class SSHResource(ConfigurableResource):
     _host_proxy: Optional[paramiko.ProxyCommand] = PrivateAttr(default=None)
     _key_obj: Optional[paramiko.RSAKey] = PrivateAttr(default=None)
 
-    def set_logger(self, logger: logging.Logger) ->None:
+    def set_logger(self, logger: logging.Logger) -> None:
         self._logger = logger
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
