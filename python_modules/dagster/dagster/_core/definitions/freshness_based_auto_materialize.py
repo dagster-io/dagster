@@ -121,7 +121,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
         for key in level:
             if (
                 key not in target_asset_keys_and_parents
-                or key not in asset_graph.non_source_asset_keys
+                or key not in asset_graph.materializable_asset_keys
                 or not asset_graph.get_downstream_freshness_policies(asset_key=key)
             ):
                 continue

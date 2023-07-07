@@ -235,7 +235,7 @@ class AssetGraphSubset:
         cls, asset_graph: AssetGraph, dynamic_partitions_store: DynamicPartitionsStore
     ) -> "AssetGraphSubset":
         return cls.from_asset_keys(
-            asset_graph.non_source_asset_keys, asset_graph, dynamic_partitions_store
+            asset_graph.materializable_asset_keys, asset_graph, dynamic_partitions_store
         )
 
     @classmethod

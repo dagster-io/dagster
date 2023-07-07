@@ -21,10 +21,10 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from typing_extensions import TypeAlias
 
-earth = SourceAsset("earth", group_name="planets")
+earth = SourceAsset(["celestial", "earth"], group_name="planets")
 
 
-@asset(group_name="ladies")
+@asset(ins={"earth": AssetIn(key=AssetKey(["celestial", "earth"]))}, group_name="ladies")
 def alice(earth):
     return "alice"
 
@@ -126,9 +126,13 @@ def test_asset_selection_downstream(all_assets: _AssetList):
 
 
 def test_asset_selection_groups(all_assets: _AssetList):
+    # does not include source assets by default
     sel = AssetSelection.groups("ladies", "planets")
-    # should not include source assets
     assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
+
+    # includes source assets if flag set
+    sel = AssetSelection.groups("planets", include_sources=True)
+    assert sel.resolve(all_assets) == {earth.key}
 
 
 def test_asset_selection_keys(all_assets: _AssetList):
@@ -145,6 +149,14 @@ def test_asset_selection_key_prefixes(all_assets: _AssetList):
 
     sel = AssetSelection.key_prefixes("plants")
     assert sel.resolve(all_assets) == _asset_keys_of(set())
+
+    # does not include source assets by default
+    sel = AssetSelection.key_prefixes("celestial")
+    assert sel.resolve(all_assets) == set()
+
+    # includes source assets if flag set
+    sel = AssetSelection.key_prefixes("celestial", include_sources=True)
+    assert sel.resolve(all_assets) == {earth.key}
 
 
 def test_select_source_asset_keys():
@@ -248,6 +260,14 @@ def test_upstream_include_self(all_assets: _AssetList):
 
     selection = AssetSelection.groups("ladies").upstream(include_self=False)
     assert selection.resolve(all_assets) == _asset_keys_of({danny})
+
+
+def test_asset_selection_source_assets(all_assets: _AssetList):
+    selection = AssetSelection.keys("alice").upstream_source_assets()
+    assert selection.resolve(all_assets) == {earth.key}
+
+    selection = AssetSelection.keys("george").upstream_source_assets()
+    assert selection.resolve(all_assets) == {earth.key}
 
 
 def test_roots():

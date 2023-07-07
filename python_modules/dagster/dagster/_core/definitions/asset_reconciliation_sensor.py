@@ -341,7 +341,7 @@ class AssetReconciliationCursor(NamedTuple):
             serialized_subset,
         ) in serialized_materialized_or_requested_root_partitions_by_asset_key.items():
             key = AssetKey.from_user_string(key_str)
-            if key not in asset_graph.non_source_asset_keys:
+            if key not in asset_graph.materializable_asset_keys:
                 continue
 
             partitions_def = asset_graph.get_partitions_def(key)
