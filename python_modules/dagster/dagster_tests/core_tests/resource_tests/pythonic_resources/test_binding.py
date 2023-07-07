@@ -585,3 +585,28 @@ def test_override_default_field_value_in_resources_using_configure_at_launch() -
     )
 
     assert executed["yes"]
+
+
+class MyModuleLevelResource(ConfigurableResource):
+    str_field: str
+
+
+# Note that an explicit string annotation has the same effect as defining a resource in a module
+# using `from __future__ import annotations`. This test will only work against a module-scoped
+# resource-- this is a hard limitation of string annotations in Python as of 2023-07-06 and Python
+# 3.11.
+def test_bind_with_string_annotation():
+    @asset
+    def my_asset(context, my_resource: "MyModuleLevelResource"):
+        return my_resource.str_field
+
+    str_field_value = "foo"
+
+    defs = Definitions(
+        [my_asset], resources={"my_resource": MyModuleLevelResource(str_field=str_field_value)}
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        == str_field_value
+    )

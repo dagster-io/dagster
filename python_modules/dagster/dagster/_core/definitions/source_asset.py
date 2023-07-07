@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 import warnings
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -53,12 +50,6 @@ from dagster._core.errors import (
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 from dagster._utils.merger import merge_dicts
-
-if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import (
-        OpExecutionContext,
-    )
-
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
@@ -192,6 +183,9 @@ class SourceAsset(ResourceAddable):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
             is_context_provided,
+        )
+        from dagster._core.execution.context.compute import (
+            OpExecutionContext,
         )
 
         observe_fn_has_context = is_context_provided(get_function_params(observe_fn))

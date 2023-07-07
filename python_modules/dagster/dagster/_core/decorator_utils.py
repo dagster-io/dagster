@@ -1,8 +1,26 @@
+import functools
+import re
 import textwrap
 from inspect import Parameter, signature
-from typing import Any, Callable, Optional, Sequence, Set, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
-from typing_extensions import Concatenate, ParamSpec, TypeGuard
+from typing_extensions import (
+    Concatenate,
+    ParamSpec,
+    TypeGuard,
+    get_type_hints as typing_get_type_hints,
+)
+
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 R = TypeVar("R")
 T = TypeVar("T")
@@ -34,6 +52,26 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
 
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
     return list(signature(fn).parameters.values())
+
+
+def get_type_hints(fn: Callable) -> Mapping[str, Any]:
+    target = fn.func if isinstance(fn, functools.partial) else fn
+
+    try:
+        return typing_get_type_hints(target, include_extras=True)
+    except NameError as e:
+        match = re.search(r"'(\w+)'", str(e))
+        assert match
+        annotation = match[1]
+        raise DagsterInvalidDefinitionError(
+            f'Failed to resolve type annotation "{annotation}" in function {target.__name__}. This'
+            " can occur when the parameter has a string annotation that references either: (1) a"
+            " type defined in a local scope (2) a type that is defined or imported in an `if"
+            " TYPE_CHECKING` block. Note that if you are including `from __future__ import"
+            " annotations`, all annotations in that module are stored as strings. Suggested"
+            " solutions include: (1) convert the annotation to a non-string annotation; (2) move"
+            " the type referenced by the annotation out of local scope or a `TYPE_CHECKING` block."
+        )
 
 
 def validate_expected_params(

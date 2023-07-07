@@ -1,26 +1,31 @@
 from inspect import Parameter
-from typing import Sequence, TypeVar
+from typing import Any, Optional, Sequence, Type, TypeVar
 
 from typing_extensions import Annotated
 
-from dagster._core.decorator_utils import get_function_params
+from dagster._core.decorator_utils import get_function_params, get_type_hints
 from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 def get_resource_args(fn) -> Sequence[Parameter]:
-    return [param for param in get_function_params(fn) if _is_resource_annotated(param)]
+    type_annotations = get_type_hints(fn)
+    return [
+        param
+        for param in get_function_params(fn)
+        if _is_resource_annotation(type_annotations.get(param.name))
+    ]
 
 
 RESOURCE_PARAM_METADATA = "resource_param"
 
 
-def _is_resource_annotated(param: Parameter) -> bool:
+def _is_resource_annotation(annotation: Optional[Type[Any]]) -> bool:
     from dagster._config.pythonic_config import ConfigurableResourceFactory
 
     extends_resource_definition = False
     try:
-        extends_resource_definition = isinstance(param.annotation, type) and issubclass(
-            param.annotation, (ResourceDefinition, ConfigurableResourceFactory)
+        extends_resource_definition = isinstance(annotation, type) and issubclass(
+            annotation, (ResourceDefinition, ConfigurableResourceFactory)
         )
     except TypeError:
         # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
@@ -29,8 +34,8 @@ def _is_resource_annotated(param: Parameter) -> bool:
         pass
 
     return (extends_resource_definition) or (
-        hasattr(param.annotation, "__metadata__")
-        and getattr(param.annotation, "__metadata__") == (RESOURCE_PARAM_METADATA,)
+        hasattr(annotation, "__metadata__")
+        and getattr(annotation, "__metadata__") == (RESOURCE_PARAM_METADATA,)
     )
 
 
