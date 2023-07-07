@@ -28,7 +28,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    deprecation_warning,
     experimental_arg_warning,
 )
 
@@ -525,14 +524,6 @@ def multi_asset(
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
-    for out in outs.values():
-        if isinstance(out, Out) and not isinstance(out, AssetOut):
-            deprecation_warning(
-                "Passing Out objects as values for the out argument of @multi_asset",
-                "1.0.0",
-                additional_warn_txt="Use AssetOut instead.",
-            )
-
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
@@ -602,7 +593,7 @@ def multi_asset(
         group_names_by_key = {
             keys_by_output_name[output_name]: out.group_name
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.group_name is not None
+            if out.group_name is not None
         }
         if group_name:
             check.invariant(
@@ -620,12 +611,12 @@ def multi_asset(
         freshness_policies_by_key = {
             keys_by_output_name[output_name]: out.freshness_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.freshness_policy is not None
+            if out.freshness_policy is not None
         }
         auto_materialize_policies_by_key = {
             keys_by_output_name[output_name]: out.auto_materialize_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
+            if out.auto_materialize_policy is not None
         }
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
