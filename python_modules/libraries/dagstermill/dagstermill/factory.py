@@ -326,7 +326,7 @@ def _make_dagstermill_compute_fn(
                     op_context.log.warning(
                         "Error when attempting to materialize executed notebook using file"
                         " manager:"
-                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        f" {serializable_error_info_from_exc_info(sys.exc_info())}\nNow"
                         " falling back to local: notebook execution was temporarily materialized"
                         f" at {executed_notebook_path}\nIf you have supplied a file manager and"
                         " expect to use it for materializing the notebook, please include"

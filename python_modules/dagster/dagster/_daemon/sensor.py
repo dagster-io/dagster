@@ -636,9 +636,7 @@ def _submit_run_request(
         )
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(
-            f"Run {run.run_id} created successfully but failed to launch: {str(error_info)}"
-        )
+        logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
 
     _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
     return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)

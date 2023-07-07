@@ -1038,7 +1038,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
         if timeout > 0 and (time.time() - start_time > timeout):
             raise Exception(
                 f"Timed out waiting for gRPC server to start after {timeout}s with arguments:"
-                f" \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
+                f" \"{' '.join(subprocess_args)}\". Most recent connection error: {last_error}"
             )
 
         if server_process.poll() is not None:

@@ -20,9 +20,9 @@ if __name__ == "__main__":
         fd.write("opened_compute_log_subprocess")
     with mirror_stream_to_file(sys.stdout, stdout_filepath) as stdout_pids:
         with mirror_stream_to_file(sys.stderr, stderr_filepath) as stderr_pids:
-            sys.stdout.write(f"stdout pids: {str(stdout_pids)}")
+            sys.stdout.write(f"stdout pids: {stdout_pids}")
             sys.stdout.flush()
-            sys.stderr.write(f"stderr pids: {str(stderr_pids)}")
+            sys.stderr.write(f"stderr pids: {stderr_pids}")
             sys.stderr.flush()
             try:
                 while True:

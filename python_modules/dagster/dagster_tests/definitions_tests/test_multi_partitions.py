@@ -502,7 +502,7 @@ def test_context_invalid_partition_time_window():
 
     @asset(partitions_def=partitions_def)
     def my_asset(context):
-        context.partition_time_window
+        context.partition_time_window  # noqa: B018
 
     multipartitioned_job = define_asset_job(
         "my_job", [my_asset], partitions_def=partitions_def

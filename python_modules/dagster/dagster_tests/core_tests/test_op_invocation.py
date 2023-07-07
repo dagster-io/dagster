@@ -1212,7 +1212,7 @@ def test_assets_def_invocation():
 
     @op
     def non_asset_op(context):
-        context.assets_def
+        context.assets_def  # noqa: B018
 
     with build_op_context(
         partition_key="2023-02-02",

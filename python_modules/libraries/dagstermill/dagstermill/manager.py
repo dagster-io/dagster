@@ -358,7 +358,7 @@ class Manager:
         # deferred import for perf
         import scrapbook
 
-        event_id = f"event-{str(uuid.uuid4())}"
+        event_id = f"event-{uuid.uuid4()}"
         out_file_path = os.path.join(self.marshal_dir, event_id)
         with open(out_file_path, "wb") as fd:
             fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))

@@ -1077,7 +1077,7 @@ class ExecutionPlan(
                     step_snap.tags,
                 )
             else:
-                raise Exception(f"Unexpected step kind {str(step_snap.kind)}")
+                raise Exception(f"Unexpected step kind {step_snap.kind}")
 
             step_dict[step.handle] = step
             step_dict_by_key[step.key] = step

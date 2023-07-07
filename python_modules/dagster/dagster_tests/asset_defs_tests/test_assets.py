@@ -1454,7 +1454,7 @@ def test_context_assets_def():
 def test_invalid_context_assets_def():
     @op
     def my_op(context):
-        context.assets_def
+        context.assets_def  # noqa: B018
 
     @job
     def my_job():

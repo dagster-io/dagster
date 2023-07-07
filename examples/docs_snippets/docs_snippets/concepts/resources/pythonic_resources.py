@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 # ruff: noqa: T201
 
 from typing import TYPE_CHECKING
@@ -561,7 +561,13 @@ def new_io_manager() -> None:
 def raw_github_resource_factory() -> None:
     # start_raw_github_resource_factory
 
-    from dagster import ConfigurableResourceFactory, Resource, asset, EnvVar
+    from dagster import (
+        ConfigurableResourceFactory,
+        Resource,
+        asset,
+        Definitions,
+        EnvVar,
+    )
 
     class GitHubResource(ConfigurableResourceFactory[GitHub]):
         access_token: str

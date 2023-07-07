@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 from dagster import (
     AssetKey,
     load_assets_from_current_module,

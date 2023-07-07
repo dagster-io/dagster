@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 # start_setup_marker
 from dagster_graphql import DagsterGraphQLClient
 

@@ -113,7 +113,7 @@ from .sensor_definition import (
     SensorEvaluationContext as SensorEvaluationContext,
 )
 
-# isort: split
+# ruff: isort: split
 from .asset_in import AssetIn as AssetIn
 from .asset_out import AssetOut as AssetOut
 from .asset_selection import AssetSelection as AssetSelection

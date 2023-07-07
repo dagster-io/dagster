@@ -87,7 +87,7 @@ def with_resources(
                 raise DagsterInvalidInvocationError(
                     f"Error with config for resource key '{key}': Expected a "
                     "dictionary of the form {'config': ...}, but received "
-                    f"{str(resource_config)}"
+                    f"{resource_config}"
                 )
 
             outer_config_shape = Shape({"config": resource_def.get_config_field()})

@@ -104,7 +104,9 @@ def test_init_compute_log_with_bad_config_module():
                 default_flow_style=False,
             )
         with pytest.raises(check.CheckError, match="Couldn't import module"):
-            DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path)).compute_log_manager
+            DagsterInstance.from_ref(  # noqa: B018
+                InstanceRef.from_dir(tmpdir_path)
+            ).compute_log_manager
 
 
 MOCK_HAS_RUN_CALLED = False
@@ -262,10 +264,10 @@ def test_threaded_ephemeral_instance(caplog):
                 with DagsterInstance.ephemeral() as instance:
                     instance.get_runs_count()  # call run storage
                     instance.all_asset_keys()  # call event log storage
-                    instance.root_directory  # access TemporaryDirectory
+                    assert instance.root_directory  # access TemporaryDirectory
                     shared_instance.get_runs_count()
                     shared_instance.all_asset_keys()
-                    shared_instance.root_directory
+                    assert shared_instance.root_directory
                 return True
 
             with ThreadPoolExecutor(
@@ -291,9 +293,9 @@ def test_threadsafe_local_temp_instance():
     shared = DagsterInstance.local_temp()
 
     def _run(_):
-        shared.root_directory
+        shared.root_directory  # noqa: B018
         with DagsterInstance.local_temp() as instance:
-            instance.root_directory
+            instance.root_directory  # noqa: B018
         return True
 
     with ThreadPoolExecutor(max_workers=n) as executor:

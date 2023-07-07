@@ -382,7 +382,7 @@ class ActiveExecution:
             steps.append(step)
             self._in_flight.add(key)
             self._pending_skip.remove(key)
-            self._gathering_dynamic_outputs
+            self._gathering_dynamic_outputs  # noqa: B018
             self._skip_for_dynamic_outputs(step)
 
         return sorted(steps, key=self._sort_key_fn)

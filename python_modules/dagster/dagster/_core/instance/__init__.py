@@ -204,7 +204,7 @@ class _EventListenerLogHandler(logging.Handler):
         try:
             self._instance.handle_new_event(event)
         except Exception as e:
-            sys.stderr.write(f"Exception while writing logger call to event log: {str(e)}\n")
+            sys.stderr.write(f"Exception while writing logger call to event log: {e}\n")
             if event.dagster_event:
                 # Swallow user-generated log failures so that the entire step/run doesn't fail, but
                 # raise failures writing system-generated log events since they are the source of
@@ -731,8 +731,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_coordinator(self) -> "RunCoordinator":
-        from dagster._core.run_coordinator import RunCoordinator
-
         # Lazily load in case the run coordinator requires dependencies that are not available
         # everywhere that loads the instance
         if not self._run_coordinator:
@@ -741,7 +739,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
             run_coordinator = cast(InstanceRef, self._ref).run_coordinator
             check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
-            self._run_coordinator = cast(RunCoordinator, run_coordinator)
+            self._run_coordinator = cast("RunCoordinator", run_coordinator)
             self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
@@ -749,15 +747,13 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_launcher(self) -> "RunLauncher":
-        from dagster._core.launcher import RunLauncher
-
         # Lazily load in case the launcher requires dependencies that are not available everywhere
         # that loads the instance (e.g. The EcsRunLauncher requires boto3)
         if not self._run_launcher:
             check.invariant(self._ref, "Run launcher not provided, and no instance ref available")
             launcher = cast(InstanceRef, self._ref).run_launcher
             check.invariant(launcher, "Run launcher not configured in instance ref")
-            self._run_launcher = cast(RunLauncher, launcher)
+            self._run_launcher = cast("RunLauncher", launcher)
             self._run_launcher.register_instance(self)
         return self._run_launcher
 
@@ -765,8 +761,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def compute_log_manager(self) -> "ComputeLogManager":
-        from dagster._core.storage.compute_log_manager import ComputeLogManager
-
         if not self._compute_log_manager:
             check.invariant(
                 self._ref, "Compute log manager not provided, and no instance ref available"
@@ -775,7 +769,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.invariant(
                 compute_log_manager, "Compute log manager not configured in instance ref"
             )
-            self._compute_log_manager = cast(ComputeLogManager, compute_log_manager)
+            self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 

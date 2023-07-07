@@ -242,7 +242,7 @@ class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
             if permission_result:
                 pass
 
-        permission_result.enabled
+        permission_result.enabled  # noqa: B018
 
 
 class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):

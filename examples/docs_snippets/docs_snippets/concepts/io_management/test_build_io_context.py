@@ -50,7 +50,7 @@ def test_build_input_context_with_cm_resource():
             ),
         ),
     ):
-        context.resources
+        context.resources  # noqa: B018
 
     del context
 
@@ -91,7 +91,7 @@ def test_build_output_context_with_cm_resource():
             ),
         ),
     ):
-        context.resources
+        context.resources  # noqa: B018
 
     del context
 

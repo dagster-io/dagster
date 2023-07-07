@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 import datetime
 
 from .schedules import configurable_job_schedule, configurable_job

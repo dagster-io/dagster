@@ -1160,7 +1160,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if overlapping_keys:
             overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
             raise DagsterInvalidInvocationError(
-                f"{str(self)} has conflicting resource "
+                f"{self} has conflicting resource "
                 "definitions with provided resources for the following keys: "
                 f"{overlapping_keys_str}. Either remove the existing "
                 "resources from the asset or change the resource keys so that "
@@ -1275,7 +1275,7 @@ def _build_invocation_context_with_included_resources(
     for resource_key in sorted(list(invocation_resources.keys())):
         if resource_key in resource_defs:
             raise DagsterInvalidInvocationError(
-                f"Error when invoking {str(assets_def)}: resource '{resource_key}' "
+                f"Error when invoking {assets_def}: resource '{resource_key}' "
                 "provided on both the definition and invocation context. Please "
                 "provide on only one or the other."
             )
