@@ -36,5 +36,10 @@ export const GET_EVALUATIONS_QUERY = gql`
         partitionKeys
       }
     }
+    ... on ParentOutdatedAutoMaterializeCondition {
+      waitingOnAssetKeys {
+        path
+      }
+    }
   }
 `;

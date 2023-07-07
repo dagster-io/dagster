@@ -1,6 +1,8 @@
 import {Box, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {AssetKey} from '../types';
+
 import {AutomaterializeRunTag} from './AutomaterializeRunTag';
 import {ConditionType, ConditionsNoPartitions} from './Conditions';
 import {EvaluationOrEmpty} from './types';
@@ -34,6 +36,19 @@ export const AutomaterializeMiddlePanelNoPartitions = ({
     return <AutomaterializeRunTag runId={runIds[0]!} />;
   };
 
+  const parentOutdatedWaitingOnAssetKeys = React.useMemo(() => {
+    if (!selectedEvaluation?.conditions) {
+      return [];
+    }
+    const waitingOnAssetKeys: AssetKey[] = [];
+    selectedEvaluation.conditions.forEach((condition) => {
+      if (condition.__typename === 'ParentOutdatedAutoMaterializeCondition') {
+        waitingOnAssetKeys.push(...(condition.waitingOnAssetKeys || []));
+      }
+    });
+    return waitingOnAssetKeys;
+  }, [selectedEvaluation]);
+
   return (
     <Box flex={{direction: 'column', grow: 1}}>
       <Box
@@ -48,6 +63,7 @@ export const AutomaterializeMiddlePanelNoPartitions = ({
       <ConditionsNoPartitions
         conditionResults={conditionResults}
         maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
       />
     </Box>
   );
