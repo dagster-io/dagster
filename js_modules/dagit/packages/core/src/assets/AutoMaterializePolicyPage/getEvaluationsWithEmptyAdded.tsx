@@ -1,3 +1,4 @@
+import {EvaluationOrEmpty} from './types';
 import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
 
 type Config = {
@@ -14,7 +15,7 @@ export const getEvaluationsWithEmptyAdded = ({
   evaluations,
   isFirstPage,
   isLastPage,
-}: Config) => {
+}: Config): EvaluationOrEmpty[] => {
   if (isLoading) {
     return [];
   }
