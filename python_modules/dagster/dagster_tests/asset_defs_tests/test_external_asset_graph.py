@@ -71,7 +71,6 @@ partitioned_source = SourceAsset(
         on_missing=True,
         for_freshness=True,
         on_new_parent_data=True,
-        time_window_partition_scope_minutes=(24 + 7) * 60,
         max_materializations_per_minute=75,
     ),
 )
@@ -266,7 +265,6 @@ def test_auto_materialize_policy():
         on_missing=True,
         for_freshness=True,
         on_new_parent_data=True,
-        time_window_partition_scope_minutes=(24 + 7) * 60,
         max_materializations_per_minute=75,
     )
 

@@ -9,6 +9,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
@@ -94,6 +95,7 @@ multipartitioned_self_dependency = [
                 }
             )
         },
+        auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=3),
     )
 ]
 

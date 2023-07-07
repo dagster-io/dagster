@@ -97,28 +97,28 @@ observable_source_asset_scenarios = {
     ),
     "observable_to_partitioned": AssetReconciliationScenario(
         assets=partitioned_downstream_of_observable_source,
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1),
         unevaluated_runs=[
             run(["source_asset"], is_observation=True),
         ]
         + [
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-06-00:00")
             )
         ],
         expected_run_requests=[],
     ),
     "observable_to_partitioned2": AssetReconciliationScenario(
         assets=partitioned_downstream_of_observable_source,
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=2),
         unevaluated_runs=[
             run(["source_asset"], is_observation=True),
         ]
         + [
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-02:00")
+                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-06-00:00")
             )
         ]
         + [
@@ -128,12 +128,12 @@ observable_source_asset_scenarios = {
             # update some subset of the partitions
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-06-17:00")
+                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-05-17:00")
             )
         ],
         expected_run_requests=[
             # only execute the missing one
-            run_request(asset_keys=["asset1"], partition_key="2013-01-07-03:00")
+            run_request(asset_keys=["asset1"], partition_key="2013-01-06-01:00")
         ],
     ),
     "multiple_observable": AssetReconciliationScenario(

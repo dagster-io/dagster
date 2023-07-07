@@ -5,6 +5,7 @@ from dagster import (
     PartitionKeyRange,
     StaticPartitionsDefinition,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
 )
@@ -71,7 +72,13 @@ two_dynamic_assets = [
 ]
 
 
-time_multipartitioned_asset = [asset_def("asset1", partitions_def=time_multipartitions_def)]
+time_multipartitioned_asset = [
+    asset_def(
+        "asset1",
+        partitions_def=time_multipartitions_def,
+        auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=2),
+    )
+]
 
 static_multipartitioned_asset = [asset_def("asset1", partitions_def=static_multipartitions_def)]
 
@@ -195,15 +202,15 @@ partition_scenarios = {
         unevaluated_runs=[
             run(["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-06-23:00")
+                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-23:00")
             )
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
-        expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2013-01-06")]
+        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=4),
+        expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2013-01-05")]
         + [
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-07-00:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-06-03:00")
             )
         ],
     ),
@@ -245,18 +252,18 @@ partition_scenarios = {
                     hourly_partitions_def,
                     num_partitions=3,
                     included_partition_keys={
-                        "2013-01-06-04:00",
-                        "2013-01-06-05:00",
-                        "2013-01-06-06:00",
+                        "2013-01-05-00:00",
+                        "2013-01-05-01:00",
+                        "2013-01-05-02:00",
                     },
                 )
             },
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=17),
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-07:00", end="2013-01-07-03:00")
+                PartitionKeyRange(start="2013-01-05-03:00", end="2013-01-05-16:00")
             )
         ],
     ),
@@ -271,14 +278,14 @@ partition_scenarios = {
                         {
                             partition_key
                             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-07-03:00")
+                                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
                             )
                         },
                     ),
                     included_partition_keys={
                         partition_key
                         for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                            PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-07-03:00")
+                            PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
                         )
                     },
                 )

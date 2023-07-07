@@ -26,9 +26,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    get_time_partition_key,
     get_time_partitions_def,
 )
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -48,7 +45,12 @@ from .decorators.sensor_decorator import sensor
 from .freshness_based_auto_materialize import (
     determine_asset_partitions_to_auto_materialize_for_freshness,
 )
-from .partition import PartitionsDefinition, PartitionsSubset, SerializedPartitionsSubset
+from .partition import (
+    PartitionsDefinition,
+    PartitionsSubset,
+    ScheduleType,
+    SerializedPartitionsSubset,
+)
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
@@ -152,63 +154,22 @@ def get_implicit_auto_materialize_policy(
     """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
     auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
     if auto_materialize_policy is None:
+        time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
+        if time_partitions_def is None:
+            max_materializations_per_minute = None
+        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+            max_materializations_per_minute = 24
+        else:
+            max_materializations_per_minute = 1
         return AutoMaterializePolicy(
             on_missing=True,
             on_new_parent_data=not bool(
                 asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
             ),
             for_freshness=True,
-            time_window_partition_scope_minutes=24 * 60,
-            max_materializations_per_minute=None,
+            max_materializations_per_minute=max_materializations_per_minute,
         )
     return auto_materialize_policy
-
-
-def reconciliation_window_for_time_window_partitions(
-    partitions_def: TimeWindowPartitionsDefinition,
-    time_window_partition_scope: Optional[datetime.timedelta],
-    current_time: datetime.datetime,
-) -> Optional[TimeWindow]:
-    latest_partition_window = partitions_def.get_last_partition_window(current_time=current_time)
-    earliest_partition_window = partitions_def.get_first_partition_window(current_time=current_time)
-    if latest_partition_window is None or earliest_partition_window is None:
-        return None
-
-    allowable_start_time = (
-        max(
-            earliest_partition_window.start,
-            latest_partition_window.start
-            - time_window_partition_scope
-            + datetime.timedelta.resolution,
-        )
-        if time_window_partition_scope is not None
-        else earliest_partition_window.start
-    )
-    return TimeWindow(allowable_start_time, latest_partition_window.end)
-
-
-def can_reconcile_time_window_partition(
-    partitions_def: Optional[PartitionsDefinition],
-    partition_key: Optional[str],
-    time_window_partition_scope: Optional[datetime.timedelta],
-    current_time: datetime.datetime,
-) -> bool:
-    time_partitions_def = get_time_partitions_def(partitions_def)
-    if partition_key is None or time_partitions_def is None or time_window_partition_scope is None:
-        return True
-    time_partition_key = get_time_partition_key(partitions_def, partition_key)
-    reconciliation_window = reconciliation_window_for_time_window_partitions(
-        partitions_def=time_partitions_def,
-        time_window_partition_scope=time_window_partition_scope,
-        current_time=current_time,
-    )
-    if reconciliation_window is None:
-        return False
-    key_window = time_partitions_def.time_window_for_partition_key(time_partition_key)
-    return (
-        key_window.start >= reconciliation_window.start
-        and key_window.end <= reconciliation_window.end
-    )
 
 
 class AssetReconciliationCursor(NamedTuple):
@@ -245,7 +206,6 @@ class AssetReconciliationCursor(NamedTuple):
         asset_graph,
         dynamic_partitions_store: "DynamicPartitionsStore",
         current_time: datetime.datetime,
-        time_window_partition_scope: Optional[datetime.timedelta],
     ) -> Iterable[str]:
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
@@ -255,28 +215,10 @@ class AssetReconciliationCursor(NamedTuple):
             )
         )
 
-        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            # for performance, only iterate over keys within the allowable time window
-            reconciliation_window = reconciliation_window_for_time_window_partitions(
-                partitions_def=partitions_def,
-                time_window_partition_scope=time_window_partition_scope,
-                current_time=current_time,
-            )
-            if reconciliation_window is None:
-                return []
-            # for performance, only iterate over keys within the allowable time window
-            return [
-                partition_key
-                for partition_key in partitions_def.get_partition_keys_in_time_window(
-                    reconciliation_window
-                )
-                if partition_key not in materialized_or_requested_subset
-            ]
-        else:
-            return materialized_or_requested_subset.get_partition_keys_not_in_subset(
-                current_time=current_time,
-                dynamic_partitions_store=dynamic_partitions_store,
-            )
+        return materialized_or_requested_subset.get_partition_keys_not_in_subset(
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
 
     def with_updates(
         self,
@@ -604,15 +546,11 @@ def find_never_materialized_or_requested_root_asset_partitions(
 
     for asset_key in target_asset_keys & asset_graph.root_asset_keys:
         if asset_graph.is_partitioned(asset_key):
-            auto_materialize_policy = check.not_none(
-                get_implicit_auto_materialize_policy(asset_graph, asset_key)
-            )
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
                 asset_key,
                 asset_graph,
                 dynamic_partitions_store=instance_queryer,
                 current_time=instance_queryer.evaluation_time,
-                time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
                 if instance_queryer.asset_partition_has_materialization_or_observation(
@@ -699,13 +637,6 @@ def determine_asset_partitions_to_auto_materialize(
             or candidate.asset_key not in target_asset_keys
             # must not be currently backfilled
             or candidate in instance_queryer.get_active_backfill_target_asset_graph_subset()
-            # must not be too old
-            or not can_reconcile_time_window_partition(
-                partitions_def=asset_graph.get_partitions_def(candidate.asset_key),
-                partition_key=candidate.partition_key,
-                time_window_partition_scope=auto_materialize_policy.time_window_partition_scope,
-                current_time=instance_queryer.evaluation_time,
-            )
             # must not have invalid parent partitions
             or len(
                 asset_graph.get_parents_partitions(
