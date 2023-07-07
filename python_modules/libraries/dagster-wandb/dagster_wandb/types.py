@@ -27,3 +27,4 @@ class WandbArtifactConfiguration(TypedDict, total=False):
     add_files: List[Dict[str, Any]]
     add_references: List[Dict[str, Any]]
     serialization_module: SerializationModule
+    partitions: Dict[str, Dict[str, Any]]

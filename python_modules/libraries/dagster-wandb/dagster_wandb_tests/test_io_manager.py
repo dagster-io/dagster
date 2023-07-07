@@ -2,9 +2,9 @@ import os
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
-import wandb
-from callee import EndsWith
+from callee import EndsWith, Regex
 from dagster import (
+    AssetKey,
     DagsterRunMetadataValue,
     IntMetadataValue,
     TextMetadataValue,
@@ -13,8 +13,14 @@ from dagster import (
     build_input_context,
     build_output_context,
 )
-from dagster_wandb import WandbArtifactsIOManagerError, wandb_artifacts_io_manager, wandb_resource
-from wandb.sdk.wandb_artifacts import Artifact
+from dagster_wandb import (
+    WandbArtifactsIOManagerError,
+    wandb_artifacts_io_manager,
+    wandb_resource,
+)
+
+import wandb
+from wandb import Artifact
 
 DAGSTER_RUN_ID = "unit-testing"
 DAGSTER_RUN_ID_SHORT = DAGSTER_RUN_ID[0:8]
@@ -30,7 +36,7 @@ ARTIFACT_NAME = "artifact_name"
 ARTIFACT_TYPE = "dataset"
 ARTIFACT_VERSION = "v1"
 ARTIFACT_SIZE = 42
-ARTIFACT_URL = f"https://wandb.ai/{WANDB_ENTITY}/{WANDB_PROJECT}/artifacts/{ARTIFACT_TYPE}/{ARTIFACT_ID}/{ARTIFACT_VERSION}"
+ARTIFACT_URL = f"https://wandb.ai/{WANDB_ENTITY}/{WANDB_PROJECT}/artifacts/{ARTIFACT_TYPE}/{ARTIFACT_NAME}/{ARTIFACT_VERSION}"
 ARTIFACT_DESCRIPTION = "Artifact description"
 EXTRA_ALIAS = "extra_alias"
 DIRS = [
@@ -60,7 +66,7 @@ REFERENCES = [
 ]
 ASSET_NAME = "asset_name"
 LOCAL_ARTIFACT_PATH = (
-    f"/storage/wandb_artifacts_manager/artifacts/{ARTIFACT_NAME}:{ARTIFACT_VERSION}"
+    f"/storage/wandb_artifacts_manager/artifacts/{ARTIFACT_NAME}.{ARTIFACT_VERSION}"
 )
 
 wandb_resource_configured = wandb_resource.configured(
@@ -113,48 +119,40 @@ def rmtree_mock():
 
 
 @pytest.fixture
-def pickle_dump_mock():
-    with patch("pickle.dump") as mock:
-        yield mock
-
-
-@pytest.fixture
-def dill_dump_mock():
-    with patch("dill.dump") as mock:
-        yield mock
-
-
-@pytest.fixture
-def cloudpickle_dump_mock():
-    with patch("cloudpickle.dump") as mock:
-        yield mock
-
-
-@pytest.fixture
-def joblib_dump_mock():
-    with patch("joblib.dump") as mock:
-        yield mock
-
-
-@pytest.fixture
 def log_artifact_mock():
     with patch("wandb.log_artifact") as mock:
         yield mock
 
 
 @pytest.fixture
+def pickle_artifact_content_mock():
+    with patch("dagster_wandb.io_manager.pickle_artifact_content") as mock:
+        yield mock
+
+
+@pytest.fixture
+def unpickle_artifact_content_mock():
+    with patch("dagster_wandb.io_manager.unpickle_artifact_content") as mock:
+        yield mock
+
+
+@pytest.fixture
 def artifact_mock():
-    with patch(
-        "wandb.Artifact",
-        autospec=True,
-        return_value=MagicMock(
-            id=ARTIFACT_ID,
-            name=ARTIFACT_NAME,
-            type=ARTIFACT_TYPE,
-            version=ARTIFACT_VERSION,
-            size=ARTIFACT_SIZE,
-        ),
-    ) as mock:
+    mocked_artifact = MagicMock(
+        id=ARTIFACT_ID,
+        type=ARTIFACT_TYPE,
+        version=ARTIFACT_VERSION,
+        size=ARTIFACT_SIZE,
+    )
+    mocked_artifact.name = ARTIFACT_NAME
+
+    def add_version():
+        # when artifact.wait() is called, the version is added to the artifact name
+        mocked_artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+    mocked_artifact.wait.side_effect = add_version
+
+    with patch("wandb.Artifact", autospec=True, return_value=mocked_artifact) as mock:
         yield mock
 
 
@@ -183,7 +181,7 @@ def init_mock():
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -218,7 +216,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -253,18 +251,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_serialization_module": "pickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.pickle", "wb")
-
-        assert pickle_dump_mock.call_count == 1
-        pickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "pickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -293,8 +286,8 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
         )
 
 
-def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_dill_serialization_module(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, dill_dump_mock
+def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_serialization_module(
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -330,7 +323,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -365,19 +358,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_dill_version_used": ANY,
-            "source_serialization_module": "dill",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.dill", "wb")
-
-        assert dill_dump_mock.call_count == 1
-        dill_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "dill",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -407,7 +394,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_cloudpickle_serialization_module(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, cloudpickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -443,7 +430,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -478,19 +465,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_cloudpickle_version_used": ANY,
-            "source_serialization_module": "cloudpickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.cloudpickle", "wb")
-
-        assert cloudpickle_dump_mock.call_count == 1
-        cloudpickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "cloudpickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -520,7 +501,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_joblib_serialization_module(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, joblib_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -556,7 +537,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -591,19 +572,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_joblib_version_used": ANY,
-            "source_serialization_module": "joblib",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.joblib", "wb")
-
-        assert joblib_dump_mock.call_count == 1
-        joblib_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "joblib",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -633,7 +608,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_custom_config(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name="my_custom_run_name",
@@ -673,7 +648,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id="my_custom_run_id",
             name="my_custom_run_name",
@@ -708,18 +683,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_serialization_module": "pickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.pickle", "wb")
-
-        assert pickle_dump_mock.call_count == 1
-        pickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "pickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -749,7 +719,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_custom_host(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -786,7 +756,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -821,20 +791,14 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_serialization_module": "pickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.pickle", "wb")
-
-        assert pickle_dump_mock.call_count == 1
-        pickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "pickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
-
         assert artifact_mock.return_value.wait.call_count == 1
 
         log_artifact_mock.assert_called_with(
@@ -850,7 +814,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
                 "wandb_artifact_size": IntMetadataValue(value=ARTIFACT_SIZE),
                 "wandb_artifact_type": TextMetadataValue(text=ARTIFACT_TYPE),
                 "wandb_artifact_url": UrlMetadataValue(
-                    url=f"http://wandb.my-custom-host.com/{WANDB_ENTITY}/{WANDB_PROJECT}/artifacts/{ARTIFACT_TYPE}/{ARTIFACT_ID}/{ARTIFACT_VERSION}"
+                    url=f"http://wandb.my-custom-host.com/{WANDB_ENTITY}/{WANDB_PROJECT}/artifacts/{ARTIFACT_TYPE}/{ARTIFACT_NAME}/{ARTIFACT_VERSION}"
                 ),
                 "wandb_artifact_version": TextMetadataValue(text=ARTIFACT_VERSION),
                 "wandb_entity": TextMetadataValue(text=WANDB_ENTITY),
@@ -864,7 +828,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_partitioned_op_with_simple_output(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -902,7 +866,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_partitioned_op_with_simple
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -937,18 +901,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_partitioned_op_with_simple
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_serialization_module": "pickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.pickle", "wb")
-
-        assert pickle_dump_mock.call_count == 1
-        pickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "pickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -978,7 +937,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_partitioned_op_with_simple
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_no_name_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1007,7 +966,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_no_name_is_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1032,7 +991,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_no_name_is_
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
         assert artifact_mock.return_value.wait.call_count == 0
         assert log_artifact_mock.call_count == 0
         assert context.add_output_metadata.call_count == 0
@@ -1040,7 +999,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_no_name_is_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_unsupported_serialization_module_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1076,7 +1035,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_unsupported
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1101,7 +1060,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_unsupported
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
         assert artifact_mock.return_value.wait.call_count == 0
         assert log_artifact_mock.call_count == 0
         assert context.add_output_metadata.call_count == 0
@@ -1109,7 +1068,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_unsupported
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_asset_with_simple_output(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1144,7 +1103,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_with_simple_output(
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1179,18 +1138,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_with_simple_output(
         assert artifact_mock.return_value.add_dir.call_count == 0
         assert artifact_mock.return_value.add_reference.call_count == 0
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_serialization_module": "pickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.pickle", "wb")
-
-        assert pickle_dump_mock.call_count == 1
-        pickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "pickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -1220,7 +1174,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_with_simple_output(
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_asset_raise_when_double_name_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1257,7 +1211,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_raise_when_double_na
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1282,7 +1236,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_raise_when_double_na
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
         assert artifact_mock.return_value.wait.call_count == 0
         assert log_artifact_mock.call_count == 0
         assert context.add_output_metadata.call_count == 0
@@ -1290,7 +1244,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_raise_when_double_na
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_all_parameters(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1330,7 +1284,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_all_
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1365,18 +1319,13 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_all_
         assert artifact_mock.return_value.add_dir.call_count == 2
         assert artifact_mock.return_value.add_reference.call_count == 1
 
-        assert artifact_mock.return_value.metadata == {
-            "source_pickle_protocol_used": ANY,
-            "source_serialization_module": "pickle",
-        }
-        assert artifact_mock.return_value.new_file.call_count == 1
-        artifact_mock.return_value.new_file.assert_called_with("output.pickle", "wb")
-
-        assert pickle_dump_mock.call_count == 1
-        pickle_dump_mock.assert_called_with(
+        assert pickle_artifact_content_mock.call_count == 1
+        pickle_artifact_content_mock.assert_called_with(
+            context,
+            "pickle",
+            {"protocol": 5},
+            artifact_mock.return_value,
             output_value,
-            artifact_mock.return_value.new_file.return_value.__enter__.return_value,  # new_file Context Manager
-            protocol=ANY,
         )
 
         assert artifact_mock.return_value.wait.call_count == 1
@@ -1406,7 +1355,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_all_
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_output(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1441,7 +1390,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1481,7 +1430,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact_mock.return_value.wait.call_count == 1
 
@@ -1510,7 +1459,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_output_all_parameters(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1549,7 +1498,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1589,7 +1538,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact_mock.return_value.wait.call_count == 1
 
@@ -1618,7 +1567,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1637,23 +1586,30 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
         )
     )
 
-    context = build_output_context()
+    context = build_output_context(asset_key=AssetKey([ARTIFACT_NAME]))
 
     with patch.object(context, "add_output_metadata") as add_output_metadata_spy:
         artifact = MagicMock(
             spec=Artifact,
             id=ARTIFACT_ID,
-            name=ARTIFACT_NAME,
             type=ARTIFACT_TYPE,
             version=ARTIFACT_VERSION,
             size=ARTIFACT_SIZE,
         )
+        artifact.name = ARTIFACT_NAME
+
+        def add_version():
+            # when artifact.wait() is called, the version is added to the artifact name
+            artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+        artifact.wait.side_effect = add_version
+
         manager.handle_output(context, artifact)
 
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1678,7 +1634,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact.wait.call_count == 1
 
@@ -1707,7 +1663,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output_raise_when_name_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1738,18 +1694,25 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
         artifact = MagicMock(
             spec=Artifact,
             id=ARTIFACT_ID,
-            name=ARTIFACT_NAME,
             type=ARTIFACT_TYPE,
             version=ARTIFACT_VERSION,
             size=ARTIFACT_SIZE,
         )
+        artifact.name = ARTIFACT_NAME
+
+        def add_version():
+            # when artifact.wait() is called, the version is added to the artifact name
+            artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+        artifact.wait.side_effect = add_version
+
         with pytest.raises(WandbArtifactsIOManagerError):
             manager.handle_output(context, artifact)
 
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1774,7 +1737,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact.wait.call_count == 0
 
@@ -1787,7 +1750,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output_raise_when_type_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1818,18 +1781,25 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
         artifact = MagicMock(
             spec=Artifact,
             id=ARTIFACT_ID,
-            name=ARTIFACT_NAME,
             type=ARTIFACT_TYPE,
             version=ARTIFACT_VERSION,
             size=ARTIFACT_SIZE,
         )
+        artifact.name = ARTIFACT_NAME
+
+        def add_version():
+            # when artifact.wait() is called, the version is added to the artifact name
+            artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+        artifact.wait.side_effect = add_version
+
         with pytest.raises(WandbArtifactsIOManagerError):
             manager.handle_output(context, artifact)
 
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1854,7 +1824,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact.wait.call_count == 0
 
@@ -1867,7 +1837,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output_raise_when_double_description_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1910,7 +1880,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -1935,7 +1905,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert artifact_mock.return_value.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact.wait.call_count == 0
 
@@ -1948,7 +1918,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
 
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output_and_all_parameters(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -1968,6 +1938,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
     )
 
     context = build_output_context(
+        asset_key=AssetKey([ARTIFACT_NAME]),
         metadata={
             "wandb_artifact_configuration": {
                 "aliases": [EXTRA_ALIAS],
@@ -1982,17 +1953,24 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
         artifact = MagicMock(
             spec=Artifact,
             id=ARTIFACT_ID,
-            name=ARTIFACT_NAME,
             type=ARTIFACT_TYPE,
             version=ARTIFACT_VERSION,
             size=ARTIFACT_SIZE,
         )
+        artifact.name = ARTIFACT_NAME
+
+        def add_version():
+            # when artifact.wait() is called, the version is added to the artifact name
+            artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+        artifact.wait.side_effect = add_version
+
         manager.handle_output(context, artifact)
 
         assert init_mock.call_count == 1
         init_mock.assert_called_with(
             anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
             entity=WANDB_ENTITY,
             id=DAGSTER_RUN_ID,
             name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
@@ -2023,7 +2001,238 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert artifact.new_file.call_count == 0
 
-        assert pickle_dump_mock.call_count == 0
+        assert pickle_artifact_content_mock.call_count == 0
+
+        assert artifact.wait.call_count == 1
+
+        log_artifact_mock.assert_called_with(
+            artifact,
+            aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
+        )
+
+        assert context.add_output_metadata.call_count == 1
+        add_output_metadata_spy.assert_called_with(
+            {
+                "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
+                "wandb_artifact_id": TextMetadataValue(text=ARTIFACT_ID),
+                "wandb_artifact_size": IntMetadataValue(value=ARTIFACT_SIZE),
+                "wandb_artifact_type": TextMetadataValue(text=ARTIFACT_TYPE),
+                "wandb_artifact_url": UrlMetadataValue(url=ARTIFACT_URL),
+                "wandb_artifact_version": TextMetadataValue(text=ARTIFACT_VERSION),
+                "wandb_entity": TextMetadataValue(text=WANDB_ENTITY),
+                "wandb_project": TextMetadataValue(text=WANDB_PROJECT),
+                "wandb_run_id": TextMetadataValue(text=WANDB_RUN_ID),
+                "wandb_run_name": TextMetadataValue(text=WANDB_RUN_NAME),
+                "wandb_run_path": TextMetadataValue(text=WANDB_RUN_PATH),
+                "wandb_run_url": UrlMetadataValue(url=WANDB_RUN_URL),
+            },
+        )
+
+
+def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output_config_overwrites_artifact_name(
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
+):
+    run_mock.configure_mock(
+        name=WANDB_RUN_NAME,
+        id=WANDB_RUN_ID,
+        entity=WANDB_ENTITY,
+        project=WANDB_PROJECT,
+        path=WANDB_RUN_PATH,
+        url=WANDB_RUN_URL,
+    )
+    manager = wandb_artifacts_io_manager(
+        build_init_resource_context(
+            resources={
+                "wandb_config": {"entity": WANDB_ENTITY, "project": WANDB_PROJECT},
+                "wandb_resource": wandb_resource_configured,
+            },
+        )
+    )
+
+    context = build_output_context(
+        asset_key=AssetKey(["asset_key_name"]),
+        metadata={
+            "wandb_artifact_configuration": {
+                "aliases": [EXTRA_ALIAS],
+                "add_dirs": DIRS,
+                "add_files": FILES,
+                "add_references": REFERENCES,
+            }
+        },
+    )
+
+    with patch.object(context, "add_output_metadata") as add_output_metadata_spy:
+        artifact = MagicMock(
+            spec=Artifact,
+            id=ARTIFACT_ID,
+            type=ARTIFACT_TYPE,
+            version=ARTIFACT_VERSION,
+            size=ARTIFACT_SIZE,
+            _name=None,
+        )
+        artifact.name = ARTIFACT_NAME
+
+        def add_version():
+            # when artifact.wait() is called, the version is added to the artifact name
+            artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+        artifact.wait.side_effect = add_version
+
+        manager.handle_output(context, artifact)
+
+        assert init_mock.call_count == 1
+        init_mock.assert_called_with(
+            anonymous="never",
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
+            entity=WANDB_ENTITY,
+            id=DAGSTER_RUN_ID,
+            name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
+            project=WANDB_PROJECT,
+            resume="allow",
+            tags=["dagster_wandb"],
+        )
+
+        assert login_mock.call_count == 1
+        login_mock.assert_called_with(
+            anonymous="never",
+            host="https://api.wandb.ai",
+            key="WANDB_API_KEY",
+        )
+
+        assert artifact._name == "asset_key_name"  # noqa: SLF001
+
+        assert artifact_mock.call_count == 0
+        assert artifact_mock.return_value.add.call_count == 0
+
+        assert artifact_mock.add_file.call_count == 0
+        assert artifact_mock.add_dir.call_count == 0
+        assert artifact_mock.add_reference.call_count == 0
+
+        assert artifact.add_file.call_count == 2
+        assert artifact.add_dir.call_count == 2
+        assert artifact.add_reference.call_count == 1
+
+        assert artifact_mock.return_value.new_file.call_count == 0
+
+        assert artifact.new_file.call_count == 0
+
+        assert pickle_artifact_content_mock.call_count == 0
+
+        assert artifact.wait.call_count == 1
+
+        log_artifact_mock.assert_called_with(
+            artifact,
+            aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
+        )
+
+        assert context.add_output_metadata.call_count == 1
+        add_output_metadata_spy.assert_called_with(
+            {
+                "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
+                "wandb_artifact_id": TextMetadataValue(text=ARTIFACT_ID),
+                "wandb_artifact_size": IntMetadataValue(value=ARTIFACT_SIZE),
+                "wandb_artifact_type": TextMetadataValue(text=ARTIFACT_TYPE),
+                "wandb_artifact_url": UrlMetadataValue(url=ARTIFACT_URL),
+                "wandb_artifact_version": TextMetadataValue(text=ARTIFACT_VERSION),
+                "wandb_entity": TextMetadataValue(text=WANDB_ENTITY),
+                "wandb_project": TextMetadataValue(text=WANDB_PROJECT),
+                "wandb_run_id": TextMetadataValue(text=WANDB_RUN_ID),
+                "wandb_run_name": TextMetadataValue(text=WANDB_RUN_NAME),
+                "wandb_run_path": TextMetadataValue(text=WANDB_RUN_PATH),
+                "wandb_run_url": UrlMetadataValue(url=WANDB_RUN_URL),
+            },
+        )
+
+
+def test_wandb_artifacts_io_manager_handle_partition_key_output_for_op_suffixes_artifact_name(
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
+):
+    run_mock.configure_mock(
+        name=WANDB_RUN_NAME,
+        id=WANDB_RUN_ID,
+        entity=WANDB_ENTITY,
+        project=WANDB_PROJECT,
+        path=WANDB_RUN_PATH,
+        url=WANDB_RUN_URL,
+    )
+    manager = wandb_artifacts_io_manager(
+        build_init_resource_context(
+            resources={
+                "wandb_config": {"entity": WANDB_ENTITY, "project": WANDB_PROJECT},
+                "wandb_resource": wandb_resource_configured,
+            },
+        )
+    )
+
+    context = build_output_context(
+        asset_key=AssetKey(["asset_key_name"]),
+        partition_key="partition_key",
+        metadata={
+            "wandb_artifact_configuration": {
+                "aliases": [EXTRA_ALIAS],
+                "add_dirs": DIRS,
+                "add_files": FILES,
+                "add_references": REFERENCES,
+            }
+        },
+    )
+
+    with patch.object(context, "add_output_metadata") as add_output_metadata_spy:
+        artifact = MagicMock(
+            spec=Artifact,
+            id=ARTIFACT_ID,
+            type=ARTIFACT_TYPE,
+            version=ARTIFACT_VERSION,
+            size=ARTIFACT_SIZE,
+            _name=None,
+        )
+        artifact.name = ARTIFACT_NAME
+
+        def add_version():
+            # when artifact.wait() is called, the version is added to the artifact name
+            artifact.name = ARTIFACT_NAME + ":" + ARTIFACT_VERSION
+
+        artifact.wait.side_effect = add_version
+
+        manager.handle_output(context, artifact)
+
+        assert init_mock.call_count == 1
+        init_mock.assert_called_with(
+            anonymous="never",
+            dir=Regex(rf".*/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}/.*"),
+            entity=WANDB_ENTITY,
+            id=DAGSTER_RUN_ID,
+            name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
+            project=WANDB_PROJECT,
+            resume="allow",
+            tags=["dagster_wandb"],
+        )
+
+        assert login_mock.call_count == 1
+        login_mock.assert_called_with(
+            anonymous="never",
+            host="https://api.wandb.ai",
+            key="WANDB_API_KEY",
+        )
+
+        assert artifact._name == "artifact_name.partition_key"  # noqa: SLF001
+
+        assert artifact_mock.call_count == 0
+        assert artifact_mock.return_value.add.call_count == 0
+
+        assert artifact_mock.add_file.call_count == 0
+        assert artifact_mock.add_dir.call_count == 0
+        assert artifact_mock.add_reference.call_count == 0
+
+        assert artifact.add_file.call_count == 2
+        assert artifact.add_dir.call_count == 2
+        assert artifact.add_reference.call_count == 1
+
+        assert artifact_mock.return_value.new_file.call_count == 0
+
+        assert artifact.new_file.call_count == 0
+
+        assert pickle_artifact_content_mock.call_count == 0
 
         assert artifact.wait.call_count == 1
 
@@ -2052,7 +2261,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
 
 def test_wandb_artifacts_io_manager_load_input_raise_when_no_name_is_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2079,7 +2288,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_no_name_is_provided(
 
 
 def test_wandb_artifacts_io_manager_load_input(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2131,7 +2340,7 @@ def test_wandb_artifacts_io_manager_load_input(
 
 
 def test_wandb_artifacts_io_manager_load_input_get(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2180,7 +2389,7 @@ def test_wandb_artifacts_io_manager_load_input_get(
 
 
 def test_wandb_artifacts_io_manager_load_input_get_path(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2232,7 +2441,7 @@ def test_wandb_artifacts_io_manager_load_input_get_path(
 
 
 def test_wandb_artifacts_io_manager_load_input_raise_when_version_and_alias_are_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2267,7 +2476,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_version_and_alias_are_
 
 
 def test_wandb_artifacts_io_manager_load_input_raise_when_get_and_get_path_are_provided(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2302,7 +2511,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_get_and_get_path_are_p
 
 
 def test_wandb_artifacts_io_manager_load_input_with_specific_version(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2356,7 +2565,7 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_version(
 
 
 def test_wandb_artifacts_io_manager_load_input_with_specific_alias(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2408,7 +2617,7 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_alias(
 
 
 def test_wandb_artifacts_io_manager_load_partitioned_input(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2454,7 +2663,7 @@ def test_wandb_artifacts_io_manager_load_partitioned_input(
     assert run_mock.use_artifact.return_value.get.call_count == 0
     assert run_mock.use_artifact.return_value.get_path.call_count == 0
 
-    LOCAL_PARTITIONED_ARTIFACT_PATH = f"/storage/wandb_artifacts_manager/artifacts/{ARTIFACT_NAME}.{PARTITION_KEY}:{ARTIFACT_VERSION}"
+    LOCAL_PARTITIONED_ARTIFACT_PATH = f"/storage/wandb_artifacts_manager/artifacts/{ARTIFACT_NAME}.{PARTITION_KEY}.{ARTIFACT_VERSION}"
     run_mock.use_artifact.return_value.download.assert_called_with(
         recursive=True,
         root=EndsWith(LOCAL_PARTITIONED_ARTIFACT_PATH),

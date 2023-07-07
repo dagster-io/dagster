@@ -1,5 +1,7 @@
-import wandb
 from dagster import AssetIn, Config, asset
+
+import wandb
+from wandb import Artifact
 
 MODEL_NAME = "my_model"
 
@@ -8,7 +10,7 @@ MODEL_NAME = "my_model"
     name=MODEL_NAME,
     compute_kind="wandb",
 )
-def write_model() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
+def write_model() -> Artifact:
     """Write your model.
 
     Here, we have we're creating a very simple Artifact with the integration.
@@ -32,7 +34,7 @@ class PromoteBestModelToProductionConfig(Config):
     output_required=False,
 )
 def promote_best_model_to_production(
-    artifact: wandb.wandb_sdk.wandb_artifacts.Artifact,
+    artifact: Artifact,
     config: PromoteBestModelToProductionConfig,
 ):
     """Example that links a model stored in a W&B Artifact to the Model Registry.

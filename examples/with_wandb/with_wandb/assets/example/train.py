@@ -11,9 +11,10 @@ import os
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-import wandb
 from fashion_data import fashion
 from torch.autograd import Variable
+
+import wandb
 
 hyperparameter_defaults = dict(
     dropout=0.5,

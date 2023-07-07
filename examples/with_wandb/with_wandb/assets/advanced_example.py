@@ -1,6 +1,8 @@
-import wandb
 from dagster import AssetExecutionContext, AssetIn, asset
 from dagster_wandb import WandbArtifactConfiguration
+
+import wandb
+from wandb import Artifact
 
 wandb_artifact_configuration: WandbArtifactConfiguration = {
     "description": "My **Markdown** description",
@@ -32,7 +34,7 @@ MY_TABLE = "my_table"
     compute_kind="wandb",
     metadata={"wandb_artifact_configuration": wandb_artifact_configuration},
 )
-def write_advanced_artifact() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
+def write_advanced_artifact() -> Artifact:
     """Example that writes an advanced Artifact.
 
     Here we use the full power of the integration with W&B Artifacts.
@@ -57,7 +59,7 @@ def write_advanced_artifact() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
     - https://docs.wandb.ai/ref/python/artifact#add_reference
 
     Returns:
-        wandb.Artifact: The Artifact we augment with the integration
+        Artifact: The Artifact we augment with the integration
     """
     artifact = wandb.Artifact(MY_ASSET, "files")
     table = wandb.Table(columns=["a", "b", "c"], data=[[1, 2, 3]])
@@ -132,14 +134,12 @@ def get_path(context: AssetExecutionContext, path: str) -> None:
     },
     output_required=False,
 )
-def get_artifact(
-    context: AssetExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
-) -> None:
+def get_artifact(context: AssetExecutionContext, artifact: Artifact) -> None:
     """Example that gets the entire Artifact object.
 
     Args:
         context (AssetExecutionContext): Dagster execution context
-        artifact (wandb.wandb_sdk.wandb_artifacts.Artifact): Downloaded Artifact object
+        artifact (Artifact): Downloaded Artifact object
 
     Here, we use the integration to collect the entire W&B Artifact object created from in first
     asset.
@@ -147,3 +147,51 @@ def get_artifact(
     The integration downloads the entire Artifact for us.
     """
     context.log.info(f"Result: {artifact.name}")  # Result: my_advanced_artifact:v0
+
+
+@asset(
+    compute_kind="wandb",
+    ins={
+        "artifact": AssetIn(
+            asset_key=MY_ASSET,
+            metadata={
+                "wandb_artifact_configuration": {
+                    "version": "v0",
+                }
+            },
+        )
+    },
+    output_required=False,
+)
+def get_version(context: AssetExecutionContext, artifact: Artifact) -> None:
+    """Example that gets the entire Artifact object based on its version.
+
+    Args:
+        context (AssetExecutionContext): Dagster execution context
+        artifact (Artifact): Downloaded Artifact object
+    """
+    context.log.info(f"Result: {artifact.name}")  # Result: my_advanced_artifact:v0
+
+
+@asset(
+    compute_kind="wandb",
+    ins={
+        "artifact": AssetIn(
+            asset_key=MY_ASSET,
+            metadata={
+                "wandb_artifact_configuration": {
+                    "alias": "first_alias",
+                }
+            },
+        )
+    },
+    output_required=False,
+)
+def get_alias(context: AssetExecutionContext, artifact: Artifact) -> None:
+    """Example that gets the entire Artifact object based on its alias.
+
+    Args:
+        context (AssetExecutionContext): Dagster execution context
+        artifact (Artifact): Downloaded Artifact object
+    """
+    context.log.info(f"Result: {artifact.name}")  # Result: my_advanced_artifact:first_alias
