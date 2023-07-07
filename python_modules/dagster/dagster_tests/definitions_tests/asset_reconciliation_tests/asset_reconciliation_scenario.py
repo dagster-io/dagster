@@ -250,8 +250,10 @@ class AssetReconciliationScenario(NamedTuple):
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
-                run_tags={},
+                materialize_run_tags={},
+                observe_run_tags={},
                 cursor=cursor,
+                auto_observe=True,
             )
 
         for run_request in run_requests:
