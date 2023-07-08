@@ -509,7 +509,9 @@ const ArticleListItem = ({title, href}) => {
       }}
     >
       {href.startsWith('http') ? (
-        <NextLink href={href}>{title}</NextLink>
+        <NextLink href={href} legacyBehavior>
+          {title}
+        </NextLink>
       ) : (
         <Link href={href}>{title}</Link>
       )}

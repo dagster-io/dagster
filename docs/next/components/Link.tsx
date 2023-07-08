@@ -28,7 +28,7 @@ const Link = ({href, children, version, passHref = false}: LinkProps) => {
     const versionedHref =
       version === defaultVersion ? path.join('/', asPath) : path.join('/', version, asPath);
     return (
-      <NextLink href={versionedHref} passHref={passHref}>
+      <NextLink legacyBehavior href={versionedHref} passHref={passHref}>
         {children}
       </NextLink>
     );
@@ -37,7 +37,7 @@ const Link = ({href, children, version, passHref = false}: LinkProps) => {
   if (currentVersion === defaultVersion) {
     const versionedHref = path.join('/', href);
     return (
-      <NextLink href={versionedHref} passHref={passHref}>
+      <NextLink legacyBehavior href={versionedHref} passHref={passHref}>
         {children}
       </NextLink>
     );
@@ -45,7 +45,7 @@ const Link = ({href, children, version, passHref = false}: LinkProps) => {
 
   const versionedHref = path.join('/', currentVersion, href);
   return (
-    <NextLink href={versionedHref} passHref={passHref}>
+    <NextLink legacyBehavior href={versionedHref} passHref={passHref}>
       {children}
     </NextLink>
   );

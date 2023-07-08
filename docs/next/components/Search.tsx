@@ -191,6 +191,7 @@ export function Search() {
               resultsFooterComponent={({state}) => {
                 return (
                   <Link
+                    legacyBehavior
                     href={{
                       pathname: '/searchpage',
                       query: {query: encodeURIComponent(state.query)},

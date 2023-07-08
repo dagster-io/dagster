@@ -98,6 +98,7 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
       <div className="-mt-px flex w-0 flex-1">
         {currentPageIndex === 0 ? null : (
           <NextLink
+            legacyBehavior
             href={{
               query: {...query, page: currentPageIndex},
             }}
@@ -131,6 +132,7 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
       <div className="-mt-px flex w-0 flex-1 justify-end">
         {currentPageIndex === totalPageCount - 1 ? null : (
           <NextLink
+            legacyBehavior
             href={{
               query: {...query, page: currentPageIndex + 2},
             }}
@@ -168,6 +170,7 @@ function PaginationItem(props: {targetIndex: number; isCurrentPage?: boolean}) {
 
   return (
     <NextLink
+      legacyBehavior
       href={{
         query: {...query, page: targetIndex + 1},
       }}
