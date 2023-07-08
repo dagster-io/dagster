@@ -84,6 +84,10 @@ class AssetGraph:
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
         self._auto_observe_interval_minutes_by_key = auto_observe_interval_minutes_by_key
+        # source assets keys can sometimes appear in the upstream dict
+        self._materializable_asset_keys = (
+            self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
+        )
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -176,12 +180,11 @@ class AssetGraph:
 
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self.materializable_asset_keys | self.source_asset_keys
+        return self._asset_dep_graph["upstream"].keys() | self.source_asset_keys
 
     @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
-        # Source assets keys can sometimes appear in the upstream dict
-        return self._asset_dep_graph["upstream"].keys() - self.source_asset_keys
+        return self._materializable_asset_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
