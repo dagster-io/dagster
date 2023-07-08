@@ -1,4 +1,4 @@
-import {useRouter} from 'next/router';
+import {useRouter} from 'next/compat/router';
 import {useState, useEffect} from 'react';
 
 import ALL_VERSIONS from '../.versioned_content/_versions.json';
