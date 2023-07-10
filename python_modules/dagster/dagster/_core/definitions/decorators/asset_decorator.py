@@ -1040,24 +1040,28 @@ def _type_check_deps_and_non_argument_deps(
     ] = None
     if deps is not None:
         for dep in deps:
-            # this gnarly type check is because we can't do isinstance(CoercibleToAssetKey) because CoercibleToAssetKey contains a List[str] subtype
-            # and isinstance breaks checking for List[str]. So split it out into two checks
-            if not (
-                isinstance(dep, (AssetsDefinition, SourceAsset, AssetKey, str))
-                or isinstance(dep, list)
-                and check.list_param(dep, "deps item", of_type=str)
-            ):
-                raise DagsterInvalidDefinitionError(
-                    f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
-                    " Instead, pass AssetsDefinitions or AssetKeys."
-                )
-            if isinstance(dep, AssetsDefinition) and len(dep.keys) > 1:
-                raise DagsterInvalidDefinitionError(
-                    "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-                    " Instead, specify dependencies on the assets created by the multi_asset"
-                    f" via AssetKeys or strings. For the multi_asset {dep.node_def.name}, the"
-                    f" available keys are: {dep.keys}."
-                )
+            if isinstance(dep, AssetsDefinition):
+                # Only AssetsDefinition with a single asset can be passed
+                if len(dep.keys) > 1:
+                    raise DagsterInvalidDefinitionError(
+                        "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                        " Instead, specify dependencies on the assets created by the multi_asset"
+                        f" via AssetKeys or strings. For the multi_asset {dep.node_def.name}, the"
+                        f" available keys are: {dep.keys}."
+                    )
+            elif isinstance(dep, SourceAsset):
+                # no additional type checking needed for SourceAssets
+                continue
+            else:
+                # confirm that dep is coercible to AssetKey
+                try:
+                    AssetKey.from_coercible(dep)
+                except check.CheckError:
+                    raise DagsterInvalidDefinitionError(
+                        f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
+                        " Instead, pass AssetsDefinitions or AssetKeys."
+                    )
+
         upstream_asset_deps = deps
 
     if non_argument_deps is not None:
@@ -1073,7 +1077,7 @@ def _type_check_deps_and_non_argument_deps(
 def _make_asset_keys(
     deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
 ) -> Optional[Set[AssetKey]]:
-    """Convert all items to AssetKey in a set. By putting all of the AsestKeys in a set, it will also deduplicate them.
+    """Convert all items to AssetKey in a set. By putting all of the AssetKeys in a set, it will also deduplicate them.
     """
     if deps is None:
         return deps
