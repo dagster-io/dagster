@@ -178,11 +178,11 @@ class AssetReconciliationCursor(NamedTuple):
             happened since the last tick.
         handled_root_asset_keys:
             Every entry is a non-partitioned asset with no parents that has been requested by this
-            sensor or has been materialized (even if not by this sensor).
+            sensor, discarded by this sensor, or has been materialized (even if not by this sensor).
         handled_root_partitions_by_asset_key:
             Every key is a partitioned root asset. Every value is the set of that asset's partitions
-            that have been requested by this sensor or have been materialized (even if not by
-            this sensor).
+            that have been requested by this sensor, discarded by this sensor,
+            or have been materialized (even if not by this sensor).
         last_observe_request_timestamp_by_asset_key:
             Every key is an observable source asset that has been auto-observed. The value is the
             timestamp of the tick that requested the observation.
