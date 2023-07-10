@@ -9,6 +9,7 @@ import dagster._seven as seven
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
@@ -36,6 +37,7 @@ class AssetsDefinitionCacheableData(
                 "auto_materialize_policies_by_output_name",
                 Optional[Mapping[str, AutoMaterializePolicy]],
             ),
+            ("backfill_policies_by_output_name", Optional[Mapping[str, BackfillPolicy]]),
         ],
     )
 ):
@@ -57,6 +59,7 @@ class AssetsDefinitionCacheableData(
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, AutoMaterializePolicy]
         ] = None,
+        backfill_policies_by_output_name: Optional[Mapping[str, BackfillPolicy]] = None,
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
@@ -99,6 +102,12 @@ class AssetsDefinitionCacheableData(
                 "auto_materialize_policies_by_output_name",
                 key_type=str,
                 value_type=AutoMaterializePolicy,
+            ),
+            backfill_policies_by_output_name=check.opt_nullable_mapping_param(
+                backfill_policies_by_output_name,
+                "backfill_policies_by_output_name",
+                key_type=str,
+                value_type=BackfillPolicy,
             ),
         )
 
@@ -174,6 +183,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         group_name: Optional[str],
         freshness_policy: Optional[FreshnessPolicy],
         auto_materialize_policy: Optional[AutoMaterializePolicy],
+        backfill_policy: Optional[BackfillPolicy],
     ) -> "CacheableAssetsDefinition":
         """Utility method which allows setting attributes for all assets in this
         CacheableAssetsDefinition, since the keys may not be known at the time of
@@ -184,6 +194,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
             group_name_for_all_assets=group_name,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
+            backfill_policy=backfill_policy,
         )
 
 
@@ -247,6 +258,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
+        backfill_policy: Optional[Union[BackfillPolicy, Mapping[AssetKey, BackfillPolicy]]] = None,
     ):
         self._output_asset_key_replacements = output_asset_key_replacements or {}
         self._input_asset_key_replacements = input_asset_key_replacements or {}
@@ -255,6 +267,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         self._prefix_for_all_assets = prefix_for_all_assets
         self._freshness_policy = freshness_policy
         self._auto_materialize_policy = auto_materialize_policy
+        self._backfill_policy = backfill_policy
 
         check.invariant(
             not (group_name_for_all_assets and group_names_by_key),
@@ -349,6 +362,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             group_names_by_key=group_names_by_key,
             freshness_policy=self._freshness_policy,
             auto_materialize_policy=self._auto_materialize_policy,
+            backfill_policy=self._backfill_policy,
         )
 
 

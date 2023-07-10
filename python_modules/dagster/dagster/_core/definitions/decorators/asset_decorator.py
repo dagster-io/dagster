@@ -37,6 +37,7 @@ from dagster._utils.backcompat import (
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
+from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -77,6 +78,7 @@ def asset(
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
+    backfill_policy: Optional[BackfillPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
     key: Optional[CoercibleToAssetKey] = None,
@@ -107,6 +109,7 @@ def asset(
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
@@ -173,6 +176,8 @@ def asset(
             with respect to its root data.
         auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
             this asset according to its FreshnessPolicy and when upstream dependencies change.
+        backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
+            BackfillPolicy.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
@@ -213,6 +218,7 @@ def asset(
             output_required=output_required,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
+            backfill_policy=backfill_policy,
             retry_policy=retry_policy,
             code_version=code_version,
             key=key,
@@ -237,6 +243,9 @@ def asset(
 
         if auto_materialize_policy is not None:
             experimental_arg_warning("auto_materialize_policy", "asset")
+
+        if backfill_policy is not None:
+            experimental_arg_warning("backfill_policy", "asset")
 
         return create_asset()(fn)
 
@@ -265,6 +274,7 @@ class _Asset:
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
         key: Optional[CoercibleToAssetKey] = None,
@@ -294,6 +304,7 @@ class _Asset:
         self.freshness_policy = freshness_policy
         self.retry_policy = retry_policy
         self.auto_materialize_policy = auto_materialize_policy
+        self.backfill_policy = backfill_policy
         self.code_version = code_version
 
         if (name or key_prefix) and key:
@@ -387,6 +398,16 @@ class _Asset:
                 code_version=self.code_version,
             )(fn)
 
+            # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
+            if self.partitions_def is None:
+                check.param_invariant(
+                    self.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
+                    if self.backfill_policy
+                    else True,
+                    "backfill_policy",
+                    "Non partitioned asset can only have single run backfill policy",
+                )
+
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
@@ -409,6 +430,9 @@ class _Asset:
             else None,
             auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
             if self.auto_materialize_policy
+            else None,
+            backfill_policies_by_key={out_asset_key: self.backfill_policy}
+            if self.backfill_policy
             else None,
             asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
@@ -636,6 +660,14 @@ def multi_asset(
             for output_name, out in outs.items()
             if out.auto_materialize_policy is not None
         }
+
+        # source backfill policies from the AssetOuts (if any)
+        backfill_policies_by_key = {
+            keys_by_output_name[output_name]: out.backfill_policy
+            for output_name, out in outs.items()
+            if out.backfill_policy is not None
+        }
+
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
@@ -659,6 +691,7 @@ def multi_asset(
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            backfill_policies_by_key=backfill_policies_by_key,
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
@@ -756,6 +789,7 @@ def graph_asset(
     metadata: Optional[MetadataUserInput] = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
+    backfill_policy: Optional[BackfillPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -772,6 +806,7 @@ def graph_asset(
     metadata: Optional[MetadataUserInput] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
@@ -799,6 +834,7 @@ def graph_asset(
             intended to be updated with respect to its root data.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
             for this asset.
+        backfill_policy (Optional[BackfillPolicy]): The BackfillPolicy to use for this asset.
 
     Examples:
         .. code-block:: python
@@ -829,6 +865,7 @@ def graph_asset(
             metadata=metadata,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
+            backfill_policy=backfill_policy,
             resource_defs=resource_defs,
         )(fn)
 
@@ -847,6 +884,7 @@ class _GraphBackedAsset:
         metadata: Optional[MetadataUserInput] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         self.name = name
@@ -861,6 +899,7 @@ class _GraphBackedAsset:
         self.metadata = metadata
         self.freshness_policy = freshness_policy
         self.auto_materialize_policy = auto_materialize_policy
+        self.backfill_policy = backfill_policy
         self.resource_defs = resource_defs
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
@@ -893,6 +932,9 @@ class _GraphBackedAsset:
             else None,
             auto_materialize_policies_by_output_name={"result": self.auto_materialize_policy}
             if self.auto_materialize_policy
+            else None,
+            backfill_policies_by_output_name={"result": self.backfill_policy}
+            if self.backfill_policy
             else None,
             descriptions_by_output_name={"result": self.description} if self.description else None,
             resource_defs=self.resource_defs,
@@ -966,6 +1008,13 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
         }
 
+        # source backfill strategies from the AssetOuts (if any)
+        backfill_policies_by_output_name = {
+            output_name: out.backfill_policy
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.backfill_policy is not None
+        }
+
         # source descriptions from the AssetOuts (if any)
         descriptions_by_output_name = {
             output_name: out.description
@@ -986,6 +1035,7 @@ def graph_multi_asset(
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
+            backfill_policies_by_output_name=backfill_policies_by_output_name,
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,
         )

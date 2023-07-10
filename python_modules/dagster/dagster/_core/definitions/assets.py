@@ -22,6 +22,7 @@ from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -83,6 +84,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     _metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
     _auto_materialize_policies_by_key: Mapping[AssetKey, AutoMaterializePolicy]
+    _backfill_policies_by_key: Mapping[AssetKey, BackfillPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
 
@@ -102,6 +104,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
+        backfill_policies_by_key: Optional[Mapping[AssetKey, BackfillPolicy]] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
@@ -232,6 +235,24 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             value_type=AutoMaterializePolicy,
         )
 
+        self._backfill_policies_by_key = check.opt_mapping_param(
+            backfill_policies_by_key,
+            "backfill_policies_by_key",
+            key_type=AssetKey,
+            value_type=BackfillPolicy,
+        )
+
+        if self._partitions_def is None:
+            # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
+            for key, backfill_policy in self._backfill_policies_by_key.items():
+                check.param_invariant(
+                    backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
+                    if backfill_policy
+                    else True,
+                    "backfill_policies_by_key",
+                    "Non partitioned asset can only have single run backfill policy",
+                )
+
         _validate_self_deps(
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._selected_asset_keys,
@@ -255,6 +276,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]],
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]],
+        backfill_policies_by_key: Optional[Mapping[AssetKey, BackfillPolicy]],
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
@@ -271,6 +293,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             metadata_by_key=metadata_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            backfill_policies_by_key=backfill_policies_by_key,
             descriptions_by_key=descriptions_by_key,
         )
 
@@ -323,6 +346,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        backfill_policies_by_output_name: Optional[Mapping[str, Optional[BackfillPolicy]]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
@@ -375,6 +399,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 AutoMaterializePolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
+            backfill_policies_by_output_name (Optional[Mapping[str, Optional[BackfillPolicy]]]): Defines a
+                BackfillPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the backfill policies to be attached
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -393,6 +420,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
+            backfill_policies_by_output_name=backfill_policies_by_output_name,
             can_subset=can_subset,
         )
 
@@ -415,6 +443,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        backfill_policies_by_output_name: Optional[Mapping[str, Optional[BackfillPolicy]]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
@@ -463,6 +492,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 AutoMaterializePolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
+            backfill_policies_by_output_name (Optional[Mapping[str, Optional[BackfillPolicy]]]): Defines a
+                BackfillPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the backfill policies to be attached.
         """
         return AssetsDefinition._from_node(
             node_def=op_def,
@@ -478,6 +510,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
+            backfill_policies_by_output_name=backfill_policies_by_output_name,
             can_subset=can_subset,
         )
 
@@ -500,6 +533,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        backfill_policies_by_output_name: Optional[Mapping[str, Optional[BackfillPolicy]]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
@@ -601,6 +635,13 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 if auto_materialize_policy is not None
             }
             if auto_materialize_policies_by_output_name
+            else None,
+            backfill_policies_by_key={
+                keys_by_output_name_with_prefix[output_name]: backfill_policy
+                for output_name, backfill_policy in backfill_policies_by_output_name.items()
+                if backfill_policy is not None
+            }
+            if backfill_policies_by_output_name
             else None,
             descriptions_by_key={
                 keys_by_output_name_with_prefix[output_name]: description
@@ -747,6 +788,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
         return self._auto_materialize_policies_by_key
 
+    @property
+    def backfill_policies_by_key(self) -> Mapping[AssetKey, BackfillPolicy]:
+        return self._backfill_policies_by_key
+
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -815,6 +860,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
+        backfill_policy: Optional[Union[BackfillPolicy, Mapping[AssetKey, BackfillPolicy]]] = None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -908,6 +954,32 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                     output_asset_key_replacements.get(key, key)
                 ] = replaced_auto_materialize_policy
 
+        if backfill_policy:
+            backfill_policy_conflicts = (
+                self.backfill_policies_by_key.keys()
+                if isinstance(backfill_policy, BackfillPolicy)
+                else (backfill_policy.keys() & self.backfill_policies_by_key.keys())
+            )
+            if backfill_policy_conflicts:
+                raise DagsterInvalidDefinitionError(
+                    "BackfillPolicy already exists on assets"
+                    f" {', '.join(key.to_string() for key in backfill_policy_conflicts)}"
+                )
+
+        replaced_backfill_policies_by_key = {}
+        for key in self.keys:
+            if isinstance(backfill_policy, BackfillPolicy):
+                replaced_backfill_policy = backfill_policy
+            elif backfill_policy:
+                replaced_backfill_policy = backfill_policy.get(key)
+            else:
+                replaced_backfill_policy = self.backfill_policies_by_key.get(key)
+
+            if replaced_backfill_policy:
+                replaced_backfill_policies_by_key[
+                    output_asset_key_replacements.get(key, key)
+                ] = replaced_backfill_policy
+
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
             for key, description in descriptions_by_key.items()
@@ -955,6 +1027,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             metadata_by_key=replaced_metadata_by_key,
             freshness_policies_by_key=replaced_freshness_policies_by_key,
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
+            backfill_policies_by_key=replaced_backfill_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
         )
 
@@ -1198,6 +1271,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             metadata_by_key=self._metadata_by_key,
             freshness_policies_by_key=self._freshness_policies_by_key,
             auto_materialize_policies_by_key=self._auto_materialize_policies_by_key,
+            backfill_policies_by_key=self._backfill_policies_by_key,
             descriptions_by_key=self._descriptions_by_key,
         )
 
