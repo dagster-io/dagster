@@ -2,6 +2,13 @@ from dagster._core.workspace.load_target import get_origins_from_toml
 from dagster._utils import file_relative_path
 
 
+def test_load_multiple_python_modules_from_toml():
+    origins = get_origins_from_toml(file_relative_path(__file__, "multiple_modules.toml"))
+    assert len(origins) == 2
+    assert origins[0].loadable_target_origin.module_name == "baaz"
+    assert origins[1].loadable_target_origin.module_name == "foo"
+
+
 def test_load_python_module_from_toml():
     origins = get_origins_from_toml(file_relative_path(__file__, "single_module.toml"))
     assert len(origins) == 1
