@@ -179,12 +179,12 @@ class AssetGraph:
         )
 
     @property
-    def all_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._asset_dep_graph["upstream"].keys() | self.source_asset_keys
-
-    @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._materializable_asset_keys
+
+    @property
+    def all_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._materializable_asset_keys | self.source_asset_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
