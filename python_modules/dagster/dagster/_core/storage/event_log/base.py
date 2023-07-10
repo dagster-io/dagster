@@ -127,6 +127,12 @@ class AssetEntry(
             return None
         return self.last_materialization_record.event_log_entry
 
+    @property
+    def last_materialization_storage_id(self) -> Optional[int]:
+        if self.last_materialization_record is None:
+            return None
+        return self.last_materialization_record.storage_id
+
 
 class AssetRecord(NamedTuple):
     """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.

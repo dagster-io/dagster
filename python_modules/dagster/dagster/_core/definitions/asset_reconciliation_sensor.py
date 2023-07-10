@@ -487,14 +487,26 @@ def find_parent_materialized_asset_partitions(
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs or
-                        # different partition keys
                         elif (
+                            # if child has a different partitions def than the parent, then it must
+                            # have been executed in a different run, so it's a valid candidate
                             child_partitions_def != partitions_def
+                            # if child partition key is not the same as any newly materialized
+                            # parent key, then it could not have been executed in the same run as
+                            # its parent
                             or child_partition not in partitions_subset
+                            # if child partition is not failed or in progress, then even if it was
+                            # executed in the same run, we can filter it out later with an is_reconciled
+                            # check (cheaper than the below logic)
+                            or child_partition
+                            not in instance_queryer.get_failed_or_in_progress_subset(
+                                asset_key=child
+                            )
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
+                            # manually query to see if this asset partition was intended to be
+                            # executed in the same run as its parent
                             latest_partition_record = check.not_none(
                                 instance_queryer.get_latest_materialization_or_observation_record(
                                     AssetKeyPartitionKey(asset_key, child_partition),
