@@ -425,6 +425,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     partitionName: string,
     sessionSolidSelection?: string[] | null,
   ) => {
+    console.log(currentSession.runConfigYaml);
     onConfigLoading();
     try {
       const {base} = currentSession;
@@ -464,7 +465,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
           body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
-        runConfigYaml = partition.runConfigOrError.yaml;
+        runConfigYaml = currentSession.runConfigYaml || partition.runConfigOrError.yaml;
       }
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;
