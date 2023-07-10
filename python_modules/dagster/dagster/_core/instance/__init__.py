@@ -1857,14 +1857,18 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def get_status_by_partition(
-        self, asset_key: AssetKey, partitions_def: PartitionsDefinition, partition_keys: List[str]
+        self,
+        asset_key: AssetKey,
+        partition_keys: Sequence[str],
+        partitions_def: PartitionsDefinition,
     ) -> Optional[Mapping[str, AssetPartitionStatus]]:
-        """Get the current status of provided partition_keys.
+        """Get the current status of provided partition_keys for the provided asset.
 
         Args:
-            asset_key (AssetKey):
-            partitions_def (PartitionsDefinition):
-            partition_keys (List[str]):
+            asset_key (AssetKey): The asset to get per-partition status for.
+            partition_keys (Sequence[str]): The partitions to get status for.
+            partitions_def (PartitionsDefinition): The PartitionsDefinition of the asset to get
+                per-partition status for.
 
         Returns:
             Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
