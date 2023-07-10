@@ -425,7 +425,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     partitionName: string,
     sessionSolidSelection?: string[] | null,
   ) => {
-    console.log(currentSession.runConfigYaml);
     onConfigLoading();
     try {
       const {base} = currentSession;
