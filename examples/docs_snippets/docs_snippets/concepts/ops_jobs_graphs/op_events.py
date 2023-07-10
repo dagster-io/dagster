@@ -68,19 +68,22 @@ from typing import Tuple
 # Using Output as type annotation without inner type
 @op
 def my_output_op() -> Output:
-    return Output("some_value")
+    return Output("some_value", metadata={"some_metadata": "a_value"})
 
 
 # A single output with a parameterized type annotation
 @op
 def my_output_generic_op() -> Output[int]:
-    return Output(5)
+    return Output(5, metadata={"some_metadata": "a_value"})
 
 
 # Multiple outputs using parameterized type annotation
 @op(out={"int_out": Out(), "str_out": Out()})
 def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
-    return (Output(5), Output("foo"))
+    return (
+        Output(5, metadata={"some_metadata": "a_value"}),
+        Output("foo", metadata={"some_metadata": "another_value"}),
+    )
 
 
 # end_op_output_4
