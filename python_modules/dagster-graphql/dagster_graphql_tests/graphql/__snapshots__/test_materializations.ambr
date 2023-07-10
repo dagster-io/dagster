@@ -1,0 +1,18 @@
+# name: TestMaterializations.test_materializations[0]
+  list([
+    'RunStartingEvent',
+    'RunStartEvent',
+    'StepWorkerStartingEvent',
+    'StepWorkerStartedEvent',
+    'ResourceInitStartedEvent',
+    'ResourceInitSuccessEvent',
+    'LogsCapturedEvent',
+    'ExecutionStepStartEvent',
+    'MaterializationEvent',
+    'ExecutionStepOutputEvent',
+    'LogMessageEvent',
+    'HandledOutputEvent',
+    'ExecutionStepSuccessEvent',
+    'RunSuccessEvent',
+  ])
+# ---

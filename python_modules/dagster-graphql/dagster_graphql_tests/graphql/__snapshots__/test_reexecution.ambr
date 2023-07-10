@@ -1,0 +1,38 @@
+# name: TestReexecution.test_full_pipeline_reexecution_fs_storage[0]
+  dict({
+    'launchPipelineExecution': dict({
+      '__typename': 'LaunchRunSuccess',
+      'run': dict({
+        'mode': 'default',
+        'pipeline': dict({
+          'name': 'csv_hello_world',
+        }),
+        'resolvedOpSelection': None,
+        'runConfigYaml': '<runConfigYaml dummy value>',
+        'runId': '<runId dummy value>',
+        'status': 'STARTING',
+        'tags': list([
+        ]),
+      }),
+    }),
+  })
+# ---
+# name: TestReexecution.test_full_pipeline_reexecution_in_memory_storage[0]
+  dict({
+    'launchPipelineExecution': dict({
+      '__typename': 'LaunchRunSuccess',
+      'run': dict({
+        'mode': 'default',
+        'pipeline': dict({
+          'name': 'csv_hello_world',
+        }),
+        'resolvedOpSelection': None,
+        'runConfigYaml': '<runConfigYaml dummy value>',
+        'runId': '<runId dummy value>',
+        'status': 'STARTING',
+        'tags': list([
+        ]),
+      }),
+    }),
+  })
+# ---

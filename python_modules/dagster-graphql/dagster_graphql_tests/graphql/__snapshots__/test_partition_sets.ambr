@@ -1,0 +1,181 @@
+# name: TestPartitionSets.test_get_partition_set[0]
+  dict({
+    'partitionSetOrError': dict({
+      '__typename': 'PartitionSet',
+      'mode': 'default',
+      'name': 'integers_partition_set',
+      'partitionsOrError': dict({
+        'results': list([
+          dict({
+            'name': '0',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '1',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '2',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '3',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '4',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '5',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '6',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '7',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '8',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+          dict({
+            'name': '9',
+            'runConfigOrError': dict({
+              'yaml': '''
+                {}
+  
+              ''',
+            }),
+            'tagsOrError': dict({
+              '__typename': 'PartitionTags',
+            }),
+          }),
+        ]),
+      }),
+      'pipelineName': 'integers',
+      'solidSelection': None,
+    }),
+  })
+# ---
+# name: TestPartitionSets.test_get_partition_set[1]
+  dict({
+    'partitionSetOrError': dict({
+      '__typename': 'PartitionSetNotFoundError',
+    }),
+  })
+# ---
+# name: TestPartitionSets.test_get_partition_set[2]
+  dict({
+    'partitionSetOrError': dict({
+      '__typename': 'PartitionSet',
+      'mode': 'default',
+      'name': 'dynamic_partitioned_assets_job_partition_set',
+      'partitionsOrError': dict({
+        'results': list([
+        ]),
+      }),
+      'pipelineName': 'dynamic_partitioned_assets_job',
+      'solidSelection': None,
+    }),
+  })
+# ---
+# name: TestPartitionSets.test_get_partition_sets_for_pipeline[0]
+  dict({
+    'partitionSetsOrError': dict({
+      '__typename': 'PartitionSets',
+      'results': list([
+        dict({
+          'mode': 'default',
+          'name': 'integers_partition_set',
+          'pipelineName': 'integers',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: TestPartitionSets.test_get_partition_sets_for_pipeline[1]
+  dict({
+    'partitionSetsOrError': dict({
+      '__typename': 'PartitionSets',
+      'results': list([
+      ]),
+    }),
+  })
+# ---
