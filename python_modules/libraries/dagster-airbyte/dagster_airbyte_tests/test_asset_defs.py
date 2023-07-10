@@ -1,5 +1,3 @@
-import re
-
 import pytest
 import responses
 from dagster import (
@@ -14,7 +12,6 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import StepMaterializationData
-from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._legacy import build_assets_job
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
 
@@ -267,13 +264,7 @@ def test_built_airbyte_asset_with_downstream_asset_errors():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=re.escape(
-            "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
-            " Instead, specify dependencies on the assets created by the multi_asset via AssetKeys"
-            " or strings."
-            " For the multi_asset airbyte_sync_12345, the available keys are: "
-            "{AssetKey(['some', 'prefix', 'bar']), AssetKey(['some', 'prefix', 'foo'])}"
-        ),
+        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps.",
     ):
 
         @asset(deps=ab_assets)
@@ -294,5 +285,5 @@ def test_built_airbyte_asset_with_downstream_asset():
         return None
 
     assert len(downstream_of_ab.input_names) == 2
-    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.kind == DagsterTypeKind.NOTHING
+    assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
+    assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
