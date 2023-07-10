@@ -24,7 +24,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
@@ -107,6 +107,35 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         for key in asset_keys:
             if key not in self._asset_record_cache:
                 self._asset_record_cache[key] = None
+
+    ####################
+    # ASSET STATUS CACHE
+    ####################
+
+    @cached_method
+    def get_failed_or_in_progress_subset(self, *, asset_key: AssetKey) -> PartitionsSubset:
+        """Returns a PartitionsSubset representing the set of partitions that are either in progress
+        or whose last materialization attempt failed.
+        """
+        from dagster._core.storage.partition_status_cache import (
+            get_and_update_asset_status_cache_value,
+        )
+
+        partitions_def = check.not_none(self.asset_graph.get_partitions_def(asset_key))
+        asset_record = self.get_asset_record(asset_key)
+        cache_value = get_and_update_asset_status_cache_value(
+            instance=self.instance,
+            asset_key=asset_key,
+            partitions_def=partitions_def,
+            dynamic_partitions_loader=self,
+            asset_record=asset_record,
+        )
+        if cache_value is None:
+            return partitions_def.empty_subset()
+
+        return cache_value.deserialize_failed_partition_subsets(
+            partitions_def
+        ) | cache_value.deserialize_in_progress_partition_subsets(partitions_def)
 
     ####################
     # ASSET RECORDS / STORAGE IDS

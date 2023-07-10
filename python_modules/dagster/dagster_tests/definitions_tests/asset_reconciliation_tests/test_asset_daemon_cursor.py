@@ -35,7 +35,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
     )
 
     c2 = c.with_updates(
-        21, [], {AssetKey("my_asset")}, {AssetKey("my_asset"): {"a"}}, 1, asset_graph, {}, 0
+        21, {}, {AssetKey("my_asset")}, {AssetKey("my_asset"): {"a"}}, 1, asset_graph, {}, 0
     )
 
     serdes_c2 = AssetReconciliationCursor.from_serialized(c2.serialize(), asset_graph)
@@ -56,17 +56,17 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat():
     def asset2():
         ...
 
-    materialized_or_requested_root_partitions_by_asset_key = {
+    handled_root_partitions_by_asset_key = {
         asset1.key: partitions_def.subset_with_partition_keys(["a", "b"])
     }
-    materialized_or_requested_root_asset_keys = {asset2.key}
+    handled_root_asset_keys = {asset2.key}
     serialized = json.dumps(
         (
             25,
-            [key.to_user_string() for key in materialized_or_requested_root_asset_keys],
+            [key.to_user_string() for key in handled_root_asset_keys],
             {
                 key.to_user_string(): subset.serialize()
-                for key, subset in materialized_or_requested_root_partitions_by_asset_key.items()
+                for key, subset in handled_root_partitions_by_asset_key.items()
             },
         )
     )
@@ -75,11 +75,5 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat():
         serialized, asset_graph=AssetGraph.from_assets([asset1, asset2])
     )
     assert cursor.latest_storage_id == 25
-    assert (
-        cursor.materialized_or_requested_root_asset_keys
-        == materialized_or_requested_root_asset_keys
-    )
-    assert (
-        cursor.materialized_or_requested_root_partitions_by_asset_key
-        == materialized_or_requested_root_partitions_by_asset_key
-    )
+    assert cursor.handled_root_asset_keys == handled_root_asset_keys
+    assert cursor.handled_root_partitions_by_asset_key == handled_root_partitions_by_asset_key

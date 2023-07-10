@@ -95,16 +95,13 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         num_discarded = 0
 
         for conditions in conditions_by_asset_partition.values():
-            if not conditions:
-                continue
-            decision_types = {condition.decision_type for condition in conditions}
-            if AutoMaterializeDecisionType.DISCARD in decision_types:
-                num_discarded += 1
-            elif AutoMaterializeDecisionType.SKIP in decision_types:
-                num_skipped += 1
-            else:
-                check.invariant(AutoMaterializeDecisionType.MATERIALIZE in decision_types)
+            decision_type = _decision_type_for_conditions(conditions)
+            if decision_type == AutoMaterializeDecisionType.MATERIALIZE:
                 num_requested += 1
+            elif decision_type == AutoMaterializeDecisionType.SKIP:
+                num_skipped += 1
+            elif decision_type == AutoMaterializeDecisionType.DISCARD:
+                num_discarded += 1
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
@@ -179,28 +176,28 @@ class AssetReconciliationCursor(NamedTuple):
         latest_storage_id:
             The latest observed storage ID across all assets. Useful for finding out what has
             happened since the last tick.
-        materialized_or_requested_root_asset_keys:
+        handled_root_asset_keys:
             Every entry is a non-partitioned asset with no parents that has been requested by this
-            sensor or has been materialized (even if not by this sensor).
-        materialized_or_requested_root_partitions_by_asset_key:
+            sensor, discarded by this sensor, or has been materialized (even if not by this sensor).
+        handled_root_partitions_by_asset_key:
             Every key is a partitioned root asset. Every value is the set of that asset's partitions
-            that have been requested by this sensor or have been materialized (even if not by
-            this sensor).
+            that have been requested by this sensor, discarded by this sensor,
+            or have been materialized (even if not by this sensor).
         last_observe_request_timestamp_by_asset_key:
             Every key is an observable source asset that has been auto-observed. The value is the
             timestamp of the tick that requested the observation.
     """
 
     latest_storage_id: Optional[int]
-    materialized_or_requested_root_asset_keys: AbstractSet[AssetKey]
-    materialized_or_requested_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
+    handled_root_asset_keys: AbstractSet[AssetKey]
+    handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
-    def was_previously_materialized_or_requested(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.materialized_or_requested_root_asset_keys
+    def was_previously_handled(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.handled_root_asset_keys
 
-    def get_never_requested_never_materialized_partitions(
+    def get_unhandled_partitions(
         self,
         asset_key: AssetKey,
         asset_graph,
@@ -209,13 +206,11 @@ class AssetReconciliationCursor(NamedTuple):
     ) -> Iterable[str]:
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
-        materialized_or_requested_subset = (
-            self.materialized_or_requested_root_partitions_by_asset_key.get(
-                asset_key, partitions_def.empty_subset()
-            )
+        handled_subset = self.handled_root_partitions_by_asset_key.get(
+            asset_key, partitions_def.empty_subset()
         )
 
-        return materialized_or_requested_subset.get_partition_keys_not_in_subset(
+        return handled_subset.get_partition_keys_not_in_subset(
             current_time=current_time,
             dynamic_partitions_store=dynamic_partitions_store,
         )
@@ -223,7 +218,9 @@ class AssetReconciliationCursor(NamedTuple):
     def with_updates(
         self,
         latest_storage_id: Optional[int],
-        run_requests: Sequence[RunRequest],
+        conditions_by_asset_partition: Mapping[
+            AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
+        ],
         newly_materialized_root_asset_keys: AbstractSet[AssetKey],
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
         evaluation_id: int,
@@ -234,46 +231,52 @@ class AssetReconciliationCursor(NamedTuple):
         """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
         """
-        requested_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
-        requested_non_partitioned_root_assets: Set[AssetKey] = set()
+        handled_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
+        handled_non_partitioned_root_assets: Set[AssetKey] = set()
 
-        for run_request in run_requests:
-            for asset_key in cast(Iterable[AssetKey], run_request.asset_selection):
-                if not asset_graph.has_non_source_parents(asset_key):
-                    if run_request.partition_key:
-                        requested_root_partitions_by_asset_key[asset_key].add(
-                            run_request.partition_key
-                        )
-                    else:
-                        requested_non_partitioned_root_assets.add(asset_key)
+        for asset_partition, conditions in conditions_by_asset_partition.items():
+            if (
+                # only consider root assets
+                not asset_graph.has_non_source_parents(asset_partition.asset_key)
+                # which were discarded or materialized
+                and (
+                    _decision_type_for_conditions(conditions)
+                    in (
+                        AutoMaterializeDecisionType.DISCARD,
+                        AutoMaterializeDecisionType.MATERIALIZE,
+                    )
+                )
+            ):
+                if asset_partition.partition_key:
+                    handled_root_partitions_by_asset_key[asset_partition.asset_key].add(
+                        asset_partition.partition_key
+                    )
+                else:
+                    handled_non_partitioned_root_assets.add(asset_partition.asset_key)
 
-        result_materialized_or_requested_root_partitions_by_asset_key = {
-            **self.materialized_or_requested_root_partitions_by_asset_key
-        }
+        result_handled_root_partitions_by_asset_key = {**self.handled_root_partitions_by_asset_key}
         for asset_key in set(newly_materialized_root_partitions_by_asset_key.keys()) | set(
-            requested_root_partitions_by_asset_key.keys()
+            handled_root_partitions_by_asset_key.keys()
         ):
-            prior_materialized_partitions = (
-                self.materialized_or_requested_root_partitions_by_asset_key.get(asset_key)
-            )
+            prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(asset_key)
             if prior_materialized_partitions is None:
                 prior_materialized_partitions = cast(
                     PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
                 ).empty_subset()
 
-            result_materialized_or_requested_root_partitions_by_asset_key[
+            result_handled_root_partitions_by_asset_key[
                 asset_key
             ] = prior_materialized_partitions.with_partition_keys(
                 itertools.chain(
                     newly_materialized_root_partitions_by_asset_key[asset_key],
-                    requested_root_partitions_by_asset_key[asset_key],
+                    handled_root_partitions_by_asset_key[asset_key],
                 )
             )
 
-        result_materialized_or_requested_root_asset_keys = (
-            self.materialized_or_requested_root_asset_keys
+        result_handled_root_asset_keys = (
+            self.handled_root_asset_keys
             | newly_materialized_root_asset_keys
-            | requested_non_partitioned_root_assets
+            | handled_non_partitioned_root_assets
         )
 
         result_last_observe_request_timestamp_by_asset_key = {
@@ -292,8 +295,8 @@ class AssetReconciliationCursor(NamedTuple):
 
         return AssetReconciliationCursor(
             latest_storage_id=latest_storage_id or self.latest_storage_id,
-            materialized_or_requested_root_asset_keys=result_materialized_or_requested_root_asset_keys,
-            materialized_or_requested_root_partitions_by_asset_key=result_materialized_or_requested_root_partitions_by_asset_key,
+            handled_root_asset_keys=result_handled_root_asset_keys,
+            handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
         )
@@ -302,8 +305,8 @@ class AssetReconciliationCursor(NamedTuple):
     def empty(cls) -> "AssetReconciliationCursor":
         return AssetReconciliationCursor(
             latest_storage_id=None,
-            materialized_or_requested_root_partitions_by_asset_key={},
-            materialized_or_requested_root_asset_keys=set(),
+            handled_root_partitions_by_asset_key={},
+            handled_root_asset_keys=set(),
             evaluation_id=0,
             last_observe_request_timestamp_by_asset_key={},
         )
@@ -316,30 +319,28 @@ class AssetReconciliationCursor(NamedTuple):
             check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
             (
                 latest_storage_id,
-                serialized_materialized_or_requested_root_asset_keys,
-                serialized_materialized_or_requested_root_partitions_by_asset_key,
+                serialized_handled_root_asset_keys,
+                serialized_handled_root_partitions_by_asset_key,
             ) = data[:3]
 
             evaluation_id = data[3] if len(data) == 4 else 0
             serialized_last_observe_request_timestamp_by_asset_key = {}
         else:
             latest_storage_id = data["latest_storage_id"]
-            serialized_materialized_or_requested_root_asset_keys = data[
-                "materialized_or_requested_root_asset_keys"
-            ]
-            serialized_materialized_or_requested_root_partitions_by_asset_key = data[
-                "materialized_or_requested_root_partitions_by_asset_key"
+            serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
+            serialized_handled_root_partitions_by_asset_key = data[
+                "handled_root_partitions_by_asset_key"
             ]
             evaluation_id = data["evaluation_id"]
             serialized_last_observe_request_timestamp_by_asset_key = data.get(
                 "last_observe_request_timestamp_by_asset_key", {}
             )
 
-        materialized_or_requested_root_partitions_by_asset_key = {}
+        handled_root_partitions_by_asset_key = {}
         for (
             key_str,
             serialized_subset,
-        ) in serialized_materialized_or_requested_root_partitions_by_asset_key.items():
+        ) in serialized_handled_root_partitions_by_asset_key.items():
             key = AssetKey.from_user_string(key_str)
             if key not in asset_graph.materializable_asset_keys:
                 continue
@@ -351,20 +352,17 @@ class AssetReconciliationCursor(NamedTuple):
             try:
                 # in the case that the partitions def has changed, we may not be able to deserialize
                 # the corresponding subset. in this case, we just use an empty subset
-                materialized_or_requested_root_partitions_by_asset_key[
-                    key
-                ] = partitions_def.deserialize_subset(serialized_subset)
+                handled_root_partitions_by_asset_key[key] = partitions_def.deserialize_subset(
+                    serialized_subset
+                )
             except:
-                materialized_or_requested_root_partitions_by_asset_key[
-                    key
-                ] = partitions_def.empty_subset()
+                handled_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
         return cls(
             latest_storage_id=latest_storage_id,
-            materialized_or_requested_root_asset_keys={
-                AssetKey.from_user_string(key_str)
-                for key_str in serialized_materialized_or_requested_root_asset_keys
+            handled_root_asset_keys={
+                AssetKey.from_user_string(key_str) for key_str in serialized_handled_root_asset_keys
             },
-            materialized_or_requested_root_partitions_by_asset_key=materialized_or_requested_root_partitions_by_asset_key,
+            handled_root_partitions_by_asset_key=handled_root_partitions_by_asset_key,
             evaluation_id=evaluation_id,
             last_observe_request_timestamp_by_asset_key={
                 AssetKey.from_user_string(key_str): timestamp
@@ -382,17 +380,17 @@ class AssetReconciliationCursor(NamedTuple):
             return data["evaluation_id"]
 
     def serialize(self) -> str:
-        serializable_materialized_or_requested_root_partitions_by_asset_key = {
+        serializable_handled_root_partitions_by_asset_key = {
             key.to_user_string(): subset.serialize()
-            for key, subset in self.materialized_or_requested_root_partitions_by_asset_key.items()
+            for key, subset in self.handled_root_partitions_by_asset_key.items()
         }
         serialized = json.dumps(
             {
                 "latest_storage_id": self.latest_storage_id,
-                "materialized_or_requested_root_asset_keys": [
-                    key.to_user_string() for key in self.materialized_or_requested_root_asset_keys
+                "handled_root_asset_keys": [
+                    key.to_user_string() for key in self.handled_root_asset_keys
                 ],
-                "materialized_or_requested_root_partitions_by_asset_key": serializable_materialized_or_requested_root_partitions_by_asset_key,
+                "handled_root_partitions_by_asset_key": serializable_handled_root_partitions_by_asset_key,
                 "evaluation_id": self.evaluation_id,
                 "last_observe_request_timestamp_by_asset_key": {
                     key.to_user_string(): timestamp
@@ -489,14 +487,26 @@ def find_parent_materialized_asset_partitions(
                         child_asset_partition = AssetKeyPartitionKey(child, child_partition)
                         if not can_reconcile_fn(child_asset_partition):
                             continue
-                        # cannot materialize in the same run if different partitions defs or
-                        # different partition keys
                         elif (
+                            # if child has a different partitions def than the parent, then it must
+                            # have been executed in a different run, so it's a valid candidate
                             child_partitions_def != partitions_def
+                            # if child partition key is not the same as any newly materialized
+                            # parent key, then it could not have been executed in the same run as
+                            # its parent
                             or child_partition not in partitions_subset
+                            # if child partition is not failed or in progress, then even if it was
+                            # executed in the same run, we can filter it out later with an is_reconciled
+                            # check (cheaper than the below logic)
+                            or child_partition
+                            not in instance_queryer.get_failed_or_in_progress_subset(
+                                asset_key=child
+                            )
                         ):
                             result_asset_partitions.add(child_asset_partition)
                         else:
+                            # manually query to see if this asset partition was intended to be
+                            # executed in the same run as its parent
                             latest_partition_record = check.not_none(
                                 instance_queryer.get_latest_materialization_or_observation_record(
                                     AssetKeyPartitionKey(asset_key, child_partition),
@@ -522,7 +532,7 @@ def find_parent_materialized_asset_partitions(
     return (result_asset_partitions, result_latest_storage_id)
 
 
-def find_never_materialized_or_requested_root_asset_partitions(
+def find_never_handled_root_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
     target_asset_keys: AbstractSet[AssetKey],
@@ -540,13 +550,13 @@ def find_never_materialized_or_requested_root_asset_partitions(
     - Asset (partition)s that had never been materialized or requested up to the previous cursor but
         are now materialized.
     """
-    never_materialized_or_requested = set()
+    never_handled = set()
     newly_materialized_root_asset_keys = set()
     newly_materialized_root_partitions_by_asset_key = defaultdict(set)
 
     for asset_key in target_asset_keys & asset_graph.root_asset_keys:
         if asset_graph.is_partitioned(asset_key):
-            for partition_key in cursor.get_never_requested_never_materialized_partitions(
+            for partition_key in cursor.get_unhandled_partitions(
                 asset_key,
                 asset_graph,
                 dynamic_partitions_store=instance_queryer,
@@ -558,33 +568,47 @@ def find_never_materialized_or_requested_root_asset_partitions(
                 ):
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
-                    never_materialized_or_requested.add(asset_partition)
+                    never_handled.add(asset_partition)
         else:
-            if not cursor.was_previously_materialized_or_requested(asset_key):
+            if not cursor.was_previously_handled(asset_key):
                 asset_partition = AssetKeyPartitionKey(asset_key)
                 if instance_queryer.asset_partition_has_materialization_or_observation(
                     asset_partition
                 ):
                     newly_materialized_root_asset_keys.add(asset_key)
                 else:
-                    never_materialized_or_requested.add(asset_partition)
+                    never_handled.add(asset_partition)
 
     return (
-        never_materialized_or_requested,
+        never_handled,
         newly_materialized_root_asset_keys,
         newly_materialized_root_partitions_by_asset_key,
     )
+
+
+def _decision_type_for_conditions(
+    conditions: Optional[AbstractSet[AutoMaterializeCondition]],
+) -> Optional[AutoMaterializeDecisionType]:
+    """Based on a set of conditions, determine the resulting decision."""
+    if not conditions:
+        return None
+    condition_decision_types = {condition.decision_type for condition in conditions}
+    # precedence of decisions
+    for decision_type in [
+        AutoMaterializeDecisionType.SKIP,
+        AutoMaterializeDecisionType.DISCARD,
+        AutoMaterializeDecisionType.MATERIALIZE,
+    ]:
+        if decision_type in condition_decision_types:
+            return decision_type
+    return None
 
 
 def _will_materialize_for_conditions(
     conditions: Optional[AbstractSet[AutoMaterializeCondition]],
 ) -> bool:
     """Based on a set of conditions, determine if the asset will be materialized."""
-    conditions = conditions or set()
-    return len(conditions) > 0 and all(
-        condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-        for condition in conditions
-    )
+    return _decision_type_for_conditions(conditions) == AutoMaterializeDecisionType.MATERIALIZE
 
 
 def determine_asset_partitions_to_auto_materialize(
@@ -606,10 +630,10 @@ def determine_asset_partitions_to_auto_materialize(
     evaluation_time = instance_queryer.evaluation_time
 
     (
-        never_materialized_or_requested_roots,
+        never_handled_roots,
         newly_materialized_root_asset_keys,
         newly_materialized_root_partitions_by_asset_key,
-    ) = find_never_materialized_or_requested_root_asset_partitions(
+    ) = find_never_handled_root_asset_partitions(
         instance_queryer=instance_queryer,
         cursor=cursor,
         target_asset_keys=target_asset_keys,
@@ -761,7 +785,7 @@ def determine_asset_partitions_to_auto_materialize(
         lambda candidates_unit, to_reconcile: should_reconcile(
             asset_graph, candidates_unit, to_reconcile
         ),
-        set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
+        set(itertools.chain(never_handled_roots, stale_candidates)),
         evaluation_time,
     )
 
@@ -868,7 +892,7 @@ def reconcile(
         run_requests,
         cursor.with_updates(
             latest_storage_id=latest_storage_id,
-            run_requests=run_requests,
+            conditions_by_asset_partition=conditions_by_asset_partition,
             asset_graph=asset_graph,
             newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
             newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,

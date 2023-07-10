@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import itertools
+import logging
 import os
 import random
 import sys
@@ -55,6 +56,7 @@ from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
+from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -124,6 +126,16 @@ class AssetReconciliationScenario(NamedTuple):
             # add any runs to the instance
             for dagster_run in self.dagster_runs or []:
                 instance.add_run(dagster_run)
+                # make sure to log the planned events
+                for asset_key in dagster_run.asset_selection:
+                    event = DagsterEvent(
+                        event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        job_name=dagster_run.job_name,
+                        event_specific_data=AssetMaterializationPlannedData(
+                            asset_key, partition=(dagster_run.tags or {}).get("dagster/partition")
+                        ),
+                    )
+                    instance.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
             # add any events to the instance
             for event_log_entry in self.event_log_entries or []:
