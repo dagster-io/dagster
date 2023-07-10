@@ -35,8 +35,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_snowflake_pyspark_tests*"]),
     install_requires=[
-        "dagster==1.3.14rc0",
-        "dagster-snowflake==0.19.14rc0",
+        "dagster==1.3.14rc1",
+        "dagster-snowflake==0.19.14rc1",
         "pyspark",
         "requests",
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350

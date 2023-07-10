@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_msteams_tests*"]),
     install_requires=[
-        "dagster==1.3.14rc0",
+        "dagster==1.3.14rc1",
         "requests>=2,<3",
     ],
     zip_safe=False,

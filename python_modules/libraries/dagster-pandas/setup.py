@@ -46,5 +46,5 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_pandas_tests*"]),
     include_package_data=True,
-    install_requires=["dagster==1.3.14rc0", "pandas"],
+    install_requires=["dagster==1.3.14rc1", "pandas"],
 )
