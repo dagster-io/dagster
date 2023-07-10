@@ -1,4 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
+import {Tag as BlueprintTag} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -32,9 +34,10 @@ import {
 interface Props {
   runIds?: string[];
   partitionKeys: string[];
+  intent?: React.ComponentProps<typeof BlueprintTag>['intent'];
 }
 
-export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: Props) => {
+export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, intent}: Props) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [queryString, setQueryString] = React.useState('');
   const queryLowercase = queryString.toLocaleLowerCase();
@@ -63,7 +66,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
     }
 
     return runIds ? (
-      <PartitionAndRunList runIds={runIds} partitionKeys={filteredPartitionKeys} />
+      <PartitionAndRunList runIds={runIds} partitionKeys={filteredPartitionKeys} intent={intent} />
     ) : (
       <VirtualizedPartitionList partitionKeys={partitionKeys} />
     );
@@ -71,7 +74,9 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
 
   return (
     <>
-      <ButtonLink onClick={() => setIsOpen(true)}>{label}</ButtonLink>
+      <ButtonLink onClick={() => setIsOpen(true)}>
+        <Tag intent={intent}>{label}</Tag>
+      </ButtonLink>
       <Dialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

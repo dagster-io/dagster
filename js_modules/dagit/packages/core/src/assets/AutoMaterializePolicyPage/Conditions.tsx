@@ -42,9 +42,11 @@ export const ConditionsWithPartitions = ({
   maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
 }: ConditionsWithPartitionsProps) => {
-  const buildRightElement = (partitionKeys: string[]) => {
+  const buildRightElement = (partitionKeys: string[], intent?: any) => {
     if (partitionKeys?.length) {
-      return <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} />;
+      return (
+        <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} intent={intent} />
+      );
     }
     return <div style={{color: Colors.Gray400}}>&ndash;</div>;
   };
@@ -106,6 +108,7 @@ export const ConditionsWithPartitions = ({
           met={conditionResults.has('MaxMaterializationsExceededAutoMaterializeCondition')}
           rightElement={buildRightElement(
             conditionToPartitions['MaxMaterializationsExceededAutoMaterializeCondition'],
+            'danger',
           )}
         />
       </CollapsibleSection>
