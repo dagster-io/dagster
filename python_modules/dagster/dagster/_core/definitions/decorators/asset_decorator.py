@@ -138,7 +138,7 @@ def asset(
             about the input.
         deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]):
             The assets that are upstream dependencies, but do not correspond to a parameter of the
-            decorated function
+            decorated function.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -453,8 +453,9 @@ def multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]): The assets that are upstream
-            dependencies, but do not pass an input value to the asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]):
+            The assets that are upstream dependencies, but do not correspond to a parameter of the
+            decorated function.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -542,18 +543,6 @@ def multi_asset(
     bare_required_resource_keys = set(required_resource_keys)
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
-
-    if non_argument_deps is not None and deps is not None:
-        raise DagsterInvalidDefinitionError(
-            "Cannot specify both deps and non_argument_deps. Use only deps instead."
-        )
-
-    upstream_asset_deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition]]] = deps
-    if non_argument_deps is not None:
-        deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
-        # this set -> list conversion is a side effect of the type changing from
-        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey]]
-        upstream_asset_deps = [dep for dep in non_argument_deps]
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
