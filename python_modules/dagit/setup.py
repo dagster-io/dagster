@@ -43,7 +43,7 @@ setup(
     packages=find_packages(exclude=["dagit_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster-webserver{pin}",
+        "dagster-webserver==1.3.14rc0",
     ],
     extras_require={
         "notebook": [f"dagster-webserver[notebook]{pin}"],  # notebooks support
