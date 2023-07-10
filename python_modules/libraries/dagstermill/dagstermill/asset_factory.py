@@ -98,7 +98,7 @@ def define_dagstermill_asset(
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
         deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]): The assets
-            that are upstream dependencies, but do not pass an input value to the asset.
+            that are upstream dependencies, but do not pass an input value to the notebook.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
