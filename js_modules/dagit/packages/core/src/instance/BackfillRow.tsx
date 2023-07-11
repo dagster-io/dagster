@@ -444,7 +444,6 @@ export const BackfillStatusTag = ({
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
       return <Tag>In Progress</Tag>;
-    case BulkActionStatus.CANCELED:
     case BulkActionStatus.FAILED:
       return (
         <Box margin={{bottom: 12}}>
@@ -454,7 +453,7 @@ export const BackfillStatusTag = ({
               showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
             }
           >
-            <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
+            <Tag intent="danger">Failed</Tag>
           </TagButton>
         </Box>
       );
@@ -474,6 +473,8 @@ export const BackfillStatusTag = ({
       return <Tag intent="warning">Incomplete</Tag>;
     case BulkActionStatus.CANCELING:
       return <Tag>Canceling</Tag>;
+    case BulkActionStatus.CANCELED:
+      return <Tag>Canceled</Tag>;
   }
 };
 
