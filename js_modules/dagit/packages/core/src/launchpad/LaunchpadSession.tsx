@@ -258,6 +258,18 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const modeError =
     configSchemaOrError?.__typename === 'ModeNotFoundError' ? configSchemaOrError : undefined;
 
+  const anyDefaultsToExpand = React.useMemo(() => {
+    if (!runConfigSchema?.rootDefaultYaml) {
+      return false;
+    }
+    const defaultsYaml = yaml.parse(sanitizeConfigYamlString(runConfigSchema?.rootDefaultYaml));
+
+    const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
+    const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
+
+    return yaml.stringify(currentUserConfig) !== yaml.stringify(updatedRunConfigData);
+  }, [currentSession.runConfigYaml, runConfigSchema?.rootDefaultYaml]);
+
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
@@ -728,6 +740,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}
               onScaffoldMissingConfig={onScaffoldMissingConfig}
               onExpandDefaults={onExpandDefaults}
+              anyDefaultsToExpand={anyDefaultsToExpand}
             />
           </>
         }
