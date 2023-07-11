@@ -1,5 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
+import * as yaml from 'yaml';
 
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -30,6 +31,24 @@ interface Props {
   sessionPresets?: Partial<IExecutionSession>;
 }
 
+const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
+  const parsedYaml = yaml.parse(defaultYaml);
+
+  const opsConfig = parsedYaml['ops'];
+  if (opsConfig) {
+    const filteredOpKeys = Object.keys(opsConfig).filter((entry: any) => {
+      return opNames.has(entry);
+    });
+    const filteredOpsConfig = filteredOpKeys.reduce(
+      (obj: any, key: any) => ((obj[key] = opsConfig[key]), obj),
+      {},
+    );
+    parsedYaml['ops'] = filteredOpsConfig;
+  }
+
+  return yaml.stringify(parsedYaml);
+};
+
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
 
@@ -54,6 +73,20 @@ export const LaunchpadAllowedRoot = (props: Props) => {
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
+
+  const filteredRootDefaultYaml = React.useMemo(() => {
+    if (result.data?.runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
+      return undefined;
+    }
+
+    const rootDefaultYaml = result.data.runConfigSchemaOrError.rootDefaultYaml;
+    const opNameList = sessionPresets?.assetSelection?.reduce(
+      (opNameList: string[], entry) => [...opNameList, ...entry.opNames],
+      [],
+    );
+    const opNames = new Set(opNameList);
+    return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
+  }, [result.data?.runConfigSchemaOrError, sessionPresets]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -114,11 +147,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
-        rootDefaultYaml={
-          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
-            ? result.data.runConfigSchemaOrError.rootDefaultYaml
-            : undefined
-        }
+        rootDefaultYaml={filteredRootDefaultYaml}
       />
     );
   } else {
