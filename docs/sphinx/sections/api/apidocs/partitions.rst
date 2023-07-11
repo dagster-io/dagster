@@ -46,6 +46,13 @@ Partition Mapping
 
 .. autoclass:: StaticPartitionMapping
 
+.. autoclass:: SpecificPartitionsPartitionMapping
+
+.. autoclass:: MultiToSingleDimensionPartitionMapping
+
+.. autoclass:: MultiPartitionMapping
+
+
 Partitioned Config
 ==================
 
