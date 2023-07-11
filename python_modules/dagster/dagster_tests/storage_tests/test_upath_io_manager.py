@@ -535,7 +535,6 @@ def test_upath_io_manager_async_multiple_time_partitions(
     assert len(downstream_asset_data) == 2, "downstream day should map to 2 upstream days"
 
 
-
 def test_upath_io_manager_async_fail_on_missing_partitions(
     tmp_path: Path,
     daily: DailyPartitionsDefinition,
@@ -586,11 +585,11 @@ def test_upath_io_manager_async_allow_missing_partitions(
         partitions_def=daily,
         io_manager_def=manager,
         ins={
-            "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1), metadata={
-                "allow_missing_partitions": True
-            })
+            "upstream_asset": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1),
+                metadata={"allow_missing_partitions": True},
+            )
         },
-
     )
     def downstream_asset(upstream_asset: Dict[str, str]):
         return upstream_asset
@@ -606,4 +605,3 @@ def test_upath_io_manager_async_allow_missing_partitions(
     )
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert len(downstream_asset_data) == 1, "1 partition should be missing"
-

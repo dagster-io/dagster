@@ -150,8 +150,10 @@ class UPathIOManager(MemoizableIOManager):
         return f"Loading partition {partition_key} from {path} using {self.__class__.__name__}..."
 
     def get_missing_partition_log_message(self, partition_key: str) -> str:
-        return f"Couldn't load partition {partition_key} and skipped it " \
-               f"because the input metadata includes allow_missing_partitions=True"
+        return (
+            f"Couldn't load partition {partition_key} and skipped it "
+            "because the input metadata includes allow_missing_partitions=True"
+        )
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
         """Returns the I/O path for a given context.
@@ -273,8 +275,6 @@ class UPathIOManager(MemoizableIOManager):
             if context.metadata is not None
             else False
         )
-        missing_partition_message = f"Couldn't load partition {partition_key} and skipped it "
-        "because the input metadata includes allow_missing_partitions=True"
 
         try:
             context.log.debug(self.get_loading_input_partition_log_message(path, partition_key))
@@ -291,12 +291,12 @@ class UPathIOManager(MemoizableIOManager):
                     return obj
                 except FileNotFoundError as e:
                     if allow_missing_partitions:
-                        context.log.debug(missing_partition_message)
+                        context.log.warning(self.get_missing_partition_log_message(partition_key))
                         return None
                     else:
                         raise e
             if allow_missing_partitions:
-                context.log.debug(missing_partition_message)
+                context.log.warning(self.get_missing_partition_log_message(partition_key))
                 return None
             else:
                 raise e
@@ -351,9 +351,9 @@ class UPathIOManager(MemoizableIOManager):
                     results_without_errors = []
                     for partition_key, result in zip(context.asset_partition_keys, results):
                         if isinstance(result, FileNotFoundError):
-                            context.log.warning(self.get_missing_partition_log_message(
-                                partition_key
-                            ))
+                            context.log.warning(
+                                self.get_missing_partition_log_message(partition_key)
+                            )
                         else:
                             results_without_errors.append(result)
 
