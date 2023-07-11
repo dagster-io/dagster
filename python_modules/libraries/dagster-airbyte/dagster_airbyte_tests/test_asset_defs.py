@@ -121,7 +121,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         destination_tables=destination_tables,
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
-        upstream_assets={AssetKey(source_asset)} if source_asset else None,
+        deps=[AssetKey(source_asset)] if source_asset else None,
         freshness_policy=freshness_policy,
     )
 

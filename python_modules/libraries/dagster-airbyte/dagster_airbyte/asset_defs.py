@@ -269,7 +269,7 @@ def build_airbyte_assets(
 
     # All non-normalization tables depend on any user-provided upstream assets
     for table in destination_tables:
-        internal_deps[table] = upstream_deps or set()
+        internal_deps[table] = set(upstream_deps) if upstream_deps else set()
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
