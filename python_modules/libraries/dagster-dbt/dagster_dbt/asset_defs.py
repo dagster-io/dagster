@@ -53,9 +53,10 @@ from dagster_dbt.asset_utils import (
     get_deps,
 )
 from dagster_dbt.core.resources import DbtCliClient
-from dagster_dbt.core.resources_v2 import DbtCli, DbtManifest
+from dagster_dbt.core.resources_v2 import DbtCli
 from dagster_dbt.core.types import DbtCliOutput
 from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
@@ -265,14 +266,15 @@ def _stream_event_iterator(
                 " metadata is yielded at runtime."
             )
 
-        class CustomDbtManifest(DbtManifest):
+        class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
             def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
                 return node_info_to_asset_key(node_info)
 
         cli_output = dbt_resource.cli(
             args=["build" if use_build_command else "run", *build_command_args_from_flags(kwargs)],
-            manifest=CustomDbtManifest(raw_manifest=manifest_json),
+            manifest=manifest_json,
+            dagster_dbt_translator=CustomDagsterDbtTranslator(),
         )
         yield from cli_output.stream()
 

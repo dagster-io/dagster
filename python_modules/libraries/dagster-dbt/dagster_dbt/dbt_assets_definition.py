@@ -90,9 +90,9 @@ class DbtAssetsDefinition(AssetsDefinition):
         """A mapping of the default asset key for a dbt node to the node's description in the manifest.
         """
         return {
-            self.dagster_dbt_translator.node_info_to_asset_key(node): self.node_info_to_description(
+            self.dagster_dbt_translator.node_info_to_asset_key(
                 node
-            )
+            ): self.dagster_dbt_translator.node_info_to_description(node)
             for node in self._node_info_by_dbt_unique_id.values()
         }
 
@@ -101,9 +101,9 @@ class DbtAssetsDefinition(AssetsDefinition):
         """A mapping of the default asset key for a dbt node to the node's metadata in the manifest.
         """
         return {
-            self.dagster_dbt_translator.node_info_to_asset_key(node): self.node_info_to_metadata(
+            self.dagster_dbt_translator.node_info_to_asset_key(
                 node
-            )
+            ): self.dagster_dbt_translator.node_info_to_metadata(node)
             for node in self._node_info_by_dbt_unique_id.values()
         }
 
@@ -154,12 +154,13 @@ class DbtAssetsDefinition(AssetsDefinition):
             .. code-block:: python
 
                 from dagster import asset
-                from dagster_dbt import DbtManifest
+                from dagster_dbt import dbt_assets
 
-                manifest = DbtManifest.read("path/to/manifest.json")
+                @dbt_assets(manifest=...)
+                def all_dbt_assets():
+                    ...
 
-
-                @asset(key=manifest.get_asset_key_for_source("my_source"))
+                @asset(key=all_dbt_assets.get_asset_key_for_source("my_source"))
                 def upstream_python_asset():
                     ...
         """
@@ -192,15 +193,16 @@ class DbtAssetsDefinition(AssetsDefinition):
             .. code-block:: python
 
                 from dagster import AssetOut, multi_asset
-                from dagster_dbt import DbtManifest
+                from dagster_dbt import dbt_assets
 
-                manifest = DbtManifest.read("path/to/manifest.json")
-
+                @dbt_assets(manifest=...)
+                def all_dbt_assets():
+                    ...
 
                 @multi_asset(
                     outs={
                         name: AssetOut(key=asset_key)
-                        for name, asset_key in manifest.get_asset_keys_by_output_name_for_source(
+                        for name, asset_key in all_dbt_assets.get_asset_keys_by_output_name_for_source(
                             "raw_data"
                         ).items()
                     },
@@ -240,12 +242,14 @@ class DbtAssetsDefinition(AssetsDefinition):
             .. code-block:: python
 
                 from dagster import asset
-                from dagster_dbt import DbtManifest
+                from dagster_dbt import dbt_assets
 
-                manifest = DbtManifest.read("path/to/manifest.json")
+                @dbt_assets(manifest=...)
+                def all_dbt_assets():
+                    ...
 
 
-                @asset(non_argument_deps={manifest.get_asset_key_for_model("customers")})
+                @asset(non_argument_deps={all_dbt_assets.get_asset_key_for_model("customers")})
                 def cleaned_customers():
                     ...
         """
@@ -284,12 +288,14 @@ class DbtAssetsDefinition(AssetsDefinition):
         Examples:
             .. code-block:: python
 
-                from dagster_dbt import DbtManifest
+                from dagster_dbt import dbt_assets
 
-                manifest = DbtManifest.read("path/to/manifest.json")
+                @dbt_assets(manifest=...)
+                def all_dbt_assets():
+                    ...
 
                 # Select the dbt assets that have the tag "foo".
-                my_selection = manifest.build_asset_selection(dbt_select="tag:foo")
+                my_selection = all_dbt_assets.build_dbt_asset_selection(dbt_select="tag:foo")
         """
         return DbtManifestAssetSelection(
             manifest=self._manifest,
@@ -330,11 +336,13 @@ class DbtAssetsDefinition(AssetsDefinition):
         Examples:
             .. code-block:: python
 
-                from dagster_dbt import DbtManifest
+                from dagster_dbt import dbt_assets
 
-                manifest = DbtManifest.read("path/to/manifest.json")
+                @dbt_assets(manifest=...)
+                def all_dbt_assets():
+                    ...
 
-                daily_dbt_assets_schedule = manifest.build_schedule(
+                daily_dbt_assets_schedule = all_dbt_assets.build_schedule_from_dbt_select(
                     job_name="all_dbt_assets",
                     cron_schedule="0 0 * * *",
                     dbt_select="fqn:*",

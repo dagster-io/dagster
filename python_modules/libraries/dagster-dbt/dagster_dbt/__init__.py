@@ -51,9 +51,9 @@ from .core import (
     DbtCli as DbtCli,
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliInvocation as DbtCliInvocation,
-    DbtManifest as DbtManifest,
-    DbtManifestAssetSelection as DbtManifestAssetSelection,
 )
+from .dagster_dbt_translator import DagsterDbtTranslator as DagsterDbtTranslator
+from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 
 # isort: split
 

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Optional, Set
 
@@ -5,10 +6,11 @@ import pytest
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtManifest
 
 manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
-manifest = DbtManifest.read(path=manifest_path)
+
+with open(manifest_path, "r") as f:
+    manifest = json.load(f)
 
 
 @pytest.mark.parametrize(
@@ -109,7 +111,7 @@ def test_dbt_asset_selection(
         ...
 
     asset_graph = AssetGraph.from_assets([my_dbt_assets])
-    asset_selection = manifest.build_asset_selection(
+    asset_selection = my_dbt_assets.build_dbt_asset_selection(
         dbt_select=select or "fqn:*",
         dbt_exclude=exclude,
     )

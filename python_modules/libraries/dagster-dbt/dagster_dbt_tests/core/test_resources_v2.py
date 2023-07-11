@@ -1,15 +1,15 @@
+import json
 import shutil
 from pathlib import Path
 from typing import List, Optional
 
 import pytest
 from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue, materialize
-from dagster_dbt import dbt_assets
+from dagster_dbt import DagsterDbtTranslator, dbt_assets
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCli,
     DbtCliEventMessage,
-    DbtManifest,
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
@@ -19,7 +19,8 @@ pytest.importorskip("dbt.version", minversion="1.4")
 
 
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
-manifest = DbtManifest.read(path=manifest_path)
+with open(manifest_path, "r") as f:
+    manifest = json.load(f)
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--debug"]])
@@ -223,16 +224,14 @@ def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     ],
 )
 def test_no_default_asset_events_emitted(data: dict) -> None:
-    manifest = DbtManifest(raw_manifest={})
     asset_events = DbtCliEventMessage(raw_event={"data": data}).to_default_asset_events(
-        manifest=manifest
+        manifest={}, dagster_dbt_translator=DagsterDbtTranslator()
     )
 
     assert list(asset_events) == []
 
 
 def test_to_default_asset_output_events() -> None:
-    manifest = DbtManifest(raw_manifest={})
     raw_event = {
         "data": {
             "node_info": {
@@ -245,7 +244,9 @@ def test_to_default_asset_output_events() -> None:
         }
     }
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
+            manifest={}, dagster_dbt_translator=DagsterDbtTranslator()
+        )
     )
 
     assert len(asset_events) == 1
@@ -257,30 +258,28 @@ def test_to_default_asset_output_events() -> None:
 
 
 def test_to_default_asset_observation_events() -> None:
-    manifest = DbtManifest(
-        raw_manifest={
-            "nodes": {
-                "a.b.c.d": {
-                    "resource_type": "model",
-                    "config": {},
-                    "name": "model",
-                }
-            },
-            "sources": {
-                "a.b.c.d.e": {
-                    "resource_type": "source",
-                    "source_name": "test",
-                    "name": "source",
-                }
-            },
-            "parent_map": {
-                "a.b.c": [
-                    "a.b.c.d",
-                    "a.b.c.d.e",
-                ]
-            },
-        }
-    )
+    manifest = {
+        "nodes": {
+            "a.b.c.d": {
+                "resource_type": "model",
+                "config": {},
+                "name": "model",
+            }
+        },
+        "sources": {
+            "a.b.c.d.e": {
+                "resource_type": "source",
+                "source_name": "test",
+                "name": "source",
+            }
+        },
+        "parent_map": {
+            "a.b.c": [
+                "a.b.c.d",
+                "a.b.c.d.e",
+            ]
+        },
+    }
     raw_event = {
         "data": {
             "node_info": {
@@ -292,7 +291,9 @@ def test_to_default_asset_observation_events() -> None:
         }
     }
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(
+            manifest=manifest, dagster_dbt_translator=DagsterDbtTranslator()
+        )
     )
 
     assert len(asset_events) == 2

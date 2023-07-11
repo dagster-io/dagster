@@ -22,21 +22,20 @@ class DbtManifestAssetSelection(AssetSelection):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
-        manifest (DbtManifest): The dbt manifest wrapper.
+        manifest (Mapping[str, Any]): The dbt manifest blob.
         select (str): A dbt selection string to specify a set of dbt resources.
         exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
 
     Examples:
         .. code-block:: python
 
-            from dagster_dbt import DbtManifest, DbtManifestAssetSelection
+            import json
+            from dagster_dbt import DbtManifestAssetSelection
 
-            manifest = DbtManifest.read("path/to/manifest.json")
+            with open("path/to/manifest.json", "r") as f:
+                manifest = json.load(f)
 
-            # Build the selection from the manifest: select the dbt assets that have the tag "foo".
-            my_selection = manifest.build_asset_selection(dbt_select="tag:foo")
-
-            # Or, manually build the same selection.
+            # select the dbt assets that have the tag "foo".
             my_selection = DbtManifestAssetSelection(manifest=manifest, select="tag:foo")
     """
 
