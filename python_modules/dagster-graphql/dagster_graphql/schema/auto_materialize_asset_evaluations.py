@@ -66,6 +66,8 @@ class GrapheneDownstreamFreshnessAutoMaterializeCondition(graphene.ObjectType):
 
 
 class GrapheneParentMaterializedAutoMaterializeCondition(graphene.ObjectType):
+    materializedAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
     class Meta:
         name = "ParentMaterializedAutoMaterializeCondition"
         interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
@@ -137,7 +139,9 @@ def create_graphene_auto_materialize_condition(
         )
     elif isinstance(condition, ParentMaterializedAutoMaterializeCondition):
         return GrapheneParentMaterializedAutoMaterializeCondition(
-            decisionType=condition.decision_type, partitionKeysOrError=partition_keys_or_error
+            decisionType=condition.decision_type,
+            partitionKeysOrError=partition_keys_or_error,
+            materializedAssetKeys=condition.materialized_asset_keys,
         )
     elif isinstance(condition, MissingAutoMaterializeCondition):
         return GrapheneMissingAutoMaterializeCondition(

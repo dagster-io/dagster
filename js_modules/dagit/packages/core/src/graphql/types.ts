@@ -2134,6 +2134,7 @@ export type OutputMapping = {
 export type ParentMaterializedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
   __typename: 'ParentMaterializedAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
+  materializedAssetKeys: Maybe<Array<AssetKey>>;
   partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
@@ -8234,6 +8235,10 @@ export const buildParentMaterializedAutoMaterializeCondition = (
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!
         : AutoMaterializeDecisionType.DISCARD,
+    materializedAssetKeys:
+      overrides && overrides.hasOwnProperty('materializedAssetKeys')
+        ? overrides.materializedAssetKeys!
+        : [],
     partitionKeysOrError:
       overrides && overrides.hasOwnProperty('partitionKeysOrError')
         ? overrides.partitionKeysOrError!
