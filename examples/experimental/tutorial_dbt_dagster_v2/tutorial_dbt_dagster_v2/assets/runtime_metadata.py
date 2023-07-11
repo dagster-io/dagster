@@ -1,10 +1,13 @@
+import json
+
 from dagster import OpExecutionContext, Output
-from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+from dagster_dbt import DbtCli, dbt_assets
 from dateutil import parser
 
 from ..constants import MANIFEST_PATH
 
-manifest = DbtManifest.read(path=MANIFEST_PATH)
+with MANIFEST_PATH.open() as f:
+    manifest = json.load(f)
 
 
 @dbt_assets(manifest=manifest)

@@ -14,15 +14,17 @@ from dagster import (
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtManifest
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
-manifest = DbtManifest.read(path=manifest_path)
+with open(manifest_path, "r") as f:
+    manifest = json.load(f)
 
 test_dagster_metadata_manifest_path = Path(__file__).parent.joinpath(
     "dbt_projects", "test_dagster_metadata", "manifest.json"
 )
-test_dagster_metadata_manifest = DbtManifest.read(path=test_dagster_metadata_manifest_path)
+with open(test_dagster_metadata_manifest_path, "r") as f:
+    test_dagster_metadata_manifest = json.load(f)
 
 
 def test_materialize(test_project_dir):
@@ -185,14 +187,12 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
 
 
 def test_with_asset_key_replacements() -> None:
-    class CustomizedDbtManifest(DbtManifest):
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
         def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
             return AssetKey(["prefix", *super().node_info_to_asset_key(node_info).path])
 
-    manifest = CustomizedDbtManifest.read(path=manifest_path)
-
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
         ...
 
@@ -210,14 +210,12 @@ def test_with_asset_key_replacements() -> None:
 def test_with_description_replacements() -> None:
     expected_description = "customized description"
 
-    class CustomizedDbtManifest(DbtManifest):
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
         def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
             return expected_description
 
-    manifest = CustomizedDbtManifest.read(path=manifest_path)
-
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
         ...
 
@@ -228,14 +226,12 @@ def test_with_description_replacements() -> None:
 def test_with_metadata_replacements() -> None:
     expected_metadata = {"customized": "metadata"}
 
-    class CustomizedDbtManifest(DbtManifest):
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
         def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
             return expected_metadata
 
-    manifest = CustomizedDbtManifest.read(path=manifest_path)
-
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
         ...
 
