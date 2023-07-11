@@ -1,3 +1,2 @@
-from dagster import asset
-
+import requests
 from . import constants
