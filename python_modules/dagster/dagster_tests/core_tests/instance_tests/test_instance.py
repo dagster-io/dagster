@@ -738,7 +738,7 @@ def test_get_status_by_partition(mock_get_and_update):
     with instance_for_test() as instance:
         partition_status = instance.get_status_by_partition(
             AssetKey("test-asset"),
-            DailyPartitionsDefinition(start_date="2023-06-01"),
             ["2023-07-01"],
+            DailyPartitionsDefinition(start_date="2023-06-01"),
         )
         assert partition_status == {"2023-07-01": AssetPartitionStatus.IN_PROGRESS}
