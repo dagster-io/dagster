@@ -208,6 +208,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
                 execution_period is not None
                 and execution_period.start <= current_time
                 and expected_data_time is not None
+                # This is the check that's failing
                 and expected_data_time >= execution_period.start
                 and all(
                     condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE

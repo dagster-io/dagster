@@ -450,13 +450,7 @@ auto_materialize_policy_scenarios = {
     "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
         assets=non_auto_to_lazy,
         asset_selection=AssetSelection.keys("auto"),
-        cursor_from=AssetReconciliationScenario(
-            assets=non_auto_to_lazy,
-            asset_selection=AssetSelection.keys("auto"),
-            unevaluated_runs=[run(["non_auto"])],
-            expected_run_requests=[],
-        ),
-        unevaluated_runs=[],
+        unevaluated_runs=[run(["non_auto"])],
         evaluation_delta=datetime.timedelta(hours=2),
         expected_run_requests=[run_request(["auto"])],
     ),
