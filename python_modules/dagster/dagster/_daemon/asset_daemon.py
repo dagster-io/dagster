@@ -13,7 +13,7 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
-    AUTO_MATERIALIZE_EVALUATION_ID_TAG,
+    ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
     AUTO_OBSERVE_TAG,
 )
@@ -132,7 +132,7 @@ class AssetDaemon(IntervalDaemon):
                 run_request._replace(
                     tags={
                         **run_request.tags,
-                        AUTO_MATERIALIZE_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
+                        ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
                     }
                 ),
                 instance,
