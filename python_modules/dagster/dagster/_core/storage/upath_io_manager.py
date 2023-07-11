@@ -66,6 +66,8 @@ class UPathIOManager(MemoizableIOManager):
             AbstractFileSystem: fsspec filesystem
 
         """
+        from upath import UPath
+
         if isinstance(self._base_path, UPath):
             return self._base_path.fs
         elif isinstance(self._base_path, Path):
@@ -80,6 +82,8 @@ class UPathIOManager(MemoizableIOManager):
         Returns:
             Dict[str, Any]: fsspec storage_options
         """
+        from upath import UPath
+
         if isinstance(self._base_path, UPath):
             return self._base_path._kwargs.copy()
         elif isinstance(self._base_path, Path):
@@ -159,7 +163,7 @@ class UPathIOManager(MemoizableIOManager):
 
     def get_path_for_partition(
         self, context: Union[InputContext, OutputContext], path: "UPath", partition: str
-    ) -> UPath:
+    ) -> "UPath":
         """Override this method if you want to use a different partitioning scheme
         (for example, if the saving function handles partitioning instead).
         The extension will be added later.
