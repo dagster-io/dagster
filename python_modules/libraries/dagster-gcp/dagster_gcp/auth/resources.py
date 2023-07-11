@@ -31,7 +31,7 @@ class GoogleAuthResource(ConfigurableResource):
 
         return values
 
-    def get_credentials(self):
+    def get_credentials(self) -> google.auth.credentials.Credentials:
         if self.service_account_file is not None:
             credentials = service_account.Credentials.from_service_account_file(
                 self.service_account_file
