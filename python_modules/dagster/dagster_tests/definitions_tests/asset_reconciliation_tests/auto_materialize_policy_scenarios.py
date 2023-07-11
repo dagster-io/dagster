@@ -1,3 +1,4 @@
+import datetime
 from typing import Sequence
 
 from dagster import (
@@ -74,6 +75,16 @@ static_partitioned_eager_after_non_partitioned = [
         ["unpartitioned"],
         partitions_def=two_partitions_partitions_def,
         auto_materialize_policy=AutoMaterializePolicy.eager(max_materializations_per_minute=2),
+    ),
+]
+
+non_auto_to_lazy = [
+    asset_def("non_auto"),
+    asset_def(
+        "auto",
+        ["non_auto"],
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
     ),
 ]
 
@@ -435,5 +446,19 @@ auto_materialize_policy_scenarios = {
             "C": {ParentMaterializedAutoMaterializeCondition()},
             "D": {ParentMaterializedAutoMaterializeCondition()},
         },
+    ),
+    "no_auto_materialize_policy_to_missing_lazy": AssetReconciliationScenario(
+        assets=non_auto_to_lazy,
+        asset_selection=AssetSelection.keys("auto"),
+        unevaluated_runs=[run(["non_auto"])],
+        evaluation_delta=datetime.timedelta(minutes=55),
+        expected_run_requests=[run_request(["auto"])],
+    ),
+    "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
+        assets=non_auto_to_lazy,
+        asset_selection=AssetSelection.keys("auto"),
+        unevaluated_runs=[run(["non_auto", "auto"]), run(["non_auto"])],
+        between_runs_delta=datetime.timedelta(minutes=55),
+        expected_run_requests=[run_request(["auto"])],
     ),
 }
