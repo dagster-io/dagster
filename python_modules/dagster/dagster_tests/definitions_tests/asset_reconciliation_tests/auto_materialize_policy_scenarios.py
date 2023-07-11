@@ -77,6 +77,11 @@ static_partitioned_eager_after_non_partitioned = [
     ),
 ]
 
+non_auto_to_lazy = [
+    asset_def("non_auto"),
+    asset_def("auto", ["non_auto"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
+]
+
 
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
@@ -435,5 +440,17 @@ auto_materialize_policy_scenarios = {
             "C": {ParentMaterializedAutoMaterializeCondition()},
             "D": {ParentMaterializedAutoMaterializeCondition()},
         },
+    ),
+    "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
+        assets=non_auto_to_lazy,
+        asset_selection=AssetSelection.keys("auto"),
+        cursor_from=AssetReconciliationScenario(
+            assets=non_auto_to_lazy,
+            asset_selection=AssetSelection.keys("auto"),
+            unevaluated_runs=[],
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["non_auto"])],
+        expected_run_requests=[run_request(["auto"])],
     ),
 }
