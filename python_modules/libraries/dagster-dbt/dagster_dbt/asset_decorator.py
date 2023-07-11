@@ -1,5 +1,7 @@
-from typing import Callable, Optional
+from pathlib import Path
+from typing import Any, Callable, Mapping, Optional, Union
 
+import dagster._check as check
 from dagster import AssetsDefinition, PartitionsDefinition, multi_asset
 from dagster._annotations import experimental
 
@@ -11,7 +13,7 @@ from .utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 @experimental
 def dbt_assets(
     *,
-    manifest: DbtManifest,
+    manifest: Union[Mapping[str, Any], DbtManifest, Path],
     select: str = "fqn:*",
     exclude: Optional[str] = None,
     io_manager_key: Optional[str] = None,
@@ -20,7 +22,10 @@ def dbt_assets(
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
 
     Args:
-        manifest (DbtManifest): The wrapper of a dbt manifest.json.
+        manifest (Union[Mapping[str, Any], DbtManifest, Path]): The contents of a manifest.json file
+            or the path to a manifest.json file. A manifest.json contains a representation of a
+            dbt project (models, tests, macros, etc). We use this representation to create
+            corresponding Dagster assets.
         select (Optional[str]): A dbt selection string for the models in a project that you want
             to include. Defaults to "*".
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
@@ -34,16 +39,21 @@ def dbt_assets(
     Examples:
         .. code-block:: python
 
+            from pathlib import Path
+
             from dagster import OpExecutionContext
-            from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+            from dagster_dbt import DbtCli, dbt_assets
 
-            manifest = DbtManifest.read(path="target/manifest.json")
-
-
-            @dbt_assets(manifest=manifest)
+            @dbt_assets(manifest=Path("target", "manifest.json"))
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
                 yield from dbt.cli(["build"], context=context).stream()
     """
+    check.inst_param(manifest, "manifest", (Path, dict, DbtManifest))
+    if isinstance(manifest, Path):
+        manifest = DbtManifest.read(path=manifest)
+    elif isinstance(manifest, Mapping):
+        manifest = DbtManifest(manifest)
+
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest.raw_manifest
     )

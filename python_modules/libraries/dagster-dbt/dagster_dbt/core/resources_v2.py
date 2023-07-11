@@ -799,12 +799,10 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
+                from pathlib import Path
                 from dagster_dbt import DbtCli, DbtManifest, dbt_assets
 
-                manifest = DbtManifest.read(path="target/manifest.json")
-
-
-                @dbt_assets(manifest=manifest)
+                @dbt_assets(manifest=Path("target", "manifest.json"))
                 def my_dbt_assets(context, dbt: DbtCli):
                     yield from dbt.cli(["run"], context=context).stream()
         """
@@ -980,12 +978,10 @@ class DbtCli(ConfigurableResource):
         Examples:
             .. code-block:: python
 
+                from pathlib import Path
                 from dagster_dbt import DbtCli, DbtManifest, dbt_assets
 
-                manifest = DbtManifest.read(path="target/manifest.json")
-
-
-                @dbt_assets(manifest=manifest)
+                @dbt_assets(manifest=Path("target", "manifest.json"))
                 def my_dbt_assets(context, dbt: DbtCli):
                     yield from dbt.cli(["run"], context=context).stream()
         """

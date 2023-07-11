@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import AbstractSet, Any, Mapping, Optional
 
@@ -32,6 +33,25 @@ def test_materialize(test_project_dir):
     assert materialize(
         [all_dbt_assets], resources={"dbt": DbtCli(project_dir=test_project_dir)}
     ).success
+
+
+@pytest.mark.parametrize("manifest", [json.load(manifest_path.open()), manifest_path])
+def test_manifest_argument(manifest):
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.keys == {
+        AssetKey.from_user_string(key)
+        for key in [
+            "sort_by_calories",
+            "cold_schema/sort_cold_cereals_by_calories",
+            "subdir_schema/least_caloric",
+            "sort_hot_cereals_by_calories",
+            "orders_snapshot",
+            "cereals",
+        ]
+    }
 
 
 @pytest.mark.parametrize(
