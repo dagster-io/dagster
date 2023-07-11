@@ -1,3 +1,4 @@
+import datetime
 from typing import Sequence
 
 from dagster import (
@@ -79,7 +80,12 @@ static_partitioned_eager_after_non_partitioned = [
 
 non_auto_to_lazy = [
     asset_def("non_auto"),
-    asset_def("auto", ["non_auto"], auto_materialize_policy=AutoMaterializePolicy.lazy()),
+    asset_def(
+        "auto",
+        ["non_auto"],
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+    ),
 ]
 
 
@@ -447,10 +453,11 @@ auto_materialize_policy_scenarios = {
         cursor_from=AssetReconciliationScenario(
             assets=non_auto_to_lazy,
             asset_selection=AssetSelection.keys("auto"),
-            unevaluated_runs=[],
+            unevaluated_runs=[run(["non_auto"])],
             expected_run_requests=[],
         ),
-        unevaluated_runs=[run(["non_auto"])],
+        unevaluated_runs=[],
+        evaluation_delta=datetime.timedelta(hours=2),
         expected_run_requests=[run_request(["auto"])],
     ),
 }
