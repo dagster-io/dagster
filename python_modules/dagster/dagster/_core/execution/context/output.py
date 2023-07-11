@@ -743,6 +743,10 @@ def get_output_context(
     asset_info = job_def.asset_layer.asset_info_for_output(
         node_handle=node_handle, output_name=step_output.name
     )
+    if asset_info is not None:
+        metadata = job_def.asset_layer.metadata_for_asset(asset_info.key) or output_def.metadata
+    else:
+        metadata = output_def.metadata
 
     if step_context:
         check.invariant(
@@ -760,7 +764,7 @@ def get_output_context(
         name=step_output_handle.output_name,
         job_name=job_def.name,
         run_id=run_id,
-        metadata=output_def.metadata,
+        metadata=metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
         op_def=job_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
