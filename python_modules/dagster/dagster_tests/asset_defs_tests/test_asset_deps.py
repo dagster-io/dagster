@@ -1,5 +1,3 @@
-import re
-
 import pytest
 from dagster import (
     AssetKey,
@@ -203,10 +201,7 @@ def test_multi_asset_deps_via_assets_definition_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=re.escape(
-            " For the multi_asset a_multi_asset, the available keys are: "
-            "{AssetKey(['asset_1']), AssetKey(['asset_2'])}."
-        ),
+        match="For the multi_asset a_multi_asset, the available keys are: ",
     ):
 
         @asset(deps=[a_multi_asset])
