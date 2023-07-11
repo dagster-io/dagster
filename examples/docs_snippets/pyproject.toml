@@ -8,7 +8,7 @@
 line-length = 88
 preview = true
 required-version = "22.12.0"
-target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+target-version = ['py38', 'py39', 'py310', 'py311']
 
 [tool.ruff]
 

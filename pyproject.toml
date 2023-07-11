@@ -19,7 +19,7 @@ preview = true
 required-version = "22.12.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+target-version = ['py38', 'py39', 'py310', 'py311']
 
 # ########################
 # ##### PYRIGHT
@@ -69,7 +69,7 @@ analyzeUnannotatedFunctions = false
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
-pythonVersion = "3.7"
+pythonVersion = "3.8"
 
 # Use "basic" ruleset. This differs from strict in several ways, but most
 # importantly it does not flag untyped code as an error.

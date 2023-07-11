@@ -59,9 +59,9 @@ For local dev (e.g., on kind or minikube):
 
    helm install \
        --set dagit.image.repository="dagster.io/buildkite-test-image" \
-       --set dagit.image.tag="py37-latest" \
+       --set dagit.image.tag="py310-latest" \
        --set job_runner.image.repository="dagster.io/buildkite-test-image" \
-       --set job_runner.image.tag="py37-latest" \
+       --set job_runner.image.tag="py310-latest" \
        --set imagePullPolicy="IfNotPresent" \
        dagster \
        helm/dagster/
@@ -150,7 +150,7 @@ the repo:
 .. code-block:: shell
 
    ./python_modules/dagster-test/dagster_test/test_project/build.sh 3.7.6 \
-       dagster.io.priv/buildkite-test-image:py37-latest
+       dagster.io.priv/buildkite-test-image:py310-latest
 
 In the above invocation, the Python majmin version should be appropriate for your desired tests.
 
@@ -160,7 +160,7 @@ feedback from the loading process.
 .. code-block:: shell
 
    kind create cluster --name kind-test
-   kind load docker-image --name kind-test dagster.io/dagster-docker-buildkite:py37-latest
+   kind load docker-image --name kind-test dagster.io/dagster-docker-buildkite:py310-latest
 
 If you are deploying the Helm chart with an in-cluster Postgres (rather than an external database),
 and/or with dagster-celery workers (and a RabbitMQ), you'll also want to have images present for

@@ -24,7 +24,6 @@ setup(
     description="Package for AWS-specific Dagster framework solid and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
