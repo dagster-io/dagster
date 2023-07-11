@@ -42,7 +42,7 @@ def dbt_assets(
 
             @dbt_assets(manifest=manifest)
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
-                yield from dbt.cli(["build"], manifest=manifest, context=context).stream()
+                yield from dbt.cli(["build"], context=context).stream()
     """
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest.raw_manifest
@@ -60,6 +60,7 @@ def dbt_assets(
         dbt_nodes=manifest.node_info_by_dbt_unique_id,
         deps=deps,
         io_manager_key=io_manager_key,
+        manifest=manifest,
     )
 
     def inner(fn) -> AssetsDefinition:

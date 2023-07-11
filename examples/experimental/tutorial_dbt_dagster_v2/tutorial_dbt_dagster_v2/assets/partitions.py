@@ -12,7 +12,7 @@ manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 @dbt_assets(manifest=manifest, select=DBT_SELECT_SEED)
 def dbt_seed_assets(context: OpExecutionContext, dbt: DbtCli):
-    yield from dbt.cli(["seed"], manifest=manifest, context=context).stream()
+    yield from dbt.cli(["seed"], context=context).stream()
 
 
 @dbt_assets(
@@ -24,4 +24,4 @@ def dbt_daily_assets(context: OpExecutionContext, dbt: DbtCli):
     dbt_vars = {"date": context.partition_key}
     dbt_args = ["run", "--vars", json.dumps(dbt_vars)]
 
-    yield from dbt.cli(dbt_args, manifest=manifest, context=context).stream()
+    yield from dbt.cli(dbt_args, context=context).stream()

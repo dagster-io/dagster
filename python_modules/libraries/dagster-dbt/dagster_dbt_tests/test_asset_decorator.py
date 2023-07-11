@@ -8,8 +8,10 @@ from dagster import (
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
+    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtManifest
 
@@ -20,6 +22,16 @@ test_dagster_metadata_manifest_path = Path(__file__).parent.joinpath(
     "dbt_projects", "test_dagster_metadata", "manifest.json"
 )
 test_dagster_metadata_manifest = DbtManifest.read(path=test_dagster_metadata_manifest_path)
+
+
+def test_materialize(test_project_dir):
+    @dbt_assets(manifest=manifest)
+    def all_dbt_assets(context, dbt: DbtCli):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    assert materialize(
+        [all_dbt_assets], resources={"dbt": DbtCli(project_dir=test_project_dir)}
+    ).success
 
 
 @pytest.mark.parametrize(

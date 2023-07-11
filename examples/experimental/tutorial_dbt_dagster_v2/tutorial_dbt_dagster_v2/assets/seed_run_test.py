@@ -15,4 +15,4 @@ def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
     ]
 
     for dbt_command in dbt_commands:
-        yield from dbt.cli(dbt_command, manifest=manifest, context=context).stream()
+        yield from dbt.cli(dbt_command, context=context).stream()
