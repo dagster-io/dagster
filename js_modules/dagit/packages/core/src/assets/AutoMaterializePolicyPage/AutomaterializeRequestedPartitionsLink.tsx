@@ -52,7 +52,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
 
   const label = React.useMemo(() => {
     if (runIds) {
-      return count === 1 ? '1 partition requested' : `${count} partitions requested`;
+      return count === 1 ? '1 partition launched' : `${count} partitions launched`;
     }
     return count === 1 ? '1 partition' : `${count} partitions`;
   }, [count, runIds]);
