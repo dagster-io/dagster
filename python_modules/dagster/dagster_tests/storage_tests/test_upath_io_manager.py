@@ -6,18 +6,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
 import pytest
-from fsspec.asyn import AsyncFileSystem
-from pydantic import (
-    Field as PydanticField,
-    PrivateAttr,
-)
-from upath import UPath
-
 from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
     ConfigurableIOManager,
+    DagsterInvariantViolationError,
     DagsterType,
     DailyPartitionsDefinition,
     Field,
@@ -35,14 +29,18 @@ from dagster import (
     build_output_context,
     io_manager,
     materialize,
-    DagsterInvariantViolationError,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
-
+from fsspec.asyn import AsyncFileSystem
+from pydantic import (
+    Field as PydanticField,
+    PrivateAttr,
+)
+from upath import UPath
 
 
 class DummyIOManager(UPathIOManager):
@@ -444,8 +442,6 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
     async def load_from_path(self, context: InputContext, path: UPath) -> Any:
         fs = self.get_async_filesystem(path)
 
-        assert path.exists(), f"Path {path} does not exist, is the test written correctly?"
-
         if inspect.iscoroutinefunction(fs.open_async):
             # S3FileSystem has this interface
             file = await fs.open_async(str(path), "rb")
@@ -525,7 +521,7 @@ def test_upath_io_manager_async_multiple_time_partitions(
     def downstream_asset(upstream_asset: Dict[str, str]):
         return upstream_asset
 
-    for days in range(5):
+    for days in range(2):
         materialize(
             [upstream_asset],
             partition_key=(start + timedelta(days=days)).strftime(daily.fmt),
@@ -533,7 +529,81 @@ def test_upath_io_manager_async_multiple_time_partitions(
 
     result = materialize(
         [upstream_asset.to_source_asset(), downstream_asset],
-        partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
+        partition_key=(start + timedelta(days=1)).strftime(daily.fmt),
     )
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert len(downstream_asset_data) == 2, "downstream day should map to 2 upstream days"
+
+
+
+def test_upath_io_manager_async_fail_on_missing_partitions(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1))
+        },
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]):
+        return upstream_asset
+
+    materialize(
+        [upstream_asset],
+        partition_key=start.strftime(daily.fmt),
+    )
+
+    with pytest.raises(FileNotFoundError):
+        result = materialize(
+            [upstream_asset.to_source_asset(), downstream_asset],
+            partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
+        )
+        downstream_asset_data = result.output_for_node("downstream_asset", "result")
+        assert len(downstream_asset_data) == 1, "1 partition should be missing"
+
+
+def test_upath_io_manager_async_allow_missing_partitions(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1), metadata={
+                "allow_missing_partitions": True
+            })
+        },
+
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]):
+        return upstream_asset
+
+    materialize(
+        [upstream_asset],
+        partition_key=start.strftime(daily.fmt),
+    )
+
+    result = materialize(
+        [upstream_asset.to_source_asset(), downstream_asset],
+        partition_key=(start + timedelta(days=1)).strftime(daily.fmt),
+    )
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert len(downstream_asset_data) == 1, "1 partition should be missing"
+

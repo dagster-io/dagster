@@ -2,14 +2,12 @@ import asyncio
 import inspect
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
 from fsspec import AbstractFileSystem
-from fsspec.asyn import AsyncFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
 from dagster import (
-    DagsterInvariantViolationError,
     InputContext,
     MetadataValue,
     MultiPartitionKey,
@@ -17,9 +15,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
-
-from typing import TYPE_CHECKING
-
 
 if TYPE_CHECKING:
     from upath import UPath
@@ -60,10 +55,10 @@ class UPathIOManager(MemoizableIOManager):
 
     @property
     def fs(self) -> AbstractFileSystem:
-        """
-        Utility function to get the IOManager filesystem.
+        """Utility function to get the IOManager filesystem.
+
         Returns:
-            AbstractFileSystem: fsspec filesystem
+            AbstractFileSystem: fsspec filesystem.
 
         """
         from upath import UPath
@@ -77,10 +72,10 @@ class UPathIOManager(MemoizableIOManager):
 
     @property
     def storage_options(self) -> Dict[str, Any]:
-        """
-        Utility function to get the fsspec storage_options which are often consumed by various I/O functions.
+        """Utility function to get the fsspec storage_options which are often consumed by various I/O functions.
+
         Returns:
-            Dict[str, Any]: fsspec storage_options
+            Dict[str, Any]: fsspec storage_options.
         """
         from upath import UPath
 
@@ -153,6 +148,10 @@ class UPathIOManager(MemoizableIOManager):
 
     def get_loading_input_partition_log_message(self, path: "UPath", partition_key: str) -> str:
         return f"Loading partition {partition_key} from {path} using {self.__class__.__name__}..."
+
+    def get_missing_partition_log_message(self, partition_key: str) -> str:
+        return f"Couldn't load partition {partition_key} and skipped it " \
+               f"because the input metadata includes allow_missing_partitions=True"
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> "UPath":
         """Returns the I/O path for a given context.
@@ -338,7 +337,27 @@ class UPathIOManager(MemoizableIOManager):
                         )
                     )
 
-                results = await asyncio.gather(*tasks)
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                # need to handle missing partitions here because exceptions don't get propagated from async calls
+                allow_missing_partitions = (
+                    context.metadata.get("allow_missing_partitions", False)
+                    if context.metadata is not None
+                    else False
+                )
+
+                if allow_missing_partitions:
+                    # only keep results which are not errors
+                    results_without_errors = []
+                    for partition_key, result in zip(context.asset_partition_keys, results):
+                        if isinstance(result, FileNotFoundError):
+                            context.log.warning(self.get_missing_partition_log_message(
+                                partition_key
+                            ))
+                        else:
+                            results_without_errors.append(result)
+
+                    results = results_without_errors
 
                 return results
 
