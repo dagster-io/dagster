@@ -451,7 +451,7 @@ auto_materialize_policy_scenarios = {
         assets=non_auto_to_lazy,
         asset_selection=AssetSelection.keys("auto"),
         unevaluated_runs=[run(["non_auto"])],
-        evaluation_delta=datetime.timedelta(hours=2),
+        evaluation_delta=datetime.timedelta(minutes=55),
         expected_run_requests=[run_request(["auto"])],
     ),
 }
