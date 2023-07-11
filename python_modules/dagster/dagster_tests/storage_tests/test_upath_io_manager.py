@@ -562,12 +562,10 @@ def test_upath_io_manager_async_fail_on_missing_partitions(
     )
 
     with pytest.raises(FileNotFoundError):
-        result = materialize(
+        materialize(
             [upstream_asset.to_source_asset(), downstream_asset],
             partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
         )
-        downstream_asset_data = result.output_for_node("downstream_asset", "result")
-        assert len(downstream_asset_data) == 1, "1 partition should be missing"
 
 
 def test_upath_io_manager_async_allow_missing_partitions(
