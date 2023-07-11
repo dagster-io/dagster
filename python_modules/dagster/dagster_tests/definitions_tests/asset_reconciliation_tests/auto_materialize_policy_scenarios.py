@@ -447,11 +447,18 @@ auto_materialize_policy_scenarios = {
             "D": {ParentMaterializedAutoMaterializeCondition()},
         },
     ),
-    "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
+    "no_auto_materialize_policy_to_missing_lazy": AssetReconciliationScenario(
         assets=non_auto_to_lazy,
         asset_selection=AssetSelection.keys("auto"),
         unevaluated_runs=[run(["non_auto"])],
         evaluation_delta=datetime.timedelta(minutes=55),
+        expected_run_requests=[run_request(["auto"])],
+    ),
+    "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
+        assets=non_auto_to_lazy,
+        asset_selection=AssetSelection.keys("auto"),
+        unevaluated_runs=[run(["non_auto", "auto"]), run(["non_auto"])],
+        between_runs_delta=datetime.timedelta(minutes=55),
         expected_run_requests=[run_request(["auto"])],
     ),
 }
