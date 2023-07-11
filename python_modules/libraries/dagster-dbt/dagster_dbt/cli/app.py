@@ -3,9 +3,10 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import typer
+import yaml
 from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
@@ -31,7 +32,16 @@ DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DAGSTER_DBT_PROJECT_DIR_NAME = "dagster"
 
 
-def validate_dagster_project_name(project_name: str) -> str:
+def validate_dagster_project_name(ctx: typer.Context, project_name: Optional[str]) -> str:
+    dbt_project_dir: Path = ctx.params["dbt_project_dir"]
+
+    dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
+    with dbt_project_yaml_path.open() as fd:
+        dbt_project_yaml = yaml.safe_load(fd)
+        dbt_project_name: str = dbt_project_yaml["name"]
+
+    project_name = project_name or dbt_project_name
+
     if not project_name.isidentifier():
         raise typer.BadParameter(
             "The project name must be a valid Python identifier containing only letters, digits, or"
@@ -56,15 +66,17 @@ def validate_dbt_project_dir(dbt_project_dir: Path) -> Path:
 @project_app.command(name="scaffold")
 def project_scaffold_command(
     project_name: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             default=...,
             show_default=False,
-            help="The name of the Dagster project to initialize for your dbt project.",
-            prompt="Enter a name for your Dagster project (letters, digits, underscores)",
+            help=(
+                "The name of the Dagster project to initialize for your dbt project. By default, we"
+                " use the name of your dbt project."
+            ),
             callback=validate_dagster_project_name,
         ),
-    ],
+    ] = None,
     dbt_project_dir: Annotated[
         Path,
         typer.Option(
@@ -74,6 +86,7 @@ def project_scaffold_command(
                 " working directory."
             ),
             callback=validate_dbt_project_dir,
+            is_eager=True,
             exists=True,
             file_okay=False,
             dir_okay=True,
