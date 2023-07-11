@@ -43,10 +43,11 @@ def test_old_resource_authenticate_via_config():
 def test_pythonic_resource_authenticate_via_config():
     @asset
     def test_asset(bigquery: BigQueryResource) -> int:
-        assert bigquery.google_auth_resource is not None
+        assert bigquery.google_auth_resource is None
 
-        assert bigquery.google_auth_resource.service_account_info is not None
-        assert bigquery.google_auth_resource.service_account_file is None
+        # this query will fail if credentials aren't set correctly
+        with bigquery.get_client() as client:
+            client.query("SELECT 1").result()
         return 1
 
     gcp_creds_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", None)
