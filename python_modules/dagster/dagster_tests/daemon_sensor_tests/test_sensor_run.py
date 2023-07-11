@@ -29,7 +29,6 @@ from dagster import (
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
-    build_asset_reconciliation_sensor,
     define_asset_job,
     load_assets_from_current_module,
     materialize,
@@ -38,6 +37,7 @@ from dagster import (
     run_failure_sensor,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor

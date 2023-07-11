@@ -8,12 +8,12 @@ from dagster import (
     SkipReason,
     StaticPartitionsDefinition,
     asset,
-    build_asset_reconciliation_sensor,
     job,
     multi_asset,
     multi_asset_sensor,
     op,
 )
+from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
 
 
 @asset
