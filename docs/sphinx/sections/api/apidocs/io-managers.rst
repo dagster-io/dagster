@@ -37,13 +37,16 @@ Input and Output Contexts
 Built-in IO Managers
 ------------------------
 
-.. autodata:: mem_io_manager
-  :annotation: IOManagerDefinition
-
 .. autodata:: FilesystemIOManager
   :annotation: IOManagerDefinition
 
 .. autodata:: fs_io_manager
+  :annotation: IOManagerDefinition
+
+.. autodata:: InMemoryIOManager
+  :annotation: IOManagerDefinition
+
+.. autodata:: mem_io_manager
   :annotation: IOManagerDefinition
 
 The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers.
