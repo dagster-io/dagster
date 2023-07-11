@@ -9,13 +9,13 @@ from dagster import (
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
-    materialize,
     asset,
+    materialize,
 )
-from dagster_dbt import DbtCli
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
+from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
