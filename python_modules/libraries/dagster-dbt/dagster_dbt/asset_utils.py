@@ -8,7 +8,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Set,
     Tuple,
 )
@@ -27,8 +26,6 @@ from dagster import (
 from dagster._utils.merger import merge_dicts
 
 from .utils import input_name_fn, output_name_fn
-
-MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 
 ###################
 # DEFAULT FUNCTIONS

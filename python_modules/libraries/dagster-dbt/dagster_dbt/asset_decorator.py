@@ -25,16 +25,11 @@ from dagster import (
 from dagster._annotations import experimental
 
 from .asset_utils import (
-    MANIFEST_METADATA_KEY,
-    default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
-    default_description_fn,
     default_freshness_policy_fn,
     default_group_fn,
-    default_metadata_fn,
     get_deps,
-    output_name_fn,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator
 from .dbt_assets_definition import DbtAssetsDefinition
@@ -137,9 +132,8 @@ def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
-    manifest: "DbtManifest",
+    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Tuple[Sequence[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
-    """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
     non_argument_deps: Set[AssetKey] = set()
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
@@ -148,18 +142,15 @@ def get_dbt_multi_asset_args(
         node_info = dbt_nodes[unique_id]
 
         output_name = output_name_fn(node_info)
-        asset_key = default_asset_key_fn(node_info)
+        asset_key = dagster_dbt_translator.node_info_to_asset_key(node_info)
 
         outs[output_name] = AssetOut(
             key=asset_key,
             dagster_type=Nothing,
             io_manager_key=io_manager_key,
-            description=default_description_fn(node_info, display_raw_sql=False),
+            description=dagster_dbt_translator.node_info_to_description(node_info),
             is_required=False,
-            metadata={  # type: ignore
-                **default_metadata_fn(node_info),
-                MANIFEST_METADATA_KEY: manifest,
-            },
+            metadata=dagster_dbt_translator.node_info_to_metadata(node_info),
             group_name=default_group_fn(node_info),
             code_version=default_code_version_fn(node_info),
             freshness_policy=default_freshness_policy_fn(node_info),
@@ -170,7 +161,7 @@ def get_dbt_multi_asset_args(
         output_internal_deps = internal_asset_deps.setdefault(output_name, set())
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = default_asset_key_fn(parent_node_info)
+            parent_asset_key = dagster_dbt_translator.node_info_to_asset_key(parent_node_info)
 
             # Add this parent as an internal dependency
             output_internal_deps.add(parent_asset_key)
