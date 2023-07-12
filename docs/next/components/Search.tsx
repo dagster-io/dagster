@@ -70,7 +70,7 @@ export function Search() {
       <Head>
         <link
           rel="preconnect"
-          href={`https://${process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}-dsn.algolia.net`}
+          href={`https://${process.env.NEXT_PUBLIC_ALGOLIA_APP_ID_TEST}-dsn.algolia.net`}
           crossOrigin="true"
         />
       </Head>
@@ -126,9 +126,9 @@ export function Search() {
               }}
               onClose={onClose}
               insights
-              indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME}
-              apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
-              appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
+              indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME_TEST}
+              apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY_TEST}
+              appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID_TEST}
               navigator={{
                 navigate({itemUrl}) {
                   setIsOpen(false);
