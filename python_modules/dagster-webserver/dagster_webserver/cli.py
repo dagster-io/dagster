@@ -271,7 +271,7 @@ def main():
                 os.environ[new_key] = val
 
     if sys.argv[0].endswith("dagit"):
-        WEBSERVER_LOGGER_NAME = "dagster_webserver"
+        WEBSERVER_LOGGER_NAME = "dagit"
 
     # click magic
     cli(auto_envvar_prefix="DAGSTER_WEBSERVER")
