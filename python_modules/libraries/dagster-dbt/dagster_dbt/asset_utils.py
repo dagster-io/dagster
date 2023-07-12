@@ -1,7 +1,6 @@
 import hashlib
 import textwrap
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -15,7 +14,6 @@ from typing import (
 
 from dagster import (
     AssetKey,
-    AssetOut,
     AutoMaterializePolicy,
     FreshnessPolicy,
     In,
@@ -28,9 +26,6 @@ from dagster import (
 from dagster._utils.merger import merge_dicts
 
 from .utils import input_name_fn, output_name_fn
-
-if TYPE_CHECKING:
-    from dagster_dbt.core.resources_v2 import DbtManifest
 
 MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 
@@ -240,55 +235,6 @@ def get_deps(
     }
 
     return frozen_asset_deps
-
-
-def get_dbt_multi_asset_args(
-    dbt_nodes: Mapping[str, Any],
-    deps: Mapping[str, FrozenSet[str]],
-    io_manager_key: Optional[str],
-    manifest: "DbtManifest",
-) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
-    """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
-    non_argument_deps: Set[AssetKey] = set()
-    outs: Dict[str, AssetOut] = {}
-    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
-
-    for unique_id, parent_unique_ids in deps.items():
-        node_info = dbt_nodes[unique_id]
-
-        output_name = output_name_fn(node_info)
-        asset_key = default_asset_key_fn(node_info)
-
-        outs[output_name] = AssetOut(
-            key=asset_key,
-            dagster_type=Nothing,
-            io_manager_key=io_manager_key,
-            description=default_description_fn(node_info, display_raw_sql=False),
-            is_required=False,
-            metadata={  # type: ignore
-                **default_metadata_fn(node_info),
-                MANIFEST_METADATA_KEY: manifest,
-            },
-            group_name=default_group_fn(node_info),
-            code_version=default_code_version_fn(node_info),
-            freshness_policy=default_freshness_policy_fn(node_info),
-            auto_materialize_policy=default_auto_materialize_policy_fn(node_info),
-        )
-
-        # Translate parent unique ids to internal asset deps and non argument dep
-        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
-        for parent_unique_id in parent_unique_ids:
-            parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = default_asset_key_fn(parent_node_info)
-
-            # Add this parent as an internal dependency
-            output_internal_deps.add(parent_asset_key)
-
-            # Mark this parent as an input if it has no dependencies
-            if parent_unique_id not in deps:
-                non_argument_deps.add(parent_asset_key)
-
-    return non_argument_deps, outs, internal_asset_deps
 
 
 def get_asset_deps(
