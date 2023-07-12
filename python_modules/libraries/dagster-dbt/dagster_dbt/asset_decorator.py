@@ -1,6 +1,18 @@
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Sequence, Set, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster import (
@@ -13,11 +25,16 @@ from dagster import (
 from dagster._annotations import experimental
 
 from .asset_utils import (
+    MANIFEST_METADATA_KEY,
+    default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
+    default_description_fn,
     default_freshness_policy_fn,
     default_group_fn,
+    default_metadata_fn,
     get_deps,
+    output_name_fn,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator
 from .dbt_assets_definition import DbtAssetsDefinition
