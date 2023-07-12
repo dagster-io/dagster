@@ -609,9 +609,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     def _get_updated_or_missing_parent_asset_partitions(
         self,
-        asset_partition,
-        parent_asset_partitions,
-    ):
+        asset_partition: AssetKeyPartitionKey,
+        parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    ) -> AbstractSet[AssetKeyPartitionKey]:
         parent_asset_partitions_by_key: Dict[AssetKey, List[AssetKeyPartitionKey]] = defaultdict(
             list
         )

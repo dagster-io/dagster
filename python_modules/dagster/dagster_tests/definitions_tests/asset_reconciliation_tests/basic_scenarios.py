@@ -125,7 +125,7 @@ basic_scenarios = {
         expected_conditions={
             "asset2": {
                 ParentMaterializedAutoMaterializeCondition(
-                    materialized_asset_keys=frozenset([AssetKey("asset1")])
+                    updated_asset_keys=frozenset([AssetKey("asset1")])
                 )
             }
         },
@@ -158,7 +158,7 @@ basic_scenarios = {
         expected_conditions={
             "child": {
                 ParentMaterializedAutoMaterializeCondition(
-                    materialized_asset_keys=frozenset([AssetKey("parent1")])
+                    updated_asset_keys=frozenset([AssetKey("parent1")])
                 )
             }
         },
@@ -184,17 +184,17 @@ basic_scenarios = {
         expected_conditions={
             "asset2": {
                 ParentMaterializedAutoMaterializeCondition(
-                    materialized_asset_keys=frozenset([AssetKey("asset1")])
+                    updated_asset_keys=frozenset([AssetKey("asset1")])
                 )
             },
             "asset3": {
                 ParentMaterializedAutoMaterializeCondition(
-                    materialized_asset_keys=frozenset([AssetKey("asset1")])
+                    updated_asset_keys=frozenset([AssetKey("asset1")])
                 )
             },
             "asset4": {
                 ParentMaterializedAutoMaterializeCondition(
-                    materialized_asset_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")])
+                    updated_asset_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")])
                 )
             },
         },

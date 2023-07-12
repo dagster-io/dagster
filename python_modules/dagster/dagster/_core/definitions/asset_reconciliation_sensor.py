@@ -756,7 +756,7 @@ def determine_asset_partitions_to_auto_materialize(
                 if parents:
                     conditions.add(
                         ParentMaterializedAutoMaterializeCondition(
-                            materialized_asset_keys=frozenset(parents)
+                            updated_asset_keys=frozenset(parents)
                         )
                     )
 
