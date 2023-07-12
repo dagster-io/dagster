@@ -243,8 +243,8 @@ def get_asset_deps(
     node_info_to_freshness_policy_fn,
     node_info_to_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn,
+    node_info_to_description_fn,
     io_manager_key,
-    display_raw_sql,
 ) -> Tuple[
     Dict[AssetKey, Set[AssetKey]],
     Dict[AssetKey, Tuple[str, In]],
@@ -288,7 +288,7 @@ def get_asset_deps(
             output_name,
             Out(
                 io_manager_key=io_manager_key,
-                description=default_description_fn(node_info, display_raw_sql),
+                description=node_info_to_description_fn(node_info),
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,

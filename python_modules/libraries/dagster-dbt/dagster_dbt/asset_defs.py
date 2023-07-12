@@ -14,6 +14,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import dateutil
@@ -40,12 +41,17 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import (
+    canonicalize_backcompat_args,
+    deprecation_warning,
+    experimental_arg_warning,
+)
 from dagster._utils.merger import deep_merge_dicts
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
+    default_description_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
@@ -379,6 +385,7 @@ def _dbt_nodes_to_assets(
     project_id: str,
     dbt_resource_key: str,
     manifest_json: Mapping[str, Any],
+    node_info_to_description_fn: Callable[[Mapping[str, Any]], str],
     op_name: Optional[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
@@ -398,7 +405,6 @@ def _dbt_nodes_to_assets(
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
-    display_raw_sql: bool = True,
 ) -> AssetsDefinition:
     if use_build_command:
         deps = get_deps(
@@ -426,8 +432,8 @@ def _dbt_nodes_to_assets(
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
+        node_info_to_description_fn=node_info_to_description_fn,
         io_manager_key=io_manager_key,
-        display_raw_sql=display_raw_sql,
     )
 
     # prevent op name collisions between multiple dbt multi-assets
@@ -471,16 +477,19 @@ def _dbt_nodes_to_assets(
 def load_assets_from_dbt_project(
     project_dir: str,
     profiles_dir: Optional[str] = None,
-    target_dir: Optional[str] = None,
+    *,
     select: Optional[str] = None,
     exclude: Optional[str] = None,
+    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    io_manager_key: Optional[str] = None,
+    target_dir: Optional[str] = None,
+    # deprecated
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     op_name: Optional[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
-    io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = True,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -513,52 +522,68 @@ def load_assets_from_dbt_project(
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
-        key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all assets loaded
-            from the dbt project. Does not apply to input assets.
-        source_key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all input
-            assets for the set of assets loaded from the dbt project.
-        op_name (Optional[str]): Sets the name of the underlying Op that will generate the dbt assets.
-        runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allow customizing how to map
+            dbt models, seeds, etc. to asset keys and asset metadata.
+        key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all assets loaded
+            from the dbt project. Does not apply to input assets. Deprecated: use
+            dagster_dbt_translator=KeyPrefixDagsterDbtTranslator(key_prefix=...) instead.
+        source_key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all input
+            assets for the set of assets loaded from the dbt project. Deprecated: use
+            dagster_dbt_translator=KeyPrefixDagsterDbtTranslator(source_key_prefix=...) instead.
+        op_name (Optional[str]): [Deprecated] Sets the name of the underlying Op that will generate the dbt assets.
+            Deprecated: use the `@dbt_assets` decorator if you need to customize the op name.
+        dbt_resource_key (Optional[str]): [Deprecated] The resource key that the dbt resource will be specified at.
+            Defaults to "dbt". Deprecated: use the `@dbt_assets` decorator if you need to customize
+            the resource key.
+        runtime_metadata_fn (Optional[Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):  [Deprecated]
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
-        io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
-            assets. When other ops are downstream of the loaded assets, the IOManager specified
-            here determines how the inputs to those ops are loaded. Defaults to "io_manager".
-        node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
-            of dbt metadata and returns the AssetKey that you want to represent a given model or
-            source. By default: dbt model -> AssetKey([model_name]) and
-            dbt source -> AssetKey([source_name, table_name])
+            Deprecated: use the @dbt_assets decorator if you need to customize runtime metadata.
+        manifest_json (Optional[Mapping[str, Any]]): [Deprecated] Use the manifest argument instead.
+        selected_unique_ids (Optional[Set[str]]): [Deprecated] The set of dbt unique_ids that you want to load
+            as assets. Deprecated: use the select argument instead.
+        node_info_to_asset_key (Mapping[str, Any] -> AssetKey): [Deprecated] A function that takes a dictionary
+            of dbt node info and returns the AssetKey that you want to represent that node. By
+            default, the asset key will simply be the name of the dbt model.
         use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset. Defaults to True. If set to False, then `dbt run` will be used, and
             seeds and snapshots won't be loaded as assets.
-        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
-            compose the dbt assets.
-        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+        partitions_def (Optional[PartitionsDefinition]): [Deprecated] Defines the set of partition keys that
+            compose the dbt assets. Deprecated: use the @dbt_assets decorator to define partitioned
+            dbt assets.
+        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): [Deprecated] A function to translate a given
             partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
-            invocation (e.g. {"run_date": "2022-01-01"})
-        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
+            invocation (e.g. {"run_date": "2022-01-01"}). Deprecated: use the @dbt_assets decorator
+            to define partitioned dbt assets.
+        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): [Deprecated] A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
-        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            Deprecated: instead, configure dagster groups on a dbt resource's meta field or assign
+            dbt groups.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): [Deprecated] A function
             that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
             should be applied to this node. By default, freshness policies will be created from
             config applied to dbt models, i.e.:
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
-            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
-        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`. Deprecated:
+            instead, configure auto-materialize policies on a dbt resource's meta field.
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
             that should be applied to this node. By default, AutoMaterializePolicies will be created from
             config applied to dbt models, i.e.:
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
-            `AutoMaterializePolicy.lazy()`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            `AutoMaterializePolicy.lazy()`. Deprecated: instead, configure auto-materialize
+            policies on a dbt resource's meta field.
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).
-        display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
+            Deprecated: instead, provide a custom DagsterDbtTranslator that overrides
+            node_info_to_metadata.
+        display_raw_sql (Optional[bool]): [Deprecated] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
-            this flag to False is advised to reduce the size of the resulting snapshot.
-        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
+            this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
+            instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
     project_dir = check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -568,18 +593,34 @@ def load_assets_from_dbt_project(
     select = check.opt_str_param(select, "select", "fqn:*")
     exclude = check.opt_str_param(exclude, "exclude", "")
 
-    manifest_json, cli_output = _load_manifest_for_project(
+    _raise_warnings_for_deprecated_args(
+        "load_assets_from_dbt_manifest",
+        selected_unique_ids=None,
+        dbt_resource_key=dbt_resource_key,
+        use_build_command=use_build_command,
+        partitions_def=partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        runtime_metadata_fn=runtime_metadata_fn,
+        node_info_to_asset_key=node_info_to_asset_key,
+        node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
+    )
+
+    manifest, cli_output = _load_manifest_for_project(
         project_dir, profiles_dir, target_dir, select, exclude
     )
     selected_unique_ids: Set[str] = set(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
     )
-    return load_assets_from_dbt_manifest(
-        manifest_json=manifest_json,
+    return _load_assets_from_dbt_manifest(
+        manifest=manifest,
         select=select,
         exclude=exclude,
         key_prefix=key_prefix,
         source_key_prefix=source_key_prefix,
+        dagster_dbt_translator=dagster_dbt_translator,
         op_name=op_name,
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
@@ -598,21 +639,27 @@ def load_assets_from_dbt_project(
 
 
 def load_assets_from_dbt_manifest(
-    manifest_json: Mapping[str, Any],
+    manifest: Optional[Mapping[str, Any]] = None,
+    *,
     select: Optional[str] = None,
     exclude: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
+    dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+    # deprecated
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    op_name: Optional[str] = None,
-    runtime_metadata_fn: Optional[
-        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
-    ] = None,
-    io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
+    display_raw_sql: Optional[bool] = None,
+    dbt_resource_key: str = "dbt",
+    op_name: Optional[str] = None,
+    manifest_json: Optional[Mapping[str, Any]] = None,
     use_build_command: bool = True,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+    ] = None,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
@@ -623,8 +670,6 @@ def load_assets_from_dbt_manifest(
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
-    display_raw_sql: Optional[bool] = None,
-    dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
@@ -632,65 +677,157 @@ def load_assets_from_dbt_manifest(
     `dbt run` command.
 
     Args:
-        manifest_json (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
+        manifest (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
             a set of models to load into assets.
         select (Optional[str]): A dbt selection string for the models in a project that you want
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
-        key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all assets loaded
-            from the dbt project. Does not apply to input assets.
-        source_key_prefix (Optional[Union[str, List[str]]]): A key prefix to apply to all input
-            assets for the set of assets loaded from the dbt project.
-        op_name (Optional[str]): Sets the name of the underlying Op that will generate the dbt assets.
-        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
-        runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
-            A function that will be run after any of the assets are materialized and returns
-            metadata entries for the asset, to be displayed in the asset catalog for that run.
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
-        selected_unique_ids (Optional[Set[str]]): The set of dbt unique_ids that you want to load
-            as assets.
-        node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allow customizing how to map
+            dbt models, seeds, etc. to asset keys and asset metadata.
+        key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all assets loaded
+            from the dbt project. Does not apply to input assets. Deprecated: use
+            dagster_dbt_translator=KeyPrefixDagsterDbtTranslator(key_prefix=...) instead.
+        source_key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all input
+            assets for the set of assets loaded from the dbt project. Deprecated: use
+            dagster_dbt_translator=KeyPrefixDagsterDbtTranslator(source_key_prefix=...) instead.
+        op_name (Optional[str]): [Deprecated] Sets the name of the underlying Op that will generate the dbt assets.
+            Deprecated: use the `@dbt_assets` decorator if you need to customize the op name.
+        dbt_resource_key (Optional[str]): [Deprecated] The resource key that the dbt resource will be specified at.
+            Defaults to "dbt". Deprecated: use the `@dbt_assets` decorator if you need to customize
+            the resource key.
+        runtime_metadata_fn (Optional[Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):  [Deprecated]
+            A function that will be run after any of the assets are materialized and returns
+            metadata entries for the asset, to be displayed in the asset catalog for that run.
+            Deprecated: use the @dbt_assets decorator if you need to customize runtime metadata.
+        manifest_json (Optional[Mapping[str, Any]]): [Deprecated] Use the manifest argument instead.
+        selected_unique_ids (Optional[Set[str]]): [Deprecated] The set of dbt unique_ids that you want to load
+            as assets. Deprecated: use the select argument instead.
+        node_info_to_asset_key (Mapping[str, Any] -> AssetKey): [Deprecated] A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
         use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset. Defaults to True. If set to False, then `dbt run` will be used, and
             seeds and snapshots won't be loaded as assets.
-        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
-            compose the dbt assets.
-        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+        partitions_def (Optional[PartitionsDefinition]): [Deprecated] Defines the set of partition keys that
+            compose the dbt assets. Deprecated: use the @dbt_assets decorator to define partitioned
+            dbt assets.
+        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): [Deprecated] A function to translate a given
             partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
-            invocation (e.g. {"run_date": "2022-01-01"})
-        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
+            invocation (e.g. {"run_date": "2022-01-01"}). Deprecated: use the @dbt_assets decorator
+            to define partitioned dbt assets.
+        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): [Deprecated] A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
-        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            Deprecated: instead, configure dagster groups on a dbt resource's meta field or assign
+            dbt groups.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): [Deprecated] A function
             that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
             should be applied to this node. By default, freshness policies will be created from
             config applied to dbt models, i.e.:
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
-            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
-        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`. Deprecated:
+            instead, configure auto-materialize policies on a dbt resource's meta field.
+        node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
             that should be applied to this node. By default, AutoMaterializePolicies will be created from
             config applied to dbt models, i.e.:
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
-            `AutoMaterializePolicy.lazy()`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            `AutoMaterializePolicy.lazy()`. Deprecated: instead, configure auto-materialize
+            policies on a dbt resource's meta field.
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]): [Deprecated]
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).
-        display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
+            Deprecated: instead, provide a custom DagsterDbtTranslator that overrides
+            node_info_to_metadata.
+        display_raw_sql (Optional[bool]): [Deprecated] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
-            this flag to False is advised to reduce the size of the resulting snapshot.
+            this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
+            instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
-    check.mapping_param(manifest_json, "manifest_json", key_type=str)
-    if partitions_def:
-        experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
+    manifest = cast(
+        Mapping[str, Any],
+        check.mapping_param(
+            canonicalize_backcompat_args(
+                manifest, "manifest", manifest_json, "manifest_json", "0.21", stacklevel=4
+            ),
+            "manifest",
+            key_type=str,
+        ),
+    )
+
+    _raise_warnings_for_deprecated_args(
+        "load_assets_from_dbt_manifest",
+        selected_unique_ids=selected_unique_ids,
+        dbt_resource_key=dbt_resource_key,
+        use_build_command=use_build_command,
+        partitions_def=partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        runtime_metadata_fn=runtime_metadata_fn,
+        node_info_to_asset_key=node_info_to_asset_key,
+        node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
+    )
+
+    return _load_assets_from_dbt_manifest(
+        manifest=manifest,
+        select=select,
+        exclude=exclude,
+        io_manager_key=io_manager_key,
+        dagster_dbt_translator=dagster_dbt_translator,
+        key_prefix=key_prefix,
+        source_key_prefix=source_key_prefix,
+        selected_unique_ids=selected_unique_ids,
+        display_raw_sql=display_raw_sql,
+        dbt_resource_key=dbt_resource_key,
+        op_name=op_name,
+        use_build_command=use_build_command,
+        partitions_def=partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        runtime_metadata_fn=runtime_metadata_fn,
+        node_info_to_asset_key=node_info_to_asset_key,
+        node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
+    )
+
+
+def _load_assets_from_dbt_manifest(
+    manifest: Mapping[str, Any],
+    select: Optional[str],
+    exclude: Optional[str],
+    io_manager_key: Optional[str],
+    dagster_dbt_translator: Optional[DagsterDbtTranslator],
+    key_prefix: Optional[CoercibleToAssetKeyPrefix],
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
+    selected_unique_ids: Optional[AbstractSet[str]],
+    display_raw_sql: Optional[bool],
+    dbt_resource_key: str,
+    op_name: Optional[str],
+    use_build_command: bool,
+    partitions_def: Optional[PartitionsDefinition],
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+    ],
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
+    node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ],
+    node_info_to_definition_metadata_fn: Callable[
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+    ],
+) -> Sequence[AssetsDefinition]:
     if partition_key_to_vars_fn:
-        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
         check.invariant(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
@@ -702,10 +839,10 @@ def load_assets_from_dbt_manifest(
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
     dbt_nodes = {
-        **manifest_json["nodes"],
-        **manifest_json["sources"],
-        **manifest_json["metrics"],
-        **manifest_json["exposures"],
+        **manifest["nodes"],
+        **manifest["sources"],
+        **manifest["metrics"],
+        **manifest["exposures"],
     }
 
     if selected_unique_ids:
@@ -720,10 +857,32 @@ def load_assets_from_dbt_manifest(
         exclude = exclude if exclude is not None else ""
 
         selected_unique_ids = select_unique_ids_from_manifest(
-            select=select, exclude=exclude, manifest_json=manifest_json
+            select=select, exclude=exclude, manifest_json=manifest
         )
         if len(selected_unique_ids) == 0:
             raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
+
+    if dagster_dbt_translator is not None:
+        check.invariant(
+            node_info_to_asset_key is None,
+            "Can't specify both dagster_dbt_translator and node_info_to_asset_key",
+        )
+        check.invariant(
+            key_prefix is None,
+            "Can't specify both dagster_dbt_translator and key_prefix",
+        )
+        check.invariant(
+            source_key_prefix is None,
+            "Can't specify both dagster_dbt_translator and source_key_prefix",
+        )
+        check.invariant(
+            display_raw_sql is None,
+            "Can't specify both dagster_dbt_translator and display_raw_sql",
+        )
+        check.invariant(
+            node_info_to_definition_metadata_fn is None,
+            "Can't specify both dagster_dbt_translator and node_info_to_definition_metadata_fn",
+        )
 
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
@@ -734,17 +893,23 @@ def load_assets_from_dbt_manifest(
         selected_unique_ids=selected_unique_ids,
         dbt_resource_key=dbt_resource_key,
         op_name=op_name,
-        project_id=manifest_json["metadata"]["project_id"][:5],
-        node_info_to_asset_key=node_info_to_asset_key,
+        project_id=manifest["metadata"]["project_id"][:5],
+        node_info_to_asset_key=dagster_dbt_translator.node_info_to_asset_key
+        if dagster_dbt_translator is not None
+        else node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
-        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
-        display_raw_sql=display_raw_sql,
-        manifest_json=manifest_json,
+        node_info_to_definition_metadata_fn=dagster_dbt_translator.node_info_to_metadata
+        if dagster_dbt_translator is not None
+        else node_info_to_definition_metadata_fn,
+        node_info_to_description_fn=dagster_dbt_translator.node_info_to_metadata
+        if dagster_dbt_translator is not None
+        else lambda node_info: default_description_fn(node_info, display_raw_sql),
+        manifest_json=manifest,
     )
     dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:
@@ -764,3 +929,110 @@ def load_assets_from_dbt_manifest(
     if key_prefix:
         dbt_assets, _ = prefix_assets(dbt_assets, key_prefix, [], source_key_prefix)
     return dbt_assets
+
+
+def _raise_warnings_for_deprecated_args(
+    public_fn_name: str,
+    selected_unique_ids: Optional[AbstractSet[str]],
+    dbt_resource_key: Optional[str],
+    use_build_command: Optional[bool],
+    partitions_def: Optional[PartitionsDefinition],
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+    ],
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
+    node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ],
+    node_info_to_definition_metadata_fn: Callable[
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+    ],
+):
+    if selected_unique_ids is not None:
+        deprecation_warning(
+            f"The selected_unique_ids arg of {public_fn_name}",
+            "0.21",
+            "Use the select parameter instead.",
+            stacklevel=4,
+        )
+
+    if dbt_resource_key is not None:
+        deprecation_warning(
+            f"The dbt_resource_key arg of {public_fn_name}",
+            "0.21",
+            "Use the @dbt_assets decorator if you need to customize your resource key.",
+            stacklevel=4,
+        )
+
+    if use_build_command is not None:
+        deprecation_warning(
+            f"The use_build_command arg of {public_fn_name}",
+            "0.21",
+            "Use the @dbt_assets decorator if you need to customize the commands you run.",
+            stacklevel=4,
+        )
+
+    if partitions_def is not None:
+        deprecation_warning(
+            f"The partitions_def arg of {public_fn_name}",
+            "0.21",
+            "Use the @dbt_assets decorator to define partitioned dbt assets.",
+            stacklevel=4,
+        )
+
+    if partition_key_to_vars_fn is not None:
+        deprecation_warning(
+            f"The partition_key_to_vars_fn arg of {public_fn_name}",
+            "0.21",
+            "Use the @dbt_assets decorator to define partitioned dbt assets.",
+            stacklevel=4,
+        )
+
+    if runtime_metadata_fn is not None:
+        deprecation_warning(
+            f"The runtime_metadata_fn arg of {public_fn_name}",
+            "0.21",
+            "Use the @dbt_assets decorator if you need to customize runtime metadata.",
+            stacklevel=4,
+        )
+
+    if node_info_to_asset_key != default_asset_key_fn:
+        deprecation_warning(
+            f"The node_info_to_asset_key_fn arg of {public_fn_name}",
+            "0.21",
+            stacklevel=4,
+        )
+
+    if node_info_to_group_fn != default_group_fn:
+        deprecation_warning(
+            f"The node_info_to_group_fn arg of {public_fn_name}",
+            "0.21",
+            "Instead, configure dagster groups on a dbt resource's meta field or assign dbt groups",
+            stacklevel=4,
+        )
+
+    if node_info_to_auto_materialize_policy_fn != default_auto_materialize_policy_fn:
+        deprecation_warning(
+            f"The node_info_to_auto_materialize_policy_fn arg of {public_fn_name}",
+            "0.21",
+            "Instead, configure Dagster auto-materialize policies on a dbt resource's meta field.",
+            stacklevel=4,
+        )
+
+    if node_info_to_freshness_policy_fn != default_freshness_policy_fn:
+        deprecation_warning(
+            f"The node_info_to_freshness_policy_fn arg of {public_fn_name}",
+            "0.21",
+            "Instead, configure Dagster freshness policies on a dbt resource's meta field.",
+            stacklevel=4,
+        )
+
+    if node_info_to_definition_metadata_fn != default_metadata_fn:
+        deprecation_warning(
+            f"The node_info_to_definition_metadata_fn arg of {public_fn_name}",
+            "0.21",
+            stacklevel=4,
+        )
