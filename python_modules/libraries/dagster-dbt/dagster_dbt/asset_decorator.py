@@ -1,6 +1,18 @@
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Set, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster import (
@@ -97,7 +109,7 @@ def dbt_assets(
         asset_definition = multi_asset(
             outs=outs,
             internal_asset_deps=internal_asset_deps,
-            non_argument_deps=non_argument_deps,
+            deps=non_argument_deps,
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,
@@ -121,7 +133,7 @@ def get_dbt_multi_asset_args(
     deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
-) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
+) -> Tuple[Sequence[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
     non_argument_deps: Set[AssetKey] = set()
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
@@ -158,4 +170,4 @@ def get_dbt_multi_asset_args(
             if parent_unique_id not in deps:
                 non_argument_deps.add(parent_asset_key)
 
-    return non_argument_deps, outs, internal_asset_deps
+    return list(non_argument_deps), outs, internal_asset_deps

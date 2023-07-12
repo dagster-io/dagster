@@ -9,9 +9,11 @@ from dagster import (
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
+    asset,
     materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -301,3 +303,32 @@ def test_dbt_config_group() -> None:
         AssetKey(["raw_orders"]): "default",
         AssetKey(["raw_payments"]): "default",
     }
+
+
+def test_dbt_with_downstream_asset_errors():
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps.",
+    ):
+
+        @asset(deps=[my_dbt_assets])
+        def downstream_of_dbt():
+            return None
+
+
+def test_dbt_with_downstream_asset():
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    @asset(deps=[AssetKey("orders"), AssetKey(["customized", "staging", "payments"])])
+    def downstream_of_dbt():
+        return None
+
+    assert len(downstream_of_dbt.input_names) == 2
+    assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
+    assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing

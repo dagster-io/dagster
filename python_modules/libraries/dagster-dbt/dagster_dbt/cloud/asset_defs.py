@@ -435,9 +435,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         @multi_asset(
             name=f"dbt_cloud_job_{job_id}",
-            non_argument_deps=set(
-                (assets_definition_cacheable_data.keys_by_input_name or {}).values()
-            ),
+            deps=list((assets_definition_cacheable_data.keys_by_input_name or {}).values()),
             outs={
                 output_name: AssetOut(
                     key=asset_key,
