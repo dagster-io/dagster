@@ -458,25 +458,26 @@ class CachingDataTimeResolver:
         record: EventLogRecord,
         current_time: Optional[datetime.datetime] = None,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-        """Method to enable calculating the timestamps of materializations of upstream assets
-        which were relevant to a given AssetMaterialization. These timestamps can be calculated relative
-        to any upstream asset keys.
+        """Method to enable calculating the timestamps of materializations or observations of
+        upstream assets which were relevant to a given AssetMaterialization. These timestamps can
+        be calculated relative to any upstream asset keys.
 
         The heart of this functionality is a recursive method which takes a given asset materialization
         and finds the most recent materialization of each of its parents which happened *before* that
         given materialization event.
         """
-        if record.asset_key is None or record.asset_materialization is None:
+        event = record.asset_materialization or record.asset_observation
+        if record.asset_key is None or event is None:
             raise DagsterInvariantViolationError(
-                "Can only calculate data times for records with a materialization event and an"
-                " asset_key."
+                "Can only calculate data times for records with a materialization / observation "
+                "event and an asset_key."
             )
 
         return self._calculate_data_time_by_key(
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
-            record_tags=make_hashable(record.asset_materialization.tags or {}),
+            record_tags=make_hashable(event.tags or {}),
             current_time=current_time or pendulum.now("UTC"),
         )
 

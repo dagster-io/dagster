@@ -12,6 +12,7 @@ import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
@@ -139,6 +140,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   const findAssetLocation = useFindAssetLocation();
   const {layout, loading, async} = useAssetLayout(assetGraphData);
   const viewportEl = React.useRef<SVGViewport>();
+  const {flagHorizontalDAGs} = useFeatureFlags();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -221,7 +223,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       onChangeExplorerPath,
       onNavigateToSourceAssetNode,
       findAssetLocation,
-      lastSelectedNode,
+      selectedGraphNodes,
       assetGraphData,
       layout,
     ],
@@ -288,6 +290,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           ) : (
             <SVGViewport
               ref={(r) => (viewportEl.current = r || undefined)}
+              defaultZoom={flagHorizontalDAGs ? 'zoom-to-fit-width' : 'zoom-to-fit'}
               interactor={SVGViewport.Interactors.PanAndZoom}
               graphWidth={layout.width}
               graphHeight={layout.height}

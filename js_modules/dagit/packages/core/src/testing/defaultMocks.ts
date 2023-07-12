@@ -42,7 +42,7 @@ export const defaultMocks = {
     solids: () => [...new Array(2)],
     modes: () => [...new Array(1)],
   }),
-  DagitQuery: () => ({
+  Query: () => ({
     version: () => 'x.y.z',
   }),
   Repository: () => ({

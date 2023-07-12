@@ -252,14 +252,13 @@ def select_unique_ids_from_manifest(
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest, WritableManifest
     from dbt.contracts.state import PreviousState
-    from dbt.graph import SelectionSpec
-    from dbt.graph.selector_spec import IndirectSelection
+    from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
     if state_path is not None:
         previous_state = PreviousState(
-            path=Path(state_path),
-            current_path=Path("/tmp/null")
+            path=Path(state_path),  # type: ignore  # (unused path, slated for deletion)
+            current_path=Path("/tmp/null")  # type: ignore  # (unused path, slated for deletion)
             if manifest_json_path is None
             else Path(manifest_json_path),
         )

@@ -8,7 +8,7 @@ export type PreviousRunsForSensorQueryVariables = Types.Exact<{
 }>;
 
 export type PreviousRunsForSensorQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}

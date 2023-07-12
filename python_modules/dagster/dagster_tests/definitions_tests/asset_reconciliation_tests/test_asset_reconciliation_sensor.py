@@ -6,7 +6,6 @@ from dagster import (
     AssetMaterialization,
     AssetSelection,
     DagsterInstance,
-    build_asset_reconciliation_sensor,
     build_sensor_context,
     job,
     op,
@@ -16,6 +15,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AutoMaterializeAssetEvaluation,
+    build_asset_reconciliation_sensor,
     build_auto_materialize_asset_evaluations,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -23,7 +23,10 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from .asset_reconciliation_scenario import AssetReconciliationScenario, asset_def
+from .asset_reconciliation_scenario import (
+    AssetReconciliationScenario,
+    asset_def,
+)
 from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 

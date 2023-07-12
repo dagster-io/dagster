@@ -839,8 +839,12 @@ def test_filtered_runs_multiple_filters():
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.STARTED).run_id
-        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE).run_id
+        instance.create_run_for_job(  # noqa: B018
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
+        ).run_id
+        instance.create_run_for_job(  # noqa: B018
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
                 context,

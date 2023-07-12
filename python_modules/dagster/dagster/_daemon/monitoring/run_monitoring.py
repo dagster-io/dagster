@@ -201,7 +201,7 @@ def execute_run_monitoring_iteration(
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
-                f"Hit error while monitoring run {run_record.dagster_run.run_id}: {str(error_info)}"
+                f"Hit error while monitoring run {run_record.dagster_run.run_id}: {error_info}"
             )
             yield error_info
         else:

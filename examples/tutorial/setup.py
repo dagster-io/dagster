@@ -8,5 +8,5 @@ setup(
         "dagster-cloud",
         "Faker==18.4.0",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

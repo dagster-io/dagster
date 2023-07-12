@@ -283,7 +283,7 @@ def launch_scheduled_runs(
                 logger.warning(
                     f"Schedule {schedule_name} was started from a location "
                     f"{code_location_name} that can no longer be found in the workspace. You can "
-                    "turn off this schedule in the Dagit UI from the Status tab."
+                    "turn off this schedule in the Dagster UI from the Status tab."
                 )
             elif not check.not_none(  # checked in case above
                 workspace_snapshot[code_location_origin.location_name].code_location
@@ -291,14 +291,14 @@ def launch_scheduled_runs(
                 logger.warning(
                     f"Could not find repository {repo_name} in location {code_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
-                    + "turn off the schedule in the Dagit UI from the Status tab.",
+                    + "turn off the schedule in the Dagster UI from the Status tab.",
                 )
             else:
                 logger.warning(
                     (
                         f"Could not find schedule {schedule_name} in repository {repo_name}. If"
-                        " this schedule no longer exists, you can turn it off in the Dagit UI from"
-                        " the Status tab."
+                        " this schedule no longer exists, you can turn it off in the Dagster UI"
+                        " from the Status tab."
                     ),
                 )
 

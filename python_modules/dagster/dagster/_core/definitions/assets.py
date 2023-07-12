@@ -4,6 +4,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Dict,
     Iterable,
     Iterator,
@@ -103,8 +104,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_attributes
-        # and from_graph methods
+        # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
+        # get_attributes_dict methods
     ):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -781,6 +782,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     def with_attributes(
         self,
+        *,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
@@ -898,7 +900,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, metadata in metadata_by_key.items()
         }
 
-        return __class__.dagster_internal_init(
+        replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
                 for input_name, key in self._keys_by_input_name.items()
@@ -907,8 +909,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 output_name: output_asset_key_replacements.get(key, key)
                 for output_name, key in self._keys_by_output_name.items()
             },
-            node_def=self.node_def,
-            partitions_def=self.partitions_def,
             partition_mappings={
                 input_asset_key_replacements.get(key, key): partition_mapping
                 for key, partition_mapping in self._partition_mappings.items()
@@ -924,11 +924,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 }
                 for key, value in self.asset_deps.items()
             },
-            can_subset=self.can_subset,
             selected_asset_keys={
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
-            resource_defs=self.resource_defs,
             group_names_by_key={
                 **replaced_group_names_by_key,
                 **group_names_by_key,
@@ -938,6 +936,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
         )
+
+        return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     def _subset_graph_backed_asset(
         self,
@@ -962,10 +962,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         return get_graph_subset(self.node_def, op_selection)
 
-    def subset_for(
-        self,
-        selected_asset_keys: AbstractSet[AssetKey],
-    ) -> "AssetsDefinition":
+    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
         """Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
 
@@ -1011,49 +1008,27 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             # materialize the unselected asset.
             #
             # Thus, we include unselected assets that may be accidentally materialized in
-            # keys_by_output_name and asset_deps so that Dagit can populate an warning when this
-            # occurs. This is the same behavior as multi-asset subsetting.
+            # keys_by_output_name and asset_deps so that the webserver can populate an warning when
+            # this occurs. This is the same behavior as multi-asset subsetting.
 
             subsetted_asset_deps = {
                 out_asset_key: set(self._keys_by_input_name.values())
                 for out_asset_key in subsetted_keys_by_output_name.values()
             }
 
-            return AssetsDefinition.dagster_internal_init(
+            replaced_attributes = dict(
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,
                 node_def=subsetted_node,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
                 asset_deps=subsetted_asset_deps,
-                can_subset=self.can_subset,
                 selected_asset_keys=selected_asset_keys & self.keys,
-                resource_defs=self.resource_defs,
-                group_names_by_key=self.group_names_by_key,
-                metadata_by_key=self.metadata_by_key,
-                freshness_policies_by_key=self.freshness_policies_by_key,
-                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-                descriptions_by_key=self.descriptions_by_key,
             )
+
+            return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
         else:
             # multi_asset subsetting
-            return AssetsDefinition.dagster_internal_init(
-                # keep track of the original mapping
-                keys_by_input_name=self._keys_by_input_name,
-                keys_by_output_name=self._keys_by_output_name,
-                node_def=self.node_def,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
-                asset_deps=self._asset_deps,
-                can_subset=self.can_subset,
-                selected_asset_keys=asset_subselection,
-                resource_defs=self.resource_defs,
-                group_names_by_key=self.group_names_by_key,
-                metadata_by_key=self.metadata_by_key,
-                freshness_policies_by_key=self.freshness_policies_by_key,
-                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-                descriptions_by_key=self.descriptions_by_key,
-            )
+            replaced_attributes = dict(selected_asset_keys=asset_subselection)
+            return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -1160,7 +1135,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if overlapping_keys:
             overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
             raise DagsterInvalidInvocationError(
-                f"{str(self)} has conflicting resource "
+                f"{self} has conflicting resource "
                 "definitions with provided resources for the following keys: "
                 f"{overlapping_keys_str}. Either remove the existing "
                 "resources from the asset or change the resource keys so that "
@@ -1183,21 +1158,26 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             if key in relevant_keys
         }
 
-        return AssetsDefinition.dagster_internal_init(
+        attributes_dict = self.get_attributes_dict()
+        attributes_dict["resource_defs"] = relevant_resource_defs
+        return self.__class__(**attributes_dict)
+
+    def get_attributes_dict(self) -> Dict[str, Any]:
+        return dict(
             keys_by_input_name=self._keys_by_input_name,
             keys_by_output_name=self._keys_by_output_name,
-            node_def=self.node_def,
+            node_def=self._node_def,
             partitions_def=self._partitions_def,
             partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
+            asset_deps=self.asset_deps,
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
-            resource_defs=relevant_resource_defs,
-            group_names_by_key=self.group_names_by_key,
-            metadata_by_key=self.metadata_by_key,
-            freshness_policies_by_key=self.freshness_policies_by_key,
-            auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-            descriptions_by_key=self.descriptions_by_key,
+            resource_defs=self._resource_defs,
+            group_names_by_key=self._group_names_by_key,
+            metadata_by_key=self._metadata_by_key,
+            freshness_policies_by_key=self._freshness_policies_by_key,
+            auto_materialize_policies_by_key=self._auto_materialize_policies_by_key,
+            descriptions_by_key=self._descriptions_by_key,
         )
 
 
@@ -1275,7 +1255,7 @@ def _build_invocation_context_with_included_resources(
     for resource_key in sorted(list(invocation_resources.keys())):
         if resource_key in resource_defs:
             raise DagsterInvalidInvocationError(
-                f"Error when invoking {str(assets_def)}: resource '{resource_key}' "
+                f"Error when invoking {assets_def}: resource '{resource_key}' "
                 "provided on both the definition and invocation context. Please "
                 "provide on only one or the other."
             )
@@ -1288,6 +1268,7 @@ def _build_invocation_context_with_included_resources(
             resources_config=context._resources_config,  # noqa: SLF001
             instance=context._instance,  # noqa: SLF001
             partition_key=context._partition_key,  # noqa: SLF001
+            partition_key_range=context._partition_key_range,  # noqa: SLF001
             mapping_key=context._mapping_key,  # noqa: SLF001
             _assets_def=assets_def,
         )
@@ -1356,9 +1337,10 @@ def _validate_self_deps(
                     continue
 
             raise DagsterInvalidDefinitionError(
-                "Assets can only depend on themselves if they are:\n(a) time-partitioned and each"
-                " partition depends on earlier partitions\n(b) multipartitioned, with one time"
-                " dimension that depends on earlier time partitions"
+                f'Asset "{input_key.to_user_string()}" depends on itself. Assets can only depend'
+                " on themselves if they are:\n(a) time-partitioned and each partition depends on"
+                " earlier partitions\n(b) multipartitioned, with one time dimension that depends"
+                " on earlier time partitions"
             )
 
 

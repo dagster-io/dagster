@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type InstanceHealthQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type InstanceHealthQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instance: {
     __typename: 'Instance';
     id: string;

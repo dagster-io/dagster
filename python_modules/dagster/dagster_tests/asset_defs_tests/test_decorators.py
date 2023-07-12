@@ -22,7 +22,7 @@ from dagster import (
     String,
     TimeWindowPartitionMapping,
     _check as check,
-    build_op_context,
+    build_asset_context,
     graph_asset,
     graph_multi_asset,
     io_manager,
@@ -556,7 +556,7 @@ def test_invoking_asset_with_context():
         assert isinstance(context, OpExecutionContext)
         return arg1
 
-    ctx = build_op_context()
+    ctx = build_asset_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
 
@@ -607,8 +607,8 @@ def test_kwargs_with_context():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
-    assert my_asset(build_op_context(), upstream=5) == 7
-    assert my_asset.op(build_op_context(), upstream=5) == 7
+    assert my_asset(build_asset_context(), upstream=5) == 7
+    assert my_asset.op(build_asset_context(), upstream=5) == 7
 
     @asset
     def upstream():
@@ -648,8 +648,8 @@ def test_kwargs_multi_asset_with_context():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
-    assert my_asset(build_op_context(), upstream=5) == (7,)
-    assert my_asset.op(build_op_context(), upstream=5) == (7,)
+    assert my_asset(build_asset_context(), upstream=5) == (7,)
+    assert my_asset.op(build_asset_context(), upstream=5) == (7,)
 
     @asset
     def upstream():

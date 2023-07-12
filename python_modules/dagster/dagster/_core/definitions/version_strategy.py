@@ -52,10 +52,27 @@ class VersionStrategy(ABC):
     @public
     @abstractmethod
     def get_op_version(self, context: OpVersionContext) -> str:
+        """Computes a version for an op.
+
+        Args:
+            context (OpVersionContext): The context for computing the version.
+
+        Returns:
+            str: The version for the op.
+        """
         raise NotImplementedError()
 
     @public
     def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
+        """Computes a version for a resource.
+
+        Args:
+            context (ResourceVersionContext): The context for computing the version.
+
+        Returns:
+            Optional[str]: The version for the resource. If None, the resource will not be
+                memoized.
+        """
         return None
 
 
@@ -73,6 +90,14 @@ class SourceHashVersionStrategy(VersionStrategy):
 
     @public
     def get_op_version(self, context: OpVersionContext) -> str:
+        """Computes a version for an op by hashing its source code.
+
+        Args:
+            context (OpVersionContext): The context for computing the version.
+
+        Returns:
+            str: The version for the op.
+        """
         compute_fn = context.op_def.compute_fn
         if callable(compute_fn):
             return self._get_source_hash(compute_fn)
@@ -81,4 +106,13 @@ class SourceHashVersionStrategy(VersionStrategy):
 
     @public
     def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
+        """Computes a version for a resource by hashing its source code.
+
+        Args:
+            context (ResourceVersionContext): The context for computing the version.
+
+        Returns:
+            Optional[str]: The version for the resource. If None, the resource will not be
+                memoized.
+        """
         return self._get_source_hash(context.resource_def.resource_fn)

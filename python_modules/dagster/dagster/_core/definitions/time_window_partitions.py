@@ -1616,13 +1616,12 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def __eq__(self, other):
         return (
             isinstance(other, TimeWindowPartitionsSubset)
-            and self._partitions_def == other._partitions_def  # noqa: SLF001
+            and self._partitions_def == other._partitions_def
             and (
                 # faster comparison, but will not catch all cases
                 (
-                    self._included_time_windows == other._included_time_windows  # noqa: SLF001
-                    and self._included_partition_keys
-                    == other._included_partition_keys  # noqa: SLF001
+                    self._included_time_windows == other._included_time_windows
+                    and self._included_partition_keys == other._included_partition_keys
                 )
                 # slower comparison, catches all cases
                 or self.included_time_windows == other.included_time_windows

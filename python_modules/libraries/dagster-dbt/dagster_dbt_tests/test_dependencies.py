@@ -1,15 +1,16 @@
+from pathlib import Path
+
 import pytest
 from dagster import (
     AssetKey,
     asset,
-    file_relative_path,
 )
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.cli import DbtManifest
+from dagster_dbt.core.resources_v2 import DbtManifest
 
 test_dagster_metadata_manifest = DbtManifest.read(
-    path=file_relative_path(__file__, "dbt_projects/test_dagster_metadata/manifest.json")
+    path=Path(__file__).parent.joinpath("dbt_projects", "test_dagster_metadata", "manifest.json")
 )
 
 

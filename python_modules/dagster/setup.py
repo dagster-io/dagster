@@ -119,7 +119,7 @@ setup(
             "pytest-xdist==2.1.0",
             "pytest==7.0.1",  # last version supporting python 3.6
             "responses",
-            "snapshottest==0.6.0",
+            "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "yamllint",
             "morefs[asynclocal]",
@@ -131,7 +131,7 @@ setup(
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.298",
+            "pyright==1.1.316",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -155,7 +155,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.255",
+            "ruff==0.0.277",
         ],
     },
     entry_points={

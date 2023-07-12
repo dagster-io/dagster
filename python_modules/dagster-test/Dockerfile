@@ -22,6 +22,7 @@ RUN pip install \
     -e modules/dagster-celery \
     -e modules/dagster-celery[flower,redis,kubernetes] \
     -e modules/dagit \
+    -e modules/dagster-webserver \
     -e modules/dagster-postgres \
     -e modules/dagster-pandas \
     -e modules/dagster-aws \

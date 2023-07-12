@@ -88,12 +88,12 @@ class DagsterEventType(str, Enum):
     STEP_SKIPPED = "STEP_SKIPPED"
 
     # The process carrying out step execution is starting/started. Shown as a
-    # marker start/end in Dagit
+    # marker start/end in the Dagster UI.
     STEP_WORKER_STARTING = "STEP_WORKER_STARTING"
     STEP_WORKER_STARTED = "STEP_WORKER_STARTED"
 
     # Resource initialization for execution has started/succeede/failed. Shown
-    # as a marker start/end in Dagit
+    # as a marker start/end in the Dagster UI.
     RESOURCE_INIT_STARTED = "RESOURCE_INIT_STARTED"
     RESOURCE_INIT_SUCCESS = "RESOURCE_INIT_SUCCESS"
     RESOURCE_INIT_FAILURE = "RESOURCE_INIT_FAILURE"
@@ -106,7 +106,7 @@ class DagsterEventType(str, Enum):
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
-    # We want to display RUN_* events in dagit and in our LogManager output, but in order to
+    # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
     # of the form "PIPELINE_*".  We may have user code that pass in the DagsterEventType
     # enum values into storage APIs (like get_event_records, which takes in an EventRecordsFilter).

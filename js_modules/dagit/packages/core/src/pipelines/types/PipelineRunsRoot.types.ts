@@ -9,7 +9,7 @@ export type PipelineRunsRootQueryVariables = Types.Exact<{
 }>;
 
 export type PipelineRunsRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
     | {

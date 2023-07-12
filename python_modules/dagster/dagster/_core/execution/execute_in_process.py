@@ -132,6 +132,6 @@ def _check_top_level_inputs_for_node(
             raise DagsterInvalidInvocationError(
                 f"Attempted to invoke execute_in_process for '{job_name}' without specifying an"
                 f" input_value for input '{top_level_input_name}', but downstream input"
-                f" {input_def.name} of op '{str(cur_node_handle)}' has no other way of being"
+                f" {input_def.name} of op '{cur_node_handle}' has no other way of being"
                 " loaded."
             )

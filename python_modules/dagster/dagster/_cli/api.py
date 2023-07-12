@@ -509,7 +509,7 @@ def _execute_step_command_body(
     help=(
         "Wait until the first LoadRepositories call to actually load the repositories, instead of"
         " waiting to load them when the server is launched. Useful for surfacing errors when the"
-        " server is managed directly from Dagit"
+        " server is managed directly from the Dagster UI."
     ),
     envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )

@@ -28,7 +28,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    deprecation_warning,
     experimental_arg_warning,
 )
 
@@ -146,7 +145,7 @@ def asset(
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
@@ -402,7 +401,7 @@ class _Asset:
             asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
-            metadata_by_key=None,  # not supported for now
+            metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
         )
 
@@ -448,7 +447,7 @@ def multi_asset(
             if it does not. If not set, Dagster will accept any config provided for the op.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the underlying op.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
-            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
             that all assets produced by a multi_asset depend on all assets that are consumed by that
             multi asset. If this default is not correct, you pass in a map of output names to a
@@ -525,14 +524,6 @@ def multi_asset(
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
-    for out in outs.values():
-        if isinstance(out, Out) and not isinstance(out, AssetOut):
-            deprecation_warning(
-                "Passing Out objects as values for the out argument of @multi_asset",
-                "1.0.0",
-                additional_warn_txt="Use AssetOut instead.",
-            )
-
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
@@ -602,7 +593,7 @@ def multi_asset(
         group_names_by_key = {
             keys_by_output_name[output_name]: out.group_name
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.group_name is not None
+            if out.group_name is not None
         }
         if group_name:
             check.invariant(
@@ -620,17 +611,22 @@ def multi_asset(
         freshness_policies_by_key = {
             keys_by_output_name[output_name]: out.freshness_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.freshness_policy is not None
+            if out.freshness_policy is not None
         }
         auto_materialize_policies_by_key = {
             keys_by_output_name[output_name]: out.auto_materialize_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
+            if out.auto_materialize_policy is not None
         }
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
             if asset_in.partition_mapping is not None
+        }
+        metadata_by_key = {
+            keys_by_output_name[output_name]: out.metadata
+            for output_name, out in outs.items()
+            if out.metadata is not None
         }
 
         return AssetsDefinition.dagster_internal_init(
@@ -647,7 +643,7 @@ def multi_asset(
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
-            metadata_by_key=None,  # not supported for now
+            metadata_by_key=metadata_by_key,
         )
 
     return inner

@@ -8,7 +8,7 @@ export type PipelineRunLogsSubscriptionVariables = Types.Exact<{
 }>;
 
 export type PipelineRunLogsSubscription = {
-  __typename: 'DagitSubscription';
+  __typename: 'Subscription';
   pipelineRunLogs:
     | {
         __typename: 'PipelineRunLogsSubscriptionFailure';
@@ -4880,7 +4880,7 @@ export type RunLogsQueryVariables = Types.Exact<{
 }>;
 
 export type RunLogsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
     | {__typename: 'Run'; id: string; status: Types.RunStatus; canTerminate: boolean}

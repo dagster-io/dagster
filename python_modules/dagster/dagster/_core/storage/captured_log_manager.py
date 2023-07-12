@@ -24,7 +24,7 @@ class CapturedLogContext(
     )
 ):
     """Object representing the context in which logs are captured.  Can be used by external logging
-    sidecar implementations to point dagit to an external url to view compute logs instead of a
+    sidecar implementations to point the Dagster UI to an external url to view compute logs instead of a
     Dagster-managed location.
     """
 

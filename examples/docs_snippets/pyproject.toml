@@ -13,7 +13,7 @@ target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 [tool.ruff]
 
 # Extend root configuration.
-extend = "../../pyproject.toml"
+extend = "../pyproject.toml"
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
 line-length = 88

@@ -5,6 +5,6 @@ import * as Types from '../../graphql/types';
 export type InstanceSupportsCapturedLogsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type InstanceSupportsCapturedLogsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instance: {__typename: 'Instance'; id: string; hasCapturedLogManager: boolean};
 };

@@ -18,6 +18,7 @@ from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRe
 
 from dagster_graphql.schema.errors import GrapheneError
 
+from .asset_key import GrapheneAssetKey
 from .util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
@@ -77,6 +78,8 @@ class GrapheneMissingAutoMaterializeCondition(graphene.ObjectType):
 
 
 class GrapheneParentOutdatedAutoMaterializeCondition(graphene.ObjectType):
+    waitingOnAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
     class Meta:
         name = "ParentOutdatedAutoMaterializeCondition"
         interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
@@ -142,7 +145,9 @@ def create_graphene_auto_materialize_condition(
         )
     elif isinstance(condition, ParentOutdatedAutoMaterializeCondition):
         return GrapheneParentOutdatedAutoMaterializeCondition(
-            decisionType=condition.decision_type, partitionKeysOrError=partition_keys_or_error
+            decisionType=condition.decision_type,
+            partitionKeysOrError=partition_keys_or_error,
+            waitingOnAssetKeys=condition.waiting_on_asset_keys,
         )
     elif isinstance(condition, MaxMaterializationsExceededAutoMaterializeCondition):
         return GrapheneMaxMaterializationsExceededAutoMaterializeCondition(

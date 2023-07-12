@@ -13,6 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
+    "allowUnreachableCode": true,
     "allowSyntheticDefaultImports": true,
     "types": ["jest", "node"],
     "skipLibCheck": true,

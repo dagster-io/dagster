@@ -129,6 +129,15 @@ SHARED_TASK_DEFINITION_FIELDS = {
             " for more information."
         ),
     ),
+    "repository_credentials": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "The arn of the secret to authenticate into your private container registry."
+            " This does not apply if you are leveraging ECR for your images, see"
+            " https://docs.aws.amazon.com/AmazonECS/latest/userguide/private-auth.html."
+        ),
+    ),
 }
 
 ECS_CONTAINER_CONTEXT_SCHEMA = {
@@ -225,6 +234,7 @@ class EcsContainerContext(
             ("run_sidecar_containers", Sequence[Mapping[str, Any]]),
             ("server_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
             ("run_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
+            ("repository_credentials", Optional[str]),
         ],
     )
 ):
@@ -248,6 +258,7 @@ class EcsContainerContext(
         run_sidecar_containers: Optional[Sequence[Mapping[str, Any]]] = None,
         server_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
         run_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
+        repository_credentials: Optional[str] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -273,6 +284,9 @@ class EcsContainerContext(
             ),
             server_ecs_tags=check.opt_sequence_param(server_ecs_tags, "server_ecs_tags"),
             run_ecs_tags=check.opt_sequence_param(run_ecs_tags, "run_tags"),
+            repository_credentials=check.opt_str_param(
+                repository_credentials, "repository_credentials"
+            ),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -296,6 +310,7 @@ class EcsContainerContext(
             run_sidecar_containers=[*other.run_sidecar_containers, *self.run_sidecar_containers],
             server_ecs_tags=[*other.server_ecs_tags, *self.server_ecs_tags],
             run_ecs_tags=[*other.run_ecs_tags, *self.run_ecs_tags],
+            repository_credentials=other.repository_credentials or self.repository_credentials,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -326,6 +341,7 @@ class EcsContainerContext(
                     volumes=run_launcher.volumes,
                     run_sidecar_containers=run_launcher.run_sidecar_containers,
                     run_ecs_tags=run_launcher.run_ecs_tags,
+                    repository_credentials=run_launcher.repository_credentials,
                 )
             )
 
@@ -387,5 +403,6 @@ class EcsContainerContext(
                 run_sidecar_containers=processed_context_value.get("run_sidecar_containers"),
                 server_ecs_tags=processed_context_value.get("server_ecs_tags"),
                 run_ecs_tags=processed_context_value.get("run_ecs_tags"),
+                repository_credentials=processed_context_value.get("repository_credentials"),
             )
         )

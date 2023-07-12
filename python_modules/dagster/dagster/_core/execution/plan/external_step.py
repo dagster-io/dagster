@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, cast
 import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
@@ -235,6 +236,25 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
+
+    # Note: This is a patch that enables using DynamicPartitionsDefinitions with step launchers in the specific case where:
+    # 1. The external step operates on a single dynamic partition.
+    # 2. No dynamic partitions are added in this external step.
+    # A more complete solution would require including all dynamic partitions on the StepRunRef object.
+    if step_context.has_partition_key:
+        partitions_def = next(
+            step_context.partitions_def_for_output(output_name=output_name)
+            for output_name in step_context.op_def.output_dict.keys()
+        )
+
+        # If we deal with DynamicPartitions, add the relevant partition to the remote instance
+        if (
+            isinstance(partitions_def, DynamicPartitionsDefinition)
+            and partitions_def.name is not None
+        ):
+            step_context.instance.add_dynamic_partitions(
+                partitions_def_name=partitions_def.name, partition_keys=[step_context.partition_key]
+            )
 
     # The step should be forced to run locally with respect to the remote process that this step
     # context is being deserialized in

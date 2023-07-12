@@ -5,7 +5,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -62,6 +62,10 @@ class EventLogRecord(NamedTuple):
     @property
     def asset_materialization(self) -> Optional[AssetMaterialization]:
         return self.event_log_entry.asset_materialization
+
+    @property
+    def asset_observation(self) -> Optional[AssetObservation]:
+        return self.event_log_entry.asset_observation
 
 
 @whitelist_for_serdes

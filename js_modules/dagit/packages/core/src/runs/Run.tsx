@@ -43,14 +43,16 @@ interface RunProps {
 
 const runStatusFavicon = (status: RunStatus) => {
   switch (status) {
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
     case RunStatus.FAILURE:
       return '/favicon-run-failed.svg';
     case RunStatus.SUCCESS:
       return '/favicon-run-success.svg';
-    default:
+    case RunStatus.STARTING:
+    case RunStatus.STARTED:
+    case RunStatus.CANCELING:
       return '/favicon-run-pending.svg';
+    default:
+      return '/favicon.svg';
   }
 };
 

@@ -13,6 +13,7 @@ def get_version() -> str:
 
 
 ver = get_version()
+
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(

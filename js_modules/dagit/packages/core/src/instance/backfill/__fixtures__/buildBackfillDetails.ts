@@ -15,7 +15,7 @@ export function buildBackfillDetailsQuery(
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         partitionBackfillOrError: buildPartitionBackfill(partitionBackfill),
       },
     },

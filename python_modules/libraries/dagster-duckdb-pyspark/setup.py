@@ -39,7 +39,8 @@ setup(
         # Pyspark 2.x is incompatible with Python 3.8+
         'pyspark>=3.0.0; python_version >= "3.8"',
         'pyspark>=2.0.2; python_version < "3.8"',
-        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
+        "pandas",
+        "pyarrow",
     ],
     zip_safe=False,
 )

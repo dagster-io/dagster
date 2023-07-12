@@ -35,7 +35,7 @@ export const buildRunStatusAndPartitionKeyQuery = (
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         runsOrError: buildRuns({
           results: runIds.map((runId, ii) => {
             return buildRun({

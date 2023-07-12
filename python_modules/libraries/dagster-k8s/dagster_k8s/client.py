@@ -773,7 +773,7 @@ class DagsterKubernetesClient:
                 log_str = f"Last 25 log lines:\n{pod_logs}" if pod_logs else "No logs in pod."
 
             except kubernetes.client.rest.ApiException as e:
-                log_str = f"Failure fetching pod logs: {str(e)}"
+                log_str = f"Failure fetching pod logs: {e}"
 
         if not K8S_EVENTS_API_PRESENT:
             warning_str = (
@@ -795,7 +795,7 @@ class DagsterKubernetesClient:
                     warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
 
             except kubernetes.client.rest.ApiException as e:
-                warning_str = f"Failure fetching pod events: {str(e)}"
+                warning_str = f"Failure fetching pod events: {e}"
 
         return (
             f"Debug information for pod {pod_name}:"

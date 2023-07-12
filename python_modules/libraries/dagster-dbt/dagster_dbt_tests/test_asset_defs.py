@@ -28,11 +28,12 @@ from dagster_dbt import (
     dbt_cli_resource,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.cli.utils import parse_run_results
+from dagster_dbt.core.utils import parse_run_results
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
 from dagster_duckdb import build_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from pandas import read_csv
 
 from .utils import assert_assets_match_project
 
@@ -76,7 +77,7 @@ def test_load_from_manifest_json(prefix):
         run_results_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
-    assert_assets_match_project(dbt_assets, prefix)
+    assert_assets_match_project(dbt_assets, prefix=prefix)
 
     dbt = MagicMock(spec=DbtCliResource)
     dbt.get_run_results_json.return_value = run_results_json
@@ -130,7 +131,7 @@ def test_runtime_metadata_fn(
             for event in result.events_for_node(dbt_assets[0].op.name)
             if event.event_type_value == "ASSET_MATERIALIZATION"
         ]
-        assert len(materializations) == 4
+        assert len(materializations) == 6
         assert materializations[0].metadata["op_name"] == MetadataValue.text(dbt_assets[0].op.name)
         assert materializations[0].metadata["dbt_model"] == MetadataValue.text(
             materializations[0].asset_key.path[-1]
@@ -197,7 +198,12 @@ def test_basic(
     fail_test,
     json_log_format,
 ):
-    if not json_log_format and dbt_cli_resource_factory == DbtCli:
+    dbt_resource = dbt_cli_resource_factory(
+        project_dir=test_project_dir,
+        profiles_dir=dbt_config_dir,
+        json_log_format=json_log_format,
+    )
+    if not json_log_format and isinstance(dbt_resource, DbtCli):
         pytest.skip("DbtCli does not support json_log_format")
 
     # expected to emit json-formatted messages
@@ -213,13 +219,7 @@ def test_basic(
     result = build_assets_job(
         "test_job",
         dbt_assets,
-        resource_defs={
-            "dbt": dbt_cli_resource_factory(
-                project_dir=test_project_dir,
-                profiles_dir=dbt_config_dir,
-                json_log_format=json_log_format,
-            )
-        },
+        resource_defs={"dbt": dbt_resource},
     ).execute_in_process(
         raise_on_error=False,
         run_config={"ops": {dbt_assets[0].op.name: {"config": {"vars": {"fail_test": fail_test}}}}},
@@ -256,17 +256,18 @@ def test_basic(
     captured = capsys.readouterr()
 
     # make sure we're not logging the raw json to the console
-    for output in [captured.out, captured.err]:
-        for line in output.split("\n"):
-            # we expect a line like --vars {"fail_test": True}
-            if "vars" in line:
-                continue
-            assert "{" not in line
+    if not isinstance(dbt_resource, DbtCli):
+        for output in [captured.out, captured.err]:
+            for line in output.split("\n"):
+                # we expect a line like --vars {"fail_test": True}
+                if "vars" in line:
+                    continue
+                assert "{" not in line
 
 
 def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
     def _node_info_to_group(node_info):
-        return node_info["tags"][0]
+        return node_info["tags"][0] if node_info["tags"] else "default"
 
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, node_info_to_group_fn=_node_info_to_group
@@ -277,6 +278,8 @@ def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
         AssetKey(["sort_by_calories"]): "foo",
         AssetKey(["sort_hot_cereals_by_calories"]): "bar",
         AssetKey(["subdir_schema", "least_caloric"]): "bar",
+        AssetKey(["cereals"]): "default",
+        AssetKey(["orders_snapshot"]): "default",
     }
 
 
@@ -562,17 +565,18 @@ def test_node_info_to_asset_key(
             "*",
             (
                 "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
-                "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2"
+                "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2,cereals,"
+                "orders_snapshot"
             ),
         ),
         (
             "sort_by_calories+",
             (
                 "sort_by_calories,subdir_schema/least_caloric,cold_schema/sort_cold_cereals_by_calories,"
-                "sort_hot_cereals_by_calories,hanger1"
+                "sort_hot_cereals_by_calories,hanger1,orders_snapshot"
             ),
         ),
-        ("*hanger2", "hanger2,subdir_schema/least_caloric,sort_by_calories"),
+        ("*hanger2", "cereals,hanger2,subdir_schema/least_caloric,sort_by_calories"),
         (
             [
                 "cold_schema/sort_cold_cereals_by_calories",
@@ -647,7 +651,7 @@ def test_op_config(
     if expected_asset_names == "ALL":
         expected_asset_names = (
             "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
-            "sort_hot_cereals_by_calories,subdir_schema/least_caloric"
+            "sort_hot_cereals_by_calories,subdir_schema/least_caloric,cereals,orders_snapshot"
         )
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
@@ -704,6 +708,8 @@ def test_op_custom_name():
             "fqn:*",
             None,
             {
+                "cereals",
+                "orders_snapshot",
                 "sort_by_calories",
                 "cold_schema/sort_cold_cereals_by_calories",
                 "subdir_schema/least_caloric",
@@ -713,7 +719,7 @@ def test_op_custom_name():
         (
             "+least_caloric",
             None,
-            {"sort_by_calories", "subdir_schema/least_caloric"},
+            {"sort_by_calories", "subdir_schema/least_caloric", "cereals"},
         ),
         (
             "sort_by_calories least_caloric",
@@ -728,6 +734,7 @@ def test_op_custom_name():
                 "cold_schema/sort_cold_cereals_by_calories",
                 "subdir_schema/least_caloric",
                 "sort_hot_cereals_by_calories",
+                "orders_snapshot",
             },
         ),
         (
@@ -747,19 +754,39 @@ def test_op_custom_name():
                 "sort_by_calories",
                 "cold_schema/sort_cold_cereals_by_calories",
                 "subdir_schema/least_caloric",
+                "cereals",
+                "orders_snapshot",
             },
         ),
         (
             None,
             "+least_caloric",
-            {"cold_schema/sort_cold_cereals_by_calories", "sort_hot_cereals_by_calories"},
+            {
+                "cold_schema/sort_cold_cereals_by_calories",
+                "orders_snapshot",
+                "sort_hot_cereals_by_calories",
+            },
         ),
         (
             None,
             "sort_by_calories least_caloric",
-            {"cold_schema/sort_cold_cereals_by_calories", "sort_hot_cereals_by_calories"},
+            {
+                "cold_schema/sort_cold_cereals_by_calories",
+                "sort_hot_cereals_by_calories",
+                "cereals",
+                "orders_snapshot",
+            },
         ),
-        (None, "tag:foo", {"subdir_schema/least_caloric", "sort_hot_cereals_by_calories"}),
+        (
+            None,
+            "tag:foo",
+            {
+                "subdir_schema/least_caloric",
+                "sort_hot_cereals_by_calories",
+                "cereals",
+                "orders_snapshot",
+            },
+        ),
     ],
 )
 def test_dbt_selections(
@@ -867,13 +894,21 @@ def test_source_tag_selection(test_python_project_dir, dbt_python_config_dir):
 
 
 def test_python_interleaving(
-    dbt_seed_python, dbt_cli_resource_factory, test_python_project_dir, dbt_python_config_dir
+    dbt_cli_resource_factory, test_python_project_dir, dbt_python_config_dir
 ):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir, dbt_python_config_dir, key_prefix="test_python_schema"
     )
 
     duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+
+    @asset(key_prefix="raw_data")
+    def events():
+        return read_csv(os.path.join(test_python_project_dir, "events.csv"))
+
+    @asset(key_prefix="raw_data")
+    def users():
+        return read_csv(os.path.join(test_python_project_dir, "users.csv"))
 
     @asset(key_prefix="dagster", ins={"cleaned_users": AssetIn(key_prefix="test_python_schema")})
     def bot_labeled_users(cleaned_users):
@@ -885,7 +920,7 @@ def test_python_interleaving(
         return bot_labeled_users_df
 
     job_def = Definitions(
-        assets=[*dbt_assets, bot_labeled_users],
+        assets=[*dbt_assets, users, events, bot_labeled_users],
         resources={
             "io_manager": duckdb_io_manager.configured(
                 {"database": os.path.join(test_python_project_dir, "test.duckdb")}
@@ -911,6 +946,8 @@ def test_python_interleaving(
         "test_python_schema.daily_aggregated_users",
         "dagster.bot_labeled_users",
         "test_python_schema.bot_labeled_events",
+        "raw_data.events",
+        "raw_data.users",
     ]
     expected_keys = {AssetKey(name.split(".")) for name in expected_asset_names}
     assert all_keys == expected_keys

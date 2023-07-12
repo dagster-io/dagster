@@ -8,4 +8,4 @@ manifest = DbtManifest.read(path=MANIFEST_PATH)
 
 @dbt_assets(manifest=manifest)
 def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
-    yield from dbt.cli(["build"], manifest=manifest, context=context).stream()
+    yield from dbt.cli(["build"], context=context).stream()

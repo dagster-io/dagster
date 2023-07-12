@@ -53,6 +53,7 @@ alias copy_py="rsync -av \
 
 copy_py $ROOT/python_modules/dagster \
         $ROOT/python_modules/dagit \
+        $ROOT/python_modules/dagster-webserver \
         $ROOT/python_modules/dagster-graphql \
         python_modules/
 

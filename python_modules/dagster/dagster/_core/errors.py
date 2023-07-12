@@ -103,7 +103,7 @@ Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 {PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
     ).format(
-        config_class=f" {repr(config_class)}" if config_class else "",
+        config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
         PYTHONIC_CONFIG_ERROR_VERBIAGE=pythonic_config_error_verbiage,

@@ -89,6 +89,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def job_name(self) -> str:
+        """str: The name of the executing job."""
         return self._job_context.job_name
 
     @public

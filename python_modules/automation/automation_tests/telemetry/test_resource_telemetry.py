@@ -77,7 +77,7 @@ def test_resource_telemetry():
                 )
             ]
         )
-        for _, klass in resources.items():
+        for klass in resources.values():
             if klass in exceptions:
                 # the klass is purposely set to dagster_maintained=False
                 continue

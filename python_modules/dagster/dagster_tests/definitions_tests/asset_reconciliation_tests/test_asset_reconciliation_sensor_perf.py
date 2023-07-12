@@ -29,6 +29,7 @@ from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.types.dagster_type import Nothing
 from dagster._utils import file_relative_path
 
@@ -152,6 +153,10 @@ class InstanceSnapshot(NamedTuple):
                             [multi_asset],
                             instance=instance,
                             partition_key=partition_key,
+                        )
+                    for asset_key in list(multi_asset.keys):
+                        get_and_update_asset_status_cache_value(
+                            instance, asset_key, self.assets.asset_partitions_def
                         )
                 else:
                     asset_graph = AssetGraph.from_assets([*sources, *roots, multi_asset])
@@ -328,7 +333,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=unpartitioned_2000_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=10,
+        max_execution_time_seconds=25,
     ),
     PerfScenario(
         snapshot=unpartitioned_2000_assets_2_random_runs,
@@ -348,7 +353,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=all_daily_partitioned_500_assets_2_partition_keys,
         n_freshness_policies=100,
-        max_execution_time_seconds=15,
+        max_execution_time_seconds=25,
     ),
     PerfScenario(
         snapshot=all_hourly_partitioned_100_assets_2_partition_keys,

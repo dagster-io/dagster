@@ -36,7 +36,7 @@ const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       runTagKeysOrError: buildRunTagKeys({
         keys: [DagsterTag.Partition, DagsterTag.PartitionSet],
       }),

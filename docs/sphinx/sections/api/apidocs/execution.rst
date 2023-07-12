@@ -79,6 +79,8 @@ Contexts
 
 .. autofunction:: build_op_context
 
+.. autofunction:: build_asset_context
+
 .. autoclass:: TypeCheckContext
   :members:
   :inherited-members:

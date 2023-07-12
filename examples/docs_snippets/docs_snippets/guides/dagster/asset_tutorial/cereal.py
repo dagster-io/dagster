@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 import csv
 import requests

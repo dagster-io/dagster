@@ -2,7 +2,6 @@ import pandas as pd
 
 from dagster import AssetIn, asset
 
-
 # this example uses the iris_data asset from Step 2 of the Using Dagster with BigQuery tutorial
 
 

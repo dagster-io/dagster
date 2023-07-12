@@ -178,7 +178,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def on_subscribe(self, subscription: "ComputeLogSubscription") -> None:
-        """Hook for managing streaming subscriptions for log data from `dagit`.
+        """Hook for managing streaming subscriptions for log data from `dagster-webserver`.
 
         Args:
             subscription (ComputeLogSubscription): subscription object which manages when to send

@@ -319,7 +319,7 @@ def asset_key_to_dep_node_handles(
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
     # handle internal_asset_deps within graph-backed assets
-    for _, assets_def in assets_defs_by_node_handle.items():
+    for assets_def in assets_defs_by_node_handle.values():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
             if asset_key not in assets_def.keys:
                 continue

@@ -60,6 +60,7 @@ export const AssetNodeLineageGraph: React.FC<{
     <SVGViewport
       ref={(r) => (viewportEl.current = r || undefined)}
       interactor={SVGViewport.Interactors.PanAndZoom}
+      defaultZoom="zoom-to-fit"
       graphWidth={layout.width}
       graphHeight={layout.height}
       onDoubleClick={(e) => {

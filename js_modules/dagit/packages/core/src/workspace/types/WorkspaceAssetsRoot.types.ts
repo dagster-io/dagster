@@ -7,7 +7,7 @@ export type WorkspaceAssetsQueryVariables = Types.Exact<{
 }>;
 
 export type WorkspaceAssetsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   repositoryOrError:
     | {
         __typename: 'PythonError';

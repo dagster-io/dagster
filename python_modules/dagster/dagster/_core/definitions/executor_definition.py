@@ -128,6 +128,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     @public
     @property
     def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
+        """Callable that takes an :py:class:`InitExecutorContext` and returns an instance of
+        :py:class:`Executor`.
+        """
         return self._executor_creation_fn
 
     def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
@@ -162,7 +165,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -444,9 +447,9 @@ def _check_intra_process_job(job: IJob) -> None:
             "You have attempted to use an executor that uses multiple processes with the job"
             f' "{job.get_definition().name}" that is not reconstructable. Job must be loaded in a'
             " way that allows dagster to reconstruct them in a new process. This means: \n  *"
-            " using the file, module, or repository.yaml arguments of"
-            " dagit/dagster-graphql/dagster\n  * loading the job through the reconstructable()"
-            " function\n"
+            " using the file, module, or workspace.yaml arguments of"
+            " dagster-webserver/dagster-graphql/dagster\n  * loading the job through the"
+            " reconstructable() function\n"
         )
 
 

@@ -199,7 +199,7 @@ def docker_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-dagit_extra_cmds = ["make rebuild_dagit"]
+ui_extra_cmds = ["make rebuild_ui"]
 
 
 mysql_extra_cmds = [
@@ -348,7 +348,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
-    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
+    PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         env_vars=["AWS_ACCOUNT_ID"],

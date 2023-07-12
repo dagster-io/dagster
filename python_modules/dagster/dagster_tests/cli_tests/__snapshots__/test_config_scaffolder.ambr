@@ -1,0 +1,57 @@
+# serializer version: 1
+# name: test_basic_ops_config
+  dict({
+    'execution': dict({
+      'config': dict({
+        'in_process': dict({
+          'marker_to_close': '',
+          'retries': dict({
+            'disabled': dict({
+            }),
+            'enabled': dict({
+            }),
+          }),
+        }),
+        'multiprocess': dict({
+          'max_concurrent': 0,
+          'retries': dict({
+            'disabled': dict({
+            }),
+            'enabled': dict({
+            }),
+          }),
+          'start_method': dict({
+            'forkserver': dict({
+              'preload_modules': list([
+              ]),
+            }),
+            'spawn': dict({
+            }),
+          }),
+          'tag_concurrency_limits': list([
+          ]),
+        }),
+      }),
+    }),
+    'loggers': dict({
+      'console': dict({
+        'config': dict({
+          'log_level': '',
+          'name': '',
+        }),
+      }),
+    }),
+    'ops': dict({
+      'required_field_op': dict({
+        'config': dict({
+          'required_int': 0,
+        }),
+      }),
+    }),
+    'resources': dict({
+      'io_manager': dict({
+        'config': 'AnyType',
+      }),
+    }),
+  })
+# ---

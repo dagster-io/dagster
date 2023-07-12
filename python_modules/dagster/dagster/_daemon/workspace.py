@@ -99,7 +99,7 @@ class BaseDaemonWorkspace(IWorkspace):
 class DaemonIterationWorkspace(BaseDaemonWorkspace):
     """A copy of the main workspace's locations that can be called from a background thread
     in a daemon without worrying that the main thread will clean up the locations underneath us.
-    Analagous to WorkspaceRequestContext in Dagit.
+    Analagous to WorkspaceRequestContext in the webserver.
 
     Daemons that call this should be careful to set cleanup_locations=False when calling cleanup
     on the parent workspace that get_workspace_copy_for_iteration() was called on to create

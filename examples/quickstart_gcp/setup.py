@@ -17,5 +17,5 @@ setup(
         "pandas_gbq",
         "google-auth",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

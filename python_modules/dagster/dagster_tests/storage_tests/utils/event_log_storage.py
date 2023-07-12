@@ -1524,7 +1524,7 @@ class TestEventLogStorage:
         event_list = []
 
         # Direct end_watch emulates behavior of clean up on exception downstream
-        # of the subscription in the dagit webserver.
+        # of the subscription in the webserver.
         storage.watch(err_run_id, None, _unsub)
 
         # Other active watches should proceed correctly.

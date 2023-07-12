@@ -19,7 +19,7 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
-    build_op_context,
+    build_asset_context,
     daily_partitioned_config,
     define_asset_job,
     hourly_partitioned_config,
@@ -207,7 +207,7 @@ def test_access_partition_keys_from_context_direct_invocation():
     def partitioned_asset(context):
         assert context.asset_partition_key_for_output() == "a"
 
-    context = build_op_context(partition_key="a")
+    context = build_asset_context(partition_key="a")
 
     # check unbound context
     assert context.asset_partition_key_for_output() == "a"
@@ -223,7 +223,7 @@ def test_access_partition_keys_from_context_direct_invocation():
         ):
             context.asset_partition_key_for_output()
 
-    context = build_op_context()
+    context = build_asset_context()
     non_partitioned_asset(context)
 
 

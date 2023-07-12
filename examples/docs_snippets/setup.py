@@ -16,8 +16,8 @@ setup(
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=[
-        "dagit",
         "dagster",
+        "dagster-webserver",
         "dagstermill",
         "dagster-airbyte",
         "dagster-airflow",
@@ -55,10 +55,10 @@ setup(
             "seaborn",
             "scikit-learn",
             "slack_sdk",
-            "snapshottest",
+            "syrupy<4",  # 3.7 compatible,
             "dbt-duckdb",
             "xgboost",
-            "dagit[test]",
+            "dagster-webserver[test]",
         ]
     },
 )

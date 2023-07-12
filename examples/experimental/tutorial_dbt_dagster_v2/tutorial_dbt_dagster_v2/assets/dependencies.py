@@ -32,7 +32,7 @@ def clients_data(context):
 
 @dbt_assets(manifest=manifest)
 def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
-    yield from dbt.cli(["build"], manifest=manifest, context=context).stream()
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 @asset(non_argument_deps={manifest.get_asset_key_for_model("customers")})

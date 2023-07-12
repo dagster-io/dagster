@@ -1,5 +1,6 @@
 import {buildAutoMaterializeAssetEvaluationRecord} from '../../../graphql/types';
 import {getEvaluationsWithEmptyAdded} from '../getEvaluationsWithEmptyAdded';
+import {AutoMaterializeEvaluationRecordItemFragment} from '../types/GetEvaluationsQuery.types';
 
 describe('getEvaluationsWithEmptyAdded', () => {
   it('should return an empty array if isLoading is true', () => {
@@ -33,6 +34,50 @@ describe('getEvaluationsWithEmptyAdded', () => {
     });
 
     expect(actual).toEqual([]);
+  });
+
+  it('should return "no conditions met" before NOW if no evaluations yet', () => {
+    const evaluations: AutoMaterializeEvaluationRecordItemFragment[] = [];
+
+    const actual = getEvaluationsWithEmptyAdded({
+      evaluations,
+      currentEvaluationId: null,
+      isFirstPage: true,
+      isLastPage: true,
+      isLoading: false,
+    });
+
+    expect(actual).toEqual([
+      {
+        __typename: 'no_conditions_met',
+        evaluationId: 1,
+        amount: 1,
+        startTimestamp: 0,
+        endTimestamp: 'now',
+      },
+    ]);
+  });
+
+  it('should return "no conditions met" before [time] if no evaluations yet', () => {
+    const evaluations: AutoMaterializeEvaluationRecordItemFragment[] = [];
+
+    const actual = getEvaluationsWithEmptyAdded({
+      evaluations,
+      currentEvaluationId: null,
+      isFirstPage: true,
+      isLastPage: true,
+      isLoading: false,
+    });
+
+    expect(actual).toEqual([
+      {
+        __typename: 'no_conditions_met',
+        evaluationId: 1,
+        amount: 1,
+        startTimestamp: 0,
+        endTimestamp: 'now',
+      },
+    ]);
   });
 
   it(
@@ -128,6 +173,13 @@ describe('getEvaluationsWithEmptyAdded', () => {
         startTimestamp: evaluations[1]!.timestamp + 60,
       },
       evaluations[1],
+      {
+        __typename: 'no_conditions_met',
+        evaluationId: 0,
+        amount: 0,
+        endTimestamp: evaluations[1]!.timestamp - 60,
+        startTimestamp: 0,
+      },
     ]);
   });
 });
