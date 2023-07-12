@@ -67,15 +67,38 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 
 ### Assets with dependencies
 
-Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
+Software-defined assets can depend on other software-defined assets. In Dagster, you can either define dependencies that just specify materialization order, or you can define dependencies that also load the contents of the upstream asset. You can also define dependencies on external assets.
+
+In this section, we'll show you how to define:
 
 - [Basic asset dependencies](#defining-basic-dependencies)
-- [Explicit asset dependencies](#defining-explicit-dependencies)
+- [Basic data-loading asset dependencies](#defining-explicit-dependencies)
+- [Explicit data-loading asset dependencies](#defining-explicit-dependencies)
 - [External asset dependencies](#defining-external-asset-dependencies)
 
 #### Defining basic dependencies
 
-The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function.
+You can define a dependency between two assets by passing the upstream asset to the `deps` parameter in the downstream asset's `@asset` decorator.
+
+In this example, `upstream_asset` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table. Then `downstream_asset` creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
+
+```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
+from dagster import asset
+
+
+@asset
+def upstream_asset() -> None:
+    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
+
+
+@asset(deps=[upstream_asset])
+def downstream_asset() -> None:
+    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
+```
+
+#### Defining basic data-loading dependencies
+
+The easiest way to define an asset dependency that will load the contents of an upstream asset is to include the upstream asset name as an argument to the decorated function.
 
 In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
 
@@ -90,7 +113,9 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 ```
 
-#### Defining explicit dependencies
+In this example, Dagster will load the data returned from `upstream_asset` and pass it as the `upstream_asset` parameter to `downstream_asset`.
+
+#### Defining explicit data-loading dependencies
 
 If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
 
@@ -140,8 +165,16 @@ from dagster import AssetKey, SourceAsset, asset
 my_source_asset = SourceAsset(key=AssetKey("a_source_asset"))
 
 
+@asset(deps=[my_source_asset])
+def my_derived_asset():
+    return execute_query("SELECT * from a_source_asset").as_list() + [4]
+```
+
+You can also define dependencies on `SourceAsset`s that will load the data of the asset:
+
+```python file=/concepts/assets/source_asset.py startafter=start_argument_dependency endbefore=end_argument_dependency
 @asset
-def my_derived_asset(a_source_asset):
+def my_other_derived_asset(a_source_asset):
     return a_source_asset + [4]
 ```
 
@@ -187,31 +220,6 @@ Using source assets has a few advantages over having the code inside of an asset
 - **Dagit can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into Dagit, Dagit can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
-
-#### Defining dependencies that don't load data
-
-Alternatively, you can define dependencies where data from an upstream asset doesn’t need to be loaded by Dagster to compute a downstream asset's output. When used, `deps` defines the dependency between assets but doesn’t pass data through Dagster.
-
-Consider the following example:
-
-1. `upstream_asset` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table
-2. `downstream_asset` then creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
-
-```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
-from dagster import asset
-
-
-@asset
-def upstream_asset() -> None:
-    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
-
-
-@asset(deps=[upstream_asset])
-def downstream_asset() -> None:
-    execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
-```
-
-In this example, Dagster doesn’t need to load data from `upstream_asset` to successfully compute the `downstream_asset`. While `downstream_asset` does depend on `upstream_asset`, the key difference with `deps` is that data isn’t being passed between the functions. Specifically, the data from the `sugary_cereals` table isn't being passed as an argument to `downstream_asset`.
 
 ### Graph-backed assets and multi-assets
 
