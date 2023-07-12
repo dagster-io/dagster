@@ -625,9 +625,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             upstream_output = artificial_output_context
 
-        asset_key = self.job_def.asset_layer.asset_key_for_input(
-            node_handle=self.node_handle, input_name=name
-        )
+        asset_key = upstream_output.asset_key
+        # self.job_def.asset_layer.asset_key_for_input(
+        #     node_handle=self.node_handle, input_name=name
+        # )
         asset_partitions_subset = (
             self.asset_partitions_subset_for_input(name)
             if self.has_asset_partitions_for_input(name)
