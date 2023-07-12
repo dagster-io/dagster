@@ -80,7 +80,7 @@ fsspec==2023.6.0
 future==0.18.3
 gcsfs==2023.6.0
 google-api-core==2.11.1
-google-auth==2.21.0
+google-auth==2.22.0
 google-auth-oauthlib==1.0.0
 google-cloud-core==2.3.3
 google-cloud-storage==2.10.0
@@ -91,6 +91,7 @@ gql==3.4.1
 graphene==3.2.2
 graphql-core==3.2.3
 graphql-relay==3.2.0
+greenlet==2.0.2
 grpcio==1.56.0
 grpcio-health-checking==1.56.0
 grpcio-tools==1.56.0
@@ -173,7 +174,7 @@ Pillow==10.0.0
 platformdirs==3.8.1
 pluggy==1.2.0
 -e examples/project_fully_featured
-prometheus-client==0.17.0
+prometheus-client==0.17.1
 prompt-toolkit==3.0.39
 protobuf==4.23.4
 psutil==5.9.5
