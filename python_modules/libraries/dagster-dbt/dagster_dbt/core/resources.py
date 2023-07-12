@@ -2,7 +2,7 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster import resource
-from dagster._annotations import deprecated, public
+from dagster._annotations import public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.backcompat import deprecation_warning
@@ -469,7 +469,6 @@ class DbtCliClient(DbtClient):
         return parse_manifest(project_dir, target_path)
 
 
-@deprecated
 class DbtCliResource(DbtCliClient):
     """Deprecated. Use `DbtCli` instead."""
 
@@ -486,8 +485,6 @@ class DbtCliResource(DbtCliClient):
         capture_logs: bool = True,
         debug: bool = False,
     ):
-        deprecation_warning("DbtCliResource", "1.5", "Use DbtCli instead.")
-
         super().__init__(
             default_flags=default_flags,
             executable=executable,
