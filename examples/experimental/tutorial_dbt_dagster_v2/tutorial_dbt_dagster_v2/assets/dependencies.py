@@ -2,15 +2,18 @@ from typing import Any
 
 import pandas as pd
 from dagster import AssetOut, OpExecutionContext, Output, asset, multi_asset
-from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+from dagster_dbt import DbtCli, dbt_assets
 
 from ..constants import MANIFEST_PATH
 
-manifest = DbtManifest.read(path=MANIFEST_PATH)
+
+@dbt_assets(manifest=MANIFEST_PATH)
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 @asset(
-    key=manifest.get_asset_key_for_source("raw_data"),
+    key=my_dbt_assets.get_asset_key_for_source("raw_data"),
 )
 def raw_inventory() -> Any:
     return pd.DataFrame()
@@ -19,7 +22,7 @@ def raw_inventory() -> Any:
 @multi_asset(
     outs={
         name: AssetOut(key=asset_key)
-        for name, asset_key in manifest.get_asset_keys_by_output_name_for_source(
+        for name, asset_key in my_dbt_assets.get_asset_keys_by_output_name_for_source(
             "clients_data"
         ).items()
     }
@@ -30,11 +33,6 @@ def clients_data(context):
     yield Output(value=pd.DataFrame(), output_name=output_names[1])
 
 
-@dbt_assets(manifest=manifest)
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
-    yield from dbt.cli(["build"], context=context).stream()
-
-
-@asset(non_argument_deps={manifest.get_asset_key_for_model("customers")})
+@asset(non_argument_deps={my_dbt_assets.get_asset_key_for_model("customers")})
 def cleaned_customers() -> Any:
     return pd.DataFrame()

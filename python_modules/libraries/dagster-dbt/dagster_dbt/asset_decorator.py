@@ -1,39 +1,48 @@
+import json
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Set, Tuple, Union, cast
 
 import dagster._check as check
-from dagster import AssetKey, AssetOut, AssetsDefinition, Nothing, PartitionsDefinition, multi_asset
+from dagster import (
+    AssetKey,
+    AssetOut,
+    Nothing,
+    PartitionsDefinition,
+    multi_asset,
+)
 from dagster._annotations import experimental
 
 from .asset_utils import (
-    MANIFEST_METADATA_KEY,
-    default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
-    default_description_fn,
     default_freshness_policy_fn,
     default_group_fn,
-    default_metadata_fn,
     get_deps,
-    output_name_fn,
 )
-from .core.resources_v2 import DbtManifest
-from .utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
+from .dagster_dbt_translator import DagsterDbtTranslator
+from .dbt_assets_definition import DbtAssetsDefinition
+from .utils import (
+    ASSET_RESOURCE_TYPES,
+    get_node_info_by_dbt_unique_id_from_manifest,
+    output_name_fn,
+    select_unique_ids_from_manifest,
+)
 
 
 @experimental
 def dbt_assets(
     *,
-    manifest: Union[Mapping[str, Any], DbtManifest, Path],
+    manifest: Union[Mapping[str, Any], Path],
     select: str = "fqn:*",
     exclude: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-) -> Callable[..., AssetsDefinition]:
+    dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
+) -> Callable[..., DbtAssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
 
     Args:
-        manifest (Union[Mapping[str, Any], DbtManifest, Path]): The contents of a manifest.json file
+        manifest (Union[Mapping[str, Any], Path]): The contents of a manifest.json file
             or the path to a manifest.json file. A manifest.json contains a representation of a
             dbt project (models, tests, macros, etc). We use this representation to create
             corresponding Dagster assets.
@@ -59,17 +68,17 @@ def dbt_assets(
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
                 yield from dbt.cli(["build"], context=context).stream()
     """
-    check.inst_param(manifest, "manifest", (Path, dict, DbtManifest))
+    check.inst_param(manifest, "manifest", (Path, dict))
     if isinstance(manifest, Path):
-        manifest = DbtManifest.read(path=manifest)
-    elif isinstance(manifest, Mapping):
-        manifest = DbtManifest(manifest)
+        with manifest.open("r") as handle:
+            manifest = cast(Mapping[str, Any], json.load(handle))
 
     unique_ids = select_unique_ids_from_manifest(
-        select=select, exclude=exclude or "", manifest_json=manifest.raw_manifest
+        select=select, exclude=exclude or "", manifest_json=manifest
     )
+    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
     deps = get_deps(
-        dbt_nodes=manifest.node_info_by_dbt_unique_id,
+        dbt_nodes=node_info_by_dbt_unique_id,
         selected_unique_ids=unique_ids,
         asset_resource_types=ASSET_RESOURCE_TYPES,
     )
@@ -78,13 +87,13 @@ def dbt_assets(
         outs,
         internal_asset_deps,
     ) = get_dbt_multi_asset_args(
-        dbt_nodes=manifest.node_info_by_dbt_unique_id,
+        dbt_nodes=node_info_by_dbt_unique_id,
         deps=deps,
         io_manager_key=io_manager_key,
-        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
     )
 
-    def inner(fn) -> AssetsDefinition:
+    def inner(fn) -> DbtAssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
             internal_asset_deps=internal_asset_deps,
@@ -98,11 +107,10 @@ def dbt_assets(
             },
         )(fn)
 
-        return asset_definition.with_attributes(
-            input_asset_key_replacements=manifest.asset_key_replacements,
-            output_asset_key_replacements=manifest.asset_key_replacements,
-            descriptions_by_key=manifest.descriptions_by_asset_key,
-            metadata_by_key=manifest.metadata_by_asset_key,
+        return DbtAssetsDefinition.from_assets_def(
+            asset_definition,
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator,
         )
 
     return inner
@@ -112,9 +120,8 @@ def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
-    manifest: "DbtManifest",
+    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
-    """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
     non_argument_deps: Set[AssetKey] = set()
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
@@ -123,18 +130,15 @@ def get_dbt_multi_asset_args(
         node_info = dbt_nodes[unique_id]
 
         output_name = output_name_fn(node_info)
-        asset_key = default_asset_key_fn(node_info)
+        asset_key = dagster_dbt_translator.node_info_to_asset_key(node_info)
 
         outs[output_name] = AssetOut(
             key=asset_key,
             dagster_type=Nothing,
             io_manager_key=io_manager_key,
-            description=default_description_fn(node_info, display_raw_sql=False),
+            description=dagster_dbt_translator.node_info_to_description(node_info),
             is_required=False,
-            metadata={  # type: ignore
-                **default_metadata_fn(node_info),
-                MANIFEST_METADATA_KEY: manifest,
-            },
+            metadata=dagster_dbt_translator.node_info_to_metadata(node_info),
             group_name=default_group_fn(node_info),
             code_version=default_code_version_fn(node_info),
             freshness_policy=default_freshness_policy_fn(node_info),
@@ -145,7 +149,7 @@ def get_dbt_multi_asset_args(
         output_internal_deps = internal_asset_deps.setdefault(output_name, set())
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = default_asset_key_fn(parent_node_info)
+            parent_asset_key = dagster_dbt_translator.node_info_to_asset_key(parent_node_info)
 
             # Add this parent as an internal dependency
             output_internal_deps.add(parent_asset_key)
