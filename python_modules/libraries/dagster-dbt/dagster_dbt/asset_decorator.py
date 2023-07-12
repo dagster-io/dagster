@@ -1,11 +1,22 @@
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Set, Tuple, Union
 
 import dagster._check as check
-from dagster import AssetsDefinition, PartitionsDefinition, multi_asset
+from dagster import AssetKey, AssetOut, AssetsDefinition, Nothing, PartitionsDefinition, multi_asset
 from dagster._annotations import experimental
 
-from .asset_utils import get_dbt_multi_asset_args, get_deps
+from .asset_utils import (
+    MANIFEST_METADATA_KEY,
+    default_asset_key_fn,
+    default_auto_materialize_policy_fn,
+    default_code_version_fn,
+    default_description_fn,
+    default_freshness_policy_fn,
+    default_group_fn,
+    default_metadata_fn,
+    get_deps,
+    output_name_fn,
+)
 from .core.resources_v2 import DbtManifest
 from .utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
@@ -95,3 +106,52 @@ def dbt_assets(
         )
 
     return inner
+
+
+def get_dbt_multi_asset_args(
+    dbt_nodes: Mapping[str, Any],
+    deps: Mapping[str, FrozenSet[str]],
+    io_manager_key: Optional[str],
+    manifest: "DbtManifest",
+) -> Tuple[Set[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
+    """Use the standard defaults for dbt to construct the arguments for a dbt multi asset."""
+    non_argument_deps: Set[AssetKey] = set()
+    outs: Dict[str, AssetOut] = {}
+    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+
+    for unique_id, parent_unique_ids in deps.items():
+        node_info = dbt_nodes[unique_id]
+
+        output_name = output_name_fn(node_info)
+        asset_key = default_asset_key_fn(node_info)
+
+        outs[output_name] = AssetOut(
+            key=asset_key,
+            dagster_type=Nothing,
+            io_manager_key=io_manager_key,
+            description=default_description_fn(node_info, display_raw_sql=False),
+            is_required=False,
+            metadata={  # type: ignore
+                **default_metadata_fn(node_info),
+                MANIFEST_METADATA_KEY: manifest,
+            },
+            group_name=default_group_fn(node_info),
+            code_version=default_code_version_fn(node_info),
+            freshness_policy=default_freshness_policy_fn(node_info),
+            auto_materialize_policy=default_auto_materialize_policy_fn(node_info),
+        )
+
+        # Translate parent unique ids to internal asset deps and non argument dep
+        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
+        for parent_unique_id in parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_asset_key = default_asset_key_fn(parent_node_info)
+
+            # Add this parent as an internal dependency
+            output_internal_deps.add(parent_asset_key)
+
+            # Mark this parent as an input if it has no dependencies
+            if parent_unique_id not in deps:
+                non_argument_deps.add(parent_asset_key)
+
+    return non_argument_deps, outs, internal_asset_deps
