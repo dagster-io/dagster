@@ -38,13 +38,11 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
     Output,
 )
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
-    experimental_arg_warning,
 )
 from dagster._utils.merger import deep_merge_dicts
 
@@ -483,7 +481,7 @@ def load_assets_from_dbt_project(
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     io_manager_key: Optional[str] = None,
     target_dir: Optional[str] = None,
-    # deprecated
+    # All arguments below are deprecated
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     op_name: Optional[str] = None,
@@ -544,7 +542,8 @@ def load_assets_from_dbt_project(
             as assets. Deprecated: use the select argument instead.
         node_info_to_asset_key (Mapping[str, Any] -> AssetKey): [Deprecated] A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
-            default, the asset key will simply be the name of the dbt model.
+            default, the asset key will simply be the name of the dbt model. Deprecated: instead,
+            provide a custom DagsterDbtTranslator that overrides node_info_to_asset_key.
         use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset. Defaults to True. If set to False, then `dbt run` will be used, and
             seeds and snapshots won't be loaded as assets.
@@ -645,7 +644,7 @@ def load_assets_from_dbt_manifest(
     exclude: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    # deprecated
+    # All arguments below are deprecated
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
@@ -832,9 +831,6 @@ def _load_assets_from_dbt_manifest(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
         )
-    if display_raw_sql is not None:
-        experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
-    display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
 
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
@@ -864,7 +860,7 @@ def _load_assets_from_dbt_manifest(
 
     if dagster_dbt_translator is not None:
         check.invariant(
-            node_info_to_asset_key is None,
+            node_info_to_asset_key == default_asset_key_fn,
             "Can't specify both dagster_dbt_translator and node_info_to_asset_key",
         )
         check.invariant(
@@ -880,9 +876,32 @@ def _load_assets_from_dbt_manifest(
             "Can't specify both dagster_dbt_translator and display_raw_sql",
         )
         check.invariant(
-            node_info_to_definition_metadata_fn is None,
+            node_info_to_definition_metadata_fn is default_metadata_fn,
             "Can't specify both dagster_dbt_translator and node_info_to_definition_metadata_fn",
         )
+    else:
+
+        class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+            @classmethod
+            def node_info_to_asset_key(cls, node_info):
+                base_key = node_info_to_asset_key(node_info)
+                if node_info["resource_type"] == "source":
+                    return base_key.with_prefix(source_key_prefix or [])
+                else:
+                    return base_key.with_prefix(key_prefix or [])
+
+            @classmethod
+            def node_info_to_metadata(cls, node_info):
+                return node_info_to_definition_metadata_fn(node_info)
+
+            @classmethod
+            def node_info_to_description(cls, node_info):
+                return default_description_fn(
+                    node_info,
+                    display_raw_sql=display_raw_sql if display_raw_sql is not None else True,
+                )
+
+        dagster_dbt_translator = CustomDagsterDbtTranslator()
 
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
@@ -894,41 +913,19 @@ def _load_assets_from_dbt_manifest(
         dbt_resource_key=dbt_resource_key,
         op_name=op_name,
         project_id=manifest["metadata"]["project_id"][:5],
-        node_info_to_asset_key=dagster_dbt_translator.node_info_to_asset_key
-        if dagster_dbt_translator is not None
-        else node_info_to_asset_key,
+        node_info_to_asset_key=dagster_dbt_translator.node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
-        node_info_to_definition_metadata_fn=dagster_dbt_translator.node_info_to_metadata
-        if dagster_dbt_translator is not None
-        else node_info_to_definition_metadata_fn,
-        node_info_to_description_fn=dagster_dbt_translator.node_info_to_metadata
-        if dagster_dbt_translator is not None
-        else lambda node_info: default_description_fn(node_info, display_raw_sql),
+        node_info_to_definition_metadata_fn=dagster_dbt_translator.node_info_to_metadata,
+        node_info_to_description_fn=dagster_dbt_translator.node_info_to_description,
         manifest_json=manifest,
     )
-    dbt_assets: Sequence[AssetsDefinition]
-    if source_key_prefix:
-        if isinstance(source_key_prefix, str):
-            source_key_prefix = [source_key_prefix]
-        source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
-        input_key_replacements = {
-            input_key: AssetKey([*source_key_prefix, *input_key.path])
-            for input_key in dbt_assets_def.keys_by_input_name.values()
-        }
-        dbt_assets = [
-            dbt_assets_def.with_attributes(input_asset_key_replacements=input_key_replacements)
-        ]
-    else:
-        dbt_assets = [dbt_assets_def]
 
-    if key_prefix:
-        dbt_assets, _ = prefix_assets(dbt_assets, key_prefix, [], source_key_prefix)
-    return dbt_assets
+    return [dbt_assets_def]
 
 
 def _raise_warnings_for_deprecated_args(
@@ -971,7 +968,7 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The use_build_command arg of {public_fn_name}",
             "0.21",
-            "Use the @dbt_assets decorator if you need to customize the commands you run.",
+            "Use the @dbt_assets decorator if you need to customize the underlying dbt commands.",
             stacklevel=4,
         )
 
@@ -1003,6 +1000,7 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_asset_key_fn arg of {public_fn_name}",
             "0.21",
+            "Instead, provide a custom DagsterDbtTranslator that overrides node_info_to_asset_key.",
             stacklevel=4,
         )
 
@@ -1034,5 +1032,6 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_definition_metadata_fn arg of {public_fn_name}",
             "0.21",
+            "Instead, provide a custom DagsterDbtTranslator that overrides node_info_to_metadata.",
             stacklevel=4,
         )
