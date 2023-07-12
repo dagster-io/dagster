@@ -4,13 +4,13 @@ from dagster import Definitions
 
 from dagster_dbt import DbtCli, DbtManifest, dbt_assets
 
-dbt_project_dir = Path(__file__).parent.joinpath("..", "jaffle_shop")
+dbt_project_dir = Path("{{ dbt_project_dir }}")
 dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 dbt_manifest = DbtManifest.read(path=dbt_manifest_path)
 
 
 @dbt_assets(manifest=dbt_manifest)
-def build_dbt_project(dbt: DbtCli):
+def {{ dbt_assets_name }}(dbt: DbtCli):
     yield from dbt.cli(["build"], manifest=dbt_manifest).stream()
 
 
@@ -22,7 +22,7 @@ schedules = [
 ]
 
 defs = Definitions(
-    assets=[build_dbt_project],
+    assets=[{{ dbt_assets_name }}],
     schedules=schedules,
     resources={
         "dbt": DbtCli(
