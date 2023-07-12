@@ -85,15 +85,6 @@ def dbt_seed(dbt_executable, dbt_config_dir):
 
 
 @pytest.fixture(scope="session")
-def dbt_seed_python(dbt_executable, dbt_python_config_dir):
-    with pushd(TEST_PYTHON_PROJECT_DIR):
-        subprocess.run(
-            [dbt_executable, "seed", "--threads", "1", "--profiles-dir", dbt_python_config_dir],
-            check=True,
-        )
-
-
-@pytest.fixture(scope="session")
 def dbt_build(dbt_executable, dbt_config_dir):
     with pushd(TEST_PROJECT_DIR):
         subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)

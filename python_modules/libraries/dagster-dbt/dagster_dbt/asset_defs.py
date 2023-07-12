@@ -480,7 +480,7 @@ def load_assets_from_dbt_project(
     ] = None,
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    use_build_command: bool = False,
+    use_build_command: bool = True,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
@@ -527,7 +527,8 @@ def load_assets_from_dbt_project(
             source. By default: dbt model -> AssetKey([model_name]) and
             dbt source -> AssetKey([source_name, table_name])
         use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
-            for this asset, rather than `dbt run`.
+            for this asset. Defaults to True. If set to False, then `dbt run` will be used, and
+            seeds and snapshots won't be loaded as assets.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
@@ -607,7 +608,7 @@ def load_assets_from_dbt_manifest(
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    use_build_command: bool = False,
+    use_build_command: bool = True,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
@@ -653,7 +654,8 @@ def load_assets_from_dbt_manifest(
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
         use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
-            for this asset, rather than `dbt run`.
+            for this asset. Defaults to True. If set to False, then `dbt run` will be used, and
+            seeds and snapshots won't be loaded as assets.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given

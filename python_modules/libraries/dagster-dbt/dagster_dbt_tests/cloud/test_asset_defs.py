@@ -204,7 +204,9 @@ def test_load_assets_from_dbt_cloud_job(
         steps_override=[f"dbt compile {expected_dbt_materialization_command_options}"],
     )
 
-    assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)
+    assert_assets_match_project(
+        dbt_cloud_assets, include_seeds_and_snapshots=False, has_non_argument_deps=True
+    )
 
     mock_run_job_and_poll.reset_mock()
 
@@ -316,7 +318,9 @@ def test_load_assets_from_cached_compile_run(
     # Assert that no compile job was run, since we looked into the cache
     mock_run_job_and_poll.assert_not_called()
 
-    assert_assets_match_project(dbt_cloud_assets, has_non_argument_deps=True)
+    assert_assets_match_project(
+        dbt_cloud_assets, include_seeds_and_snapshots=False, has_non_argument_deps=True
+    )
 
     mock_run_job_and_poll.reset_mock()
 
