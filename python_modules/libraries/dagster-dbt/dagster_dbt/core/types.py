@@ -1,12 +1,10 @@
 from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import deprecated
 
 from ..types import DbtOutput
 
 
-@deprecated
 class DbtCliOutput(DbtOutput):
     """The results of executing a dbt command, along with additional metadata about the dbt CLI
     process that was run.

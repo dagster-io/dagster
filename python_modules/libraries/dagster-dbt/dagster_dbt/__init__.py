@@ -11,17 +11,7 @@ from .cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
-from .core import (
-    DbtCliClientResource as DbtCliClientResource,
-    DbtCliOutput as DbtCliOutput,
-    DbtCliResource as DbtCliResource,
-    dbt_cli_resource as dbt_cli_resource,
-)
-from .dbt_resource import DbtResource as DbtResource
 from .errors import (
-    DagsterDbtCliFatalRuntimeError as DagsterDbtCliFatalRuntimeError,
-    DagsterDbtCliHandledRuntimeError as DagsterDbtCliHandledRuntimeError,
-    DagsterDbtCliOutputsNotFoundError as DagsterDbtCliOutputsNotFoundError,
     DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
     DagsterDbtCliUnexpectedOutputError as DagsterDbtCliUnexpectedOutputError,
     DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
@@ -37,7 +27,6 @@ from .ops import (
     dbt_snapshot_op as dbt_snapshot_op,
     dbt_test_op as dbt_test_op,
 )
-from .types import DbtOutput as DbtOutput
 from .version import __version__ as __version__
 
 # ruff: isort: split
@@ -87,6 +76,22 @@ if TYPE_CHECKING:
         local_dbt_rpc_resource as local_dbt_rpc_resource,
     )
 
+    # isort: split
+    ##### Deprecating DbtCliClientResource
+    from .core import (
+        DbtCliClientResource as DbtCliClientResource,
+        DbtCliOutput as DbtCliOutput,
+        DbtCliResource as DbtCliResource,
+        dbt_cli_resource as dbt_cli_resource,
+    )
+    from .dbt_resource import DbtResource as DbtResource
+    from .errors import (
+        DagsterDbtCliFatalRuntimeError as DagsterDbtCliFatalRuntimeError,
+        DagsterDbtCliHandledRuntimeError as DagsterDbtCliHandledRuntimeError,
+        DagsterDbtCliOutputsNotFoundError as DagsterDbtCliOutputsNotFoundError,
+    )
+    from .types import DbtOutput as DbtOutput
+
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
@@ -111,14 +116,51 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
             ("DagsterDbtRpcUnexpectedPollOutputError", "dagster_dbt.errors"),
         ]
     },
+    **{
+        value: (
+            module,
+            "0.21.0",
+            additional_warn_text,
+        )
+        for value, module, additional_warn_text in [
+            (
+                "DbtCliClientResource",
+                "dagster_dbt.core",
+                "DbtCliClientResource is deprecated. Use DbtCli instead.",
+            ),
+            ("DbtCliOutput", "dagster_dbt.core", None),
+            (
+                "DbtCliResource",
+                "dagster_dbt.core",
+                "DbtCliResource is deprecated. Use DbtCli instead.",
+            ),
+            (
+                "dbt_cli_resource",
+                "dagster_dbt.core",
+                "dbt_cli_resource is deprecated. Use DbtCli instead.",
+            ),
+            (
+                "DbtResource",
+                "dagster_dbt.dbt_resource",
+                "DbtResource is deprecated. Use DbtCli instead.",
+            ),
+            ("DagsterDbtCliFatalRuntimeError", "dagster_dbt.errors", None),
+            ("DagsterDbtCliHandledRuntimeError", "dagster_dbt.errors", None),
+            ("DagsterDbtCliOutputsNotFoundError", "dagster_dbt.errors", None),
+            ("DbtOutput", "dagster_dbt.types", None),
+        ]
+    },
 }
 
 
 def __getattr__(name: str) -> Any:
     if name in _DEPRECATED:
         module, breaking_version, additional_warn_text = _DEPRECATED[name]
+        if additional_warn_text:
+            deprecation_warning(name, breaking_version, additional_warn_text)
+
         value = getattr(importlib.import_module(module), name)
-        deprecation_warning(name, breaking_version, additional_warn_text)
+
         return value
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
