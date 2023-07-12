@@ -14,7 +14,6 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster_dbt import DbtCli
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -331,8 +330,5 @@ def test_dbt_with_downstream_asset():
         return None
 
     assert len(downstream_of_dbt.input_names) == 2
-    assert downstream_of_dbt.op.ins["orders"].dagster_type.kind == DagsterTypeKind.NOTHING
-    assert (
-        downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.kind
-        == DagsterTypeKind.NOTHING
-    )
+    assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
+    assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing
