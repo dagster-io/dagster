@@ -80,7 +80,7 @@ class UPathIOManager(MemoizableIOManager):
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
-            return self._base_path._kwargs.copy()
+            return self._base_path._kwargs.copy()  # noqa
         elif isinstance(self._base_path, Path):
             return {}
         else:
@@ -346,20 +346,29 @@ class UPathIOManager(MemoizableIOManager):
                     else False
                 )
 
-                if allow_missing_partitions:
-                    # only keep results which are not errors
-                    results_without_errors = []
-                    for partition_key, result in zip(context.asset_partition_keys, results):
-                        if isinstance(result, FileNotFoundError):
+                results_without_errors = []
+                found_errors = False
+                for partition_key, result in zip(context.asset_partition_keys, results):
+                    if isinstance(result, FileNotFoundError):
+                        if allow_missing_partitions:
                             context.log.warning(
                                 self.get_missing_partition_log_message(partition_key)
                             )
                         else:
-                            results_without_errors.append(result)
+                            context.log.error(str(result))
+                            found_errors = True
+                    elif isinstance(result, Exception):
+                        context.log.error(str(result))
+                        found_errors = True
+                    else:
+                        results_without_errors.append(result)
 
-                    results = results_without_errors
+                if found_errors:
+                    raise RuntimeError(
+                        f"{len(paths) - len(results_without_errors)} partitions could not be loaded"
+                    )
 
-                return results
+                return results_without_errors
 
             awaited_objects = asyncio.get_event_loop().run_until_complete(collect())
 

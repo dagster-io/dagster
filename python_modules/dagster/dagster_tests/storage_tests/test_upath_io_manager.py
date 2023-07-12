@@ -561,7 +561,7 @@ def test_upath_io_manager_async_fail_on_missing_partitions(
         partition_key=start.strftime(daily.fmt),
     )
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(RuntimeError):
         materialize(
             [upstream_asset.to_source_asset(), downstream_asset],
             partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
