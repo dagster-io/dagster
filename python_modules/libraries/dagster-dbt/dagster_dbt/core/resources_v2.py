@@ -218,7 +218,11 @@ class DbtManifest:
     def node_info_by_output_name(self) -> Mapping[str, Mapping[str, Any]]:
         """A mapping of the default output name for a dbt node to the node's dictionary representation in the manifest.
         """
-        return {output_name_fn(node): node for node in self.node_info_by_dbt_unique_id.values()}
+        return {
+            output_name_fn(node): node
+            for node in self.node_info_by_dbt_unique_id.values()
+            if node["resource_type"] in ASSET_RESOURCE_TYPES
+        }
 
     @property
     def asset_key_replacements(self) -> Mapping[AssetKey, AssetKey]:
