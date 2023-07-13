@@ -25,13 +25,17 @@ If you have an existing data pipeline, you likely already have assets.
 
 _Software-defined assets_ are a Dagster concept that allows you to write data pipelines in terms of the assets that they produce. How they work: you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that can be run to compute the contents of the asset.
 
-Here's an example. The asset is a dataset called `topstories`, and it's computed by starting with an asset called `topstory_ids` and then fetching data for each of those IDs.
+Here's an example. The asset is a dataset called `topstories`, and it depends on another asset called `topstory_ids`. `topstories` gets the IDs computed in `topstory_ids`, then fetches data for each of those IDs.
 
-
-# TODO - update this code snippet to match what it ends up being and update the description above
 ```python
-@asset
-def topstories(topstory_ids):
+# TODO - ensure updated with the final version of this asset
+@asset(deps=[topstory_ids])
+def topstories() -> None:
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = (
+            f.read()
+        )  # TODO confirm this doesn't do weird linter things with redefining the same symbol in a different scope
+
     results = []
     for item_id in topstory_ids:
         item = requests.get(
@@ -39,7 +43,11 @@ def topstories(topstory_ids):
         ).json()
         results.append(item)
 
-    return pd.DataFrame(results)
+        if len(results) % 20 == 0:
+            print(f"Got {len(results)} items so far.")  # noqa: T201
+
+    df = pd.DataFrame(results)
+    df.to_csv("data/topstories.csv")
 ```
 
 ### Building a DAG of assets

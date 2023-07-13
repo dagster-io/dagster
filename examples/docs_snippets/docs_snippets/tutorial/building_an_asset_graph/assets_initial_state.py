@@ -1,12 +1,36 @@
-# start_topstories_asset
-import pandas as pd  # Add new imports to the top of `assets.py`
+import json
+import os
+
 import requests
 
 from dagster import asset
 
 
 @asset
-def topstories(topstory_ids):  # this asset is dependent on topstory_ids
+def topstory_ids() -> None:
+    newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+    top_new_story_ids = requests.get(newstories_url).json()[:100]
+
+    os.makedirs("data", exist_ok=True)
+    with open("data/topstory_ids.json", "w") as f:
+        f.write(json.dumps((top_new_story_ids)))
+
+
+# start_topstories_asset
+import json
+import os
+
+import pandas as pd  # Add new imports to the top of `assets.py`
+import requests
+
+from dagster import asset
+
+
+@asset(deps=[topstory_ids])  # this asset is dependent on topstory_ids
+def topstories() -> None:
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = json.load(f)
+
     results = []
     for item_id in topstory_ids:
         item = requests.get(
@@ -18,17 +42,18 @@ def topstories(topstory_ids):  # this asset is dependent on topstory_ids
             print(f"Got {len(results)} items so far.")  # noqa: T201
 
     df = pd.DataFrame(results)
-
-    return df
+    df.to_csv("data/topstories.csv")
 
 
 # end_topstories_asset
 
 
 # start_most_frequent_words_asset
-@asset
-def most_frequent_words(topstories):
+@asset(deps=[topstories])
+def most_frequent_words() -> None:
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
+
+    topstories = pd.read_csv("data/topstories.csv")
 
     # loop through the titles and count the frequency of each word
     word_counts = {}
@@ -45,7 +70,8 @@ def most_frequent_words(topstories):
         for pair in sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:25]
     }
 
-    return top_words
+    with open("data/most_frequent_words.json", "w") as f:
+        f.write(json.dumps(top_words))
 
 
 # end_most_frequent_words_asset
