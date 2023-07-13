@@ -307,11 +307,15 @@ class OutputContext:
     @public
     @property
     def has_asset_key(self) -> bool:
+        """Returns True if an asset is being stored, otherwise returns False. A return value of False
+        indicates that an output from an op is being stored.
+        """
         return self._asset_info is not None
 
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """The ``AssetKey`` of the asset that is being stored as an output."""
         if self._asset_info is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, "
@@ -391,6 +395,7 @@ class OutputContext:
     @public
     @property
     def has_asset_partitions(self) -> bool:
+        """Returns True if the asset being stored is partitioned."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_asset_partitions"
@@ -571,6 +576,11 @@ class OutputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """The sequence of strings making up the AssetKey for the asset being stored as an output.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])``, ``get_asset_identifier`` would return
+        ``["foo", "bar", "baz"]``.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
