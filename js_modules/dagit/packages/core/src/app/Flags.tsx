@@ -13,7 +13,7 @@ export const FeatureFlag = {
   flagSensorScheduleLogging: 'flagSensorScheduleLogging' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
   flagHorizontalDAGs: 'flagHorizontalDAGs' as const,
-  flagAutoLoadDefaults: 'flagAutoLoadDefaults' as const,
+  flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 

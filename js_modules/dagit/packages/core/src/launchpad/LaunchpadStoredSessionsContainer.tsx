@@ -29,12 +29,12 @@ interface Props {
 export const LaunchpadStoredSessionsContainer = (props: Props) => {
   const {launchpadType, pipeline, partitionSets, repoAddress, rootDefaultYaml} = props;
 
-  const {flagAutoLoadDefaults} = useFeatureFlags();
+  const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialDataForMode = useInitialDataForMode(
     pipeline,
     partitionSets,
     rootDefaultYaml,
-    flagAutoLoadDefaults,
+    !flagDisableAutoLoadDefaults,
   );
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
 

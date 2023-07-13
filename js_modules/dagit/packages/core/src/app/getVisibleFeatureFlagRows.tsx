@@ -17,12 +17,12 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagSidebarResources,
   },
   {
-    key: 'Experimental schedule/sensor logging view',
-    flagType: FeatureFlag.flagSensorScheduleLogging,
+    key: 'Disable automatically loading default config in launchpad',
+    flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
   {
-    key: 'Automatically load default config in launchpad',
-    flagType: FeatureFlag.flagAutoLoadDefaults,
+    key: 'Experimental schedule/sensor logging view',
+    flagType: FeatureFlag.flagSensorScheduleLogging,
   },
   {
     key: 'Experimental instance-level concurrency limits',
