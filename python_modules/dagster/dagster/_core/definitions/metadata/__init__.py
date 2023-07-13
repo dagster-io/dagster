@@ -86,7 +86,7 @@ def normalize_metadata(
             if allow_invalid:
                 deprecation_warning(
                     "Support for arbitrary metadata values",
-                    "1.4.0",
+                    "2.0.0",
                     additional_warn_txt=(
                         "In the future, all user-supplied metadata values must be one of"
                         f" {RawMetadataValue}"
