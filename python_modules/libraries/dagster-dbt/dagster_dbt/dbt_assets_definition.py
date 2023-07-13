@@ -307,7 +307,7 @@ class DbtAssetsDefinition(AssetsDefinition):
             exclude=dbt_exclude,
         )
 
-    def build_schedule_from_dbt_select(
+    def build_schedule_from_dbt_selection(
         self,
         job_name: str,
         cron_schedule: str,
@@ -346,7 +346,7 @@ class DbtAssetsDefinition(AssetsDefinition):
                 def all_dbt_assets():
                     ...
 
-                daily_dbt_assets_schedule = all_dbt_assets.build_schedule_from_dbt_select(
+                daily_dbt_assets_schedule = all_dbt_assets.build_schedule_from_dbt_selection(
                     job_name="all_dbt_assets",
                     cron_schedule="0 0 * * *",
                     dbt_select="fqn:*",
