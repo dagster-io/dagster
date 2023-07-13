@@ -13,7 +13,7 @@ import {
 } from '../assets/AssetNodePartitionCounts';
 import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
-import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
+import {OverdueLineagePopover, isAssetOverdue} from '../assets/OverdueTag';
 import {StaleReasonsTags} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
@@ -174,7 +174,7 @@ export function buildAssetNodeStatusContent({
   } = liveData;
 
   const materializingRunId = inProgressRunIds[0] || unstartedRunIds[0];
-  const late = isAssetLate(liveData);
+  const overdue = isAssetOverdue(liveData);
 
   if (definition.isSource) {
     if (materializingRunId) {
@@ -286,14 +286,14 @@ export function buildAssetNodeStatusContent({
     const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
     const numMissing = numPartitions - numFailed - numMaterialized;
     const {background, foreground, border} = StyleForAssetPartitionStatus[
-      late || numFailed
+      overdue || numFailed
         ? AssetPartitionStatus.FAILED
         : numMissing
         ? AssetPartitionStatus.MISSING
         : AssetPartitionStatus.MATERIALIZED
     ];
     const statusCase =
-      late || numFailed
+      overdue || numFailed
         ? StatusCase.PARTITIONS_FAILED
         : numMissing
         ? StatusCase.PARTITIONS_MISSING
@@ -314,13 +314,10 @@ export function buildAssetNodeStatusContent({
           target="_blank"
           rel="noreferrer"
         >
-          {late ? (
-            <Tooltip
-              position="top"
-              content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
-            >
+          {overdue ? (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
               Overdue
-            </Tooltip>
+            </OverdueLineagePopover>
           ) : (
             partitionCountString(numPartitions)
           )}
@@ -343,7 +340,7 @@ export function buildAssetNodeStatusContent({
     </span>
   ) : undefined;
 
-  if (runWhichFailedToMaterialize || late) {
+  if (runWhichFailedToMaterialize || overdue) {
     return {
       case: StatusCase.LATE_OR_FAILED,
       background: Colors.Red50,
@@ -359,20 +356,14 @@ export function buildAssetNodeStatusContent({
             />
           )}
 
-          {late && runWhichFailedToMaterialize ? (
-            <Tooltip
-              position="top"
-              content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
-            >
+          {overdue && runWhichFailedToMaterialize ? (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
               <span style={{color: Colors.Red700}}>Failed, Overdue</span>
-            </Tooltip>
-          ) : late ? (
-            <Tooltip
-              position="top"
-              content={humanizedLateString(liveData.freshnessInfo.currentMinutesLate)}
-            >
+            </OverdueLineagePopover>
+          ) : overdue ? (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
               <span style={{color: Colors.Red700}}>Overdue</span>
-            </Tooltip>
+            </OverdueLineagePopover>
           ) : runWhichFailedToMaterialize ? (
             <span style={{color: Colors.Red700}}>Failed</span>
           ) : undefined}

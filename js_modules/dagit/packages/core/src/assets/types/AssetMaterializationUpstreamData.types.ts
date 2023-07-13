@@ -2,6 +2,24 @@
 
 import * as Types from '../../graphql/types';
 
+export type AssetMaterializationUpstreamTableFragment = {
+  __typename: 'AssetNode';
+  freshnessPolicy: {__typename: 'FreshnessPolicy'; maximumLagMinutes: number} | null;
+  assetMaterializationUsedData: Array<{
+    __typename: 'MaterializationUpstreamDataVersion';
+    timestamp: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    downstreamAssetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
+};
+
+export type MaterializationUpstreamDataVersionFragment = {
+  __typename: 'MaterializationUpstreamDataVersion';
+  timestamp: string;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  downstreamAssetKey: {__typename: 'AssetKey'; path: Array<string>};
+};
+
 export type AssetMaterializationUpstreamQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
   timestamp: Types.Scalars['String'];
@@ -13,6 +31,7 @@ export type AssetMaterializationUpstreamQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
+        freshnessPolicy: {__typename: 'FreshnessPolicy'; maximumLagMinutes: number} | null;
         assetMaterializationUsedData: Array<{
           __typename: 'MaterializationUpstreamDataVersion';
           timestamp: string;
@@ -21,11 +40,4 @@ export type AssetMaterializationUpstreamQuery = {
         }>;
       }
     | {__typename: 'AssetNotFoundError'};
-};
-
-export type MaterializationUpstreamDataVersionFragment = {
-  __typename: 'MaterializationUpstreamDataVersion';
-  timestamp: string;
-  assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  downstreamAssetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
