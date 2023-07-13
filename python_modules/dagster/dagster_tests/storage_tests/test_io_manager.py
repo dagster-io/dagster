@@ -740,12 +740,12 @@ def test_asset_key():
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.asset_key == before.asset_key
-            assert context.upstream_output.asset_key == before.asset_key
+            assert context.asset_key == before.key
+            assert context.upstream_output.asset_key == before.key
             return 1
 
         def handle_output(self, context, obj):
-            assert context.asset_key in {before.asset_key, after.asset_key}
+            assert context.asset_key in {before.key, after.key}
 
     result = materialize([before, after], resources={"io_manager": MyIOManager()})
     assert result.success

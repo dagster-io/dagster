@@ -1025,7 +1025,7 @@ class MetadataEntry(
                 new_arg="value",
                 old_val=entry_data,
                 old_arg="entry_data",
-                breaking_version="1.0.0",
+                breaking_version="2.0.0",
             ),
         )
         value = normalize_metadata_value(value)

@@ -33,7 +33,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidIn
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    deprecation_warning,
     experimental_arg_warning,
 )
 from dagster._utils.merger import merge_dicts
@@ -668,13 +667,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         return next(iter(self.keys))
 
-    @property
-    def asset_key(self) -> AssetKey:
-        deprecation_warning(
-            "AssetsDefinition.asset_key", "1.0.0", "Use AssetsDefinition.key instead."
-        )
-        return self.key
-
     @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
@@ -684,13 +676,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @property
     def keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
-
-    @property
-    def asset_keys(self) -> AbstractSet[AssetKey]:
-        deprecation_warning(
-            "AssetsDefinition.asset_keys", "1.0.0", "Use AssetsDefinition.keys instead."
-        )
-        return self.keys
 
     @public
     @property
@@ -1115,12 +1100,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return {requirement.key for requirement in self.get_resource_requirements()}
 
     def __str__(self):
-        if len(self.asset_keys) == 1:
-            return f"AssetsDefinition with key {self.asset_key.to_string()}"
+        if len(self.keys) == 1:
+            return f"AssetsDefinition with key {self.key.to_string()}"
         else:
-            asset_keys = ", ".join(
-                sorted(([asset_key.to_string() for asset_key in self.asset_keys]))
-            )
+            asset_keys = ", ".join(sorted(([asset_key.to_string() for asset_key in self.keys])))
             return f"AssetsDefinition with keys {asset_keys}"
 
     @property
