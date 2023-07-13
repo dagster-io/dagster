@@ -27,6 +27,8 @@ _Software-defined assets_ are a Dagster concept that allows you to write data pi
 
 Here's an example. The asset is a dataset called `topstories`, and it's computed by starting with an asset called `topstory_ids` and then fetching data for each of those IDs.
 
+
+# TODO - update this code snippet to match what it ends up being and update the description above
 ```python
 @asset
 def topstories(topstory_ids):
