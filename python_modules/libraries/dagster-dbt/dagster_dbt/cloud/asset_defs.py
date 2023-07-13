@@ -42,6 +42,7 @@ from dagster._utils.backcompat import experimental_arg_warning
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
+    default_description_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
@@ -358,7 +359,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             io_manager_key=None,
             # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
             # and attach metadata to link to the docs.
-            display_raw_sql=False,
+            node_info_to_description_fn=lambda node_info: default_description_fn(
+                node_info, display_raw_sql=False
+            ),
         )
 
         return AssetsDefinitionCacheableData(

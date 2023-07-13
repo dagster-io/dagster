@@ -41,7 +41,10 @@ from .core import (
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliInvocation as DbtCliInvocation,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator as DagsterDbtTranslator
+from .dagster_dbt_translator import (
+    DagsterDbtTranslator as DagsterDbtTranslator,
+    KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
+)
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 
 # isort: split

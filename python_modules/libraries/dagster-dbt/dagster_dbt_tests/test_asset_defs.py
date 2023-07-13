@@ -22,6 +22,7 @@ from dagster._core.execution.with_resources import with_resources
 from dagster._utils import file_relative_path
 from dagster_dbt import (
     DagsterDbtError,
+    DagsterDbtTranslator,
     DbtCli,
     DbtCliClientResource,
     DbtCliResource,
@@ -556,6 +557,52 @@ def test_node_info_to_asset_key(
         assert len(observations) == 17
     else:
         assert len(observations) == 0
+
+
+def test_dagster_dbt_translator(
+    dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir
+):
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def node_info_to_asset_key(cls, node_info):
+            return AssetKey(["foo", node_info["name"]])
+
+        @classmethod
+        def node_info_to_metadata(cls, node_info):
+            return {"name_metadata": node_info["name"] + "_metadata"}
+
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+
+    assert dbt_assets[0].keys == {
+        AssetKey(["foo", "cereals"]),
+        AssetKey(["foo", "least_caloric"]),
+        AssetKey(["foo", "orders_snapshot"]),
+        AssetKey(["foo", "sort_by_calories"]),
+        AssetKey(["foo", "sort_cold_cereals_by_calories"]),
+        AssetKey(["foo", "sort_hot_cereals_by_calories"]),
+    }
+    assert (
+        dbt_assets[0].metadata_by_key[AssetKey(["foo", "cereals"])]["name_metadata"]
+        == "cereals_metadata"
+    )
+
+    result = materialize_to_memory(
+        dbt_assets,
+        resources={
+            "dbt": dbt_cli_resource_factory(
+                project_dir=test_project_dir, profiles_dir=dbt_config_dir
+            )
+        },
+    )
+
+    assert result.success
+    materializations = result.asset_materializations_for_node(dbt_assets[0].op.name)
+    assert len(materializations) == 6
+    assert materializations[0].asset_key == AssetKey(["foo", "cereals"])
+    observations = result.asset_observations_for_node(dbt_assets[0].op.name)
+    assert len(observations) == 17
 
 
 @pytest.mark.parametrize(
