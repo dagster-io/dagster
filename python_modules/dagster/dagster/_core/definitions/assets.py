@@ -626,7 +626,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
-        to the group names assigned to them (if any).
+        to the group names assigned to them. If there is no assigned group name for a given AssetKey,
+        it will not be present in this dictionary.
         """
         return self._group_names_by_key
 
@@ -634,7 +635,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @property
     def descriptions_by_key(self) -> Mapping[AssetKey, str]:
         """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
-        to the descriptions assigned to them (if any).
+        to the descriptions assigned to them. If there is no assigned description for a given AssetKey,
+        it will not be present in this dictionary.
         """
         return self._descriptions_by_key
 
@@ -706,7 +708,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
-        """Iterable[AssetKey]: The asset keys which are upstream of assets associated with this
+        """Iterable[AssetKey]: The asset keys which are upstream of any asset included in this
         AssetsDefinition.
         """
         # the input asset keys that are directly upstream of a selected asset key
