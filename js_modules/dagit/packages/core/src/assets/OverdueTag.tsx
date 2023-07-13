@@ -34,7 +34,7 @@ export function isAssetOverdue(liveData?: LiveDataForNode): liveData is LiveData
 }
 
 export const humanizedMinutesLateString = (minLate: number) =>
-  `${dayjs.duration(minLate, 'minutes').humanize(false)} overdue`;
+  dayjs.duration(minLate, 'minutes').humanize(false);
 
 export const OverdueTag: React.FC<{
   liveData: LiveDataForNode | undefined;
@@ -75,7 +75,7 @@ export const OverdueTag: React.FC<{
   return (
     <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
       <Tag intent="danger" icon="warning">
-        {humanizedMinutesLateString(freshnessInfo.currentMinutesLate)}
+        {humanizedMinutesLateString(freshnessInfo.currentMinutesLate)} overdue
       </Tag>
     </OverdueLineagePopover>
   );
@@ -116,23 +116,25 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
 
   if (!data) {
     return (
-      <Box style={{width: '400px'}}>
+      <Box style={{width: 600}}>
         <LoadingSpinner purpose="section" />
       </Box>
     );
   }
 
   if (!data.freshnessPolicy) {
-    return <Box style={{width: '400px'}}>No freshness policy or timestamp.</Box>;
+    return <Box style={{width: 600}}>No freshness policy or timestamp.</Box>;
   }
 
   const minutesLate = humanizedMinutesLateString(liveData.freshnessInfo?.currentMinutesLate || 0);
-  const policyDescription = freshnessPolicyDescription(data.freshnessPolicy);
 
   return (
-    <Box style={{width: '400px'}}>
+    <Box style={{width: 600}}>
       <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        {`A materialization incorporating more recent upstream data is ${minutesLate}. ${policyDescription}`}
+        {`The latest materialization is derived from source data that is ${minutesLate} old. The asset's freshness policy requires it to be derived from data ${freshnessPolicyDescription(
+          data.freshnessPolicy,
+          'short',
+        )}`}
       </Box>
       <Box
         padding={12}
@@ -170,7 +172,10 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
   );
 };
 
-export const freshnessPolicyDescription = (freshnessPolicy: FreshnessPolicy | null) => {
+export const freshnessPolicyDescription = (
+  freshnessPolicy: FreshnessPolicy | null,
+  format: 'long' | 'short' = 'long',
+) => {
   if (!freshnessPolicy) {
     return '';
   }
@@ -188,10 +193,18 @@ export const freshnessPolicyDescription = (freshnessPolicy: FreshnessPolicy | nu
       ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
       : `${maximumLagMinutes} min`;
 
-  if (cronDesc) {
-    return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
+  if (format === 'short') {
+    if (cronDesc) {
+      return `no more than ${lagDesc} old by${nbsp}${cronDesc}.`;
+    } else {
+      return `no more than ${lagDesc} old at any${nbsp}time.`;
+    }
   } else {
-    return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
+    if (cronDesc) {
+      return `By ${cronDesc}, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
+    } else {
+      return `At any point in time, this asset should incorporate all data up to ${lagDesc} before that${nbsp}time.`;
+    }
   }
 };
 
