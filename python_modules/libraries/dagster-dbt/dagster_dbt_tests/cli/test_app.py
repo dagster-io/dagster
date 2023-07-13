@@ -9,6 +9,8 @@ from dagster import Definitions
 from dagster_dbt.cli.app import app
 from typer.testing import CliRunner
 
+pytest.importorskip("dbt.version", minversion="1.4")
+
 test_dagster_metadata_dbt_project_path = Path(__file__).parent.joinpath(
     "..", "dbt_projects", "test_dagster_metadata"
 )
