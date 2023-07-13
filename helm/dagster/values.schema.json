@@ -562,6 +562,12 @@
                 "enabled"
             ]
         },
+        "ReadinessProbeWithEnabled": {
+            "title": "ReadinessProbeWithEnabled",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -650,7 +656,7 @@
                     "$ref": "#/definitions/LivenessProbe"
                 },
                 "readinessProbe": {
-                    "$ref": "#/definitions/ReadinessProbe"
+                    "$ref": "#/definitions/ReadinessProbeWithEnabled"
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"

@@ -389,6 +389,8 @@ dagster-user-deployments:
       # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
       readinessProbe:
+        # Readiness probes are enabled by default.
+        enabled: true
         # If `readinessProbe` has no `exec` field, then the following default will be used:
         # exec:
         #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
