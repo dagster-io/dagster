@@ -56,7 +56,7 @@ def test_dbt_build_schedule(
     def my_dbt_assets():
         ...
 
-    test_daily_schedule = my_dbt_assets.build_schedule_from_dbt_select(
+    test_daily_schedule = my_dbt_assets.build_schedule_from_dbt_selection(
         job_name=job_name,
         cron_schedule=cron_schedule,
         dbt_select=dbt_select,
