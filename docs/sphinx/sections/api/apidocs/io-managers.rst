@@ -63,14 +63,4 @@ Input managers load inputs from either upstream outputs or from provided default
 
 .. autoclass:: InputManager
 
-Root Input Managers (Experimental)
-----------------------------------
-
-Root input managers are user-provided objects that specify how to load inputs that aren't connected
-to upstream outputs.
-
-.. autodecorator:: root_input_manager
-
-.. autoclass:: RootInputManager
-
-.. autoclass:: RootInputManagerDefinition
+.. autoclass:: InputManagerDefinition

@@ -276,7 +276,7 @@ class OutputContext:
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
-        """The config associated with the resource that initializes the RootInputManager."""
+        """The config associated with the resource that initializes the InputManager."""
         return self._resource_config
 
     @public

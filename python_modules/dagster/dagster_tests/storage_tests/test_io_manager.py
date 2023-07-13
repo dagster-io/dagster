@@ -576,7 +576,7 @@ def test_io_manager_resources_on_context():
         return InternalIOManager()
 
     @op(
-        ins={"_manager_input": In(root_manager_key="io_manager_reqs_resources")},
+        ins={"_manager_input": In(input_manager_key="io_manager_reqs_resources")},
         out=Out(dagster_type=str, io_manager_key="io_manager_reqs_resources"),
     )
     def big_op(_manager_input):

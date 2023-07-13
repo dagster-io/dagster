@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 
 class InputContext:
-    """The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
+    """The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
     Users should not instantiate this object directly. In order to construct
     an `InputContext` for testing an IO Manager's `load_input` method, use
@@ -229,14 +229,14 @@ class InputContext:
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
-        """The config associated with the resource that initializes the RootInputManager."""
+        """The config associated with the resource that initializes the InputManager."""
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
         """The resources required by the resource that initializes the
-        input manager. If using the :py:func:`@root_input_manager` decorator, these resources
+        input manager. If using the :py:func:`@input_manager` decorator, these resources
         correspond to those requested with the `required_resource_keys` parameter.
         """
         if self._resources is None:

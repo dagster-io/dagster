@@ -331,7 +331,6 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             if (
                 not input_def.dagster_type.loader
                 and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                and not input_def.root_manager_key
                 and not input_def.has_default_value
                 and not input_def.input_manager_key
             ):
@@ -409,14 +408,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                 key=resource_key, node_description=node_description
             )
         for input_def in self.input_defs:
-            if input_def.root_manager_key:
-                yield InputManagerRequirement(
-                    key=input_def.root_manager_key,
-                    node_description=node_description,
-                    input_name=input_def.name,
-                    root_input=True,
-                )
-            elif input_def.input_manager_key:
+            if input_def.input_manager_key:
                 yield InputManagerRequirement(
                     key=input_def.input_manager_key,
                     node_description=node_description,

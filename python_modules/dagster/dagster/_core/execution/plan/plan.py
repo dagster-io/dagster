@@ -55,9 +55,9 @@ from .inputs import (
     FromDefaultValue,
     FromDirectInputValue,
     FromDynamicCollect,
+    FromInputManager,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputManager,
     FromSourceAsset,
     FromStepOutput,
     FromUnresolvedStepOutput,
@@ -442,8 +442,8 @@ def get_step_input_source(
         # can only load from source asset if assets defs are available
         if asset_layer.asset_key_for_input(handle, input_handle.input_name):
             return FromSourceAsset(node_handle=handle, input_name=input_name)
-        elif input_def.root_manager_key or input_def.input_manager_key:
-            return FromRootInputManager(node_handle=handle, input_name=input_name)
+        elif input_def.input_manager_key:
+            return FromInputManager(node_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         node_output_handle = dependency_structure.get_direct_dep(input_handle)

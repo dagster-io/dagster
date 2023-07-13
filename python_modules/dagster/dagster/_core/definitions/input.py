@@ -27,7 +27,7 @@ from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
-from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
+from dagster._utils.backcompat import experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
@@ -82,9 +82,6 @@ class InputDefinition:
             to be run on this input. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        root_manager_key (Optional[str]): (Experimental) The resource key for the
-            :py:class:`RootInputManager` used for loading this input when it is not connected to an
-            upstream output.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
@@ -92,6 +89,9 @@ class InputDefinition:
         asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this InputDefinition.
+        input_manager_key (Optional[str]): (Experimental) The resource key for the
+            :py:class:`InputManager` used for loading this input when it is not connected to an
+            upstream output.
     """
 
     _name: str
@@ -100,7 +100,6 @@ class InputDefinition:
     _description: Optional[str]
     _default_value: Any
     _input_manager_key: Optional[str]
-    _root_manager_key: Optional[str]
     _raw_metadata: ArbitraryMetadataMapping
     _metadata: Mapping[str, MetadataValue]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
@@ -112,7 +111,6 @@ class InputDefinition:
         dagster_type: object = None,
         description: Optional[str] = None,
         default_value: object = NoValueSentinel,
-        root_manager_key: Optional[str] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
@@ -127,21 +125,6 @@ class InputDefinition:
         self._description = check.opt_str_param(description, "description")
 
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
-
-        if root_manager_key:
-            deprecation_warning(
-                "root_manager_key",
-                "1.0.0",
-                additional_warn_txt="Use an InputManager with input_manager_key instead.",
-            )
-
-        if root_manager_key and input_manager_key:
-            raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key"
-                f" {input_manager_key} on InputDefinition."
-            )
-
-        self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
         self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
@@ -191,10 +174,6 @@ class InputDefinition:
     def default_value(self) -> Any:
         check.invariant(self.has_default_value, "Can only fetch default_value if has_default_value")
         return self._default_value
-
-    @property
-    def root_manager_key(self) -> Optional[str]:
-        return self._root_manager_key
 
     @property
     def input_manager_key(self) -> Optional[str]:
@@ -312,7 +291,6 @@ class InputDefinition:
             dagster_type=dagster_type,
             description=description,
             default_value=default_value,
-            root_manager_key=self._root_manager_key,
             metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
@@ -325,7 +303,6 @@ class InputDefinition:
             dagster_type=dagster_type,
             description=self.description,
             default_value=self.default_value if self.has_default_value else NoValueSentinel,
-            root_manager_key=self._root_manager_key,
             metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
@@ -453,7 +430,6 @@ class In(
             ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
             ("description", PublicAttr[Optional[str]]),
             ("default_value", PublicAttr[Any]),
-            ("root_manager_key", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
             (
                 "asset_key",
@@ -478,9 +454,6 @@ class In(
             be inferred directly from the type signature of the decorated function.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
-        root_manager_key (Optional[str]): (Experimental) The resource key for the
-            :py:class:`RootInputManager` used for loading this input when it is not connected to an
-            upstream output.
         metadata (Optional[Dict[str, RawMetadataValue]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
@@ -488,6 +461,9 @@ class In(
         asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this In.
+        input_manager_key (Optional[str]): (Experimental) The resource key for the
+            :py:class:`InputManager` used for loading this input when it is not connected to an
+            upstream output.
     """
 
     def __new__(
@@ -495,25 +471,11 @@ class In(
         dagster_type: Union[Type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
-        root_manager_key: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None,
     ):
-        if root_manager_key and input_manager_key:
-            raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key"
-                f" {input_manager_key} on InputDefinition."
-            )
-
-        if root_manager_key:
-            deprecation_warning(
-                "root_manager_key",
-                "1.0.0",
-                additional_warn_txt="Use an InputManager with input_manager_key instead.",
-            )
-
         return super(In, cls).__new__(
             cls,
             dagster_type=NoValueSentinel
@@ -521,7 +483,6 @@ class In(
             else resolve_dagster_type(dagster_type),
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
-            root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
@@ -534,7 +495,6 @@ class In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
             default_value=input_def._default_value,  # noqa: SLF001
-            root_manager_key=input_def.root_manager_key,
             metadata=input_def.metadata,
             asset_key=input_def._asset_key,  # noqa: SLF001
             asset_partitions=input_def._asset_partitions_fn,  # noqa: SLF001
@@ -548,7 +508,6 @@ class In(
             dagster_type=dagster_type,
             description=self.description,
             default_value=self.default_value,
-            root_manager_key=self.root_manager_key,
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
