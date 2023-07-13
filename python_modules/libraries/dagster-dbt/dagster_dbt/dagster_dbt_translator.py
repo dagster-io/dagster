@@ -40,7 +40,7 @@ class DagsterDbtTranslator:
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
                     def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
-                        return AssetKey(["prefix", node_info["alias"]])
+                        return AssetKey([dbt_resource_info["alias"]]).with_prefix("prefix")
         """
         return default_asset_key_fn(dbt_resource_info)
 
