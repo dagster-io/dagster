@@ -453,7 +453,7 @@ def test_to_source_assets():
 
 
 def test_coerced_asset_keys():
-    @asset(ins={"input1": AssetIn(asset_key=["Asset", "1"])})
+    @asset(ins={"input1": AssetIn(key=["Asset", "1"])})
     def asset1(input1):
         assert input1
 

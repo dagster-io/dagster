@@ -313,7 +313,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         group_names_by_key = (
             {
                 k: self._group_name_for_all_assets
-                for k in assets_def.asset_keys
+                for k in assets_def.keys
                 if self._group_name_for_all_assets
             }
             if self._group_name_for_all_assets
@@ -326,7 +326,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
                     if self._prefix_for_all_assets
                     else k.path
                 )
-                for k in assets_def.asset_keys
+                for k in assets_def.keys
             }
             if self._prefix_for_all_assets
             else self._output_asset_key_replacements

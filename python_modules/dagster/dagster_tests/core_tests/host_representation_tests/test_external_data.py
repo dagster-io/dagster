@@ -145,7 +145,7 @@ def test_two_asset_job():
 def test_input_name_matches_output_name():
     not_result = SourceAsset(key=AssetKey("not_result"), description=None)
 
-    @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
+    @asset(ins={"result": AssetIn(key=AssetKey("not_result"))})
     def something(result):
         pass
 
