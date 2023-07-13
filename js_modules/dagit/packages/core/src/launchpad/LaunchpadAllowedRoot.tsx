@@ -39,9 +39,8 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
     const filteredOpKeys = Object.keys(opsConfig).filter((entry: any) => {
       return opNames.has(entry);
     });
-    const filteredOpsConfig = filteredOpKeys.reduce(
-      (obj: any, key: any) => ((obj[key] = opsConfig[key]), obj),
-      {},
+    const filteredOpsConfig = Object.fromEntries(
+      filteredOpKeys.map((key) => [key, opsConfig[key]]),
     );
     parsedYaml['ops'] = filteredOpsConfig;
   }
@@ -74,19 +73,19 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
 
+  const runConfigSchemaOrError = result.data?.runConfigSchemaOrError;
   const filteredRootDefaultYaml = React.useMemo(() => {
-    if (result.data?.runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
+    if (!runConfigSchemaOrError || runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
       return undefined;
     }
 
-    const rootDefaultYaml = result.data.runConfigSchemaOrError.rootDefaultYaml;
-    const opNameList = sessionPresets?.assetSelection?.reduce(
-      (opNameList: string[], entry) => [...opNameList, ...entry.opNames],
-      [],
-    );
+    const rootDefaultYaml = runConfigSchemaOrError.rootDefaultYaml;
+    const opNameList = sessionPresets?.assetSelection
+      ? sessionPresets.assetSelection.map((entry) => entry.opNames).flat()
+      : [];
     const opNames = new Set(opNameList);
     return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
-  }, [result.data?.runConfigSchemaOrError, sessionPresets]);
+  }, [runConfigSchemaOrError, sessionPresets]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
