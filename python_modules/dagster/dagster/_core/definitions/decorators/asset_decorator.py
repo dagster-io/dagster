@@ -16,6 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import deprecated_param, experimental_param
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
@@ -30,8 +31,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    deprecation_warning,
-    experimental_arg_warning,
 )
 
 from ..asset_in import AssetIn
@@ -87,6 +86,13 @@ def asset(
     ...
 
 
+@experimental_param(param="resource_defs")
+@experimental_param(param="io_manager_def")
+@experimental_param(param="auto_materialize_policy")
+@experimental_param(param="backfill_policy")
+@deprecated_param(
+    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+)
 def asset(
     compute_fn: Optional[Callable] = None,
     *,
@@ -235,18 +241,6 @@ def asset(
                 " provide one or the other. "
             ),
         )
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "asset")
-
-        if io_manager_def is not None:
-            experimental_arg_warning("io_manager_def", "asset")
-
-        if auto_materialize_policy is not None:
-            experimental_arg_warning("auto_materialize_policy", "asset")
-
-        if backfill_policy is not None:
-            experimental_arg_warning("backfill_policy", "asset")
-
         return create_asset()(fn)
 
     return inner
@@ -440,6 +434,10 @@ class _Asset:
         )
 
 
+@experimental_param(param="resource_defs")
+@deprecated_param(
+    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+)
 def multi_asset(
     *,
     outs: Mapping[str, AssetOut],
@@ -544,9 +542,6 @@ def multi_asset(
     upstream_asset_deps = _type_check_deps_and_non_argument_deps(
         deps=deps, non_argument_deps=non_argument_deps
     )
-
-    if resource_defs is not None:
-        experimental_arg_warning("resource_defs", "multi_asset")
 
     asset_deps = check.opt_mapping_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
@@ -1088,7 +1083,6 @@ def _type_check_deps_and_non_argument_deps(
         upstream_asset_deps = deps
 
     if non_argument_deps is not None:
-        deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
         # this set -> list conversion is a side effect of the type changing from
         # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
         check.set_param(non_argument_deps, "non_argument_deps", of_type=(AssetKey, str))

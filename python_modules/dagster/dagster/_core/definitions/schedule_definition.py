@@ -24,13 +24,12 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, ensure_gen
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -466,6 +465,14 @@ def validate_and_get_schedule_resource_dict(
     return {k: getattr(resources, k) for k in required_resource_keys}
 
 
+@deprecated_param(
+    param="environment_vars",
+    breaking_version="2.0",
+    additional_warn_text=(
+        "It is no longer necessary. Schedules will have access to all environment variables set in"
+        " the containing environment, and can safely be deleted."
+    ),
+)
 class ScheduleDefinition(IHasInternalInit):
     """Define a schedule that targets a job.
 
@@ -582,15 +589,6 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._description = check.opt_str_param(description, "description")
 
-        if environment_vars is not None:
-            deprecation_warning(
-                "`environment_vars` parameter to `ScheduleDefinition`",
-                "2.0.0",
-                (
-                    "It is no longer necessary. Schedules will have access to all environment"
-                    " variables set in the containing environment, and can safely be deleted."
-                ),
-            )
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )

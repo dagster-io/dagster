@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import experimental_param
 from dagster._config import ConfigType
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import experimental_arg_warning
 
 from ..definitions.resource_requirement import (
     ResourceRequirement,
@@ -60,6 +60,8 @@ class DagsterTypeLoader(ABC):
             )
 
 
+@experimental_param(param="loader_version")
+@experimental_param(param="external_version_fn")
 class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
     def __init__(
         self,
@@ -75,15 +77,9 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._loader_version = check.opt_str_param(loader_version, "loader_version")
-        if self._loader_version:
-            experimental_arg_warning("loader_version", "DagsterTypeLoaderFromDecorator.__init__")
         self._external_version_fn = check.opt_callable_param(
             external_version_fn, "external_version_fn"
         )
-        if self._external_version_fn:
-            experimental_arg_warning(
-                "external_version_fn", "DagsterTypeLoaderFromDecorator.__init__"
-            )
 
     @property
     def schema_type(self) -> ConfigType:

@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from typing import Callable, Optional, TypeVar, Union, overload
+from typing import Callable, Mapping, Optional, TypeVar, Union, overload
 
 from typing_extensions import Annotated, Final, TypeAlias
 
@@ -8,6 +8,7 @@ from dagster import _check as check
 from dagster._core.decorator_utils import (
     Decoratable,
     apply_pre_call_decorator,
+    get_decorator_target,
     is_resource_def,
 )
 from dagster._utils.backcompat import (
@@ -164,9 +165,9 @@ def deprecated(
                 additional_warn_text=additional_warn_text,
                 stacklevel=_get_warning_stacklevel(__obj),
             )
-            return apply_pre_call_decorator(__obj, warning_fn)
+            return apply_pre_call_decorator(__obj, warning_fn)  # type: ignore  # (pyright bug)
         else:
-            return __obj
+            return __obj  # type: ignore  # (pyright bug)
 
 
 def is_deprecated(obj: Annotatable) -> bool:
@@ -177,6 +178,113 @@ def is_deprecated(obj: Annotatable) -> bool:
 def get_deprecated_info(obj: Annotatable) -> DeprecatedInfo:
     target = _get_annotation_target(obj)
     return getattr(target, _DEPRECATED_ATTR_NAME)
+
+
+# ########################
+# ##### DEPRECATED PARAM
+# ########################
+
+_DEPRECATED_PARAM_ATTR_NAME: Final[str] = "_deprecated_params"
+
+
+@overload
+def deprecated_param(
+    __obj: T_Annotatable,
+    *,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> T_Annotatable:
+    ...
+
+
+@overload
+def deprecated_param(
+    __obj: None = ...,
+    *,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> Callable[[T_Annotatable], T_Annotatable]:
+    ...
+
+
+def deprecated_param(
+    __obj: Optional[T_Annotatable] = None,
+    *,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = None,
+    emit_runtime_warning: bool = True,
+) -> T_Annotatable:
+    """Mark a parameter of a class initializer or function/method as deprecated. This appends some
+    metadata to the decorated object that causes the specified argument to be rendered with a
+    "deprecated" tag and associated warning in the docs.
+
+    If `emit_runtime_warning` is True, a warning will also be emitted when the function is called
+    and a non-None value is passed for the parameter. For consistency between docs and runtime
+    warnings, this decorator is preferred to manual calls to `deprecation_warning`. Note that the
+    warning will only be emitted if the value is passed as a keyword argument.
+
+    Args:
+        param (str): The name of the parameter to deprecate.
+        breaking_version (str): The version at which the deprecated function will be removed.
+        additional_warn_text (str): Additional text to display after the deprecation warning.
+            Typically this should suggest a newer API.
+        emit_runtime_warning (bool): Whether to emit a warning when the function is called.
+    """
+    if __obj is None:
+        return lambda obj: deprecated_param(  # type: ignore
+            obj,
+            param=param,
+            breaking_version=breaking_version,
+            additional_warn_text=additional_warn_text,
+            emit_runtime_warning=emit_runtime_warning,
+        )
+    else:
+        check.invariant(
+            _annotatable_has_param(__obj, param),
+            f"Attempted to mark undefined parameter `{param}` deprecated.",
+        )
+        target = _get_annotation_target(__obj)
+        if not hasattr(target, _DEPRECATED_PARAM_ATTR_NAME):
+            setattr(target, _DEPRECATED_PARAM_ATTR_NAME, {})
+        getattr(target, _DEPRECATED_PARAM_ATTR_NAME)[param] = DeprecatedInfo(
+            breaking_version=breaking_version,
+            additional_warn_text=additional_warn_text,
+        )
+
+        if emit_runtime_warning:
+            condition = lambda *_, **kwargs: kwargs.get(param) is not None
+            warning_fn = lambda: deprecation_warning(
+                _get_subject(__obj, param=param),
+                breaking_version=breaking_version,
+                additional_warn_text=additional_warn_text,
+                stacklevel=4,
+            )
+            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)  # type: ignore  # (pyright bug)
+        else:
+            return __obj  # type: ignore  # (pyright bug)
+
+
+def has_deprecated_params(obj: Annotatable) -> bool:
+    return hasattr(_get_annotation_target(obj), _DEPRECATED_PARAM_ATTR_NAME)
+
+
+def get_deprecated_params(obj: Annotatable) -> Mapping[str, DeprecatedInfo]:
+    return getattr(_get_annotation_target(obj), _DEPRECATED_PARAM_ATTR_NAME)
+
+
+def is_deprecated_param(obj: Annotatable, param_name: str) -> bool:
+    target = _get_annotation_target(obj)
+    return param_name in getattr(target, _DEPRECATED_PARAM_ATTR_NAME, {})
+
+
+def get_deprecated_param_info(obj: Annotatable, param_name: str) -> DeprecatedInfo:
+    target = _get_annotation_target(obj)
+    return getattr(target, _DEPRECATED_PARAM_ATTR_NAME)[param_name]
 
 
 # ########################
@@ -265,9 +373,9 @@ def experimental(
                 subject or _get_subject(__obj),
                 stacklevel=_get_warning_stacklevel(__obj),
             )
-            return apply_pre_call_decorator(__obj, warning_fn)
+            return apply_pre_call_decorator(__obj, warning_fn)  # type: ignore  # (pyright bug)
         else:
-            return __obj
+            return __obj  # type: ignore  # (pyright bug)
 
 
 def is_experimental(obj: Annotatable) -> bool:
@@ -281,6 +389,107 @@ def get_experimental_info(obj: Annotatable) -> ExperimentalInfo:
 
 
 # ########################
+# ##### EXPERIMENTAL PARAM
+# ########################
+
+_EXPERIMENTAL_PARAM_ATTR_NAME: Final[str] = "_experimental_params"
+
+
+@overload
+def experimental_param(
+    __obj: T_Annotatable,
+    *,
+    param: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> T_Annotatable:
+    ...
+
+
+@overload
+def experimental_param(
+    __obj: None = ...,
+    *,
+    param: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> Callable[[T_Annotatable], T_Annotatable]:
+    ...
+
+
+def experimental_param(
+    __obj: Optional[T_Annotatable] = None,
+    *,
+    param: str,
+    additional_warn_text: Optional[str] = None,
+    emit_runtime_warning: bool = True,
+) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+    """Mark a parameter of a class initializer or function/method as experimental. This appends some
+    metadata to the decorated object that causes the specified argument to be rendered with an
+    "experimental" tag and associated warning in the docs.
+
+    If `emit_runtime_warning` is True, a warning will also be emitted when the function is called
+    and a non-None value is passed for the parameter. For consistency between docs and runtime
+    warnings, this decorator is preferred to manual calls to `experimental_warning`. Note that the
+    warning will only be emitted if the value is passed as a keyword argument.
+
+    Args:
+        param (str): The name of the parameter to mark experimental.
+        additional_warn_text (str): Additional text to display after the deprecation warning.
+            Typically this should suggest a newer API.
+        emit_runtime_warning (bool): Whether to emit a warning when the function is called.
+    """
+    if __obj is None:
+        return lambda obj: experimental_param(
+            obj,
+            param=param,
+            additional_warn_text=additional_warn_text,
+            emit_runtime_warning=emit_runtime_warning,
+        )
+    else:
+        check.invariant(
+            _annotatable_has_param(__obj, param),
+            f"Attempted to mark undefined parameter `{param}` experimental.",
+        )
+        target = _get_annotation_target(__obj)
+
+        if not hasattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME):
+            setattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME, {})
+        getattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME)[param] = ExperimentalInfo(
+            additional_warn_text=additional_warn_text,
+        )
+
+        if emit_runtime_warning:
+            condition = lambda *_, **kwargs: kwargs.get(param) is not None
+            warning_fn = lambda: experimental_warning(
+                _get_subject(__obj, param=param),
+                additional_warn_text=additional_warn_text,
+                stacklevel=4,
+            )
+            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)  # type: ignore  # (pyright bug)
+        else:
+            return __obj  # type: ignore  # (pyright bug)
+
+
+def has_experimental_params(obj: Annotatable) -> bool:
+    return hasattr(_get_annotation_target(obj), _EXPERIMENTAL_PARAM_ATTR_NAME)
+
+
+def get_experimental_params(obj: Annotatable) -> Mapping[str, ExperimentalInfo]:
+    return getattr(_get_annotation_target(obj), _EXPERIMENTAL_PARAM_ATTR_NAME)
+
+
+def is_experimental_param(obj: Annotatable, param_name: str) -> bool:
+    target = _get_annotation_target(obj)
+    return param_name in getattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME, {})
+
+
+def get_experimental_param_info(obj: Annotatable, param_name: str) -> ExperimentalInfo:
+    target = _get_annotation_target(obj)
+    return getattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME)[param_name]
+
+
+# ########################
 # ##### HELPERS
 # ########################
 
@@ -289,12 +498,24 @@ def copy_annotations(dest: Annotatable, src: Annotatable) -> None:
     """Copy all Dagster annotations from one object to another object."""
     dest_target = _get_annotation_target(dest)
     src_target = _get_annotation_target(src)
-    if hasattr(src_target, _DEPRECATED_ATTR_NAME):
-        setattr(dest_target, _DEPRECATED_ATTR_NAME, getattr(src_target, _DEPRECATED_ATTR_NAME))
     if hasattr(src_target, _PUBLIC_ATTR_NAME):
         setattr(dest_target, _PUBLIC_ATTR_NAME, getattr(src_target, _PUBLIC_ATTR_NAME))
+    if hasattr(src_target, _DEPRECATED_ATTR_NAME):
+        setattr(dest_target, _DEPRECATED_ATTR_NAME, getattr(src_target, _DEPRECATED_ATTR_NAME))
+    if hasattr(src_target, _DEPRECATED_PARAM_ATTR_NAME):
+        setattr(
+            dest_target,
+            _DEPRECATED_PARAM_ATTR_NAME,
+            getattr(src_target, _DEPRECATED_PARAM_ATTR_NAME),
+        )
     if hasattr(src_target, _EXPERIMENTAL_ATTR_NAME):
         setattr(dest_target, _EXPERIMENTAL_ATTR_NAME, getattr(src_target, _EXPERIMENTAL_ATTR_NAME))
+    if hasattr(src_target, _EXPERIMENTAL_PARAM_ATTR_NAME):
+        setattr(
+            dest_target,
+            _EXPERIMENTAL_PARAM_ATTR_NAME,
+            getattr(src_target, _EXPERIMENTAL_PARAM_ATTR_NAME),
+        )
 
 
 def _get_annotation_target(obj: Annotatable) -> object:
@@ -309,25 +530,32 @@ def _get_annotation_target(obj: Annotatable) -> object:
         return obj
 
 
-def _get_subject(obj: Annotatable) -> str:
+def _get_subject(obj: Annotatable, param: Optional[str] = None) -> str:
     """Get the string representation of an annotated object that will appear in
     annotation-generated warnings about the object.
     """
-    if isinstance(obj, type):
-        return f"Class `{obj.__qualname__}`"
-    elif isinstance(obj, property):
-        return f"Property `{obj.fget.__qualname__ if obj.fget else obj}`"
-    # classmethod and staticmethod don't themselves get a `__qualname__` attr until Python 3.10.
-    elif isinstance(obj, classmethod):
-        return f"Class method `{_get_annotation_target(obj).__qualname__}`"  # type: ignore
-    elif isinstance(obj, staticmethod):
-        return f"Static method `{_get_annotation_target(obj).__qualname__}`"  # type: ignore
-    elif inspect.isfunction(obj):
-        return f"Function `{obj.__qualname__}`"
-    elif is_resource_def(obj):
-        return f"Dagster resource `{obj.__qualname__}`"  # type: ignore  # (bad stubs)
+    if param:
+        if isinstance(obj, type):
+            return f"Parameter `{param}` of initializer `{obj.__qualname__}.__init__`"
+        else:
+            fn_subject = _get_subject(obj)
+            return f"Parameter `{param}` of {fn_subject[:1].lower() + fn_subject[1:]}"
     else:
-        check.failed(f"Unexpected object type: {type(obj)}")
+        if isinstance(obj, type):
+            return f"Class `{obj.__qualname__}`"
+        elif isinstance(obj, property):
+            return f"Property `{obj.fget.__qualname__ if obj.fget else obj}`"
+        # classmethod and staticmethod don't themselves get a `__qualname__` attr until Python 3.10.
+        elif isinstance(obj, classmethod):
+            return f"Class method `{_get_annotation_target(obj).__qualname__}`"  # type: ignore
+        elif isinstance(obj, staticmethod):
+            return f"Static method `{_get_annotation_target(obj).__qualname__}`"  # type: ignore
+        elif inspect.isfunction(obj):
+            return f"Function `{obj.__qualname__}`"
+        elif is_resource_def(obj):
+            return f"Dagster resource `{obj.__qualname__}`"  # type: ignore  # (bad stubs)
+        else:
+            check.failed(f"Unexpected object type: {type(obj)}")
 
 
 def _get_warning_stacklevel(obj: Annotatable):
@@ -343,3 +571,8 @@ def _get_warning_stacklevel(obj: Annotatable):
         return 6
     else:
         return 4
+
+
+def _annotatable_has_param(obj: Annotatable, param: str) -> bool:
+    target_fn = get_decorator_target(obj)
+    return param in inspect.signature(target_fn).parameters

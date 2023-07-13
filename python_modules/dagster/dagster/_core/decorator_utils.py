@@ -173,19 +173,25 @@ def get_decorator_target(obj: Decoratable) -> Callable:
         return obj
 
 
-def apply_pre_call_decorator(obj: T_Decoratable, pre_call_fn: Callable[[], None]) -> T_Decoratable:
+def apply_pre_call_decorator(
+    obj: T_Decoratable,
+    pre_call_fn: Callable[[], None],
+    condition: Optional[Callable[..., bool]] = None,
+) -> T_Decoratable:
     target = get_decorator_target(obj)
-    new_fn = _wrap_with_pre_call_fn(target, pre_call_fn)
+    new_fn = _wrap_with_pre_call_fn(target, pre_call_fn, condition)
     return _update_decoratable(obj, new_fn)
 
 
 def _wrap_with_pre_call_fn(
     fn: T_Callable,
     pre_call_fn: Callable[[], None],
+    condition: Optional[Callable[..., bool]] = None,
 ) -> T_Callable:
     @functools.wraps(fn)
     def wrapped_with_pre_call_fn(*args, **kwargs):
-        pre_call_fn()
+        if condition is None or condition(*args, **kwargs):
+            pre_call_fn()
         return fn(*args, **kwargs)
 
     return cast(T_Callable, wrapped_with_pre_call_fn)

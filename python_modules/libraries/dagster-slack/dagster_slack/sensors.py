@@ -17,14 +17,13 @@ from dagster import (
     FreshnessPolicySensorContext,
     freshness_policy_sensor,
 )
-from dagster._annotations import experimental
+from dagster._annotations import deprecated_param, experimental
 from dagster._core.definitions import GraphDefinition, JobDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._utils.backcompat import deprecation_warning
 from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
@@ -99,6 +98,11 @@ def _default_failure_message_text_fn(context: RunFailureSensorContext) -> str:
     return f"Error: ```{context.failure_event.message}```"
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
@@ -199,9 +203,6 @@ def make_slack_on_run_failure_sensor(
 
     """
     slack_client = WebClient(token=slack_token)
-
-    if job_selection:
-        deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
     @run_failure_sensor(
