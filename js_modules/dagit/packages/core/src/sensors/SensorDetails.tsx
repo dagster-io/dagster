@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Group,
   MetadataTableWIP,
   PageHeader,
   Tag,
@@ -14,18 +13,17 @@ import {
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetLink} from '../assets/AssetLink';
 import {InstigationStatus, InstigationType, SensorType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {EditCursorDialog} from './EditCursorDialog';
+import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorSwitch} from './SensorSwitch';
+import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
 
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
@@ -60,7 +58,6 @@ export const SensorDetails: React.FC<{
   const {
     name,
     sensorState: {status, ticks},
-    targets,
     metadata,
   } = sensor;
 
@@ -70,30 +67,8 @@ export const SensorDetails: React.FC<{
     repositoryName: repoAddress.name,
     repositoryLocationName: repoAddress.location,
   };
-  const repo = useRepository(repoAddress);
-  const pipelinesAndJobs = repo?.repository.pipelines;
 
   const latestTick = ticks.length ? ticks[0] : null;
-  const targetCount = targets?.length || 0;
-
-  const targetNames = React.useMemo(
-    () => new Set((targets || []).map((target) => target.pipelineName)),
-    [targets],
-  );
-
-  const anyPipelines = React.useMemo(() => {
-    return (pipelinesAndJobs || []).some(
-      (pipelineOrJob) => !pipelineOrJob.isJob && targetNames.has(pipelineOrJob.name),
-    );
-  }, [pipelinesAndJobs, targetNames]);
-
-  const pipelineOrJobLabel = React.useMemo(() => {
-    if (anyPipelines) {
-      return targetCount > 1 ? 'Jobs / Pipelines' : 'Pipeline';
-    }
-    return targetCount > 1 ? 'Jobs' : 'Job';
-  }, [anyPipelines, targetCount]);
-
   const cursor =
     sensor.sensorState.typeSpecificData &&
     sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
@@ -177,20 +152,9 @@ export const SensorDetails: React.FC<{
           </tr>
           {sensor.targets && sensor.targets.length ? (
             <tr>
-              <td>{pipelineOrJobLabel}</td>
+              <td>Job / Asset</td>
               <td>
-                <Group direction="column" spacing={2}>
-                  {sensor.targets.map((target) =>
-                    target.pipelineName ? (
-                      <PipelineReference
-                        key={target.pipelineName}
-                        pipelineName={target.pipelineName}
-                        pipelineHrefContext={repoAddress}
-                        isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
-                      />
-                    ) : null,
-                  )}
-                </Group>
+                <SensorTargetList targets={sensor.targets} repoAddress={repoAddress} />
               </td>
             </tr>
           ) : null}
@@ -224,11 +188,7 @@ export const SensorDetails: React.FC<{
             <tr>
               <td>Monitored assets</td>
               <td>
-                <Box flex={{direction: 'column', gap: 2}}>
-                  {metadata.assetKeys.map((key) => (
-                    <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
-                  ))}
-                </Box>
+                <SensorMonitoredAssets metadata={metadata} />
               </td>
             </tr>
           ) : null}
