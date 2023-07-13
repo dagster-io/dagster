@@ -199,6 +199,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
 
+    @public
     @property
     def job_def(self) -> JobDefinition:
         """JobDefinition: The currently executing pipeline."""
