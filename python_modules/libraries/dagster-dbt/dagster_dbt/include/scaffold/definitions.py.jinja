@@ -1,23 +1,23 @@
 from pathlib import Path
 
-from dagster import Definitions
+from dagster import Definitions, OpExecutionContext
 
-from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+from dagster_dbt import DbtCli, dbt_assets
 
 dbt_project_dir = Path("{{ dbt_project_dir }}")
 dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
-dbt_manifest = DbtManifest.read(path=dbt_manifest_path)
 
 
-@dbt_assets(manifest=dbt_manifest)
-def {{ dbt_assets_name }}(dbt: DbtCli):
-    yield from dbt.cli(["build"], manifest=dbt_manifest).stream()
+@dbt_assets(manifest=dbt_manifest_path)
+def {{ dbt_assets_name }}(context: OpExecutionContext, dbt: DbtCli):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 schedules = [
-    dbt_manifest.build_schedule(
+    {{ dbt_assets_name }}.build_schedule_from_dbt_selection(
         job_name="materialize_dbt_models",
         cron_schedule="0 0 * * *",
+        dbt_select="fqn:*",
     )
 ]
 
