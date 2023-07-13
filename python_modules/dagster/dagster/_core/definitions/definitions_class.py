@@ -16,6 +16,7 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._config.pythonic_config import (
     attach_resource_id_to_key_mapping,
 )
+from dagster._core.definitions.asset_graph import InternalAssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -517,3 +518,7 @@ class Definitions:
         point is to defer that resolution until later.
         """
         return self._created_pending_or_normal_repo
+
+    def get_asset_graph(self) -> InternalAssetGraph:
+        """Get the AssetGraph for this set of definitions."""
+        return self.get_repository_def().asset_graph

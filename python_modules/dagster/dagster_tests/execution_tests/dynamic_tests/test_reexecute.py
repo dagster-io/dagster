@@ -15,6 +15,7 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
@@ -572,14 +573,15 @@ def asset_job():
         ),
         executor_def=in_process_executor,
     ).resolve(
-        assets=[
-            branching_asset,
-            echo_branching,
-            absent_asset,
-            mapped_fail_asset,
-            echo_mapped,
-        ],
-        source_assets=[],
+        asset_graph=AssetGraph.from_assets(
+            [
+                branching_asset,
+                echo_branching,
+                absent_asset,
+                mapped_fail_asset,
+                echo_mapped,
+            ]
+        )
     )
 
 

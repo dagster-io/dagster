@@ -30,6 +30,7 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
@@ -522,7 +523,9 @@ def test_multipartitions_fs_io_manager():
         def asset2(asset1):
             return asset1
 
-        my_job = define_asset_job("my_job", [asset1, asset2]).resolve([asset1, asset2], [])
+        my_job = define_asset_job("my_job", [asset1, asset2]).resolve(
+            asset_graph=AssetGraph.from_assets([asset1, asset2])
+        )
 
         result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
 
@@ -568,7 +571,11 @@ def test_backcompat_multipartitions_fs_io_manager():
         with pytest.raises(FileNotFoundError, match="c/2020-04-21"):
             my_job = define_asset_job(
                 "my_job", [multipartitioned, downstream_of_multipartitioned]
-            ).resolve([multipartitioned, downstream_of_multipartitioned], [])
+            ).resolve(
+                asset_graph=AssetGraph.from_assets(
+                    [multipartitioned, downstream_of_multipartitioned]
+                )
+            )
             result = my_job.execute_in_process(
                 partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-21"}),
                 asset_selection=[AssetKey("downstream_of_multipartitioned")],
@@ -576,7 +583,9 @@ def test_backcompat_multipartitions_fs_io_manager():
 
         my_job = define_asset_job(
             "my_job", [multipartitioned, downstream_of_multipartitioned]
-        ).resolve([multipartitioned, downstream_of_multipartitioned], [])
+        ).resolve(
+            asset_graph=AssetGraph.from_assets([multipartitioned, downstream_of_multipartitioned])
+        )
         result = my_job.execute_in_process(
             partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-22"}),
             asset_selection=[AssetKey("downstream_of_multipartitioned")],
