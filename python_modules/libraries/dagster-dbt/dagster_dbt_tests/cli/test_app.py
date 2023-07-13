@@ -1,7 +1,11 @@
+import importlib
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+from dagster import Definitions
 from dagster_dbt.cli.app import app
 from typer.testing import CliRunner
 
@@ -12,21 +16,24 @@ test_dagster_metadata_dbt_project_path = Path(__file__).parent.joinpath(
 runner = CliRunner()
 
 
-@pytest.fixture(name="tmp_project_dir")
-def tmp_project_dir_fixture(tmp_path: Path) -> Path:
+@pytest.fixture(name="dbt_project_dir")
+def dbt_project_dir_fixture(tmp_path: Path) -> Path:
+    dbt_project_dir = tmp_path.joinpath("test_dagster_metadata")
     shutil.copytree(
         test_dagster_metadata_dbt_project_path,
         tmp_path.joinpath("test_dagster_metadata"),
     )
 
-    return tmp_path
+    return dbt_project_dir
 
 
-def test_project_scaffold_command(monkeypatch: pytest.MonkeyPatch, tmp_project_dir: Path) -> None:
-    monkeypatch.chdir(tmp_project_dir)
+def test_project_scaffold_command(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
 
     project_name = "test_dagster_scaffold"
-    dagster_project_dir = tmp_project_dir.joinpath(project_name)
+    dagster_project_dir = tmp_path.joinpath(project_name)
 
     result = runner.invoke(
         app,
@@ -36,7 +43,7 @@ def test_project_scaffold_command(monkeypatch: pytest.MonkeyPatch, tmp_project_d
             "--project-name",
             project_name,
             "--dbt-project-dir",
-            tmp_project_dir.joinpath("test_dagster_metadata").as_posix(),
+            dbt_project_dir.as_posix(),
         ],
     )
 
@@ -46,6 +53,26 @@ def test_project_scaffold_command(monkeypatch: pytest.MonkeyPatch, tmp_project_d
     assert dagster_project_dir.exists()
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
+
+    subprocess.run(["dbt", "compile"], cwd=dbt_project_dir, check=True)
+
+    assert dbt_project_dir.joinpath("target", "manifest.json").exists()
+
+    monkeypatch.chdir(tmp_path)
+    sys.path.append(tmp_path.as_posix())
+
+    defs: Definitions = getattr(
+        importlib.import_module(f"{project_name}.{project_name}.definitions"),
+        "defs",
+    )
+
+    materialize_dbt_models_job = defs.get_job_def("materialize_dbt_models")
+    materialize_dbt_models_schedule = defs.get_schedule_def("materialize_dbt_models_schedule")
+
+    result = materialize_dbt_models_job.execute_in_process()
+
+    assert result.success
+    assert materialize_dbt_models_schedule.cron_schedule == "0 0 * * *"
 
 
 def test_project_scaffold_command_on_invalid_dbt_project(

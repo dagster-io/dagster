@@ -37,9 +37,11 @@ setup(
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
         "dbt-core<1.6",
+        "Jinja2",
         "networkx",
         "requests",
-        "typer[all]",
+        "rich",
+        "typer",
     ],
     extras_require={
         "test": [
