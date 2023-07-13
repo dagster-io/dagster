@@ -87,7 +87,7 @@ def test_dynamic_partitioned_asset_dep():
     def asset1():
         pass
 
-    @asset(partitions_def=partitions_def, non_argument_deps={"asset1"})
+    @asset(partitions_def=partitions_def, deps=[asset1])
     def asset2(context):
         assert context.partition_key == "apple"
         assert context.asset_key_for_output() == "apple"

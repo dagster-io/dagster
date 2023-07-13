@@ -14,6 +14,6 @@ def hourly_asset2() -> None:
     ...
 
 
-@asset(partitions_def=daily_partitions_def, non_argument_deps={"hourly_asset1", "hourly_asset2"})
+@asset(partitions_def=daily_partitions_def, deps=[hourly_asset1, hourly_asset2])
 def daily_asset() -> None:
     ...

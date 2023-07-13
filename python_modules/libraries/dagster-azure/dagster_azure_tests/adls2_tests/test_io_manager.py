@@ -340,7 +340,7 @@ def test_nothing():
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(deps=[asset1])
     def asset2() -> None:
         ...
 
@@ -368,7 +368,7 @@ def test_nothing_pythonic() -> None:
     def asset1() -> None:
         ...
 
-    @asset(non_argument_deps={"asset1"})
+    @asset(deps=[asset1])
     def asset2() -> None:
         ...
 

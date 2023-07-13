@@ -424,10 +424,10 @@ def asset_def(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinition:
     if deps is None:
-        non_argument_deps = set()
+        non_argument_deps = None
         ins = None
     elif isinstance(deps, list):
-        non_argument_deps = set(deps)
+        non_argument_deps = deps
         ins = None
     else:
         non_argument_deps = None
@@ -439,7 +439,7 @@ def asset_def(
     @asset(
         name=key,
         partitions_def=partitions_def,
-        non_argument_deps=non_argument_deps,
+        deps=non_argument_deps,
         ins=ins,
         config_schema={"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
@@ -461,13 +461,13 @@ def multi_asset_def(
     freshness_policies: Optional[Mapping[str, FreshnessPolicy]] = None,
 ) -> AssetsDefinition:
     if deps is None:
-        non_argument_deps = set()
+        non_argument_deps = None
         internal_asset_deps = None
     elif isinstance(deps, list):
-        non_argument_deps = set(deps)
+        non_argument_deps = deps
         internal_asset_deps = None
     else:
-        non_argument_deps = set().union(*deps.values()) - set(deps.keys())
+        non_argument_deps = list(set().union(*deps.values()) - set(deps.keys()))
         internal_asset_deps = {k: {AssetKey(vv) for vv in v} for k, v in deps.items()}
 
     @multi_asset(
@@ -479,7 +479,7 @@ def multi_asset_def(
             for key in keys
         },
         name="_".join(keys),
-        non_argument_deps=non_argument_deps,
+        deps=non_argument_deps,
         internal_asset_deps=internal_asset_deps,
         can_subset=can_subset,
     )
