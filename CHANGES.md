@@ -1,5 +1,86 @@
 # Changelog
 
+# 1.3.14 (core) / 0.19.14 (libraries)
+
+### New
+
+- `DynamicPartitionsDefinition` and `SensorResult` are no longer marked experimental
+- `DagsterInstance` now has a `get_status_by_partition` method, which returns the status of each partition for a given asset. Thanks renzhe-brian!
+- `DagsterInstance` now has a `get_latest_materialization_code_versions` method, which returns the code version of the latest materialization for each of the provided (non-partitioned) assets.
+- The error message for when an asset illegally depends on itself is now more informative.
+- Further performance improvements for the Asset Daemon.
+- Performance improvements in the asset graph view for large asset graphs.
+- Pandas 2.x is now supported in all dagster packages.
+- `build_asset_context` has been added as an asset focused replacement for `build_op_context`.
+- `build_op_context` now accepts a `partition_key_range` parameter.
+- New `AssetSelection.upstream_source_assets` method allows selecting source assets upstream of the current selection.
+- `AssetSelection.key_prefixes` and `AssetSelection.groups` now accept an optional `include_sources` parameter.
+- The AutoMaterialize evaluations UI now provides more details about partitions and waiting on upstream assets.
+- [dbt] The `DbtCli` resource is no longer marked experimental.
+- [dbt] The `global_config` parameter of the `DbtCli` resource has been renamed to `global_config_flags`
+- [dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now work with the `DbtCli` resource.
+- [dbt] The `manifest` argument of the `@dbt_assets` decorator now additionally can accept a `Path` argument representing a path to the manifest file or dictionary argument representing the raw manifest blob.
+- [dbt] When invoking `DbtCli.cli` from inside a `@dbt_assets`-decorated function, you no longer need to supply the manifest argument as long as you provide the context argument.
+- [dbt] The `DbtManifest` object can now generate schedules using dbt selection syntax.
+
+```yaml
+dbt_manifest.build_schedule(
+      job_name="materialize_dbt_models",
+      cron_schedule="0 0 * * *",
+      dbt_select="fqn:*"
+  )
+```
+
+- [dbt] When invoking `DbtCli.cli` and the underlying command fails, an exception will now be raised. To suppress the exception, run the `DbtCli.cli(..., raise_on_error=False`).
+- [ui] You can now alphabetically sort your partitions on the asset partitions page
+- [ui] A button in the “Run is materializing this asset” and “Run failed to materialize this asset” banners provides direct access to the relevant run logs
+
+### Bugfixes
+
+- Fixed a bug that caused asset metadata to not be available available on the `OutputContext` when using `with_attributes` or `AssetsDefinition.from_graph`.
+- Previously, if a partitioned asset at the root of the graph had more missing partitions than its AutoMaterializePolicy’s `max_materializations_per_minute` parameter, those older partitions would not be properly discarded from consideration on subsequent ticks. This has been fixed.
+- Fixed a bug that caused AutoMaterializePolicy.lazy() to not materialize missing assets that were downstream of assets without an AutoMaterializePolicy.
+- In rare cases, the AssetDaemon could hit an exception when using a combination of freshness policies and observable source assets. This has been fixed.
+- Previously, string type annotations (most commonly via modules containing `from __future__ import annotations`) would cause errors in most cases when used with Dagster definitions. This has been fixed for the vast majority of cases.
+- `AssetExecutionContext` has returned to being a type alias for `OpExecutionContext`.
+- [ui] Date filtering on the runs page now takes your timezone into consideration
+- [ui] Fixed a bug where selecting partitions in the launchpad dialog cleared out your configuration
+- [ui] In the run Gantt chart, executed steps that follow skipped steps no longer render off the far right of the visualization.
+- [ui] Cancelling a running backfill no longer makes canceled partitions un-selectable on the job partitions page and backfill modal, and cancellation is shown in gray instead of red.
+
+### Breaking Changes
+
+- [experimental] The internal `time_window_partition_scope_minutes` parameter of the `AutoMaterializePolicy` class has been removed. Instead, `max_materializations_per_minute` should be used to limit the number of runs that may be kicked off for a partitioned asset.
+
+### Deprecations
+
+- [dbt] `DbtCliResource` has been deprecated in favor of `DbtCli`.
+- The python package `dagit` has been deprecated in favor of a new package `dagster-webserver`.
+- `OpExecutionContext.asset_partition_key_range` has been deprecated in favor of `partition_key_range`.
+
+### Community Contributions
+
+- The `databricks_pyspark_step_launcher` will no longer error when executing steps that target a single partition of a `DynamicPartitionsDefinition` (thanks @[weberdavid](https://github.com/weberdavid)!).
+- Increased timeout on readinessProbe for example user code images, which prevents breakages in certain scenarios (thanks @[leehuwuj](https://github.com/leehuwuj))!
+- Avoid creation of erroneous local directories by GCS IO manager (thanks @[peterjclaw](https://github.com/PeterJCLaw))!
+- Fixed typo in intro docs (thanks @[adeboyed](https://github.com/adeboyed))!
+- Fix typo in bigquery docs (thanks @[nigelainscoe](https://github.com/nigelainscoe))!
+- Fix typing on run tag validation (thanks @[yuvalgimmunai](https://github.com/yuvalgimmunai))!
+- Allow passing repositoryCredentials arn as config to ecs run launcher (thanks @[armandobelardo](https://github.com/armandobelardo))!
+
+### Experimental
+
+- The `@observable_source_asset` decorator now accepts an `auto_observe_interval_minutes` parameter. If the asset daemon is turned on, then the observation function will automatically be run at this interval.
+- [dbt] `DbtCliTask` has been renamed to `DbtCliInvocation`
+- [dbt] The `get_asset_key_by_output_name` and `get_node_info_by_output_name` methods of `DbtManifest` have been renamed to`get_asset_key_for_output_name` and `get_node_info_for_output_name`, respectively.
+- [ui] A new feature flag allows you to switch Asset DAG rendering to a tighter horizontal layout, which may be preferable in some scenarios
+
+### Documentation
+
+- Many public methods that were missing in the API docs are now documented. Updated classes include `DagsterInstance`, `*MetadataValue`, `DagsterType`, and others.
+- `dagster-pandera` now has an API docs page.
+- Deprecated methods in the API docs now are marked with a special badge.
+
 # 1.3.13 (core) / 0.19.13 (libraries)
 
 ### Bugfixes
