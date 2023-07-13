@@ -23,7 +23,7 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
-from dagster._utils.backcompat import experimental_class_param_warning
+from dagster._utils.backcompat import experimental_arg_warning
 
 from .metadata import (
     MetadataFieldSerializer,
@@ -263,7 +263,7 @@ class Output(Generic[T]):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
         if data_version is not None:
-            experimental_class_param_warning("data_version", "Output")
+            experimental_arg_warning("data_version", "Output")
         self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),

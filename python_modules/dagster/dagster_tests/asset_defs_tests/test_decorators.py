@@ -304,7 +304,7 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-@ignore_warning("`version` property on OpDefinition is deprecated")
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
@@ -314,7 +314,7 @@ def test_asset_with_code_version():
     assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
-@ignore_warning("`version` property on OpDefinition is deprecated")
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version_direct_call():
     def func(arg1):
         return arg1
@@ -813,7 +813,7 @@ def test_invalid_self_dep(partitions_def, partition_mapping):
             del b
 
 
-@ignore_warning('"MultiPartitionMapping" is an experimental class')
+@ignore_warning("Class `MultiPartitionMapping` is experimental")
 def test_invalid_self_dep_no_time_dimension():
     partitions_def = MultiPartitionsDefinition(
         {
@@ -884,8 +884,8 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
-@ignore_warning('"FreshnessPolicy" is an experimental class')
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
 @ignore_warning('"resource_defs" is an experimental argument')
 def test_graph_asset_with_args():
     @resource
@@ -988,8 +988,8 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
-@ignore_warning('"FreshnessPolicy" is an experimental class')
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
 @ignore_warning('"resource_defs" is an experimental argument')
 def test_graph_multi_asset_decorator():
     @resource
@@ -1108,7 +1108,7 @@ def test_multi_asset_with_bare_resource():
     assert executed["yes"]
 
 
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
 def test_multi_asset_with_auto_materialize_policy():
     @multi_asset(
         outs={

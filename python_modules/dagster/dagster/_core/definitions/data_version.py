@@ -151,7 +151,7 @@ class DataProvenance(
         return DataProvenance(code_version, input_data_versions, is_user_provided)
 
     @property
-    @deprecated
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `input_data_versions` instead.")
     def input_logical_versions(self) -> Mapping["AssetKey", DataVersion]:
         return self.input_data_versions
 

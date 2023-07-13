@@ -66,7 +66,10 @@ from dagster._core.storage.tags import (
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import PrintFn, traced
-from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
+from dagster._utils.backcompat import (
+    deprecation_warning,
+    experimental_warning,
+)
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 
@@ -2042,7 +2045,7 @@ class DagsterInstance(DynamicPartitionsStore):
             logging_config = self.get_settings("python_logs").get("dagster_handler_config", {})
 
             if logging_config:
-                experimental_functionality_warning("Handling yaml-defined logging configuration")
+                experimental_warning("Handling yaml-defined logging configuration")
 
             # Handlers can only be retrieved from dictConfig configuration if they are attached
             # to a logger. We add a dummy logger to the configuration that allows us to access user

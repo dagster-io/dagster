@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple
+import warnings
 
 import pytest
 from dagster._annotations import experimental
@@ -8,9 +8,8 @@ from dagster._utils.backcompat import (
     ExperimentalWarning,
     canonicalize_backcompat_args,
     experimental_arg_warning,
+    quiet_experimental_warnings,
 )
-
-from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 
 def is_new(old_flag=None, new_flag=None, include_additional_warn_txt=True):
@@ -21,7 +20,9 @@ def is_new(old_flag=None, new_flag=None, include_additional_warn_txt=True):
         old_arg="old_flag",
         breaking_version="0.9.0",
         coerce_old_to_new=lambda val: not val,
-        additional_warn_txt="Will remove at next release." if include_additional_warn_txt else None,
+        additional_warn_text="Will remove at next release."
+        if include_additional_warn_txt
+        else None,
     )
 
     return actual_new_flag
@@ -64,107 +65,6 @@ def test_backcompat_both_set():
         is_new(old_flag=False, new_flag=True)
 
 
-def test_experimental_fn_warning():
-    @experimental
-    def my_experimental_function():
-        pass
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match=(
-            '"my_experimental_function" is an experimental function. It may break in future'
-            " versions, even between dot releases. "
-        ),
-    ) as warning:
-        my_experimental_function()
-
-    assert warning[0].filename.endswith("test_backcompat.py")
-
-
-def test_experimental_class_warning():
-    @experimental
-    class MyExperimentalClass:
-        def __init__(self):
-            pass
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match=(
-            '"MyExperimentalClass" is an experimental class. It may break in future'
-            " versions, even between dot releases. "
-        ),
-    ) as warning:
-        MyExperimentalClass()
-
-    assert warning[0].filename.endswith("test_backcompat.py")
-
-
-def test_experimental_class_with_methods():
-    @experimental
-    class ExperimentalClass:
-        def __init__(self, salutation="hello"):
-            self.salutation = salutation
-
-        def hello(self, name):
-            return f"{self.salutation} {name}"
-
-    @experimental
-    class ExperimentalClassWithExperimentalFunction(ExperimentalClass):
-        def __init__(self, sendoff="goodbye", **kwargs):
-            self.sendoff = sendoff
-            super().__init__(**kwargs)
-
-        @experimental
-        def goodbye(self, name):
-            return f"{self.sendoff} {name}"
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match=(
-            '"ExperimentalClass" is an experimental class. It may break in future versions, even'
-            " between dot releases."
-        ),
-    ):
-        experimental_class = ExperimentalClass(salutation="howdy")
-
-    with assert_no_warnings():
-        assert experimental_class.hello("dagster") == "howdy dagster"
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match=(
-            '"ExperimentalClassWithExperimentalFunction" is an experimental class. It may break in'
-            " future versions, even between dot releases."
-        ),
-    ):
-        experimental_class_with_experimental_function = ExperimentalClassWithExperimentalFunction()
-
-    with assert_no_warnings():
-        assert experimental_class_with_experimental_function.hello("dagster") == "hello dagster"
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match=(
-            '"goodbye" is an experimental function. It may break in future versions, even between'
-            " dot releases."
-        ),
-    ):
-        assert experimental_class_with_experimental_function.goodbye("dagster") == "goodbye dagster"
-
-    @experimental
-    class ExperimentalNamedTupleClass(NamedTuple("_", [("salutation", str)])):
-        pass
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match=(
-            '"ExperimentalNamedTupleClass" is an experimental class. It may break in future'
-            " versions, even between dot releases."
-        ),
-    ):
-        assert ExperimentalNamedTupleClass(salutation="howdy").salutation == "howdy"
-
-
 def test_experimental_arg_warning():
     def stable_function(_stable_arg, _experimental_arg):
         experimental_arg_warning("experimental_arg", "stable_function")
@@ -179,3 +79,62 @@ def test_experimental_arg_warning():
         stable_function(1, 2)
 
     assert warning[0].filename.endswith("test_backcompat.py")
+
+
+def test_quiet_experimental_warnings() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        def my_experimental_function(my_arg) -> None:
+            pass
+
+        assert len(w) == 0
+        my_experimental_function("foo")
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        def my_experimental_function(my_arg) -> None:
+            pass
+
+        @quiet_experimental_warnings
+        def my_quiet_wrapper(my_arg) -> None:
+            my_experimental_function(my_arg)
+
+        assert len(w) == 0
+        my_quiet_wrapper("foo")
+        assert len(w) == 0
+
+
+def test_quiet_experimental_warnings_on_class() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        class MyExperimental:
+            def __init__(self, _string_in: str) -> None:
+                pass
+
+        assert len(w) == 0
+        MyExperimental("foo")
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        class MyExperimentalTwo:
+            def __init__(self, _string_in: str) -> None:
+                pass
+
+        class MyExperimentalWrapped(MyExperimentalTwo):
+            @quiet_experimental_warnings
+            def __init__(self, string_in: str) -> None:
+                super().__init__(string_in)
+
+        assert len(w) == 0
+        MyExperimentalWrapped("foo")
+        assert len(w) == 0

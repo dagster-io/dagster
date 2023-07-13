@@ -18,7 +18,7 @@ from typing import (
 from typing_extensions import TypeAlias, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
@@ -34,7 +34,7 @@ from dagster._core.definitions.resource_requirement import (
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
+from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from .definition_config_schema import (
     IDefinitionConfigSchema,
@@ -250,12 +250,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return frozenset(self._required_resource_keys)
 
     @public
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `code_version` instead.")
     @property
     def version(self) -> Optional[str]:
-        """[DEPRECATED] str: Version of the code encapsulated by the op. If set, this is used as a
+        """str: Version of the code encapsulated by the op. If set, this is used as a
         default code version for all outputs.
         """
-        deprecation_warning("`version` property on OpDefinition", "2.0")
         return self._version
 
     @public

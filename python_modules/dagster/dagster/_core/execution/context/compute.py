@@ -263,7 +263,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
-    @deprecated
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:

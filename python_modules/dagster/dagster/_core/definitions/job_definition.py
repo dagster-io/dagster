@@ -22,7 +22,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -63,7 +63,7 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import deprecation_warning, experimental_class_warning
+from dagster._utils.backcompat import experimental_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
@@ -185,7 +185,7 @@ class JobDefinition(IHasInternalInit):
             version_strategy, "version_strategy", VersionStrategy
         )
         if self.version_strategy is not None:
-            experimental_class_warning("VersionStrategy")
+            experimental_warning("class `VersionStrategy`")
 
         _subset_selection_data = check.opt_inst_param(
             _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
@@ -836,6 +836,10 @@ class JobDefinition(IHasInternalInit):
             ) from exc
 
     @public
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -864,12 +868,6 @@ class JobDefinition(IHasInternalInit):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        deprecation_warning(
-            "JobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
-        )
-
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 

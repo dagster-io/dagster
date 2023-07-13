@@ -930,7 +930,9 @@ class ConfigurableResourceFactory(
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `with_replaced_resource_context` instead"
+    )
     def with_resource_context(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":

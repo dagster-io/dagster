@@ -803,9 +803,14 @@ class ScheduleDefinition(IHasInternalInit):
         """
         return self._cron_schedule  # type: ignore
 
-    @deprecated
+    @public
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Setting this property no longer has any effect.",
+    )
     @property
     def environment_vars(self) -> Mapping[str, str]:
+        """Mapping[str, str]: Environment variables to export to the cron schedule."""
         return self._environment_vars
 
     @public

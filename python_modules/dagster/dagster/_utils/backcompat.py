@@ -1,16 +1,18 @@
 import warnings
-from typing import Callable, Optional, TypeVar
+from contextlib import contextmanager
+from typing import Callable, Iterator, Optional, TypeVar
 
 import dagster._check as check
+from dagster._core.decorator_utils import (
+    Decoratable,
+    apply_context_manager_decorator,
+)
 
 T = TypeVar("T")
 
-EXPERIMENTAL_WARNING_HELP = (
-    "To mute warnings for experimental functionality, invoke"
-    ' warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning) or use'
-    " one of the other methods described at"
-    " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
-)
+# ########################
+# ##### DEPRECATED
+# ########################
 
 
 def canonicalize_backcompat_args(
@@ -20,7 +22,7 @@ def canonicalize_backcompat_args(
     old_arg: str,
     breaking_version: str,
     coerce_old_to_new: Optional[Callable[[T], T]] = None,
-    additional_warn_txt: Optional[str] = None,
+    additional_warn_text: Optional[str] = None,
     # stacklevel=3 punches up to the caller of canonicalize_backcompat_args
     stacklevel: int = 3,
 ) -> T:
@@ -59,7 +61,7 @@ def canonicalize_backcompat_args(
     check.str_param(new_arg, "new_arg")
     check.str_param(old_arg, "old_arg")
     check.opt_callable_param(coerce_old_to_new, "coerce_old_to_new")
-    check.opt_str_param(additional_warn_txt, "additional_warn_txt")
+    check.opt_str_param(additional_warn_text, "additional_warn_text")
     check.int_param(stacklevel, "stacklevel")
     if new_val is not None:
         if old_val is not None:
@@ -71,7 +73,7 @@ def canonicalize_backcompat_args(
         return new_val
     if old_val is not None:
         _additional_warn_txt = f'Use "{new_arg}" instead.' + (
-            (" " + additional_warn_txt) if additional_warn_txt else ""
+            (" " + additional_warn_text) if additional_warn_text else ""
         )
         deprecation_warning(
             f'Argument "{old_arg}"', breaking_version, _additional_warn_txt, stacklevel + 1
@@ -84,88 +86,42 @@ def canonicalize_backcompat_args(
 def deprecation_warning(
     subject: str,
     breaking_version: str,
-    additional_warn_txt: Optional[str] = None,
+    additional_warn_text: Optional[str] = None,
     stacklevel: int = 3,
 ):
     warnings.warn(
         f"{subject} is deprecated and will be removed in {breaking_version}."
-        + ((" " + additional_warn_txt) if additional_warn_txt else ""),
+        + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=DeprecationWarning,
         stacklevel=stacklevel,
     )
 
 
-def rename_warning(
-    new_name: str,
-    old_name: str,
-    breaking_version: str,
-    additional_warn_txt: Optional[str] = None,
-    stacklevel: int = 3,
-) -> None:
-    """Common utility for managing backwards compatibility of renaming."""
-    warnings.warn(
-        '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}"'
-        " instead.".format(
-            old_name=old_name,
-            new_name=new_name,
-            breaking_version=breaking_version,
-        )
-        + ((" " + additional_warn_txt) if additional_warn_txt else ""),
-        category=DeprecationWarning,
-        stacklevel=stacklevel,
-    )
+# ########################
+# ##### EXPERIMENTAL
+# ########################
+
+EXPERIMENTAL_WARNING_HELP = (
+    "To mute warnings for experimental functionality, invoke"
+    ' warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning) or use'
+    " one of the other methods described at"
+    " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
+)
 
 
 class ExperimentalWarning(Warning):
     pass
 
 
-def experimental_warning(message: str, stacklevel: int = 3) -> None:
-    warnings.warn(
-        f"{message}. {EXPERIMENTAL_WARNING_HELP}",
-        ExperimentalWarning,
-        stacklevel=stacklevel,
-    )
-
-
-def experimental_fn_warning(name: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a function is experimental."""
-    warnings.warn(
-        '"{name}" is an experimental function. It may break in future versions, even between dot'
-        " releases. {help}".format(name=name, help=EXPERIMENTAL_WARNING_HELP),
-        ExperimentalWarning,
-        stacklevel=stacklevel,
-    )
-
-
-def experimental_decorator_warning(name: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a decorator is experimental."""
+def experimental_warning(
+    subject: str, additional_warn_text: Optional[str] = None, stacklevel: int = 3
+) -> None:
+    extra_text = ((f" {additional_warn_text} " if additional_warn_text else ""),)
     warnings.warn(
         (
-            f'"{name}" is an experimental decorator. It may break in future versions, even between'
-            f" dot releases. {EXPERIMENTAL_WARNING_HELP}"
+            f"{subject} is experimental. It may break in future versions, even between dot"
+            f" releases.{extra_text}{EXPERIMENTAL_WARNING_HELP}"
         ),
-        ExperimentalWarning,
-        stacklevel=stacklevel,
-    )
-
-
-def experimental_class_warning(name: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a class is experimental. Expected to be called from the class's
-    __init__ method.
-
-    Usage:
-
-    .. code-block:: python
-
-        class MyExperimentalClass:
-            def __init__(self, some_arg):
-                experimental_class_warning('MyExperimentalClass')
-                # do other initialization stuff
-    """
-    warnings.warn(
-        '"{name}" is an experimental class. It may break in future versions, even between dot'
-        " releases. {help}".format(name=name, help=EXPERIMENTAL_WARNING_HELP),
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
@@ -183,25 +139,32 @@ def experimental_arg_warning(arg_name: str, fn_name: str, stacklevel: int = 3) -
     )
 
 
-def experimental_functionality_warning(desc: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a particular functionality is experimental."""
-    warnings.warn(
-        (
-            f"{desc} is currently experimental functionality. It may break in future versions, even"
-            f" between dot releases. {EXPERIMENTAL_WARNING_HELP}"
-        ),
-        ExperimentalWarning,
-        stacklevel=stacklevel,
-    )
+# ########################
+# ##### QUIET EXPERIMENTAL WARNINGS
+# ########################
 
 
-def experimental_class_param_warning(param_name: str, class_name: str, stacklevel=3) -> None:
-    """Utility for warning that an argument to a constructor is experimental."""
-    warnings.warn(
-        (
-            f'"{param_name}" is an experimental parameter to the class "{class_name}". It may '
-            f"break in future versions, even between dot releases. {EXPERIMENTAL_WARNING_HELP}"
-        ),
-        ExperimentalWarning,
-        stacklevel=stacklevel,
-    )
+T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
+
+
+def quiet_experimental_warnings(__obj: T_Decoratable) -> T_Decoratable:
+    """Mark a method/function as ignoring experimental warnings. This quiets any "experimental" warnings
+    emitted inside the passed callable. Useful when we want to use experimental features internally
+    in a way that we don't want to warn users about.
+
+    Usage:
+
+        .. code-block:: python
+
+            @quiet_experimental_warnings
+            def invokes_some_experimental_stuff(my_arg):
+                my_experimental_function(my_arg)
+    """
+
+    @contextmanager
+    def suppress_experimental_warnings() -> Iterator[None]:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ExperimentalWarning)
+            yield
+
+    return apply_context_manager_decorator(__obj, suppress_experimental_warnings)
