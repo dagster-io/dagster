@@ -19,12 +19,9 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._core.definitions.asset_daemon_context import build_run_requests
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    build_run_requests,
-    find_parent_materialized_asset_partitions,
-)
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -807,12 +804,10 @@ def execute_asset_backfill_iteration_inner(
         (
             parent_materialized_asset_partitions,
             next_latest_storage_id,
-        ) = find_parent_materialized_asset_partitions(
-            asset_graph=asset_graph,
-            instance_queryer=instance_queryer,
+        ) = instance_queryer.asset_partitions_with_newly_updated_parents(
             target_asset_keys=asset_backfill_data.target_subset.asset_keys,
             target_asset_keys_and_parents=target_asset_keys_and_parents,
-            latest_storage_id=asset_backfill_data.latest_storage_id,
+            after_cursor=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)
 

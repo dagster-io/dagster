@@ -1,4 +1,5 @@
-from typing import Sequence
+from collections import defaultdict
+from typing import AbstractSet, Dict, Sequence
 
 import pendulum
 import pytest
@@ -12,12 +13,10 @@ from dagster import (
     repository,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_daemon_context import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AutoMaterializeAssetEvaluation,
-    build_asset_reconciliation_sensor,
-    build_auto_materialize_asset_evaluations,
-)
+from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeCondition
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
@@ -56,7 +55,7 @@ def test_reconciliation(scenario):
         )
 
     if scenario.expected_conditions is not None:
-        reasons = {
+        conditions = {
             (
                 AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
                 if isinstance(key, tuple)
@@ -64,10 +63,24 @@ def test_reconciliation(scenario):
             ): rs
             for key, rs in (scenario.expected_conditions or {}).items()
         }
+        conditions_by_asset_key: Dict[
+            AssetKey, Dict[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]
+        ] = defaultdict(dict)
+
+        # split into sub-dictionaries that hold only the conditions specific to each asset
+        for asset_partition, cs in conditions.items():
+            conditions_by_asset_key[asset_partition.asset_key][asset_partition] = cs
+
         assert _sorted_evaluations(
-            build_auto_materialize_asset_evaluations(
-                AssetGraph.from_assets(scenario.assets), reasons, dynamic_partitions_store=instance
-            )
+            [
+                AutoMaterializeAssetEvaluation.from_conditions(
+                    AssetGraph.from_assets(scenario.assets),
+                    asset_key,
+                    conditions_by_asset_partition,
+                    instance,
+                )
+                for asset_key, conditions_by_asset_partition in conditions_by_asset_key.items()
+            ]
         ) == _sorted_evaluations(evaluations)
 
     assert len(run_requests) == len(scenario.expected_run_requests), evaluations

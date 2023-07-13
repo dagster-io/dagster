@@ -105,7 +105,6 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
     asset_graph: AssetGraph,
     target_asset_keys: AbstractSet[AssetKey],
     target_asset_keys_and_parents: AbstractSet[AssetKey],
-    current_time: datetime.datetime,
 ) -> Mapping[AssetKeyPartitionKey, Set[AutoMaterializeCondition]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies, as well as a set of AssetKeyPartitionKeys which will be materialized at
@@ -114,6 +113,8 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
     Attempts to minimize the total number of asset executions.
     """
     from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
+    current_time = data_time_resolver.instance_queryer.evaluation_time
 
     # now we have a full set of constraints, we can find solutions for them as we move down
     conditions_by_asset_partition: Mapping[

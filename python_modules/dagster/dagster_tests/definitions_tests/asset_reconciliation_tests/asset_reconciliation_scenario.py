@@ -42,11 +42,8 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
-    AutoMaterializeCondition,
-    reconcile,
-)
+from dagster._core.definitions.asset_reconciliation_sensor import AssetDaemonCursor, reconcile
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
@@ -197,12 +194,10 @@ class AssetReconciliationScenario(NamedTuple):
                     )
 
                 # make sure we can deserialize it using the new asset graph
-                cursor = AssetReconciliationCursor.from_serialized(
-                    cursor.serialize(), repo.asset_graph
-                )
+                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
 
             else:
-                cursor = AssetReconciliationCursor.empty()
+                cursor = AssetDaemonCursor.empty()
 
         start = datetime.datetime.now()
 

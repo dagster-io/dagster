@@ -3,10 +3,7 @@ from typing import Optional
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
-    reconcile,
-)
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext, AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -48,11 +45,7 @@ def _get_raw_cursor(instance: DagsterInstance) -> Optional[str]:
 
 def get_current_evaluation_id(instance: DagsterInstance) -> Optional[int]:
     raw_cursor = _get_raw_cursor(instance)
-    return (
-        AssetReconciliationCursor.get_evaluation_id_from_serialized(raw_cursor)
-        if raw_cursor
-        else None
-    )
+    return AssetDaemonCursor.get_evaluation_id_from_serialized(raw_cursor) if raw_cursor else None
 
 
 class AssetDaemon(IntervalDaemon):
@@ -86,33 +79,29 @@ class AssetDaemon(IntervalDaemon):
 
         workspace = workspace_process_context.create_request_context()
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
-        target_asset_keys = {
-            target_key
-            for target_key in asset_graph.materializable_asset_keys
-            if asset_graph.get_auto_materialize_policy(target_key) is not None
-        }
 
+        has_auto_materialize_assets = any(
+            asset_graph.get_auto_materialize_policy(key) is not None
+            for key in asset_graph.all_asset_keys
+        )
         has_auto_observe_assets = any(
             asset_graph.get_auto_observe_interval_minutes(key) is not None
             for key in asset_graph.source_asset_keys
         )
 
-        if not target_asset_keys and not has_auto_observe_assets:
+        if not has_auto_materialize_assets and not has_auto_observe_assets:
             yield
             return
 
         raw_cursor = _get_raw_cursor(instance)
         cursor = (
-            AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
+            AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
-            else AssetReconciliationCursor.empty()
+            else AssetDaemonCursor.empty()
         )
+        context = AssetDaemonContext(instance, asset_graph, stored_cursor=cursor)
 
-        run_requests, new_cursor, evaluations = reconcile(
-            asset_graph=asset_graph,
-            target_asset_keys=target_asset_keys,
-            instance=instance,
-            cursor=cursor,
+        run_requests, new_cursor, evaluations = context.evaluate(
             materialize_run_tags={
                 AUTO_MATERIALIZE_TAG: "true",
                 **instance.auto_materialize_run_tags,

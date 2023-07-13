@@ -3,7 +3,7 @@ import json
 from dagster import AssetKey, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
+    AssetDaemonCursor,
 )
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
@@ -19,14 +19,12 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         """[20, ["a"], {"my_asset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]"""
     )
 
-    assert (
-        AssetReconciliationCursor.get_evaluation_id_from_serialized(backcompat_serialized) is None
-    )
+    assert AssetDaemonCursor.get_evaluation_id_from_serialized(backcompat_serialized) is None
 
     asset_graph = AssetGraph.from_assets([my_asset])
-    c = AssetReconciliationCursor.from_serialized(backcompat_serialized, asset_graph)
+    c = AssetDaemonCursor.from_serialized(backcompat_serialized, asset_graph)
 
-    assert c == AssetReconciliationCursor(
+    assert c == AssetDaemonCursor(
         20,
         {AssetKey("a")},
         {AssetKey("my_asset"): partitions.empty_subset().with_partition_keys(["a"])},
@@ -38,11 +36,11 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
         21, {}, {AssetKey("my_asset")}, {AssetKey("my_asset"): {"a"}}, 1, asset_graph, {}, 0
     )
 
-    serdes_c2 = AssetReconciliationCursor.from_serialized(c2.serialize(), asset_graph)
+    serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)
     assert serdes_c2 == c2
     assert serdes_c2.evaluation_id == 1
 
-    assert AssetReconciliationCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1
+    assert AssetDaemonCursor.get_evaluation_id_from_serialized(c2.serialize()) == 1
 
 
 def test_asset_reconciliation_cursor_auto_observe_backcompat():
@@ -71,7 +69,7 @@ def test_asset_reconciliation_cursor_auto_observe_backcompat():
         )
     )
 
-    cursor = AssetReconciliationCursor.from_serialized(
+    cursor = AssetDaemonCursor.from_serialized(
         serialized, asset_graph=AssetGraph.from_assets([asset1, asset2])
     )
     assert cursor.latest_storage_id == 25
