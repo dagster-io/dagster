@@ -2,6 +2,7 @@ import copy
 import hashlib
 import json
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from datetime import (
     datetime,
     timedelta,
@@ -10,6 +11,7 @@ from enum import Enum
 from typing import (
     Any,
     Callable,
+    Dict,
     Generic,
     Iterable,
     Mapping,
@@ -291,6 +293,18 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
             )
 
 
+def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> None:
+    counts: Dict[str, int] = defaultdict(lambda: 0)
+    for partition_key in partition_keys:
+        counts[partition_key] += 1
+        found_duplicates = [key for key in counts.keys() if counts[key] > 1]
+        if found_duplicates:
+            raise DagsterInvalidDefinitionError(
+                "Partition keys must be unique. Duplicate instances of partition keys:"
+                f" {found_duplicates}."
+            )
+
+
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """A statically-defined set of partitions.
 
@@ -311,8 +325,8 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        # TODO 1.3.0 enforce that partition keys are unique
         raise_error_on_invalid_partition_key_substring(partition_keys)
+        raise_error_on_duplicate_partition_keys(partition_keys)
 
         self._partition_keys = partition_keys
 
