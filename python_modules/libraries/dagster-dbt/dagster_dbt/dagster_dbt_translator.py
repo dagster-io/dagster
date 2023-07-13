@@ -11,17 +11,17 @@ from .asset_utils import default_asset_key_fn, default_description_fn, default_m
 
 class DagsterDbtTranslator:
     @classmethod
-    def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
-        """A function that takes a dictionary representing the dbt node and returns the
-        Dagster asset key the represents the dbt node.
+    def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
+        """A function that takes a dictionary representing information about a dbt resource (model,
+        seed, snapshot, or source), and returns the Dagster asset key that represents that resource.
 
-        This method can be overridden to provide a custom asset key for a dbt node.
+        This method can be overridden to provide a custom asset key for a dbt resource.
 
         Args:
-            node_info (Mapping[str, Any]): A dictionary representing the dbt node.
+            dbt_resource_info (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
-            AssetKey: The Dagster asset key for the dbt node.
+            AssetKey: The Dagster asset key for the dbt resource.
 
         Examples:
             .. code-block:: python
@@ -34,23 +34,23 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
+                    def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
                         return AssetKey(["prefix", node_info["alias"]])
         """
-        return default_asset_key_fn(node_info)
+        return default_asset_key_fn(dbt_resource_info)
 
     @classmethod
-    def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
-        """A function that takes a dictionary representing the dbt node and returns the
-        Dagster description the represents the dbt node.
+    def get_description(cls, dbt_resource_info: Mapping[str, Any]) -> str:
+        """A function that takes a dictionary representing information about a dbt resource (model,
+        seed, snapshot, or source), and returns the Dagster description for that resource.
 
-        This method can be overridden to provide a custom description for a dbt node.
+        This method can be overridden to provide a custom description for a dbt resource.
 
         Args:
-            node_info (Mapping[str, Any]): A dictionary representing the dbt node.
+            dbt_resource_info (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
-            str: The description for the dbt node.
+            str: The description for the dbt resource.
 
         Examples:
             .. code-block:: python
@@ -62,23 +62,23 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+                    def get_description(cls, dbt_resource_info: Mapping[str, Any]) -> str:
                         return "custom description"
         """
-        return default_description_fn(node_info)
+        return default_description_fn(dbt_resource_info)
 
     @classmethod
-    def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
-        """A function that takes a dictionary representing the dbt node and returns the
-        Dagster metadata the represents the dbt node.
+    def get_metadata(cls, dbt_resource_info: Mapping[str, Any]) -> Mapping[str, Any]:
+        """A function that takes a dictionary representing information about a dbt resource (model,
+        seed, snapshot, or source), and returns the Dagster metadata for that resource.
 
-        This method can be overridden to provide custom metadata for a dbt node.
+        This method can be overridden to provide a custom metadata for a dbt resource.
 
         Args:
-            node_info (Mapping[str, Any]): A dictionary representing the dbt node.
+            node_info (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
-            Mapping[str, Any]: A dictionary representing the Dagster metadata for the dbt node.
+            Mapping[str, Any]: A dictionary representing the Dagster metadata for the dbt resource.
 
         Examples:
             .. code-block:: python
@@ -90,13 +90,13 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+                    def get_metadata(cls, dbt_resource_info: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
-        return default_metadata_fn(node_info)
+        return default_metadata_fn(dbt_resource_info)
 
 
-class KeyPrefixDagsterDbtTranslator:
+class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
     """A DagsterDbtTranslator that applies prefixes to the asset keys generated from dbt resources.
 
     Attributes:
@@ -122,9 +122,9 @@ class KeyPrefixDagsterDbtTranslator:
             or []
         )
 
-    def node_info_to_asset_key(self, node_info: Mapping[str, Any]) -> AssetKey:
-        base_key = default_asset_key_fn(node_info)
-        if node_info["resource_type"] == "source":
+    def get_asset_key(self, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
+        base_key = default_asset_key_fn(dbt_resource_info)
+        if dbt_resource_info["resource_type"] == "source":
             return base_key.with_prefix(self._source_asset_key_prefix)
         else:
             return base_key.with_prefix(self._asset_key_prefix)

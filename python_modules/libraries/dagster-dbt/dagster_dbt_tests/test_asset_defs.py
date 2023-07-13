@@ -564,12 +564,12 @@ def test_dagster_dbt_translator(
 ):
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_asset_key(cls, node_info):
-            return AssetKey(["foo", node_info["name"]])
+        def get_asset_key(cls, dbt_resource_info):
+            return AssetKey(["foo", dbt_resource_info["name"]])
 
         @classmethod
-        def node_info_to_metadata(cls, node_info):
-            return {"name_metadata": node_info["name"] + "_metadata"}
+        def get_metadata(cls, dbt_resource_info):
+            return {"name_metadata": dbt_resource_info["name"] + "_metadata"}
 
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()

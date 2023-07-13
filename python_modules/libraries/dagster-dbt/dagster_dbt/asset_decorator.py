@@ -142,15 +142,15 @@ def get_dbt_multi_asset_args(
         node_info = dbt_nodes[unique_id]
 
         output_name = output_name_fn(node_info)
-        asset_key = dagster_dbt_translator.node_info_to_asset_key(node_info)
+        asset_key = dagster_dbt_translator.get_asset_key(node_info)
 
         outs[output_name] = AssetOut(
             key=asset_key,
             dagster_type=Nothing,
             io_manager_key=io_manager_key,
-            description=dagster_dbt_translator.node_info_to_description(node_info),
+            description=dagster_dbt_translator.get_description(node_info),
             is_required=False,
-            metadata=dagster_dbt_translator.node_info_to_metadata(node_info),
+            metadata=dagster_dbt_translator.get_metadata(node_info),
             group_name=default_group_fn(node_info),
             code_version=default_code_version_fn(node_info),
             freshness_policy=default_freshness_policy_fn(node_info),
@@ -161,7 +161,7 @@ def get_dbt_multi_asset_args(
         output_internal_deps = internal_asset_deps.setdefault(output_name, set())
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = dagster_dbt_translator.node_info_to_asset_key(parent_node_info)
+            parent_asset_key = dagster_dbt_translator.get_asset_key(parent_node_info)
 
             # Add this parent as an internal dependency
             output_internal_deps.add(parent_asset_key)

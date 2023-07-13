@@ -272,8 +272,8 @@ def _stream_event_iterator(
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
-            def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
-                return node_info_to_asset_key(node_info)
+            def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
+                return node_info_to_asset_key(dbt_resource_info)
 
         cli_output = dbt_resource.cli(
             args=["build" if use_build_command else "run", *build_command_args_from_flags(kwargs)],
@@ -883,21 +883,21 @@ def _load_assets_from_dbt_manifest(
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
-            def node_info_to_asset_key(cls, node_info):
-                base_key = node_info_to_asset_key(node_info)
-                if node_info["resource_type"] == "source":
+            def get_asset_key(cls, dbt_resource_info):
+                base_key = node_info_to_asset_key(dbt_resource_info)
+                if dbt_resource_info["resource_type"] == "source":
                     return base_key.with_prefix(source_key_prefix or [])
                 else:
                     return base_key.with_prefix(key_prefix or [])
 
             @classmethod
-            def node_info_to_metadata(cls, node_info):
-                return node_info_to_definition_metadata_fn(node_info)
+            def get_metadata(cls, dbt_resource_info):
+                return node_info_to_definition_metadata_fn(dbt_resource_info)
 
             @classmethod
-            def node_info_to_description(cls, node_info):
+            def get_description(cls, dbt_resource_info):
                 return default_description_fn(
-                    node_info,
+                    dbt_resource_info,
                     display_raw_sql=display_raw_sql if display_raw_sql is not None else True,
                 )
 
@@ -913,15 +913,15 @@ def _load_assets_from_dbt_manifest(
         dbt_resource_key=dbt_resource_key,
         op_name=op_name,
         project_id=manifest["metadata"]["project_id"][:5],
-        node_info_to_asset_key=dagster_dbt_translator.node_info_to_asset_key,
+        node_info_to_asset_key=dagster_dbt_translator.get_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
-        node_info_to_definition_metadata_fn=dagster_dbt_translator.node_info_to_metadata,
-        node_info_to_description_fn=dagster_dbt_translator.node_info_to_description,
+        node_info_to_definition_metadata_fn=dagster_dbt_translator.get_metadata,
+        node_info_to_description_fn=dagster_dbt_translator.get_description,
         manifest_json=manifest,
     )
 
