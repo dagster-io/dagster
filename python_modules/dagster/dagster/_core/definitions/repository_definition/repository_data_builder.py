@@ -320,8 +320,7 @@ def build_caching_repository_data_from_dict(
         elif isinstance(raw_job_def, UnresolvedAssetJobDefinition):
             repository_definitions["jobs"][key] = raw_job_def.resolve(
                 # TODO: https://github.com/dagster-io/dagster/issues/8263
-                assets=[],
-                source_assets=[],
+                asset_graph=AssetGraph.from_assets([]),
                 default_executor_def=None,
             )
         elif not isinstance(raw_job_def, JobDefinition) and not isfunction(raw_job_def):

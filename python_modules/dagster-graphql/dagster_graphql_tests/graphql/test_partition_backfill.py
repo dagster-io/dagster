@@ -10,6 +10,7 @@ from dagster import (
     asset,
     define_asset_job,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
@@ -267,7 +268,9 @@ def _mock_asset_backfill_runs(
             raise Exception("fail")
         return Output(5)
 
-    define_asset_job("my_job", [dummy_asset]).resolve([dummy_asset], []).execute_in_process(
+    define_asset_job("my_job", [dummy_asset]).resolve(
+        asset_graph=AssetGraph.from_assets([dummy_asset])
+    ).execute_in_process(
         tags={**DagsterRun.tags_for_backfill_id(backfill_id)},
         partition_key=partition_key,
         raise_on_error=False,
