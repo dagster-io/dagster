@@ -41,7 +41,7 @@ top_new_story_ids = requests.get(newstories_url).json()[:100]
 
 os.makedirs("data", exist_ok=True)
 with open("data/topstory_ids.json", "w") as f:
-    f.write(json.dumps((top_new_story_ids)))
+    json.dump(top_new_story_ids, f)
 ```
 
 This code creates a list of integers representing the IDs for the current top stories on Hacker News and stores them in a file called `data/topstory_ids.json`.
@@ -91,7 +91,7 @@ And now you're done! Time to go into the Dagster UI and see what you've built.
 
 Using Dagster's UI, you can explore your data assets, manually launch runs, and observe what's happening during pipeline runs.
 
-As a reminder, to launch the UI, set your terminal's current directory to `/tutorial-project` and run the following command:
+As a reminder, to launch the UI, set your terminal's current directory to `/tutorial` and run the following command:
 
 ```bash
 dagster dev

@@ -1,15 +1,15 @@
-import base64
-import json
+import base64  # noqa: I001
 from io import BytesIO
-
-# start_topstory_ids_asset
-from typing import Dict, List  # add imports to the top of `assets.py`
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
 from dagster import AssetExecutionContext, MetadataValue, asset, get_dagster_logger
+
+
+# start_topstory_ids_asset
+from typing import Dict, List  # add imports to the top of `assets.py`
 
 
 @asset
@@ -29,10 +29,9 @@ def topstory_ids() -> List:  # modify return type signature
 
 @asset  # remove deps parameter
 def topstories(
-    context: AssetExecutionContext, topstory_ids: List
-) -> (
-    pd.DataFrame
-):  # add topstory_ids as a function argument and modify the return type signature
+    context: AssetExecutionContext,
+    topstory_ids: List,  # add topstory_ids as a function argument
+) -> pd.DataFrame:  # modify the return type signature
     logger = get_dagster_logger()
 
     # remove manually loading topstory_ids
@@ -69,8 +68,9 @@ def topstories(
 
 @asset  # remove deps parameter
 def most_frequent_words(
-    context: AssetExecutionContext, topstories: pd.DataFrame
-) -> Dict:  # add topstories as a function argument and modify the return type signature
+    context: AssetExecutionContext,
+    topstories: pd.DataFrame,  # add topstories as a function argument
+) -> Dict:  # modify the return type signature
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
 
     # remove manually loading topstory_ids

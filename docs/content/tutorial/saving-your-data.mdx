@@ -5,7 +5,7 @@ description: Learn how to use I/O managers to save your data.
 
 # Tutorial, part six: Using Dagster to save and load your data
 
-You've written a data pipeline using assets that runs every hour. Currently, you are manually storing and loading your data using the `json` and `pandas` libraries at the beginning and end of each asset. Dagster provides I/O managers that abstract away reading and writing data to storage. I/O managers allow you to reduce boilerplate reading and writing code and easily change where your data is stored.
+You've written a data pipeline using assets that runs every hour. Currently, you are manually storing and loading your data using the `json` and `pandas` libraries at the beginning and end of each asset. Dagster provides I/O managers that will handle reading and writing data to storage for you. I/O managers allow you to reduce boilerplate reading and writing code and easily change where your data is stored.
 
 By the end of this section, you will:
 
@@ -40,7 +40,7 @@ Points to hit:
 
 ## Step 1: Writing files to storage
 
-Now, you'll use the and I/O to read and write your data. For this tutorial, you’ll be writing to a directory in your file system by using the `FilesystemIOManager`, which is bundled with the core `dagster` package.
+Now, you'll use an I/O manager to read and write your data. For this tutorial, you’ll be writing to a directory in your file system by using the `FilesystemIOManager`, which is bundled with the core `dagster` package.
 
 In `__init__.py`, add the following snippet anywhere above the `def = Definitions(...)` line:
 
@@ -96,12 +96,6 @@ Modify `topstory_ids` to use an I/O manager:
 ```python file=/tutorial/saving/update_assets_to_use_io.py startafter=start_topstory_ids_asset endbefore=end_topstory_ids_asset
 from typing import Dict, List  # add imports to the top of `assets.py`
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import requests
-
-from dagster import AssetExecutionContext, MetadataValue, asset, get_dagster_logger
-
 
 @asset
 def topstory_ids() -> List:  # modify return type signature
@@ -118,10 +112,9 @@ Modify `topstories` to use an I/O manager:
 ```python file=/tutorial/saving/update_assets_to_use_io.py startafter=start_topstories_asset endbefore=end_topstories_asset
 @asset  # remove deps parameter
 def topstories(
-    context: AssetExecutionContext, topstory_ids: List
-) -> (
-    pd.DataFrame
-):  # add topstory_ids as a function argument and modify the return type signature
+    context: AssetExecutionContext,
+    topstory_ids: List,  # add topstory_ids as a function argument
+) -> pd.DataFrame:  # modify the return type signature
     logger = get_dagster_logger()
 
     # remove manually loading topstory_ids
@@ -155,8 +148,9 @@ Modify `most_frequent_words` to use an I/O manager:
 ```python file=/tutorial/saving/update_assets_to_use_io.py startafter=start_most_frequent_words_asset endbefore=end_most_frequent_words_asset
 @asset  # remove deps parameter
 def most_frequent_words(
-    context: AssetExecutionContext, topstories: pd.DataFrame
-) -> Dict:  # add topstories as a function argument and modify the return type signature
+    context: AssetExecutionContext,
+    topstories: pd.DataFrame,  # add topstories as a function argument
+) -> Dict:  # modify the return type signature
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
 
     # remove manually loading topstory_ids
