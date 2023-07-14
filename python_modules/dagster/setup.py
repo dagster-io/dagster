@@ -122,7 +122,7 @@ setup(
             "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "yamllint",
-            "morefs[asynclocal]",
+            "morefs[asynclocal]; python_version>='3.8'",
         ],
         "black": [
             "black[jupyter]==22.12.0",
