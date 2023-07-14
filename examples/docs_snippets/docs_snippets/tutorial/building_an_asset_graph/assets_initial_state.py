@@ -1,3 +1,4 @@
+# ruff: noqa: T201
 import json
 import os
 
@@ -39,7 +40,7 @@ def topstories() -> None:
         results.append(item)
 
         if len(results) % 20 == 0:
-            print(f"Got {len(results)} items so far.")  # noqa: T201
+            print(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
     df.to_csv("data/topstories.csv")
