@@ -256,11 +256,15 @@ class InputContext:
     @public
     @property
     def has_asset_key(self) -> bool:
+        """Returns True if an asset is being loaded as input, otherwise returns False. A return value of False
+        indicates that an output from an op is being loaded as the input.
+        """
         return self._asset_key is not None
 
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """The ``AssetKey`` of the asset that is being loaded as an input."""
         if self._asset_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, but no asset is associated with this input"
@@ -319,6 +323,7 @@ class InputContext:
     @public
     @property
     def has_asset_partitions(self) -> bool:
+        """Returns True if the asset being loaded as input is partitioned."""
         return self._asset_partitions_subset is not None
 
     @public
@@ -448,6 +453,11 @@ class InputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """The sequence of strings making up the AssetKey for the asset being loaded as an input.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])``, materialized with
+        partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
