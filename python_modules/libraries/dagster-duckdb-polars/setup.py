@@ -35,8 +35,8 @@ setup(
     packages=find_packages(exclude=["dagster_duckdb_polars_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.3.14rc2",
-        "dagster-duckdb==0.19.14rc2",
+        "dagster==1.3.14",
+        "dagster-duckdb==0.19.14",
         "polars[pyarrow]",
     ],
     zip_safe=False,

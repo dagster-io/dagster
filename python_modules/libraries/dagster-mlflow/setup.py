@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_mlflow_tests*"]),
-    install_requires=["dagster==1.3.14rc2", "mlflow", "pandas"],
+    install_requires=["dagster==1.3.14", "mlflow", "pandas"],
     zip_safe=False,
 )

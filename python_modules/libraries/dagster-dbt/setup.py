@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     install_requires=[
-        "dagster==1.3.14rc2",
+        "dagster==1.3.14",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
         "dbt-core<1.6",
         "networkx",

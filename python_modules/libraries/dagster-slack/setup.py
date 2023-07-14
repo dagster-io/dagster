@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_slack_tests*"]),
     install_requires=[
-        "dagster==1.3.14rc2",
+        "dagster==1.3.14",
         "slack_sdk",
     ],
     zip_safe=False,

@@ -33,6 +33,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_papertrail_tests*"]),
-    install_requires=["dagster==1.3.14rc2"],
+    install_requires=["dagster==1.3.14"],
     zip_safe=False,
 )
