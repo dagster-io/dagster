@@ -233,7 +233,7 @@ select = [
   
   # (flake8-type-checking) Auto-sort imports into TYPE_CHECKING blocks depending on whether
   # they are runtime or type-only imports.
-  # "TCH",
+  "TCH",
 
   # (banned-api) Flag use of banned APIs. See tool.ruff.flake8-tidy-imports.banned-api for details.
   "TID251",
