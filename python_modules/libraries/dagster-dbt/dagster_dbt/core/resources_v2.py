@@ -113,9 +113,7 @@ class DbtCliEventMessage:
                 upstream_node_info: Dict[str, Any] = manifest["nodes"].get(
                     upstream_unique_id
                 ) or manifest["sources"].get(upstream_unique_id)
-                upstream_asset_key = dagster_dbt_translator.node_info_to_asset_key(
-                    upstream_node_info
-                )
+                upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_node_info)
 
                 yield AssetObservation(
                     asset_key=upstream_asset_key,

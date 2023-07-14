@@ -75,7 +75,7 @@ class DbtAssetsDefinition(AssetsDefinition):
         """A mapping of the default asset key for a dbt node to the node's dictionary representation in the manifest.
         """
         return {
-            self.dagster_dbt_translator.node_info_to_asset_key(node): node
+            self.dagster_dbt_translator.get_asset_key(node): node
             for node in self._node_info_by_dbt_unique_id.values()
         }
 
@@ -94,9 +94,9 @@ class DbtAssetsDefinition(AssetsDefinition):
         """A mapping of the default asset key for a dbt node to the node's description in the manifest.
         """
         return {
-            self.dagster_dbt_translator.node_info_to_asset_key(
+            self.dagster_dbt_translator.get_asset_key(
                 node
-            ): self.dagster_dbt_translator.node_info_to_description(node)
+            ): self.dagster_dbt_translator.get_description(node)
             for node in self._node_info_by_dbt_unique_id.values()
         }
 
@@ -105,9 +105,9 @@ class DbtAssetsDefinition(AssetsDefinition):
         """A mapping of the default asset key for a dbt node to the node's metadata in the manifest.
         """
         return {
-            self.dagster_dbt_translator.node_info_to_asset_key(
+            self.dagster_dbt_translator.get_asset_key(
                 node
-            ): self.dagster_dbt_translator.node_info_to_metadata(node)
+            ): self.dagster_dbt_translator.get_metadata(node)
             for node in self._node_info_by_dbt_unique_id.values()
         }
 
@@ -124,7 +124,7 @@ class DbtAssetsDefinition(AssetsDefinition):
         Returns:
             AssetKey: The corresponding dbt node's Dagster asset key.
         """
-        return self.dagster_dbt_translator.node_info_to_asset_key(
+        return self.dagster_dbt_translator.get_asset_key(
             self.get_node_info_for_output_name(output_name)
         )
 
@@ -140,7 +140,7 @@ class DbtAssetsDefinition(AssetsDefinition):
                 " https://docs.getdbt.com/reference/artifacts/manifest-json"
             )
 
-        return self.dagster_dbt_translator.node_info_to_asset_key(node_info)
+        return self.dagster_dbt_translator.get_asset_key(node_info)
 
     def get_asset_key_for_source(self, source_name: str) -> AssetKey:
         """Returns the corresponding Dagster asset key for a dbt source with a singular table.
@@ -229,7 +229,7 @@ class DbtAssetsDefinition(AssetsDefinition):
             )
 
         return {
-            output_name_fn(value): self.dagster_dbt_translator.node_info_to_asset_key(value)
+            output_name_fn(value): self.dagster_dbt_translator.get_asset_key(value)
             for value in matching_nodes
         }
 
@@ -270,7 +270,7 @@ class DbtAssetsDefinition(AssetsDefinition):
                 f"Could not find a dbt model with name: {model_name}"
             )
 
-        return self.dagster_dbt_translator.node_info_to_asset_key(next(iter(matching_models)))
+        return self.dagster_dbt_translator.get_asset_key(next(iter(matching_models)))
 
     def build_dbt_asset_selection(
         self,

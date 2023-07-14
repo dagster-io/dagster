@@ -191,8 +191,8 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
 def test_with_asset_key_replacements() -> None:
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
-            return AssetKey(["prefix", *super().node_info_to_asset_key(node_info).path])
+        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            return AssetKey(["prefix", *super().get_asset_key(dbt_resource_props).path])
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
@@ -214,7 +214,7 @@ def test_with_description_replacements() -> None:
 
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+        def get_description(cls, node_info: Mapping[str, Any]) -> str:
             return expected_description
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
@@ -230,7 +230,7 @@ def test_with_metadata_replacements() -> None:
 
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+        def get_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
             return expected_metadata
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())

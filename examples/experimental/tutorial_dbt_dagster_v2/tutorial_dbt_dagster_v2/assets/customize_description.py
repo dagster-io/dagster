@@ -8,7 +8,7 @@ from ..constants import MANIFEST_PATH
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     @classmethod
-    def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+    def get_description(cls, node_info: Mapping[str, Any]) -> str:
         description_sections = []
 
         description = node_info.get("description", "")

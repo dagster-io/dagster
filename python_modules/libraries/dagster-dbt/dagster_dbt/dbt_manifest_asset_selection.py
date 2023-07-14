@@ -69,7 +69,7 @@ class DbtManifestAssetSelection(AssetSelection):
             node_info = dbt_nodes[unique_id]
             is_dbt_asset = node_info["resource_type"] in ASSET_RESOURCE_TYPES
             if is_dbt_asset and not is_non_asset_node(node_info):
-                asset_key = self.dagster_dbt_translator.node_info_to_asset_key(node_info)
+                asset_key = self.dagster_dbt_translator.get_asset_key(node_info)
                 keys.add(asset_key)
 
         return keys
