@@ -75,7 +75,7 @@ In the following tutorial, we install the most recent version of the Dagster Hel
       </td>
     </tr>
     <tr>
-      <td>Dagit</td>
+      <td>Dagster webserver</td>
       <td>
         <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
           Deployment
@@ -135,7 +135,7 @@ In the following tutorial, we install the most recent version of the Dagster Hel
 </TabItem>
 <TabItem name="Code location server">
 
-A [code location server](/concepts/code-locations) runs a gRPC server and responds to Dagit's requests for information, such as:
+A [code location server](/concepts/code-locations) runs a gRPC server and responds to the Dagster webserver's requests for information, such as:
 
 - List all of the jobs in each code location, or
 - What is the dependency structure of job X?
@@ -144,16 +144,16 @@ The user-provided image for the server must contain a [code location definition]
 
 Users can have multiple code location servers. A common pattern is for each code location server to correspond to a different code location.
 
-Code location servers can be updated independently from other Dagster components, including Dagit. As a result, updates to code locations can occur without causing downtime to any other code location or Dagit. After updating, if there is an error with any code location, an error is surfaced for that code location within Dagit. All other code locations and Dagit will still operate normally.
+Code location servers can be updated independently from other Dagster components, including the webserver. As a result, updates to code locations can occur without causing downtime to any other code location or the webserver. After updating, if there is an error with any code location, an error is surfaced for that code location within the Dagster UI. All other code locations and the UI will still operate normally.
 
 </TabItem>
-<TabItem name="Dagit">
+<TabItem name="Dagster webserver">
 
-The Dagit webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagit UI. Dagit doesn't load or execute user-written code, and will remain available even when user code contains errors. Dagit frequently checks whether the user code deployment has been updated and if so, fetches the new information.
+The Dagster webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagster UI. The webserver doesn't load or execute user-written code, which allows the UI to remain available even when user code contains errors. The webserver frequently checks whether the user code deployment has been updated and if so, fetches the new information.
 
-Dagit can be horizontally scaled by setting the `dagit.replicaCount` field in `values.yaml`.
+The webserver can be horizontally scaled by setting the `dagit.replicaCount` field in `values.yaml`.
 
-By default, Dagit launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
+By default, the webserver launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
 
 </TabItem>
 <TabItem name="Daemon">
@@ -165,7 +165,7 @@ The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLa
 </TabItem>
 <TabItem name="Run worker">
 
-The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute and completes once the run is finished. Events that occur during the run are written to the database and then displayed in Dagit.
+The run worker is responsible for executing launched Dagster runs. The run worker uses the same image as the user code deployment at the time the run was submitted. The run worker uses ephemeral compute and completes once the run is finished. Events that occur during the run are written to the database and then displayed in the UI.
 
 Run worker jobs and pods are not automatically deleted so that users are able to inspect results. It's up to the user to periodically delete old jobs and pods.
 
@@ -186,7 +186,7 @@ Generally, increasing isolation incurs some additional overhead per step (e.g. s
 </TabItem>
 <TabItem name="Database">
 
-An external database (i.e. using a cloud provider's managed database service, like RDS) can be connected, or you can run PostgreSQL on Kubernetes. This database stores run event logs, other metadata, and powers much of the real-time and historical data visible in Dagit. To maintain a referenceable history of events, we recommend connecting an external database for most use cases.
+An external database (i.e. using a cloud provider's managed database service, like RDS) can be connected, or you can run PostgreSQL on Kubernetes. This database stores run event logs, other metadata, and powers much of the real-time and historical data visible in the UI. To maintain a referenceable history of events, we recommend connecting an external database for most use cases.
 
 </TabItem>
 </TabGroup>
@@ -318,7 +318,7 @@ helm repo add dagster https://dagster-io.github.io/helm
 
 In this step, you'll update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
 
-Here, we can specify the configuration of the Kubernetes deployment that creates the gRPC server for Dagit and the daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
+Here, we can specify the configuration of the Kubernetes deployment that creates the gRPC server for the webserver and daemon to access the user code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/code-locations/workspace-files#running-your-own-grpc-server).
 
 To get access to the Dagster `values.yaml`, run:
 
@@ -442,7 +442,7 @@ dagster-postgresql-0                              1/1     Running   0          1
 
 ### Step 8: Run a job in your deployment
 
-After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the Dagit pod via:
+After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the webserver pod via:
 
 ```shell
 export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
@@ -500,7 +500,7 @@ That's it! You deployed Dagster, configured with the default <PyObject module="d
 
 Running into issues deploying on Helm? Use these commands to help with debugging.
 
-### Get the name of the Dagit pod
+### Get the name of the webserver pod
 
 ```shell
 export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
@@ -508,7 +508,7 @@ export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
       -o jsonpath="{.items[0].metadata.name}")
 ```
 
-### Start a shell in the Dagit pod
+### Start a shell in the webserver pod
 
 ```shell
 kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
@@ -528,7 +528,7 @@ kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
 
 ### Get debug output of a failed run
 
-**Note**: This information is also available in Dagit
+**Note**: This information is also available in the UI
 
 ```shell
 kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip

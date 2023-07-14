@@ -1,43 +1,43 @@
 ---
-title: Dagit UI | Dagster
-description: Dagit is a web-based interface for Dagster. You can inspect op and job definitions, launch runs, view launched runs, and view assets.
+title: Dagster UI | Dagster
+description: The Dagster UI is a web-based interface for Dagster. You can inspect op and job definitions, launch runs, view launched runs, and view assets.
 ---
 
-# Dagit UI
+# Dagster UI
 
-Dagit is a web-based interface for viewing and interacting with Dagster objects.
+The Dagster UI is a web-based interface for viewing and interacting with Dagster objects.
 
 You can inspect op, job, and graph definitions, launch runs, view launched runs, and view assets produced by those runs.
 
 ---
 
-## Launching Dagit
+## Launching the UI
 
-The easiest way to launch Dagit from the command line during local development is to run:
+The easiest way to launch the UI from the command line during local development is to run:
 
 ```shell
 dagster dev
 ```
 
-This command launches both Dagit and the [Dagster daemon](/deployment/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
+This command launches both the Dagster webserver (which serves the UI) and the [Dagster daemon](/deployment/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
 
-The command will print out the URL you can access the interface from in the browser, usually on port 3000.
+The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
-When invoked, Dagit will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/concepts/code-locations/workspace-files). Refer to the [Code location documentation](/concepts/code-locations) for more info.
+When invoked, the UI will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/concepts/code-locations/workspace-files). Refer to the [Code location documentation](/concepts/code-locations) for more info.
 
-You can also launch Dagit by itself from the command line by running:
+You can also launch the webserver by itself from the command line by running:
 
 ```shell
-dagit
+dagster-webserver
 ```
 
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 
 ---
 
-## Navigating Dagit
+## Navigating the UI
 
-These are the main pages inside Dagit:
+These are the main pages inside the UI:
 
 - [Jobs](#jobs)
 - [Runs](#runs)
@@ -63,10 +63,10 @@ The **Overview** tab shows the graph of ops that make up a job.
 
 In this tab, you can view the definition of a job:
 
-<!-- ![Dagit Job Definition](/images/tutorial/complex-job.png) -->
+<!-- ![UI Job Definition](/images/tutorial/complex-job.png) -->
 
 <Image
-alt="Dagit Job Definition"
+alt="UI Job Definition"
 src="/images/tutorial/complex-job.png"
 width={2313}
 height={1298}
@@ -78,11 +78,11 @@ height={1298}
 
 To view detailed information about an op in the job, click an op to open a panel on the right side of the page:
 
-<!-- ![Dagit Op Definition](/images/concepts/dagit/op-definition.png) -->
+<!-- ![UI Op Definition](/images/concepts/webserver/op-definition.png) -->
 
 <Image
-alt="Dagit Op Definition"
-src="/images/concepts/dagit/op-definition.png"
+alt="UI Op Definition"
+src="/images/concepts/webserver/op-definition.png"
 width={2315}
 height={1299}
 />
@@ -96,10 +96,10 @@ height={1299}
 
 The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs:
 
-<!-- ![Dagit Launchpad](/images/tutorial/single-op-launchpad.png) -->
+<!-- ![UI Launchpad](/images/tutorial/single-op-launchpad.png) -->
 
 <Image
-alt="Dagit Launchpad"
+alt="UI Launchpad"
 src="/images/tutorial/single-op-launchpad.png"
 width={1523}
 height={1049}
@@ -114,11 +114,11 @@ height={1049}
 
 The Runs tab displays a list of recent runs for the job:
 
-<!-- ![Dagit Job runs tab](/images/concepts/dagit/runs-tab.png) -->
+<!-- ![UI Job runs tab](/images/concepts/webserver/runs-tab.png) -->
 
 <Image
-alt="Dagit Job runs tab"
-src="/images/concepts/dagit/runs-tab.png"
+alt="UI Job runs tab"
+src="/images/concepts/webserver/runs-tab.png"
 width={1446}
 height={754}
 />
@@ -137,11 +137,11 @@ height={754}
 
 The Runs page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run:
 
-<!-- ![Dagit Runs page](/images/concepts/dagit/all-runs.png) -->
+<!-- ![UI Runs page](/images/concepts/webserver/all-runs.png) -->
 
 <Image
-alt="Dagit Runs page"
-src="/images/concepts/dagit/all-runs.png"
+alt="UI Runs page"
+src="/images/concepts/webserver/all-runs.png"
 width={1861}
 height={1300}
 />
@@ -155,22 +155,22 @@ The **Run details** page contains details about a single run, including timing i
 
 The upper left pane contains a Gantt chart, indicating how long each op took to execute. The bottom pane displays filterable events and logs emitted during the course of execution:
 
-<!-- ![Dagit Job run](/images/concepts/dagit/single-run.png) -->
+<!-- ![UI Job run](/images/concepts/webserver/single-run.png) -->
 
 <Image
-alt="Dagit Job run"
-src="/images/concepts/dagit/single-run.png"
+alt="UI Job run"
+src="/images/concepts/webserver/single-run.png"
 width={2318}
 height={1298}
 />
 
 From the **Run details** page, you can also re-execute a run using the same configuration by clicking the **Re-execute** button:
 
-<!-- ![Dagit job re-execution button](/images/concepts/dagit/re-execution.png) -->
+<!-- ![UI job re-execution button](/images/concepts/webserver/re-execution.png) -->
 
 <Image
-alt="Dagit job re-execution button"
-src="/images/concepts/dagit/single-run.png"
+alt="UI job re-execution button"
+src="/images/concepts/webserver/single-run.png"
 width={2318}
 height={1298}
 />
@@ -196,11 +196,11 @@ Related runs (e.g., runs created by re-executing the same previous run) are grou
 
 The **Asset catalog** page lists all assets, which can be filtered by asset key. Click an asset to open the [**Asset details** page](#asset-details):
 
-<!-- ![Dagit Asset Catalog](/images/concepts/dagit/all-assets.png) -->
+<!-- ![UI Asset Catalog](/images/concepts/webserver/all-assets.png) -->
 
 <Image
-alt="Dagit Asset Catalog"
-src="/images/concepts/dagit/all-assets.png"
+alt="UI Asset Catalog"
+src="/images/concepts/webserver/all-assets.png"
 width={3574}
 height={1962}
 />
@@ -214,11 +214,11 @@ height={1962}
 
 The **Asset details** page contains details about a single asset:
 
-<!-- ![Dagit Asset Details](/images/concepts/dagit/asset.png) -->
+<!-- ![UI Asset Details](/images/concepts/webserver/asset.png) -->
 
 <Image
-alt="Dagit Asset Details"
-src="/images/concepts/dagit/asset.png"
+alt="UI Asset Details"
+src="/images/concepts/webserver/asset.png"
 width={3574}
 height={1962}
 />
@@ -239,11 +239,11 @@ The Schedules page lists all schedules defined in your workspace, as well as inf
 
 Click a schedule to view details about the schedule, including its recent tick history and recent runs.
 
-<!-- ![Dagit Schedules page](/images/concepts/dagit/schedules.png) -->
+<!-- ![UI Schedules page](/images/concepts/webserver/schedules.png) -->
 
 <Image
-alt="Dagit Schedules page"
-src="/images/concepts/dagit/schedules.png"
+alt="UI Schedules page"
+src="/images/concepts/webserver/schedules.png"
 width={2315}
 height={1300}
 />
@@ -259,11 +259,11 @@ The Sensors page lists all sensors defined in your workspace, as well as informa
 
 Click a sensor to view details about the sensor, including its recent tick history and recent runs.
 
-<!-- ![Dagit Sensors page](/images/concepts/dagit/sensors.png) -->
+<!-- ![UI Sensors page](/images/concepts/webserver/sensors.png) -->
 
 <Image
-alt="Dagit Sensors page"
-src="/images/concepts/dagit/sensors.png"
+alt="UI Sensors page"
+src="/images/concepts/webserver/sensors.png"
 width={2311}
 height={1299}
 />
@@ -277,11 +277,11 @@ height={1299}
 
 The Deployment overview page includes information about the status of the code locations in your deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details:
 
-<!-- ![Dagit Deployment overview page](/images/concepts/dagit/deployment-status.png) -->
+<!-- ![UI Deployment overview page](/images/concepts/webserver/deployment-status.png) -->
 
 <Image
-alt="Dagit Deployment overview page"
-src="/images/concepts/dagit/deployment-status.png"
+alt="UI Deployment overview page"
+src="/images/concepts/webserver/deployment-status.png"
 width={2311}
 height={1300}
 />

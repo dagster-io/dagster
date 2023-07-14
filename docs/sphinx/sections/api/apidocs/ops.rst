@@ -126,7 +126,7 @@ Asset key
 ^^^^^^^^^^^^^^^^
 
 Dagster uses :py:class:`AssetKey` to build an index on :py:class:`Materialization` events.
-Assets materialized with an :py:class:`AssetKey` are highlighted in `dagit` on the `Assets`
+Assets materialized with an :py:class:`AssetKey` are highlighted in the Dagster UI on the `Assets`
 dashboard.
 
 .. autoclass:: AssetKey

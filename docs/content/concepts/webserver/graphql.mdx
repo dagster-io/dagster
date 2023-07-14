@@ -7,8 +7,9 @@ description: Dagster exposes a GraphQL API that allows clients to interact with 
 
 <Note>
   The GraphQL API is still evolving and is subject to breaking changes. A large
-  portion of the API is primarily for internal use by Dagit. For any of the
-  queries below, we will be clear about breaking changes in release notes.
+  portion of the API is primarily for internal use by the Dagster webserver. For
+  any of the queries below, we will be clear about breaking changes in release
+  notes.
 </Note>
 
 Dagster exposes a GraphQL API that allows clients to interact with Dagster programmatically. The API allows users to:
@@ -21,13 +22,13 @@ Dagster exposes a GraphQL API that allows clients to interact with Dagster progr
 
 ## Using the GraphQL API
 
-The GraphQL API is served alongside the Dagit web server. To start the server, run the following:
+The GraphQL API is served from the webserver. To start the server, run the following:
 
 ```shell
 dagster dev
 ```
 
-Dagit serves the GraphQL endpoint at the `/graphql` endpoint. If you are running Dagit locally on port 3000, you can access the API at <https://localhost:3000/graphql>.
+The webserver serves the GraphQL endpoint at the `/graphql` endpoint. If you are running the webserver locally on port 3000, you can access the API at <https://localhost:3000/graphql>.
 
 ### Using the GraphQL playground
 
@@ -35,7 +36,7 @@ You can access the GraphQL Playground by navigating to the `/graphql` route in y
 
 <Image
 alt="GraphQL Playground"
-src="/images/concepts/dagit/graphql/playground.png"
+src="/images/concepts/webserver/graphql/playground.png"
 width={3122}
 height={2028}
 />
@@ -46,7 +47,7 @@ Clicking on the **Docs** tab on the right edge of the playground opens up intera
 
 <Image
 alt="GraphQL Docs"
-src="/images/concepts/dagit/graphql/docs.png"
+src="/images/concepts/webserver/graphql/docs.png"
 width={3122}
 height={2028}
 />
@@ -59,7 +60,7 @@ height={2028}
   This feature is <strong>experimental</strong>.
 </Note>
 
-Dagster also provides a Python client to interface with Dagster's GraphQL API from Python. Refer to the <Link href="/concepts/dagit/graphql-client">GraphQL Python client docs</Link> for more info.
+Dagster also provides a Python client to interface with Dagster's GraphQL API from Python. Refer to the <Link href="/concepts/webserver/graphql-client">GraphQL Python client docs</Link> for more info.
 
 ---
 

@@ -30,13 +30,13 @@ Preemptively declaring assets offers distinct advantages, including:
 
 ### Lineage
 
-As software-defined assets know what other assets they depend on, an asset's lineage can be [viewed easily in Dagit](/concepts/assets/software-defined-assets#viewing-assets-in-dagit).
+As software-defined assets know what other assets they depend on, an asset's lineage can be [viewed easily in the Dagster UI](/concepts/assets/software-defined-assets#viewing-assets-in-the-ui).
 
 Assets help track and define cross-job dependencies. For example, when viewing a job that materializes assets, you can navigate to the jobs that produce the assets that it depends on. Additionally, when an upstream asset has been updated more recently than a downstream asset, Dagster will indicate that the downstream asset might be out of date.
 
 ### Direct operation
 
-Using software-defined assets enables you to directly operate them in Dagit. On the [Asset's Details page](/concepts/dagit/dagit#asset-details), you can:
+Using software-defined assets enables you to directly operate them in the UI. On the [Asset's Details page](/concepts/webserver/ui#asset-details), you can:
 
 - View the materialization history of the asset
 - Check when the next materialization will occur

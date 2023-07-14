@@ -9,11 +9,11 @@ description: How to perform Run Attribution by using the Run Coordinator.
 
 The [Run Coordinator](/deployment/run-coordinator) is used to control the policy that Dagster uses to manage the set of active runs on your deployment.
 
-The Run Coordinator is invoked when runs are submitted on the [instance](/deployment/dagster-instance) (e.g. via the [GraphQL API](/concepts/dagit/graphql#launch-a-run), and as a result it can be used to dynamically attach <Link href="/concepts/solids-pipelines/pipelines#pipeline-tags">tags</Link> to submitted runs.
+The Run Coordinator is invoked when runs are submitted on the [instance](/deployment/dagster-instance) (e.g. via the [GraphQL API](/concepts/webserver/graphql#launch-a-run), and as a result it can be used to dynamically attach <Link href="/concepts/solids-pipelines/pipelines#pipeline-tags">tags</Link> to submitted runs.
 
 In this example, we'll perform run attribution, which means that we'll attach a user's email as a tag to submitted runs.
 
-To accomplish this, we'll use a custom Run Coordinator to read Flask HTTP headers (from Dagster's [GraphQL server](/concepts/dagit/graphql)) and parse the headers to get an email which we'll attach as a tag.
+To accomplish this, we'll use a custom Run Coordinator to read Flask HTTP headers (from Dagster's [GraphQL server](/concepts/webserver/graphql)) and parse the headers to get an email which we'll attach as a tag.
 
 ### Custom Run Coordinator
 
