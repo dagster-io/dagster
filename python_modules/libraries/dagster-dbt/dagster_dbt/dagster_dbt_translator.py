@@ -11,19 +11,19 @@ from .asset_utils import default_asset_key_fn, default_description_fn, default_m
 
 class DagsterDbtTranslator:
     @classmethod
-    def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
-        """A function that takes a dictionary representing information about a dbt resource, and
+    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster asset key that represents that resource.
 
         Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
         a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
         resources and the properties available in this dictionary here:
-        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+        https://docs.getdbt.com/reference/artifacts/manifest-json
 
         This method can be overridden to provide a custom asset key for a dbt resource.
 
         Args:
-            dbt_repsource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
             AssetKey: The Dagster asset key for the dbt resource.
@@ -39,25 +39,25 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
-                        return AssetKey([dbt_repsource_props["alias"]]).with_prefix("prefix")
+                    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+                        return AssetKey([dbt_resource_props["alias"]]).with_prefix("prefix")
         """
-        return default_asset_key_fn(dbt_repsource_props)
+        return default_asset_key_fn(dbt_resource_props)
 
     @classmethod
-    def get_description(cls, dbt_repsource_props: Mapping[str, Any]) -> str:
-        """A function that takes a dictionary representing information about a dbt resource, and
+    def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
+        """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster description for that resource.
 
         Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
         a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
         resources and the properties available in this dictionary here:
-        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+        https://docs.getdbt.com/reference/artifacts/manifest-json
 
         This method can be overridden to provide a custom description for a dbt resource.
 
         Args:
-            dbt_repsource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
             str: The description for the dbt resource.
@@ -72,20 +72,20 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_description(cls, dbt_repsource_props: Mapping[str, Any]) -> str:
+                    def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
                         return "custom description"
         """
-        return default_description_fn(dbt_repsource_props)
+        return default_description_fn(dbt_resource_props)
 
     @classmethod
-    def get_metadata(cls, dbt_repsource_props: Mapping[str, Any]) -> Mapping[str, Any]:
-        """A function that takes a dictionary representing information about a dbt resource, and
+    def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster metadata for that resource.
 
         Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
         a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
         resources and the properties available in this dictionary here:
-        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+        https://docs.getdbt.com/reference/artifacts/manifest-json
 
         This method can be overridden to provide a custom metadata for a dbt resource.
 
@@ -105,10 +105,10 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_metadata(cls, dbt_repsource_props: Mapping[str, Any]) -> Mapping[str, Any]:
+                    def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
-        return default_metadata_fn(dbt_repsource_props)
+        return default_metadata_fn(dbt_resource_props)
 
 
 class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
@@ -137,9 +137,9 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
             or []
         )
 
-    def get_asset_key(self, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
-        base_key = default_asset_key_fn(dbt_repsource_props)
-        if dbt_repsource_props["resource_type"] == "source":
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        base_key = default_asset_key_fn(dbt_resource_props)
+        if dbt_resource_props["resource_type"] == "source":
             return base_key.with_prefix(self._source_asset_key_prefix)
         else:
             return base_key.with_prefix(self._asset_key_prefix)

@@ -8,8 +8,8 @@ from ..constants import MANIFEST_PATH
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     @classmethod
-    def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
-        return AssetKey(["prefix", dbt_repsource_props["alias"]])
+    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        return AssetKey(["prefix", dbt_resource_props["alias"]])
 
 
 @dbt_assets(manifest=MANIFEST_PATH, dagster_dbt_translator=CustomDagsterDbtTranslator())
