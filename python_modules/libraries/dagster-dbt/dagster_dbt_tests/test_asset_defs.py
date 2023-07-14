@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -92,6 +93,26 @@ def test_load_from_manifest_json(prefix):
         resource_defs={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
     )
     assert assets_job.execute_in_process().success
+
+
+manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
+
+
+@pytest.mark.parametrize("manifest", [json.load(manifest_path.open()), manifest_path])
+def test_manifest_argument(manifest):
+    my_dbt_assets = load_assets_from_dbt_manifest(manifest)
+
+    assert my_dbt_assets[0].keys == {
+        AssetKey.from_user_string(key)
+        for key in [
+            "sort_by_calories",
+            "cold_schema/sort_cold_cereals_by_calories",
+            "subdir_schema/least_caloric",
+            "sort_hot_cereals_by_calories",
+            "orders_snapshot",
+            "cereals",
+        ]
+    }
 
 
 def test_runtime_metadata_fn(
