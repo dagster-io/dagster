@@ -13,7 +13,7 @@ from dagster._config.pythonic_config import (
     ConfigurableLegacyIOManagerAdapter,
     ConfigurableResourceFactory,
 )
-from dagster._core.storage.root_input_manager import RootInputManagerDefinition
+from dagster._core.storage.input_manager import InputManagerDefinition
 from dagster_duckdb import DuckDBIOManager
 from dagster_gcp import BigQueryIOManager
 from dagster_snowflake.snowflake_io_manager import SnowflakeIOManager
@@ -36,7 +36,7 @@ def test_resource_telemetry():
         # the actual class definitions are set to False
         ResourceDefinition,
         IOManagerDefinition,
-        RootInputManagerDefinition,
+        InputManagerDefinition,
         ConfigurableResource,
         ConfigurableIOManager,
         ConfigurableLegacyIOManagerAdapter,

@@ -56,7 +56,7 @@ Software-defined assets provide sizeable improvements when it comes to code ergo
   - Contain everything in a single mega-job, which allows for easy dependency tracking but creates maintenance difficulties, OR
   - Split your pipeline into smaller jobs, which allows for easy maintenance but makes dependency tracking difficult
 
-  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for root input managers.
+  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for input managers.
 
 ---
 
@@ -174,7 +174,7 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 <TabGroup>
 <TabItem name="Without software-defined assets">
 
-This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and root input managers.
+This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and input managers.
 
 The goal of each op in the job is to produce an asset. However, because the job doesn't use the software-defined asset APIs, Dagster is unaware of this:
 
@@ -187,7 +187,7 @@ from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
 
 @op(
-    ins={"raw_users": In(root_manager_key="warehouse")},
+    ins={"raw_users": In(input_manager_key="warehouse")},
     out={"users": Out(io_manager_key="warehouse")},
 )
 def build_users(raw_users: DataFrame) -> DataFrame:
@@ -259,7 +259,7 @@ defs = Definitions(
 <TabGroup>
 <TabItem name="Without software-defined assets">
 
-This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and root input managers:
+This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and input managers:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql

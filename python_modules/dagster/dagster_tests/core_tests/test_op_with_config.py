@@ -8,8 +8,8 @@ from dagster import (
     graph,
     job,
     op,
-    root_input_manager,
 )
+from dagster._core.storage.input_manager import input_manager
 
 
 def test_basic_op_with_config():
@@ -228,11 +228,11 @@ def test_extra_config_unsatisfied_input():
 
 
 def test_extra_config_unsatisfied_input_io_man():
-    @root_input_manager(input_config_schema=int)
+    @input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
 
-    @op(ins={"x": In(root_manager_key="my_loader")})
+    @op(ins={"x": In(input_manager_key="my_loader")})
     def start(_, x):
         return x
 

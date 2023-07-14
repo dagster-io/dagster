@@ -481,6 +481,7 @@ from dagster._core.storage.fs_io_manager import (
 )
 from dagster._core.storage.input_manager import (
     InputManager as InputManager,
+    InputManagerDefinition as InputManagerDefinition,
     input_manager as input_manager,
 )
 from dagster._core.storage.io_manager import (
@@ -495,11 +496,6 @@ from dagster._core.storage.mem_io_manager import (
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
 from dagster._core.storage.partition_status_cache import (
     AssetPartitionStatus as AssetPartitionStatus,
-)
-from dagster._core.storage.root_input_manager import (
-    RootInputManager as RootInputManager,
-    RootInputManagerDefinition as RootInputManagerDefinition,
-    root_input_manager as root_input_manager,
 )
 from dagster._core.storage.tags import (
     MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
