@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
@@ -20,7 +18,7 @@ DAGSTER_META_KEY = "dagster_meta"
 
 class IDagsterMeta(Protocol):
     @property
-    def dagster_meta(self) -> DagsterLoggingMetadata:
+    def dagster_meta(self) -> "DagsterLoggingMetadata":
         ...
 
 
@@ -224,7 +222,7 @@ class DagsterLogHandler(logging.Handler):
     def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._logging_metadata
 
-    def with_tags(self, **new_tags: str) -> DagsterLogHandler:
+    def with_tags(self, **new_tags: str) -> "DagsterLogHandler":
         return DagsterLogHandler(
             logging_metadata=self.logging_metadata._replace(**new_tags),
             loggers=self._loggers,
@@ -423,7 +421,7 @@ class DagsterLogManager(logging.Logger):
         if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
             self._log(level, msg, args, **kwargs)
 
-    def with_tags(self, **new_tags: str) -> DagsterLogManager:
+    def with_tags(self, **new_tags: str) -> "DagsterLogManager":
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
 

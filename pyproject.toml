@@ -233,7 +233,10 @@ select = [
   
   # (flake8-type-checking) Auto-sort imports into TYPE_CHECKING blocks depending on whether
   # they are runtime or type-only imports.
-  "TCH",
+  # "TCH",
+
+  # (banned-api) Flag use of banned APIs. See tool.ruff.flake8-tidy-imports.banned-api for details.
+  "TID251",
 
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
@@ -252,6 +255,11 @@ required-version = "0.0.277"
 
 # We use `id` in many places and almost never want to use the python builtin.
 builtins-ignorelist = ["id"]
+
+[tool.ruff.flake8-tidy-imports.banned-api]
+
+"__future__.annotations".msg = "Test"
+
 
 [tool.ruff.isort]
 

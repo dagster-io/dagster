@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import logging
 import math
@@ -1070,7 +1068,7 @@ def open_server_process(
     env: Optional[Dict[str, str]] = None,
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
-    container_context: Optional[dict[str, Any]] = None,
+    container_context: Optional[Dict[str, Any]] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
