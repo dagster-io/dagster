@@ -194,7 +194,7 @@ Now that you've created an asset, a resource, and a `Definitions` object, it's t
    Which will result in output similar to:
 
    ```shell
-   Serving dagit on http://127.0.0.1:3000 in process 70635
+   Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
    ```
 
 2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the notebook asset in the **Asset Graph**.
@@ -202,7 +202,7 @@ Now that you've created an asset, a resource, and a `Definitions` object, it's t
    If you click the notebook asset, a sidebar containing info about the asset will slide out from the right side of the page. In the **Description** section of the panel is a **View Source Notebook** button:
 
    <Image
-   src="/images/integrations/dagstermill/dagit-one.png"
+   src="/images/integrations/dagstermill/ui-one.png"
    width={2870}
    height={1398}
    />
@@ -221,7 +221,7 @@ Now that you've created an asset, a resource, and a `Definitions` object, it's t
 After the run completes successfully, you can view the executed notebook in the UI. Click the asset again and locate the **View Notebook** button in the **Materialization in Last Run** section of the sidebar:
 
 <Image
-src="/images/integrations/dagstermill/dagit-two.png"
+src="/images/integrations/dagstermill/ui-two.png"
 width={2870}
 height={1398}
 />
@@ -349,7 +349,7 @@ Next, we'll materialize our `iris_dataset` and notebook assets.
    At this point, the `iris_dataset` asset should display above the `iris_kmeans_jupyter` asset as an upstream dependency:
 
    <Image
-   src="/images/integrations/dagstermill/dagit-three.png"
+   src="/images/integrations/dagstermill/ui-three.png"
    width={2870}
    height={1398}
    />

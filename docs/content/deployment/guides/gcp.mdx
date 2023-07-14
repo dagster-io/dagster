@@ -1,19 +1,19 @@
 ---
 title: Deploying Dagster to GCP | Dagster
-description: To deploy Dagster to GCP, Google Compute Engine (GCE) can host Dagit, Google Cloud SQL can store runs and events, and Google Cloud Storage (GCS) can act as an IO manager.
+description: To deploy Dagster to GCP, Google Compute Engine (GCE) can host the Dagster webserver, Google Cloud SQL can store runs and events, and Google Cloud Storage (GCS) can act as an IO manager.
 ---
 
 # Deploying Dagster to GCP
 
-To deploy Dagster to GCP, Google Compute Engine (GCE) can host Dagit, Google Cloud SQL can store runs and events, and Google Cloud Storage (GCS) can act as an IO manager.
+To deploy Dagster to GCP, Google Compute Engine (GCE) can host the Dagster webserver, Google Cloud SQL can store runs and events, and Google Cloud Storage (GCS) can act as an IO manager.
 
-## Hosting Dagit or Dagster Daemon on GCE
+## Hosting the Dagster webserver or Dagster Daemon on GCE
 
-To host Dagit or Dagster Daemon on a bare VM or in Docker on GCE, see [Running Dagster as a service](/deployment/guides/service).
+To host the Dagster webserver or Dagster daemon on a bare VM or in Docker on GCE, see [Running Dagster as a service](/deployment/guides/service).
 
 ## Using Cloud SQL for run and event log storage
 
-We recommend launching a Cloud SQL PostgreSQL instance for run and events data. You can configure Dagit to use Cloud SQL to run and events data by setting blocks in your `$DAGSTER_HOME/dagster.yaml` appropriately:
+We recommend launching a Cloud SQL PostgreSQL instance for run and events data. You can configure the webserver to use Cloud SQL to run and events data by setting blocks in your `$DAGSTER_HOME/dagster.yaml` appropriately:
 
 ```python file=/deploying/dagster-pg.yaml
 storage:
@@ -26,11 +26,11 @@ storage:
       port: 5432
 ```
 
-In this case, you'll want to ensure you provide the right connection strings for your Cloud SQL instance, and that the node or container hosting Dagit is able to connect to Cloud SQL.
+In this case, you'll want to ensure you provide the right connection strings for your Cloud SQL instance, and that the node or container hosting the webserver is able to connect to Cloud SQL.
 
-Be sure that this file is present, and _DAGSTER_HOME_ is set, on the node where Dagit is running.
+Be sure that this file is present, and _DAGSTER_HOME_ is set, on the node where the webserver is running.
 
-Note that using Cloud SQL for run and event log storage does not require that Dagit be running in the cloud. If you are connecting a local Dagit instance to a remote Cloud SQL storage, double check that your local node is able to connect to Cloud SQL.
+Note that using Cloud SQL for run and event log storage does not require that the webserver be running in the cloud. If you are connecting a local webserver instance to a remote Cloud SQL storage, double check that your local node is able to connect to Cloud SQL.
 
 ## Using GCS for IO Management
 
