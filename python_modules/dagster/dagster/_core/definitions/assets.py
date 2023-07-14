@@ -616,21 +616,36 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def can_subset(self) -> bool:
+        """bool: If True, indicates that this AssetsDefinition may materialize any subset of its
+        asset keys in a given computation (as opposed to being required to materialize all asset
+        keys).
+        """
         return self._can_subset
 
     @public
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
+        """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
+        to the group names assigned to them. If there is no assigned group name for a given AssetKey,
+        it will not be present in this dictionary.
+        """
         return self._group_names_by_key
 
     @public
     @property
     def descriptions_by_key(self) -> Mapping[AssetKey, str]:
+        """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
+        to the descriptions assigned to them. If there is no assigned description for a given AssetKey,
+        it will not be present in this dictionary.
+        """
         return self._descriptions_by_key
 
     @public
     @property
     def op(self) -> OpDefinition:
+        """OpDefinition: Returns the OpDefinition that is used to materialize the assets in this
+        AssetsDefinition.
+        """
         check.invariant(
             isinstance(self._node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
@@ -640,6 +655,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def node_def(self) -> NodeDefinition:
+        """NodeDefinition: Returns the OpDefinition or GraphDefinition that is used to materialize
+        the assets in this AssetsDefinition.
+        """
         return self._node_def
 
     @public
@@ -654,11 +672,17 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @property
     def input_names(self) -> Iterable[str]:
+        """Iterable[str]: The set of input names of the underlying NodeDefinition for this
+        AssetsDefinition.
+        """
         return self.keys_by_input_name.keys()
 
     @public
     @property
     def key(self) -> AssetKey:
+        """AssetKey: The asset key associated with this AssetsDefinition. If this AssetsDefinition
+        has more than one asset key, this will produce an error.
+        """
         check.invariant(
             len(self.keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
@@ -670,16 +694,23 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        """Mapping[str, ResourceDefinition]: A mapping from resource name to ResourceDefinition for
+        the resources bound to this AssetsDefinition.
+        """
         return dict(self._resource_defs)
 
     @public
     @property
     def keys(self) -> AbstractSet[AssetKey]:
+        """AbstractSet[AssetKey]: The asset keys associated with this AssetsDefinition."""
         return self._selected_asset_keys
 
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
+        """Iterable[AssetKey]: The asset keys which are upstream of any asset included in this
+        AssetsDefinition.
+        """
         # the input asset keys that are directly upstream of a selected asset key
         upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         input_keys = set(self._keys_by_input_name.values())
@@ -719,6 +750,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
+        """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any).
+        """
         return self._partitions_def
 
     @property
@@ -735,6 +768,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
+        """Returns the partition mapping between keys in this AssetsDefinition and a given input
+        asset key (if any).
+        """
         return self._partition_mappings.get(in_asset_key)
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
@@ -1097,6 +1133,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
+        """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition.
+        """
         return {requirement.key for requirement in self.get_resource_requirements()}
 
     def __str__(self):

@@ -215,16 +215,21 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @public
     @property
     def name(self) -> str:
+        """str: The name of this op."""
         return super(OpDefinition, self).name
 
     @public
     @property
     def ins(self) -> Mapping[str, In]:
+        """Mapping[str, In]: A mapping from input name to the In object that represents that input.
+        """
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
     @public
     @property
     def outs(self) -> Mapping[str, Out]:
+        """Mapping[str, Out]: A mapping from output name to the Out object that represents that output.
+        """
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @property
@@ -234,43 +239,55 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @public
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
+        """IDefinitionConfigSchema: The config schema for this op."""
         return self._config_schema
 
     @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
+        """AbstractSet[str]: A set of keys for resources that must be provided to this OpDefinition.
+        """
         return frozenset(self._required_resource_keys)
 
     @public
     @property
     def version(self) -> Optional[str]:
+        """[DEPRECATED] str: Version of the code encapsulated by the op. If set, this is used as a
+        default code version for all outputs.
+        """
         deprecation_warning("`version` property on OpDefinition", "2.0")
         return self._version
 
     @public
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
+        """Optional[RetryPolicy]: The RetryPolicy for this op."""
         return self._retry_policy
 
     @public
     @property
     def tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for this op."""
         return super(OpDefinition, self).tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given name."""
         return super(OpDefinition, self).alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given tags."""
         return super(OpDefinition, self).tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given hook definitions."""
         return super(OpDefinition, self).with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given retry policy."""
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
