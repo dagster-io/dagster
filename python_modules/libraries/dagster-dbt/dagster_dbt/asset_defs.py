@@ -272,8 +272,8 @@ def _stream_event_iterator(
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
-            def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
-                return node_info_to_asset_key(dbt_resource_info)
+            def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
+                return node_info_to_asset_key(dbt_repsource_props)
 
         cli_output = dbt_resource.cli(
             args=["build" if use_build_command else "run", *build_command_args_from_flags(kwargs)],
@@ -883,21 +883,21 @@ def _load_assets_from_dbt_manifest(
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
-            def get_asset_key(cls, dbt_resource_info):
-                base_key = node_info_to_asset_key(dbt_resource_info)
-                if dbt_resource_info["resource_type"] == "source":
+            def get_asset_key(cls, dbt_repsource_props):
+                base_key = node_info_to_asset_key(dbt_repsource_props)
+                if dbt_repsource_props["resource_type"] == "source":
                     return base_key.with_prefix(source_key_prefix or [])
                 else:
                     return base_key.with_prefix(key_prefix or [])
 
             @classmethod
-            def get_metadata(cls, dbt_resource_info):
-                return node_info_to_definition_metadata_fn(dbt_resource_info)
+            def get_metadata(cls, dbt_repsource_props):
+                return node_info_to_definition_metadata_fn(dbt_repsource_props)
 
             @classmethod
-            def get_description(cls, dbt_resource_info):
+            def get_description(cls, dbt_repsource_props):
                 return default_description_fn(
-                    dbt_resource_info,
+                    dbt_repsource_props,
                     display_raw_sql=display_raw_sql if display_raw_sql is not None else True,
                 )
 

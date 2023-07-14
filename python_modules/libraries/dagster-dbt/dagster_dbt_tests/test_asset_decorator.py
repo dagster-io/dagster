@@ -191,8 +191,8 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
 def test_with_asset_key_replacements() -> None:
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
-            return AssetKey(["prefix", *super().get_asset_key(dbt_resource_info).path])
+        def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
+            return AssetKey(["prefix", *super().get_asset_key(dbt_repsource_props).path])
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():

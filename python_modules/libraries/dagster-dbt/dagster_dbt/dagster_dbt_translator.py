@@ -11,7 +11,7 @@ from .asset_utils import default_asset_key_fn, default_description_fn, default_m
 
 class DagsterDbtTranslator:
     @classmethod
-    def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
+    def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
         """A function that takes a dictionary representing information about a dbt resource, and
         returns the Dagster asset key that represents that resource.
 
@@ -23,7 +23,7 @@ class DagsterDbtTranslator:
         This method can be overridden to provide a custom asset key for a dbt resource.
 
         Args:
-            dbt_resource_info (Mapping[str, Any]): A dictionary representing the dbt resource.
+            dbt_repsource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
             AssetKey: The Dagster asset key for the dbt resource.
@@ -39,13 +39,13 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_asset_key(cls, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
-                        return AssetKey([dbt_resource_info["alias"]]).with_prefix("prefix")
+                    def get_asset_key(cls, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
+                        return AssetKey([dbt_repsource_props["alias"]]).with_prefix("prefix")
         """
-        return default_asset_key_fn(dbt_resource_info)
+        return default_asset_key_fn(dbt_repsource_props)
 
     @classmethod
-    def get_description(cls, dbt_resource_info: Mapping[str, Any]) -> str:
+    def get_description(cls, dbt_repsource_props: Mapping[str, Any]) -> str:
         """A function that takes a dictionary representing information about a dbt resource, and
         returns the Dagster description for that resource.
 
@@ -57,7 +57,7 @@ class DagsterDbtTranslator:
         This method can be overridden to provide a custom description for a dbt resource.
 
         Args:
-            dbt_resource_info (Mapping[str, Any]): A dictionary representing the dbt resource.
+            dbt_repsource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
             str: The description for the dbt resource.
@@ -72,13 +72,13 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_description(cls, dbt_resource_info: Mapping[str, Any]) -> str:
+                    def get_description(cls, dbt_repsource_props: Mapping[str, Any]) -> str:
                         return "custom description"
         """
-        return default_description_fn(dbt_resource_info)
+        return default_description_fn(dbt_repsource_props)
 
     @classmethod
-    def get_metadata(cls, dbt_resource_info: Mapping[str, Any]) -> Mapping[str, Any]:
+    def get_metadata(cls, dbt_repsource_props: Mapping[str, Any]) -> Mapping[str, Any]:
         """A function that takes a dictionary representing information about a dbt resource, and
         returns the Dagster metadata for that resource.
 
@@ -105,10 +105,10 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_metadata(cls, dbt_resource_info: Mapping[str, Any]) -> Mapping[str, Any]:
+                    def get_metadata(cls, dbt_repsource_props: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
-        return default_metadata_fn(dbt_resource_info)
+        return default_metadata_fn(dbt_repsource_props)
 
 
 class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
@@ -137,9 +137,9 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
             or []
         )
 
-    def get_asset_key(self, dbt_resource_info: Mapping[str, Any]) -> AssetKey:
-        base_key = default_asset_key_fn(dbt_resource_info)
-        if dbt_resource_info["resource_type"] == "source":
+    def get_asset_key(self, dbt_repsource_props: Mapping[str, Any]) -> AssetKey:
+        base_key = default_asset_key_fn(dbt_repsource_props)
+        if dbt_repsource_props["resource_type"] == "source":
             return base_key.with_prefix(self._source_asset_key_prefix)
         else:
             return base_key.with_prefix(self._asset_key_prefix)
