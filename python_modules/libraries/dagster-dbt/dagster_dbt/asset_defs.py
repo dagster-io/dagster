@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
@@ -639,7 +640,7 @@ def load_assets_from_dbt_project(
 
 
 def load_assets_from_dbt_manifest(
-    manifest: Optional[Mapping[str, Any]] = None,
+    manifest: Optional[Union[Path, Mapping[str, Any]]] = None,
     *,
     select: Optional[str] = None,
     exclude: Optional[str] = None,
@@ -749,16 +750,15 @@ def load_assets_from_dbt_manifest(
             this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
-    manifest = cast(
-        Mapping[str, Any],
-        check.mapping_param(
-            canonicalize_backcompat_args(
-                manifest, "manifest", manifest_json, "manifest_json", "0.21", stacklevel=4
-            ),
-            "manifest",
-            key_type=str,
-        ),
+    manifest = canonicalize_backcompat_args(
+        manifest, "manifest", manifest_json, "manifest_json", "0.21", stacklevel=4
     )
+    manifest = cast(
+        Union[Mapping[str, Any], Path], check.inst_param(manifest, "manifest", (Path, dict))
+    )
+    if isinstance(manifest, Path):
+        with manifest.open("r") as handle:
+            manifest = cast(Mapping[str, Any], json.load(handle))
 
     _raise_warnings_for_deprecated_args(
         "load_assets_from_dbt_manifest",
