@@ -216,6 +216,9 @@ def test_basic(
         )
 
     assert dbt_assets[0].op.name == "run_dbt_5ad73"
+    assert dbt_assets[0].get_asset_key_for_model("sort_by_calories") == AssetKey(
+        ["sort_by_calories"]
+    )
 
     result = build_assets_job(
         "test_job",
@@ -524,6 +527,9 @@ def test_node_info_to_asset_key(
         dbt_config_dir,
         node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
         use_build_command=use_build,
+    )
+    assert dbt_assets[0].get_asset_key_for_model("sort_hot_cereals_by_calories") == AssetKey(
+        ["foo", "sort_hot_cereals_by_calories"]
     )
 
     result = build_assets_job(
