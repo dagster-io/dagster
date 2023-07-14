@@ -1,6 +1,7 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -176,6 +177,7 @@ const EMPTY_RESPONSE = {queryString: '', results: []};
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
 export const useGlobalSearch = () => {
+  const {staticPathRoot} = React.useContext(AppContext);
   const primarySearch = React.useRef<WorkerSearchResult>();
   const secondarySearch = React.useRef<WorkerSearchResult>();
 
@@ -183,7 +185,7 @@ export const useGlobalSearch = () => {
     onCompleted: (data: SearchPrimaryQuery) => {
       const results = primaryDataToSearchResults({data});
       if (!primarySearch.current) {
-        primarySearch.current = createSearchWorker('primary', fuseOptions);
+        primarySearch.current = createSearchWorker('primary', fuseOptions, staticPathRoot);
       }
       primarySearch.current.update(results);
     },
@@ -193,7 +195,7 @@ export const useGlobalSearch = () => {
     onCompleted: (data: SearchSecondaryQuery) => {
       const results = secondaryDataToSearchResults({data});
       if (!secondarySearch.current) {
-        secondarySearch.current = createSearchWorker('secondary', fuseOptions);
+        secondarySearch.current = createSearchWorker('secondary', fuseOptions, staticPathRoot);
       }
       secondarySearch.current.update(results);
     },
