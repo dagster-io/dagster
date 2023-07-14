@@ -1,7 +1,6 @@
 import copy
 from functools import update_wrapper
 from typing import (
-    TYPE_CHECKING,
     Callable,
     List,
     Mapping,
@@ -37,9 +36,6 @@ from ..schedule_definition import (
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
-
-if TYPE_CHECKING:
-    pass
 
 
 def schedule(

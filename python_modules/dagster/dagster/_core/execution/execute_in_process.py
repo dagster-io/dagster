@@ -1,10 +1,9 @@
-from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
@@ -20,6 +19,9 @@ from .context_creation_job import (
     orchestration_context_event_generator,
 )
 from .execute_in_process_result import ExecuteInProcessResult
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 
 def core_execute_in_process(

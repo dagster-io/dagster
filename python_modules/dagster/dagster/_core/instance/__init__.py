@@ -231,7 +231,7 @@ T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance", defaul
 class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
-    _instance_weakref: Optional[weakref.ReferenceType[T_DagsterInstance]]
+    _instance_weakref: "Optional[weakref.ReferenceType[T_DagsterInstance]]"
 
     def __init__(self):
         self._instance_weakref = None
@@ -332,9 +332,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Stores TemporaryDirectory instances that were created for DagsterInstance.local_temp() calls
     # to be removed once the instance is garbage collected.
-    _TEMP_DIRS: weakref.WeakKeyDictionary[
-        "DagsterInstance", TemporaryDirectory
-    ] = weakref.WeakKeyDictionary()
+    _TEMP_DIRS: "weakref.WeakKeyDictionary[DagsterInstance, TemporaryDirectory]" = (
+        weakref.WeakKeyDictionary()
+    )
 
     def __init__(
         self,

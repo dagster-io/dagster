@@ -11,11 +11,21 @@ import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
-from multiprocessing.synchronize import Event as MPEvent
-from subprocess import Popen
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -87,6 +97,10 @@ from .types import (
     StartRunResult,
 )
 from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
+
+if TYPE_CHECKING:
+    from multiprocessing.synchronize import Event as MPEvent
+    from subprocess import Popen
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
@@ -1122,7 +1136,7 @@ def open_server_process(
 def _open_server_process_on_dynamic_port(
     max_retries: int = 10,
     **kwargs,
-) -> Tuple[Optional[Popen[str]], Optional[int]]:
+) -> Tuple[Optional["Popen[str]"], Optional[int]]:
     server_process = None
     retries = 0
     port = None

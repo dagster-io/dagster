@@ -1,7 +1,18 @@
 from abc import ABC, abstractmethod
 from asyncio import Task, get_event_loop
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._serdes import pack_value
@@ -14,7 +25,6 @@ from graphql.execution import ExecutionResult
 from starlette import status
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
-from starlette.datastructures import QueryParams
 from starlette.middleware import Middleware
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -22,6 +32,9 @@ from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from dagster_webserver.templates.playground import TEMPLATE
+
+if TYPE_CHECKING:
+    from starlette.datastructures import QueryParams
 
 
 class GraphQLWS(str, Enum):

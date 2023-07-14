@@ -43,7 +43,6 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
-from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
@@ -73,6 +72,7 @@ from .represented import RepresentedJob
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
+    from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 
 
 class ExternalRepository:
@@ -673,7 +673,7 @@ class ExternalSchedule:
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
-    ) -> InstigatorState:
+    ) -> "InstigatorState":
         from dagster._core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -805,7 +805,7 @@ class ExternalSensor:
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
-    ) -> InstigatorState:
+    ) -> "InstigatorState":
         from dagster._core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,

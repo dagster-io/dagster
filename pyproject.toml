@@ -258,8 +258,7 @@ builtins-ignorelist = ["id"]
 
 [tool.ruff.flake8-tidy-imports.banned-api]
 
-"__future__.annotations".msg = "Test"
-
+"__future__.annotations".msg = "Directly quote annotations instead."
 
 [tool.ruff.isort]
 

@@ -34,11 +34,7 @@ extend-ignore = [
   # purposes.
   "F841",
 
-  # (isort): No need to automatically insert imports in docs snippets.
-  "I002",
-
-  # (flake8-type-checking) We can't use this in docs_snippets because we don't auto-insert `from
-  # __future__ import annotations`. But we also don't need it becasse we don't use `TYPE_CHECKING`.
+  # (flake8-type-checking) No need to complicate docs snippets with `if TYPE_CHECKING` blocks.
   "TCH",
 ]
 

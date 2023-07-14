@@ -1,15 +1,17 @@
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from dagster import Config, Field, job, op
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.host_representation import InProcessCodeLocationOrigin
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.external import ExternalJob
 
 
 def test_basic_default():

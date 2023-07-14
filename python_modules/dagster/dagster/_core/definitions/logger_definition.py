@@ -1,4 +1,3 @@
-import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
@@ -14,6 +13,8 @@ from .definition_config_schema import (
 )
 
 if TYPE_CHECKING:
+    import logging
+
     from dagster._core.definitions import JobDefinition
     from dagster._core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 

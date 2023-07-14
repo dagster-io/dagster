@@ -4,11 +4,14 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from dagster import Definitions
 from dagster_dbt.cli.app import app
 from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from dagster import Definitions
 
 pytest.importorskip("dbt.version", minversion="1.4")
 
