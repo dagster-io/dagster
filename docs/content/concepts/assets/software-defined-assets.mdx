@@ -67,9 +67,7 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 
 ### Assets with dependencies
 
-Software-defined assets can depend on other software-defined assets. In Dagster, you can either define dependencies that just specify materialization order, or you can define dependencies that also load the contents of the upstream asset. You can also define dependencies on external assets.
-
-In this section, we'll show you how to define:
+Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
 
 - [Basic asset dependencies](#defining-basic-dependencies)
 - [Basic data-loading asset dependencies](#defining-explicit-dependencies)
@@ -80,25 +78,25 @@ In this section, we'll show you how to define:
 
 You can define a dependency between two assets by passing the upstream asset to the `deps` parameter in the downstream asset's `@asset` decorator.
 
-In this example, `upstream_asset` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table. Then `downstream_asset` creates a new table (`shopping_list`) by selecting records from `sugary_cereals`
+In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table. Then the asset `shopping_list` creates a new table (`shopping_list`) by selecting records from `sugary_cereals`:
 
 ```python file=/concepts/assets/non_argument_deps.py startafter=start_marker endbefore=end_marker
 from dagster import asset
 
 
 @asset
-def upstream_asset() -> None:
+def sugary_cereals() -> None:
     execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
 
 
-@asset(deps=[upstream_asset])
-def downstream_asset() -> None:
+@asset(deps=[sugary_cereals])
+def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 ```
 
 #### Defining basic data-loading dependencies
 
-The easiest way to define an asset dependency that will load the contents of an upstream asset is to include the upstream asset name as an argument to the decorated function.
+When using basic dependencies, as above, it's expected that if you need direct access to the contents of the asset, the code you include inside your `@asset`-decorated function will load the data from the upstream asset. Dagster alternatively allows you to delegate loading data to an [I/O manager](\(/concepts/io-management/io-managers\)). To do this, you express the dependency by using the upstream asset name as the name of one of the arguments on the decorated function.
 
 In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
 
@@ -170,7 +168,7 @@ def my_derived_asset():
     return execute_query("SELECT * from a_source_asset").as_list() + [4]
 ```
 
-You can also define dependencies on `SourceAsset`s that will load the data of the asset:
+You can also define a dependency on a `SourceAsset` that will load the data of the asset:
 
 ```python file=/concepts/assets/source_asset.py startafter=start_argument_dependency endbefore=end_argument_dependency
 @asset

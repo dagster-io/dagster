@@ -13,7 +13,7 @@ def topstory_ids() -> None:
 
     os.makedirs("data", exist_ok=True)
     with open("data/topstory_ids.json", "w") as f:
-        f.write(json.dumps((top_new_story_ids)))
+        json.dump(top_new_story_ids, f)
 
 
 # start_topstories_asset
@@ -71,7 +71,7 @@ def most_frequent_words() -> None:
     }
 
     with open("data/most_frequent_words.json", "w") as f:
-        f.write(json.dumps(top_words))
+        json.dump(top_words, f)
 
 
 # end_most_frequent_words_asset

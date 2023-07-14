@@ -55,7 +55,7 @@ def topstories() -> None:
     df.to_csv("data/topstories.csv")
 ```
 
-Dependencies between assets are defined using the `deps` parameter of the `@asset` decorator. In this case, `topstory_ids` (the list of IDs) is a dependency of `topstories` (the DataFrame).
+Dependencies between assets are defined using the `deps` parameter of the `@asset` decorator. In this case, `topstory_ids` (the list of IDs) is a dependency of `topstories` (the CSV file).
 
 In your browser, navigate to Dagster's UI (`localhost:3000`) and look at the asset graph to see the relationship between your assets.
 
@@ -123,7 +123,7 @@ def most_frequent_words() -> None:
     }
 
     with open("data/most_frequent_words.json", "w") as f:
-        f.write(json.dumps(top_words))
+        json.dump(top_words, f)
 ```
 
 ---
@@ -248,7 +248,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
     with open("data/most_frequent_words.json", "w") as f:
-        f.write(json.dumps(top_words))
+        json.dump(top_words, f)
 
     # Attach the Markdown content as metadata to the asset
     context.add_output_metadata(metadata={"plot": MetadataValue.md(md_content)})

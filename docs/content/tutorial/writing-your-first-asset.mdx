@@ -61,7 +61,7 @@ def topstory_ids() -> None: # turn it into a function
 
     os.makedirs("data", exist_ok=True)
     with open("data/topstory_ids.json", "w") as f:
-        f.write(json.dumps((top_new_story_ids)))
+        json.dump(top_new_story_ids, f)
 ```
 
 Now, add the <PyObject module="dagster" object="asset" decorator/> decorator from the `dagster` library to the function:
@@ -80,7 +80,7 @@ def topstory_ids() -> None:
 
     os.makedirs("data", exist_ok=True)
     with open("data/topstory_ids.json", "w") as f:
-        f.write(json.dumps((top_new_story_ids)))
+        json.dump(top_new_story_ids, f)
 ```
 
 That's all it takes to get started 🎉. Dagster now knows that this is an asset. In future sections, you'll see how you can add metadata, schedule when to refresh the asset, and more.

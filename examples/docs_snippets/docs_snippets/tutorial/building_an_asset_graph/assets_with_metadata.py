@@ -90,7 +90,7 @@ def most_frequent_words(context: AssetExecutionContext) -> None:
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
     with open("data/most_frequent_words.json", "w") as f:
-        f.write(json.dumps(top_words))
+        json.dump(top_words, f)
 
     # Attach the Markdown content as metadata to the asset
     context.add_output_metadata(metadata={"plot": MetadataValue.md(md_content)})
