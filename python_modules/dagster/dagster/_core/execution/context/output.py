@@ -578,8 +578,8 @@ class OutputContext:
     def get_asset_identifier(self) -> Sequence[str]:
         """The sequence of strings making up the AssetKey for the asset being stored as an output.
         If the asset is partitioned, the identifier contains the partition key as the final element in the
-        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])``, ``get_asset_identifier`` would return
-        ``["foo", "bar", "baz"]``.
+        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])`` materialized with
+        partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
         """
         if self.asset_key is not None:
             if self.has_asset_partitions:
