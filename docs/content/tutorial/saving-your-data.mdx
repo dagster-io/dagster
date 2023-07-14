@@ -27,14 +27,15 @@ I/O managers control **output** by writing the asset's to the location configure
 ---
 
 ## When should you use I/O managers?
+I/O managers are a powerful tool that can greatly simplify your code and allow you to easily modify where your assets are stored. However, some assets do not need I/O managers.
 
-### TODO WRITE THIS SECTION
+For example, I/O managers are useful in the following cases:
+* When you need to access the contents of an upstream asset in memory.
+* When your assets can be stored in a consistent way (i.e. in the same schema of a database).
 
-Points to hit:
-
-- I/O managers are useful when you need access to the contents of an upstream asset in memory
-- When your assets can all be stored in a consistent way (ie in the same schema in a database)
-- I/O managers are not useful if you are simply calling out to external services, running SQL queries
+Using I/O managers is not required, and may not be the right tool for some assets. For example:
+* Your asset executes a SQL queries in Snowflake to join two tables to create a third table.
+* Your asset launches a Databricks job that creates a table.
 
 ---
 
@@ -189,7 +190,10 @@ def most_frequent_words(
 
 To see the effect of this change, reload your code location in the Dagster UI and materialize your assets. When you click on an asset, you’ll see the `path` metadata pointing to the `data` directory on your computer.
 
-### TODO - some kind of closing statement that make sense
+
+This is a short example of the value of I/O managers. With I/O managers, you can save your assets to places like AWS S3, Google Cloud Storage, or Azure Blob Storage. For example, to store your assets in AWS S3, all you need to do is replace `FilesystemIOManager` in `__init__.py` with Dagster-provided `ConfigurablePickledObjectS3IOManager`.
+
+In addition to file storage systems, I/O managers can connect to any service from which data can be read or written, such as databases.
 
 ---
 
