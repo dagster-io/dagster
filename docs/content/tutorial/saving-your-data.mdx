@@ -88,9 +88,10 @@ defs = Definitions(
   information.
 </Note>
 
-Now, you will modify your three assets `topstory_ids`, `topstories`, and `most_frequent_words` to use the I/O manager to read and write data rather than direct calls to the `json` and `pandas` libraries. To do this, you will need to modify how the dependencies between assets are defined, and remove manual reading and writing of data.
+Now, you will modify your three assets `topstory_ids`, `topstories`, and `most_frequent_words` to use the I/O manager to read and write data rather than direct calls to the `json` and `pandas` libraries. To do this, you will:
+* Return your data from each asset, rather than manually writing it to the file system. The I/O manager will now save the data.
+* Modify how you define dependencies between assets. To use the I/O manager to load the data associated with an upstream asset into memory, you use the upstream asset's name as the name of one of the arguments to the downstream asset's function.
 
-When using an I/O manager, rather than manually save your data, you return it and the I/O manager will write it to storage. To define dependencies between assets you use upstream asset name as the name of one of the arguments on the decorated function. The I/O manager will then load the data associated with that asset into memory.
 
 Modify `topstory_ids` to use an I/O manager:
 
