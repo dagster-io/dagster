@@ -32,9 +32,7 @@ Here's an example. The asset is a dataset called `topstories`, and it depends on
 @asset(deps=[topstory_ids])
 def topstories() -> None:
     with open("data/topstory_ids.json", "r") as f:
-        topstory_ids = (
-            f.read()
-        )  # TODO confirm this doesn't do weird linter things with redefining the same symbol in a different scope
+        topstory_ids = json.load(f)
 
     results = []
     for item_id in topstory_ids:
@@ -44,7 +42,7 @@ def topstories() -> None:
         results.append(item)
 
         if len(results) % 20 == 0:
-            print(f"Got {len(results)} items so far.")  # noqa: T201
+            print(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
     df.to_csv("data/topstories.csv")
