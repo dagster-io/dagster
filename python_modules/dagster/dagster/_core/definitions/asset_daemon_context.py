@@ -29,11 +29,11 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 from .asset_graph import AssetGraph
 from .auto_materialize_condition import (
+    AutoMaterializeAssetEvaluation,
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
     MaxMaterializationsExceededAutoMaterializeCondition,
@@ -45,7 +45,6 @@ from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
     ScheduleType,
-    SerializedPartitionsSubset,
 )
 
 if TYPE_CHECKING:
@@ -53,114 +52,14 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
-def _decision_type_for_conditions(
-    conditions: Optional[AbstractSet[AutoMaterializeCondition]],
-) -> Optional[AutoMaterializeDecisionType]:
-    """Based on a set of conditions, determine the resulting decision."""
-    if not conditions:
-        return None
-    condition_decision_types = {condition.decision_type for condition in conditions}
-    # precedence of decisions
-    for decision_type in [
-        AutoMaterializeDecisionType.SKIP,
-        AutoMaterializeDecisionType.DISCARD,
-        AutoMaterializeDecisionType.MATERIALIZE,
-    ]:
-        if decision_type in condition_decision_types:
-            return decision_type
-    return None
-
-
 def _will_materialize_for_conditions(
     conditions: Optional[AbstractSet[AutoMaterializeCondition]],
 ) -> bool:
     """Based on a set of conditions, determine if the asset will be materialized."""
-    return _decision_type_for_conditions(conditions) == AutoMaterializeDecisionType.MATERIALIZE
-
-
-@whitelist_for_serdes
-class AutoMaterializeAssetEvaluation(NamedTuple):
-    """Represents the results of the auto-materialize logic for a single asset.
-
-    Properties:
-        asset_key (AssetKey): The asset key that was evaluated.
-        partition_subsets_by_condition: The conditions that impact if the asset should be materialized, skipped, or
-            discarded. If the asset is partitioned, this will be a list of tuples, where the first
-            element is the condition and the second element is the serialized subset of partitions that the
-            condition applies to. If it's not partitioned, the second element will be None.
-    """
-
-    asset_key: AssetKey
-    partition_subsets_by_condition: Sequence[
-        Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]]
-    ]
-    num_requested: int
-    num_skipped: int
-    num_discarded: int
-    run_ids: Set[str] = set()
-
-    @staticmethod
-    def from_conditions(
-        asset_graph: AssetGraph,
-        asset_key: AssetKey,
-        conditions_by_asset_partition: Mapping[
-            AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
-        ],
-        dynamic_partitions_store: "DynamicPartitionsStore",
-    ) -> "AutoMaterializeAssetEvaluation":
-        num_requested = 0
-        num_skipped = 0
-        num_discarded = 0
-
-        for conditions in conditions_by_asset_partition.values():
-            decision_type = _decision_type_for_conditions(conditions)
-            if decision_type == AutoMaterializeDecisionType.MATERIALIZE:
-                num_requested += 1
-            elif decision_type == AutoMaterializeDecisionType.SKIP:
-                num_skipped += 1
-            elif decision_type == AutoMaterializeDecisionType.DISCARD:
-                num_discarded += 1
-
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        if partitions_def is None:
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (condition, None)
-                    for condition in set().union(*conditions_by_asset_partition.values())
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-            )
-        else:
-            partition_keys_by_condition = defaultdict(set)
-
-            for asset_partition, conditions in conditions_by_asset_partition.items():
-                for condition in conditions:
-                    partition_keys_by_condition[condition].add(
-                        check.not_none(asset_partition.partition_key)
-                    )
-
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (
-                        condition,
-                        SerializedPartitionsSubset.from_subset(
-                            subset=partitions_def.empty_subset().with_partition_keys(
-                                partition_keys
-                            ),
-                            partitions_def=partitions_def,
-                            dynamic_partitions_store=dynamic_partitions_store,
-                        ),
-                    )
-                    for condition, partition_keys in partition_keys_by_condition.items()
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-            )
+    return (
+        AutoMaterializeDecisionType.from_conditions(conditions)
+        == AutoMaterializeDecisionType.MATERIALIZE
+    )
 
 
 class AssetDaemonCursor(NamedTuple):
@@ -243,7 +142,7 @@ class AssetDaemonCursor(NamedTuple):
             handled_partition_keys = {
                 asset_partition.partition_key
                 for asset_partition, conditions in conditions_by_asset_partition.items()
-                if _decision_type_for_conditions(conditions)
+                if AutoMaterializeDecisionType.from_conditions(conditions)
                 in (AutoMaterializeDecisionType.DISCARD, AutoMaterializeDecisionType.MATERIALIZE)
             }
             if not handled_partition_keys:
@@ -489,9 +388,6 @@ class AssetDaemonContext:
             asset_partition, set()
         )
 
-    def will_materialize(self, asset_partition: AssetKeyPartitionKey) -> bool:
-        return _will_materialize_for_conditions(self.get_conditions(asset_partition))
-
     def can_materialize(self, asset_partition: AssetKeyPartitionKey) -> bool:
         """A filter for eliminating asset partitions from consideration for auto-materialization."""
         return not (
@@ -528,7 +424,7 @@ class AssetDaemonContext:
         ).parent_partitions:
             # parent will not be materialized this tick
             if not (
-                self.will_materialize(parent)
+                parent in self._will_materialize_asset_partitions[parent.asset_key]
                 # the parent must have the same partitioning / partition key to be materialized
                 # alongside the candidate
                 and self.asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
@@ -592,19 +488,6 @@ class AssetDaemonContext:
 
         return conditions
 
-    @cached_method
-    def asset_partitions_with_newly_updated_parents(self) -> AbstractSet[AssetKeyPartitionKey]:
-        (
-            asset_partitions,
-            latest_storage_id,
-        ) = self.instance_queryer.asset_partitions_with_newly_updated_parents(
-            after_cursor=self.stored_cursor.latest_storage_id,
-            target_asset_keys=self.auto_materialize_asset_keys,
-            target_asset_keys_and_parents=self.auto_materialize_asset_keys_and_parents,
-        )
-        self.new_cursor = self.new_cursor._replace(latest_storage_id=latest_storage_id)
-        return asset_partitions
-
     def get_conditions_by_asset_partition(
         self,
     ) -> Mapping[AssetKey, Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]]:
@@ -639,6 +522,16 @@ class AssetDaemonContext:
                     self._will_materialize_asset_partitions[candidate.asset_key].add(candidate)
             return will_materialize
 
+        (
+            asset_partitions_with_newly_updated_parents,
+            latest_storage_id,
+        ) = self.instance_queryer.asset_partitions_with_newly_updated_parents(
+            after_cursor=self.stored_cursor.latest_storage_id,
+            target_asset_keys=self.auto_materialize_asset_keys,
+            target_asset_keys_and_parents=self.auto_materialize_asset_keys_and_parents,
+        )
+        self.new_cursor = self.new_cursor._replace(latest_storage_id=latest_storage_id)
+
         # will add conditions to the internal mapping
         self.asset_graph.bfs_filter_asset_partitions(
             self.instance_queryer,
@@ -646,7 +539,7 @@ class AssetDaemonContext:
                 self.asset_graph, candidates_unit, to_reconcile
             ),
             {
-                *self.asset_partitions_with_newly_updated_parents(),
+                *asset_partitions_with_newly_updated_parents,
                 *self.unhandled_root_asset_partitions(),
             },
             self.instance_queryer.evaluation_time,
