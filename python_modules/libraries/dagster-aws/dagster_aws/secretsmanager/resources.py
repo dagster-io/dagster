@@ -5,8 +5,8 @@ from dagster import (
     Field as LegacyDagsterField,
     resource,
 )
+from dagster._annotations import dagster_maintained
 from dagster._config.field_utils import Shape
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
@@ -64,7 +64,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
         )
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(SecretsManagerResource.to_config_schema())
 def secretsmanager_resource(context) -> "botocore.client.SecretsManager":
     """Resource that gives access to AWS SecretsManager.
@@ -240,7 +240,7 @@ LEGACY_SECRETSMANAGER_SECRETS_SCHEMA = {
 }
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(config_schema=LEGACY_SECRETSMANAGER_SECRETS_SCHEMA)
 @contextmanager
 def secretsmanager_secrets_resource(context):

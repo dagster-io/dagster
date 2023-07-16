@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Uni
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import copy_annotations, public
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
@@ -99,8 +99,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             input_config_schema=self.input_config_schema,
             output_config_schema=self.output_config_schema,
         )
-
-        io_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
+        copy_annotations(io_def, self)
 
         return io_def
 
@@ -241,11 +240,6 @@ def io_manager(
         )(resource_fn)
 
     return _wrap
-
-
-def dagster_maintained_io_manager(io_manager_def: IOManagerDefinition) -> IOManagerDefinition:
-    io_manager_def._dagster_maintained = True  # noqa: SLF001
-    return io_manager_def
 
 
 class _IOManagerDecoratorCallable:

@@ -9,9 +9,8 @@ from typing import BinaryIO, ContextManager, Iterator, Optional, TextIO, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import dagster_maintained, public, resource
 from dagster._config import Field, StringSource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
@@ -167,7 +166,7 @@ class FileManager(ABC):
         raise NotImplementedError()
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(config_schema={"base_dir": Field(StringSource, is_required=False)})
 def local_file_manager(init_context: InitResourceContext) -> "LocalFileManager":
     """FileManager that provides abstract access to a local filesystem.

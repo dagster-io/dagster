@@ -15,7 +15,7 @@ from dagster import (
     _check as check,
     resource,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.execution.plan.external_step import (
@@ -60,7 +60,7 @@ DAGSTER_SYSTEM_ENV_VARS = {
 }
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     {
         "run_config": define_databricks_submit_run_config(),

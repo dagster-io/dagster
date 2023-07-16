@@ -32,6 +32,7 @@ from dagster import (
     StaticPartitionsDefinition,
     _check as check,
 )
+from dagster._annotations import is_dagster_maintained
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
@@ -1673,17 +1674,7 @@ def external_resource_data_from_def(
     else:
         resource_type = _get_class_name(type(resource_type_def))
 
-    dagster_maintained = (
-        resource_type_def._is_dagster_maintained()  # noqa: SLF001
-        if type(resource_type_def)
-        in (
-            ResourceDefinition,
-            IOManagerDefinition,
-            ConfigurableResourceFactoryResourceDefinition,
-            ConfigurableIOManagerFactoryResourceDefinition,
-        )
-        else False
-    )
+    dagster_maintained = is_dagster_maintained(resource_type_def)
 
     return ExternalResourceData(
         name=name,

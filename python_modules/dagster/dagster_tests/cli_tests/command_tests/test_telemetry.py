@@ -23,16 +23,15 @@ from dagster import (
     repository,
     resource,
 )
+from dagster._annotations import dagster_maintained
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import external_repository_data_from_def
 from dagster._core.host_representation.handle import RepositoryHandle
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
@@ -447,7 +446,7 @@ def test_get_stats_from_external_repo_io_managers():
 
 
 def test_get_stats_from_external_repo_functional_resources():
-    @dagster_maintained_resource
+    @dagster_maintained
     @resource(config_schema={"foo": str})
     def my_resource():
         return 1
@@ -480,7 +479,7 @@ def test_get_stats_from_external_repo_functional_resources():
 
 
 def test_get_stats_from_external_repo_functional_io_managers():
-    @dagster_maintained_io_manager
+    @dagster_maintained
     @io_manager(config_schema={"foo": str})
     def my_io_manager():
         return 1
@@ -533,12 +532,12 @@ def test_get_stats_from_external_repo_delayed_resource_configuration():
         def load_input(self, context: InputContext) -> Any:
             return 1
 
-    @dagster_maintained_resource
+    @dagster_maintained
     @resource(config_schema={"foo": str})
     def my_resource():
         return 1
 
-    @dagster_maintained_io_manager
+    @dagster_maintained
     @io_manager(config_schema={"foo": str})
     def my_io_manager():
         return 1

@@ -11,7 +11,7 @@ from dagster import (
     _check as check,
     io_manager,
 )
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from dagster._core.storage.io_manager import dagster_maintained
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.cached_method import cached_method
@@ -149,7 +149,7 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
         return self.inner_io_manager().handle_output(context, obj)
 
 
-@dagster_maintained_io_manager
+@dagster_maintained
 @io_manager(
     config_schema=ConfigurablePickledObjectS3IOManager.to_config_schema(),
     required_resource_keys={"s3"},

@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import copy_annotations, experimental_param, public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
@@ -155,9 +155,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         """
         return self._required_resource_keys
 
-    def _is_dagster_maintained(self) -> bool:
-        return self._dagster_maintained
-
     @public
     @staticmethod
     def none_resource(description: Optional[str] = None) -> "ResourceDefinition":
@@ -234,8 +231,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             required_resource_keys=self.required_resource_keys,
             version=self.version,
         )
-
-        resource_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
+        copy_annotations(resource_def, self)
 
         return resource_def
 
@@ -290,7 +286,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
 
 
-def dagster_maintained_resource(
+def dagster_maintained(
     resource_def: ResourceDefinition,
 ) -> ResourceDefinition:
     resource_def._dagster_maintained = True  # noqa: SLF001
