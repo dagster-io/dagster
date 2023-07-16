@@ -13,7 +13,18 @@ from sphinx.ext.autodoc import (
 from sphinx.util import logging
 from typing_extensions import Literal, TypeAlias
 
-from dagster_sphinx.configurable import ConfigurableDocumenter
+from dagster_sphinx.configurable import (
+    ConfigurableDocumenter,
+    get_deprecated_info,
+    get_deprecated_params,
+    get_experimental_info,
+    get_experimental_params,
+    has_deprecated_params,
+    has_experimental_params,
+    is_experimental,
+)
+
+from .docstring_flags import inject_object_flag, inject_param_flag
 
 logger = logging.getLogger(__name__)
 
@@ -92,15 +103,29 @@ def process_docstring(
 ) -> None:
     assert app.env is not None
 
-    # Insert a "deprecated" sphinx directive (this is built-in to autodoc) for objects flagged with
-    # @deprecated.
     if is_deprecated(obj):
-        # Note that these are in reversed order from how they will appear because we insert at the
-        # front. We insert the <placeholder> string because the directive requires an argument that
-        # we can't supply (we would have to know the version at which the object was deprecated).
-        # We discard the "<placeholder>" string in `substitute_deprecated_text`.
-        for line in ["", ".. deprecated:: <placeholder>"]:
-            lines.insert(0, line)
+        inject_object_flag(obj, get_deprecated_info(obj), lines)
+
+    if has_deprecated_params(obj):
+        params = get_deprecated_params(obj)
+        for param, info in params.items():
+            inject_param_flag(lines, param, info)
+
+    if is_experimental(obj):
+        inject_object_flag(obj, get_experimental_info(obj), lines)
+
+    from dagster import ResourceDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
+
+    if obj == SourceAsset:
+        print("SOURCE ASSET", has_experimental_params(obj))
+    if has_experimental_params(obj):
+        params = get_experimental_params(obj)
+        for param, info in params.items():
+            print("INJECTING", obj)
+            inject_param_flag(lines, param, info)
+        if obj == ResourceDefinition:
+            print(lines)
 
 
 T_Node = TypeVar("T_Node", bound=nodes.Node)
