@@ -2,7 +2,7 @@ import gzip
 import io
 import uuid
 from os import path
-from typing import Generic, List, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -54,9 +54,11 @@ T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorksp
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
 
-    def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
+    def __init__(
+        self, process_context: T_IWorkspaceProcessContext, app_path_prefix: Optional[str] = None
+    ):
         self._process_context = process_context
-        super().__init__(app_path_prefix)
+        super().__init__(app_path_prefix or "")
 
     def build_graphql_schema(self) -> Schema:
         return create_schema()

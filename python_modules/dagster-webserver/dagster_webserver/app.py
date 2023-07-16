@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dagster import (
     _check as check,
 )
@@ -11,13 +13,13 @@ from .webserver import DagsterWebserver
 
 def create_app_from_workspace_process_context(
     workspace_process_context: IWorkspaceProcessContext,
-    path_prefix: str = "",
+    path_prefix: Optional[str] = None,
     **kwargs,
 ) -> Starlette:
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
     )
-    check.str_param(path_prefix, "path_prefix")
+    check.opt_str_param(path_prefix, "path_prefix")
 
     instance = workspace_process_context.instance
 

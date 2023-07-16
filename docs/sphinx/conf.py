@@ -79,11 +79,6 @@ project = "Dagster"
 copyright = "2019, Elementl, Inc"  # noqa: A001
 author = "The Dagster Team"
 
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = ""
-
 # -- General configuration ---------------------------------------------------
 
 # NOTE: `sphinx.ext.*` extensions are built-in to sphinx-- all others are supplied by other
@@ -164,7 +159,19 @@ autodoc_mock_imports = [
     "pandas_gbq",
 ]
 
-autodoc_typehints = "none"
+# Read type annotations from the source code and insert these types into the docstring in places
+# where the docstring is missing a type. There are some subtleties to how this works:
+#
+# - If both the docstring and the type annotation are present, the type annotation is ignored.
+# - If the annotated function has overloads, sphinx handles this oddly-- there is clearly a bug.
+#    - The annotations get added to both the signature in the docstring and the "Parameters"
+#      section. This is not supposed to happen; the `description` setting is supposed to restrict
+#      annotation injection to the "Paremeters" signature only. The `both` setting is intended ot
+#      inject in both places. So it appears the presence of overloads is causing the value of this
+#      setting to be interpreted as `both`. Note that htis is claerly a problem with `description`
+#      as setting the value to `none` prevents injecting the annotations into signatures, even for
+#      overloads.
+autodoc_typehints = "description"
 
 # From https://www.sphinx-doc.org/en/master/usage/extensions/autosectionlabel.html#confval-autosectionlabel_prefix_document
 #   "Prefix each section label with the name of the document it is in, followed by a colon. For

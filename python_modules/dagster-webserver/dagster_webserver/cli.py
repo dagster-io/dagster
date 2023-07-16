@@ -70,7 +70,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
         Options can also provide arguments via environment variables prefixed with DAGSTER_WEBSERVER.
 
-        For example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver
+        For example, `DAGSTER_WEBSERVER_PORT=3333 dagster-webserver`.
     """
     ),
 )
@@ -95,8 +95,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     "--path-prefix",
     "-l",
     type=click.STRING,
-    default="",
-    help="The path prefix where server will be hosted (eg: /dagster-webserver)",
+    help="The path prefix where server will be hosted (e.g. /dagster-webserver).",
+    default=None,
     show_default=True,
 )
 @click.option(
@@ -158,7 +158,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 def dagster_webserver(
     host: str,
     port: int,
-    path_prefix: str,
+    path_prefix: Optional[str],
     db_statement_timeout: int,
     db_pool_recycle: int,
     read_only: bool,
@@ -216,7 +216,7 @@ def host_dagster_ui_with_workspace_process_context(
     workspace_process_context: IWorkspaceProcessContext,
     host: Optional[str],
     port: Optional[int],
-    path_prefix: str,
+    path_prefix: Optional[str],
     log_level: str,
 ):
     check.inst_param(
@@ -224,7 +224,7 @@ def host_dagster_ui_with_workspace_process_context(
     )
     host = check.opt_str_param(host, "host", "127.0.0.1")
     check.opt_int_param(port, "port")
-    check.str_param(path_prefix, "path_prefix")
+    check.opt_str_param(path_prefix, "path_prefix")
 
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
