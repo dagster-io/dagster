@@ -262,12 +262,16 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     if (!runConfigSchema?.rootDefaultYaml) {
       return false;
     }
-    const defaultsYaml = yaml.parse(sanitizeConfigYamlString(runConfigSchema?.rootDefaultYaml));
+    try {
+      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(runConfigSchema?.rootDefaultYaml));
 
-    const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
-    const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
+      const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
+      const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
 
-    return yaml.stringify(currentUserConfig) !== yaml.stringify(updatedRunConfigData);
+      return yaml.stringify(currentUserConfig) !== yaml.stringify(updatedRunConfigData);
+    } catch (err) {
+      return false;
+    }
   }, [currentSession.runConfigYaml, runConfigSchema?.rootDefaultYaml]);
 
   const onScaffoldMissingConfig = () => {
