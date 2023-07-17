@@ -197,11 +197,7 @@ def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
 
 # Some images have custom build context manager functions, listed here
 CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
-    "k8s-example": k8s_example_cm,
-    "k8s-example-editable": k8s_example_editable_cm,
-    "k8s-dagit-editable": k8s_webserver_editable_cm,
     "k8s-dagit-example": k8s_webserver_example_cm,
-    "k8s-celery-worker-editable": k8s_celery_worker_editable_cm,
     "user-code-example": user_code_example_cm,
     "user-code-example-editable": user_code_example_editable_cm,
     "dagster-k8s-editable": dagster_k8s_editable_cm,
