@@ -70,8 +70,8 @@ By default, the name of the decorated function, `my_asset`, is used as the asset
 Software-defined assets can depend on other software-defined assets. In this section, we'll show you how to define:
 
 - [Basic asset dependencies](#defining-basic-dependencies)
-- [Basic data-loading asset dependencies](#defining-explicit-dependencies)
-- [Explicit data-loading asset dependencies](#defining-explicit-dependencies)
+- [Basic managed-loading dependencies](#defining-basic-managed-loading-dependencies)
+- [Explicit managed-loading asset dependencies](#defining-explicit-managed-loading-dependencies)
 - [External asset dependencies](#defining-external-asset-dependencies)
 
 #### Defining basic dependencies
@@ -96,7 +96,7 @@ def shopping_list() -> None:
 
 #### Defining basic managed-loading dependencies
 
-When using basic dependencies, as above, it's expected that if you need direct access to the contents of the asset, the code you include inside your `@asset`-decorated function will load the data from the upstream asset. Dagster alternatively allows you to delegate loading data to an [I/O manager](\(/concepts/io-management/io-managers\)). To do this, you express the dependency by using the upstream asset name as the name of one of the arguments on the decorated function.
+When using basic dependencies, as above, it's expected that if you need direct access to the contents of the asset, the code you include inside your `@asset`-decorated function will load the data from the upstream asset. Dagster alternatively allows you to delegate loading data to an [I/O manager](/concepts/io-management/io-managers). To do this, you express the dependency by using the upstream asset name as the name of one of the arguments on the decorated function.
 
 In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
 

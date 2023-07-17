@@ -24,9 +24,7 @@ def topstories(context: AssetExecutionContext, topstory_ids: List) -> pd.DataFra
         if len(results) % 20 == 0:
             logger.info(f"Got {len(results)} items so far.")
 
-    df = pd.DataFrame(results).drop(
-        ["kids"], axis=1
-    )  # TODO - why are we dropping kids column here, but not in the other versions of this asset?
+    df = pd.DataFrame(results)
 
     context.add_output_metadata(
         metadata={

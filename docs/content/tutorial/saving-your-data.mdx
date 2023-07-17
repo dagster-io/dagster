@@ -77,8 +77,8 @@ defs = Definitions(
 
 Now, you will modify your three assets `topstory_ids`, `topstories`, and `most_frequent_words` to use the I/O manager to read and write data rather than direct calls to the `json` and `pandas` libraries. To do this, you will:
 
-- Return your data from each asset, rather than manually writing it to the file system. The I/O manager will now save the data.
-- Modify how you define dependencies between assets. To use the I/O manager to load the data associated with an upstream asset into memory, you use the upstream asset's name as the name of one of the arguments to the downstream asset's function.
+- **Return your data from each asset, rather than manually writing it to the file system.** The I/O manager will now save the data.
+- **Modify how you define dependencies between assets.** To use the I/O manager to load the data associated with an upstream asset into memory, you use the upstream asset's name as the name of one of the arguments to the downstream asset's function.
 
 Modify `topstory_ids` to use an I/O manager:
 
@@ -248,9 +248,7 @@ def topstories(context: AssetExecutionContext, topstory_ids: List) -> pd.DataFra
         if len(results) % 20 == 0:
             logger.info(f"Got {len(results)} items so far.")
 
-    df = pd.DataFrame(results).drop(
-        ["kids"], axis=1
-    )  # TODO - why are we dropping kids column here, but not in the other versions of this asset?
+    df = pd.DataFrame(results)
 
     context.add_output_metadata(
         metadata={
@@ -272,9 +270,9 @@ Despite the changes in where the data is stored, the developer experience hasnâ€
 
 I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. However, they are not required, nor are they the best option, in all scenarios.
 
-In this tutorial, using an I/O manager made sense because the contents of each asset are used in the downstream assets. For example, you needed to load the `topstory_ids` asset in order to compute the `topstories` asset. Using an I/O manager allowed you to remove the repetitive reading and writing code. The storage requirements were also relatively simple, and were standardized across the assets using the same storage location. However, you could have left your pipeline as it was at the end of section five, and had a fully functional data pipeline.
+In this tutorial, using an I/O manager made sense because the contents of each asset were used in the downstream assets. For example, you needed to load the `topstory_ids` asset in order to compute the `topstories` asset. Using an I/O manager allowed you to remove repetitive reading and writing code. The storage requirements were also relatively simple, and were standardized across the assets using the same storage location. However, you could have left your pipeline as it was at the end of section five, and had a fully functional data pipeline.
 
-Some assets do not need an I/O manager. For example, you may write an asset that executes a Snowflake query that creates a new tables based on the data of another table. This asset would depend on the the existing table, but does not need to load that table in memory in order to execute the query:
+Some assets do not need an I/O manager. For example, you may write an asset that executes a Snowflake query that creates a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
 
 ```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
 @asset(deps=[orders])
@@ -286,14 +284,17 @@ def returns():
 ```
 
 Other reasons you may not want to use I/O managers:
-* You want to run a SQL query that creates or updates a table in a database (the above example).
-* Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
-* You have unique storage requirements for each asset.
-* Your assets won't fit in memory (for example, a database table with billions of rows).
-* You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
-* You simply prefer to have the reading and writing code explicitly defined in each asset.
 
-As a general rule, if you find yourself getting tripped up writing your pipeline to use I/O managers, or you find yourself making your pipeline more complicated in order to use I/O managers, you will likely have more success not using I/O managers.
+- You want to run a SQL query that creates or updates a table in a database (the above example).
+- Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
+- You have unique storage requirements for each asset.
+- Your assets won't fit in memory (for example, a database table with billions of rows).
+- You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
+- You simply prefer to have the reading and writing code explicitly defined in each asset.
+
+As a general rule, if you find yourself getting tripped up writing your pipeline to use I/O managers, or you find yourself making your pipeline more complicated in order to use I/O managers, you will likely have more success not using I/O managers. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
+
+---
 
 ## Next steps
 
