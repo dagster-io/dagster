@@ -47,17 +47,7 @@
     'runConfigSchemaOrError': dict({
       '__typename': 'RunConfigSchema',
       'rootDefaultYaml': '''
-        ops:
-          sum_op:
-            inputs: {}
-          sum_sq_op: {}
-        resources:
-          io_manager: {}
-        execution:
-          config:
-            retries:
-              enabled: {}
-        loggers: {}
+        {}
   
       ''',
     }),
