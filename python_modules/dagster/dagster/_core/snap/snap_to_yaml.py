@@ -15,12 +15,20 @@ def _safe_json_loads(json_str: Optional[str]) -> object:
 PRIORITY_CONFIG_KEYS = ("ops", "resources")
 
 
+def _filter_empty_dicts(to_filter: Any) -> Any:
+    if not isinstance(to_filter, Mapping):
+        return to_filter
+    else:
+        filtered_dict = {k: _filter_empty_dicts(v) for k, v in to_filter.items()}
+        return {k: v for k, v in filtered_dict.items() if v is not None and v != {}}
+
+
 def default_values_yaml_from_type_snap(
     snapshot: ConfigSchemaSnapshot,
     type_snap: ConfigTypeSnap,
 ) -> str:
     """Returns a YAML representation of the default values for the given type snap."""
-    run_config_dict = default_values_from_type_snap(type_snap, snapshot)
+    run_config_dict = _filter_empty_dicts(default_values_from_type_snap(type_snap, snapshot))
 
     # Sort the keys so that the output begins with the most useful keys (ops, resources)
     # We use a dict rather than an OrderedDict because in Py3.7+ the order of keys in a dict
