@@ -12,6 +12,9 @@ def _safe_json_loads(json_str: Optional[str]) -> object:
         return None
 
 
+PRIORITY_CONFIG_KEYS = ("ops", "resources")
+
+
 def default_values_yaml_from_type_snap(
     snapshot: ConfigSchemaSnapshot,
     type_snap: ConfigTypeSnap,
@@ -25,7 +28,7 @@ def default_values_yaml_from_type_snap(
     # OrderedDicts
     run_config_dict_sorted: Mapping[str, Any] = dict(
         (k, run_config_dict.get(k))
-        for k in ["ops", "resources", *run_config_dict.keys()]
+        for k in [*PRIORITY_CONFIG_KEYS, *run_config_dict.keys()]
         if k in run_config_dict
     )
     return dump_run_config_yaml(run_config_dict_sorted, sort_keys=False)
