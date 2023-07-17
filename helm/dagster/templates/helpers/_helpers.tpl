@@ -41,7 +41,7 @@ If release name contains chart name it will be used as a full name.
 
 {{- define "dagster.dagit.dagitCommand" -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
-dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
+dagster-webserver -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
 {{- with .Values.dagit.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
 {{- with .Values.dagit.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}
