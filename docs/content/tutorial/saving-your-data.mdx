@@ -5,7 +5,7 @@ description: Learn how to use I/O managers to save your data.
 
 # Tutorial, part six: Using Dagster to save and load your data
 
-You've written a data pipeline using assets that runs every hour. Currently, you are manually storing and loading your data using the `json` and `pandas` libraries at the beginning and end of each asset. Dagster provides I/O managers that will handle reading and writing data to storage for you. I/O managers allow you to reduce boilerplate code and easily change where your data is stored.
+You've written a data pipeline using assets that runs every hour. Currently, you are manually storing and loading your data using the `json` and `pandas` libraries at the beginning and end of each asset. Dagster provides I/O managers that help separate your business logic from I/O by handling reading and writing data to storage for you. I/O managers allow you to reduce boilerplate code and easily change where your data is stored. I/O managers can be a powerful tool in some situations, but a poor fit for others. By the end of this section you will understand how I/O managers work and how to choose if they are the right tool for you and your data pipelines.
 
 By the end of this section, you will:
 
@@ -22,7 +22,7 @@ I/O stands for **input** and **output.** I/O managers are Dagster objects that c
 
 They manage **input** by reading an asset from where it’s stored and loading it into memory to be used by a dependent asset. For example, `most_frequent_words` needs `topstories`. Therefore, you could use an I/O manager to load the `topstories` data into memory so that the `most_frequent_words` asset can use it.
 
-I/O managers control **output** by writing the asset's to the location configured. By the end of this section, you’ll configure an I/O manager to write the `topstories` DataFrame into a database as a table.
+I/O managers control **output** by writing the assets to the location configured. By the end of this section, you’ll configure an I/O manager to write the `topstories` DataFrame into a database as a table.
 
 ---
 
@@ -270,9 +270,11 @@ Despite the changes in where the data is stored, the developer experience hasn�
 
 ## When should you use I/O managers?
 
-I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. In this tutorial, using an I/O manager made sense because the contents of each asset are used in the downstream assets. For example, you needed to load the `topstory_ids` asset in order to compute the `topstories` asset. Using an I/O manager allowed up to remove the repetitive reading and writing code.
+I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. However, they are not required, nor are they the best option, in all scenarios.
 
-However, some assets do not need an I/O manager. For example, you may write an asset that executes a Snowflake query that creates a new tables based on the data of another table. This asset would depend on the the existing table, but does not need to load that table in memory in order to execute the query:
+In this tutorial, using an I/O manager made sense because the contents of each asset are used in the downstream assets. For example, you needed to load the `topstory_ids` asset in order to compute the `topstories` asset. Using an I/O manager allowed you to remove the repetitive reading and writing code. The storage requirements were also relatively simple, and were standardized across the assets using the same storage location. However, you could have left your pipeline as it was at the end of section five, and had a fully functional data pipeline.
+
+Some assets do not need an I/O manager. For example, you may write an asset that executes a Snowflake query that creates a new tables based on the data of another table. This asset would depend on the the existing table, but does not need to load that table in memory in order to execute the query:
 
 ```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
 @asset(deps=[orders])
@@ -282,6 +284,16 @@ def returns():
         "CREATE TABLE returns AS SELECT * from orders WHERE status = 'RETURNED'"
     )
 ```
+
+Other reasons you may not want to use I/O managers:
+* You want to run a SQL query that creates or updates a table in a database (the above example).
+* Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
+* You have unique storage requirements for each asset.
+* Your assets won't fit in memory (for example, a database table with billions of rows).
+* You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
+* You simply prefer to have the reading and writing code explicitly defined in each asset.
+
+As a general rule, if you find yourself getting tripped up writing your pipeline to use I/O managers, or you find yourself making your pipeline more complicated in order to use I/O managers, you will likely have more success not using I/O managers.
 
 ## Next steps
 

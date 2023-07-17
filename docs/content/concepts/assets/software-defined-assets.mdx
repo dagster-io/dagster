@@ -94,7 +94,7 @@ def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 ```
 
-#### Defining basic data-loading dependencies
+#### Defining basic managed-loading dependencies
 
 When using basic dependencies, as above, it's expected that if you need direct access to the contents of the asset, the code you include inside your `@asset`-decorated function will load the data from the upstream asset. Dagster alternatively allows you to delegate loading data to an [I/O manager](\(/concepts/io-management/io-managers\)). To do this, you express the dependency by using the upstream asset name as the name of one of the arguments on the decorated function.
 
@@ -113,7 +113,7 @@ def downstream_asset(upstream_asset):
 
 In this example, Dagster will load the data returned from `upstream_asset` and pass it as the `upstream_asset` parameter to `downstream_asset`.
 
-#### Defining explicit data-loading dependencies
+#### Defining explicit managed-loading dependencies
 
 If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
 
