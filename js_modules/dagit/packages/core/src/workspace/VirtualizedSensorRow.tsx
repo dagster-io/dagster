@@ -11,7 +11,6 @@ import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
-import {SensorMonitoredAssets} from '../sensors/SensorMonitoredAssets';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {SensorTargetList} from '../sensors/SensorTargetList';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
@@ -138,7 +137,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
             <SensorTargetList targets={sensorData?.targets} repoAddress={repoAddress} />
-            <SensorMonitoredAssets metadata={sensorData?.metadata} />
           </Box>
         </RowCell>
         <RowCell>
@@ -207,7 +205,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         </HeaderCell>
       ) : null}
       <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Job / Asset</HeaderCell>
+      <HeaderCell>Target</HeaderCell>
       <HeaderCell>Running</HeaderCell>
       <HeaderCell>Frequency</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>

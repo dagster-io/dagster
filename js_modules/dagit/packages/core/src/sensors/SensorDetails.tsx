@@ -152,7 +152,7 @@ export const SensorDetails: React.FC<{
           </tr>
           {sensor.targets && sensor.targets.length ? (
             <tr>
-              <td>Job / Asset</td>
+              <td>Target</td>
               <td>
                 <SensorTargetList targets={sensor.targets} repoAddress={repoAddress} />
               </td>
