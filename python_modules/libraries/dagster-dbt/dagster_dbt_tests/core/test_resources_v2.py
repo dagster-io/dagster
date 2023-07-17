@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import List, Optional
 
 import pytest
-from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue, materialize
+from dagster import (
+    AssetObservation,
+    FloatMetadataValue,
+    Output,
+    TextMetadataValue,
+    job,
+    materialize,
+    op,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
@@ -76,7 +85,7 @@ def test_dbt_cli_get_artifact() -> None:
     assert manifest_json_1 != manifest_json_2
 
 
-def test_dbt_profile_configuration(monkeypatch) -> None:
+def test_dbt_profile_configuration() -> None:
     dbt = DbtCli(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
 
     dbt_cli_task = dbt.cli(["parse"], manifest=manifest)
@@ -178,6 +187,24 @@ def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
         yield from dbt_cli_task.stream()
 
     assert materialize([my_dbt_assets]).success
+
+
+def test_dbt_cli_op_execution() -> None:
+    @op
+    def my_dbt_op(context: OpExecutionContext, dbt: DbtCli):
+        dbt.cli(["run"], context=context, manifest=manifest).wait()
+
+    @job
+    def my_dbt_job():
+        my_dbt_op()
+
+    result = my_dbt_job.execute_in_process(
+        resources={
+            "dbt": DbtCli(project_dir=TEST_PROJECT_DIR),
+        }
+    )
+
+    assert result.success
 
 
 @pytest.mark.parametrize(
