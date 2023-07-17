@@ -150,8 +150,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[T_str]:
-        """Sequence[str]: Returns a list of strings representing the partition keys of the
-        PartitionsDefinition.
+        """Returns a list of strings representing the partition keys of the PartitionsDefinition.
 
         Args:
             current_time (Optional[datetime]): A datetime object representing the current time, only
@@ -160,6 +159,9 @@ class PartitionsDefinition(ABC, Generic[T_str]):
                 object that is responsible for fetching dynamic partitions. Required when the
                 partitions definition is a DynamicPartitionsDefinition with a name defined. Users
                 can pass the DagsterInstance fetched via `context.instance` to this argument.
+
+        Returns:
+            Sequence[str]
         """
         ...
 
@@ -347,8 +349,7 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        """Sequence[str]: Returns a list of strings representing the partition keys of the
-        PartitionsDefinition.
+        """Returns a list of strings representing the partition keys of the PartitionsDefinition.
 
         Args:
             current_time (Optional[datetime]): A datetime object representing the current time, only
@@ -356,6 +357,9 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
             dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
                 object that is responsible for fetching dynamic partitions. Only applicable to
                 DynamicPartitionsDefinitions.
+
+        Returns:
+            Sequence[str]
 
         """
         return self._partition_keys
@@ -503,7 +507,7 @@ class DynamicPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        """Sequence[str]: Returns a list of strings representing the partition keys of the
+        """Returns a list of strings representing the partition keys of the
         PartitionsDefinition.
 
         Args:
@@ -513,6 +517,9 @@ class DynamicPartitionsDefinition(
                 object that is responsible for fetching dynamic partitions. Required when the
                 partitions definition is a DynamicPartitionsDefinition with a name defined. Users
                 can pass the DagsterInstance fetched via `context.instance` to this argument.
+
+        Returns:
+            Sequence[str]
         """
         if self.partition_fn:
             partitions = self.partition_fn(current_time)
@@ -673,12 +680,15 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
 
     @public
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
-        """Sequence[str]: A list of partition keys, representing the full set of partitions that
+        """Returns a list of partition keys, representing the full set of partitions that
         config can be applied to.
 
         Args:
             current_time (Optional[datetime]): A datetime object representing the current time. Only
                 applicable to time-based partitions definitions.
+
+        Returns:
+            Sequence[str]
         """
         return self.partitions_def.get_partition_keys(current_time)
 

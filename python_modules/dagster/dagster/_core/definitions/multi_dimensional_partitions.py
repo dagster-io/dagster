@@ -277,8 +277,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[MultiPartitionKey]:
-        """Sequence[MultiPartitionKey]: Returns a list of MultiPartitionKeys representing the
-        partition keys of the PartitionsDefinition.
+        """Returns a list of MultiPartitionKeys representing the partition keys of the
+        PartitionsDefinition.
 
         Args:
             current_time (Optional[datetime]): A datetime object representing the current time, only
@@ -287,6 +287,9 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 object that is responsible for fetching dynamic partitions. Required when a
                 dimension is a DynamicPartitionsDefinition with a name defined. Users can pass the
                 DagsterInstance fetched via `context.instance` to this argument.
+
+        Returns:
+            Sequence[MultiPartitionKey]
         """
         partition_key_sequences = [
             partition_dim.partitions_def.get_partition_keys(
