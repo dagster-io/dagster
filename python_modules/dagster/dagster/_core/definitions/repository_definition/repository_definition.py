@@ -116,11 +116,13 @@ class RepositoryDefinition:
     @public
     @property
     def name(self) -> str:
+        """str: The name of the repository."""
         return self._name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A human-readable description of the repository."""
         return self._description
 
     def load_all_definitions(self):
@@ -186,27 +188,47 @@ class RepositoryDefinition:
     @public
     @property
     def schedule_defs(self) -> Sequence[ScheduleDefinition]:
+        """List[ScheduleDefinition]: All schedules in the repository."""
         return self._repository_data.get_all_schedules()
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Get a schedule definition by name.
+
+        Args:
+            name (str): The name of the schedule.
+
+        Returns:
+            ScheduleDefinition: The schedule definition.
+        """
         return self._repository_data.get_schedule(name)
 
     @public
     def has_schedule_def(self, name: str) -> bool:
+        """bool: Check if a schedule with a given name is present in the repository."""
         return self._repository_data.has_schedule(name)
 
     @public
     @property
     def sensor_defs(self) -> Sequence[SensorDefinition]:
+        """Sequence[SensorDefinition]: All sensors in the repository."""
         return self._repository_data.get_all_sensors()
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
+        """Get a sensor definition by name.
+
+        Args:
+            name (str): The name of the sensor.
+
+        Returns:
+            SensorDefinition: The sensor definition.
+        """
         return self._repository_data.get_sensor(name)
 
     @public
     def has_sensor_def(self, name: str) -> bool:
+        """bool: Check if a sensor with a given name is present in the repository."""
         return self._repository_data.has_sensor(name)
 
     @property
