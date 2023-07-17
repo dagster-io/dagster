@@ -29,6 +29,7 @@ export type WorkerSearchResult = {
 export const createSearchWorker = (
   key: string,
   fuseOptions: Fuse.IFuseOptions<SearchResult>,
+  staticPathRoot?: string,
 ): WorkerSearchResult => {
   const searchWorker = spawnSearchWorker(key);
   const listeners: Set<QueryListener> = new Set();
@@ -54,7 +55,7 @@ export const createSearchWorker = (
    * @param results - Prepackaged search results, supplied via GraphQL or otherwise
    */
   const update = (results: SearchResult[]) => {
-    searchWorker.postMessage({type: 'set-results', results, fuseOptions});
+    searchWorker.postMessage({type: 'set-results', results, fuseOptions, staticPathRoot});
   };
 
   /**
