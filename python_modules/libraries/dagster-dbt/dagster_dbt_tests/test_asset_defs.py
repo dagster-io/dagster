@@ -27,6 +27,7 @@ from dagster_dbt import (
     DbtCliClientResource,
     DbtCliResource,
     dbt_cli_resource,
+    get_asset_key_for_model,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.core.resources import DbtCliClient
@@ -237,9 +238,7 @@ def test_basic(
         )
 
     assert dbt_assets[0].op.name == "run_dbt_5ad73"
-    assert dbt_assets[0].get_asset_key_for_model("sort_by_calories") == AssetKey(
-        ["sort_by_calories"]
-    )
+    assert get_asset_key_for_model(dbt_assets, "sort_by_calories") == AssetKey(["sort_by_calories"])
 
     result = build_assets_job(
         "test_job",
@@ -541,7 +540,7 @@ def test_node_info_to_asset_key(
         node_info_to_asset_key=lambda node_info: AssetKey(["foo", node_info["name"]]),
         use_build_command=use_build,
     )
-    assert dbt_assets[0].get_asset_key_for_model("sort_hot_cereals_by_calories") == AssetKey(
+    assert get_asset_key_for_model(dbt_assets, "sort_hot_cereals_by_calories") == AssetKey(
         ["foo", "sort_hot_cereals_by_calories"]
     )
 

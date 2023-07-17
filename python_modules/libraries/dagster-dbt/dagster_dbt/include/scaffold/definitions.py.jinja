@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from dagster import Definitions, OpExecutionContext
-from dagster_dbt import DbtCliResource, dbt_assets
+from dagster_dbt import DbtCliResource, build_schedule_from_dbt_selection, dbt_assets
 
 dbt_project_dir = Path(__file__).parent.joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}})
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
@@ -22,7 +22,8 @@ def {{ dbt_assets_name }}(context: OpExecutionContext, dbt: DbtCliResource):
 
 
 schedules = [
-    {{ dbt_assets_name }}.build_schedule_from_dbt_selection(
+    build_schedule_from_dbt_selection(
+        [{{ dbt_assets_name }}],
         job_name="materialize_dbt_models",
         cron_schedule="0 0 * * *",
         dbt_select="fqn:*",

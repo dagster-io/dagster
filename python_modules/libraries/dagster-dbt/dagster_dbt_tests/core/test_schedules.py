@@ -5,7 +5,7 @@ from typing import Mapping, Optional
 import pytest
 from dagster import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster_dbt import DbtManifestAssetSelection, dbt_assets
+from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
 manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
 with open(manifest_path, "r") as f:
@@ -56,7 +56,8 @@ def test_dbt_build_schedule(
     def my_dbt_assets():
         ...
 
-    test_daily_schedule = my_dbt_assets.build_schedule_from_dbt_selection(
+    test_daily_schedule = build_schedule_from_dbt_selection(
+        [my_dbt_assets],
         job_name=job_name,
         cron_schedule=cron_schedule,
         dbt_select=dbt_select,

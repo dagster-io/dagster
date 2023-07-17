@@ -34,9 +34,10 @@ from dbt.node_types import NodeType
 from pydantic import Field
 from typing_extensions import Literal
 
-from ..asset_utils import output_name_fn
+from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
 from ..dagster_dbt_translator import DagsterDbtTranslator
 from ..errors import DagsterDbtCliRuntimeError
+from ..utils import ASSET_RESOURCE_TYPES, get_node_info_by_dbt_unique_id_from_manifest
 
 logger = get_dagster_logger()
 
@@ -465,25 +466,20 @@ class DbtCliResource(ConfigurableResource):
             "DBT_TARGET_PATH": target_path,
         }
 
-        from dagster_dbt.dbt_assets_definition import DbtAssetsDefinition
-
         assets_def: Optional[AssetsDefinition] = None
         with suppress(DagsterInvalidPropertyError):
             assets_def = context.assets_def if context else None
 
-        if context and isinstance(assets_def, DbtAssetsDefinition):
-            logger.info(
-                "A DbtAssetsDefinition was provided to the dbt CLI client. Selection arguments to"
-                " dbt will automatically be interpreted from the execution environment."
+        if context and assets_def is not None:
+            manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
+                [assets_def]
             )
-
-            selection_args = assets_def.get_subset_selection_for_context(
+            selection_args = get_subset_selection_for_context(
                 context=context,
+                manifest=manifest,
                 select=context.op.tags.get("dagster-dbt/select"),
                 exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
-            manifest = assets_def.manifest
-            dagster_dbt_translator = assets_def.dagster_dbt_translator
         else:
             selection_args: List[str] = []
             if manifest is None:
@@ -515,3 +511,75 @@ class DbtCliResource(ConfigurableResource):
             target_path=project_dir.joinpath(target_path),
             raise_on_error=raise_on_error,
         )
+
+
+def get_subset_selection_for_context(
+    context: OpExecutionContext,
+    manifest: Mapping[str, Any],
+    select: Optional[str],
+    exclude: Optional[str],
+) -> List[str]:
+    """Generate a dbt selection string to materialize the selected resources in a subsetted execution context.
+
+    See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+
+    Args:
+        context (OpExecutionContext): The execution context for the current execution step.
+        select (Optional[str]): A dbt selection string to select resources to materialize.
+        exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
+
+    Returns:
+        List[str]: dbt CLI arguments to materialize the selected resources in a
+            subsetted execution context.
+
+            If the current execution context is not performing a subsetted execution,
+            return CLI arguments composed of the inputed selection and exclusion arguments.
+    """
+    default_dbt_selection = []
+    if select:
+        default_dbt_selection += ["--select", select]
+    if exclude:
+        default_dbt_selection += ["--exclude", exclude]
+
+    node_info_by_output_name = get_node_info_by_output_name(manifest)
+
+    # TODO: this should be a property on the context if this is a permanent indicator for
+    # determining whether the current execution context is performing a subsetted execution.
+    is_subsetted_execution = len(context.selected_output_names) != len(context.assets_def.keys)
+    if not is_subsetted_execution:
+        logger.info(
+            "A dbt subsetted execution is not being performed. Using the default dbt selection"
+            f" arguments `{default_dbt_selection}`."
+        )
+        return default_dbt_selection
+
+    selected_dbt_resources = []
+    for output_name in context.selected_output_names:
+        node_info = node_info_by_output_name[output_name]
+
+        # Explicitly select a dbt resource by its fully qualified name (FQN).
+        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+        fqn_selector = f"fqn:{'.'.join(node_info['fqn'])}"
+
+        selected_dbt_resources.append(fqn_selector)
+
+    # Take the union of all the selected resources.
+    # https://docs.getdbt.com/reference/node-selection/set-operators#unions
+    union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
+
+    logger.info(
+        "A dbt subsetted execution is being performed. Overriding default dbt selection"
+        f" arguments `{default_dbt_selection}` with arguments: `{union_selected_dbt_resources}`"
+    )
+
+    return union_selected_dbt_resources
+
+
+def get_node_info_by_output_name(manifest: Mapping[str, Any]) -> Mapping[str, Mapping[str, Any]]:
+    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
+
+    return {
+        output_name_fn(node): node
+        for node in node_info_by_dbt_unique_id.values()
+        if node["resource_type"] in ASSET_RESOURCE_TYPES
+    }
