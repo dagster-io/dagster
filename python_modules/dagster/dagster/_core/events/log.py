@@ -98,7 +98,8 @@ class EventLogEntry(
     @public
     def get_dagster_event(self) -> DagsterEvent:
         """DagsterEvent: Returns the DagsterEvent contained within this entry. If this entry does not
-        contain a DagsterEvent, an error will be raised."""
+        contain a DagsterEvent, an error will be raised.
+        """
         if not isinstance(self.dagster_event, DagsterEvent):
             check.failed(
                 "Not a dagster event, check is_dagster_event before calling get_dagster_event",

@@ -537,49 +537,49 @@ class DagsterEvent(
     @public
     @property
     def is_step_success(self) -> bool:
-        """bool: If this event is of type STEP_SUCCESS"""
+        """bool: If this event is of type STEP_SUCCESS."""
         return self.event_type == DagsterEventType.STEP_SUCCESS
 
     @public
     @property
     def is_successful_output(self) -> bool:
-        """bool: If this event is of type STEP_OUTPUT"""
+        """bool: If this event is of type STEP_OUTPUT."""
         return self.event_type == DagsterEventType.STEP_OUTPUT
 
     @public
     @property
     def is_step_start(self) -> bool:
-        """bool: If this event is of type STEP_START"""
+        """bool: If this event is of type STEP_START."""
         return self.event_type == DagsterEventType.STEP_START
 
     @public
     @property
     def is_step_failure(self) -> bool:
-        """bool: If this event is of type STEP_FAILURE"""
+        """bool: If this event is of type STEP_FAILURE."""
         return self.event_type == DagsterEventType.STEP_FAILURE
 
     @public
     @property
     def is_resource_init_failure(self) -> bool:
-        """bool: If this event is of type RESOURCE_INIT_FAILURE"""
+        """bool: If this event is of type RESOURCE_INIT_FAILURE."""
         return self.event_type == DagsterEventType.RESOURCE_INIT_FAILURE
 
     @public
     @property
     def is_step_skipped(self) -> bool:
-        """bool: If this event is of type STEP_SKIPPED"""
+        """bool: If this event is of type STEP_SKIPPED."""
         return self.event_type == DagsterEventType.STEP_SKIPPED
 
     @public
     @property
     def is_step_up_for_retry(self) -> bool:
-        """bool: If this event is of type STEP_UP_FOR_RETRY"""
+        """bool: If this event is of type STEP_UP_FOR_RETRY."""
         return self.event_type == DagsterEventType.STEP_UP_FOR_RETRY
 
     @public
     @property
     def is_step_restarted(self) -> bool:
-        """bool: If this event is of type STEP_RESTARTED"""
+        """bool: If this event is of type STEP_RESTARTED."""
         return self.event_type == DagsterEventType.STEP_RESTARTED
 
     @property
@@ -607,43 +607,43 @@ class DagsterEvent(
     @public
     @property
     def is_engine_event(self) -> bool:
-        """bool: If this event is of type ENGINE_EVENT"""
+        """bool: If this event is of type ENGINE_EVENT."""
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
     @public
     @property
     def is_handled_output(self) -> bool:
-        """bool: If this event is of type HANDLED_OUTPUT"""
+        """bool: If this event is of type HANDLED_OUTPUT."""
         return self.event_type == DagsterEventType.HANDLED_OUTPUT
 
     @public
     @property
     def is_loaded_input(self) -> bool:
-        """bool: If this event is of type LOADED_INPUT"""
+        """bool: If this event is of type LOADED_INPUT."""
         return self.event_type == DagsterEventType.LOADED_INPUT
 
     @public
     @property
     def is_step_materialization(self) -> bool:
-        """bool: If this event is of type ASSET_MATERIALIZATION"""
+        """bool: If this event is of type ASSET_MATERIALIZATION."""
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
     @public
     @property
     def is_expectation_result(self) -> bool:
-        """bool: If this event is of type STEP_EXPECTATION_RESULT"""
+        """bool: If this event is of type STEP_EXPECTATION_RESULT."""
         return self.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
 
     @public
     @property
     def is_asset_observation(self) -> bool:
-        """bool: If this event is of type ASSET_OBSERVATION"""
+        """bool: If this event is of type ASSET_OBSERVATION."""
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 
     @public
     @property
     def is_asset_materialization_planned(self) -> bool:
-        """bool: If this event is of type ASSET_MATERIALIZATION_PLANNED"""
+        """bool: If this event is of type ASSET_MATERIALIZATION_PLANNED."""
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
 
     @public
