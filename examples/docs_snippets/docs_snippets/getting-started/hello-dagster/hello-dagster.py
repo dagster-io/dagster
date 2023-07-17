@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import requests
 
-from dagster import MetadataValue, Output, asset
+from dagster import AssetExecutionContext, MetadataValue, asset
 
 
 @asset
@@ -22,7 +22,7 @@ def hackernews_top_story_ids():
 
 # asset dependencies can be inferred from parameter names
 @asset(deps=[hackernews_top_story_ids])
-def hackernews_top_stories(context):
+def hackernews_top_stories(context: AssetExecutionContext):
     """Get items based on story ids from the HackerNews items endpoint."""
     with open("hackernews_top_story_ids.json", "r") as f:
         hackernews_top_story_ids = json.load(f)
