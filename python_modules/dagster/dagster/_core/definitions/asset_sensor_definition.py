@@ -167,7 +167,8 @@ class AssetSensorDefinition(SensorDefinition):
 
     @public
     @property
-    def asset_key(self):
+    def asset_key(self) -> AssetKey:
+        """AssetKey: The key of the asset targeted by this sensor."""
         return self._asset_key
 
     @property
