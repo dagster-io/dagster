@@ -234,7 +234,8 @@ class Array(ConfigType):
 
     @public
     @property
-    def description(self):
+    def description(self) -> str:
+        """A human-readable description of this Array type."""
         return f"List of {self.key}"
 
     def type_iterator(self) -> Iterator["ConfigType"]:

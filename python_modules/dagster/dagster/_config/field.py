@@ -356,6 +356,10 @@ class Field:
     @public
     @property
     def is_required(self) -> bool:
+        """Whether a value for this field must be provided at runtime.
+
+        Cannot be True if a default value is provided.
+        """
         return self._is_required
 
     @public
@@ -371,12 +375,17 @@ class Field:
     @public
     @property
     def default_value(self) -> Any:
+        """The default value for the field.
+
+        Raises an exception if no default value was provided.
+        """
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """A human-readable description of this config field, if provided."""
         return self._description
 
     @property
