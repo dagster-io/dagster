@@ -1,22 +1,23 @@
 from collections import defaultdict
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
     FrozenSet,
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Tuple,
     Union,
-    Sequence,
-    AbstractSet,
-    TYPE_CHECKING,
 )
-from .partition import SerializedPartitionsSubset
+
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
-
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._serdes import whitelist_for_serdes
+
+from .partition import SerializedPartitionsSubset
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
