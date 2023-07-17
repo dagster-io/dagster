@@ -703,6 +703,7 @@ type FreshnessPolicy {
   maximumLagMinutes: Float!
   cronSchedule: String
   cronScheduleTimezone: String
+  lastEvaluationTimestamp: String
 }
 
 type AutoMaterializePolicy {

@@ -1112,6 +1112,7 @@ export type FreshnessPolicy = {
   __typename: 'FreshnessPolicy';
   cronSchedule: Maybe<Scalars['String']>;
   cronScheduleTimezone: Maybe<Scalars['String']>;
+  lastEvaluationTimestamp: Maybe<Scalars['String']>;
   maximumLagMinutes: Scalars['Float'];
 };
 
@@ -6206,6 +6207,10 @@ export const buildFreshnessPolicy = (
       overrides && overrides.hasOwnProperty('cronScheduleTimezone')
         ? overrides.cronScheduleTimezone!
         : 'recusandae',
+    lastEvaluationTimestamp:
+      overrides && overrides.hasOwnProperty('lastEvaluationTimestamp')
+        ? overrides.lastEvaluationTimestamp!
+        : 'neque',
     maximumLagMinutes:
       overrides && overrides.hasOwnProperty('maximumLagMinutes')
         ? overrides.maximumLagMinutes!

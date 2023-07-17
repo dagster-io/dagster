@@ -17,6 +17,7 @@ export type OverduePopoverQuery = {
           __typename: 'FreshnessPolicy';
           cronSchedule: string | null;
           cronScheduleTimezone: string | null;
+          lastEvaluationTimestamp: string | null;
           maximumLagMinutes: number;
         } | null;
         assetMaterializationUsedData: Array<{

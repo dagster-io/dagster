@@ -6,124 +6,179 @@ import {createAppCache} from '../../app/AppCache';
 import {
   LiveDataForNodeMaterialized,
   LiveDataForNodeMaterializedAndOverdue,
-  LiveDataForNodeNeverMaterialized,
   LiveDataForNodeMaterializedAndFresh,
 } from '../../asset-graph/__fixtures__/AssetNode.fixtures';
-import {buildAssetKey, buildAssetNode, buildFreshnessPolicy, buildQuery} from '../../graphql/types';
+import {
+  FreshnessPolicy,
+  buildAssetKey,
+  buildAssetNode,
+  buildFreshnessPolicy,
+  buildQuery,
+} from '../../graphql/types';
 import {OVERDUE_POPOVER_QUERY, OverdueTag} from '../OverdueTag';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/OverdueTag.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: OverdueTag};
 
-const mockFreshnessPolicy = buildFreshnessPolicy({
-  cronSchedule: '30 2 * * *',
-  cronScheduleTimezone: null,
-  maximumLagMinutes: 2,
+const TEST_TIME = 1689561000000;
+const LAST_MATERIALIZATION_TIME = TEST_TIME - 4 * 60 * 1000;
+
+const mockLiveData = {
+  ...LiveDataForNodeMaterializedAndOverdue,
+  lastMaterialization: {
+    ...LiveDataForNodeMaterializedAndOverdue.lastMaterialization!,
+    timestamp: `${LAST_MATERIALIZATION_TIME}`,
+  },
+};
+
+const mockFreshnessPolicyCron = buildFreshnessPolicy({
+  cronSchedule: '30 2 * * 1', // Monday at 2:30 Central
+  cronScheduleTimezone: 'America/Chicago',
+  maximumLagMinutes: 5,
+  lastEvaluationTimestamp: `${TEST_TIME}`,
 });
 
-function buildOverduePopoverMock(): MockedResponse<
-  OverduePopoverQuery,
-  OverduePopoverQueryVariables
-> {
+const mockFreshnessPolicy = buildFreshnessPolicy({
+  cronSchedule: null,
+  cronScheduleTimezone: null,
+  maximumLagMinutes: 24 * 60,
+  lastEvaluationTimestamp: `${TEST_TIME}`,
+});
+
+function buildOverduePopoverMock(
+  policy: FreshnessPolicy,
+  hasUsedData = true,
+): MockedResponse<OverduePopoverQuery, OverduePopoverQueryVariables> {
   return {
     request: {
       query: OVERDUE_POPOVER_QUERY,
       variables: {
         assetKey: {path: ['inp8']},
-        timestamp: LiveDataForNodeMaterializedAndOverdue.lastMaterialization!.timestamp,
+        timestamp: `${LAST_MATERIALIZATION_TIME}`,
       },
     },
     result: {
       data: buildQuery({
         assetNodeOrError: buildAssetNode({
           id: 'test.py.repo.["inp8"]',
-          freshnessPolicy: mockFreshnessPolicy,
-          assetMaterializationUsedData: [
-            {
-              timestamp: '1684596878856',
-              assetKey: buildAssetKey({
-                path: ['inp1'],
-              }),
-              downstreamAssetKey: buildAssetKey({
-                path: ['inp8'],
-              }),
-              __typename: 'MaterializationUpstreamDataVersion',
-            },
-            {
-              timestamp: '1686943124049',
-              assetKey: buildAssetKey({
-                path: ['inp2'],
-              }),
-              downstreamAssetKey: buildAssetKey({
-                path: ['inp8'],
-              }),
-              __typename: 'MaterializationUpstreamDataVersion',
-            },
-          ],
-          __typename: 'AssetNode',
+          freshnessPolicy: policy,
+          assetMaterializationUsedData: hasUsedData
+            ? [
+                {
+                  timestamp: `${TEST_TIME - 24 * 60 * 60 * 1000}`,
+                  assetKey: buildAssetKey({
+                    path: ['inp1'],
+                  }),
+                  downstreamAssetKey: buildAssetKey({
+                    path: ['inp8'],
+                  }),
+                  __typename: 'MaterializationUpstreamDataVersion',
+                },
+                {
+                  timestamp: `${TEST_TIME - 3 * 60 * 1000}`,
+                  assetKey: buildAssetKey({
+                    path: ['inp2'],
+                  }),
+                  downstreamAssetKey: buildAssetKey({
+                    path: ['inp8'],
+                  }),
+                  __typename: 'MaterializationUpstreamDataVersion',
+                },
+              ]
+            : [],
         }),
       }),
     },
   };
 }
 
-const TestContainer: React.FC<{
-  children: React.ReactNode;
-}> = ({children}) => (
-  <MockedProvider cache={createAppCache()} mocks={[buildOverduePopoverMock()]}>
-    <Box style={{width: 400}}>{children}</Box>
-  </MockedProvider>
-);
-
-export const Basic = () => {
+export const OverdueCronSchedule = () => {
   return (
-    <TestContainer>
-      <OverdueTag
-        assetKey={{path: ['inp8']}}
-        liveData={LiveDataForNodeMaterializedAndOverdue}
-        policy={mockFreshnessPolicy}
-      />{' '}
-      (Hover for details)
-    </TestContainer>
+    <MockedProvider
+      cache={createAppCache()}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicyCron)]}
+    >
+      <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
+        <OverdueTag
+          assetKey={{path: ['inp8']}}
+          liveData={mockLiveData}
+          policy={mockFreshnessPolicyCron}
+        />
+        {' Hover for details, times are relative to last cron tick (eg: "earlier")'}
+      </Box>
+    </MockedProvider>
+  );
+};
+
+export const OverdueNoSchedule = () => {
+  return (
+    <MockedProvider cache={createAppCache()} mocks={[buildOverduePopoverMock(mockFreshnessPolicy)]}>
+      <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
+        <OverdueTag
+          assetKey={{path: ['inp8']}}
+          liveData={mockLiveData}
+          policy={mockFreshnessPolicy}
+        />
+        {' Hover for details, times are relative to now (eg: "ago")'}
+      </Box>
+    </MockedProvider>
+  );
+};
+
+export const OverdueNoUpstreams = () => {
+  return (
+    <MockedProvider
+      cache={createAppCache()}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicy, false)]}
+    >
+      <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
+        <OverdueTag
+          assetKey={{path: ['inp8']}}
+          liveData={mockLiveData}
+          policy={mockFreshnessPolicy}
+        />
+        {' Hover for details. "derived from upstream data" omitted from description.'}
+      </Box>
+    </MockedProvider>
   );
 };
 
 export const NeverMaterialized = () => {
   return (
-    <TestContainer>
+    <MockedProvider cache={createAppCache()} mocks={[]}>
       <OverdueTag
         assetKey={{path: ['inp8']}}
         policy={mockFreshnessPolicy}
         liveData={{
-          ...LiveDataForNodeNeverMaterialized,
+          ...mockLiveData,
           freshnessInfo: {__typename: 'AssetFreshnessInfo', currentMinutesLate: null},
         }}
       />
-    </TestContainer>
+    </MockedProvider>
   );
 };
 
 export const Fresh = () => {
   return (
-    <TestContainer>
+    <MockedProvider cache={createAppCache()} mocks={[]}>
       <OverdueTag
         assetKey={{path: ['inp8']}}
         policy={mockFreshnessPolicy}
         liveData={LiveDataForNodeMaterializedAndFresh}
       />
-    </TestContainer>
+    </MockedProvider>
   );
 };
 
 export const NotLate = () => {
   return (
-    <TestContainer>
+    <MockedProvider cache={createAppCache()} mocks={[]}>
       <OverdueTag
         assetKey={{path: ['inp8']}}
         liveData={LiveDataForNodeMaterialized}
         policy={mockFreshnessPolicy}
       />
-    </TestContainer>
+    </MockedProvider>
   );
 };

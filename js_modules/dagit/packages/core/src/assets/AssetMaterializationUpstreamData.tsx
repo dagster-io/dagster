@@ -23,9 +23,9 @@ dayjs.extend(relativeTime);
 export const AssetMaterializationUpstreamTable: React.FC<{
   data: AssetMaterializationUpstreamTableFragment | undefined;
   assetKey: AssetKeyInput;
-  timestampDiffStyle: 'since-now' | 'since-timestamp';
-  timestamp?: string;
-}> = ({data, assetKey, timestamp, timestampDiffStyle}) => {
+  relativeTo: number | 'now';
+  maximumLagMinutes?: number; // pass to get red "late" highlighting
+}> = ({data, assetKey, maximumLagMinutes, relativeTo}) => {
   const displayName = displayNameForAssetKey(assetKey);
 
   if (!data) {
@@ -51,7 +51,6 @@ export const AssetMaterializationUpstreamTable: React.FC<{
     );
   }
 
-  const maximumLagMinutes = data.freshnessPolicy?.maximumLagMinutes || 0;
   const seen = new Set<string>();
 
   const renderEntryAndParents = (
@@ -93,16 +92,11 @@ export const AssetMaterializationUpstreamTable: React.FC<{
                 timeFormat={{showSeconds: true, showTimezone: false}}
               />
             </Link>
-            {timestampDiffStyle === 'since-timestamp' ? (
-              <span style={{color: Colors.Gray700}}>
-                ({dayjs(Number(entry.timestamp)).from(Number(timestamp), true)} earlier)
-              </span>
-            ) : (
-              <TimeSinceWithOverdueColor
-                timestamp={Number(entry.timestamp)}
-                maximumLagMinutes={maximumLagMinutes}
-              />
-            )}
+            <TimeSinceWithOverdueColor
+              timestamp={Number(entry.timestamp)}
+              maximumLagMinutes={maximumLagMinutes}
+              relativeTo={relativeTo}
+            />
           </Box>
         </td>
       </tr>,
@@ -125,9 +119,6 @@ export const AssetMaterializationUpstreamTable: React.FC<{
 
 export const ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT = gql`
   fragment AssetMaterializationUpstreamTableFragment on AssetNode {
-    freshnessPolicy {
-      maximumLagMinutes
-    }
     assetMaterializationUsedData(timestampMillis: $timestamp) {
       ...MaterializationUpstreamDataVersionFragment
     }
@@ -163,8 +154,7 @@ export const AssetMaterializationUpstreamData: React.FC<{
 
   return (
     <AssetMaterializationUpstreamTable
-      timestamp={timestamp}
-      timestampDiffStyle="since-timestamp"
+      relativeTo={Number(timestamp)}
       assetKey={assetKey}
       data={data}
     />
@@ -173,13 +163,19 @@ export const AssetMaterializationUpstreamData: React.FC<{
 
 export const TimeSinceWithOverdueColor: React.FC<{
   timestamp: number;
-  maximumLagMinutes: number;
-}> = ({timestamp, maximumLagMinutes}) => {
-  const upstreamLagMinutes = (Date.now() - timestamp) / (60 * 1000);
-  const isOverdue = maximumLagMinutes && upstreamLagMinutes > maximumLagMinutes;
-  return (
+  maximumLagMinutes?: number;
+  relativeTo?: number | 'now';
+}> = ({timestamp, maximumLagMinutes, relativeTo = Date.now()}) => {
+  const lagMinutes = ((relativeTo === 'now' ? Date.now() : relativeTo) - timestamp) / (60 * 1000);
+  const isOverdue = maximumLagMinutes && lagMinutes > maximumLagMinutes;
+
+  return relativeTo === 'now' ? (
     <span style={{color: isOverdue ? Colors.Red700 : Colors.Gray700}}>
       ({dayjs(timestamp).fromNow()})
+    </span>
+  ) : (
+    <span style={{color: isOverdue ? Colors.Red700 : Colors.Gray700}}>
+      ({dayjs(Number(timestamp)).from(relativeTo, true)} earlier)
     </span>
   );
 };

@@ -6,6 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {timestampToString} from '../app/time/timestampToString';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
@@ -19,6 +20,7 @@ import {
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
 
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
+const locale = navigator.language;
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
@@ -38,9 +40,11 @@ export const humanizedMinutesLateString = (minLate: number) =>
 
 export const OverdueTag: React.FC<{
   liveData: LiveDataForNode | undefined;
-  policy: FreshnessPolicy;
+  policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
 }> = ({liveData, policy, assetKey}) => {
+  console.log(liveData);
+
   if (!liveData?.freshnessInfo) {
     return null;
   }
@@ -122,19 +126,31 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
     );
   }
 
-  if (!data.freshnessPolicy) {
-    return <Box style={{width: 600}}>No freshness policy or timestamp.</Box>;
+  if (!data.freshnessPolicy?.lastEvaluationTimestamp) {
+    return <Box style={{width: 600}}>No freshness policy or evaluation timestamp.</Box>;
   }
 
-  const minutesLate = humanizedMinutesLateString(liveData.freshnessInfo?.currentMinutesLate || 0);
+  const hasUpstreams = data.assetMaterializationUsedData.length > 0;
+  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone} = data.freshnessPolicy;
+  const lateStr = humanizedMinutesLateString(liveData.freshnessInfo?.currentMinutesLate || 0);
+  const policyStr = freshnessPolicyDescription(data.freshnessPolicy, 'short');
+  const lastEvaluationStr = timestampToString({
+    locale,
+    timezone: cronScheduleTimezone || 'UTC',
+    timestamp: {ms: Number(lastEvaluationTimestamp)},
+    timeFormat: {showTimezone: true},
+  });
 
   return (
     <Box style={{width: 600}}>
       <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        {`The latest materialization is derived from source data that is ${minutesLate} old. The asset's freshness policy requires it to be derived from data ${freshnessPolicyDescription(
-          data.freshnessPolicy,
-          'short',
-        )}`}
+        {hasUpstreams
+          ? cronSchedule
+            ? `The latest materialization is derived from source data that was ${lateStr} old on ${lastEvaluationStr}. The asset's freshness policy requires it to be derived from data ${policyStr}`
+            : `The latest materialization is derived from source data that is ${lateStr} old. The asset's freshness policy requires it to be derived from data ${policyStr}`
+          : cronSchedule
+          ? `The latest materialization was ${lateStr} old on ${lastEvaluationStr}. The asset's freshness policy requires it ${policyStr}`
+          : `The latest materialization is ${lateStr} old. The asset's freshness policy requires it ${policyStr}`}
       </Box>
       <Box
         padding={12}
@@ -151,6 +167,7 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
         <Timestamp timestamp={{ms: Number(timestamp)}} />
         <TimeSinceWithOverdueColor
           timestamp={Number(timestamp)}
+          relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
           maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
         />
       </Box>
@@ -163,8 +180,8 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
       >
         <AssetMaterializationUpstreamTable
           data={data}
-          timestamp={timestamp}
-          timestampDiffStyle="since-now"
+          maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
+          relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
           assetKey={assetKey}
         />
       </Box>
@@ -173,7 +190,10 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
 };
 
 export const freshnessPolicyDescription = (
-  freshnessPolicy: FreshnessPolicy | null,
+  freshnessPolicy: Pick<
+    FreshnessPolicy,
+    'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'
+  > | null,
   format: 'long' | 'short' = 'long',
 ) => {
   if (!freshnessPolicy) {
@@ -217,6 +237,7 @@ export const OVERDUE_POPOVER_QUERY = gql`
           __typename
           cronSchedule
           cronScheduleTimezone
+          lastEvaluationTimestamp
           maximumLagMinutes
         }
         ...AssetMaterializationUpstreamTableFragment

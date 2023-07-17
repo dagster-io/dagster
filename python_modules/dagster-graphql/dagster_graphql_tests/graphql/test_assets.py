@@ -261,6 +261,7 @@ GET_FRESHNESS_INFO = """
             freshnessPolicy {
                 cronSchedule
                 maximumLagMinutes
+                lastEvaluationTimestamp
             }
         }
     }

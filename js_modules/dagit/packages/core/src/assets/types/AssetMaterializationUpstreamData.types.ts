@@ -4,7 +4,6 @@ import * as Types from '../../graphql/types';
 
 export type AssetMaterializationUpstreamTableFragment = {
   __typename: 'AssetNode';
-  freshnessPolicy: {__typename: 'FreshnessPolicy'; maximumLagMinutes: number} | null;
   assetMaterializationUsedData: Array<{
     __typename: 'MaterializationUpstreamDataVersion';
     timestamp: string;
@@ -31,7 +30,6 @@ export type AssetMaterializationUpstreamQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
-        freshnessPolicy: {__typename: 'FreshnessPolicy'; maximumLagMinutes: number} | null;
         assetMaterializationUsedData: Array<{
           __typename: 'MaterializationUpstreamDataVersion';
           timestamp: string;
