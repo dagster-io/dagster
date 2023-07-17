@@ -56,7 +56,7 @@ CLI Resource
 
 .. autoclass:: DbtCli
 
-Deprecated CLI Resource
+Deprecated (dbt Core)
 -----------------------
 
 .. autoclass:: DbtCliResource
@@ -85,7 +85,10 @@ Ops (dbt Cloud)
 Resources (dbt Cloud)
 =====================
 
-.. autoclass:: DbtCloudResourceV2
+.. autoclass:: DbtCloudClientResource
+
+Deprecated (dbt Cloud)
+----------------------
 
 .. autoconfigurable:: dbt_cloud_resource
     :annotation: ResourceDefinition
