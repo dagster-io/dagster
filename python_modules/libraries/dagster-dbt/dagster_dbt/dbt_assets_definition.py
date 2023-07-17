@@ -128,20 +128,6 @@ class DbtAssetsDefinition(AssetsDefinition):
             self.get_node_info_for_output_name(output_name)
         )
 
-    def get_asset_key_for_dbt_unique_id(self, unique_id: str) -> AssetKey:
-        node_info = self._node_info_by_dbt_unique_id.get(unique_id)
-
-        if not node_info:
-            raise DagsterInvalidInvocationError(
-                f"Could not find a dbt node with unique_id: {unique_id}. A unique ID consists of"
-                " the node type (model, source, seed, etc.), project name, and node name in a"
-                " dot-separated string. For example: model.my_project.my_model\n For more"
-                " information on the unique ID structure:"
-                " https://docs.getdbt.com/reference/artifacts/manifest-json"
-            )
-
-        return self.dagster_dbt_translator.get_asset_key(node_info)
-
     def get_asset_key_for_source(self, source_name: str) -> AssetKey:
         """Returns the corresponding Dagster asset key for a dbt source with a singular table.
 
