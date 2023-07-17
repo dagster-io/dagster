@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -12,12 +12,26 @@ def _safe_json_loads(json_str: Optional[str]) -> object:
         return None
 
 
+PRIORITY_CONFIG_KEYS = ("ops", "resources")
+
+
 def default_values_yaml_from_type_snap(
     snapshot: ConfigSchemaSnapshot,
     type_snap: ConfigTypeSnap,
 ) -> str:
     """Returns a YAML representation of the default values for the given type snap."""
-    return dump_run_config_yaml(default_values_from_type_snap(type_snap, snapshot))
+    run_config_dict = default_values_from_type_snap(type_snap, snapshot)
+
+    # Sort the keys so that the output begins with the most useful keys (ops, resources)
+    # We use a dict rather than an OrderedDict because in Py3.7+ the order of keys in a dict
+    # is guaranteed to be insertion order and because yaml.dump() does not natively support
+    # OrderedDicts
+    run_config_dict_sorted: Mapping[str, Any] = dict(
+        (k, run_config_dict.get(k))
+        for k in [*PRIORITY_CONFIG_KEYS, *run_config_dict.keys()]
+        if k in run_config_dict
+    )
+    return dump_run_config_yaml(run_config_dict_sorted, sort_keys=False)
 
 
 def default_values_from_type_snap(type_snap: ConfigTypeSnap, snapshot: ConfigSchemaSnapshot) -> Any:
