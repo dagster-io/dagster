@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import time
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -20,12 +21,14 @@ from typing import (
 import dateutil.parser
 from dagster import (
     AssetObservation,
+    AssetsDefinition,
     ConfigurableResource,
     OpExecutionContext,
     Output,
     _check as check,
     get_dagster_logger,
 )
+from dagster._core.errors import DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
 from pydantic import Field
@@ -466,24 +469,25 @@ class DbtCli(ConfigurableResource):
 
         from dagster_dbt.dbt_assets_definition import DbtAssetsDefinition
 
-        if context and context.assets_def and isinstance(context.assets_def, DbtAssetsDefinition):
-            dbt_assets_def = context.assets_def
+        assets_def: Optional[AssetsDefinition] = None
+        with suppress(DagsterInvalidPropertyError):
+            assets_def = context.assets_def if context else None
 
+        if context and isinstance(assets_def, DbtAssetsDefinition):
             logger.info(
                 "A DbtAssetsDefinition was provided to the dbt CLI client. Selection arguments to"
                 " dbt will automatically be interpreted from the execution environment."
             )
 
-            selection_args = dbt_assets_def.get_subset_selection_for_context(
+            selection_args = assets_def.get_subset_selection_for_context(
                 context=context,
                 select=context.op.tags.get("dagster-dbt/select"),
                 exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
-            manifest = dbt_assets_def.manifest
-            dagster_dbt_translator = dbt_assets_def.dagster_dbt_translator
+            manifest = assets_def.manifest
+            dagster_dbt_translator = assets_def.dagster_dbt_translator
         else:
             selection_args: List[str] = []
-            dbt_assets_def = None
             if manifest is None:
                 check.failed(
                     "Must provide a value for the manifest argument if not executing as part of"
