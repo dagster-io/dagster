@@ -9,10 +9,10 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
+    ReadinessProbeWithEnabled,
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
     UserDeployments,
-    ReadinessProbeWithEnabled,
 )
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
@@ -445,7 +445,7 @@ def test_readiness_probe_enabled_by_default(template: HelmTemplate):
         "-p",
         "3030",
     ]
-    assert container.readiness_probe.timeout_seconds == 3
+    assert container.readiness_probe.timeout_seconds == 10
 
 
 def test_readiness_probe_can_be_disabled(template: HelmTemplate):
