@@ -404,3 +404,34 @@ def test_dep_via_deps_and_fn():
         @asset(deps=[the_upstream_asset])
         def depends_on_upstream_asset(the_upstream_asset):
             return None
+
+
+def test_list_of_list_deps():
+    @asset
+    def asset_1():
+        return None
+
+    @asset
+    def asset_2():
+        return None
+
+    my_assets = [
+        asset_1,
+        asset_2,
+    ]  # mimic the kind of output we would get from dbt or load_assets_from_module
+
+    @asset
+    def asset_3():
+        return None
+
+    @asset(deps=[my_assets, asset_3])
+    def combine_all_the_assets():
+        return None
+
+    assert len(combine_all_the_assets.input_names) == 3
+    assert combine_all_the_assets.op.ins["asset_1"].dagster_type.is_nothing
+    assert combine_all_the_assets.op.ins["asset_2"].dagster_type.is_nothing
+    assert combine_all_the_assets.op.ins["asset_3"].dagster_type.is_nothing
+
+    res = materialize([combine_all_the_assets], resources={"io_manager": TestingIOManager()})
+    assert res.success

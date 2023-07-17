@@ -5,11 +5,14 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -46,6 +49,8 @@ from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
+
+T = TypeVar("T")
 
 
 @overload
@@ -1022,11 +1027,23 @@ def _type_check_deps_and_non_argument_deps(
             "Cannot specify both deps and non_argument_deps to @asset. Use only deps instead."
         )
 
+    def _flatten(items: Sequence) -> Iterator:
+        # this is to add support for a list of AssetsDefinitions or SourceAssets to the deps parameter
+        for x in items:
+            if isinstance(x, List):
+                if isinstance(x[0], str):
+                    # ["my_prefix", "my_asset_key"] needs to stay a list
+                    yield x
+                yield from x
+            else:
+                yield x
+
     upstream_asset_deps: Optional[
         Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
-    ] = None
+    ] = []
     if deps is not None:
-        for dep in deps:
+        flattened_deps = _flatten(deps)
+        for dep in flattened_deps:
             if isinstance(dep, AssetsDefinition):
                 # Only AssetsDefinition with a single asset can be passed
                 if len(dep.keys) > 1:
@@ -1036,20 +1053,20 @@ def _type_check_deps_and_non_argument_deps(
                         f" via AssetKeys or strings. For the multi_asset {dep.node_def.name}, the"
                         f" available keys are: {dep.keys}."
                     )
+                upstream_asset_deps.append(dep)
             elif isinstance(dep, SourceAsset):
                 # no additional type checking needed for SourceAssets
-                continue
+                upstream_asset_deps.append(dep)
             else:
                 # confirm that dep is coercible to AssetKey
                 try:
                     AssetKey.from_coercible(dep)
+                    upstream_asset_deps.append(dep)
                 except check.CheckError:
                     raise DagsterInvalidDefinitionError(
                         f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
                         " Instead, pass AssetsDefinitions or AssetKeys."
                     )
-
-        upstream_asset_deps = deps
 
     if non_argument_deps is not None:
         deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
