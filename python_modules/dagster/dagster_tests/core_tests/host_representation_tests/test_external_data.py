@@ -17,7 +17,9 @@ from dagster import (
     graph_multi_asset,
     op,
 )
+from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -63,6 +65,108 @@ def test_single_asset_job():
             group_name=DEFAULT_GROUP_NAME,
         )
     ]
+
+
+def test_asset_with_default_backfill_policy():
+    @asset(description="hullo")
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+            backfill_policy=None,
+        ),
+    ]
+
+
+def test_asset_with_single_run_backfill_policy():
+    @asset(description="hullo_single_run", backfill_policy=BackfillPolicy.single_run())
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo_single_run",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+            backfill_policy=BackfillPolicy.single_run(),
+        )
+    ]
+
+
+def test_asset_with_multi_run_backfill_policy():
+    partitions_def_data = ExternalTimeWindowPartitionsDefinitionData(
+        cron_schedule="5 13 * * 0",
+        start=pendulum.instance(datetime(year=2022, month=5, day=5), tz="US/Central").timestamp(),
+        timezone="US/Central",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+        end_offset=1,
+    )
+    partitions_def = partitions_def_data.get_partitions_definition()
+
+    @asset(
+        description="hullo_ten_partitions_per_run",
+        partitions_def=partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(10),
+    )
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo_ten_partitions_per_run",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+            partitions_def_data=partitions_def_data,
+            backfill_policy=BackfillPolicy.multi_run(10),
+        )
+    ]
+
+
+def test_non_partitioned_asset_with_multi_run_backfill_policy():
+    with pytest.raises(
+        ParameterCheckError, match="Non partitioned asset can only have single run backfill policy"
+    ):
+
+        @asset(description="hullo", backfill_policy=BackfillPolicy.multi_run(10))
+        def asset1():
+            return 1
 
 
 def test_asset_with_group_name():
