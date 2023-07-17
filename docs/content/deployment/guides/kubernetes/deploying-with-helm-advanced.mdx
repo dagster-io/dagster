@@ -183,7 +183,7 @@ The step worker is responsible for executing a single step, writing the structur
 
 ## Walkthrough
 
-We assume that you've followed the initial steps in the [previous walkthrough](/deployment/guides/kubernetes/deploying-with-helm#walkthrough) by building your docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `pod_per_op_celery_job`.
+We assume that you've followed the initial steps in the [previous walkthrough](/deployment/guides/kubernetes/deploying-with-helm#walkthrough) by building your docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `celery_step_isolated_job`.
 
 ### Configure Persistent Object Storage
 
@@ -219,7 +219,7 @@ After Helm has successfully installed all the required kubernetes resources, sta
       -o jsonpath="{.items[0].metadata.name}")
     kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
 
-Visit <http://127.0.0.1:8080>, and navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/pod_per_op_celery_job/launchpad). Notice how `resources.io_manager.config.s3_bucket` is set to `dagster-test`. You can replace this string with any other accessible S3 bucket. Then, click _Launch Run_.
+Visit <http://127.0.0.1:8080>, and navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/celery_step_isolated_job/launchpad). Notice how `resources.io_manager.config.s3_bucket` is set to `dagster-test`. You can replace this string with any other accessible S3 bucket. Then, click _Launch Run_.
 
 You can introspect the jobs that were launched with `kubectl`:
 
