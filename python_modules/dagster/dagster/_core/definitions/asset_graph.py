@@ -165,7 +165,7 @@ class AssetGraph:
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
                 auto_materialize_policies_by_key.update(asset.auto_materialize_policies_by_key)
-                backfill_policies_by_key.update(asset.backfill_policies_by_key)
+                backfill_policies_by_key.update({key: asset.backfill_policy for key in asset.keys})
                 if len(asset.keys) > 1 and not asset.can_subset:
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys

@@ -1326,7 +1326,7 @@ def external_asset_graph_from_defs(
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
     auto_materialize_policy_by_asset_key: Dict[AssetKey, AutoMaterializePolicy] = dict()
-    backfill_policy_by_asset_key: Dict[AssetKey, BackfillPolicy] = dict()
+    backfill_policy_by_asset_key: Dict[AssetKey, Optional[BackfillPolicy]] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
@@ -1377,7 +1377,9 @@ def external_asset_graph_from_defs(
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
             auto_materialize_policy_by_asset_key.update(assets_def.auto_materialize_policies_by_key)
-            backfill_policy_by_asset_key.update(assets_def.backfill_policies_by_key)
+            backfill_policy_by_asset_key.update(
+                {key: assets_def.backfill_policy for key in assets_def.keys}
+            )
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id

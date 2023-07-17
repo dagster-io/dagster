@@ -431,9 +431,7 @@ class _Asset:
             auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
             if self.auto_materialize_policy
             else None,
-            backfill_policies_by_key={out_asset_key: self.backfill_policy}
-            if self.backfill_policy
-            else None,
+            backfill_policy=self.backfill_policy,
             asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
@@ -454,6 +452,7 @@ def multi_asset(
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, object]] = None,
@@ -493,6 +492,7 @@ def multi_asset(
             used as input to the asset or produced within the op.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
+        backfill_policy (Optional[BackfillPolicy]): The backfill policy for the op that computes the asset.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
@@ -661,13 +661,6 @@ def multi_asset(
             if out.auto_materialize_policy is not None
         }
 
-        # source backfill policies from the AssetOuts (if any)
-        backfill_policies_by_key = {
-            keys_by_output_name[output_name]: out.backfill_policy
-            for output_name, out in outs.items()
-            if out.backfill_policy is not None
-        }
-
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
@@ -691,7 +684,7 @@ def multi_asset(
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
-            backfill_policies_by_key=backfill_policies_by_key,
+            backfill_policy=backfill_policy,
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
@@ -933,9 +926,7 @@ class _GraphBackedAsset:
             auto_materialize_policies_by_output_name={"result": self.auto_materialize_policy}
             if self.auto_materialize_policy
             else None,
-            backfill_policies_by_output_name={"result": self.backfill_policy}
-            if self.backfill_policy
-            else None,
+            backfill_policy=self.backfill_policy,
             descriptions_by_output_name={"result": self.description} if self.description else None,
             resource_defs=self.resource_defs,
         )
@@ -947,6 +938,7 @@ def graph_multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     group_name: Optional[str] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -964,6 +956,7 @@ def graph_multi_asset(
             about the input.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
+        backfill_policy (Optional[BackfillPolicy]): The backfill policy for the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
         can_subset (bool): Whether this asset's computation can emit a subset of the asset
@@ -1008,13 +1001,6 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
         }
 
-        # source backfill strategies from the AssetOuts (if any)
-        backfill_policies_by_output_name = {
-            output_name: out.backfill_policy
-            for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.backfill_policy is not None
-        }
-
         # source descriptions from the AssetOuts (if any)
         descriptions_by_output_name = {
             output_name: out.description
@@ -1035,7 +1021,7 @@ def graph_multi_asset(
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
             auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
-            backfill_policies_by_output_name=backfill_policies_by_output_name,
+            backfill_policy=backfill_policy,
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,
         )

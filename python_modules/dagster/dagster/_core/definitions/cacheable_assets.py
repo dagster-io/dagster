@@ -37,7 +37,7 @@ class AssetsDefinitionCacheableData(
                 "auto_materialize_policies_by_output_name",
                 Optional[Mapping[str, AutoMaterializePolicy]],
             ),
-            ("backfill_policies_by_output_name", Optional[Mapping[str, BackfillPolicy]]),
+            ("backfill_policy", Optional[BackfillPolicy]),
         ],
     )
 ):
@@ -59,7 +59,7 @@ class AssetsDefinitionCacheableData(
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, AutoMaterializePolicy]
         ] = None,
-        backfill_policies_by_output_name: Optional[Mapping[str, BackfillPolicy]] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
@@ -103,11 +103,8 @@ class AssetsDefinitionCacheableData(
                 key_type=str,
                 value_type=AutoMaterializePolicy,
             ),
-            backfill_policies_by_output_name=check.opt_nullable_mapping_param(
-                backfill_policies_by_output_name,
-                "backfill_policies_by_output_name",
-                key_type=str,
-                value_type=BackfillPolicy,
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
 
@@ -258,7 +255,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
-        backfill_policy: Optional[Union[BackfillPolicy, Mapping[AssetKey, BackfillPolicy]]] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         self._output_asset_key_replacements = output_asset_key_replacements or {}
         self._input_asset_key_replacements = input_asset_key_replacements or {}
