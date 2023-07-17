@@ -1,10 +1,10 @@
+import os
 from pathlib import Path
 
 from dagster import Definitions, OpExecutionContext
-
 from dagster_dbt import DbtCli, dbt_assets
 
-dbt_project_dir = Path("{{ dbt_project_dir }}")
+dbt_project_dir = Path(__file__).parent.joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}})
 dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 
 
@@ -26,7 +26,7 @@ defs = Definitions(
     schedules=schedules,
     resources={
         "dbt": DbtCli(
-            project_dir=dbt_project_dir.as_posix(),
+            project_dir=os.fspath(dbt_project_dir),
         ),
     },
 )
