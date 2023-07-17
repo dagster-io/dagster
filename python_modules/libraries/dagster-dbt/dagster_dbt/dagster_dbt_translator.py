@@ -9,7 +9,7 @@ from dagster._core.definitions.events import (
 from .asset_utils import (
     default_asset_key_fn,
     default_description_fn,
-    default_group_fn,
+    default_group_from_dbt_resource_props,
     default_metadata_fn,
 )
 
@@ -153,7 +153,7 @@ class DagsterDbtTranslator:
                     def get_group(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
                         return "custom_group_prefix" + node_info.get("config", {}).get("group")
         """
-        return default_group_fn(dbt_resource_props)
+        return default_group_from_dbt_resource_props(dbt_resource_props)
 
 
 class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):

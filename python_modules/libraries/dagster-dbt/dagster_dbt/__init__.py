@@ -5,9 +5,11 @@ from .asset_defs import (
 from .asset_utils import (
     build_dbt_asset_selection as build_dbt_asset_selection,
     build_schedule_from_dbt_selection as build_schedule_from_dbt_selection,
+    default_group_from_dbt_resource_props as default_group_from_dbt_resource_props,
     get_asset_key_for_model as get_asset_key_for_model,
     get_asset_key_for_source as get_asset_key_for_source,
     get_asset_keys_by_output_name_for_source as get_asset_keys_by_output_name_for_source,
+    group_from_dbt_resource_props_fallback_to_directory as group_from_dbt_resource_props_fallback_to_directory,
 )
 from .cloud import (
     DbtCloudClientResource as DbtCloudClientResource,

@@ -28,6 +28,7 @@ from dagster_dbt import (
     DbtCliResource,
     dbt_cli_resource,
     get_asset_key_for_model,
+    group_from_dbt_resource_props_fallback_to_directory,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.core.resources import DbtCliClient
@@ -237,6 +238,8 @@ def test_basic(
             use_build_command=use_build,
         )
 
+    assert len(dbt_assets[0].group_names_by_key) == len(dbt_assets[0].keys)
+    assert set(dbt_assets[0].group_names_by_key.values()) == {"default"}
     assert dbt_assets[0].op.name == "run_dbt_5ad73"
     assert get_asset_key_for_model(dbt_assets, "sort_by_calories") == AssetKey(["sort_by_calories"])
 
@@ -287,6 +290,23 @@ def test_basic(
                 if "vars" in line:
                     continue
                 assert "{" not in line
+
+
+def test_groups_from_directories(dbt_seed, test_project_dir, dbt_config_dir):
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir,
+        dbt_config_dir,
+        node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
+    )
+
+    assert dbt_assets[0].group_names_by_key == {
+        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]): "default",
+        AssetKey(["sort_by_calories"]): "default",
+        AssetKey(["sort_hot_cereals_by_calories"]): "default",
+        AssetKey(["subdir_schema", "least_caloric"]): "subdir",
+        AssetKey(["cereals"]): "default",
+        AssetKey(["orders_snapshot"]): "sort_snapshot",
+    }
 
 
 def test_custom_groups(dbt_seed, test_project_dir, dbt_config_dir):
