@@ -66,6 +66,16 @@ def copy_scaffold(
         dbt_project_yaml: Dict[str, Any] = yaml.safe_load(fd)
         dbt_project_name: str = dbt_project_yaml["name"]
 
+    dbt_project_dir_relative_path = Path(
+        os.path.relpath(
+            dbt_project_dir,
+            start=dagster_project_dir.joinpath(project_name),
+        )
+    )
+    dbt_project_dir_relative_path_parts = [
+        f'"{part}"' for part in dbt_project_dir_relative_path.parts
+    ]
+
     env = Environment(loader=FileSystemLoader(dagster_project_dir))
 
     for path in dagster_project_dir.glob("**/*"):
@@ -75,7 +85,7 @@ def copy_scaffold(
             template_path = path.relative_to(dagster_project_dir).as_posix()
 
             env.get_template(template_path).stream(
-                dbt_project_dir=os.fspath(dbt_project_dir),
+                dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
                 dbt_project_name=dbt_project_name,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 project_name=project_name,
