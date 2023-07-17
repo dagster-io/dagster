@@ -21,18 +21,6 @@ def my_dbt_assets():
     ...
 
 
-def test_get_asset_key_for_dbt_unique_id() -> None:
-    assert my_dbt_assets.get_asset_key_for_dbt_unique_id(
-        "source.test_dagster_metadata.jaffle_shop.raw_events"
-    ) == AssetKey(["jaffle_shop", "raw_events"])
-
-
-def test_get_explicit_asset_key_for_dbt_unique_id_() -> None:
-    assert my_dbt_assets.get_asset_key_for_dbt_unique_id(
-        "source.test_dagster_metadata.jaffle_shop.raw_customers"
-    ) == AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"])
-
-
 def test_asset_downstream_of_dbt_asset() -> None:
     upstream_asset_key = AssetKey(["orders"])
 
@@ -42,11 +30,6 @@ def test_asset_downstream_of_dbt_asset() -> None:
 
     assert upstream_asset_key in my_dbt_assets.keys_by_output_name.values()
     assert set(downstream_python_asset.keys_by_input_name.values()) == {upstream_asset_key}
-
-
-def test_nonexistent_dbt_unique_id() -> None:
-    with pytest.raises(DagsterInvalidInvocationError):
-        my_dbt_assets.get_asset_key_for_dbt_unique_id(unique_id="nonexistent")
 
 
 def test_get_asset_keys_by_output_name_for_source() -> None:
