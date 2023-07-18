@@ -170,3 +170,6 @@ pyrightconfig.json
 
 # Scripts working directory
 scripts/.build
+
+# dbt .user files
+.user.yml
