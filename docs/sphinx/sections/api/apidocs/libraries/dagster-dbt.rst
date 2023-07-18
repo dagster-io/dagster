@@ -26,6 +26,10 @@ Assets (dbt Core)
 
 .. autofunction:: load_assets_from_dbt_manifest
 
+.. autodecorator:: dbt_assets
+
+.. autoclass:: DagsterDbtTranslator
+
 Ops (dbt Core)
 ==============
 

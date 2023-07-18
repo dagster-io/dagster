@@ -10,6 +10,13 @@ from .asset_utils import default_asset_key_fn, default_description_fn, default_m
 
 
 class DagsterDbtTranslator:
+    """Holds a set of methods that derive Dagster asset definition metadata given a representation
+    of a dbt resource (models, tests, sources, etc).
+
+    This class is exposed so that methods can be overriden to customize how Dagster asset metadata
+    is derived.
+    """
+
     @classmethod
     def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         """A function that takes a dictionary representing properties of a dbt resource, and
