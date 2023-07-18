@@ -15,23 +15,18 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster import (
-    AssetKey,
-    AssetOut,
-    Nothing,
-    PartitionsDefinition,
-    multi_asset,
-)
+from dagster import AssetKey, AssetOut, AssetsDefinition, Nothing, PartitionsDefinition, multi_asset
 from dagster._annotations import experimental
 
 from .asset_utils import (
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
+    MANIFEST_METADATA_KEY,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
     default_freshness_policy_fn,
     get_deps,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator
-from .dbt_assets_definition import DbtAssetsDefinition
 from .utils import (
     ASSET_RESOURCE_TYPES,
     get_node_info_by_dbt_unique_id_from_manifest,
@@ -49,7 +44,7 @@ def dbt_assets(
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-) -> Callable[..., DbtAssetsDefinition]:
+) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
 
     Args:
@@ -101,10 +96,11 @@ def dbt_assets(
         dbt_nodes=node_info_by_dbt_unique_id,
         deps=deps,
         io_manager_key=io_manager_key,
+        manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
     )
 
-    def inner(fn) -> DbtAssetsDefinition:
+    def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
             outs=outs,
             internal_asset_deps=internal_asset_deps,
@@ -118,11 +114,7 @@ def dbt_assets(
             },
         )(fn)
 
-        return DbtAssetsDefinition.from_assets_def(
-            asset_definition,
-            manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator,
-        )
+        return asset_definition
 
     return inner
 
@@ -131,6 +123,7 @@ def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
+    manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Tuple[Sequence[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
     non_argument_deps: Set[AssetKey] = set()
@@ -149,7 +142,11 @@ def get_dbt_multi_asset_args(
             io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(node_info),
             is_required=False,
-            metadata=dagster_dbt_translator.get_metadata(node_info),
+            metadata={  # type: ignore
+                **dagster_dbt_translator.get_metadata(node_info),
+                MANIFEST_METADATA_KEY: manifest,
+                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
+            },
             group_name=dagster_dbt_translator.get_group_name(node_info),
             code_version=default_code_version_fn(node_info),
             freshness_policy=default_freshness_policy_fn(node_info),

@@ -2,11 +2,8 @@ import json
 from pathlib import Path
 
 import pytest
-from dagster import (
-    AssetKey,
-    asset,
-)
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster import AssetKey, asset
+from dagster_dbt import get_asset_key_for_model, get_asset_keys_by_output_name_for_source
 from dagster_dbt.asset_decorator import dbt_assets
 
 manifest_path = Path(__file__).parent.joinpath(
@@ -24,7 +21,7 @@ def my_dbt_assets():
 def test_asset_downstream_of_dbt_asset() -> None:
     upstream_asset_key = AssetKey(["orders"])
 
-    @asset(deps=[my_dbt_assets.get_asset_key_for_model("orders")])
+    @asset(deps=[get_asset_key_for_model([my_dbt_assets], "orders")])
     def downstream_python_asset():
         ...
 
@@ -33,23 +30,21 @@ def test_asset_downstream_of_dbt_asset() -> None:
 
 
 def test_get_asset_keys_by_output_name_for_source() -> None:
-    assert my_dbt_assets.get_asset_keys_by_output_name_for_source("jaffle_shop") == {
+    assert get_asset_keys_by_output_name_for_source([my_dbt_assets], "jaffle_shop") == {
         "raw_customers": AssetKey(["customized", "source", "jaffle_shop", "main", "raw_customers"]),
         "raw_events": AssetKey(["jaffle_shop", "raw_events"]),
     }
 
-    with pytest.raises(
-        DagsterInvalidInvocationError, match="Could not find a dbt source with name"
-    ):
-        my_dbt_assets.get_asset_keys_by_output_name_for_source("nonexistent")
+    with pytest.raises(KeyError, match="Could not find a dbt source with name"):
+        get_asset_keys_by_output_name_for_source([my_dbt_assets], "nonexistent")
 
 
 def test_get_asset_keys_for_model() -> None:
-    assert my_dbt_assets.get_asset_key_for_model("stg_customers") == AssetKey(
+    assert get_asset_key_for_model([my_dbt_assets], "stg_customers") == AssetKey(
         ["customized", "staging", "customers"]
     )
 
-    assert my_dbt_assets.get_asset_key_for_model("customers") == AssetKey(["customers"])
+    assert get_asset_key_for_model([my_dbt_assets], "customers") == AssetKey(["customers"])
 
-    with pytest.raises(DagsterInvalidInvocationError, match="Could not find a dbt model with name"):
-        my_dbt_assets.get_asset_key_for_model("nonexistent")
+    with pytest.raises(KeyError, match="Could not find a dbt model with name"):
+        get_asset_key_for_model([my_dbt_assets], "nonexistent")

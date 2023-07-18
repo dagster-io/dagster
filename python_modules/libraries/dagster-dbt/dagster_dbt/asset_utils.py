@@ -9,26 +9,305 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
 )
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
+    AssetSelection,
     AutoMaterializePolicy,
+    DagsterInvariantViolationError,
     FreshnessPolicy,
     In,
     MetadataValue,
     Nothing,
     Out,
+    RunConfig,
+    ScheduleDefinition,
     TableColumn,
     TableSchema,
+    _check as check,
+    define_asset_job,
 )
+from dagster._utils.merger import merge_dicts
 
 from .utils import input_name_fn, output_name_fn
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator
+
+MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
+DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
+
+
+def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
+    """Return the corresponding Dagster asset key for a dbt model.
+
+    Args:
+        dbt_assets (AssetsDefinition): An AssetsDefinition object produced by
+            load_assets_from_dbt_project, load_assets_from_dbt_manifest, or @dbt_assets.
+        model_name (str): The name of the dbt model.
+
+    Returns:
+        AssetKey: The corresponding Dagster asset key.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_dbt import dbt_assets, get_asset_key_for_model
+
+            @dbt_assets(manifest=...)
+            def all_dbt_assets():
+                ...
+
+
+            @asset(deps={get_asset_key_for_model([all_dbt_assets], "customers")})
+            def cleaned_customers():
+                ...
+    """
+    check.sequence_param(dbt_assets, "dbt_assets", of_type=AssetsDefinition)
+    check.str_param(model_name, "model_name")
+
+    manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+
+    matching_models = [
+        value
+        for value in manifest["nodes"].values()
+        if value["name"] == model_name and value["resource_type"] == "model"
+    ]
+
+    if len(matching_models) == 0:
+        raise KeyError(f"Could not find a dbt model with name: {model_name}")
+
+    return dagster_dbt_translator.get_asset_key(next(iter(matching_models)))
+
+
+def get_asset_keys_by_output_name_for_source(
+    dbt_assets: Sequence[AssetsDefinition], source_name: str
+) -> Mapping[str, AssetKey]:
+    """Returns the corresponding Dagster asset keys for all tables in a dbt source.
+
+    This is a convenience method that makes it easy to define a multi-asset that generates
+    all the tables for a given dbt source.
+
+    Args:
+        source_name (str): The name of the dbt source.
+
+    Returns:
+        Mapping[str, AssetKey]: A mapping of the table name to corresponding Dagster asset key
+            for all tables in the given dbt source.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import AssetOut, multi_asset
+            from dagster_dbt import dbt_assets, get_asset_keys_by_output_name_for_source
+
+            @dbt_assets(manifest=...)
+            def all_dbt_assets():
+                ...
+
+            @multi_asset(
+                outs={
+                    name: AssetOut(key=asset_key)
+                    for name, asset_key in get_asset_keys_by_output_name_for_source(
+                        [all_dbt_assets], "raw_data"
+                    ).items()
+                },
+            )
+            def upstream_python_asset():
+                ...
+
+    """
+    check.sequence_param(dbt_assets, "dbt_assets", of_type=AssetsDefinition)
+    check.str_param(source_name, "source_name")
+
+    manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+
+    matching_nodes = [
+        value for value in manifest["sources"].values() if value["source_name"] == source_name
+    ]
+
+    if len(matching_nodes) == 0:
+        raise KeyError(f"Could not find a dbt source with name: {source_name}")
+
+    return {
+        output_name_fn(value): dagster_dbt_translator.get_asset_key(value)
+        for value in matching_nodes
+    }
+
+
+def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name: str) -> AssetKey:
+    """Returns the corresponding Dagster asset key for a dbt source with a singular table.
+
+    Args:
+        source_name (str): The name of the dbt source.
+
+    Raises:
+        DagsterInvalidInvocationError: If the source has more than one table.
+
+    Returns:
+        AssetKey: The corresponding Dagster asset key.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_dbt import dbt_assets, get_asset_key_for_source
+
+            @dbt_assets(manifest=...)
+            def all_dbt_assets():
+                ...
+
+            @asset(key=get_asset_key_for_source([all_dbt_assets], "my_source"))
+            def upstream_python_asset():
+                ...
+    """
+    asset_keys_by_output_name = get_asset_keys_by_output_name_for_source(dbt_assets, source_name)
+
+    if len(asset_keys_by_output_name) > 1:
+        raise KeyError(
+            f"Source {source_name} has more than one table:"
+            f" {asset_keys_by_output_name.values()}. Use"
+            " `get_asset_keys_by_output_name_for_source` instead to get all tables for a"
+            " source."
+        )
+
+    return list(asset_keys_by_output_name.values())[0]
+
+
+def build_dbt_asset_selection(
+    dbt_assets: Sequence[AssetsDefinition],
+    dbt_select: str = "fqn:*",
+    dbt_exclude: Optional[str] = None,
+) -> AssetSelection:
+    """Build an asset selection for a dbt selection string.
+
+    See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work for
+    more information.
+
+    Args:
+        dbt_select (str): A dbt selection string to specify a set of dbt resources.
+        dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+
+    Returns:
+        AssetSelection: An asset selection for the selected dbt nodes.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_dbt import dbt_assets, build_dbt_asset_selection
+
+            @dbt_assets(manifest=...)
+            def all_dbt_assets():
+                ...
+
+            # Select the dbt assets that have the tag "foo".
+            my_selection = build_dbt_asset_selection([dbt_assets], dbt_select="tag:foo")
+    """
+    manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+    from .dbt_manifest_asset_selection import DbtManifestAssetSelection
+
+    return DbtManifestAssetSelection(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        select=dbt_select,
+        exclude=dbt_exclude,
+    )
+
+
+def build_schedule_from_dbt_selection(
+    dbt_assets: Sequence[AssetsDefinition],
+    job_name: str,
+    cron_schedule: str,
+    dbt_select: str = "fqn:*",
+    dbt_exclude: Optional[str] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    config: Optional[RunConfig] = None,
+    execution_timezone: Optional[str] = None,
+) -> ScheduleDefinition:
+    """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
+
+    See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work for
+    more information.
+
+    Args:
+        job_name (str): The name of the job to materialize the dbt resources.
+        cron_schedule (str): The cron schedule to define the schedule.
+        dbt_select (str): A dbt selection string to specify a set of dbt resources.
+        dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+        tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
+            to the scheduled runs.
+        config (Optional[RunConfig]): The config that parameterizes the execution of this schedule.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+
+    Returns:
+        ScheduleDefinition: A definition to materialize the selected dbt resources on a cron schedule.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_dbt import dbt_assets, build_schedule_from_dbt_selection
+
+            @dbt_assets(manifest=...)
+            def all_dbt_assets():
+                ...
+
+            daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
+                [all_dbt_assets],
+                job_name="all_dbt_assets",
+                cron_schedule="0 0 * * *",
+                dbt_select="fqn:*",
+            )
+    """
+    return ScheduleDefinition(
+        cron_schedule=cron_schedule,
+        job=define_asset_job(
+            name=job_name,
+            selection=build_dbt_asset_selection(
+                dbt_assets,
+                dbt_select=dbt_select,
+                dbt_exclude=dbt_exclude,
+            ),
+            config=config,
+            tags=tags,
+        ),
+        execution_timezone=execution_timezone,
+    )
+
+
+def get_manifest_and_translator_from_dbt_assets(
+    dbt_assets: Sequence[AssetsDefinition],
+) -> Tuple[Mapping[str, Any], "DagsterDbtTranslator"]:
+    check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
+    dbt_assets_def = dbt_assets[0]
+    metadata_by_key = dbt_assets_def.metadata_by_key or {}
+    first_asset_key = next(iter(dbt_assets_def.keys))
+    first_metadata = metadata_by_key.get(first_asset_key, {})
+    manifest = first_metadata.get(MANIFEST_METADATA_KEY)
+    if manifest is None:
+        raise DagsterInvariantViolationError(
+            f"Expected to find dbt manifest metadata on asset {first_asset_key.to_user_string()},"
+            " but did not. Did you pass in assets that weren't generated by"
+            " load_assets_from_dbt_project, load_assets_from_dbt_manifest, or @dbt_assets?"
+        )
+
+    dagster_dbt_translator = first_metadata.get(DAGSTER_DBT_TRANSLATOR_METADATA_KEY)
+    if dagster_dbt_translator is None:
+        raise DagsterInvariantViolationError(
+            f"Expected to find dbt translator metadata on asset {first_asset_key.to_user_string()},"
+            " but did not. Did you pass in assets that weren't generated by"
+            " load_assets_from_dbt_project, load_assets_from_dbt_manifest, or @dbt_assets?"
+        )
+
+    return manifest, dagster_dbt_translator
+
 
 ###################
 # DEFAULT FUNCTIONS
@@ -288,7 +567,13 @@ def get_asset_deps(
 
         asset_deps[asset_key] = set()
 
-        metadata = dagster_dbt_translator.get_metadata(node_info)
+        metadata = merge_dicts(
+            dagster_dbt_translator.get_metadata(node_info),
+            {
+                MANIFEST_METADATA_KEY: manifest,
+                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
+            },
+        )
         asset_outs[asset_key] = (
             output_name,
             Out(
