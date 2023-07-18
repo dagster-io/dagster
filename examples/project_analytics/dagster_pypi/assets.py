@@ -88,7 +88,7 @@ def github_stars(context, raw_github_stars) -> pd.DataFrame:
 
 
 @asset(
-    non_argument_deps={"weekly_agg_activity", "daily_agg_activity", "monthly_agg_activity"},
+    deps=["weekly_agg_activity", "daily_agg_activity", "monthly_agg_activity"],
     required_resource_keys={"hex"},
 )
 def hex_notebook(context) -> None:

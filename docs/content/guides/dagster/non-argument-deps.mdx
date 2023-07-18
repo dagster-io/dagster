@@ -55,7 +55,7 @@ Let's define an asset that contains the unzipped contents of our zip file:
 ```python
 import zipfile
 
-@asset(non_argument_deps={"stopwords_zip"})
+@asset(deps=[stopwords_zip])
 def stopwords_csv() -> None:
     with zipfile.ZipFile("stopwords.zip", "r") as zip_ref:
         zip_ref.extractall(".")
@@ -65,7 +65,7 @@ The implementation extracts our zip file to a CSV file in the same directory. It
 
 In the assets you wrote in the tutorial, you indicated the asset dependencies by including function arguments with the name of the upstream assets. Dagster then invoked an I/O manager to load the asset as a Python object and supplied it to your function.
 
-However, in this case, we don't want a Python object for the upstream asset, we just want to work with the file directly. So we instead supply `"stopwords_zip"` to the `non_argument_deps` parameter of the <PyObject module="dagster" object="asset" displayText="@asset"/> decorator. This lets us tell Dagster that the `stopwords` asset depends on the `stopwords_zip` asset, without telling it to load `stopwords_zip` for us.
+However, in this case, we don't want a Python object for the upstream asset, we just want to work with the file directly. So we instead supply `stopwords_zip` to the `deps` parameter of the <PyObject module="dagster" object="asset" displayText="@asset"/> decorator. This lets us tell Dagster that the `stopwords` asset depends on the `stopwords_zip` asset, without telling it to load `stopwords_zip` for us.
 
 ### Combining assets with and without I/O
 
@@ -74,7 +74,7 @@ Finally, let's modify the `topstories_word_cloud` asset to read from the `stopwo
 ```python
 import csv
 
-@asset(non_argument_deps={"stopwords_csv"})
+@asset(deps=[stopwords_csv])
 def topstories_word_cloud(topstories):
     with open("stopwords.csv", "r") as f:
         stopwords = {row[0] for row in csv.reader(f)}
@@ -109,7 +109,7 @@ def topstories_word_cloud(topstories):
     return result
 ```
 
-This asset mixes and matches argument-based dependencies with non-argument-based dependencies. It depends on the `topstories_word_cloud` asset, which we defined in the previous section of the tutorial, and it relies on Dagster to load that asset's value into memory. It also depends on the `stopwords` asset, and the decorated function takes responsibility for loading that asset's value into memory.
+This asset mixes and matches argument-based dependencies with non-argument-based dependencies. It depends on the `topstories` asset, which we defined in the previous section of the tutorial, and it relies on Dagster to load that asset's value into memory. It also depends on the `stopwords_csv` asset, and the decorated function takes responsibility for loading that asset's value into memory.
 
 Now let's visualize all these assets in Dagit:
 

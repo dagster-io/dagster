@@ -294,7 +294,7 @@ def input_number():
         return DataVersion(sha256_digest_from_str(ff.read()))
 
 
-@asset(code_version="v6", non_argument_deps={"input_number"})
+@asset(code_version="v6", deps=[input_number])
 def versioned_number():
     with open(FILE_PATH) as ff:
         value = int(ff.read())

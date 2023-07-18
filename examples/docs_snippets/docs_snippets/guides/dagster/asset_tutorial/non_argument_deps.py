@@ -57,7 +57,7 @@ def cereal_ratings_zip() -> None:
 import zipfile
 
 
-@asset(non_argument_deps={"cereal_ratings_zip"})
+@asset(deps=[cereal_ratings_zip])
 def cereal_ratings_csv() -> None:
     with zipfile.ZipFile("cereal-ratings.csv.zip", "r") as zip_ref:
         zip_ref.extractall(".")
@@ -67,7 +67,7 @@ def cereal_ratings_csv() -> None:
 
 
 # nabisco_cereal_ratings_start
-@asset(non_argument_deps={"cereal_ratings_csv"})
+@asset(deps=[cereal_ratings_csv])
 def nabisco_cereal_ratings(nabisco_cereals):
     with open("cereal-ratings.csv", "r") as f:
         cereal_ratings = {
