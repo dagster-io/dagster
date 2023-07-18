@@ -201,10 +201,10 @@ With this configuration, each unique value of the `use-case` tag will be limited
 ## Configuring op/asset-level concurrency
 
 <Note>
-  <strong>Looking for global op/asset concurrency?</strong> Dagster doesn’t
-  currently support global (across multiple runs) op/asset concurrency
-  out-of-the-box. If you require concurrency that applies to all ops/assets in a
-  deployment, check out our{" "}
+  <strong>Looking for global op/asset concurrency?</strong> Check out Dagster's
+  experimental support for [global op/asset concurrency
+  limits](#limiting-opasset-concurrency-across-runs). For more fine-grained
+  control, you can also check out our{" "}
   <a href="/deployment/guides/celery">integration with Celery</a>.
 </Note>
 
