@@ -38,6 +38,7 @@ setup(
         "dbt-core<1.6",
         "Jinja2",
         "networkx",
+        "orjson",
         "requests",
         "rich",
         "typer",

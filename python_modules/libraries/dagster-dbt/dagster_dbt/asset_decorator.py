@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import (
     Any,
@@ -15,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+import orjson
 from dagster import (
     AssetKey,
     AssetOut,
@@ -81,8 +81,8 @@ def dbt_assets(
     """
     check.inst_param(manifest, "manifest", (Path, dict))
     if isinstance(manifest, Path):
-        with manifest.open("r") as handle:
-            manifest = cast(Mapping[str, Any], json.load(handle))
+        with manifest.open("rb") as handle:
+            manifest = cast(Mapping[str, Any], orjson.loads(handle.read()))
 
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest
