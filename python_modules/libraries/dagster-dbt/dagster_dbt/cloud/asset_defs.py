@@ -349,6 +349,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 # and attach metadata to link to the docs.
                 return default_description_fn(dbt_resource_props, display_raw_sql=False)
 
+            @classmethod
+            def get_group_name(cls, dbt_resource_props):
+                return self._node_info_to_group_fn(dbt_resource_props)
+
         (
             asset_deps,
             asset_ins,
@@ -361,7 +365,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
-            node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
             node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
             # TODO: In the future, allow the IO manager to be specified.

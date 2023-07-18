@@ -241,6 +241,22 @@ def test_with_metadata_replacements() -> None:
         assert metadata["customized"] == "metadata"
 
 
+def test_with_group_replacements() -> None:
+    expected_group = "customized_group"
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_group_name(cls, node_info: Mapping[str, Any]) -> Optional[str]:
+            return expected_group
+
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
+    def my_dbt_assets():
+        ...
+
+    for group in my_dbt_assets.group_names_by_key.values():
+        assert group == expected_group
+
+
 def test_dbt_meta_auto_materialize_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
     def my_dbt_assets():

@@ -247,7 +247,6 @@ def get_deps(
 def get_asset_deps(
     dbt_nodes,
     deps,
-    node_info_to_group_fn,
     node_info_to_freshness_policy_fn,
     node_info_to_auto_materialize_policy_fn,
     io_manager_key,
@@ -302,7 +301,7 @@ def get_asset_deps(
             ),
         )
 
-        group_name = node_info_to_group_fn(node_info)
+        group_name = dagster_dbt_translator.get_group_name(node_info)
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
 

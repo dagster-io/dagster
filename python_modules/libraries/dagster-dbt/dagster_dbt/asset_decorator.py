@@ -28,7 +28,6 @@ from .asset_utils import (
     default_auto_materialize_policy_fn,
     default_code_version_fn,
     default_freshness_policy_fn,
-    default_group_fn,
     get_deps,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator
@@ -151,7 +150,7 @@ def get_dbt_multi_asset_args(
             description=dagster_dbt_translator.get_description(node_info),
             is_required=False,
             metadata=dagster_dbt_translator.get_metadata(node_info),
-            group_name=default_group_fn(node_info),
+            group_name=dagster_dbt_translator.get_group_name(node_info),
             code_version=default_code_version_fn(node_info),
             freshness_policy=default_freshness_policy_fn(node_info),
             auto_materialize_policy=default_auto_materialize_policy_fn(node_info),
