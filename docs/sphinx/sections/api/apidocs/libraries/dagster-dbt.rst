@@ -40,6 +40,21 @@ Assets (dbt Core)
 
 .. autofunction:: get_asset_keys_by_output_name_for_source
 
+Resources (dbt Core)
+====================
+
+CLI Resource
+------------
+
+.. autoclass:: DbtCliResource
+
+Deprecated (dbt Core)
+-----------------------
+
+.. autoclass:: DbtCliOutput
+
+.. autoconfigurable:: dbt_cli_resource
+    :annotation: ResourceDefinition
 
 Ops (dbt Core)
 ==============
@@ -62,22 +77,6 @@ we suggest building your own ops which directly interact with these resources.
 .. autofunction:: dbt_seed_op
 
 .. autofunction:: dbt_docs_generate_op
-
-Resources (dbt Core)
-====================
-
-CLI Resource
-------------
-
-.. autoclass:: DbtCliResource
-
-Deprecated (dbt Core)
------------------------
-
-.. autoclass:: DbtCliOutput
-
-.. autoconfigurable:: dbt_cli_resource
-    :annotation: ResourceDefinition
 
 *********
 dbt Cloud
