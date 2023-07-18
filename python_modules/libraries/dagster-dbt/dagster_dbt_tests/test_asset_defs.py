@@ -590,6 +590,10 @@ def test_dagster_dbt_translator(
         def get_metadata(cls, dbt_resource_props):
             return {"name_metadata": dbt_resource_props["name"] + "_metadata"}
 
+        @classmethod
+        def get_group_name(cls, dbt_resource_props):
+            return "foo_group" if dbt_resource_props["name"] == "cereals" else None
+
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
@@ -606,6 +610,8 @@ def test_dagster_dbt_translator(
         dbt_assets[0].metadata_by_key[AssetKey(["foo", "cereals"])]["name_metadata"]
         == "cereals_metadata"
     )
+    assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "cereals"])] == "foo_group"
+    assert dbt_assets[0].group_names_by_key[AssetKey(["foo", "least_caloric"])] == "default"
 
     result = materialize_to_memory(
         dbt_assets,

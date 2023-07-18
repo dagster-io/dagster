@@ -6,7 +6,12 @@ from dagster._core.definitions.events import (
     check_opt_coercible_to_asset_key_prefix_param,
 )
 
-from .asset_utils import default_asset_key_fn, default_description_fn, default_metadata_fn
+from .asset_utils import (
+    default_asset_key_fn,
+    default_description_fn,
+    default_group_fn,
+    default_metadata_fn,
+)
 
 
 class DagsterDbtTranslator:
@@ -116,6 +121,39 @@ class DagsterDbtTranslator:
                         return {"custom": "metadata"}
         """
         return default_metadata_fn(dbt_resource_props)
+
+    @classmethod
+    def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster group name for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json
+
+        This method can be overridden to provide a custom metadata for a dbt resource.
+
+        Args:
+            node_info (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[str]: A Dagster group name.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    @classmethod
+                    def get_group(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+                        return "custom_group_prefix" + node_info.get("config", {}).get("group")
+        """
+        return default_group_fn(dbt_resource_props)
 
 
 class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):

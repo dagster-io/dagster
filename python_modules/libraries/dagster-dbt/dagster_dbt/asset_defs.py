@@ -395,7 +395,6 @@ def _dbt_nodes_to_assets(
     use_build_command: bool,
     partitions_def: Optional[PartitionsDefinition],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
     node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
     node_info_to_auto_materialize_policy_fn: Callable[
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
@@ -423,7 +422,6 @@ def _dbt_nodes_to_assets(
     ) = get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
-        node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         io_manager_key=io_manager_key,
@@ -868,6 +866,10 @@ def _load_assets_from_dbt_manifest(
             "Can't specify both dagster_dbt_translator and source_key_prefix",
         )
         check.invariant(
+            node_info_to_group_fn == default_group_fn,
+            "Can't specify both dagster_dbt_translator and node_info_to_group_fn",
+        )
+        check.invariant(
             display_raw_sql is None,
             "Can't specify both dagster_dbt_translator and display_raw_sql",
         )
@@ -897,6 +899,10 @@ def _load_assets_from_dbt_manifest(
                     display_raw_sql=display_raw_sql if display_raw_sql is not None else True,
                 )
 
+            @classmethod
+            def get_group_name(cls, dbt_resource_props):
+                return node_info_to_group_fn(dbt_resource_props)
+
         dagster_dbt_translator = CustomDagsterDbtTranslator()
 
     dbt_assets_def = _dbt_nodes_to_assets(
@@ -912,7 +918,6 @@ def _load_assets_from_dbt_manifest(
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
-        node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         dagster_dbt_translator=dagster_dbt_translator,
@@ -1008,7 +1013,10 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_group_fn arg of {public_fn_name}",
             "0.21",
-            "Instead, configure dagster groups on a dbt resource's meta field or assign dbt groups",
+            (
+                "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
+                " groups or provide a custom DagsterDbtTranslator that overrides get_group_name."
+            ),
             stacklevel=4,
         )
 
