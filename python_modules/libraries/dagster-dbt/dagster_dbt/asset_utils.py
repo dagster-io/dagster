@@ -1,6 +1,7 @@
 import hashlib
 import textwrap
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -23,9 +24,11 @@ from dagster import (
     TableColumn,
     TableSchema,
 )
-from dagster._utils.merger import merge_dicts
 
 from .utils import input_name_fn, output_name_fn
+
+if TYPE_CHECKING:
+    from .dagster_dbt_translator import DagsterDbtTranslator
 
 ###################
 # DEFAULT FUNCTIONS
@@ -244,13 +247,12 @@ def get_deps(
 def get_asset_deps(
     dbt_nodes,
     deps,
-    node_info_to_asset_key,
     node_info_to_group_fn,
     node_info_to_freshness_policy_fn,
     node_info_to_auto_materialize_policy_fn,
-    node_info_to_definition_metadata_fn,
-    node_info_to_description_fn,
     io_manager_key,
+    manifest: Optional[Mapping[str, Any]],
+    dagster_dbt_translator: "DagsterDbtTranslator",
 ) -> Tuple[
     Dict[AssetKey, Set[AssetKey]],
     Dict[AssetKey, Tuple[str, In]],
@@ -283,18 +285,16 @@ def get_asset_deps(
             key: node_info[key] for key in ["unique_id", "resource_type"]
         }
 
-        asset_key = node_info_to_asset_key(node_info)
+        asset_key = dagster_dbt_translator.get_asset_key(node_info)
 
         asset_deps[asset_key] = set()
 
-        metadata = default_metadata_fn(node_info)
-        if node_info_to_definition_metadata_fn != default_metadata_fn:
-            metadata = merge_dicts(metadata, node_info_to_definition_metadata_fn(node_info))
+        metadata = dagster_dbt_translator.get_metadata(node_info)
         asset_outs[asset_key] = (
             output_name,
             Out(
                 io_manager_key=io_manager_key,
-                description=node_info_to_description_fn(node_info),
+                description=dagster_dbt_translator.get_description(node_info),
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
@@ -316,7 +316,7 @@ def get_asset_deps(
 
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = node_info_to_asset_key(parent_node_info)
+            parent_asset_key = dagster_dbt_translator.get_asset_key(parent_node_info)
 
             asset_deps[asset_key].add(parent_asset_key)
 
