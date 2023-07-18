@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -38,6 +39,7 @@ from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
@@ -45,6 +47,7 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
+from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
@@ -508,6 +511,8 @@ class ScheduleDefinition(IHasInternalInit):
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
+        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
+            this schedule runs. This can be provided instead of specifying a job.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
@@ -528,6 +533,7 @@ class ScheduleDefinition(IHasInternalInit):
             default_status=self.default_status,
             environment_vars=self._environment_vars,
             required_resource_keys=self.required_resource_keys,
+            asset_selection=self._asset_selection,
             run_config=None,  # run_config, tags, should_execute encapsulated in execution_fn
             run_config_fn=None,
             tags=None,
@@ -553,7 +559,23 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        asset_selection: Optional[AssetSelection] = None,
     ):
+        if (
+            sum(
+                [
+                    int(job is not None),
+                    int(job_name is not None),
+                    int(asset_selection is not None),
+                ]
+            )
+            > 1
+        ):
+            raise DagsterInvalidDefinitionError(
+                "Attempted to provide more than one of 'job', 'jobs', 'job_name', and "
+                "'asset_selection' params to SensorDefinition. Must provide only one."
+            )
+
         self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(self._cron_schedule, str):
             check.sequence_param(self._cron_schedule, "cron_schedule", of_type=str)  # type: ignore
@@ -564,13 +586,16 @@ class ScheduleDefinition(IHasInternalInit):
                 "Dagster recognizes standard cron expressions consisting of 5 fields."
             )
 
+        self._target: Optional[Union[RepoRelativeTarget, DirectTarget]] = None
         if job is not None:
-            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
-        else:
+            self._target = DirectTarget(job)
+        elif job_name:
             self._target = RepoRelativeTarget(
                 job_name=check.str_param(job_name, "job_name"),
                 op_selection=None,
             )
+        elif asset_selection:
+            self._target = None
 
         if name:
             self._name = check_valid_name(name)
@@ -578,6 +603,9 @@ class ScheduleDefinition(IHasInternalInit):
             self._name = job_name + "_schedule"
         elif job:
             self._name = job.name + "_schedule"
+        else:
+            # TODO: better default name for asset selection or should we always ask the users to specify a name when asset_selection is provided?
+            self._name = "asset_selection_schedule"
 
         self._description = check.opt_str_param(description, "description")
 
@@ -696,6 +724,10 @@ class ScheduleDefinition(IHasInternalInit):
             default_status, "default_status", DefaultScheduleStatus
         )
 
+        self._asset_selection = check.opt_inst_param(
+            asset_selection, "asset_selection", AssetSelection
+        )
+
         resource_arg_names: Set[str] = (
             {arg.name for arg in get_resource_args(self._execution_fn.decorated_fn)}
             if isinstance(self._execution_fn, DecoratedScheduleFunction)
@@ -733,6 +765,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         default_status: DefaultScheduleStatus,
         required_resource_keys: Optional[Set[str]],
+        asset_selection: Optional[AssetSelection],
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -750,6 +783,7 @@ class ScheduleDefinition(IHasInternalInit):
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            asset_selection=asset_selection,
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
@@ -785,6 +819,12 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def job_name(self) -> str:
+        if self._target is None:
+            # return "blah"
+            raise DagsterInvalidInvocationError(
+                f"Cannot use `job_name` property for schedule {self.name}, which does not target"
+                " any job."
+            )
         return self._target.job_name
 
     @public
@@ -878,8 +918,18 @@ class ScheduleDefinition(IHasInternalInit):
 
         # clone all the run requests with resolved tags and config
         resolved_run_requests = []
+
+        if self._asset_selection:
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, self._asset_selection)
+            ]
+
         for run_request in run_requests:
-            if run_request.partition_key and not run_request.has_resolved_partition():
+            if (
+                run_request.partition_key
+                and not run_request.has_resolved_partition()
+                and self._target is not None
+            ):
                 if context.repository_def is None:
                     raise DagsterInvariantViolationError(
                         "Must provide repository def to build_schedule_context when yielding"
@@ -929,3 +979,42 @@ class ScheduleDefinition(IHasInternalInit):
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
+
+    @property
+    def asset_selection(self) -> Optional[AssetSelection]:
+        return self._asset_selection
+
+
+def _run_requests_with_base_asset_jobs(
+    run_requests: Iterable[RunRequest],
+    context: ScheduleEvaluationContext,
+    outer_asset_selection: AssetSelection,
+) -> Sequence[RunRequest]:
+    """For schedules that target asset selections instead of jobs, finds the corresponding base asset
+    for a selected set of assets.
+    """
+    asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
+    result = []
+    for run_request in run_requests:
+        if run_request.asset_selection:
+            asset_keys = run_request.asset_selection
+
+            unexpected_asset_keys = (
+                AssetSelection.keys(*asset_keys) - outer_asset_selection
+            ).resolve(asset_graph)
+            if unexpected_asset_keys:
+                raise DagsterInvalidSubsetError(
+                    "RunRequest includes asset keys that are not part of sensor's asset_selection:"
+                    f" {unexpected_asset_keys}"
+                )
+        else:
+            asset_keys = outer_asset_selection.resolve(asset_graph)
+
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
+        result.append(
+            run_request.with_replaced_attrs(
+                job_name=base_job.name, asset_selection=list(asset_keys)  # type: ignore  # (possible none)
+            )
+        )
+
+    return result

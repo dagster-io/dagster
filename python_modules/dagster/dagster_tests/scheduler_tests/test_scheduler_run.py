@@ -21,6 +21,7 @@ from dagster import (
     repository,
     schedule,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.run_request import RunRequest
@@ -453,6 +454,21 @@ def asset2(asset1):
     return asset1 + "asset2"
 
 
+targets_asset_selection_schedule = ScheduleDefinition(
+    name="targets_asset_selection_schedule",
+    cron_schedule="* * * * *",
+    asset_selection=AssetSelection.assets(asset1),
+)
+
+
+@schedule(asset_selection=AssetSelection.all(), cron_schedule="@daily")
+def targets_asset_selection_decorator_schedule():
+    return [
+        RunRequest(run_key="A", asset_selection=[asset1.key]),
+        RunRequest(run_key="B", asset_selection=[asset2.key]),
+    ]
+
+
 asset_job = define_asset_job("asset_job")
 
 
@@ -514,6 +530,8 @@ def the_repo():
         asset_selection_schedule,
         stale_asset_selection_schedule,
         source_asset_observation_schedule,
+        targets_asset_selection_schedule,
+        targets_asset_selection_decorator_schedule,
     ]
 
 
@@ -2400,6 +2418,102 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_targets_asset_selection(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+):
+    freeze_datetime = feb_27_2019_one_second_to_midnight()
+    external_schedule = external_repo.get_external_schedule("targets_asset_selection_schedule")
+    schedule_origin = external_schedule.get_external_origin()
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+        # launch_scheduled_runs does nothing before the first tick
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in instance.get_runs()],
+        )
+
+        wait_for_all_runs_to_start(instance)
+        run = next(iter(instance.get_runs()))
+        assert run.asset_selection == {AssetKey("asset1")}
+
+        validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_targets_asset_selection_decorator(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+):
+    freeze_datetime = feb_27_2019_one_second_to_midnight()
+    external_schedule = external_repo.get_external_schedule(
+        "targets_asset_selection_decorator_schedule"
+    )
+    schedule_origin = external_schedule.get_external_origin()
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+        # launch_scheduled_runs does nothing before the first tick
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+        runs = instance.get_runs()
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs],
+        )
+
+        wait_for_all_runs_to_start(instance)
+        run_2 = runs[0]
+        assert run_2.asset_selection == {AssetKey("asset2")}
+        validate_run_started(instance, run_2, execution_time=create_pendulum_time(2019, 2, 28))
+
+        run_1 = runs[1]
+        assert run_1.asset_selection == {AssetKey("asset1")}
+        validate_run_started(instance, run_1, execution_time=create_pendulum_time(2019, 2, 28))
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())

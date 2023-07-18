@@ -24,6 +24,7 @@ from dagster._core.errors import (
 )
 from dagster._utils import ensure_gen
 
+from ..asset_selection import AssetSelection
 from ..run_request import RunRequest, SkipReason
 from ..schedule_definition import (
     DecoratedScheduleFunction,
@@ -56,6 +57,7 @@ def schedule(
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     required_resource_keys: Optional[Set[str]] = None,
+    asset_selection: Optional[AssetSelection] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -98,6 +100,8 @@ def schedule(
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
+        asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
+            this schedule runs. This can be provided instead of specifying a job.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -182,6 +186,7 @@ def schedule(
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            asset_selection=asset_selection,
             run_config=None,  # cannot supply run_config or run_config_fn to decorator
             run_config_fn=None,
             tags=None,  # cannot supply tags or tags_fn to decorator
