@@ -27,17 +27,23 @@ def _cleanup_run_config_dict(run_config_dict: Any) -> Any:
     """Performs cleanup of the run config dict to remove empty dicts and strip the default executor
     config if it has not been overridden, to make the output more readable.
     """
-    filtered_dict = _filter_empty_dicts(run_config_dict)
-
     # We manually strip the default executor config because
     # the max_concurrent default value is a sentinel and can be confusing
-    # if presented to the user
-    if filtered_dict.get("execution") == {
-        "config": {"multiprocess": {"max_concurrent": 0}},
-    }:
-        del filtered_dict["execution"]
+    # if presented to the user:
+    # execution:
+    #   config:
+    #     multiprocess:
+    #       max_concurrent: 0
+    if (
+        run_config_dict.get("execution", {})
+        .get("config", {})
+        .get("multiprocess", {})
+        .get("max_concurrent", None)
+        == 0
+    ):
+        del run_config_dict["execution"]["config"]["multiprocess"]["max_concurrent"]
 
-    return filtered_dict
+    return _filter_empty_dicts(run_config_dict)
 
 
 def default_values_yaml_from_type_snap(
