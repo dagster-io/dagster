@@ -561,20 +561,12 @@ class ScheduleDefinition(IHasInternalInit):
         required_resource_keys: Optional[Set[str]] = None,
         asset_selection: Optional[AssetSelection] = None,
     ):
-        if (
-            sum(
-                [
-                    int(job is not None),
-                    int(job_name is not None),
-                    int(asset_selection is not None),
-                ]
-            )
-            > 1
-        ):
-            raise DagsterInvalidDefinitionError(
-                "Attempted to provide more than one of 'job', 'jobs', 'job_name', and "
-                "'asset_selection' params to SensorDefinition. Must provide only one."
-            )
+        if asset_selection:
+            if job is not None and job_name is not None:
+                raise DagsterInvalidDefinitionError(
+                    "Attempted to provide both asset_selection and job to ScheduleDefinition. Must "
+                    "provide only one."
+                )
 
         self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(self._cron_schedule, str):
