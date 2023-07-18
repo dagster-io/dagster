@@ -87,8 +87,8 @@ def copy_scaffold(
     for path in dagster_project_dir.glob("**/*"):
         if path.suffix == ".jinja":
             relative_path = path.relative_to(Path.cwd())
-            destination_path = relative_path.parent.joinpath(relative_path.stem).as_posix()
-            template_path = path.relative_to(dagster_project_dir).as_posix()
+            destination_path = os.fspath(relative_path.parent.joinpath(relative_path.stem))
+            template_path = os.fspath(path.relative_to(dagster_project_dir))
 
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,

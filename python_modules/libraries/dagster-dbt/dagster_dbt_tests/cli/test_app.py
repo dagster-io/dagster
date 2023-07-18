@@ -1,4 +1,5 @@
 import importlib
+import os
 import shutil
 import subprocess
 import sys
@@ -45,7 +46,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
             "--project-name",
             project_name,
             "--dbt-project-dir",
-            dbt_project_dir.as_posix(),
+            os.fspath(dbt_project_dir),
         ],
     )
 
@@ -61,7 +62,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
     assert dbt_project_dir.joinpath("target", "manifest.json").exists()
 
     monkeypatch.chdir(tmp_path)
-    sys.path.append(tmp_path.as_posix())
+    sys.path.append(os.fspath(tmp_path))
 
     defs: Definitions = getattr(
         importlib.import_module(f"{project_name}.{project_name}.definitions"),
@@ -93,7 +94,7 @@ def test_project_scaffold_command_with_runtime_manifest(
             "--project-name",
             project_name,
             "--dbt-project-dir",
-            dbt_project_dir.as_posix(),
+            os.fspath(dbt_project_dir),
         ],
     )
 
@@ -106,7 +107,7 @@ def test_project_scaffold_command_with_runtime_manifest(
     assert not dbt_project_dir.joinpath("target", "manifest.json").exists()
 
     monkeypatch.chdir(tmp_path)
-    sys.path.append(tmp_path.as_posix())
+    sys.path.append(os.fspath(tmp_path))
 
     with pytest.raises(FileNotFoundError):
         getattr(
@@ -114,7 +115,7 @@ def test_project_scaffold_command_with_runtime_manifest(
             "defs",
         )
 
-    monkeypatch.setenv("DAGSTER_DBT_BUILD_PROJECT", "1")
+    monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
 
     defs: Definitions = getattr(
         importlib.import_module(f"{project_name}.{project_name}.definitions"),
@@ -146,7 +147,7 @@ def test_project_scaffold_command_on_invalid_dbt_project(
             "--project-name",
             "test_dagster_scaffold",
             "--dbt-project-dir",
-            tmp_path.as_posix(),
+            os.fspath(tmp_path),
         ],
     )
 
