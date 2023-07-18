@@ -74,10 +74,10 @@ def dbt_assets(
             from pathlib import Path
 
             from dagster import OpExecutionContext
-            from dagster_dbt import DbtCli, dbt_assets
+            from dagster_dbt import DbtCliResource, dbt_assets
 
             @dbt_assets(manifest=Path("target", "manifest.json"))
-            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
     """
     check.inst_param(manifest, "manifest", (Path, dict))

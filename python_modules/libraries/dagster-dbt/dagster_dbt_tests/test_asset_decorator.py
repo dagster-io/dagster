@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster_dbt import DbtCli
+from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
@@ -31,11 +31,11 @@ with open(test_dagster_metadata_manifest_path, "r") as f:
 
 def test_materialize(test_project_dir):
     @dbt_assets(manifest=manifest)
-    def all_dbt_assets(context, dbt: DbtCli):
+    def all_dbt_assets(context, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
     assert materialize(
-        [all_dbt_assets], resources={"dbt": DbtCli(project_dir=test_project_dir)}
+        [all_dbt_assets], resources={"dbt": DbtCliResource(project_dir=test_project_dir)}
     ).success
 
 

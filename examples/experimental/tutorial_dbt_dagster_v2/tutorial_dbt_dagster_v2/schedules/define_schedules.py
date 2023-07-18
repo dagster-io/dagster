@@ -1,10 +1,10 @@
-from dagster_dbt import DbtCli, dbt_assets
+from dagster_dbt import DbtCliResource, dbt_assets
 
 from ..constants import MANIFEST_PATH
 
 
 @dbt_assets(manifest=MANIFEST_PATH)
-def all_dbt_assets(context, dbt: DbtCli):
+def all_dbt_assets(context, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 

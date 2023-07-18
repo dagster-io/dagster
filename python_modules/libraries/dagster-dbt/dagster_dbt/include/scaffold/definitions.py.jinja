@@ -2,14 +2,14 @@ import os
 from pathlib import Path
 
 from dagster import Definitions, OpExecutionContext
-from dagster_dbt import DbtCli, dbt_assets
+from dagster_dbt import DbtCliResource, dbt_assets
 
 dbt_project_dir = Path(__file__).parent.joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}})
 dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 
 
 @dbt_assets(manifest=dbt_manifest_path)
-def {{ dbt_assets_name }}(context: OpExecutionContext, dbt: DbtCli):
+def {{ dbt_assets_name }}(context: OpExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
@@ -25,7 +25,7 @@ defs = Definitions(
     assets=[{{ dbt_assets_name }}],
     schedules=schedules,
     resources={
-        "dbt": DbtCli(
+        "dbt": DbtCliResource(
             project_dir=os.fspath(dbt_project_dir),
         ),
     },

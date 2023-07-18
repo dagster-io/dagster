@@ -204,12 +204,12 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
-                from dagster_dbt import DbtCli
+                from dagster_dbt import DbtCliResource
 
                 with open("path/to/manifest.json", "r") as f:
                     manifest = json.load(f)
 
-                dbt = DbtCli(project_dir="/path/to/dbt/project")
+                dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
                 dbt_cli_task = dbt.cli(["run"], manifest=manifest)
                 dbt_cli_task.wait()
@@ -226,12 +226,12 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
-                from dagster_dbt import DbtCli
+                from dagster_dbt import DbtCliResource
 
                 with open("path/to/manifest.json", "r") as f:
                     manifest = json.load(f)
 
-                dbt = DbtCli(project_dir="/path/to/dbt/project")
+                dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
                 dbt_cli_task = dbt.cli(["run"], manifest=manifest)
                 dbt_cli_task.wait()
@@ -253,10 +253,10 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 from pathlib import Path
-                from dagster_dbt import DbtCli, dbt_assets
+                from dagster_dbt import DbtCliResource, dbt_assets
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context, dbt: DbtCli):
+                def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
         for event in self.stream_raw_events():
@@ -317,12 +317,12 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
-                from dagster_dbt import DbtCli
+                from dagster_dbt import DbtCliResource
 
                 with open("path/to/manifest.json", "r") as f:
                     manifest = json.load(f)
 
-                dbt = DbtCli(project_dir="/path/to/dbt/project")
+                dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
                 dbt_cli_task = dbt.cli(["run"], manifest=manifest)
                 dbt_cli_task.wait()
@@ -336,7 +336,7 @@ class DbtCliInvocation:
             return json.loads(handle.read())
 
 
-class DbtCli(ConfigurableResource):
+class DbtCliResource(ConfigurableResource):
     """A resource used to execute dbt CLI commands.
 
     Attributes:
@@ -356,9 +356,9 @@ class DbtCli(ConfigurableResource):
     Examples:
         .. code-block:: python
 
-            from dagster_dbt import DbtCli
+            from dagster_dbt import DbtCliResource
 
-            dbt = DbtCli(
+            dbt = DbtCliResource(
                 project_dir="/path/to/dbt/project",
                 global_config_flags=["--no-use-colors"],
                 profile="jaffle_shop",
@@ -444,10 +444,10 @@ class DbtCli(ConfigurableResource):
             .. code-block:: python
 
                 from pathlib import Path
-                from dagster_dbt import DbtCli, dbt_assets
+                from dagster_dbt import DbtCliResource, dbt_assets
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context, dbt: DbtCli):
+                def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
         target_path = self._get_unique_target_path(context=context)

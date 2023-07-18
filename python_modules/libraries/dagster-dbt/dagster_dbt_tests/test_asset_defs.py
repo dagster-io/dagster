@@ -24,12 +24,12 @@ from dagster._utils import file_relative_path
 from dagster_dbt import (
     DagsterDbtError,
     DagsterDbtTranslator,
-    DbtCli,
     DbtCliClientResource,
     DbtCliResource,
     dbt_cli_resource,
 )
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster_dbt.core.resources import DbtCliClient
 from dagster_dbt.core.utils import parse_run_results
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
 from dagster_dbt.types import DbtOutput
@@ -81,7 +81,7 @@ def test_load_from_manifest_json(prefix):
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
     assert_assets_match_project(dbt_assets, prefix=prefix)
 
-    dbt = MagicMock(spec=DbtCliResource)
+    dbt = MagicMock(spec=DbtCliClient)
     dbt.get_run_results_json.return_value = run_results_json
     dbt.run.return_value = DbtOutput(run_results_json)
     dbt.build.return_value = DbtOutput(run_results_json)
@@ -138,7 +138,7 @@ def test_runtime_metadata_fn(
     )
     assets_job = build_assets_job("assets_job", dbt_assets, resource_defs={"dbt": dbt_resource})
 
-    if isinstance(dbt_resource, DbtCli):
+    if isinstance(dbt_resource, DbtCliResource):
         with pytest.raises(
             DagsterDbtError,
             match="The runtime_metadata_fn argument on the load_assets_from_dbt_manifest",
@@ -180,7 +180,7 @@ def test_fail_immediately(
 
     if isinstance(good_dbt, DbtCliClientResource):
         assert good_dbt.with_replaced_resource_context(build_init_resource_context()).get_dbt_client().get_run_results_json()  # type: ignore
-    elif isinstance(good_dbt, DbtCli):
+    elif isinstance(good_dbt, DbtCliResource):
         assert parse_run_results(test_project_dir)
     else:
         assert good_dbt(build_init_resource_context()).get_run_results_json()
@@ -225,8 +225,8 @@ def test_basic(
         profiles_dir=dbt_config_dir,
         json_log_format=json_log_format,
     )
-    if not json_log_format and isinstance(dbt_resource, DbtCli):
-        pytest.skip("DbtCli does not support json_log_format")
+    if not json_log_format and isinstance(dbt_resource, DbtCliResource):
+        pytest.skip("DbtCliResource does not support json_log_format")
 
     # expected to emit json-formatted messages
     with capsys.disabled():
@@ -281,7 +281,7 @@ def test_basic(
     captured = capsys.readouterr()
 
     # make sure we're not logging the raw json to the console
-    if not isinstance(dbt_resource, DbtCli):
+    if not isinstance(dbt_resource, DbtCliResource):
         for output in [captured.out, captured.err]:
             for line in output.split("\n"):
                 # we expect a line like --vars {"fail_test": True}

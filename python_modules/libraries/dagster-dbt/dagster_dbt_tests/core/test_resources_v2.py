@@ -17,8 +17,8 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
-    DbtCli,
     DbtCliEventMessage,
+    DbtCliResource,
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
@@ -35,7 +35,7 @@ with open(manifest_path, "r") as f:
 @pytest.mark.parametrize("global_config_flags", [[], ["--debug"]])
 @pytest.mark.parametrize("command", ["run", "parse"])
 def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
     dbt_cli_task = dbt.cli([command], manifest=manifest)
 
     dbt_cli_task.wait()
@@ -46,7 +46,7 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
 
 
 def test_dbt_cli_failure() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_task = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
 
     with pytest.raises(DagsterDbtCliRuntimeError):
@@ -57,7 +57,7 @@ def test_dbt_cli_failure() -> None:
 
 
 def test_dbt_cli_get_artifact() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
     dbt_cli_task_1 = dbt.cli(["run"], manifest=manifest)
     dbt_cli_task_1.wait()
@@ -86,7 +86,7 @@ def test_dbt_cli_get_artifact() -> None:
 
 
 def test_dbt_profile_configuration() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
 
     dbt_cli_task = dbt.cli(["parse"], manifest=manifest)
     dbt_cli_task.wait()
@@ -96,7 +96,7 @@ def test_dbt_profile_configuration() -> None:
 
 
 def test_dbt_without_partial_parse() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
     dbt.cli(["clean"], manifest=manifest).wait()
 
@@ -110,7 +110,7 @@ def test_dbt_without_partial_parse() -> None:
 
 
 def test_dbt_with_partial_parse() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
     dbt.cli(["clean"], manifest=manifest).wait()
 
@@ -147,7 +147,7 @@ def test_dbt_cli_subsetted_execution() -> None:
         ),
     )
     def my_dbt_assets(context):
-        dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+        dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
         dbt_cli_task = dbt.cli(["run"], context=context)
 
         dbt_cli_task.wait()
@@ -172,7 +172,7 @@ def test_dbt_cli_subsetted_execution() -> None:
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
     def my_dbt_assets(context):
-        dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+        dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
         dbt_cli_task = dbt.cli(["run"], context=context)
 
         dbt_cli_task.wait()
@@ -191,7 +191,7 @@ def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
 
 def test_dbt_cli_op_execution() -> None:
     @op
-    def my_dbt_op(context: OpExecutionContext, dbt: DbtCli):
+    def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
         dbt.cli(["run"], context=context, manifest=manifest).wait()
 
     @job
@@ -200,7 +200,7 @@ def test_dbt_cli_op_execution() -> None:
 
     result = my_dbt_job.execute_in_process(
         resources={
-            "dbt": DbtCli(project_dir=TEST_PROJECT_DIR),
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
         }
     )
 

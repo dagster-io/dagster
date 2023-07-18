@@ -1,7 +1,7 @@
 from typing import Any, Mapping
 
 from dagster import AssetKey, OpExecutionContext
-from dagster_dbt import DagsterDbtTranslator, DbtCli, dbt_assets
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 from ..constants import MANIFEST_PATH
 
@@ -13,5 +13,5 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
 
 @dbt_assets(manifest=MANIFEST_PATH, dagster_dbt_translator=CustomDagsterDbtTranslator())
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
