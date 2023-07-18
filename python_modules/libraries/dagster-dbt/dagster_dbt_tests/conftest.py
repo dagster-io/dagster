@@ -52,8 +52,8 @@ def dbt_python_config_dir():
 @pytest.fixture(
     scope="session",
     params=[
-        "legacy",
-        "DbtCliClientResource",
+        pytest.param("legacy", marks=pytest.mark.legacy),
+        pytest.param("DbtCliClientResource", marks=pytest.mark.legacy),
         pytest.param(
             "DbtCliResource",
             marks=pytest.mark.skipif(
