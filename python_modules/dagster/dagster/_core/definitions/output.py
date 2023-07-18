@@ -486,15 +486,92 @@ class DynamicOut(Out):
         return True
 
 
-class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
+class GraphOut(
+    NamedTuple(
+        "_GraphOut",
+        [
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("is_required", PublicAttr[bool]),
+            ("io_manager_key", PublicAttr[str]),
+            ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("code_version", PublicAttr[Optional[str]]),
+        ],
+    )
+):
     """Represents information about the outputs that a graph maps.
 
     Args:
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
         description (Optional[str]): Human-readable description of the output.
+        is_required (bool): Whether the presence of this field is required. (default: True)
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
+        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+            general, versions should be set only for code that deterministically produces the same
+            output when given the same inputs.
     """
 
-    def __new__(cls, description: Optional[str] = None):
-        return super(GraphOut, cls).__new__(cls, description=description)
+    def __new__(
+        cls,
+        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        description: Optional[str] = None,
+        is_required: bool = True,
+        io_manager_key: Optional[str] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
+        code_version: Optional[str] = None,
+        # make sure new parameters are updated in combine_with_inferred below
+    ):
+        return super(GraphOut, cls).__new__(
+            cls,
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
+            description=description,
+            is_required=check.bool_param(is_required, "is_required"),
+            io_manager_key=check.opt_str_param(
+                io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
+            ),
+            metadata=metadata,
+            code_version=code_version,
+        )
 
-    def to_definition(self, name: Optional[str]) -> "OutputDefinition":
-        return OutputDefinition(name=name, description=self.description)
+    @classmethod
+    def from_definition(cls, output_def: "OutputDefinition"):
+        return GraphOut(
+            dagster_type=output_def.dagster_type,
+            description=output_def.description,
+            is_required=output_def.is_required,
+            io_manager_key=output_def.io_manager_key,
+            metadata=output_def.metadata,
+            code_version=output_def.code_version,
+        )
+
+    def to_definition(
+        self,
+        annotation_type: type,
+        name: Optional[str],
+        description: Optional[str],
+        code_version: Optional[str],
+    ) -> "OutputDefinition":
+        dagster_type = (
+            self.dagster_type
+            if self.dagster_type is not NoValueSentinel
+            else _checked_inferred_type(annotation_type)
+        )
+
+        return OutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description or description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            code_version=self.code_version or code_version,
+        )

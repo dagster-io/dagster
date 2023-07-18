@@ -556,15 +556,88 @@ class In(
         )
 
 
-class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
-    """Represents information about an input that a graph maps.
-
-    Args:
-        description (Optional[str]): Human-readable description of the input.
+class GraphIn(
+    NamedTuple(
+        "_GraphIn",
+        [
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("default_value", PublicAttr[Any]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            (
+                "asset_key",
+                PublicAttr[Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]],
+            ),
+            (
+                "asset_partitions",
+                PublicAttr[Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]],
+            ),
+            ("input_manager_key", PublicAttr[Optional[str]]),
+        ],
+    )
+):
+    """Args:
+    dagster_type (Optional[Union[Type, DagsterType]]]):
+    The type of this input. Should only be set if the correct type can not
+    be inferred directly from the type signature of the decorated function.
+    description (Optional[str]): Human-readable description of the input.
+    default_value (Optional[Any]): The default value to use if no input is provided.
+    root_manager_key (Optional[str]): (Experimental) The resource key for the
+    :py:class:`RootInputManager` used for loading this input when it is not connected to an
+    upstream output.
+    metadata (Optional[Dict[str, RawMetadataValue]]): A dict of metadata for the input.
+    asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+    (or function that produces an AssetKey from the InputContext) which should be associated
+    with this In. Used for tracking lineage information through Dagster.
+    asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
+    set of partitions of the given asset_key (or a function that produces this list of
+    partitions from the InputContext) which should be associated with this In.
     """
 
-    def __new__(cls, description: Optional[str] = None):
-        return super(GraphIn, cls).__new__(cls, description=description)
+    def __new__(
+        cls,
+        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        description: Optional[str] = None,
+        default_value: Any = NoValueSentinel,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
+        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        input_manager_key: Optional[str] = None,
+    ):
+        return super(GraphIn, cls).__new__(
+            cls,
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
+            description=check.opt_str_param(description, "description"),
+            default_value=default_value,
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
+            asset_partitions=asset_partitions,
+            input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
+        )
+
+    @staticmethod
+    def from_definition(input_def: InputDefinition) -> "GraphIn":
+        return GraphIn(
+            dagster_type=input_def.dagster_type,
+            description=input_def.description,
+            default_value=input_def._default_value,  # noqa: SLF001
+            metadata=input_def.metadata,
+            asset_key=input_def._asset_key,  # noqa: SLF001
+            asset_partitions=input_def._asset_partitions_fn,  # noqa: SLF001
+            input_manager_key=input_def.input_manager_key,
+        )
 
     def to_definition(self, name: str) -> InputDefinition:
-        return InputDefinition(name=name, description=self.description)
+        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
+        return InputDefinition(
+            name=name,
+            dagster_type=dagster_type,
+            description=self.description,
+            default_value=self.default_value,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+            input_manager_key=self.input_manager_key,
+        )

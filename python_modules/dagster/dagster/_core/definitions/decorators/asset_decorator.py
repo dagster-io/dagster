@@ -9,6 +9,8 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -30,6 +32,8 @@ from dagster._utils.backcompat import (
     ExperimentalWarning,
     experimental_arg_warning,
 )
+from python_modules.dagster.dagster._core.definitions.config import ConfigMapping
+from python_modules.dagster.dagster._core.storage.io_manager import IOManagerDefinition
 
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
@@ -37,7 +41,7 @@ from ..assets import AssetsDefinition
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from ..input import In
+from ..input import GraphIn, In
 from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
@@ -649,11 +653,15 @@ def multi_asset(
     return inner
 
 
+TInType = TypeVar("TInType", In, GraphIn)
+
+
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
-) -> Mapping[AssetKey, Tuple[str, In]]:
+    in_cls: Type[TInType] = In,
+) -> Mapping[AssetKey, Tuple[str, TInType]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
@@ -690,7 +698,7 @@ def build_asset_ins(
                     "of the arguments to the decorated function"
                 )
 
-    ins_by_asset_key: Dict[AssetKey, Tuple[str, In]] = {}
+    ins_by_asset_key: Dict[AssetKey, Tuple[str, TInType]] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -710,13 +718,15 @@ def build_asset_ins(
 
         ins_by_asset_key[asset_key] = (
             input_name.replace("-", "_"),
-            In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
+            in_cls(
+                metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type
+            ),
         )
 
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
+        ins_by_asset_key[asset_key] = (stringified_asset_key, in_cls(cast(type, Nothing)))
 
     return ins_by_asset_key
 
@@ -748,13 +758,23 @@ def graph_asset(
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    group_name: Optional[str] = None,
+    non_argument_deps: Optional[Set[AssetKey]] = None,
     metadata: Optional[MetadataUserInput] = None,
+    description: Optional[str] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    io_manager_def: Optional[IOManagerDefinition] = None,
+    io_manager_key: Optional[str] = None,
+    compute_kind: Optional[str] = None,
+    dagster_type: Optional[DagsterType] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    graph_tags: Optional[Mapping[str, Any]] = None,
+    group_name: Optional[str] = None,
+    output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    code_version: Optional[str] = None,
+    key: Optional[CoercibleToAssetKey] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -805,13 +825,23 @@ def graph_asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            description=description,
-            partitions_def=partitions_def,
-            group_name=group_name,
+            non_argument_deps=non_argument_deps,
             metadata=metadata,
+            description=description,
+            config=config,
+            resource_defs=resource_defs,
+            io_manager_def=io_manager_def,
+            io_manager_key=io_manager_key,
+            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            dagster_type=dagster_type,
+            partitions_def=partitions_def,
+            graph_tags=graph_tags,
+            group_name=group_name,
+            output_required=output_required,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
-            resource_defs=resource_defs,
+            code_version=code_version,
+            key=key,
         )(fn)
 
     return inner
@@ -823,13 +853,23 @@ class _GraphBackedAsset:
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        description: Optional[str] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
+        non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[MetadataUserInput] = None,
+        description: Optional[str] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        io_manager_def: Optional[IOManagerDefinition] = None,
+        io_manager_key: Optional[str] = None,
+        compute_kind: Optional[str] = None,
+        dagster_type: Optional[DagsterType] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        graph_tags: Optional[Mapping[str, Any]] = None,
+        group_name: Optional[str] = None,
+        output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        code_version: Optional[str] = None,
+        key: Optional[CoercibleToAssetKey] = None,
     ):
         self.name = name
 
@@ -837,47 +877,121 @@ class _GraphBackedAsset:
             key_prefix = [key_prefix]
         self.key_prefix = key_prefix
         self.ins = ins or {}
-        self.description = description
-        self.partitions_def = partitions_def
-        self.group_name = group_name
+        self.non_argument_deps = non_argument_deps
         self.metadata = metadata
+        self.description = description
+        self.io_manager_key = io_manager_key
+        self.io_manager_def = io_manager_def
+        self.config = config
+        self.compute_kind = compute_kind
+        self.dagster_type = dagster_type
+        self.partitions_def = partitions_def
+        self.graph_tags = graph_tags
+        self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self.group_name = group_name
+        self.output_required = output_required
         self.freshness_policy = freshness_policy
         self.auto_materialize_policy = auto_materialize_policy
-        self.resource_defs = resource_defs
+        self.code_version = code_version
+
+        if (name or key_prefix) and key:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify a name or key prefix for an asset when the key argument is"
+                " provided."
+            )
+
+        self.key = AssetKey.from_coercible(key) if key is not None else None
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
+        from dagster._config.pythonic_config import (
+            validate_resource_annotated_function,
+        )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+        validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
-        asset_ins = build_asset_ins(fn, self.ins or {}, set())
-        out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+
+        asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps, GraphIn)
+
+        out_asset_key = (
+            AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+            if not self.key
+            else self.key
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            resource_defs_dict = self.resource_defs
+
+            io_manager_key = self.io_manager_key
+            if self.io_manager_def:
+                if not io_manager_key:
+                    io_manager_key = out_asset_key.to_python_identifier("io_manager")
+
+                if (
+                    io_manager_key in self.resource_defs
+                    and self.resource_defs[io_manager_key] != self.io_manager_def
+                ):
+                    raise DagsterInvalidDefinitionError(
+                        f"Provided conflicting definitions for io manager key '{io_manager_key}'."
+                        " Please provide only one definition per key."
+                    )
+
+                resource_defs_dict[io_manager_key] = self.io_manager_def
+
+            wrapped_resource_defs = wrap_resources_for_execution(resource_defs_dict)
+
+            io_manager_key = cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
+
+            out = GraphOut(
+                metadata=self.metadata or {},
+                io_manager_key=io_manager_key,
+                dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
+                description=self.description,
+                is_required=self.output_required,
+                code_version=self.code_version,
+            )
+
+            op_graph = graph(
+                name=out_asset_key.to_python_identifier(),
+                description=self.description,
+                ins=dict(asset_ins.values()),
+                out=out,
+                tags={
+                    **({"kind": self.compute_kind} if self.compute_kind else {}),
+                    **(self.graph_tags or {}),
+                },
+                config=self.config,
+            )(fn)
 
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
         partition_mappings = {
-            input_name: asset_in.partition_mapping
+            keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in self.ins.items()
-            if asset_in.partition_mapping
+            if asset_in.partition_mapping is not None
         }
 
-        op_graph = graph(name=out_asset_key.to_python_identifier(), description=self.description)(
-            fn
-        )
-        return AssetsDefinition.from_graph(
-            op_graph,
+        return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
+            node_def=op_graph,
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
-            group_name=self.group_name,
-            metadata_by_output_name={"result": self.metadata} if self.metadata else None,
-            freshness_policies_by_output_name={"result": self.freshness_policy}
+            resource_defs=wrapped_resource_defs,
+            group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
+            freshness_policies_by_key={out_asset_key: self.freshness_policy}
             if self.freshness_policy
             else None,
-            auto_materialize_policies_by_output_name={"result": self.auto_materialize_policy}
+            auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
             if self.auto_materialize_policy
             else None,
-            descriptions_by_output_name={"result": self.description} if self.description else None,
-            resource_defs=self.resource_defs,
+            asset_deps=None,  # no asset deps in single-asset decorator
+            selected_asset_keys=None,  # no subselection in decorator
+            can_subset=False,
+            metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
+            descriptions_by_key=None,  # not supported for now
         )
 
 
