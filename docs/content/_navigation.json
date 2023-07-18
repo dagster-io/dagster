@@ -53,7 +53,7 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Part 6: Saving your data",
+        "title": "Part 6: Using Dagster to save your data",
         "path": "/tutorial/saving-your-data"
       },
       {
