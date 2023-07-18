@@ -26,6 +26,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -408,6 +409,7 @@ def find_parent_materialized_asset_partitions(
     target_asset_keys_and_parents: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     can_reconcile_fn: Callable[[AssetKeyPartitionKey], bool] = lambda _: True,
+    map_old_time_partitions: bool = True,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
     """Finds asset partitions in the given selection whose parents have been materialized since
     latest_storage_id.
@@ -445,8 +447,19 @@ def find_parent_materialized_asset_partitions(
                 current_time=instance_queryer.evaluation_time,
                 asset_key=asset_key,
             ):
+                child_partitions_def = asset_graph.get_partitions_def(child.asset_key)
                 if (
                     child.asset_key in target_asset_keys
+                    # when mapping from unpartitioned assets to time partitioned assets, we ignore
+                    # historical time partitions
+                    and (
+                        map_old_time_partitions
+                        or not isinstance(child_partitions_def, TimeWindowPartitionsDefinition)
+                        or child.partition_key
+                        == child_partitions_def.get_last_partition_key(
+                            current_time=instance_queryer.evaluation_time
+                        )
+                    )
                     and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
                 ):
                     result_asset_partitions.add(child)
@@ -680,6 +693,7 @@ def determine_asset_partitions_to_auto_materialize(
         target_asset_keys_and_parents=target_asset_keys_and_parents,
         asset_graph=asset_graph,
         can_reconcile_fn=can_reconcile_candidate,
+        map_old_time_partitions=False,
     )
 
     def get_waiting_on_asset_keys(candidate: AssetKeyPartitionKey) -> FrozenSet[AssetKey]:
