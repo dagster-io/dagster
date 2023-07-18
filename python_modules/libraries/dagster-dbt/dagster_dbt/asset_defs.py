@@ -385,26 +385,20 @@ def _dbt_nodes_to_assets(
     project_id: str,
     dbt_resource_key: str,
     manifest_json: Mapping[str, Any],
-    node_info_to_description_fn: Callable[[Mapping[str, Any]], str],
-    op_name: Optional[str] = None,
+    op_name: Optional[str],
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
-    ] = None,
-    io_manager_key: Optional[str] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    use_build_command: bool = False,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
-    node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = default_freshness_policy_fn,
+    ],
+    io_manager_key: Optional[str],
+    use_build_command: bool,
+    partitions_def: Optional[PartitionsDefinition],
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
+    node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
     node_info_to_auto_materialize_policy_fn: Callable[
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
-    ] = default_auto_materialize_policy_fn,
-    node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = default_metadata_fn,
+    ],
+    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> AssetsDefinition:
     if use_build_command:
         deps = get_deps(
@@ -427,13 +421,12 @@ def _dbt_nodes_to_assets(
     ) = get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
-        node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
-        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
-        node_info_to_description_fn=node_info_to_description_fn,
         io_manager_key=io_manager_key,
+        manifest=manifest_json,
+        dagster_dbt_translator=dagster_dbt_translator,
     )
 
     # prevent op name collisions between multiple dbt multi-assets
@@ -451,7 +444,7 @@ def _dbt_nodes_to_assets(
         use_build_command=use_build_command,
         fqns_by_output_name=fqns_by_output_name,
         dbt_resource_key=dbt_resource_key,
-        node_info_to_asset_key=node_info_to_asset_key,
+        node_info_to_asset_key=dagster_dbt_translator.get_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
         manifest_json=manifest_json,
@@ -914,15 +907,13 @@ def _load_assets_from_dbt_manifest(
         dbt_resource_key=dbt_resource_key,
         op_name=op_name,
         project_id=manifest["metadata"]["project_id"][:5],
-        node_info_to_asset_key=dagster_dbt_translator.get_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
-        node_info_to_definition_metadata_fn=dagster_dbt_translator.get_metadata,
-        node_info_to_description_fn=dagster_dbt_translator.get_description,
+        dagster_dbt_translator=dagster_dbt_translator,
         manifest_json=manifest,
     )
 

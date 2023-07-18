@@ -345,8 +345,6 @@ def test_custom_definition_metadata():
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
 
-    dbt_assets_default = load_assets_from_dbt_manifest(manifest_json=manifest_json)
-
     dbt_assets_custom = load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         node_info_to_definition_metadata_fn=lambda node_info: {
@@ -355,16 +353,10 @@ def test_custom_definition_metadata():
         },
     )
 
-    has_some_schema = False
     for asset_key, custom_metadata in dbt_assets_custom[0].metadata_by_key.items():
-        default_metadata = dbt_assets_default[0].metadata_by_key[asset_key]
-        if custom_metadata.get("table_schema") is not None:
-            has_some_schema = True
-        assert custom_metadata.get("table_schema") == default_metadata.get("table_schema")
+        assert custom_metadata.get("table_schema") is None
         assert custom_metadata["foo_key"] == asset_key.path[-1]
         assert custom_metadata["bar_key"] == 1.0
-
-    assert has_some_schema
 
 
 def test_partitions(dbt_seed, dbt_cli_resource_factory, test_project_dir, dbt_config_dir):
