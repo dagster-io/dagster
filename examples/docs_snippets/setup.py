@@ -7,7 +7,6 @@ setup(
     license="Apache-2.0",
     url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
