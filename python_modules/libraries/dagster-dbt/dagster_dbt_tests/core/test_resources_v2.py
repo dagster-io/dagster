@@ -32,13 +32,11 @@ with open(manifest_path, "r") as f:
     manifest = json.load(f)
 
 
-@pytest.mark.parametrize("global_config_flags", [[], ["--debug"]])
+@pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
 @pytest.mark.parametrize("command", ["run", "parse"])
 def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
     dbt_cli_task = dbt.cli([command], manifest=manifest)
-
-    dbt_cli_task.wait()
 
     assert dbt_cli_task.process.args == ["dbt", *global_config_flags, command]
     assert dbt_cli_task.is_successful()
@@ -59,11 +57,8 @@ def test_dbt_cli_failure() -> None:
 def test_dbt_cli_get_artifact() -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    dbt_cli_task_1 = dbt.cli(["run"], manifest=manifest)
-    dbt_cli_task_1.wait()
-
-    dbt_cli_task_2 = dbt.cli(["compile"], manifest=manifest)
-    dbt_cli_task_2.wait()
+    dbt_cli_task_1 = dbt.cli(["run"], manifest=manifest).wait()
+    dbt_cli_task_2 = dbt.cli(["compile"], manifest=manifest).wait()
 
     # `dbt run` produces a manifest.json and run_results.json
     manifest_json_1 = dbt_cli_task_1.get_artifact("manifest.json")
@@ -88,8 +83,7 @@ def test_dbt_cli_get_artifact() -> None:
 def test_dbt_profile_configuration() -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
 
-    dbt_cli_task = dbt.cli(["parse"], manifest=manifest)
-    dbt_cli_task.wait()
+    dbt_cli_task = dbt.cli(["parse"], manifest=manifest).wait()
 
     assert dbt_cli_task.process.args == ["dbt", "parse", "--profile", "duckdb", "--target", "dev"]
     assert dbt_cli_task.is_successful()
@@ -115,8 +109,7 @@ def test_dbt_with_partial_parse() -> None:
     dbt.cli(["clean"], manifest=manifest).wait()
 
     # Run `dbt compile` to generate the partial parse file
-    dbt_cli_compile_task = dbt.cli(["compile"], manifest=manifest)
-    dbt_cli_compile_task.wait()
+    dbt_cli_compile_task = dbt.cli(["compile"], manifest=manifest).wait()
 
     # Copy the partial parse file to the target directory
     partial_parse_file_path = Path(
@@ -128,8 +121,7 @@ def test_dbt_with_partial_parse() -> None:
     shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
 
     # Assert that partial parsing was used.
-    dbt_cli_compile_with_partial_parse_task = dbt.cli(["compile"], manifest=manifest)
-    dbt_cli_compile_with_partial_parse_task.wait()
+    dbt_cli_compile_with_partial_parse_task = dbt.cli(["compile"], manifest=manifest).wait()
 
     assert dbt_cli_compile_with_partial_parse_task.is_successful()
     assert not any(
