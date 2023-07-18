@@ -482,7 +482,7 @@ class CachingRepositoryData(RepositoryData):
     def _validate_schedule(self, schedule: ScheduleDefinition) -> ScheduleDefinition:
         job_names = self.get_job_names()
 
-        if schedule.job_name not in job_names:
+        if not schedule.asset_selection and schedule.job_name not in job_names:
             raise DagsterInvalidDefinitionError(
                 f'ScheduleDefinition "{schedule.name}" targets job "{schedule.job_name}" '
                 "which was not found in this repository."

@@ -1259,7 +1259,10 @@ def external_repository_data_from_def(
     return ExternalRepositoryData(
         name=repository_def.name,
         external_schedule_datas=sorted(
-            list(map(external_schedule_data_from_def, repository_def.schedule_defs)),
+            [
+                external_schedule_data_from_def(schedule_def, repository_def)
+                for schedule_def in repository_def.schedule_defs
+            ],
             key=lambda sd: sd.name,
         ),
         # `PartitionSetDefinition` has been deleted, so we now construct `ExternalPartitonSetData`
@@ -1666,13 +1669,26 @@ def external_resource_data_from_def(
     )
 
 
-def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ExternalScheduleData:
+def external_schedule_data_from_def(
+    schedule_def: ScheduleDefinition, repository_def: RepositoryDefinition
+) -> ExternalScheduleData:
     check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
+
+    if schedule_def.asset_selection:
+        asset_graph = repository_def.asset_graph
+        asset_keys = schedule_def.asset_selection.resolve(asset_graph)
+        base_job = repository_def.get_implicit_job_def_for_assets(asset_keys)
+        job_name = base_job.name  # type: ignore  # (possible none)
+    else:
+        job_name = schedule_def.job_name
+
     return ExternalScheduleData(
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
-        job_name=schedule_def.job_name,
-        op_selection=schedule_def._target.op_selection,  # noqa: SLF001
+        job_name=job_name,
+        op_selection=schedule_def._target.op_selection  # noqa: SLF001
+        if schedule_def._target  # noqa: SLF001
+        else None,
         mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=None,
