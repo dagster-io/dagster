@@ -11,6 +11,7 @@ import {
   buildRepository,
   buildAssetKey,
   buildPartitionDefinition,
+  buildFreshnessPolicy,
 } from '../../graphql/types';
 import {SINGLE_NON_SDA_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {SingleNonSdaAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
@@ -281,12 +282,11 @@ export const AssetCatalogTableMockAssets: Extract<
       id: 'test.py.repo.["late_asset"]',
       groupName: 'GROUP2',
       partitionDefinition: null,
-      freshnessPolicy: {
+      freshnessPolicy: buildFreshnessPolicy({
         maximumLagMinutes: 2,
         cronSchedule: null,
         cronScheduleTimezone: null,
-        __typename: 'FreshnessPolicy',
-      },
+      }),
       hasMaterializePermission: true,
       computeKind: null,
       description: null,

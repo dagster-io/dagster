@@ -47,9 +47,9 @@ import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
+import {OverdueTag} from './OverdueTag';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetKey} from './types';
 import {
@@ -522,10 +522,10 @@ const AssetViewPageHeaderTags: React.FC<{
       )}
       {definition && definition.autoMaterializePolicy && <AutomaterializeDaemonStatusTag />}
       {definition && definition.freshnessPolicy && (
-        <CurrentMinutesLateTag
+        <OverdueTag
           liveData={liveData}
           policy={definition.freshnessPolicy}
-          policyOnHover
+          assetKey={definition.assetKey}
         />
       )}
       {definition && (

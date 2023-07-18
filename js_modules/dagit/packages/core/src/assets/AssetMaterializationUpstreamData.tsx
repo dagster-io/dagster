@@ -12,6 +12,7 @@ import {AssetKeyInput} from '../graphql/types';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
+  AssetMaterializationUpstreamTableFragment,
   AssetMaterializationUpstreamQuery,
   AssetMaterializationUpstreamQueryVariables,
   MaterializationUpstreamDataVersionFragment,
@@ -19,23 +20,38 @@ import {
 
 dayjs.extend(relativeTime);
 
-export const AssetMaterializationUpstreamData: React.FC<{
+export const AssetMaterializationUpstreamTable: React.FC<{
+  data: AssetMaterializationUpstreamTableFragment | undefined;
   assetKey: AssetKeyInput;
-  timestamp?: string;
-}> = ({assetKey, timestamp}) => {
-  const result = useQuery<
-    AssetMaterializationUpstreamQuery,
-    AssetMaterializationUpstreamQueryVariables
-  >(ASSET_MATERIALIZATION_UPSTREAM_QUERY, {
-    skip: !timestamp,
-    variables: {assetKey, timestamp: timestamp || ''},
-  });
-
+  relativeTo: number | 'now';
+  maximumLagMinutes?: number; // pass to get red "late" highlighting
+}> = ({data, assetKey, maximumLagMinutes, relativeTo}) => {
   const displayName = displayNameForAssetKey(assetKey);
-  const entries =
-    result.data?.assetNodeOrError.__typename === 'AssetNode'
-      ? result.data.assetNodeOrError.assetMaterializationUsedData
-      : [];
+
+  if (!data) {
+    return (
+      <TableContainer>
+        <tbody>
+          <tr>
+            <td>Loading…</td>
+          </tr>
+        </tbody>
+      </TableContainer>
+    );
+  }
+  if (!data.assetMaterializationUsedData.length) {
+    return (
+      <TableContainer>
+        <tbody>
+          <tr>
+            <td>No upstream materializations to display.</td>
+          </tr>
+        </tbody>
+      </TableContainer>
+    );
+  }
+
+  const seen = new Set<string>();
 
   const renderEntryAndParents = (
     entry: MaterializationUpstreamDataVersionFragment,
@@ -47,6 +63,13 @@ export const AssetMaterializationUpstreamData: React.FC<{
       view: 'events',
       time: entry.timestamp,
     });
+
+    // Safeguard against infinite loops in this code that could be caused by the
+    // API returning an entry where assetKey === downstreamAssetKey
+    if (seen.has(entryDisplayName)) {
+      return [];
+    }
+    seen.add(entryDisplayName);
 
     return [
       <tr key={entryDisplayName}>
@@ -62,67 +85,42 @@ export const AssetMaterializationUpstreamData: React.FC<{
           </Box>
         </td>
         <td>
-          <Box flex={{gap: 8}} style={{whiteSpace: 'nowrap'}}>
+          <Box flex={{gap: 8, justifyContent: 'space-between'}} style={{whiteSpace: 'nowrap'}}>
             <Link to={entryLink}>
               <Timestamp
                 timestamp={{ms: Number(entry.timestamp)}}
                 timeFormat={{showSeconds: true, showTimezone: false}}
               />
             </Link>
-            <span style={{opacity: 0.7}}>
-              ({dayjs(Number(entry.timestamp)).from(Number(timestamp), true)} earlier)
-            </span>
+            <TimeSinceWithOverdueColor
+              timestamp={Number(entry.timestamp)}
+              maximumLagMinutes={maximumLagMinutes}
+              relativeTo={relativeTo}
+            />
           </Box>
         </td>
       </tr>,
-      ...entries
+      ...data.assetMaterializationUsedData
         .filter((e) => displayNameForAssetKey(e.downstreamAssetKey) === entryDisplayName)
         .map((e, idx) => renderEntryAndParents(e, depth + 1, idx === 0)),
     ];
   };
 
-  if (result.loading) {
-    return (
-      <AssetUpstreamDataTable>
-        <tbody>
-          <tr>
-            <td>Loading…</td>
-          </tr>
-        </tbody>
-      </AssetUpstreamDataTable>
-    );
-  }
-  if (!entries.length) {
-    return (
-      <AssetUpstreamDataTable>
-        <tbody>
-          <tr>
-            <td>No upstream materializations to display.</td>
-          </tr>
-        </tbody>
-      </AssetUpstreamDataTable>
-    );
-  }
   return (
-    <AssetUpstreamDataTable>
+    <TableContainer>
       <tbody>
-        {entries
+        {data.assetMaterializationUsedData
           .filter((e) => displayNameForAssetKey(e.downstreamAssetKey) === displayName)
           .map((e) => renderEntryAndParents(e, 0, false))}
       </tbody>
-    </AssetUpstreamDataTable>
+    </TableContainer>
   );
 };
 
-export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
-  query AssetMaterializationUpstreamQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
-        id
-        assetMaterializationUsedData(timestampMillis: $timestamp) {
-          ...MaterializationUpstreamDataVersionFragment
-        }
-      }
+export const ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT = gql`
+  fragment AssetMaterializationUpstreamTableFragment on AssetNode {
+    assetMaterializationUsedData(timestampMillis: $timestamp) {
+      ...MaterializationUpstreamDataVersionFragment
     }
   }
 
@@ -137,7 +135,64 @@ export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
   }
 `;
 
-const AssetUpstreamDataTable = styled.table`
+export const AssetMaterializationUpstreamData: React.FC<{
+  assetKey: AssetKeyInput;
+  timestamp?: string;
+}> = ({assetKey, timestamp = ''}) => {
+  const result = useQuery<
+    AssetMaterializationUpstreamQuery,
+    AssetMaterializationUpstreamQueryVariables
+  >(ASSET_MATERIALIZATION_UPSTREAM_QUERY, {
+    variables: {assetKey: {path: assetKey.path}, timestamp},
+    skip: !timestamp,
+  });
+
+  const data =
+    result.data?.assetNodeOrError.__typename === 'AssetNode'
+      ? result.data.assetNodeOrError
+      : undefined;
+
+  return (
+    <AssetMaterializationUpstreamTable
+      relativeTo={Number(timestamp)}
+      assetKey={assetKey}
+      data={data}
+    />
+  );
+};
+
+export const TimeSinceWithOverdueColor: React.FC<{
+  timestamp: number;
+  maximumLagMinutes?: number;
+  relativeTo?: number | 'now';
+}> = ({timestamp, maximumLagMinutes, relativeTo = Date.now()}) => {
+  const lagMinutes = ((relativeTo === 'now' ? Date.now() : relativeTo) - timestamp) / (60 * 1000);
+  const isOverdue = maximumLagMinutes && lagMinutes > maximumLagMinutes;
+
+  return relativeTo === 'now' ? (
+    <span style={{color: isOverdue ? Colors.Red700 : Colors.Gray700}}>
+      ({dayjs(timestamp).fromNow()})
+    </span>
+  ) : (
+    <span style={{color: isOverdue ? Colors.Red700 : Colors.Gray700}}>
+      ({dayjs(Number(timestamp)).from(relativeTo, true)} earlier)
+    </span>
+  );
+};
+
+export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
+  query AssetMaterializationUpstreamQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        id
+        ...AssetMaterializationUpstreamTableFragment
+      }
+    }
+  }
+  ${ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT}
+`;
+
+const TableContainer = styled.table`
   width: 100%;
   border-spacing: 0;
   border-collapse: collapse;
