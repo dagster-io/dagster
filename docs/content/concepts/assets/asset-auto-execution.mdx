@@ -149,8 +149,6 @@ def asset1():
     ...
 ```
 
-Note that the auto-materialization daemon is currently only responsible for automatically materializing assets. It doesn't automatically observe source assets, so we need to set up a schedule if we want that to happen.
-
 ### Auto-materialization and partitions
 
 Partitioned assets can have <PyObject object="AutoMaterializePolicy" pluralize />. Partitions are eligible for auto-materialization when either:
