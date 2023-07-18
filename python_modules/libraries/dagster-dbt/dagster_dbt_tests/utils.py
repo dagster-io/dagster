@@ -35,14 +35,7 @@ def assert_assets_match_project(
         assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
 
     for asset_key, group_name in dbt_assets[0].group_names_by_key.items():
-        if asset_key == AssetKey(prefix + ["subdir_schema", "least_caloric"]):
-            assert group_name == "subdir", f'{asset_key} group {group_name} != "subdir"'
-        elif asset_key.path[-1] == "orders_snapshot":
-            assert (
-                group_name == "sort_snapshot"
-            ), f'{asset_key} group {group_name} != "sort_snapshot"'
-        else:
-            assert group_name == "default", f'{asset_key} group {group_name} != "default"'
+        assert group_name == "default", f'{asset_key} group {group_name} != "default"'
 
     assert dbt_assets[0].keys_by_output_name["sort_by_calories"] == AssetKey(
         prefix + ["sort_by_calories"]

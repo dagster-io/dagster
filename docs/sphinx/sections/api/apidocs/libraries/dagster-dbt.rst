@@ -134,6 +134,11 @@ Errors
 Utils
 *****
 
+.. autofunction:: default_group_from_dbt_resource_props
+
+.. autofunction:: group_from_dbt_resource_props_fallback_to_directory
+
 .. currentmodule:: dagster_dbt.utils
 
 .. autofunction:: generate_materializations
+
