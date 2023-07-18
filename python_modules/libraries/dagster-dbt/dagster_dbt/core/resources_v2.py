@@ -14,7 +14,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Union,
 )
 
@@ -195,11 +194,11 @@ class DbtCliInvocation:
             raise_on_error=raise_on_error,
         )
 
-    def wait(self) -> Sequence[DbtCliEventMessage]:
-        """Wait for the dbt CLI process to complete and return the events.
+    def wait(self) -> "DbtCliInvocation":
+        """Wait for the dbt CLI process to complete.
 
         Returns:
-            Sequence[DbtCliEventMessage]: A sequence of events from the dbt CLI process.
+            DbtCliInvocation: The current representation of the dbt CLI invocation.
 
         Examples:
             .. code-block:: python
@@ -212,10 +211,11 @@ class DbtCliInvocation:
 
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
-                dbt_cli_task.wait()
+                dbt_cli_task = dbt.cli(["run"], manifest=manifest).wait()
         """
-        return list(self.stream_raw_events())
+        self._raise_on_error()
+
+        return self
 
     def is_successful(self) -> bool:
         """Return whether the dbt CLI process completed successfully.
@@ -235,7 +235,6 @@ class DbtCliInvocation:
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
                 dbt_cli_task = dbt.cli(["run"], manifest=manifest)
-                dbt_cli_task.wait()
 
                 if dbt_cli_task.is_successful():
                     ...
@@ -287,13 +286,7 @@ class DbtCliInvocation:
                 sys.stdout.flush()
 
         # Ensure that the dbt CLI process has completed.
-        if not self.is_successful() and self.raise_on_error:
-            raise DagsterDbtCliRuntimeError(
-                description=(
-                    f"The dbt CLI process failed with exit code {self.process.returncode}. Check"
-                    " the compute logs for the full information about the error."
-                )
-            )
+        self._raise_on_error()
 
     def get_artifact(
         self,
@@ -326,7 +319,6 @@ class DbtCliInvocation:
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
                 dbt_cli_task = dbt.cli(["run"], manifest=manifest)
-                dbt_cli_task.wait()
 
                 # Retrieve the run_results.json artifact.
                 if dbt_cli_task.is_successful():
@@ -335,6 +327,18 @@ class DbtCliInvocation:
         artifact_path = self.target_path.joinpath(artifact)
         with artifact_path.open() as handle:
             return json.loads(handle.read())
+
+    def _raise_on_error(self) -> None:
+        """Ensure that the dbt CLI process has completed. If the process has not successfully
+        completed, then optionally raise an error.
+        """
+        if not self.is_successful() and self.raise_on_error:
+            raise DagsterDbtCliRuntimeError(
+                description=(
+                    f"The dbt CLI process failed with exit code {self.process.returncode}. Check"
+                    " the compute logs for the full information about the error."
+                )
+            )
 
 
 class DbtCliResource(ConfigurableResource):
