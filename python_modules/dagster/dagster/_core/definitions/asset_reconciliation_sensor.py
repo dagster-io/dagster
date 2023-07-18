@@ -661,6 +661,17 @@ def determine_asset_partitions_to_auto_materialize(
             or candidate.asset_key not in target_asset_keys
             # must not be currently backfilled
             or candidate in instance_queryer.get_active_backfill_target_asset_graph_subset()
+            or (
+                # is not a root asset
+                candidate.asset_key not in asset_graph.root_asset_keys
+                # has a rate limit
+                and auto_materialize_policy.max_materializations_per_minute is not None
+                # would exceed the rate limit
+                and len(
+                    materialization_requests_by_asset_key[candidate.asset_key].union({candidate})
+                )
+                > auto_materialize_policy.max_materializations_per_minute
+            )
             # must not have invalid parent partitions
             or len(
                 asset_graph.get_parents_partitions(
