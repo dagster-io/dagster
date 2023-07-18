@@ -1,5 +1,7 @@
 import os
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Type
+from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._utils.backcompat import deprecation_warning
 
 import yaml
 
@@ -527,7 +529,15 @@ class InstanceRef(
     def compute_log_manager(self) -> "ComputeLogManager":
         from dagster._core.storage.compute_log_manager import ComputeLogManager
 
-        return self.compute_logs_data.rehydrate(as_type=ComputeLogManager)
+        compute_log_manager = self.compute_logs_data.rehydrate(as_type=ComputeLogManager)
+        if not isinstance(compute_log_manager, CapturedLogManager):
+            deprecation_warning(
+                "The ComputeLogManager interface",
+                "1.5.0",
+                "It has been replaced by the CapturedLogManager interface.",
+            )
+
+        return compute_log_manager
 
     @property
     def scheduler(self) -> Optional["Scheduler"]:
