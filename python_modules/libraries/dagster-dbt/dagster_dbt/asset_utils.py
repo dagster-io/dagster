@@ -361,14 +361,12 @@ def default_metadata_fn(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     return metadata
 
 
-def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
+def default_group_from_dbt_resource_props(node_info: Mapping[str, Any]) -> Optional[str]:
     """Get the group name for a dbt node.
 
     If a Dagster group is configured in the metadata for the node, use that.
 
     Otherwise, if a dbt group is configured for the node, use that.
-
-    By default, a node's group name is subdirectory that it resides in.
     """
     dagster_metadata = node_info.get("meta", {}).get("dagster", {})
 
@@ -380,7 +378,36 @@ def default_group_fn(node_info: Mapping[str, Any]) -> Optional[str]:
     if dbt_group:
         return dbt_group
 
-    fqn = node_info.get("fqn", [])
+    return None
+
+
+def group_from_dbt_resource_props_fallback_to_directory(
+    dbt_resource_props: Mapping[str, Any]
+) -> Optional[str]:
+    """Get the group name for a dbt node.
+
+    Has the same behavior as the default_group_from_dbt_resource_props, except for that, if no group can be determined
+    from config or metadata, falls back to using the subdirectory of the models directory that the
+    source file is in.
+
+    Args:
+        dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_dbt import group_from_dbt_resource_props_fallback_to_directory
+
+            dbt_assets = load_assets_from_dbt_manifest(
+                manifest=manifest,
+                node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
+            )
+    """
+    group_name = default_group_from_dbt_resource_props(dbt_resource_props)
+    if group_name is not None:
+        return group_name
+
+    fqn = dbt_resource_props.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:
         return None

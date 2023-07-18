@@ -52,7 +52,7 @@ from dagster_dbt.asset_utils import (
     default_auto_materialize_policy_fn,
     default_description_fn,
     default_freshness_policy_fn,
-    default_group_fn,
+    default_group_from_dbt_resource_props,
     default_metadata_fn,
     get_asset_deps,
     get_deps,
@@ -486,7 +486,9 @@ def load_assets_from_dbt_project(
     use_build_command: bool = True,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
+    node_info_to_group_fn: Callable[
+        [Mapping[str, Any]], Optional[str]
+    ] = default_group_from_dbt_resource_props,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
@@ -653,7 +655,9 @@ def load_assets_from_dbt_manifest(
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
+    node_info_to_group_fn: Callable[
+        [Mapping[str, Any]], Optional[str]
+    ] = default_group_from_dbt_resource_props,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
@@ -865,7 +869,7 @@ def _load_assets_from_dbt_manifest(
             "Can't specify both dagster_dbt_translator and source_key_prefix",
         )
         check.invariant(
-            node_info_to_group_fn == default_group_fn,
+            node_info_to_group_fn == default_group_from_dbt_resource_props,
             "Can't specify both dagster_dbt_translator and node_info_to_group_fn",
         )
         check.invariant(
@@ -1002,7 +1006,7 @@ def _raise_warnings_for_deprecated_args(
             stacklevel=4,
         )
 
-    if node_info_to_group_fn != default_group_fn:
+    if node_info_to_group_fn != default_group_from_dbt_resource_props:
         deprecation_warning(
             f"The node_info_to_group_fn arg of {public_fn_name}",
             "0.21",
