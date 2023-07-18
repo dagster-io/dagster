@@ -30,6 +30,17 @@ Assets (dbt Core)
 
 .. autoclass:: DagsterDbtTranslator
 
+.. autofunction:: build_dbt_asset_selection
+
+.. autofunction:: build_schedule_from_dbt_selection
+
+.. autofunction:: get_asset_key_for_model
+
+.. autofunction:: get_asset_key_for_source
+
+.. autofunction:: get_asset_keys_by_output_name_for_source
+
+
 Ops (dbt Core)
 ==============
 

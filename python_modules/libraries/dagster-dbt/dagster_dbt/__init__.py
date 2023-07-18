@@ -2,6 +2,13 @@ from .asset_defs import (
     load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
     load_assets_from_dbt_project as load_assets_from_dbt_project,
 )
+from .asset_utils import (
+    build_dbt_asset_selection as build_dbt_asset_selection,
+    build_schedule_from_dbt_selection as build_schedule_from_dbt_selection,
+    get_asset_key_for_model as get_asset_key_for_model,
+    get_asset_key_for_source as get_asset_key_for_source,
+    get_asset_keys_by_output_name_for_source as get_asset_keys_by_output_name_for_source,
+)
 from .cloud import (
     DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,

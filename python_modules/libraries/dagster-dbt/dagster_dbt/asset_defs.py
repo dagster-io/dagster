@@ -62,7 +62,6 @@ from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.core.types import DbtCliOutput
 from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-from dagster_dbt.dbt_assets_definition import DbtAssetsDefinition
 from dagster_dbt.errors import DagsterDbtError
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
@@ -499,7 +498,7 @@ def load_assets_from_dbt_project(
     ] = default_metadata_fn,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
-) -> Sequence[DbtAssetsDefinition]:
+) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models from a dbt project into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
@@ -664,7 +663,7 @@ def load_assets_from_dbt_manifest(
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = default_metadata_fn,
-) -> Sequence[DbtAssetsDefinition]:
+) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
@@ -819,7 +818,7 @@ def _load_assets_from_dbt_manifest(
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ],
-) -> Sequence[DbtAssetsDefinition]:
+) -> Sequence[AssetsDefinition]:
     if partition_key_to_vars_fn:
         check.invariant(
             partitions_def is not None,
@@ -924,13 +923,7 @@ def _load_assets_from_dbt_manifest(
         manifest_json=manifest,
     )
 
-    return [
-        DbtAssetsDefinition.from_assets_def(
-            dbt_assets_def,
-            manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator,
-        )
-    ]
+    return [dbt_assets_def]
 
 
 def _raise_warnings_for_deprecated_args(
