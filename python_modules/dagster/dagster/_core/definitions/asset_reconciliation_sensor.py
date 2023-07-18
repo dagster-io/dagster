@@ -747,6 +747,7 @@ def determine_asset_partitions_to_auto_materialize(
             )
         ):
             conditions.add(MissingAutoMaterializeCondition())
+
         # if parent data has been updated or will update
         elif auto_materialize_policy.on_new_parent_data:
             if not asset_graph.is_source(candidate.asset_key):
@@ -756,16 +757,20 @@ def determine_asset_partitions_to_auto_materialize(
                     asset_key=candidate.asset_key,
                     partition_key=candidate.partition_key,
                 ).parent_partitions
-                updated_parents = {
-                    parent.asset_key
-                    for parent in instance_queryer.get_updated_parent_asset_partitions(
-                        candidate, parent_asset_partitions
-                    )
-                }
+
+                (
+                    updated_parent_asset_partitions,
+                    _,
+                ) = instance_queryer.get_updated_and_missing_parent_asset_partitions(
+                    candidate, parent_asset_partitions
+                )
+                updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
+
                 will_update_parents = set()
                 for parent in parent_asset_partitions:
                     if _will_materialize_for_conditions(conditions_by_asset_partition.get(parent)):
                         will_update_parents.add(parent.asset_key)
+
                 if updated_parents or will_update_parents:
                     conditions.add(
                         ParentMaterializedAutoMaterializeCondition(
