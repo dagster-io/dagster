@@ -480,7 +480,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
           body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
-        runConfigYaml = currentSession.runConfigYaml || partition.runConfigOrError.yaml;
+        runConfigYaml = partition.runConfigOrError.yaml;
       }
 
       const solidSelection = sessionSolidSelection || partition.solidSelection;
