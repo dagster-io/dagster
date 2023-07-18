@@ -6,7 +6,6 @@ from .cloud import (
     DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,
     DbtCloudResource as DbtCloudResource,
-    DbtCloudResourceV2 as DbtCloudResourceV2,
     dbt_cloud_resource as dbt_cloud_resource,
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
