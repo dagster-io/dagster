@@ -161,10 +161,8 @@ def project_scaffold_command(
         Syntax(
             code="\n".join(
                 [
-                    f"cd '{dbt_project_dir}' \\",
-                    "  && dbt parse --target-path target \\",
-                    f"  && cd '{dagster_project_dir}' \\",
-                    "  && dagster dev",
+                    f"cd '{dagster_project_dir}' \\",
+                    "  && (DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev)",
                 ]
             ),
             lexer="bash",
