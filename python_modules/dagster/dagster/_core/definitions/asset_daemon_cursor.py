@@ -72,74 +72,6 @@ class AssetDaemonCursor(NamedTuple):
             dynamic_partitions_store=dynamic_partitions_store,
         )
 
-    def with_handled_asset_key(self, asset_key: AssetKey) -> "AssetDaemonCursor":
-        return self._replace(handled_root_asset_keys=self.handled_root_asset_keys | {asset_key})
-
-    def with_handled_asset_partitions(
-        self,
-        asset_graph: AssetGraph,
-        asset_key: AssetKey,
-        partition_keys: AbstractSet[str],
-    ) -> "AssetDaemonCursor":
-        prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(asset_key)
-        if prior_materialized_partitions is None:
-            prior_materialized_partitions = cast(
-                PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
-            ).empty_subset()
-
-        return self._replace(
-            handled_root_partitions_by_asset_key={
-                **self.handled_root_partitions_by_asset_key,
-                **{asset_key: prior_materialized_partitions.with_partition_keys(partition_keys)},
-            }
-        )
-
-    def with_conditions(
-        self,
-        asset_graph: AssetGraph,
-        conditions_by_asset_partition_by_asset_key: Mapping[
-            AssetKey, Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]
-        ],
-    ) -> "AssetDaemonCursor":
-        new_cursor = self
-        for (
-            asset_key,
-            conditions_by_asset_partition,
-        ) in conditions_by_asset_partition_by_asset_key.items():
-            handled_partition_keys = {
-                asset_partition.partition_key
-                for asset_partition, conditions in conditions_by_asset_partition.items()
-                if AutoMaterializeDecisionType.from_conditions(conditions)
-                in (AutoMaterializeDecisionType.DISCARD, AutoMaterializeDecisionType.MATERIALIZE)
-            }
-            if not handled_partition_keys:
-                continue
-            elif asset_graph.is_partitioned(asset_key):
-                new_cursor = new_cursor.with_handled_asset_partitions(
-                    asset_graph, asset_key, {check.not_none(key) for key in handled_partition_keys}
-                )
-            else:
-                new_cursor = new_cursor.with_handled_asset_key(asset_key)
-        return new_cursor
-
-    def with_observe_run_requests(
-        self, observe_run_requests: Sequence[RunRequest], observe_request_timestamp: float
-    ) -> "AssetDaemonCursor":
-        result_last_observe_request_timestamp_by_asset_key = dict(
-            self.last_observe_request_timestamp_by_asset_key
-        )
-        for asset_key in [
-            asset_key
-            for run_request in observe_run_requests
-            for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
-        ]:
-            result_last_observe_request_timestamp_by_asset_key[
-                asset_key
-            ] = observe_request_timestamp
-        return self._replace(
-            last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key
-        )
-
     @classmethod
     def empty(cls) -> "AssetDaemonCursor":
         return AssetDaemonCursor(
@@ -238,3 +170,80 @@ class AssetDaemonCursor(NamedTuple):
             }
         )
         return serialized
+
+    def with_updates(
+        self,
+        asset_graph: AssetGraph,
+        new_latest_storage_id: Optional[int],
+        newly_observed_source_assets: AbstractSet[AssetKey],
+        newly_observed_source_timestamp: float,
+        newly_handled_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        conditions_by_asset_partition_by_asset_key: Mapping[
+            AssetKey, Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]
+        ],
+    ) -> "AssetDaemonCursor":
+        # Create a single dictionary for all the newly-handled asset partitions
+        handled_root_asset_partitions_by_asset_key = {
+            asset_key: {
+                asset_partition
+                for asset_partition, conditions in conditions_by_asset_partition.items()
+                if AutoMaterializeDecisionType.from_conditions(conditions)
+                in (AutoMaterializeDecisionType.MATERIALIZE, AutoMaterializeDecisionType.DISCARD)
+            }
+            for asset_key, conditions_by_asset_partition in conditions_by_asset_partition_by_asset_key.items()
+            if asset_key in asset_graph.root_asset_keys
+        }
+        for asset_partition in newly_handled_asset_partitions:
+            if asset_partition.asset_key in asset_graph.root_asset_keys:
+                handled_root_asset_partitions_by_asset_key.setdefault(
+                    asset_partition.asset_key, set()
+                ).add(asset_partition)
+
+        # update the relevant fields depending on if the asset key is partitioned or not
+        new_handled_root_asset_keys = set(self.handled_root_asset_keys)
+        new_handled_root_asset_partitions_by_asset_key = {}
+        handled_conditions = (
+            AutoMaterializeDecisionType.MATERIALIZE,
+            AutoMaterializeDecisionType.DISCARD,
+        )
+        for asset_key in asset_graph.root_asset_keys:
+            if asset_graph.is_partitioned(asset_key):
+                prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(
+                    asset_key
+                )
+                if prior_materialized_partitions is None:
+                    prior_materialized_partitions = cast(
+                        PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
+                    ).empty_subset()
+                new_handled_root_asset_partitions_by_asset_key[
+                    asset_key
+                ] = prior_materialized_partitions.with_partition_keys(
+                    {
+                        check.not_none(ap.partition_key)
+                        for ap in handled_root_asset_partitions_by_asset_key.get(asset_key, set())
+                    }
+                )
+            else:
+                asset_partition = AssetKeyPartitionKey(asset_key)
+                if asset_partition in newly_handled_asset_partitions or (
+                    asset_key in conditions_by_asset_partition_by_asset_key
+                    and AutoMaterializeDecisionType.from_conditions(
+                        conditions_by_asset_partition_by_asset_key[asset_key][asset_partition]
+                    )
+                    in handled_conditions
+                ):
+                    new_handled_root_asset_keys.add(asset_key)
+
+        return self._replace(
+            evaluation_id=self.evaluation_id + 1,
+            latest_storage_id=new_latest_storage_id,
+            handled_root_asset_keys=new_handled_root_asset_keys,
+            handled_root_partitions_by_asset_key=new_handled_root_asset_partitions_by_asset_key,
+            last_observe_request_timestamp_by_asset_key={
+                **self.last_observe_request_timestamp_by_asset_key,
+                **{
+                    asset_key: newly_observed_source_timestamp
+                    for asset_key in newly_observed_source_assets
+                },
+            },
+        )

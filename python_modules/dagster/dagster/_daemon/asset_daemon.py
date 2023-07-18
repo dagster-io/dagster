@@ -3,7 +3,7 @@ from typing import Optional
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext, AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_context import AssetDaemonIteration, AssetDaemonCursor
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -99,7 +99,7 @@ class AssetDaemon(IntervalDaemon):
             if raw_cursor
             else AssetDaemonCursor.empty()
         )
-        context = AssetDaemonContext(instance, asset_graph, stored_cursor=cursor)
+        context = AssetDaemonIteration(instance, asset_graph, stored_cursor=cursor)
 
         run_requests, new_cursor, evaluations = context.evaluate(
             materialize_run_tags={

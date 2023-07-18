@@ -11,6 +11,7 @@ from typing import (
     Set,
     Tuple,
 )
+from dagster._utils.cached_method import cached_method
 
 import pendulum
 
@@ -57,7 +58,7 @@ def _will_materialize_for_conditions(
     )
 
 
-class AssetDaemonContext:
+class AssetDaemonIteration:
     def __init__(
         self,
         instance: "DagsterInstance",
@@ -71,7 +72,6 @@ class AssetDaemonContext:
 
         self._instance_queryer = CachingInstanceQueryer(instance, asset_graph)
         self._stored_cursor = stored_cursor
-        self._new_cursor = stored_cursor
         self._auto_materialize_asset_keys = target_asset_keys or {
             key
             for key, policy in self.asset_graph.auto_materialize_policies_by_key.items()
@@ -122,6 +122,69 @@ class AssetDaemonContext:
             for asset_key in self.auto_materialize_asset_keys
             for parent in self.asset_graph.get_parents(asset_key)
         } | self.auto_materialize_asset_keys
+
+    @property
+    def new_latest_storage_id(self) -> Optional[int]:
+        (_, new_latest_storage_id) = self._cached()
+        return new_latest_storage_id
+
+    @property
+    def asset_partitions_with_newly_updated_parents(self) -> AbstractSet[AssetKeyPartitionKey]:
+        (asset_partitions_with_newly_updated_parents, _) = self._cached()
+        return asset_partitions_with_newly_updated_parents
+
+    @property
+    def newly_handled_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        (_, newly_handled_asset_partitions) = self._cached2()
+        return newly_handled_asset_partitions
+
+    @property
+    def unhandled_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        (unhandled_asset_partitions, _) = self._cached2()
+        return unhandled_asset_partitions
+
+    @cached_method
+    def _cached(self) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
+        return self.instance_queryer.asset_partitions_with_newly_updated_parents(
+            after_cursor=self.stored_cursor.latest_storage_id,
+            target_asset_keys=self.auto_materialize_asset_keys,
+            target_asset_keys_and_parents=self.auto_materialize_asset_keys_and_parents,
+        )
+
+    @cached_method
+    def _cached2(
+        self,
+    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
+        """Finds asset partitions that have never been materialized, requested, or discarded and
+        that have no parents.
+        """
+        unhandled_asset_partitions = set()
+        newly_handled_asset_partitions = set()
+        for asset_key in self.asset_graph.root_asset_keys & self.auto_materialize_asset_keys:
+            if not self.asset_graph.is_partitioned(asset_key):
+                if asset_key not in self.stored_cursor.handled_root_asset_keys:
+                    asset_partition = AssetKeyPartitionKey(asset_key)
+                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
+                        asset_partition
+                    ):
+                        newly_handled_asset_partitions.add(asset_partition)
+                    else:
+                        unhandled_asset_partitions.add(asset_partition)
+            else:
+                for partition_key in self.stored_cursor.get_unhandled_partitions(
+                    asset_key,
+                    self.asset_graph,
+                    dynamic_partitions_store=self.instance_queryer,
+                    current_time=self.instance_queryer.evaluation_time,
+                ):
+                    asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
+                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
+                        asset_partition
+                    ):
+                        newly_handled_asset_partitions.add(asset_partition)
+                    else:
+                        unhandled_asset_partitions.add(asset_partition)
+        return newly_handled_asset_partitions, unhandled_asset_partitions
 
     def get_implicit_auto_materialize_policy(self, asset_key: AssetKey) -> AutoMaterializePolicy:
         """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
@@ -254,9 +317,6 @@ class AssetDaemonContext:
     def get_conditions_by_asset_partition(
         self,
     ) -> Mapping[AssetKey, Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]]:
-        self._new_cursor = self._new_cursor._replace(
-            evaluation_id=self._new_cursor.evaluation_id + 1
-        )
         conditions_by_asset_partition_by_asset_key: Dict[
             AssetKey, Dict[AssetKeyPartitionKey, Set[AutoMaterializeCondition]]
         ] = defaultdict(lambda: defaultdict(set))
@@ -304,16 +364,6 @@ class AssetDaemonContext:
                     will_materialize_asset_partitions[candidate.asset_key].add(candidate)
             return will_materialize
 
-        (
-            asset_partitions_with_newly_updated_parents,
-            latest_storage_id,
-        ) = self.instance_queryer.asset_partitions_with_newly_updated_parents(
-            after_cursor=self.stored_cursor.latest_storage_id,
-            target_asset_keys=self.auto_materialize_asset_keys,
-            target_asset_keys_and_parents=self.auto_materialize_asset_keys_and_parents,
-        )
-        self._new_cursor = self._new_cursor._replace(latest_storage_id=latest_storage_id)
-
         # will add conditions to the internal mapping
         self.asset_graph.bfs_filter_asset_partitions(
             self.instance_queryer,
@@ -321,8 +371,8 @@ class AssetDaemonContext:
                 self.asset_graph, candidates_unit, to_reconcile
             ),
             {
-                *asset_partitions_with_newly_updated_parents,
-                *self._unhandled_root_asset_partitions(),
+                *self.asset_partitions_with_newly_updated_parents,
+                *self.unhandled_asset_partitions,
             },
             self.instance_queryer.evaluation_time,
         )
@@ -330,46 +380,28 @@ class AssetDaemonContext:
         return {
             asset_key: conditions_by_asset_partition
             for asset_key, conditions_by_asset_partition in conditions_by_asset_partition_by_asset_key.items()
-            if any(
-                conditions for asset_partition, conditions in conditions_by_asset_partition.items()
-            )
+            if any(conditions_by_asset_partition.values())
         }
 
-    def _unhandled_root_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        """Finds asset partitions that have never been materialized, requested, or discarded and
-        that have no parents.
-        """
-        unhandled_asset_partitions = set()
-        for asset_key in self.asset_graph.root_asset_keys & self.auto_materialize_asset_keys:
-            if not self.asset_graph.is_partitioned(asset_key):
-                if asset_key not in self.stored_cursor.handled_root_asset_keys:
-                    asset_partition = AssetKeyPartitionKey(asset_key)
-                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
-                        asset_partition
-                    ):
-                        self._new_cursor = self._new_cursor.with_handled_asset_key(asset_key)
-                        continue
-                    else:
-                        unhandled_asset_partitions.add(asset_partition)
-            else:
-                newly_materialized_partition_keys = set()
-                for partition_key in self.stored_cursor.get_unhandled_partitions(
-                    asset_key,
-                    self.asset_graph,
-                    dynamic_partitions_store=self.instance_queryer,
-                    current_time=self.instance_queryer.evaluation_time,
-                ):
-                    asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
-                        asset_partition
-                    ):
-                        newly_materialized_partition_keys.add(partition_key)
-                    else:
-                        unhandled_asset_partitions.add(asset_partition)
-                self._new_cursor = self._new_cursor.with_handled_asset_partitions(
-                    self.asset_graph, asset_key, newly_materialized_partition_keys
+    def get_asset_keys_to_auto_observe(self, current_timestamp: float) -> AbstractSet[AssetKey]:
+        assets_to_auto_observe: Set[AssetKey] = set()
+        for asset_key in self.asset_graph.source_asset_keys:
+            last_observe_request_timestamp = (
+                self.stored_cursor.last_observe_request_timestamp_by_asset_key.get(asset_key)
+            )
+            auto_observe_interval_minutes = self.asset_graph.get_auto_observe_interval_minutes(
+                asset_key
+            )
+
+            if auto_observe_interval_minutes and (
+                last_observe_request_timestamp is None
+                or (
+                    last_observe_request_timestamp + auto_observe_interval_minutes * 60
+                    < current_timestamp
                 )
-        return unhandled_asset_partitions
+            ):
+                assets_to_auto_observe.add(asset_key)
+        return assets_to_auto_observe
 
     def evaluate(
         self,
@@ -391,24 +423,28 @@ class AssetDaemonContext:
         )
 
         observe_request_timestamp = pendulum.now().timestamp()
-        observe_run_requests = (
-            get_auto_observe_run_requests(
-                self.stored_cursor.last_observe_request_timestamp_by_asset_key,
-                observe_request_timestamp,
-                self.asset_graph,
-                observe_run_tags,
-            )
+        assets_to_auto_observe = (
+            self.get_asset_keys_to_auto_observe(observe_request_timestamp)
             if auto_observe
-            else []
+            else set()
         )
-        self._new_cursor = self._new_cursor.with_observe_run_requests(
-            observe_run_requests, observe_request_timestamp
-        )
+        observe_run_requests = [
+            RunRequest(asset_selection=list(asset_keys), tags=observe_run_tags)
+            for asset_keys in self.asset_graph.split_asset_keys_by_repository(
+                assets_to_auto_observe
+            )
+            if len(asset_keys) > 0
+        ]
 
         return (
             [*observe_run_requests, *materialize_run_requests],
-            self._new_cursor.with_conditions(
-                self.asset_graph, conditions_by_asset_partition_by_asset_key
+            self.stored_cursor.with_updates(
+                asset_graph=self.asset_graph,
+                new_latest_storage_id=self.new_latest_storage_id,
+                newly_observed_source_assets=assets_to_auto_observe,
+                newly_observed_source_timestamp=observe_request_timestamp,
+                newly_handled_asset_partitions=self.newly_handled_asset_partitions,
+                conditions_by_asset_partition_by_asset_key=conditions_by_asset_partition_by_asset_key,
             ),
             [
                 AutoMaterializeAssetEvaluation.from_conditions(
@@ -462,30 +498,3 @@ def build_run_requests(
             )
 
     return run_requests
-
-
-def get_auto_observe_run_requests(
-    last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
-    current_timestamp: float,
-    asset_graph: AssetGraph,
-    run_tags: Optional[Mapping[str, str]],
-) -> Sequence[RunRequest]:
-    assets_to_auto_observe: Set[AssetKey] = set()
-    for asset_key in asset_graph.source_asset_keys:
-        last_observe_request_timestamp = last_observe_request_timestamp_by_asset_key.get(asset_key)
-        auto_observe_interval_minutes = asset_graph.get_auto_observe_interval_minutes(asset_key)
-
-        if auto_observe_interval_minutes and (
-            last_observe_request_timestamp is None
-            or (
-                last_observe_request_timestamp + auto_observe_interval_minutes * 60
-                < current_timestamp
-            )
-        ):
-            assets_to_auto_observe.add(asset_key)
-
-    return [
-        RunRequest(asset_selection=list(asset_keys), tags=run_tags)
-        for asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe)
-        if len(asset_keys) > 0
-    ]
