@@ -1005,7 +1005,7 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_asset_key_fn arg of {public_fn_name}",
             "0.21",
-            "Instead, provide a custom DagsterDbtTranslator that overrides node_info_to_asset_key.",
+            "Instead, provide a custom DagsterDbtTranslator that overrides get_asset_key.",
             stacklevel=4,
         )
 
@@ -1040,6 +1040,6 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_definition_metadata_fn arg of {public_fn_name}",
             "0.21",
-            "Instead, provide a custom DagsterDbtTranslator that overrides node_info_to_metadata.",
+            "Instead, provide a custom DagsterDbtTranslator that overrides get_metadata.",
             stacklevel=4,
         )
