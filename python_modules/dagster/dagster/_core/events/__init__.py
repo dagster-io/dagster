@@ -597,7 +597,7 @@ class DagsterEvent(
     @public
     @property
     def is_failure(self) -> bool:
-        """bool: If this event represetns the failure of a run or step."""
+        """bool: If this event represents the failure of a run or step."""
         return self.event_type in FAILURE_EVENTS
 
     @property
