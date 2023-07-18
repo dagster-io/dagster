@@ -5,7 +5,6 @@ from dagster import (
     AssetSelection,
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph import AssetGraph
 
 from .asset_utils import is_non_asset_node
@@ -17,7 +16,6 @@ from .utils import (
 )
 
 
-@experimental
 class DbtManifestAssetSelection(AssetSelection):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
