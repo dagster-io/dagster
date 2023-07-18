@@ -439,7 +439,7 @@ class AssetDaemonIteration:
         return (
             [*observe_run_requests, *materialize_run_requests],
             self.stored_cursor.with_updates(
-                root_asset_keys=self.asset_graph.root_asset_keys,
+                asset_graph=self.asset_graph,
                 new_latest_storage_id=self.new_latest_storage_id,
                 newly_observed_source_assets=assets_to_auto_observe,
                 newly_observed_source_timestamp=observe_request_timestamp,
