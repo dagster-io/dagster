@@ -11,7 +11,6 @@ from typing import (
     Set,
     Tuple,
 )
-from dagster._utils.cached_method import cached_method
 
 import pendulum
 
@@ -26,6 +25,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
+from dagster._utils.cached_method import cached_method
 
 from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph
@@ -184,7 +184,7 @@ class AssetDaemonIteration:
                         newly_handled_asset_partitions.add(asset_partition)
                     else:
                         unhandled_asset_partitions.add(asset_partition)
-        return newly_handled_asset_partitions, unhandled_asset_partitions
+        return unhandled_asset_partitions, newly_handled_asset_partitions
 
     def get_implicit_auto_materialize_policy(self, asset_key: AssetKey) -> AutoMaterializePolicy:
         """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
@@ -439,7 +439,7 @@ class AssetDaemonIteration:
         return (
             [*observe_run_requests, *materialize_run_requests],
             self.stored_cursor.with_updates(
-                asset_graph=self.asset_graph,
+                root_asset_keys=self.asset_graph.root_asset_keys,
                 new_latest_storage_id=self.new_latest_storage_id,
                 newly_observed_source_assets=assets_to_auto_observe,
                 newly_observed_source_timestamp=observe_request_timestamp,

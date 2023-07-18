@@ -5,6 +5,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetDaemonCursor,
 )
+from dagster._core.definitions.events import AssetKeyPartitionKey
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
@@ -33,7 +34,15 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat():
     )
 
     c2 = c.with_updates(
-        21, {}, {AssetKey("my_asset")}, {AssetKey("my_asset"): {"a"}}, 1, asset_graph, {}, 0
+        asset_graph=asset_graph,
+        new_latest_storage_id=21,
+        newly_observed_source_assets=set(),
+        newly_observed_source_timestamp=0,
+        newly_handled_asset_partitions={
+            AssetKeyPartitionKey("a"),
+            AssetKeyPartitionKey("my_asset", "a"),
+        },
+        conditions_by_asset_partition_by_asset_key={},
     )
 
     serdes_c2 = AssetDaemonCursor.from_serialized(c2.serialize(), asset_graph)

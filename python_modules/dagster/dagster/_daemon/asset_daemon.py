@@ -3,7 +3,7 @@ from typing import Optional
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import AssetDaemonIteration, AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_context import AssetDaemonCursor, AssetDaemonIteration
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector

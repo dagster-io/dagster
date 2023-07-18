@@ -7,13 +7,11 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     cast,
 )
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.run_request import RunRequest
 
 from .asset_graph import AssetGraph
 from .auto_materialize_condition import (
@@ -182,6 +180,7 @@ class AssetDaemonCursor(NamedTuple):
             AssetKey, Mapping[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]
         ],
     ) -> "AssetDaemonCursor":
+        root_asset_keys = asset_graph.root_asset_keys
         # Create a single dictionary for all the newly-handled asset partitions
         handled_root_asset_partitions_by_asset_key = {
             asset_key: {
@@ -191,13 +190,12 @@ class AssetDaemonCursor(NamedTuple):
                 in (AutoMaterializeDecisionType.MATERIALIZE, AutoMaterializeDecisionType.DISCARD)
             }
             for asset_key, conditions_by_asset_partition in conditions_by_asset_partition_by_asset_key.items()
-            if asset_key in asset_graph.root_asset_keys
+            if asset_key in root_asset_keys
         }
         for asset_partition in newly_handled_asset_partitions:
-            if asset_partition.asset_key in asset_graph.root_asset_keys:
-                handled_root_asset_partitions_by_asset_key.setdefault(
-                    asset_partition.asset_key, set()
-                ).add(asset_partition)
+            handled_root_asset_partitions_by_asset_key.setdefault(
+                asset_partition.asset_key, set()
+            ).add(asset_partition)
 
         # update the relevant fields depending on if the asset key is partitioned or not
         new_handled_root_asset_keys = set(self.handled_root_asset_keys)
@@ -206,7 +204,7 @@ class AssetDaemonCursor(NamedTuple):
             AutoMaterializeDecisionType.MATERIALIZE,
             AutoMaterializeDecisionType.DISCARD,
         )
-        for asset_key in asset_graph.root_asset_keys:
+        for asset_key in root_asset_keys:
             if asset_graph.is_partitioned(asset_key):
                 prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(
                     asset_key

@@ -1,11 +1,34 @@
+from typing import Mapping
+
 from dagster import AssetKey, DagsterInstance, observable_source_asset
-from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonCursor,
-    get_auto_observe_run_requests,
-)
+from dagster._core.definitions.asset_daemon_context import AssetDaemonCursor, AssetDaemonIteration
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import reconcile
+from dagster._core.definitions.run_request import RunRequest
+from git import Sequence
 from pytest import fixture
+
+
+def get_auto_observe_run_requests(
+    asset_graph: AssetGraph,
+    current_timestamp: float,
+    last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
+    run_tags: Mapping[str, str],
+) -> Sequence[RunRequest]:
+    context = AssetDaemonIteration(
+        instance=DagsterInstance.ephemeral(),
+        asset_graph=asset_graph,
+        stored_cursor=AssetDaemonCursor.empty()._replace(
+            last_observe_request_timestamp_by_asset_key=last_observe_request_timestamp_by_asset_key
+        ),
+    )
+    return [
+        RunRequest(asset_selection=list(asset_keys), tags=run_tags)
+        for asset_keys in asset_graph.split_asset_keys_by_repository(
+            context.get_asset_keys_to_auto_observe(current_timestamp)
+        )
+        if len(asset_keys) > 0
+    ]
 
 
 def test_single_observable_source_asset_no_auto_observe():

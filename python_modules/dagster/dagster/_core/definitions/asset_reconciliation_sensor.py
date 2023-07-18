@@ -10,8 +10,8 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonIteration,
     AssetDaemonCursor,
+    AssetDaemonIteration,
     AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.events import AssetKey

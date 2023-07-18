@@ -2,6 +2,7 @@ from datetime import datetime
 
 import dagster._check as check
 from dagster import AssetKey
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetDaemonCursor,
     AutoMaterializeAssetEvaluation,
@@ -331,7 +332,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
                 CURSOR_KEY: AssetDaemonCursor.empty()
-                .with_updates(0, {}, set(), {}, 42, None, [], 0)  # type: ignore
+                ._replace(evaluation_id=41)
+                .with_updates(
+                    asset_graph=AssetGraph.from_assets([]),
+                    new_latest_storage_id=42,
+                    newly_observed_source_assets=set(),
+                    newly_observed_source_timestamp=0,
+                    newly_handled_asset_partitions=set(),
+                    conditions_by_asset_partition_by_asset_key={},
+                )
                 .serialize()
             }
         )
