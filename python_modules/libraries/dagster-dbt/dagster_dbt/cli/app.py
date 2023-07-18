@@ -5,13 +5,15 @@ from typing import Any, Dict
 
 import typer
 import yaml
+from dbt.version import __version__ as dbt_version
 from jinja2 import Environment, FileSystemLoader
+from packaging import version
 from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
 from ..include import STARTER_PROJECT_PATH
-from ..version import __version__
+from ..version import __version__ as dagster_dbt_version
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -76,6 +78,10 @@ def copy_scaffold(
         f'"{part}"' for part in dbt_project_dir_relative_path.parts
     ]
 
+    dbt_parse_command = ['"parse"']
+    if version.parse(dbt_version) < version.parse("1.5.0"):
+        dbt_parse_command += ['"--write-manifest"']
+
     env = Environment(loader=FileSystemLoader(dagster_project_dir))
 
     for path in dagster_project_dir.glob("**/*"):
@@ -87,6 +93,7 @@ def copy_scaffold(
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
                 dbt_project_name=dbt_project_name,
+                dbt_parse_command=dbt_parse_command,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 project_name=project_name,
             ).dump(destination_path)
@@ -130,7 +137,9 @@ def project_scaffold_command(
     load assets from an existing dbt project.
     """
     console = Console()
-    console.print(f"Running with dagster-dbt version: [bold green]{__version__}[/bold green].")
+    console.print(
+        f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
+    )
     console.print(
         f"Initializing Dagster project [bold green]{project_name}[/bold green] in the current"
         f" working directory for dbt project directory [bold green]{dbt_project_dir}[/bold green]"
