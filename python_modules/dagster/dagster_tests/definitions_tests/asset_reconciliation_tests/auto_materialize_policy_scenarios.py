@@ -316,12 +316,14 @@ auto_materialize_policy_scenarios = {
         expected_conditions={
             "asset3": {
                 ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset({AssetKey("asset1")})
+                    updated_asset_keys=frozenset({AssetKey("asset1")}),
+                    will_update_asset_keys=frozenset(),
                 )
             },
             "asset4": {
                 ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset({AssetKey("asset2"), AssetKey("asset3")})
+                    updated_asset_keys=frozenset({AssetKey("asset2"), AssetKey("asset3")}),
+                    will_update_asset_keys=frozenset(),
                 )
             },
         },
@@ -341,7 +343,8 @@ auto_materialize_policy_scenarios = {
             "asset4": {
                 ParentMaterializedAutoMaterializeCondition(
                     # NOTE: asset3 is misleading here, because it doesn't have an AutoMaterializePolicy. We should filter this out
-                    updated_asset_keys=frozenset({AssetKey("asset2"), AssetKey("asset3")})
+                    updated_asset_keys=frozenset({AssetKey("asset2"), AssetKey("asset3")}),
+                    will_update_asset_keys=frozenset(),
                 ),
                 ParentOutdatedAutoMaterializeCondition(
                     waiting_on_asset_keys=frozenset({AssetKey("asset3")})
@@ -430,7 +433,8 @@ auto_materialize_policy_scenarios = {
                 expected_conditions={
                     "D": {
                         ParentMaterializedAutoMaterializeCondition(
-                            updated_asset_keys=frozenset({AssetKey("C"), AssetKey("root2")})
+                            updated_asset_keys=frozenset({AssetKey("C"), AssetKey("root2")}),
+                            will_update_asset_keys=frozenset(),
                         ),
                         ParentOutdatedAutoMaterializeCondition(
                             # waiting on A to be materialized (pulling in the new version of root1)
@@ -444,7 +448,8 @@ auto_materialize_policy_scenarios = {
             expected_conditions={
                 "D": {
                     ParentMaterializedAutoMaterializeCondition(
-                        updated_asset_keys=frozenset({AssetKey("root2"), AssetKey("C")})
+                        updated_asset_keys=frozenset({AssetKey("root2"), AssetKey("C")}),
+                        will_update_asset_keys=frozenset(),
                     ),
                     ParentOutdatedAutoMaterializeCondition(
                         # now waiting on B to be materialized (pulling in the new version of root1/A)
@@ -460,12 +465,14 @@ auto_materialize_policy_scenarios = {
         expected_conditions={
             "C": {
                 ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset({AssetKey("B")})
+                    updated_asset_keys=frozenset({AssetKey("B")}),
+                    will_update_asset_keys=frozenset(),
                 )
             },
             "D": {
                 ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset({AssetKey("C"), AssetKey("root2")})
+                    updated_asset_keys=frozenset({AssetKey("C"), AssetKey("root2")}),
+                    will_update_asset_keys=frozenset(),
                 )
             },
         },

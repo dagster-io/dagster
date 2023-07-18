@@ -651,6 +651,50 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return updated_or_missing_parents
 
+    def get_updated_parent_asset_partitions(
+        self,
+        asset_partition: AssetKeyPartitionKey,
+        parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        parent_asset_partitions_by_key: Dict[AssetKey, List[AssetKeyPartitionKey]] = defaultdict(
+            list
+        )
+        for parent in parent_asset_partitions:
+            parent_asset_partitions_by_key[parent.asset_key].append(parent)
+
+        time_or_dynamic_partitioned = isinstance(
+            self.asset_graph.get_partitions_def(asset_partition.asset_key),
+            (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
+        )
+        updated_parents = set()
+        for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
+            # ignore non-observable source parents
+            if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
+                parent_key
+            ):
+                continue
+
+            # find missing parents
+            for parent in parent_asset_partitions:
+                if not self.asset_partition_has_materialization_or_observation(parent):
+                    continue
+
+            # when mapping from time or dynamic downstream to unpartitioned upstream, only check
+            # for existence of upstream materialization, do not worry about updates
+            if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
+                continue
+
+            updated_parents.update(
+                self.get_asset_partitions_updated_after_cursor(
+                    asset_key=parent_key,
+                    asset_partitions=parent_asset_partitions,
+                    after_cursor=self.get_latest_materialization_or_observation_storage_id(
+                        asset_partition
+                    ),
+                )
+            )
+        return updated_parents
+
     @cached_method
     def get_root_unreconciled_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey
@@ -689,18 +733,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return root_unreconciled_ancestors
 
-    def get_missing_or_updated_or_going_to_update_parents(
-        self, asset_partition: AssetKeyPartitionKey
-    ) -> AbstractSet[AssetKey]:
+    def get_updated_parents(self, asset_partition: AssetKeyPartitionKey) -> AbstractSet[AssetKey]:
         """Return the set of parents of the asset partition that are
         - missing (and thus will be materialized)
-        - updated more recently than the asset partition
-        - have a parent that is missing or updated more recently than the asset partition (and thus will be materialized).
+        - updated more recently than the asset partition.
         """
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
-        elif not self.asset_partition_has_materialization_or_observation(asset_partition):
-            return {asset_partition.asset_key}
 
         parent_asset_partitions = self.asset_graph.get_parents_partitions(
             dynamic_partitions_store=self,
@@ -714,10 +753,5 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 asset_partition, parent_asset_partitions
             )
         )
-
-        # recurse over parents
-        for parent in set(parent_asset_partitions) - missing_or_updated_or_going_to_update_parents:
-            if self.get_root_unreconciled_ancestors(asset_partition=parent):
-                missing_or_updated_or_going_to_update_parents.add(parent)
 
         return {p.asset_key for p in missing_or_updated_or_going_to_update_parents}

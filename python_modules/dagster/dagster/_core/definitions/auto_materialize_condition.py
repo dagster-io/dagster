@@ -46,6 +46,7 @@ class ParentMaterializedAutoMaterializeCondition(NamedTuple):
 
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
     updated_asset_keys: Optional[FrozenSet[AssetKey]] = None
+    will_update_asset_keys: Optional[FrozenSet[AssetKey]] = None
 
 
 @whitelist_for_serdes
