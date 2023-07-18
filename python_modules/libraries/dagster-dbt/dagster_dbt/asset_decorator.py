@@ -15,8 +15,14 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster import AssetKey, AssetOut, AssetsDefinition, Nothing, PartitionsDefinition, multi_asset
-from dagster._annotations import experimental
+from dagster import (
+    AssetKey,
+    AssetOut,
+    AssetsDefinition,
+    Nothing,
+    PartitionsDefinition,
+    multi_asset,
+)
 
 from .asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
@@ -35,7 +41,6 @@ from .utils import (
 )
 
 
-@experimental
 def dbt_assets(
     *,
     manifest: Union[Mapping[str, Any], Path],
