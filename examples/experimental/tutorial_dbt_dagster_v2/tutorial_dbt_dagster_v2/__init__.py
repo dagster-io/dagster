@@ -1,5 +1,5 @@
 from dagster import Definitions
-from dagster_dbt import DbtCli
+from dagster_dbt import DbtCliResource
 
 from .assets.build import my_dbt_assets
 from .constants import DBT_PROJECT_DIR
@@ -11,7 +11,7 @@ defs = Definitions(
     schedules=[daily_dbt_assets_schedule, hourly_staging_dbt_assets],
     jobs=[my_dbt_job],
     resources={
-        "dbt": DbtCli(
+        "dbt": DbtCliResource(
             project_dir=DBT_PROJECT_DIR,
             global_config_flags=["--no-use-colors"],
             profile="jaffle_shop",

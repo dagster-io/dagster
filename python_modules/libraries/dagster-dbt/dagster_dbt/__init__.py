@@ -36,9 +36,9 @@ from .version import __version__ as __version__
 
 from .asset_decorator import dbt_assets as dbt_assets
 from .core import (
-    DbtCli as DbtCli,
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliInvocation as DbtCliInvocation,
+    DbtCliResource as DbtCliResource,
 )
 from .dagster_dbt_translator import (
     DagsterDbtTranslator as DagsterDbtTranslator,
@@ -71,7 +71,6 @@ if TYPE_CHECKING:
     from .core import (
         DbtCliClientResource as DbtCliClientResource,
         DbtCliOutput as DbtCliOutput,
-        DbtCliResource as DbtCliResource,
         dbt_cli_resource as dbt_cli_resource,
     )
     from .dbt_resource import DbtResource as DbtResource
@@ -99,23 +98,18 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
             (
                 "DbtCliClientResource",
                 "dagster_dbt.core",
-                "DbtCliClientResource is deprecated. Use DbtCli instead.",
+                "DbtCliClientResource is deprecated. Use DbtCliResource instead.",
             ),
             ("DbtCliOutput", "dagster_dbt.core", None),
             (
-                "DbtCliResource",
-                "dagster_dbt.core",
-                "DbtCliResource is deprecated. Use DbtCli instead.",
-            ),
-            (
                 "dbt_cli_resource",
                 "dagster_dbt.core",
-                "dbt_cli_resource is deprecated. Use DbtCli instead.",
+                "dbt_cli_resource is deprecated. Use DbtCliResource instead.",
             ),
             (
                 "DbtResource",
                 "dagster_dbt.dbt_resource",
-                "DbtResource is deprecated. Use DbtCli instead.",
+                "DbtResource is deprecated. Use DbtCliResource instead.",
             ),
             ("DagsterDbtCliFatalRuntimeError", "dagster_dbt.errors", None),
             ("DagsterDbtCliHandledRuntimeError", "dagster_dbt.errors", None),

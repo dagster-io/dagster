@@ -54,12 +54,10 @@ Resources (dbt Core)
 CLI Resource
 ------------
 
-.. autoclass:: DbtCli
+.. autoclass:: DbtCliResource
 
 Deprecated (dbt Core)
 -----------------------
-
-.. autoclass:: DbtCliResource
 
 .. autoclass:: DbtCliOutput
 

@@ -58,7 +58,7 @@ from dagster_dbt.asset_utils import (
     get_deps,
 )
 from dagster_dbt.core.resources import DbtCliClient
-from dagster_dbt.core.resources_v2 import DbtCli
+from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.core.types import DbtCliOutput
 from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -104,15 +104,15 @@ def _load_manifest_for_project(
         return json.load(f), cli_output
 
 
-def _can_stream_events(dbt_resource: Union[DbtCliClient, DbtCli]) -> bool:
+def _can_stream_events(dbt_resource: Union[DbtCliClient, DbtCliResource]) -> bool:
     """Check if the installed dbt version supports streaming events."""
     import dbt.version
     from packaging import version
 
     if version.parse(dbt.version.__version__) >= version.parse("1.4.0"):
-        # The json log format is required for streaming events. DbtCli always uses this format, but
+        # The json log format is required for streaming events. DbtCliResource always uses this format, but
         # DbtCliClient has an option to disable it.
-        if isinstance(dbt_resource, DbtCli):
+        if isinstance(dbt_resource, DbtCliResource):
             return True
         else:
             return dbt_resource._json_log_format  # noqa: SLF001
@@ -239,7 +239,7 @@ def _events_for_structured_json_line(
 
 def _stream_event_iterator(
     context: OpExecutionContext,
-    dbt_resource: Union[DbtCli, DbtCliClient],
+    dbt_resource: Union[DbtCliResource, DbtCliClient],
     use_build_command: bool,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     runtime_metadata_fn: Optional[
@@ -267,9 +267,9 @@ def _stream_event_iterator(
         if runtime_metadata_fn is not None:
             raise DagsterDbtError(
                 "The runtime_metadata_fn argument on the load_assets_from_dbt_manifest and"
-                " load_assets_from_dbt_project functions is not supported when using the DbtCli"
-                " resource. Use the @dbt_assets decorator instead if you want control over what"
-                " metadata is yielded at runtime."
+                " load_assets_from_dbt_project functions is not supported when using the"
+                " DbtCliResource resource. Use the @dbt_assets decorator instead if you want"
+                " control over what metadata is yielded at runtime."
             )
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -321,13 +321,15 @@ def _get_dbt_op(
         required_resource_keys={dbt_resource_key},
     )
     def _dbt_op(context, config: DbtOpConfig):
-        dbt_resource: Union[DbtCli, DbtCliClient] = getattr(context.resources, dbt_resource_key)
+        dbt_resource: Union[DbtCliResource, DbtCliClient] = getattr(
+            context.resources, dbt_resource_key
+        )
         check.inst(
             dbt_resource,
-            (DbtCli, DbtCliClient),
+            (DbtCliResource, DbtCliClient),
             (
-                "Resource with key 'dbt_resource_key' must be a DbtCli or DbtCliClient object,"
-                f" but is a {type(dbt_resource)}"
+                "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
+                f" object, but is a {type(dbt_resource)}"
             ),
         )
 

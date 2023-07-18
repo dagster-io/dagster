@@ -1,7 +1,7 @@
 import json
 
 from dagster import AssetMaterialization, Output, job, op
-from dagster_dbt import DbtCli
+from dagster_dbt import DbtCliResource
 
 from ..constants import MANIFEST_PATH
 
@@ -10,7 +10,7 @@ with MANIFEST_PATH.open("r") as f:
 
 
 @op
-def my_dbt_build_op(dbt: DbtCli):
+def my_dbt_build_op(dbt: DbtCliResource):
     for dagster_event in dbt.cli(["build"], manifest=manifest).stream():
         if isinstance(dagster_event, Output):
             yield AssetMaterialization(
