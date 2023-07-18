@@ -427,7 +427,6 @@
         }),
         'freshnessPolicy': dict({
           'cronSchedule': None,
-          'lastEvaluationTimestamp': '1689650339334',
           'maximumLagMinutes': 30.0,
         }),
         'id': 'test.test_repo.["fresh_diamond_bottom"]',

@@ -11,10 +11,10 @@ import {
   AutomaterializePolicyTag,
   automaterializePolicyDescription,
 } from './AutomaterializePolicyTag';
-import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
+import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
