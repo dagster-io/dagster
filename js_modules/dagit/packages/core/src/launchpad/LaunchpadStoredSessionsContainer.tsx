@@ -58,6 +58,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
         pipeline={pipeline}
         partitionSets={partitionSets}
         repoAddress={repoAddress}
+        rootDefaultYaml={rootDefaultYaml}
       />
     </>
   );

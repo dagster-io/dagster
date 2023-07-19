@@ -85,6 +85,7 @@ interface LaunchpadSessionProps {
   partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
   initialExecutionSessionState?: Partial<IExecutionSession>;
+  rootDefaultYaml: string | undefined;
 }
 
 interface ILaunchpadSessionState {
@@ -172,6 +173,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     partitionSets,
     pipeline,
     repoAddress,
+    rootDefaultYaml,
   } = props;
 
   const client = useApolloClient();
@@ -259,11 +261,11 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     configSchemaOrError?.__typename === 'ModeNotFoundError' ? configSchemaOrError : undefined;
 
   const anyDefaultsToExpand = React.useMemo(() => {
-    if (!runConfigSchema?.rootDefaultYaml) {
+    if (!rootDefaultYaml) {
       return false;
     }
     try {
-      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(runConfigSchema?.rootDefaultYaml));
+      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(rootDefaultYaml));
 
       const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
@@ -275,7 +277,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     } catch (err) {
       return false;
     }
-  }, [currentSession.runConfigYaml, runConfigSchema?.rootDefaultYaml]);
+  }, [currentSession.runConfigYaml, rootDefaultYaml]);
 
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
@@ -290,8 +292,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   };
 
   const onExpandDefaults = () => {
-    if (runConfigSchema?.rootDefaultYaml) {
-      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(runConfigSchema?.rootDefaultYaml));
+    if (rootDefaultYaml) {
+      const defaultsYaml = yaml.parse(sanitizeConfigYamlString(rootDefaultYaml));
 
       const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
