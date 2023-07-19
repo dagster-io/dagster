@@ -2,10 +2,10 @@ import subprocess
 
 import pytest
 from kubernetes.client import models
-from schema.charts.dagster.subschema.dagit import (
-    Dagit,
-)
 from schema.charts.dagster.subschema.migrate import Migrate
+from schema.charts.dagster.subschema.webserver import (
+    Webserver,
+)
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
@@ -55,7 +55,7 @@ def test_job_instance_migrate_keeps_annotations(template: HelmTemplate):
 
     helm_values_migrate_enabled = DagsterHelmValues.construct(
         migrate=Migrate(enabled=True),
-        dagit=Dagit.construct(
+        dagsterWebserver=Webserver.construct(
             annotations=kubernetes.Annotations.parse_obj(annotations),
         ),
     )

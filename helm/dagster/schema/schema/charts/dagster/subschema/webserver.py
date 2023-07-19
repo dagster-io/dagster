@@ -19,7 +19,7 @@ class Workspace(BaseModel):
     externalConfigmap: Optional[str]
 
 
-class Dagit(BaseModel):
+class Webserver(BaseModel):
     replicaCount: int
     image: kubernetes.Image
     nameOverride: str
