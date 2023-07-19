@@ -9,13 +9,9 @@ import {EvaluationOrEmpty} from './types';
 
 interface Props {
   selectedEvaluation?: EvaluationOrEmpty;
-  maxMaterializationsPerMinute: number;
 }
 
-export const AutomaterializeMiddlePanelNoPartitions = ({
-  selectedEvaluation,
-  maxMaterializationsPerMinute,
-}: Props) => {
+export const AutomaterializeMiddlePanelNoPartitions = ({selectedEvaluation}: Props) => {
   const conditionResults = React.useMemo(() => {
     return new Set(
       (selectedEvaluation?.conditions || []).map((condition) => condition.__typename),
@@ -62,7 +58,6 @@ export const AutomaterializeMiddlePanelNoPartitions = ({
       </Box>
       <ConditionsNoPartitions
         conditionResults={conditionResults}
-        maxMaterializationsPerMinute={maxMaterializationsPerMinute}
         parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
       />
     </Box>
