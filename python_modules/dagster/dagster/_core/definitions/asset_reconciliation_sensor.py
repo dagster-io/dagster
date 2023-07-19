@@ -748,11 +748,36 @@ def determine_asset_partitions_to_auto_materialize(
         ):
             conditions.add(MissingAutoMaterializeCondition())
 
-        # if the parent has been updated
-        if auto_materialize_policy.on_new_parent_data and not instance_queryer.is_reconciled(
-            asset_partition=candidate
-        ):
-            conditions.add(ParentMaterializedAutoMaterializeCondition())
+        # if parent data has been updated or will update
+        elif auto_materialize_policy.on_new_parent_data:
+            if not asset_graph.is_source(candidate.asset_key):
+                parent_asset_partitions = asset_graph.get_parents_partitions(
+                    dynamic_partitions_store=instance_queryer,
+                    current_time=evaluation_time,
+                    asset_key=candidate.asset_key,
+                    partition_key=candidate.partition_key,
+                ).parent_partitions
+
+                (
+                    updated_parent_asset_partitions,
+                    _,
+                ) = instance_queryer.get_updated_and_missing_parent_asset_partitions(
+                    candidate, parent_asset_partitions
+                )
+                updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
+
+                will_update_parents = set()
+                for parent in parent_asset_partitions:
+                    if _will_materialize_for_conditions(conditions_by_asset_partition.get(parent)):
+                        will_update_parents.add(parent.asset_key)
+
+                if updated_parents or will_update_parents:
+                    conditions.add(
+                        ParentMaterializedAutoMaterializeCondition(
+                            updated_asset_keys=frozenset(updated_parents),
+                            will_update_asset_keys=frozenset(will_update_parents),
+                        )
+                    )
 
         # if the parents will not be resolved this tick
         waiting_on_asset_keys = get_waiting_on_asset_keys(candidate)
