@@ -23,12 +23,35 @@ def _filter_empty_dicts(to_filter: Any) -> Any:
         return {k: v for k, v in filtered_dict.items() if v is not None and v != {}}
 
 
+def _cleanup_run_config_dict(run_config_dict: Any) -> Any:
+    """Performs cleanup of the run config dict to remove empty dicts and strip the default executor
+    config if it has not been overridden, to make the output more readable.
+    """
+    # We manually strip the default executor config because
+    # the max_concurrent default value is a sentinel and can be confusing
+    # if presented to the user:
+    # execution:
+    #   config:
+    #     multiprocess:
+    #       max_concurrent: 0
+    if (
+        run_config_dict.get("execution", {})
+        .get("config", {})
+        .get("multiprocess", {})
+        .get("max_concurrent", None)
+        == 0
+    ):
+        del run_config_dict["execution"]["config"]["multiprocess"]["max_concurrent"]
+
+    return _filter_empty_dicts(run_config_dict)
+
+
 def default_values_yaml_from_type_snap(
     snapshot: ConfigSchemaSnapshot,
     type_snap: ConfigTypeSnap,
 ) -> str:
     """Returns a YAML representation of the default values for the given type snap."""
-    run_config_dict = _filter_empty_dicts(default_values_from_type_snap(type_snap, snapshot))
+    run_config_dict = _cleanup_run_config_dict(default_values_from_type_snap(type_snap, snapshot))
 
     # Sort the keys so that the output begins with the most useful keys (ops, resources)
     # We use a dict rather than an OrderedDict because in Py3.7+ the order of keys in a dict
