@@ -268,7 +268,10 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       const currentUserConfig = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       const updatedRunConfigData = merge(defaultsYaml, currentUserConfig);
 
-      return yaml.stringify(currentUserConfig) !== yaml.stringify(updatedRunConfigData);
+      return (
+        yaml.stringify(currentUserConfig, {sortMapEntries: true}) !==
+        yaml.stringify(updatedRunConfigData, {sortMapEntries: true})
+      );
     } catch (err) {
       return false;
     }
