@@ -13,7 +13,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
   tutorial.
 </Note>
 
-By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project), [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models), and [created and materialized upstream assets using Dagit](/integrations/dbt/using-dbt-with-dagster/upstream-assets).
+By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project), [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models), and [created and materialized upstream assets using the Dagster UI](/integrations/dbt/using-dbt-with-dagster/upstream-assets).
 
 In this step, you'll:
 
@@ -29,7 +29,7 @@ You've added upstream assets to your data pipeline, but nothing downstream - unt
 Here's a quick refresher of what our graph of assets currently looks like:
 
 <Image
-alt="Asset graph in Dagit, showing materialized assets"
+alt="Asset graph in the Dagster UI, showing materialized assets"
 src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets-asset-graph-materialized.png"
 width={1091}
 height={896}
@@ -112,12 +112,12 @@ def order_count_chart(context, customers: pd.DataFrame):
 
 In this step, you'll materialize the `order_count_chart_asset`. When successfully materialized, a new tab containing the plotly chart will automatically open in your browser.
 
-1. Back in Dagit on the asset graph, click **Reload definitions**. This ensures that Dagit picks up the changes you made in the previous steps.
+1. Back in the UI on the asset graph, click **Reload definitions**. This ensures that the UI picks up the changes you made in the previous steps.
 
    At this point, the `order_count_chart` asset should display below `customers` as a downstream dependency:
 
    <Image
-   alt="order_count_chart asset displaying in Dagit's asset graph"
+   alt="order_count_chart asset displaying in the Dagster UI's asset graph"
    src="/images/integrations/dbt/using-dbt-with-dagster/downstream-assets-new-asset.png"
    width={998}
    height={808}

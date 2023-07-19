@@ -52,7 +52,7 @@ height={917}
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject object="MetadataValue" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the [Asset Details](/concepts/webserver/ui#asset-details) page. Check our API docs for <PyObject object="MetadataValue" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
 from dagster import AssetMaterialization, AssetObservation, MetadataValue, op
@@ -79,7 +79,7 @@ def observes_dataset_op(context):
     return remote_storage_path
 ```
 
-In the [Asset Details](/concepts/dagit/dagit#asset-details) page, we can see observations in the Asset Activity table.
+In the [Asset Details](/concepts/webserver/ui#asset-details) page, we can see observations in the Asset Activity table.
 
 <Image
 alt="asset-activity-observation"
@@ -118,7 +118,7 @@ function is run, an <PyObject object="AssetObservation" /> will be generated for
 the source asset and tagged with the returned data version. When an asset is
 observed to have a newer data version than the data version it had when a
 downstream asset was materialized, then the downstream asset will be given a
-label in the UI that indicates that upstream data has changed.
+label in the Dagster UI that indicates that upstream data has changed.
 
 <PyObject object="AutoMaterializePolicy" pluralize /> can be used to automatically
 materialize downstream assets when this occurs.
@@ -141,7 +141,7 @@ def foo_source_asset():
 
 When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this source asset might need to be updated.
 
-Source asset observations can be triggered via the "Observe sources" button in the Dagit graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
+Source asset observations can be triggered via the "Observe sources" button in the the UI graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
 
 <Image
 alt="observable-source-asset"
