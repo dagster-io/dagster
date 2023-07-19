@@ -7,6 +7,7 @@ from dagster import (
     ConfigurableIOManager,
     ConfigurableResource,
     Definitions,
+    FilesystemIOManager,
     JobDefinition,
     RunRequest,
     ScheduleDefinition,
@@ -14,6 +15,7 @@ from dagster import (
     job,
     op,
     repository,
+    resource,
     sensor,
 )
 from dagster._core.definitions.repository_definition.repository_data_builder import (
@@ -610,3 +612,82 @@ def test_bind_with_string_annotation():
         defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
         == str_field_value
     )
+
+
+def test_late_binding_with_resource_defs() -> None:
+    queries = []
+
+    class DummyDB:
+        def execute_query(self, query):
+            queries.append(query)
+
+    @resource
+    def dummy_database_resource(init_context):
+        return DummyDB()
+
+    @op(required_resource_keys={"database"})
+    def op_requires_resources(context):
+        context.resources.database.execute_query("foo")
+
+    @job(resource_defs={"database": dummy_database_resource})
+    def do_database_stuff():
+        op_requires_resources()
+
+    @op
+    def simple_op():
+        pass
+
+    @job()
+    def simple_job():
+        simple_op()
+
+    # io_manager here will be bound to both jobs
+    # we need to make sure this doesn't invalidate the database resource
+    defs = Definitions(
+        jobs=[do_database_stuff, simple_job],
+        resources={"io_manager": FilesystemIOManager()},
+    )
+
+    assert defs.get_job_def("do_database_stuff").execute_in_process().success
+
+    assert queries == ["foo"]
+
+
+def test_late_binding_with_resource_defs_override() -> None:
+    queries = []
+
+    class DummyDB:
+        def execute_query(self, query):
+            queries.append(query)
+
+    @resource
+    def dummy_database_resource(init_context):
+        return DummyDB()
+
+    @op(required_resource_keys={"database"})
+    def op_requires_resources(context):
+        context.resources.database.execute_query("foo")
+
+    @job(resource_defs={"database": dummy_database_resource})
+    def do_database_stuff():
+        op_requires_resources()
+
+    class BadDB(DummyDB):
+        def execute_query(self, query):
+            pass
+
+    @resource
+    def bad_database_resource(init_context):
+        return BadDB()
+
+    # io_manager here will be bound to both jobs
+    # we need to make sure the bad database resource doesn't get bound, since the
+    # job-level resource def should take precedence
+    defs = Definitions(
+        jobs=[do_database_stuff],
+        resources={"io_manager": FilesystemIOManager(), "database": bad_database_resource},
+    )
+
+    assert defs.get_job_def("do_database_stuff").execute_in_process().success
+
+    assert queries == ["foo"]
