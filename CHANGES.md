@@ -1,5 +1,54 @@
 # Changelog
 
+# 1.4.0 / 0.20.0 (libraries) "Material Girl"
+
+## **Since 1.3.14 (core) / 0.19.14 (libraries)**
+
+### New
+
+- The published Dagster Docker images now use Python 3.10, instead of 3.7.
+- We’ve deprecated the `non_argument_deps` parameter of `@asset` and `@multi_asset` in favor of a new `deps` parameter. The new parameter makes it clear that this is a first-class way of defining dependencies, makes code more concise, and accepts `AssetsDefinition` and `SourceAsset` objects, in addition to the `str`s and `AssetKey`s that the previous parameter accepted.
+- The `UPathIOManager` can now be extended to load multiple partitions asynchronously (Thanks Daniel Gafni!).
+- By default, Dagster will now automatically load default config values into the launchpad. This behavior can be disabled in the user settings page.
+- [dagster-k8s] The Helm chart now sets readiness probes on user code deployment servers by default. These can be disabled with `dagster-user-deployments.deployments.[...].readinessProbe.enabled=false`.
+- [dagster-airbyte] In line with the deprecation of `non_argument_deps` in favor of `deps`, `build_airbyte_assets` now accepts a `deps` parameter.
+- [dagstermill] In line with the deprecation of `non_argument_deps` in favor of `deps`, `define_dagstermill_asset` now accepts a `deps` parameter.
+
+### Bugfixes
+
+- Duplicate partition keys passed to `StaticPartitionsDefinition` will now raise an error.
+- Fixed a bug that caused lazy `AutoMaterializePolicy`'s to not materialize missing assets.
+- [ui] Fixed an issue where global search and large DAGs were broken when using `--path-prefix`.
+- Schedule and sensor run submissions are now kept up to date with the current workspace, fixing an issue where a stale reference to a server would be used in some conditions.
+
+### Breaking Changes
+
+- Support for Python 3.7 has been dropped.
+- `build_asset_reconciliation_sensor` (Experimental) has been removed. It was deprecated in 1.3 in favor of `AutoMaterializePolicy`.
+- `asset_key(s)` properties on `AssetIn` and `AssetDefinition` have been removed in favor of `key(s)`. These APIs were deprecated in 1.0.
+- `root_input_manager` and `RootInputManagerDefinition` have been removed in favor of `input_manager` and `InputManagerDefinition`. These APIs were deprecated in 1.0.
+- [dagster-pandas] The `event_metadata_fn` parameter on `create_dagster_pandas_dataframe_type` has been removed in favor of `metadata_fn`.
+
+### Deprecations
+
+- The `dagit` python package is deprecated and will be removed in 2.0 in favor  of `dagster-webserver`. See the migration guide for details.
+- The following fields containing “dagit” in the Dagster helm chart schema have been deprecated in favor of  “dagsterWebserver” equivalents (see migration guide for details):
+    - `dagit` → `dagsterWebserver`
+    - `ingress.dagit` → `ingress.dagsterWebserver`
+    - `ingress.readOnlyDagit` → `ingress.readOnlyDagsterWebserver`
+- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
+
+### Community Contributions
+
+- Docs typo fix from @chodera, thank you!
+- Run request docstring fix from @Jinior, thank you!
+
+### Documentation
+
+- All public methods in the Dagster API now have docstrings.
+- The entirety of the documentation has been updated to now refer to the “Dagster webserver” or “Dagster UI” where “Dagit” was previously used for both entities.
+
+
 # 1.3.14 (core) / 0.19.14 (libraries)
 
 ### New
