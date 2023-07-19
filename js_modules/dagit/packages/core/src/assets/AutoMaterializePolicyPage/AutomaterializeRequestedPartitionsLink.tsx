@@ -74,9 +74,14 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
 
   return (
     <>
-      <ButtonLink onClick={() => setIsOpen(true)}>
+      <Box>
         <Tag intent={intent}>{label}</Tag>
-      </ButtonLink>
+        <ButtonLink onClick={() => setIsOpen(true)}>
+          <small style={{marginLeft: 10}}>
+            <a>View details</a>
+          </small>
+        </ButtonLink>
+      </Box>
       <Dialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

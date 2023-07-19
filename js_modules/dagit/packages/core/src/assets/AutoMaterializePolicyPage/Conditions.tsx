@@ -19,7 +19,10 @@ interface ConditionProps {
 
 const Condition = ({text, met, rightElement}: ConditionProps) => {
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+    <Box
+      flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+      style={{minHeight: 24}}
+    >
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Icon name={met ? 'done' : 'close'} color={met ? Colors.Dark : Colors.Gray500} />
         <div style={{color: met ? Colors.Dark : Colors.Gray500}}>{text}</div>

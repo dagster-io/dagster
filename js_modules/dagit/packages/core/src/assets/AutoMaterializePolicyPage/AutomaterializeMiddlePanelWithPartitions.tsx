@@ -119,12 +119,6 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
 
   return (
     <Box flex={{direction: 'column', grow: 1}}>
-      <ConditionsWithPartitions
-        conditionResults={conditionResults}
-        conditionToPartitions={conditionToPartitions}
-        maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
-      />
       <Box
         style={{flex: '0 0 48px'}}
         padding={{horizontal: 16}}
@@ -134,6 +128,12 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
         <Subheading>Result</Subheading>
         <div>{headerRight()}</div>
       </Box>
+      <ConditionsWithPartitions
+        conditionResults={conditionResults}
+        conditionToPartitions={conditionToPartitions}
+        maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
+      />
     </Box>
   );
 };
