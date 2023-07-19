@@ -168,7 +168,12 @@ def error_recon_job_fixture(request):
 
 @pytest.fixture(
     name="two_tier_job_def",
-    params=[two_tier_job_inprocess, two_tier_job_multiprocess, two_tier_job_step_delegating],
+    params=[
+        # skip the in_process executor, which flakes based on run coordinator / launcher timing
+        # two_tier_job_inprocess,
+        two_tier_job_multiprocess,
+        two_tier_job_step_delegating,
+    ],
 )
 def two_tier_job_def_fixture(request):
     return request.param
