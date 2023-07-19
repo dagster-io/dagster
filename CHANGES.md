@@ -7,15 +7,16 @@
 ### New
 
 - The published Dagster Docker images now use Python 3.10, instead of 3.7.
-- [dagster-k8s] The Helm chart now sets readiness probes on user code deployment servers by default. These can be disabled with `dagster-user-deployments.deployments.[...].readinessProbe.enabled=false`.
 - We’ve deprecated the `non_argument_deps` parameter of `@asset` and `@multi_asset` in favor of a new `deps` parameter. The new parameter makes it clear that this is a first-class way of defining dependencies, makes code more concise, and accepts `AssetsDefinition` and `SourceAsset` objects, in addition to the `str`s and `AssetKey`s that the previous parameter accepted.
 - The `UPathIOManager` can now be extended to load multiple partitions asynchronously (Thanks Daniel Gafni!).
 - By default, Dagster will now automatically load default config values into the launchpad. This behavior can be disabled in the user settings page.
+- [dagster-k8s] The Helm chart now sets readiness probes on user code deployment servers by default. These can be disabled with `dagster-user-deployments.deployments.[...].readinessProbe.enabled=false`.
 - [dagster-airbyte] In line with the deprecation of `non_argument_deps` in favor of `deps`, `build_airbyte_assets` now accepts a `deps` parameter.
 - [dagstermill] In line with the deprecation of `non_argument_deps` in favor of `deps`, `define_dagstermill_asset` now accepts a `deps` parameter.
 
 ### Bugfixes
 
+- Duplicate partition keys passed to `StaticPartitionsDefinition` will now raise an error.
 - Fixed a bug that caused lazy `AutoMaterializePolicy`'s to not materialize missing assets.
 - [ui] Fixed an issue where global search and large DAGs were broken when using `--path-prefix`.
 - Schedule and sensor run submissions are now kept up to date with the current workspace, fixing an issue where a stale reference to a server would be used in some conditions.
@@ -24,9 +25,8 @@
 
 - Support for Python 3.7 has been dropped.
 - `build_asset_reconciliation_sensor` (Experimental) has been removed. It was deprecated in 1.3 in favor of `AutoMaterializePolicy`.
-- `asset_key(s)` properties on `AssetIn` and `AssetDefinition` have been removed in favor of `key(s)`.
-- Duplicate partition keys passed to `StaticPartitionsDefinition` will now raise an error.
-- `root_input_manager` and `RootInputManagerDefinition` have been removed in favor of `input_manager` and `InputManagerDefinition`.
+- `asset_key(s)` properties on `AssetIn` and `AssetDefinition` have been removed in favor of `key(s)`. These APIs were deprecated in 1.0.
+- `root_input_manager` and `RootInputManagerDefinition` have been removed in favor of `input_manager` and `InputManagerDefinition`. These APIs were deprecated in 1.0.
 - [dagster-pandas] The `event_metadata_fn` parameter on `create_dagster_pandas_dataframe_type` has been removed in favor of `metadata_fn`.
 
 ### Deprecations
