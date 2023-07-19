@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 
 import pendulum
 
@@ -598,14 +599,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 return False
         return True
 
-    def asset_partitions_with_newly_updated_parents(
+    @cached_method
+    def _asset_partitions_with_newly_updated_parents(
         self,
         after_cursor: Optional[int],
         target_asset_keys: AbstractSet[AssetKey],
         target_asset_keys_and_parents: AbstractSet[AssetKey],
     ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
-        """Finds asset partitions in the given selection whose parents have been materialized since
-        latest_storage_id.
+        """Internal method that finds asset partitions in the given selection whose parents have
+        been updated since after_cursor, as well as the storage_id of the latest updated parent.
 
         Returns:
             - A set of asset partitions.
@@ -699,6 +701,92 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
 
         return (result_asset_partitions, result_latest_storage_id)
+
+    def asset_partitions_with_newly_updated_parents(
+        self,
+        after_cursor: Optional[int],
+        target_asset_keys: AbstractSet[AssetKey],
+        target_asset_keys_and_parents: AbstractSet[AssetKey],
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """The set of asset partitions within the given selection whose parents have been updated
+        since after_cursor.
+        """
+        (asset_partitions, _) = self._asset_partitions_with_newly_updated_parents(
+            after_cursor=after_cursor,
+            target_asset_keys=frozenset(target_asset_keys),
+            target_asset_keys_and_parents=frozenset(target_asset_keys_and_parents),
+        )
+        return asset_partitions
+
+    def latest_newly_updated_parent_storage_id(
+        self,
+        after_cursor: Optional[int],
+        target_asset_keys: AbstractSet[AssetKey],
+        target_asset_keys_and_parents: AbstractSet[AssetKey],
+    ) -> Optional[int]:
+        """The latest storage id within the target asset selection of any parent which has been
+        updated since after_cursor.
+        """
+        (_, latest_storage_id) = self._asset_partitions_with_newly_updated_parents(
+            after_cursor=after_cursor,
+            target_asset_keys=frozenset(target_asset_keys),
+            target_asset_keys_and_parents=frozenset(target_asset_keys_and_parents),
+        )
+        return latest_storage_id
+
+    @cached_method
+    def _get_unhandled_and_newly_handled_asset_partitions(
+        self,
+        cursor: AssetDaemonCursor,
+        target_asset_keys: AbstractSet[AssetKey],
+    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
+        """Internal method to compute the set of asset partitions which have not been materialized,
+        requested, or discarded, as well as the set of asset partitions which have been newly
+        materialized since the given cursor.
+        """
+        unhandled_asset_partitions = set()
+        newly_handled_asset_partitions = set()
+        for asset_key in self.asset_graph.root_asset_keys & target_asset_keys:
+            if not self.asset_graph.is_partitioned(asset_key):
+                if asset_key not in cursor.handled_root_asset_keys:
+                    asset_partition = AssetKeyPartitionKey(asset_key)
+                    if self.asset_partition_has_materialization_or_observation(asset_partition):
+                        newly_handled_asset_partitions.add(asset_partition)
+                    else:
+                        unhandled_asset_partitions.add(asset_partition)
+            else:
+                for partition_key in cursor.get_unhandled_partitions(
+                    asset_key,
+                    self.asset_graph,
+                    dynamic_partitions_store=self,
+                    current_time=self.evaluation_time,
+                ):
+                    asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
+                    if self.asset_partition_has_materialization_or_observation(asset_partition):
+                        newly_handled_asset_partitions.add(asset_partition)
+                    else:
+                        unhandled_asset_partitions.add(asset_partition)
+        return unhandled_asset_partitions, newly_handled_asset_partitions
+
+    def get_unhandled_asset_partitions(
+        self, cursor: AssetDaemonCursor, target_asset_keys: AbstractSet[AssetKey]
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Finds asset partitions that have never been materialized, requested, or discarded and
+        that have no parents.
+        """
+        (unhandled_asset_partitions, _) = self._get_unhandled_and_newly_handled_asset_partitions(
+            cursor=cursor, target_asset_keys=frozenset(target_asset_keys)
+        )
+        return unhandled_asset_partitions
+
+    def get_newly_handled_asset_partitions(
+        self, cursor: AssetDaemonCursor, target_asset_keys: AbstractSet[AssetKey]
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Finds asset partitions that have been materialized since the given cursor."""
+        (_, newly_handled_asset_partitions) = self._get_unhandled_and_newly_handled_asset_partitions(
+            cursor=cursor, target_asset_keys=frozenset(target_asset_keys)
+        )
+        return newly_handled_asset_partitions
 
     def get_asset_partitions_updated_after_cursor(
         self,

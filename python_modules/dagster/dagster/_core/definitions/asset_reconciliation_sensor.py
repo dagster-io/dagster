@@ -11,7 +11,7 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonCursor,
-    AssetDaemonIteration,
+    AssetDaemonContext,
     AutoMaterializeAssetEvaluation,
 )
 from dagster._core.definitions.events import AssetKey
@@ -37,7 +37,7 @@ def reconcile(
     observe_run_tags: Optional[Mapping[str, str]],
     auto_observe: bool,
 ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
-    context = AssetDaemonIteration(
+    context = AssetDaemonContext(
         instance=instance,
         asset_graph=asset_graph,
         stored_cursor=cursor,

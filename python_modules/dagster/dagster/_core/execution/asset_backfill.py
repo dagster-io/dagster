@@ -808,6 +808,10 @@ def execute_asset_backfill_iteration_inner(
             target_asset_keys=asset_backfill_data.target_subset.asset_keys,
             target_asset_keys_and_parents=target_asset_keys_and_parents,
             after_cursor=asset_backfill_data.latest_storage_id,
+        ), instance_queryer.latest_newly_updated_parent_storage_id(
+            target_asset_keys=asset_backfill_data.target_subset.asset_keys,
+            target_asset_keys_and_parents=target_asset_keys_and_parents,
+            after_cursor=asset_backfill_data.latest_storage_id,
         )
         initial_candidates.update(parent_materialized_asset_partitions)
 

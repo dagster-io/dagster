@@ -7,6 +7,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Tuple,
     cast,
 )
 
@@ -245,3 +246,6 @@ class AssetDaemonCursor(NamedTuple):
                 },
             },
         )
+
+    def __hash__(self) -> int:
+        return id(self)

@@ -58,7 +58,7 @@ def _will_materialize_for_conditions(
     )
 
 
-class AssetDaemonIteration:
+class AssetDaemonContext:
     def __init__(
         self,
         instance: "DagsterInstance",
@@ -122,69 +122,6 @@ class AssetDaemonIteration:
             for asset_key in self.auto_materialize_asset_keys
             for parent in self.asset_graph.get_parents(asset_key)
         } | self.auto_materialize_asset_keys
-
-    @property
-    def new_latest_storage_id(self) -> Optional[int]:
-        (_, new_latest_storage_id) = self._cached()
-        return new_latest_storage_id
-
-    @property
-    def asset_partitions_with_newly_updated_parents(self) -> AbstractSet[AssetKeyPartitionKey]:
-        (asset_partitions_with_newly_updated_parents, _) = self._cached()
-        return asset_partitions_with_newly_updated_parents
-
-    @property
-    def newly_handled_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        (_, newly_handled_asset_partitions) = self._cached2()
-        return newly_handled_asset_partitions
-
-    @property
-    def unhandled_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        (unhandled_asset_partitions, _) = self._cached2()
-        return unhandled_asset_partitions
-
-    @cached_method
-    def _cached(self) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
-        return self.instance_queryer.asset_partitions_with_newly_updated_parents(
-            after_cursor=self.stored_cursor.latest_storage_id,
-            target_asset_keys=self.auto_materialize_asset_keys,
-            target_asset_keys_and_parents=self.auto_materialize_asset_keys_and_parents,
-        )
-
-    @cached_method
-    def _cached2(
-        self,
-    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
-        """Finds asset partitions that have never been materialized, requested, or discarded and
-        that have no parents.
-        """
-        unhandled_asset_partitions = set()
-        newly_handled_asset_partitions = set()
-        for asset_key in self.asset_graph.root_asset_keys & self.auto_materialize_asset_keys:
-            if not self.asset_graph.is_partitioned(asset_key):
-                if asset_key not in self.stored_cursor.handled_root_asset_keys:
-                    asset_partition = AssetKeyPartitionKey(asset_key)
-                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
-                        asset_partition
-                    ):
-                        newly_handled_asset_partitions.add(asset_partition)
-                    else:
-                        unhandled_asset_partitions.add(asset_partition)
-            else:
-                for partition_key in self.stored_cursor.get_unhandled_partitions(
-                    asset_key,
-                    self.asset_graph,
-                    dynamic_partitions_store=self.instance_queryer,
-                    current_time=self.instance_queryer.evaluation_time,
-                ):
-                    asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
-                        asset_partition
-                    ):
-                        newly_handled_asset_partitions.add(asset_partition)
-                    else:
-                        unhandled_asset_partitions.add(asset_partition)
-        return unhandled_asset_partitions, newly_handled_asset_partitions
 
     def get_implicit_auto_materialize_policy(self, asset_key: AssetKey) -> AutoMaterializePolicy:
         """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
@@ -371,8 +308,14 @@ class AssetDaemonIteration:
                 self.asset_graph, candidates_unit, to_reconcile
             ),
             {
-                *self.asset_partitions_with_newly_updated_parents,
-                *self.unhandled_asset_partitions,
+                *self.instance_queryer.asset_partitions_with_newly_updated_parents(
+                    self.stored_cursor.latest_storage_id,
+                    self.auto_materialize_asset_keys,
+                    self.auto_materialize_asset_keys_and_parents,
+                ),
+                *self.instance_queryer.get_unhandled_asset_partitions(
+                    self.stored_cursor, self.auto_materialize_asset_keys
+                ),
             },
             self.instance_queryer.evaluation_time,
         )
@@ -440,10 +383,17 @@ class AssetDaemonIteration:
             [*observe_run_requests, *materialize_run_requests],
             self.stored_cursor.with_updates(
                 asset_graph=self.asset_graph,
-                new_latest_storage_id=self.new_latest_storage_id,
+                new_latest_storage_id=self.instance_queryer.latest_newly_updated_parent_storage_id(
+                    self.stored_cursor.latest_storage_id,
+                    self.auto_materialize_asset_keys,
+                    self.auto_materialize_asset_keys_and_parents,
+                ),
                 newly_observed_source_assets=assets_to_auto_observe,
                 newly_observed_source_timestamp=observe_request_timestamp,
-                newly_handled_asset_partitions=self.newly_handled_asset_partitions,
+                newly_handled_asset_partitions=self.instance_queryer.get_newly_handled_asset_partitions(
+                    self.stored_cursor,
+                    self.auto_materialize_asset_keys,
+                ),
                 conditions_by_asset_partition_by_asset_key=conditions_by_asset_partition_by_asset_key,
             ),
             [

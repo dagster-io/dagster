@@ -1,7 +1,7 @@
 from typing import Mapping
 
 from dagster import AssetKey, DagsterInstance, observable_source_asset
-from dagster._core.definitions.asset_daemon_context import AssetDaemonCursor, AssetDaemonIteration
+from dagster._core.definitions.asset_daemon_context import AssetDaemonCursor, AssetDaemonContext
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import reconcile
 from dagster._core.definitions.run_request import RunRequest
@@ -15,7 +15,7 @@ def get_auto_observe_run_requests(
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
     run_tags: Mapping[str, str],
 ) -> Sequence[RunRequest]:
-    context = AssetDaemonIteration(
+    context = AssetDaemonContext(
         instance=DagsterInstance.ephemeral(),
         asset_graph=asset_graph,
         stored_cursor=AssetDaemonCursor.empty()._replace(
