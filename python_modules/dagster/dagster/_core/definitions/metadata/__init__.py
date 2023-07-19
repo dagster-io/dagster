@@ -850,6 +850,7 @@ class TableMetadataValue(
     @public
     @staticmethod
     def infer_column_type(value: object) -> str:
+        """str: Infer the :py:class:`TableSchema` column type that will be used for a value."""
         if isinstance(value, bool):
             return "bool"
         elif isinstance(value, int):

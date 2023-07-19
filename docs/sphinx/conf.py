@@ -149,6 +149,7 @@ autodoc_mock_imports = [
     "mlflow",
     "mysql",
     "oauth2client",
+    "orjson",
     "pandera",
     "prometheus_client",
     "psycopg2",
