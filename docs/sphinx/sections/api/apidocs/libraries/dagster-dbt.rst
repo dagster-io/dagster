@@ -138,6 +138,8 @@ Utils
 
 .. autofunction:: group_from_dbt_resource_props_fallback_to_directory
 
+.. autofunction:: default_metadata_from_dbt_resource_props
+
 .. currentmodule:: dagster_dbt.utils
 
 .. autofunction:: generate_materializations

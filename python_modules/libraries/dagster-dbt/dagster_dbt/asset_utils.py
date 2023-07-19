@@ -342,7 +342,7 @@ def default_asset_key_fn(node_info: Mapping[str, Any]) -> AssetKey:
     return AssetKey(components)
 
 
-def default_metadata_fn(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+def default_metadata_from_dbt_resource_props(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
     columns = node_info.get("columns", {})
     if len(columns) > 0:

@@ -53,7 +53,7 @@ from dagster_dbt.asset_utils import (
     default_description_fn,
     default_freshness_policy_fn,
     default_group_from_dbt_resource_props,
-    default_metadata_fn,
+    default_metadata_from_dbt_resource_props,
     get_asset_deps,
     get_deps,
 )
@@ -497,7 +497,7 @@ def load_assets_from_dbt_project(
     ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = default_metadata_fn,
+    ] = default_metadata_from_dbt_resource_props,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
@@ -666,7 +666,7 @@ def load_assets_from_dbt_manifest(
     ] = default_auto_materialize_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = default_metadata_fn,
+    ] = default_metadata_from_dbt_resource_props,
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
@@ -877,7 +877,7 @@ def _load_assets_from_dbt_manifest(
             "Can't specify both dagster_dbt_translator and display_raw_sql",
         )
         check.invariant(
-            node_info_to_definition_metadata_fn is default_metadata_fn,
+            node_info_to_definition_metadata_fn is default_metadata_from_dbt_resource_props,
             "Can't specify both dagster_dbt_translator and node_info_to_definition_metadata_fn",
         )
     else:
@@ -1033,7 +1033,7 @@ def _raise_warnings_for_deprecated_args(
             stacklevel=4,
         )
 
-    if node_info_to_definition_metadata_fn != default_metadata_fn:
+    if node_info_to_definition_metadata_fn != default_metadata_from_dbt_resource_props:
         deprecation_warning(
             f"The node_info_to_definition_metadata_fn arg of {public_fn_name}",
             "0.21",
