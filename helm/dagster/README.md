@@ -22,7 +22,7 @@ helm install my-release . \
     --create-namespace
 ```
 
-### Installing a specific Chart version
+### Installing a specific chart version
 
 The `dagster` Python package version and Helm chart version have a 1:1 correspondence, and ideally should
 only be used together when the version numbers match.

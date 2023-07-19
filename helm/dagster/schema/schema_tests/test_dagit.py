@@ -86,10 +86,19 @@ def test_webserver_port(deployment_template: HelmTemplate, webserver_field: str,
     assert k8s_port == service_port
 
 
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
 @pytest.mark.parametrize("enabled", [True, False])
-def test_startup_probe_enabled(deployment_template: HelmTemplate, enabled: bool):
+def test_startup_probe_enabled(
+    deployment_template: HelmTemplate, webserver_field: str, enabled: bool
+):
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(startupProbe=kubernetes.StartupProbe(enabled=enabled))
+        **{
+            webserver_field: Webserver.construct(
+                startupProbe=kubernetes.StartupProbe(enabled=enabled)
+            )
+        }
     )
 
     webserver = deployment_template.render(helm_values)
@@ -102,8 +111,11 @@ def test_startup_probe_enabled(deployment_template: HelmTemplate, enabled: bool)
     assert (container.startup_probe is not None) == enabled
 
 
-def test_readiness_probe(deployment_template: HelmTemplate):
-    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
+def test_readiness_probe(deployment_template: HelmTemplate, webserver_field: str):
+    helm_values = DagsterHelmValues.construct(**{webserver_field: Webserver.construct()})
 
     webserver = deployment_template.render(helm_values)
     assert len(webserver) == 1
@@ -126,9 +138,12 @@ def test_webserver_read_only_disabled(deployment_template: HelmTemplate):
     assert "--read-only" not in "".join(webserver[0].spec.template.spec.containers[0].command)
 
 
-def test_webserver_read_only_enabled(deployment_template: HelmTemplate):
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
+def test_webserver_read_only_enabled(deployment_template: HelmTemplate, webserver_field: str):
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(enableReadOnly=True)
+        **{webserver_field: Webserver.construct(enableReadOnly=True)}
     )
 
     deployments = deployment_template.render(helm_values)
@@ -151,13 +166,19 @@ def test_webserver_read_only_enabled(deployment_template: HelmTemplate):
     ]
 
 
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
 @pytest.mark.parametrize("enable_read_only", [True, False])
 @pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
 def test_webserver_default_image_tag_is_chart_version(
-    deployment_template: HelmTemplate, enable_read_only: bool, chart_version: str
+    deployment_template: HelmTemplate,
+    webserver_field: str,
+    enable_read_only: bool,
+    chart_version: str,
 ):
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(enableReadOnly=enable_read_only)
+        **{webserver_field: Webserver.construct(enableReadOnly=enable_read_only)}
     )
 
     webserver_deployments = deployment_template.render(helm_values, chart_version=chart_version)
@@ -171,13 +192,18 @@ def test_webserver_default_image_tag_is_chart_version(
         assert image_tag == chart_version
 
 
-def test_webserver_image_tag(deployment_template: HelmTemplate):
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
+def test_webserver_image_tag(deployment_template: HelmTemplate, webserver_field: str):
     repository = "repository"
     tag = "tag"
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(
-            image=kubernetes.Image.construct(repository=repository, tag=tag)
-        )
+        **{
+            webserver_field: Webserver.construct(
+                image=kubernetes.Image.construct(repository=repository, tag=tag)
+            )
+        }
     )
 
     webserver_deployments = deployment_template.render(helm_values)
@@ -191,10 +217,13 @@ def test_webserver_image_tag(deployment_template: HelmTemplate):
     assert image_tag == tag
 
 
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
 @pytest.mark.parametrize("name_override", ["webserver", "new-name"])
-def test_webserver_name_override(deployment_template, name_override):
+def test_webserver_name_override(deployment_template, webserver_field, name_override):
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(nameOverride=name_override)
+        **{webserver_field: Webserver.construct(nameOverride=name_override)}
     )
     webserver_deployments = deployment_template.render(helm_values)
 
@@ -205,10 +234,13 @@ def test_webserver_name_override(deployment_template, name_override):
     assert deployment_name == f"{deployment_template.release_name}-{name_override}"
 
 
+# Parametrizing "webserver_field" here tests backcompat. `dagit` was the old field name.
+# This parametrization can be removed in 2.0.
+@pytest.mark.parametrize("webserver_field", ["dagsterWebserver", "dagit"])
 @pytest.mark.parametrize("path_prefix", ["webserver", "some-path"])
-def test_webserver_path_prefix(deployment_template, path_prefix):
+def test_webserver_path_prefix(deployment_template, webserver_field, path_prefix):
     helm_values = DagsterHelmValues.construct(
-        dagsterWebserver=Webserver.construct(pathPrefix=path_prefix)
+        **{webserver_field: Webserver.construct(pathPrefix=path_prefix)}
     )
     webserver_deployments = deployment_template.render(helm_values)
 
