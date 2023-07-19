@@ -62,6 +62,7 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
       pipeline={pipeline}
       partitionSets={partitionSets}
       repoAddress={repoAddress}
+      rootDefaultYaml={rootDefaultYaml}
     />
   );
 };
