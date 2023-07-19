@@ -238,19 +238,19 @@
         ]
       },
       {
-        "title": "Dagit UI & GraphQL API",
+        "title": "Dagster webserver & UI",
         "children": [
           {
-            "title": "Dagit UI",
-            "path": "/concepts/dagit/dagit"
+            "title": "Dagster UI",
+            "path": "/concepts/webserver/ui"
           },
           {
             "title": "GraphQL API",
-            "path": "/concepts/dagit/graphql"
+            "path": "/concepts/webserver/graphql"
           },
           {
             "title": "GraphQL Python client",
-            "path": "/concepts/dagit/graphql-client"
+            "path": "/concepts/webserver/graphql-client"
           }
         ]
       },

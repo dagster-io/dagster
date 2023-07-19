@@ -4,7 +4,7 @@ Kubernetes (dagster-k8s)
 See also the `Kubernetes deployment guide <https://docs.dagster.io/deploying/kubernetes/>`_.
 
 This library contains utilities for running Dagster with Kubernetes. This includes a Python API
-allowing Dagit to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
+allowing the webserver to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
 for a Dagster deployment on a Kubernetes cluster.
 
 APIs
@@ -27,7 +27,7 @@ Ops
 Python API
 ^^^^^^^^^^
 
-The ``K8sRunLauncher`` allows Dagit instances to be configured to launch new runs by starting
+The ``K8sRunLauncher`` allows webserver instances to be configured to launch new runs by starting
 per-run Kubernetes Jobs. To configure the ``K8sRunLauncher``\ , your ``dagster.yaml`` should
 include a section like:
 
@@ -66,8 +66,8 @@ For local dev (e.g., on kind or minikube):
        dagster \
        helm/dagster/
 
-Upon installation, the Helm chart will provide instructions for port forwarding Dagit and Flower (if
-configured).
+Upon installation, the Helm chart will provide instructions for port forwarding
+the Dagster webserver and Flower (if configured).
 
 Running tests
 ^^^^^^^^^^^^^
