@@ -1,10 +1,10 @@
-[![Pypi Publish](https://github.com/hightouchio/dagster-hightouch/actions/workflows/pypi-publish.yml/badge.svg?branch=main)](https://github.com/hightouchio/dagster-hightouch/actions/workflows/pypi-publish.yml)
+[![PyPi Publish](https://github.com/hightouchio/dagster-hightouch/actions/workflows/pypi-publish.yml/badge.svg?branch=main)](https://github.com/hightouchio/dagster-hightouch/actions/workflows/pypi-publish.yml)
 
 ## Dagster-Hightouch
 
 A Dagster library for triggering syncs in Hightouch.
 
-### Installation 
+### Installation
 
 To install the library, use pip alongside your existing Dagster environment.
 
@@ -35,7 +35,7 @@ from dagster import ScheduleDefinition, get_dagster_logger, job
 from dagster_hightouch.ops import hightouch_sync_op
 from .resources import ht_resource
 
-# Sync IDs are set as constants. You can also use 
+# Sync IDs are set as constants. You can also use
 # the sync slug, read the documentation for other
 # options.
 
@@ -57,9 +57,10 @@ run_ht_sync_orgs = hightouch_sync_op.configured(
     }
 )
 def ht_sfdc_job():
-    
+
     ht_orgs = run_ht_sync_orgs(start_after=ht_contacts)
     run_ht_sync_workspaces(start_after=ht_orgs)
 
 # And we schedule it to run every 30 mins.
 every_30_schedule = ScheduleDefinition(job=ht_sfdc_job, cron_schedule="*/30 * * * *")
+```
