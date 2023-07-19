@@ -27,7 +27,6 @@ def _cleanup_run_config_dict(run_config_dict: Any) -> Any:
     """Performs cleanup of the run config dict to remove empty dicts and strip the default executor
     config if it has not been overridden, to make the output more readable.
     """
-
     return _filter_empty_dicts(run_config_dict)
 
 

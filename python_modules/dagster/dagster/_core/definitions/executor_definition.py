@@ -7,7 +7,7 @@ from typing_extensions import Self, TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import Int
-from dagster._config import Field, Selector, UserConfigSchema, Noneable
+from dagster._config import Field, Noneable, Selector, UserConfigSchema
 from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
