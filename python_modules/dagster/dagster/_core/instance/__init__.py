@@ -352,6 +352,7 @@ class DagsterInstance(DynamicPartitionsStore):
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
+        **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
