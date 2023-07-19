@@ -1,4 +1,5 @@
 # ruff: isort: skip_file
+from typing import Tuple
 from dagster import (
     AssetKey,
     load_assets_from_current_module,
@@ -102,10 +103,18 @@ def two_outputs(upstream):
 from dagster import AssetOut, graph_multi_asset
 
 
-@graph_multi_asset(outs={"first_asset": AssetOut(), "second_asset": AssetOut()})
+@op
+def divide_by_three(number: int) -> Tuple[int, int]:
+    quotient = number // 3
+    remainder = number % 3
+
+    return quotient, remainder
+
+
+@graph_multi_asset(outs={"quotient": AssetOut(), "remainder": AssetOut()})
 def two_assets(upstream_asset):
-    one, two = two_outputs(upstream_asset)
-    return {"first_asset": one, "second_asset": two}
+    q, r = divide_by_three(multiply_by_two(upstream_asset))
+    return {"quotient": q, "remainder": r}
 
 
 # end_basic_dependencies_2
