@@ -17,9 +17,9 @@ def test_annotations(dagster_instance_for_daemon, helm_namespace_for_daemon):
         assert "dagster-integration-tests" in annotations
         assert annotations["dagster-integration-tests"] == expected_annotation
 
-    check_annotation_values(pods, "dagit", 1, "dagit-pod-annotation")
+    check_annotation_values(pods, "webserver", 1, "webserver-pod-annotation")
     check_annotation_values(pods, "celery-workers", 3, "celery-pod-annotation")
     check_annotation_values(pods, "daemon", 1, "daemon-pod-annotation")
     check_annotation_values(pods, "user-code-deployment-1", 1, "ucd-1-pod-annotation")
-    check_annotation_values(services, "dagit", 1, "dagit-svc-annotation")
+    check_annotation_values(services, "webserver", 1, "webserver-svc-annotation")
     check_annotation_values(services, "user-code-deployment-1", 1, "ucd-1-svc-annotation")

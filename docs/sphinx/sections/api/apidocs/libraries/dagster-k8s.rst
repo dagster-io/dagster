@@ -58,8 +58,8 @@ For local dev (e.g., on kind or minikube):
 .. code-block:: shell
 
    helm install \
-       --set dagit.image.repository="dagster.io/buildkite-test-image" \
-       --set dagit.image.tag="py310-latest" \
+       --set dagsterWebserver.image.repository="dagster.io/buildkite-test-image" \
+       --set dagsterWebserver.image.tag="py310-latest" \
        --set job_runner.image.repository="dagster.io/buildkite-test-image" \
        --set job_runner.image.tag="py310-latest" \
        --set imagePullPolicy="IfNotPresent" \
