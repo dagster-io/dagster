@@ -35,7 +35,6 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
   const parsedYaml = yaml.parse(defaultYaml);
 
   const opsConfig = parsedYaml['ops'];
-  console.log(opNames);
   if (opsConfig) {
     const filteredOpKeys = Object.keys(opsConfig).filter((entry: any) => {
       return opNames.has(entry);
