@@ -10,7 +10,10 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
@@ -163,11 +166,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
         num_dequeued_runs = 0
-        workspace = workspace_process_context.create_request_context()
         for run in runs_to_dequeue:
             run_launched = self._dequeue_run(
                 workspace_process_context.instance,
-                workspace,
+                workspace_process_context.create_request_context(),
                 run,
                 run_queue_config,
                 fixed_iteration_time=fixed_iteration_time,
@@ -228,7 +230,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
 
         self._logger.info(
-            f"Retrieved %d queued runs, checking limits.{locations_clause}", len(queued_runs)
+            f"Retrieved %d queued runs, checking limits.{locations_clause}",
+            len(queued_runs),
         )
 
         # place in order
