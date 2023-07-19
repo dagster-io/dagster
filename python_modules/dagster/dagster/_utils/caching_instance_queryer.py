@@ -581,9 +581,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             for asset_partition, latest_storage_id in self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
                 asset_key=asset_key
             ).items()
-            if (asset_partitions is None or asset_partition in asset_partitions)
-            and (latest_storage_id or 0) > (after_cursor or 0)
+            if (latest_storage_id or 0) > (after_cursor or 0)
         }
+
+        if asset_partitions:
+            updated_after_cursor = updated_after_cursor.intersection(set(asset_partitions))
+
         if not updated_after_cursor:
             return set()
         # for regular assets, don't bother checking versions
