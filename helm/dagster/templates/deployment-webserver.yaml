@@ -1,0 +1,9 @@
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
+{{- $data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template -}}
+{{- include "deployment-webserver" $data -}}
+
+{{- if $_.Values.dagsterWebserver.enableReadOnly -}}
+---
+{{$data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template "webserverReadOnly" true}}
+{{- include "deployment-webserver" $data -}}
+{{- end -}}

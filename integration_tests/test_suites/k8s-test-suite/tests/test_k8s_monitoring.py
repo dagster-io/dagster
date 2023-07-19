@@ -22,7 +22,7 @@ def log_run_events(instance, run_id):
 def test_k8s_run_monitoring_startup_fail(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -39,7 +39,7 @@ def test_k8s_run_monitoring_startup_fail(
     run_id = None
     try:
         run_id = launch_run_over_graphql(
-            dagit_url_for_k8s_run_launcher,
+            webserver_url_for_k8s_run_launcher,
             run_config=run_config,
             job_name="slow_job_k8s",
             tags={
@@ -67,7 +67,7 @@ def test_k8s_run_monitoring_startup_fail(
 def test_k8s_run_monitoring_resume(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -81,7 +81,7 @@ def test_k8s_run_monitoring_resume(
         },
     )
     _launch_run_and_wait_for_resume(
-        dagit_url_for_k8s_run_launcher,
+        webserver_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
         user_code_namespace_for_k8s_run_launcher,
@@ -89,7 +89,7 @@ def test_k8s_run_monitoring_resume(
 
 
 def _launch_run_and_wait_for_resume(
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
     run_config,
     instance,
     namespace,
@@ -99,7 +99,7 @@ def _launch_run_and_wait_for_resume(
 
     try:
         run_id = launch_run_over_graphql(
-            dagit_url_for_k8s_run_launcher,
+            webserver_url_for_k8s_run_launcher,
             run_config=run_config,
             job_name=job_name,
         )

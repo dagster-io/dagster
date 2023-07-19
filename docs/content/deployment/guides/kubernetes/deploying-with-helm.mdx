@@ -151,7 +151,7 @@ Code location servers can be updated independently from other Dagster components
 
 The Dagster webserver communicates with user code deployments via gRPC to fetch information needed to populate the Dagster UI. The webserver doesn't load or execute user-written code, which allows the UI to remain available even when user code contains errors. The webserver frequently checks whether the user code deployment has been updated and if so, fetches the new information.
 
-The webserver can be horizontally scaled by setting the `dagit.replicaCount` field in `values.yaml`.
+The webserver can be horizontally scaled by setting the `dagsterWebserver.replicaCount` field in `values.yaml`.
 
 By default, the webserver launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, which creates a new Kubernetes job per run.
 
@@ -436,7 +436,7 @@ If everything worked correctly, you should see output like the following:
 ```shell
 $ kubectl get pods
 NAME                                              READY   STATUS    RESTARTS   AGE
-dagster-dagit-645b7d59f8-6lwxh                    1/1     Running   0          11m
+dagster-webserver-645b7d59f8-6lwxh                    1/1     Running   0          11m
 dagster-k8s-example-user-code-1-88764b4f4-ds7tn   1/1     Running   0          9m24s
 dagster-postgresql-0                              1/1     Running   0          17m
 ```
@@ -446,10 +446,10 @@ dagster-postgresql-0                              1/1     Running   0          1
 After Helm has successfully installed all the required Kubernetes resources, start port forwarding to the webserver pod via:
 
 ```shell
-export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-  -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
+  -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=webserver" \
   -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
+kubectl --namespace default port-forward $DAGSTER_WEBSERVER_POD_NAME 8080:80
 ```
 
 Next, try running a job. Navigate to <http://127.0.0.1:8080>, then the [**Launchpad** tab](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/example_job/launchpad) for `example_job`, and click **Launch Run**.
@@ -504,27 +504,27 @@ Running into issues deploying on Helm? Use these commands to help with debugging
 ### Get the name of the webserver pod
 
 ```shell
-export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
-      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
+      -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=webserver" \
       -o jsonpath="{.items[0].metadata.name}")
 ```
 
 ### Start a shell in the webserver pod
 
 ```shell
-kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+kubectl exec --stdin --tty $DAGSTER_WEBSERVER_POD_NAME -- /bin/bash
 ```
 
 ### Get debug data from $RUN_ID
 
 ```shell
-kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+kubectl exec $DAGSTER_WEBSERVER_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
 ```
 
 ### Get a list of recently failed runs
 
 ```shell
-kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+kubectl exec $DAGSTER_WEBSERVER_POD -- dagster debug export fakename fakename.gzip
 ```
 
 ### Get debug output of a failed run
@@ -532,13 +532,13 @@ kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
 **Note**: This information is also available in the UI
 
 ```shell
-kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+kubectl exec $DAGSTER_WEBSERVER_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
 ```
 
 ### Extract the debug.gzip from the pod
 
 ```shell
-kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+kubectl cp $DAGSTER_WEBSERVER_POD:debug.gzip debug.gzip
 ```
 
 ### List config maps

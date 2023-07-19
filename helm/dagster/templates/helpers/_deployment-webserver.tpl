@@ -1,31 +1,32 @@
-{{ define "deployment-dagit" }}
+{{ define "deployment-webserver" }}
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "dagster.dagit.fullname" . }}
+  name: {{ template "dagster.webserver.fullname" . }}
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
-    component: {{ include "dagster.dagit.componentName" . }}
-    {{- with .Values.dagit.deploymentLabels }}
+    component: {{ include "dagster.webserver.componentName" . }}
+    {{- with $_.Values.dagsterWebserver.deploymentLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
   annotations:
-    {{- range $key, $value := .Values.dagit.annotations }}
+    {{- range $key, $value := $_.Values.dagsterWebserver.annotations }}
     {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
-  replicas: {{ .Values.dagit.replicaCount }}
+  replicas: {{ $_.Values.dagsterWebserver.replicaCount }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" . | nindent 6 }}
-      component: {{ include "dagster.dagit.componentName" . }}
+      component: {{ include "dagster.webserver.componentName" . }}
   template:
     metadata:
       labels:
         {{- include "dagster.selectorLabels" . | nindent 8 }}
-        component: {{ include "dagster.dagit.componentName" . }}
-        {{- with .Values.dagit.labels }}
+        component: {{ include "dagster.webserver.componentName" . }}
+        {{- with $_.Values.dagsterWebserver.labels }}
         {{- . | toYaml | nindent 8 }}
         {{- end }}
       annotations:
@@ -33,7 +34,7 @@ spec:
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
         {{- end }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
-        {{- range $key, $value := .Values.dagit.annotations }}
+        {{- range $key, $value := $_.Values.dagsterWebserver.annotations }}
         {{ $key }}: {{ $value | squote }}
         {{- end }}
     spec:
@@ -43,33 +44,33 @@ spec:
     {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.dagit.podSecurityContext | nindent 8 }}
+        {{- toYaml $_.Values.dagsterWebserver.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: {{ include "dagster.externalImage.name" .Values.postgresql.image | quote }}
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
-            {{- toYaml .Values.dagit.securityContext | nindent 12 }}
+            {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
           securityContext:
-            {{- toYaml $.Values.dagit.securityContext | nindent 12 }}
+            {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
         {{- end }}
         {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.dagit.securityContext | nindent 12 }}
-          imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
-          image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagit.image) | quote }}
+            {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
+          imagePullPolicy: {{ $_.Values.dagsterWebserver.image.pullPolicy }}
+          image: {{ include "dagster.dagsterImage.name" (list $ $_.Values.dagsterWebserver.image) | quote }}
           command: [
             "/bin/bash",
             "-c",
-            "{{ template "dagster.dagit.dagitCommand" . }}"
+            "{{ template "dagster.webserver.dagsterWebserverCommand" . }}"
           ]
           env:
             - name: DAGSTER_PG_PASSWORD
@@ -77,18 +78,18 @@ spec:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" . | quote }}
                   key: postgresql-password
-            # This is a list by default, but for backcompat it can be a map. As a map it's written to the dagit-env
-            # configmap.
-            {{- if and (.Values.dagit.env) (kindIs "slice" .Values.dagit.env) }}
-            {{- toYaml .Values.dagit.env | nindent 12 }}
+            # This is a list by default, but for backcompat it can be a map. As
+            # a map it's written to the webserver-env configmap.
+            {{- if and ($_.Values.dagsterWebserver.env) (kindIs "slice" $_.Values.dagsterWebserver.env) }}
+            {{- toYaml $_.Values.dagsterWebserver.env | nindent 12 }}
             {{- end}}
           envFrom:
             - configMapRef:
-                name: {{ template "dagster.fullname" . }}-dagit-env
-            {{- range $envConfigMap := .Values.dagit.envConfigMaps }}
+                name: {{ template "dagster.fullname" . }}-webserver-env
+            {{- range $envConfigMap := $_.Values.dagsterWebserver.envConfigMaps }}
             - configMapRef: {{- $envConfigMap | toYaml | nindent 16 }}
             {{- end }}
-            {{- range $envSecret := .Values.dagit.envSecrets }}
+            {{- range $envSecret := $_.Values.dagsterWebserver.envSecrets }}
             - secretRef: {{- $envSecret | toYaml | nindent 16 }}
             {{- end }}
             {{- if eq $.Values.runLauncher.type "CeleryK8sRunLauncher" }}
@@ -104,31 +105,31 @@ spec:
             - name: dagster-workspace-yaml
               mountPath: "/dagster-workspace/"
             {{- end }}
-            {{- if .Values.dagit.volumeMounts }}
-            {{- range $volumeMount := .Values.dagit.volumeMounts }}
+            {{- if $_.Values.dagsterWebserver.volumeMounts }}
+            {{- range $volumeMount := $_.Values.dagsterWebserver.volumeMounts }}
             - {{- $volumeMount | toYaml | nindent 14 }}
             {{- end }}
             {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.dagit.service.port }}
+              containerPort: {{ $_.Values.dagsterWebserver.service.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.dagit.resources | nindent 12 }}
-        {{- if .Values.dagit.readinessProbe }}
+            {{- toYaml $_.Values.dagsterWebserver.resources | nindent 12 }}
+        {{- if $_.Values.dagsterWebserver.readinessProbe }}
           readinessProbe:
-            {{- toYaml .Values.dagit.readinessProbe | nindent 12 }}
+            {{- toYaml $_.Values.dagsterWebserver.readinessProbe | nindent 12 }}
         {{- end }}
-        {{- if .Values.dagit.livenessProbe }}
+        {{- if $_.Values.dagsterWebserver.livenessProbe }}
           livenessProbe:
-            {{- toYaml .Values.dagit.livenessProbe | nindent 12 }}
+            {{- toYaml $_.Values.dagsterWebserver.livenessProbe | nindent 12 }}
         {{- end }}
-        {{- if .Values.dagit.startupProbe.enabled}}
-          {{- $startupProbe := omit .Values.dagit.startupProbe "enabled" }}
+        {{- if $_.Values.dagsterWebserver.startupProbe.enabled}}
+          {{- $startupProbe := omit $_.Values.dagsterWebserver.startupProbe "enabled" }}
           startupProbe:
             {{- toYaml $startupProbe | nindent 12 }}
         {{- end }}
-      {{- with .Values.dagit.nodeSelector }}
+      {{- with $_.Values.dagsterWebserver.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -140,23 +141,23 @@ spec:
         {{- if $userDeployments.enabled }}
         - name: dagster-workspace-yaml
           configMap:
-            name: {{ include "dagit.workspace.configmapName" . }}
+            name: {{ include "dagster.workspace.configmapName" . }}
         {{- end }}
-        {{- if .Values.dagit.volumes }}
-        {{- range $volume := .Values.dagit.volumes }}
+        {{- if $_.Values.dagsterWebserver.volumes }}
+        {{- range $volume := $_.Values.dagsterWebserver.volumes }}
         - {{- $volume | toYaml | nindent 10 }}
         {{- end }}
         {{- end }}
-    {{- with .Values.dagit.affinity }}
+    {{- with $_.Values.dagsterWebserver.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.dagit.tolerations }}
+    {{- with $_.Values.dagsterWebserver.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- if .Values.dagit.schedulerName }}
-      schedulerName: {{ .Values.dagit.schedulerName }}
+    {{- if $_.Values.dagsterWebserver.schedulerName }}
+      schedulerName: {{ $_.Values.dagsterWebserver.schedulerName }}
     {{- end }}
 
 
