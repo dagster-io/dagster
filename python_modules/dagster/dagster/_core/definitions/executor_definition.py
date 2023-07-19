@@ -7,7 +7,7 @@ from typing_extensions import Self, TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import Int
-from dagster._config import Field, Selector, UserConfigSchema
+from dagster._config import Field, Selector, UserConfigSchema, Noneable
 from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
@@ -335,7 +335,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
         start_method, start_cfg = list(start_selector.items())[0]
 
     return MultiprocessExecutor(
-        max_concurrent=check.int_elem(config, "max_concurrent"),
+        max_concurrent=check.opt_int_elem(config, "max_concurrent"),
         tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
@@ -346,8 +346,8 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
 MULTI_PROC_CONFIG = Field(
     {
         "max_concurrent": Field(
-            Int,
-            default_value=0,
+            Noneable(Int),
+            default_value=None,
             description=(
                 "The number of processes that may run concurrently. "
                 "By default, this is set to be the return value of `multiprocessing.cpu_count()`."
@@ -418,7 +418,7 @@ def multiprocess_executor(init_context):
               max_concurrent: 4
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
-    concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
+    concurrently. By default, or if you set ``max_concurrent`` to be None or 0, this is the return value of
     :py:func:`python:multiprocessing.cpu_count`.
 
     Execution priority can be configured using the ``dagster/priority`` tag via op metadata,
