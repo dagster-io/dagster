@@ -896,12 +896,12 @@ def graph_asset(
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=group_name,
             metadata_by_output_name={"result": metadata} if metadata else None,
-            freshness_policies_by_output_name={"result": freshness_policy}
-            if freshness_policy
-            else None,
-            auto_materialize_policies_by_output_name={"result": auto_materialize_policy}
-            if auto_materialize_policy
-            else None,
+            freshness_policies_by_output_name=(
+                {"result": freshness_policy} if freshness_policy else None
+            ),
+            auto_materialize_policies_by_output_name=(
+                {"result": auto_materialize_policy} if auto_materialize_policy else None
+            ),
             backfill_policy=backfill_policy,
             descriptions_by_output_name={"result": description} if description else None,
             resource_defs=resource_defs,
