@@ -62,7 +62,9 @@ export const WaitingOnAssetKeysLink = ({assetKeys}: Props) => {
 
   return (
     <>
-      <ButtonLink onClick={() => setIsOpen(true)}>{label}</ButtonLink>
+      <ButtonLink onClick={() => setIsOpen(true)}>
+        <small>{label}</small>
+      </ButtonLink>
       <Dialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

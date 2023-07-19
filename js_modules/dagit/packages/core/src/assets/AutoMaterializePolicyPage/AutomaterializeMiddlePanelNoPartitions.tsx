@@ -30,7 +30,7 @@ export const AutomaterializeMiddlePanelNoPartitions = ({
     const count = runIds.length;
 
     if (count === 0 || !selectedEvaluation?.conditions) {
-      return null;
+      return <small>Not launched</small>;
     }
 
     return <AutomaterializeRunTag runId={runIds[0]!} />;
@@ -57,14 +57,28 @@ export const AutomaterializeMiddlePanelNoPartitions = ({
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subheading>Result</Subheading>
-        <div>{headerRight()}</div>
+        <Subheading>Evaluation</Subheading>
       </Box>
       <ConditionsNoPartitions
         conditionResults={conditionResults}
         maxMaterializationsPerMinute={maxMaterializationsPerMinute}
         parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
       />
+      <Box
+        // style={{flex: '0 0 96px'}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        flex={{alignItems: 'center', justifyContent: 'space-between'}}
+      >
+        <Box
+          style={{flex: '0', backgroundColor: Colors.Gray100}}
+          padding={{horizontal: 32, vertical: 24}}
+        >
+          <Subheading>Result</Subheading>
+        </Box>
+        <Box flex={{alignItems: 'flex-end'}} padding={{horizontal: 16}}>
+          <div>{headerRight()}</div>
+        </Box>
+      </Box>
     </Box>
   );
 };
