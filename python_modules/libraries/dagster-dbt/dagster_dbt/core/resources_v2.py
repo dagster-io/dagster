@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import subprocess
@@ -18,6 +17,7 @@ from typing import (
 )
 
 import dateutil.parser
+import orjson
 from dagster import (
     AssetObservation,
     AssetsDefinition,
@@ -62,7 +62,7 @@ class DbtCliEventMessage:
 
         We assume that the log format is json.
         """
-        raw_event: Dict[str, Any] = json.loads(log)
+        raw_event: Dict[str, Any] = orjson.loads(log)
 
         return cls(raw_event=raw_event)
 
@@ -326,7 +326,7 @@ class DbtCliInvocation:
         """
         artifact_path = self.target_path.joinpath(artifact)
         with artifact_path.open() as handle:
-            return json.loads(handle.read())
+            return orjson.loads(handle.read())
 
     def _raise_on_error(self) -> None:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
