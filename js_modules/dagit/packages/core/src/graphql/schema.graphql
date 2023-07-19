@@ -3103,7 +3103,8 @@ type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeCondi
 type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
   partitionKeysOrError: PartitionKeysOrError
-  materializedAssetKeys: [AssetKey!]
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
 }
 
 type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
