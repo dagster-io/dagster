@@ -10,7 +10,7 @@ from .asset_utils import (
     default_asset_key_fn,
     default_description_fn,
     default_group_from_dbt_resource_props,
-    default_metadata_fn,
+    default_metadata_from_dbt_resource_props,
 )
 
 
@@ -120,7 +120,7 @@ class DagsterDbtTranslator:
                     def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
-        return default_metadata_fn(dbt_resource_props)
+        return default_metadata_from_dbt_resource_props(dbt_resource_props)
 
     @classmethod
     def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
