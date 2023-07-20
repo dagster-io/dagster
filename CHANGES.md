@@ -13,6 +13,7 @@
 - [dagster-k8s] The Helm chart now sets readiness probes on user code deployment servers by default. These can be disabled with `dagster-user-deployments.deployments.[...].readinessProbe.enabled=false`.
 - [dagster-airbyte] In line with the deprecation of `non_argument_deps` in favor of `deps`, `build_airbyte_assets` now accepts a `deps` parameter.
 - [dagstermill] In line with the deprecation of `non_argument_deps` in favor of `deps`, `define_dagstermill_asset` now accepts a `deps` parameter.
+- [dagster-dbt] A new CLI utility `dagster-dbt project scaffold` has been provided to scaffold a Dagster code location for an existing dbt project.
 
 ### Bugfixes
 
@@ -20,6 +21,7 @@
 - Fixed a bug that caused lazy `AutoMaterializePolicy`'s to not materialize missing assets.
 - [ui] Fixed an issue where global search and large DAGs were broken when using `--path-prefix`.
 - Schedule and sensor run submissions are now kept up to date with the current workspace, fixing an issue where a stale reference to a server would be used in some conditions.
+- [dagster-dbt] Fixed an issue where materializing dbt models with the same name as a dbt source would cause an error.
 
 ### Breaking Changes
 
@@ -28,7 +30,10 @@
 - `asset_key(s)` properties on `AssetIn` and `AssetDefinition` have been removed in favor of `key(s)`. These APIs were deprecated in 1.0.
 - `root_input_manager` and `RootInputManagerDefinition` have been removed in favor of `input_manager` and `InputManagerDefinition`. These APIs were deprecated in 1.0.
 - [dagster-pandas] The `event_metadata_fn` parameter on `create_dagster_pandas_dataframe_type` has been removed in favor of `metadata_fn`.
-
+- [dagster-dbt] Group names for dbt assets are now taken from a dbt model's group. Before, group names were determined using the model's subdirectory path.
+- [dagster-dbt] Support for `dbt-rpc` has been removed.
+- [dagster-dbt] The class alias `DbtCloudResourceV2` has been removed.
+- [dagster-dbt] `DbtCli` has been renamed to `DbtCliResource`
 ### Deprecations
 
 - The `dagit` python package is deprecated and will be removed in 2.0 in favor  of `dagster-webserver`. See the migration guide for details.
