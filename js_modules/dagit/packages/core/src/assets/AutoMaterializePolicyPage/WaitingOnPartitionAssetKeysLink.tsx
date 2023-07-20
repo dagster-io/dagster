@@ -8,6 +8,8 @@ import {
   Button,
   NonIdealState,
   Icon,
+  Tag,
+  Caption,
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -67,7 +69,12 @@ export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) =
 
   return (
     <>
-      <ButtonLink onClick={() => setIsOpen(true)}>{label}</ButtonLink>
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <Tag intent="warning">{label}</Tag>
+        <ButtonLink onClick={() => setIsOpen(true)}>
+          <Caption>View details</Caption>
+        </ButtonLink>
+      </Box>
       <Dialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

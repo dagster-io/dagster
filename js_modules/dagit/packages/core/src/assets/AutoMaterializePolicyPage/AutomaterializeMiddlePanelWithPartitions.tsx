@@ -112,6 +112,7 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
       <AutomaterializeRequestedPartitionsLink
         runIds={runIds}
         partitionKeys={Array.from(partitionKeys)}
+        intent="success"
       />
     );
   };

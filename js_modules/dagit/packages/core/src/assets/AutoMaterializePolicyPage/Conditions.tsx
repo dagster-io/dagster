@@ -1,4 +1,4 @@
-import {Colors, Box, Icon} from '@dagster-io/ui';
+import {Colors, Box, Icon, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {AssetKey} from '../types';
@@ -19,7 +19,10 @@ interface ConditionProps {
 
 const Condition = ({text, met, rightElement}: ConditionProps) => {
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+    <Box
+      flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+      style={{height: 24}}
+    >
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Icon name={met ? 'done' : 'close'} color={met ? Colors.Dark : Colors.Gray500} />
         <div style={{color: met ? Colors.Dark : Colors.Gray500}}>{text}</div>
@@ -42,9 +45,14 @@ export const ConditionsWithPartitions = ({
   maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
 }: ConditionsWithPartitionsProps) => {
-  const buildRightElement = (partitionKeys: string[]) => {
+  const buildRightElement = (
+    partitionKeys: string[],
+    intent?: React.ComponentProps<typeof Tag>['intent'],
+  ) => {
     if (partitionKeys?.length) {
-      return <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} />;
+      return (
+        <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} intent={intent} />
+      );
     }
     return <div style={{color: Colors.Gray400}}>&ndash;</div>;
   };
@@ -106,6 +114,7 @@ export const ConditionsWithPartitions = ({
           met={conditionResults.has('MaxMaterializationsExceededAutoMaterializeCondition')}
           rightElement={buildRightElement(
             conditionToPartitions['MaxMaterializationsExceededAutoMaterializeCondition'],
+            'danger',
           )}
         />
       </CollapsibleSection>
