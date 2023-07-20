@@ -417,7 +417,7 @@ class CrossRepoAssetDependedByLoader:
 
             for asset in all_depended_by_assets:
                 # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
-                # no output or partition definition data) and no job_names. Dagit displays
+                # no output or partition definition data) and no job_names. The Dagster UI displays
                 # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
                 # are defined as ExternalAssetNodes with no definition data.
                 sink_assets[asset.downstream_asset_key] = ExternalAssetNode(

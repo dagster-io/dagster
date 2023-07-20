@@ -8,6 +8,7 @@ from typing import Optional
 import click
 import dagster._check as check
 import uvicorn
+from dagster._annotations import deprecated
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
@@ -257,6 +258,11 @@ def host_dagster_ui_with_workspace_process_context(
 cli = create_dagster_webserver_cli()
 
 
+@deprecated(
+    breaking_version="2.0",
+    subject="DAGIT_* environment variables, WEBSERVER_LOGGER_NAME",
+    emit_runtime_warning=False,
+)
 def main():
     # We only ever update this variable here. It is used to set the logger name as "dagit" if the
     # user invokes "dagit" on the command line.

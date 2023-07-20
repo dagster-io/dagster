@@ -221,8 +221,8 @@ def get_assets_latest_info(
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
             list(in_progress_run_ids_by_asset.get(asset_key, [])),
             GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
-            # Dagit error occurs if a run is terminated at the same time that this endpoint is called
-            # so we check to make sure the run ID exists in the run records
+            # Dagster UI error occurs if a run is terminated at the same time that this endpoint is
+            # called so we check to make sure the run ID exists in the run records.
             if asset_key in latest_run_ids_by_asset
             and latest_run_ids_by_asset[asset_key] in run_records_by_run_id
             else None,

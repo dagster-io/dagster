@@ -111,7 +111,7 @@ def k8s_webserver_editable_cm(cwd: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def k8s_webserver_example_cm(cwd: str) -> Iterator[None]:
+def k8s_dagit_example(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
@@ -197,7 +197,7 @@ def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
 
 # Some images have custom build context manager functions, listed here
 CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
-    "k8s-webserver-example": k8s_webserver_example_cm,
+    "k8s-dagit-example": k8s_dagit_example,
     "user-code-example": user_code_example_cm,
     "user-code-example-editable": user_code_example_editable_cm,
     "dagster-k8s-editable": dagster_k8s_editable_cm,

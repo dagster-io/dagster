@@ -68,6 +68,7 @@ ENABLED_STR = "enabled"
 DAGSTER_HOME_FALLBACK = "~/.dagster"
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
+# 'dagit' name is deprecated but we keep the same telemetry action name to avoid data disruption
 START_DAGSTER_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"

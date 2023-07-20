@@ -74,13 +74,13 @@ If you're new to Dagster, we recommend reading about its [core concepts](https:/
 Dagster is available on PyPI and officially supports Python 3.8+.
 
 ```bash
-pip install dagster dagit
+pip install dagster dagster-webserver
 ```
 
-This installs two modules:
+This installs two packages:
 
-- **Dagster**: The core programming model.
-- **Dagit**: The web interface for developing and operating Dagster jobs and assets.
+- `dagster`: The core programming model.
+- `dagster-webserver`: The server that hosts Dagster's web UI for developing and operating Dagster jobs and assets.
 
 Running on Using a Mac with an M1 or M2 chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
 

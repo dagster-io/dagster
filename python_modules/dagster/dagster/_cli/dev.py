@@ -9,6 +9,7 @@ from typing import Optional
 import click
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
@@ -70,6 +71,9 @@ def dev_command_options(f):
     "-h",
     help="Host to use for the Dagster webserver.",
     required=False,
+)
+@deprecated(
+    breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
 def dev_command(
     code_server_log_level: str,

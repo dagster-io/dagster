@@ -65,7 +65,7 @@ def teams_on_failure(
 
     """
     webserver_base_url = normalize_renamed_param(
-        webserver_base_url, dagit_base_url, "webserver_base_url", "dagit_base_url"
+        webserver_base_url, "webserver_base_url", dagit_base_url, "dagit_base_url"
     )
 
     @failure_hook(required_resource_keys={"msteams"})
@@ -125,7 +125,7 @@ def teams_on_success(
 
     """
     webserver_base_url = normalize_renamed_param(
-        webserver_base_url, dagit_base_url, "webserver_base_url", "dagit_base_url"
+        webserver_base_url, "webserver_base_url", dagit_base_url, "dagit_base_url"
     )
 
     @success_hook(required_resource_keys={"msteams"})

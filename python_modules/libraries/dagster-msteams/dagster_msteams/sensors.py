@@ -104,13 +104,13 @@ def make_teams_on_run_failure_sensor(
             teams_on_run_failure = make_teams_on_run_failure_sensor(
                 hook_url=os.getenv("TEAMS_WEBHOOK_URL"),
                 message_fn=my_message_fn,
-                dagit_base_url="http://localhost:3000",
+                webserver_base_url="http://localhost:3000",
             )
 
 
     """
     webserver_base_url = normalize_renamed_param(
-        webserver_base_url, dagit_base_url, "webserver_base_url", "dagit_base_url"
+        webserver_base_url, "webserver_base_url", dagit_base_url, "dagit_base_url"
     )
 
     teams_client = TeamsClient(
@@ -129,9 +129,9 @@ def make_teams_on_run_failure_sensor(
     )
     def teams_on_run_failure(context: RunFailureSensorContext):
         text = message_fn(context)
-        if dagit_base_url:
+        if webserver_base_url:
             text += "<a href='{base_url}/runs/{run_id}'>View in Dagit</a>".format(
-                base_url=dagit_base_url,
+                base_url=webserver_base_url,
                 run_id=context.dagster_run.run_id,
             )
         card = Card()

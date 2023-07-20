@@ -303,7 +303,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalStderrUrl = graphene.String()
     pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
-    # renamed to fileKey for newer versions of dagit
+    # renamed to fileKey for newer versions of the Dagster UI
     logKey = graphene.NonNull(graphene.String)
 
 
