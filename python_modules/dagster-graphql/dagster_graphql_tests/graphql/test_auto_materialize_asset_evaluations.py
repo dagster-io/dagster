@@ -2,11 +2,9 @@ from datetime import datetime
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
-    AutoMaterializeAssetEvaluation,
-)
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_condition import (
+    AutoMaterializeAssetEvaluation,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
@@ -364,7 +362,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
     def test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
-            {CURSOR_KEY: AssetReconciliationCursor.empty().serialize()}
+            {CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
         )
 
         results = execute_dagster_graphql(
@@ -381,7 +379,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
-                CURSOR_KEY: AssetReconciliationCursor.empty()
+                CURSOR_KEY: AssetDaemonCursor.empty()
                 .with_updates(0, {}, set(), {}, 42, None, [], 0)  # type: ignore
                 .serialize()
             }

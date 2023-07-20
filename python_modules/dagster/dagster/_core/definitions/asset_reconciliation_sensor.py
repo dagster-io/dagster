@@ -1,6 +1,5 @@
 import datetime
 import itertools
-import json
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -10,7 +9,6 @@ from typing import (
     FrozenSet,
     Iterable,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -29,12 +27,13 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.backcompat import deprecation_warning
 
+from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph
 from .asset_selection import AssetSelection
 from .auto_materialize_condition import (
+    AutoMaterializeAssetEvaluation,
     AutoMaterializeCondition,
     AutoMaterializeDecisionType,
     MaxMaterializationsExceededAutoMaterializeCondition,
@@ -48,9 +47,7 @@ from .freshness_based_auto_materialize import (
 )
 from .partition import (
     PartitionsDefinition,
-    PartitionsSubset,
     ScheduleType,
-    SerializedPartitionsSubset,
 )
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
@@ -59,91 +56,6 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
-
-
-@whitelist_for_serdes
-class AutoMaterializeAssetEvaluation(NamedTuple):
-    """Represents the results of the auto-materialize logic for a single asset.
-
-    Properties:
-        asset_key (AssetKey): The asset key that was evaluated.
-        partition_subsets_by_condition: The conditions that impact if the asset should be materialized, skipped, or
-            discarded. If the asset is partitioned, this will be a list of tuples, where the first
-            element is the condition and the second element is the serialized subset of partitions that the
-            condition applies to. If it's not partitioned, the second element will be None.
-    """
-
-    asset_key: AssetKey
-    partition_subsets_by_condition: Sequence[
-        Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]]
-    ]
-    num_requested: int
-    num_skipped: int
-    num_discarded: int
-    run_ids: Set[str] = set()
-
-    @staticmethod
-    def from_conditions(
-        asset_graph: AssetGraph,
-        asset_key: AssetKey,
-        conditions_by_asset_partition: Mapping[
-            AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
-        ],
-        dynamic_partitions_store: "DynamicPartitionsStore",
-    ) -> "AutoMaterializeAssetEvaluation":
-        num_requested = 0
-        num_skipped = 0
-        num_discarded = 0
-
-        for conditions in conditions_by_asset_partition.values():
-            decision_type = _decision_type_for_conditions(conditions)
-            if decision_type == AutoMaterializeDecisionType.MATERIALIZE:
-                num_requested += 1
-            elif decision_type == AutoMaterializeDecisionType.SKIP:
-                num_skipped += 1
-            elif decision_type == AutoMaterializeDecisionType.DISCARD:
-                num_discarded += 1
-
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        if partitions_def is None:
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (condition, None)
-                    for condition in set().union(*conditions_by_asset_partition.values())
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-            )
-        else:
-            partition_keys_by_condition = defaultdict(set)
-
-            for asset_partition, conditions in conditions_by_asset_partition.items():
-                for condition in conditions:
-                    partition_keys_by_condition[condition].add(
-                        check.not_none(asset_partition.partition_key)
-                    )
-
-            return AutoMaterializeAssetEvaluation(
-                asset_key=asset_key,
-                partition_subsets_by_condition=[
-                    (
-                        condition,
-                        SerializedPartitionsSubset.from_subset(
-                            subset=partitions_def.empty_subset().with_partition_keys(
-                                partition_keys
-                            ),
-                            partitions_def=partitions_def,
-                            dynamic_partitions_store=dynamic_partitions_store,
-                        ),
-                    )
-                    for condition, partition_keys in partition_keys_by_condition.items()
-                ],
-                num_requested=num_requested,
-                num_skipped=num_skipped,
-                num_discarded=num_discarded,
-            )
 
 
 def get_implicit_auto_materialize_policy(
@@ -168,238 +80,6 @@ def get_implicit_auto_materialize_policy(
             max_materializations_per_minute=max_materializations_per_minute,
         )
     return auto_materialize_policy
-
-
-class AssetReconciliationCursor(NamedTuple):
-    """State that's saved between reconciliation evaluations.
-
-    Attributes:
-        latest_storage_id:
-            The latest observed storage ID across all assets. Useful for finding out what has
-            happened since the last tick.
-        handled_root_asset_keys:
-            Every entry is a non-partitioned asset with no parents that has been requested by this
-            sensor, discarded by this sensor, or has been materialized (even if not by this sensor).
-        handled_root_partitions_by_asset_key:
-            Every key is a partitioned root asset. Every value is the set of that asset's partitions
-            that have been requested by this sensor, discarded by this sensor,
-            or have been materialized (even if not by this sensor).
-        last_observe_request_timestamp_by_asset_key:
-            Every key is an observable source asset that has been auto-observed. The value is the
-            timestamp of the tick that requested the observation.
-    """
-
-    latest_storage_id: Optional[int]
-    handled_root_asset_keys: AbstractSet[AssetKey]
-    handled_root_partitions_by_asset_key: Mapping[AssetKey, PartitionsSubset]
-    evaluation_id: int
-    last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
-
-    def was_previously_handled(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.handled_root_asset_keys
-
-    def get_unhandled_partitions(
-        self,
-        asset_key: AssetKey,
-        asset_graph,
-        dynamic_partitions_store: "DynamicPartitionsStore",
-        current_time: datetime.datetime,
-    ) -> Iterable[str]:
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-
-        handled_subset = self.handled_root_partitions_by_asset_key.get(
-            asset_key, partitions_def.empty_subset()
-        )
-
-        return handled_subset.get_partition_keys_not_in_subset(
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
-
-    def with_updates(
-        self,
-        latest_storage_id: Optional[int],
-        conditions_by_asset_partition: Mapping[
-            AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
-        ],
-        newly_materialized_root_asset_keys: AbstractSet[AssetKey],
-        newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
-        evaluation_id: int,
-        asset_graph: AssetGraph,
-        newly_observe_requested_asset_keys: Sequence[AssetKey],
-        observe_request_timestamp: float,
-    ) -> "AssetReconciliationCursor":
-        """Returns a cursor that represents this cursor plus the updates that have happened within the
-        tick.
-        """
-        handled_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
-        handled_non_partitioned_root_assets: Set[AssetKey] = set()
-
-        for asset_partition, conditions in conditions_by_asset_partition.items():
-            if (
-                # only consider root assets
-                not asset_graph.has_non_source_parents(asset_partition.asset_key)
-                # which were discarded or materialized
-                and (
-                    _decision_type_for_conditions(conditions)
-                    in (
-                        AutoMaterializeDecisionType.DISCARD,
-                        AutoMaterializeDecisionType.MATERIALIZE,
-                    )
-                )
-            ):
-                if asset_partition.partition_key:
-                    handled_root_partitions_by_asset_key[asset_partition.asset_key].add(
-                        asset_partition.partition_key
-                    )
-                else:
-                    handled_non_partitioned_root_assets.add(asset_partition.asset_key)
-
-        result_handled_root_partitions_by_asset_key = {**self.handled_root_partitions_by_asset_key}
-        for asset_key in set(newly_materialized_root_partitions_by_asset_key.keys()) | set(
-            handled_root_partitions_by_asset_key.keys()
-        ):
-            prior_materialized_partitions = self.handled_root_partitions_by_asset_key.get(asset_key)
-            if prior_materialized_partitions is None:
-                prior_materialized_partitions = cast(
-                    PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
-                ).empty_subset()
-
-            result_handled_root_partitions_by_asset_key[
-                asset_key
-            ] = prior_materialized_partitions.with_partition_keys(
-                itertools.chain(
-                    newly_materialized_root_partitions_by_asset_key[asset_key],
-                    handled_root_partitions_by_asset_key[asset_key],
-                )
-            )
-
-        result_handled_root_asset_keys = (
-            self.handled_root_asset_keys
-            | newly_materialized_root_asset_keys
-            | handled_non_partitioned_root_assets
-        )
-
-        result_last_observe_request_timestamp_by_asset_key = {
-            **self.last_observe_request_timestamp_by_asset_key
-        }
-        for asset_key in newly_observe_requested_asset_keys:
-            result_last_observe_request_timestamp_by_asset_key[
-                asset_key
-            ] = observe_request_timestamp
-
-        if latest_storage_id and self.latest_storage_id:
-            check.invariant(
-                latest_storage_id >= self.latest_storage_id,
-                "Latest storage ID should be >= previous latest storage ID",
-            )
-
-        return AssetReconciliationCursor(
-            latest_storage_id=latest_storage_id or self.latest_storage_id,
-            handled_root_asset_keys=result_handled_root_asset_keys,
-            handled_root_partitions_by_asset_key=result_handled_root_partitions_by_asset_key,
-            evaluation_id=evaluation_id,
-            last_observe_request_timestamp_by_asset_key=result_last_observe_request_timestamp_by_asset_key,
-        )
-
-    @classmethod
-    def empty(cls) -> "AssetReconciliationCursor":
-        return AssetReconciliationCursor(
-            latest_storage_id=None,
-            handled_root_partitions_by_asset_key={},
-            handled_root_asset_keys=set(),
-            evaluation_id=0,
-            last_observe_request_timestamp_by_asset_key={},
-        )
-
-    @classmethod
-    def from_serialized(cls, cursor: str, asset_graph: AssetGraph) -> "AssetReconciliationCursor":
-        data = json.loads(cursor)
-
-        if isinstance(data, list):  # backcompat
-            check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
-            (
-                latest_storage_id,
-                serialized_handled_root_asset_keys,
-                serialized_handled_root_partitions_by_asset_key,
-            ) = data[:3]
-
-            evaluation_id = data[3] if len(data) == 4 else 0
-            serialized_last_observe_request_timestamp_by_asset_key = {}
-        else:
-            latest_storage_id = data["latest_storage_id"]
-            serialized_handled_root_asset_keys = data["handled_root_asset_keys"]
-            serialized_handled_root_partitions_by_asset_key = data[
-                "handled_root_partitions_by_asset_key"
-            ]
-            evaluation_id = data["evaluation_id"]
-            serialized_last_observe_request_timestamp_by_asset_key = data.get(
-                "last_observe_request_timestamp_by_asset_key", {}
-            )
-
-        handled_root_partitions_by_asset_key = {}
-        for (
-            key_str,
-            serialized_subset,
-        ) in serialized_handled_root_partitions_by_asset_key.items():
-            key = AssetKey.from_user_string(key_str)
-            if key not in asset_graph.materializable_asset_keys:
-                continue
-
-            partitions_def = asset_graph.get_partitions_def(key)
-            if partitions_def is None:
-                continue
-
-            try:
-                # in the case that the partitions def has changed, we may not be able to deserialize
-                # the corresponding subset. in this case, we just use an empty subset
-                handled_root_partitions_by_asset_key[key] = partitions_def.deserialize_subset(
-                    serialized_subset
-                )
-            except:
-                handled_root_partitions_by_asset_key[key] = partitions_def.empty_subset()
-        return cls(
-            latest_storage_id=latest_storage_id,
-            handled_root_asset_keys={
-                AssetKey.from_user_string(key_str) for key_str in serialized_handled_root_asset_keys
-            },
-            handled_root_partitions_by_asset_key=handled_root_partitions_by_asset_key,
-            evaluation_id=evaluation_id,
-            last_observe_request_timestamp_by_asset_key={
-                AssetKey.from_user_string(key_str): timestamp
-                for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
-            },
-        )
-
-    @classmethod
-    def get_evaluation_id_from_serialized(cls, cursor: str) -> Optional[int]:
-        data = json.loads(cursor)
-        if isinstance(data, list):  # backcompat
-            check.invariant(len(data) in [3, 4], "Invalid serialized cursor")
-            return data[3] if len(data) == 4 else None
-        else:
-            return data["evaluation_id"]
-
-    def serialize(self) -> str:
-        serializable_handled_root_partitions_by_asset_key = {
-            key.to_user_string(): subset.serialize()
-            for key, subset in self.handled_root_partitions_by_asset_key.items()
-        }
-        serialized = json.dumps(
-            {
-                "latest_storage_id": self.latest_storage_id,
-                "handled_root_asset_keys": [
-                    key.to_user_string() for key in self.handled_root_asset_keys
-                ],
-                "handled_root_partitions_by_asset_key": serializable_handled_root_partitions_by_asset_key,
-                "evaluation_id": self.evaluation_id,
-                "last_observe_request_timestamp_by_asset_key": {
-                    key.to_user_string(): timestamp
-                    for key, timestamp in self.last_observe_request_timestamp_by_asset_key.items()
-                },
-            }
-        )
-        return serialized
 
 
 def find_parent_materialized_asset_partitions(
@@ -547,7 +227,7 @@ def find_parent_materialized_asset_partitions(
 
 def find_never_handled_root_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
-    cursor: AssetReconciliationCursor,
+    cursor: AssetDaemonCursor,
     target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
 ) -> Tuple[
@@ -599,34 +279,19 @@ def find_never_handled_root_asset_partitions(
     )
 
 
-def _decision_type_for_conditions(
-    conditions: Optional[AbstractSet[AutoMaterializeCondition]],
-) -> Optional[AutoMaterializeDecisionType]:
-    """Based on a set of conditions, determine the resulting decision."""
-    if not conditions:
-        return None
-    condition_decision_types = {condition.decision_type for condition in conditions}
-    # precedence of decisions
-    for decision_type in [
-        AutoMaterializeDecisionType.SKIP,
-        AutoMaterializeDecisionType.DISCARD,
-        AutoMaterializeDecisionType.MATERIALIZE,
-    ]:
-        if decision_type in condition_decision_types:
-            return decision_type
-    return None
-
-
 def _will_materialize_for_conditions(
     conditions: Optional[AbstractSet[AutoMaterializeCondition]],
 ) -> bool:
     """Based on a set of conditions, determine if the asset will be materialized."""
-    return _decision_type_for_conditions(conditions) == AutoMaterializeDecisionType.MATERIALIZE
+    return (
+        AutoMaterializeDecisionType.from_conditions(conditions)
+        == AutoMaterializeDecisionType.MATERIALIZE
+    )
 
 
 def determine_asset_partitions_to_auto_materialize(
     instance_queryer: "CachingInstanceQueryer",
-    cursor: AssetReconciliationCursor,
+    cursor: AssetDaemonCursor,
     target_asset_keys: AbstractSet[AssetKey],
     target_asset_keys_and_parents: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
@@ -840,15 +505,11 @@ def reconcile(
     asset_graph: AssetGraph,
     target_asset_keys: AbstractSet[AssetKey],
     instance: "DagsterInstance",
-    cursor: AssetReconciliationCursor,
+    cursor: AssetDaemonCursor,
     materialize_run_tags: Optional[Mapping[str, str]],
     observe_run_tags: Optional[Mapping[str, str]],
     auto_observe: bool,
-) -> Tuple[
-    Sequence[RunRequest],
-    AssetReconciliationCursor,
-    Sequence[AutoMaterializeAssetEvaluation],
-]:
+) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutoMaterializeAssetEvaluation],]:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
     current_time = pendulum.now("UTC")
@@ -1139,9 +800,9 @@ def build_asset_reconciliation_sensor(
     def _sensor(context):
         asset_graph = context.repository_def.asset_graph
         cursor = (
-            AssetReconciliationCursor.from_serialized(context.cursor, asset_graph)
+            AssetDaemonCursor.from_serialized(context.cursor, asset_graph)
             if context.cursor
-            else AssetReconciliationCursor.empty()
+            else AssetDaemonCursor.empty()
         )
 
         # if there is a auto materialize policy set in the selection, filter down to that. Otherwise, use the
