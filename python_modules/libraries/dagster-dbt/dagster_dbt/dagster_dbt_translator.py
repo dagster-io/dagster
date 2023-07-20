@@ -1,6 +1,7 @@
 from typing import Any, Mapping, Optional
 
 from dagster import AssetKey
+from dagster._annotations import public
 from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
@@ -22,6 +23,7 @@ class DagsterDbtTranslator:
     is derived.
     """
 
+    @public
     @classmethod
     def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         """A function that takes a dictionary representing properties of a dbt resource, and
@@ -56,6 +58,7 @@ class DagsterDbtTranslator:
         """
         return default_asset_key_fn(dbt_resource_props)
 
+    @public
     @classmethod
     def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
         """A function that takes a dictionary representing properties of a dbt resource, and
@@ -89,6 +92,7 @@ class DagsterDbtTranslator:
         """
         return default_description_fn(dbt_resource_props)
 
+    @public
     @classmethod
     def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
         """A function that takes a dictionary representing properties of a dbt resource, and
@@ -122,6 +126,7 @@ class DagsterDbtTranslator:
         """
         return default_metadata_from_dbt_resource_props(dbt_resource_props)
 
+    @public
     @classmethod
     def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         """A function that takes a dictionary representing properties of a dbt resource, and
@@ -182,6 +187,7 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
             or []
         )
 
+    @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         base_key = default_asset_key_fn(dbt_resource_props)
         if dbt_resource_props["resource_type"] == "source":

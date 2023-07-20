@@ -27,6 +27,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
@@ -69,6 +70,7 @@ class DbtCliEventMessage:
     def __str__(self) -> str:
         return self.raw_event["info"]["msg"]
 
+    @public
     def to_default_asset_events(
         self,
         manifest: Mapping[str, Any],
@@ -194,6 +196,7 @@ class DbtCliInvocation:
             raise_on_error=raise_on_error,
         )
 
+    @public
     def wait(self) -> "DbtCliInvocation":
         """Wait for the dbt CLI process to complete.
 
@@ -217,6 +220,7 @@ class DbtCliInvocation:
 
         return self
 
+    @public
     def is_successful(self) -> bool:
         """Return whether the dbt CLI process completed successfully.
 
@@ -241,6 +245,7 @@ class DbtCliInvocation:
         """
         return self.process.wait() == 0
 
+    @public
     def stream(self) -> Iterator[Union[Output, AssetObservation]]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
@@ -264,6 +269,7 @@ class DbtCliInvocation:
                 manifest=self.manifest, dagster_dbt_translator=self.dagster_dbt_translator
             )
 
+    @public
     def stream_raw_events(self) -> Iterator[DbtCliEventMessage]:
         """Stream the events from the dbt CLI process.
 
@@ -288,6 +294,7 @@ class DbtCliInvocation:
         # Ensure that the dbt CLI process has completed.
         self._raise_on_error()
 
+    @public
     def get_artifact(
         self,
         artifact: Union[
@@ -419,6 +426,7 @@ class DbtCliResource(ConfigurableResource):
 
         return f"target/{path}"
 
+    @public
     def cli(
         self,
         args: List[str],
