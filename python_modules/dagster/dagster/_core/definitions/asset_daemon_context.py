@@ -196,16 +196,6 @@ class AssetDaemonContext:
             newly_materialized_root_partitions_by_asset_key,
         )
 
-    def _will_materialize_for_conditions(
-        self,
-        conditions: Optional[AbstractSet[AutoMaterializeCondition]],
-    ) -> bool:
-        """Based on a set of conditions, determine if the asset will be materialized."""
-        return (
-            AutoMaterializeDecisionType.from_conditions(conditions)
-            == AutoMaterializeDecisionType.MATERIALIZE
-        )
-
     def determine_asset_partitions_to_auto_materialize(
         self,
         conditions_by_asset_partition_for_freshness: Mapping[
