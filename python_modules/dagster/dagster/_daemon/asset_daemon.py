@@ -3,10 +3,8 @@ from typing import Optional
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
-    reconcile,
-)
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_reconciliation_sensor import reconcile
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -48,11 +46,7 @@ def _get_raw_cursor(instance: DagsterInstance) -> Optional[str]:
 
 def get_current_evaluation_id(instance: DagsterInstance) -> Optional[int]:
     raw_cursor = _get_raw_cursor(instance)
-    return (
-        AssetReconciliationCursor.get_evaluation_id_from_serialized(raw_cursor)
-        if raw_cursor
-        else None
-    )
+    return AssetDaemonCursor.get_evaluation_id_from_serialized(raw_cursor) if raw_cursor else None
 
 
 class AssetDaemon(IntervalDaemon):
@@ -103,9 +97,9 @@ class AssetDaemon(IntervalDaemon):
 
         raw_cursor = _get_raw_cursor(instance)
         cursor = (
-            AssetReconciliationCursor.from_serialized(raw_cursor, asset_graph)
+            AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
-            else AssetReconciliationCursor.empty()
+            else AssetDaemonCursor.empty()
         )
 
         run_requests, new_cursor, evaluations = reconcile(
