@@ -2135,6 +2135,8 @@ export type ParentMaterializedAutoMaterializeCondition = AutoMaterializeConditio
   __typename: 'ParentMaterializedAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
   partitionKeysOrError: Maybe<PartitionKeysOrError>;
+  updatedAssetKeys: Maybe<Array<AssetKey>>;
+  willUpdateAssetKeys: Maybe<Array<AssetKey>>;
 };
 
 export type ParentOutdatedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
@@ -8240,6 +8242,12 @@ export const buildParentMaterializedAutoMaterializeCondition = (
         : relationshipsToOmit.has('PartitionKeys')
         ? ({} as PartitionKeys)
         : buildPartitionKeys({}, relationshipsToOmit),
+    updatedAssetKeys:
+      overrides && overrides.hasOwnProperty('updatedAssetKeys') ? overrides.updatedAssetKeys! : [],
+    willUpdateAssetKeys:
+      overrides && overrides.hasOwnProperty('willUpdateAssetKeys')
+        ? overrides.willUpdateAssetKeys!
+        : [],
   };
 };
 
