@@ -616,14 +616,30 @@ def table1() -> Output[DataFrame]:
 This works even if you're not returning an object from your decorated function:
 
 ```python file=/concepts/assets/asset_materialization_metadata_none.py
-from dagster import Output, asset
+from dagster import AssetExecutionContext, asset
 
 
 @asset
-def table1() -> Output[None]:
+def table1(context: AssetExecutionContext) -> None:
     ...  # write out some data to table1
-    return Output(None, metadata={"num_rows": 25})
+    context.add_output_metadata(metadata={"num_rows": 25})
 ```
+
+Dagster supports more complex metadata types as well. For example, you can render Markdown by using <PyObject object="MetadataValue" method="md" /> or clickable URLs using <PyObject object="MetadataValue" method="url" />:
+
+```python file=/concepts/assets/asset_materialization_metadata_with_metadata_value.py startafter=start endbefore=end
+from dagster import AssetExecutionContext, MetadataValue, asset
+
+
+@asset
+def sales_dashboard(context: AssetExecutionContext):
+    generate_sales_dashboard()
+    context.add_output_metadata(
+        metadata={"link": MetadataValue.url("http://mycoolsite.com/my_dashboard")}
+    )
+```
+
+For a full list of supported metadata types, see <PyObject object="MetadataValue" />.
 
 #### Recording materialization metadata using I/O managers
 
