@@ -57,5 +57,7 @@ def scaffold_type(config_type: ConfigType, skip_non_required: bool = True):
         return {}
     elif config_type.kind == ConfigTypeKind.ENUM:
         return "|".join(sorted(map(lambda v: v.config_value, config_type.enum_values)))  # type: ignore
+    elif config_type.kind == ConfigTypeKind.NONEABLE:
+        return None
     else:
         check.failed(f"Do not know how to scaffold {config_type.given_name}")
