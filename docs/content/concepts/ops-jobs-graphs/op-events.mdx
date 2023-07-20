@@ -212,7 +212,7 @@ from dagster import AssetObservation, op
 
 
 @op
-def observation_op(context):
+def observation_op(context: OpExecutionContext):
     df = read_df()
     context.log_event(
         AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
