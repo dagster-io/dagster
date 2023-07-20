@@ -57,11 +57,11 @@ For example, below is a software-defined asset with a partition for each day sin
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
 import urllib.request
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context) -> None:
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> None:
     partition_date_str = context.asset_partition_key_for_output()
 
     url = f"coolweatherwebsite.com/weather_obs&date={partition_date_str}"
@@ -79,11 +79,11 @@ Here's a software-defined asset that relies on an I/O manager to store its outpu
 ```python file=/concepts/partitions_schedules_sensors/partitioned_asset_uses_io_manager.py
 import pandas as pd
 
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-def my_daily_partitioned_asset(context) -> pd.DataFrame:
+def my_daily_partitioned_asset(context: AssetExecutionContext) -> pd.DataFrame:
     partition_date_str = context.asset_partition_key_for_output()
     return pd.read_csv(f"coolweatherwebsite.com/weather_obs&date={partition_date_str}")
 ```
@@ -92,10 +92,11 @@ If you're using the default I/O manager, materializing partition `2022-07-23` of
 
 #### Multi-dimensionally partitioned assets
 
-The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension name to partitions definition, creating a partition for each unique combination of dimension partitions. For example, the asset below would contain a partition for each combination of color and date: `red|2022-01-01`, `yellow|2022-01-01`, `blue|2022-01-01`, `red|2022-01-02` and so on.
+The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension name to `PartitionsDefinition`, creating a partition for each unique combination of dimension partitions. For example, the asset below would contain a partition for each combination of color and date: `red|2022-01-01`, `yellow|2022-01-01`, `blue|2022-01-01`, `red|2022-01-02` and so on.
 
 ```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -111,7 +112,7 @@ from dagster import (
         }
     )
 )
-def multi_partitions_asset(context):
+def multi_partitions_asset(context: AssetExecutionContext):
     context.log.info(context.partition_key.keys_by_dimension)
 ```
 
@@ -134,14 +135,14 @@ result = materialize(
 
 Sometimes you don't know the set of partitions ahead of time when you're defining your assets. For example, maybe you want to add a new partition every time a new data file lands in a directory, or every time you want to experiment with a new set of hyperparameters. In these cases, you can use a <PyObject object="DynamicPartitionsDefinition"/>.
 
-The <PyObject object="DynamicPartitionsDefinition" /> class accepts a name argument, representing the name of the partition set:
+The <PyObject object="DynamicPartitionsDefinition" /> class accepts a `name` argument, representing the name of the partition set:
 
 ```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_marker endbefore=end_dynamic_partitions_marker
 images_partitions_def = DynamicPartitionsDefinition(name="images")
 
 
 @asset(partitions_def=images_partitions_def)
-def images(context):
+def images(context: AssetExecutionContext):
     ...
 ```
 
@@ -154,7 +155,7 @@ images_job = define_asset_job(
 
 
 @sensor(job=images_job)
-def image_sensor(context):
+def image_sensor(context: AssetExecutionContext):
     new_images = [
         img_filename
         for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
@@ -347,7 +348,7 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 Before we define a partitioned job, let's look at a non-partitioned job that computes some data for a given date:
 
 ```python file=/concepts/partitions_schedules_sensors/date_config_job.py
-from dagster import Config, job, op
+from dagster import Config, OpExecutionContext, job, op
 
 
 class ProcessDateConfig(Config):
@@ -355,7 +356,7 @@ class ProcessDateConfig(Config):
 
 
 @op
-def process_data_for_date(context, config: ProcessDateConfig):
+def process_data_for_date(context: OpExecutionContext, config: ProcessDateConfig):
     date = config.date
     context.log.info(f"processing data for {date}")
 
@@ -433,7 +434,7 @@ In addition to the <PyObject object="daily_partitioned_config" decorator /> deco
 Not all jobs are partitioned by time. Here's a partitioned job where the partitions are continents:
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -456,7 +457,7 @@ class ContinentOpConfig(Config):
 
 
 @op
-def continent_op(context, config: ContinentOpConfig):
+def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 
@@ -572,7 +573,7 @@ class ProcessDataConfig(Config):
 
 
 @op
-def process_data(context, config: ProcessDataConfig):
+def process_data(context: OpExecutionContext, config: ProcessDataConfig):
     s = config.start
     e = config.end
     context.log.info(f"processing data for {s} - {e}")
