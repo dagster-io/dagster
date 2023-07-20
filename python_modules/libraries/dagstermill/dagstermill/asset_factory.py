@@ -104,7 +104,7 @@ def define_dagstermill_asset(
             if it does not. If not set, Dagster will accept any config provided for the op.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the notebook.
-        description (Optional[str]): Description of the asset to display in Dagit.
+        description (Optional[str]): Description of the asset to display in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.

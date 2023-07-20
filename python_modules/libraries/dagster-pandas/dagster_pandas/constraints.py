@@ -138,7 +138,7 @@ class Constraint:
 
     Args:
         error_description (Optional[str]): The plain string description that is output in the terminal if the constraint fails.
-        markdown_description (Optional[str]): A markdown supported description that is emitted by dagit if the constraint fails.
+        markdown_description (Optional[str]): A markdown supported description that is shown in the Dagster UI if the constraint fails.
     """
 
     def __init__(self, error_description=None, markdown_description=None):
@@ -297,7 +297,7 @@ class DataFrameConstraint(Constraint):
 
     Args:
         error_description (Optional[str]): The plain string description that is output in the terminal if the constraint fails.
-        markdown_description (Optional[str]): A markdown supported description that is emitted by dagit if the constraint fails.
+        markdown_description (Optional[str]): A markdown supported description that is shown in the Dagster UI if the constraint fails.
     """
 
     def __init__(self, error_description=None, markdown_description=None):
@@ -892,7 +892,7 @@ class ColumnConstraint(Constraint):
 
     Args:
         error_description (Optional[str]): The plain string description that is output in the terminal if the constraint fails.
-        markdown_description (Optional[str]): A markdown supported description that is emitted by dagit if the constraint fails.
+        markdown_description (Optional[str]): A markdown supported description that is shown in the Dagster UI if the constraint fails.
     """
 
     def __init__(self, error_description=None, markdown_description=None):
