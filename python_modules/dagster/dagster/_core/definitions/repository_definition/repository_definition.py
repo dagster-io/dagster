@@ -2,6 +2,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -10,7 +11,6 @@ from typing import (
     Sequence,
     Type,
     Union,
-    Dict,
 )
 
 import dagster._check as check
