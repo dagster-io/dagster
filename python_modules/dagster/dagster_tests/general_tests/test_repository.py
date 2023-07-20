@@ -181,3 +181,31 @@ def test_asset_value_loader_with_resources():
     resource_config = {"io_resource": {"config": {"key": 5}}}
     value = repo.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
     assert value == 5
+
+
+def test_asset_value_loader_with_metadata():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert context.metadata is not None
+            return context.metadata.get("return") or 5
+
+    @io_manager()
+    def my_io_manager():
+        return MyIOManager()
+
+    @asset
+    def asset1():
+        ...
+
+    @repository
+    def repo():
+        return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
+
+    value = repo.load_asset_value(AssetKey("asset1"))
+    assert value == 5
+
+    value = repo.load_asset_value(AssetKey("asset1"), metadata={"return": 10})
+    assert value == 10

@@ -9,6 +9,7 @@ from typing import (
     Sequence,
     Type,
     Union,
+    Dict,
 )
 
 import dagster._check as check
@@ -444,6 +445,7 @@ class Definitions:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -458,6 +460,7 @@ class Definitions:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            metadata (Optional[Dict[str, Any]]): A dict of metadata to pass (or override) to the IOManager.
 
         Returns:
             The contents of an asset as a Python object.
@@ -467,6 +470,7 @@ class Definitions:
             python_type=python_type,
             instance=instance,
             partition_key=partition_key,
+            metadata=metadata,
         )
 
     @public
