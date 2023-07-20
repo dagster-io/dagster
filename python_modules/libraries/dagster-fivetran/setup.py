@@ -32,7 +32,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_fivetran_tests*"]),
-    install_requires=["dagster==1.4.0"],
+    install_requires=[f"dagster{pin}"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
@@ -41,7 +41,7 @@ setup(
     },
     extras_require={
         "managed": [
-            "dagster-managed-elements==0.20.0",
+            f"dagster-managed-elements{pin}",
         ],
     },
 )
