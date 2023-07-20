@@ -50,6 +50,7 @@ setup(
             "apache-airflow-providers-apache-spark",
             # Logging messages are set to debug starting 4.1.1
             "apache-airflow-providers-http<4.1.1",
+            "marshmallow<3.20.0",
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",
