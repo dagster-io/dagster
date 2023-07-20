@@ -5,6 +5,7 @@ import {AssetKey} from '../types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
+import {ParentUpdatedLink} from './ParentUpdatedLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnPartitionAssetKeysLink} from './WaitingOnPartitionAssetKeysLink';
 import {AutoMateralizeWithConditionFragment} from './types/GetEvaluationsQuery.types';
@@ -134,11 +135,15 @@ export const ConditionsWithPartitions = ({
 interface ConditionsProps {
   conditionResults: Set<ConditionType>;
   parentOutdatedWaitingOnAssetKeys: AssetKey[];
+  parentUpdatedAssetKeys: AssetKey[];
+  parentWillUpdateAssetKeys: AssetKey[];
 }
 
 export const ConditionsNoPartitions = ({
   conditionResults,
   parentOutdatedWaitingOnAssetKeys,
+  parentUpdatedAssetKeys,
+  parentWillUpdateAssetKeys,
 }: ConditionsProps) => {
   return (
     <>
@@ -154,6 +159,14 @@ export const ConditionsNoPartitions = ({
           <Condition
             text="Upstream data has changed since latest materialization"
             met={conditionResults.has('ParentMaterializedAutoMaterializeCondition')}
+            rightElement={
+              parentUpdatedAssetKeys.length + parentWillUpdateAssetKeys.length ? (
+                <ParentUpdatedLink
+                  updatedAssetKeys={parentUpdatedAssetKeys}
+                  willUpdateAssetKeys={parentWillUpdateAssetKeys}
+                />
+              ) : null
+            }
           />
           <Condition
             text="Required to meet this asset's freshness policy"

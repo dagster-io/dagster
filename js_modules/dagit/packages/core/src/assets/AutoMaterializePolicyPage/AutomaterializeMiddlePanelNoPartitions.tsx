@@ -32,17 +32,30 @@ export const AutomaterializeMiddlePanelNoPartitions = ({selectedEvaluation}: Pro
     return <AutomaterializeRunTag runId={runIds[0]!} />;
   };
 
-  const parentOutdatedWaitingOnAssetKeys = React.useMemo(() => {
+  const assetKeyDetails = React.useMemo(() => {
     if (!selectedEvaluation?.conditions) {
-      return [];
+      return {
+        waitingOnAssetKeys: [],
+        parentUpdatedAssetKeys: [],
+        parentWillUpdateAssetKeys: [],
+      };
     }
     const waitingOnAssetKeys: AssetKey[] = [];
+    const parentUpdatedAssetKeys: AssetKey[] = [];
+    const parentWillUpdateAssetKeys: AssetKey[] = [];
     selectedEvaluation.conditions.forEach((condition) => {
       if (condition.__typename === 'ParentOutdatedAutoMaterializeCondition') {
         waitingOnAssetKeys.push(...(condition.waitingOnAssetKeys || []));
+      } else if (condition.__typename === 'ParentMaterializedAutoMaterializeCondition') {
+        parentUpdatedAssetKeys.push(...(condition.updatedAssetKeys || []));
+        parentWillUpdateAssetKeys.push(...(condition.willUpdateAssetKeys || []));
       }
     });
-    return waitingOnAssetKeys;
+    return {
+      waitingOnAssetKeys,
+      parentUpdatedAssetKeys,
+      parentWillUpdateAssetKeys,
+    };
   }, [selectedEvaluation]);
 
   return (
@@ -58,7 +71,9 @@ export const AutomaterializeMiddlePanelNoPartitions = ({selectedEvaluation}: Pro
       </Box>
       <ConditionsNoPartitions
         conditionResults={conditionResults}
-        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
+        parentOutdatedWaitingOnAssetKeys={assetKeyDetails.waitingOnAssetKeys}
+        parentUpdatedAssetKeys={assetKeyDetails.parentUpdatedAssetKeys}
+        parentWillUpdateAssetKeys={assetKeyDetails.parentWillUpdateAssetKeys}
       />
     </Box>
   );

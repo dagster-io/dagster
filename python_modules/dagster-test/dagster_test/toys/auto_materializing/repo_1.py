@@ -8,8 +8,13 @@ def eager_upstream():
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
-def eager_downstream_1(eager_upstream):
+def eager_downstream_0_point_5(eager_upstream):
     return eager_upstream + 1
+
+
+@asset(auto_materialize_policy=AutoMaterializePolicy.eager(), deps=[eager_upstream])
+def eager_downstream_1(eager_downstream_0_point_5):
+    return eager_downstream_0_point_5 + 1
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
@@ -52,6 +57,7 @@ def lazy_downstream_1_partitioned(lazy_upstream_partitioned):
 def auto_materialize_repo_1():
     return [
         eager_upstream,
+        eager_downstream_0_point_5,
         eager_downstream_1,
         lazy_upstream,
         lazy_downstream_1,
