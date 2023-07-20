@@ -1,8 +1,7 @@
 from typing import Tuple
 
-from dagster import AssetOut, multi_asset
-
 import wandb
+from dagster import AssetOut, multi_asset
 
 
 @multi_asset(

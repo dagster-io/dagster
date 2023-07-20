@@ -1,3 +1,4 @@
+import wandb
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
@@ -5,8 +6,6 @@ from dagster import (
     StaticPartitionsDefinition,
     asset,
 )
-
-import wandb
 
 partitions_def = MultiPartitionsDefinition(
     {

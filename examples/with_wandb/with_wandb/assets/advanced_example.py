@@ -1,7 +1,6 @@
+import wandb
 from dagster import AssetExecutionContext, AssetIn, asset
 from dagster_wandb import WandbArtifactConfiguration
-
-import wandb
 from wandb import Artifact
 
 wandb_artifact_configuration: WandbArtifactConfiguration = {
