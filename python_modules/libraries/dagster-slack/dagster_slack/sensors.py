@@ -40,7 +40,7 @@ def _build_slack_blocks_and_text(
     context: T,
     text_fn: Callable[[T], str],
     blocks_fn: Optional[Callable[[T], List[Dict[Any, Any]]]],
-    dagit_base_url: Optional[str],
+    webserver_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
     main_body_text = text_fn(context)
     blocks: List[Dict[Any, Any]] = []
@@ -74,18 +74,18 @@ def _build_slack_blocks_and_text(
             ]
         )
 
-    if dagit_base_url:
+    if webserver_base_url:
         if isinstance(context, RunFailureSensorContext):
-            url = f"{dagit_base_url}/runs/{context.dagster_run.run_id}"
+            url = f"{webserver_base_url}/runs/{context.dagster_run.run_id}"
         else:
-            url = f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
+            url = f"{webserver_base_url}/assets/{'/'.join(context.asset_key.path)}"
         blocks.append(
             {
                 "type": "actions",
                 "elements": [
                     {
                         "type": "button",
-                        "text": {"type": "plain_text", "text": "View in Dagit"},
+                        "text": {"type": "plain_text", "text": "View in Dagster UI"},
                         "url": url,
                     }
                 ],
@@ -214,7 +214,7 @@ def make_slack_on_run_failure_sensor(
     )
     def slack_on_run_failure(context: RunFailureSensorContext):
         blocks, main_body_text = _build_slack_blocks_and_text(
-            context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
+            context=context, text_fn=text_fn, blocks_fn=blocks_fn, webserver_base_url=dagit_base_url
         )
 
         slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
@@ -322,7 +322,10 @@ def make_slack_on_freshness_policy_status_change_sensor(
             and context.previous_minutes_overdue != 0
         ):
             blocks, main_body_text = _build_slack_blocks_and_text(
-                context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
+                context=context,
+                text_fn=text_fn,
+                blocks_fn=blocks_fn,
+                webserver_base_url=dagit_base_url,
             )
 
             slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
