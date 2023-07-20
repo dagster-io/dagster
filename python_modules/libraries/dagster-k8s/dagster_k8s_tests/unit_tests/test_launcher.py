@@ -96,6 +96,17 @@ def test_launcher_with_container_context(kubeconfig_file):
             },
             "scheduler_name": "test-scheduler-2",
             "security_context": {"capabilities": {"add": ["SYS_PTRACE"]}},
+            "run_k8s_config": {
+                "container_config": {
+                    "lifecycle": {
+                        "preStop": {
+                            "exec": {
+                                "command": ["echo", "STOP"],
+                            }
+                        }
+                    }
+                }
+            },
         }
     }
 
@@ -161,6 +172,8 @@ def test_launcher_with_container_context(kubeconfig_file):
 
         assert "BAR_TEST" in env_names
         assert "FOO_TEST" in env_names
+
+        assert container.lifecycle.pre_stop._exec.command == ["echo", "STOP"]
 
         args = container.args
         assert (
