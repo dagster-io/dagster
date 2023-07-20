@@ -679,6 +679,18 @@ class ExternalTimeWindowPartitionsDefinitionData(
             )
 
 
+def _dedup_partition_keys(keys: Sequence[str]):
+    # Use both a set and a list here to preserve lookup performance in case of large inputs. (We
+    # can't just use a set because we need to preserve ordering.)
+    seen_keys: Set[str] = set()
+    new_keys: List[str] = []
+    for key in keys:
+        if key not in seen_keys:
+            new_keys.append(key)
+            seen_keys.add(key)
+    return new_keys
+
+
 @whitelist_for_serdes
 class ExternalStaticPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
@@ -690,7 +702,11 @@ class ExternalStaticPartitionsDefinitionData(
         )
 
     def get_partitions_definition(self):
-        return StaticPartitionsDefinition(self.partition_keys)
+        # v1.4 made `StaticPartitionsDefinition` error if given duplicate keys. This caused
+        # host process errors for users who had not upgraded their user code to 1.4 and had dup
+        # keys, since the host process `StaticPartitionsDefinition` would throw an error.
+        keys = _dedup_partition_keys(self.partition_keys)
+        return StaticPartitionsDefinition(keys)
 
 
 @whitelist_for_serdes
