@@ -211,7 +211,7 @@ def build_pod_body(
         "name": pod_name,
     }
     if "labels" in meta:
-        meta["labels"] = {**get_common_labels(), **meta["labels"]}  # type: ignore
+        meta["labels"] = {**get_common_labels(), **meta["labels"]}
     else:
         meta["labels"] = get_common_labels()
 
