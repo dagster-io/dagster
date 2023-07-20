@@ -28,7 +28,7 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
     DagsterBackfillFailedError,
@@ -323,6 +323,55 @@ class AssetBackfillData(NamedTuple):
             latest_storage_id=storage_dict["latest_storage_id"],
             backfill_start_time=utc_datetime_from_timestamp(backfill_start_timestamp),
         )
+
+    @classmethod
+    def from_partitions_by_assets(
+        cls,
+        asset_graph: AssetGraph,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        backfill_start_time: datetime,
+        partitions_by_assets: Sequence[PartitionsByAssetSelector],
+    ) -> "AssetBackfillData":
+        check.sequence_param(partitions_by_assets, "partitions_by_asset", PartitionsByAssetSelector)
+
+        non_partitioned_asset_keys = set()
+        partitions_subsets_by_asset_key = dict()
+        for partitions_by_asset_selector in partitions_by_assets:
+            asset_key = partitions_by_asset_selector.asset_key
+            partitions = partitions_by_asset_selector.partitions
+            partition_def = asset_graph.get_partitions_def(asset_key)
+            if partitions and partition_def:
+                if partitions.partition_range:
+                    # a range of partitions is selected
+                    partition_keys_in_range = partition_def.get_partition_keys_in_range(
+                        partition_key_range=PartitionKeyRange(
+                            start=partitions.partition_range.start,
+                            end=partitions.partition_range.end,
+                        ),
+                        dynamic_partitions_store=dynamic_partitions_store,
+                    )
+                    partition_subset_in_range = partition_def.subset_with_partition_keys(
+                        partition_keys_in_range
+                    )
+                    partitions_subsets_by_asset_key.update({asset_key: partition_subset_in_range})
+                else:
+                    raise DagsterBackfillFailedError(
+                        "partitions_by_asset_selector does not have a partition range selected"
+                    )
+            elif partition_def:
+                # no partitions selected for partitioned asset, we will select all partitions
+                all_partitions = partition_def.subset_with_all_partitions()
+                partitions_subsets_by_asset_key.update({asset_key: all_partitions})
+            else:
+                # asset is not partitioned
+                non_partitioned_asset_keys.add(asset_key)
+
+        target_subset = AssetGraphSubset(
+            asset_graph,
+            partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
+            non_partitioned_asset_keys=non_partitioned_asset_keys,
+        )
+        return cls.empty(target_subset, backfill_start_time)
 
     @classmethod
     def from_asset_partitions(

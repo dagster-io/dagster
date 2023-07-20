@@ -309,3 +309,96 @@ class PartitionSetSelector(
             "repositoryName": self.repository_name,
             "partitionSetName": self.partition_set_name,
         }
+
+
+@whitelist_for_serdes
+class PartitionRangeSelector(
+    NamedTuple(
+        "_PartitionRangeSelector",
+        [("start", str), ("end", str)],
+    )
+):
+    """The information needed to resolve a partition range."""
+
+    def __new__(cls, start: str, end: str):
+        return super(PartitionRangeSelector, cls).__new__(
+            cls,
+            start=check.inst_param(start, "start", str),
+            end=check.inst_param(end, "end", str),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "start": self.start,
+            "end": self.end,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return PartitionRangeSelector(
+            start=graphql_data["start"],
+            end=graphql_data["end"],
+        )
+
+
+class PartitionsSelector(
+    NamedTuple(
+        "_PartitionsSelector",
+        [("partition_range", PartitionRangeSelector)],
+    )
+):
+    """The information needed to define selection partitions.
+    Using partition_range as property name to avoid shadowing Python 'range' builtin .
+    """
+
+    def __new__(cls, partition_range: PartitionRangeSelector):
+        return super(PartitionsSelector, cls).__new__(
+            cls,
+            partition_range=check.inst_param(partition_range, "range", PartitionRangeSelector),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "range": self.range.to_graphql_input(),
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return PartitionsSelector(
+            partition_range=PartitionRangeSelector.from_graphql_input(graphql_data["range"])
+        )
+
+
+@whitelist_for_serdes
+class PartitionsByAssetSelector(
+    NamedTuple(
+        "PartitionsByAssetSelector",
+        [
+            ("asset_key", AssetKey),
+            ("partitions", Optional[PartitionsSelector]),
+        ],
+    )
+):
+    """The information needed to define partitions selection for a given asset key."""
+
+    def __new__(cls, asset_key: AssetKey, partitions: Optional[PartitionsSelector] = None):
+        return super(PartitionsByAssetSelector, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partitions=check.opt_inst_param(partitions, "partitions", PartitionsSelector),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "assetKey": self.asset_key.to_graphql_input(),
+            "partitions": self.partitions.to_graphql_input() if self.partitions else None,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        asset_key = graphql_data["assetKey"]
+        partitions = graphql_data.get("partitions")
+        return PartitionsByAssetSelector(
+            asset_key=AssetKey.from_graphql_input(asset_key),
+            partitions=PartitionsSelector.from_graphql_input(partitions) if partitions else None,
+        )
