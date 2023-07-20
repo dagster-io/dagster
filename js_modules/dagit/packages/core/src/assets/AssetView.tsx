@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ButtonLink,
   Colors,
   NonIdealState,
   Spinner,
@@ -12,7 +11,7 @@ import {
   ErrorBoundary,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 
 import {
   FIFTEEN_SECONDS,
@@ -296,12 +295,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           </Box>
         }
       />
-      {!viewingMostRecent && (
-        <HistoricalViewAlert
-          asOf={params.asOf}
-          onClick={() => setParams({asOf: undefined, time: params.asOf})}
-          hasDefinition={!!definition}
-        />
+      {!viewingMostRecent && params.asOf && (
+        <HistoricalViewAlert asOf={params.asOf} hasDefinition={!!definition} />
       )}
       <ErrorBoundary region="page" resetErrorOnChange={[assetKey, params]}>
         {selectedTab === 'definition' ? (
@@ -458,39 +453,42 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
   ${UNDERLYING_OPS_ASSET_NODE_FRAGMENT}
 `;
 
-const HistoricalViewAlert: React.FC<{
-  asOf: string | undefined;
-  onClick: () => void;
-  hasDefinition: boolean;
-}> = ({asOf, onClick, hasDefinition}) => (
-  <Box
-    padding={{vertical: 16, horizontal: 24}}
-    border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-  >
-    <Alert
-      intent="info"
-      title={
-        <span>
-          This is a historical view of materializations as of{' '}
-          <span style={{fontWeight: 600}}>
-            <Timestamp
-              timestamp={{ms: Number(asOf)}}
-              timeFormat={{showSeconds: true, showTimezone: true}}
-            />
+const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition: boolean}) => {
+  const {pathname, search} = useLocation();
+  const searchParams = new URLSearchParams(search);
+  searchParams.delete('asOf');
+  searchParams.set('time', asOf);
+
+  return (
+    <Box
+      padding={{vertical: 16, horizontal: 24}}
+      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+    >
+      <Alert
+        intent="info"
+        title={
+          <span>
+            This is a historical view of materializations as of{' '}
+            <span style={{fontWeight: 600}}>
+              <Timestamp
+                timestamp={{ms: Number(asOf)}}
+                timeFormat={{showSeconds: true, showTimezone: true}}
+              />
+            </span>
+            .
           </span>
-          .
-        </span>
-      }
-      description={
-        <ButtonLink onClick={onClick} underline="always">
-          {hasDefinition
-            ? 'Show definition and latest materializations'
-            : 'Show latest materializations'}
-        </ButtonLink>
-      }
-    />
-  </Box>
-);
+        }
+        description={
+          <Link to={`${pathname}?${searchParams.toString()}`}>
+            {hasDefinition
+              ? 'Show definition and latest materializations'
+              : 'Show latest materializations'}
+          </Link>
+        }
+      />
+    </Box>
+  );
+};
 
 const AssetViewPageHeaderTags: React.FC<{
   definition: AssetViewDefinitionNodeFragment | null;
