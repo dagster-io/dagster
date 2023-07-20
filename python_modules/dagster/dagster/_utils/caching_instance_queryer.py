@@ -525,7 +525,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_storage_id: Optional[int],
         target_asset_keys: FrozenSet[AssetKey],
         target_asset_keys_and_parents: FrozenSet[AssetKey],
-        asset_graph: AssetGraph,
         can_reconcile_fn: Callable[[AssetKeyPartitionKey], bool] = lambda _: True,
         map_old_time_partitions: bool = True,
     ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
@@ -541,7 +540,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         result_latest_storage_id = latest_storage_id
 
         for asset_key in target_asset_keys_and_parents:
-            if asset_graph.is_source(asset_key) and not asset_graph.is_observable(asset_key):
+            if self.asset_graph.is_source(asset_key) and not self.asset_graph.is_observable(
+                asset_key
+            ):
                 continue
 
             # the set of asset partitions which have been updated since the latest storage id
@@ -553,19 +554,19 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if not new_asset_partitions:
                 continue
 
-            partitions_def = asset_graph.get_partitions_def(asset_key)
+            partitions_def = self.asset_graph.get_partitions_def(asset_key)
             if partitions_def is None:
                 latest_record = check.not_none(
                     self.get_latest_materialization_or_observation_record(
                         AssetKeyPartitionKey(asset_key)
                     )
                 )
-                for child in asset_graph.get_children_partitions(
+                for child in self.asset_graph.get_children_partitions(
                     dynamic_partitions_store=self,
                     current_time=self.evaluation_time,
                     asset_key=asset_key,
                 ):
-                    child_partitions_def = asset_graph.get_partitions_def(child.asset_key)
+                    child_partitions_def = self.asset_graph.get_partitions_def(child.asset_key)
                     if (
                         child.asset_key in target_asset_keys
                         # when mapping from unpartitioned assets to time partitioned assets, we ignore
@@ -594,8 +595,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         )
                     ]
                 )
-                for child in asset_graph.get_children(asset_key):
-                    child_partitions_def = asset_graph.get_partitions_def(child)
+                for child in self.asset_graph.get_children(asset_key):
+                    child_partitions_def = self.asset_graph.get_partitions_def(child)
                     if child not in target_asset_keys:
                         continue
                     elif not child_partitions_def:
@@ -603,7 +604,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     else:
                         # we are mapping from the partitions of the parent asset to the partitions of
                         # the child asset
-                        partition_mapping = asset_graph.get_partition_mapping(child, asset_key)
+                        partition_mapping = self.asset_graph.get_partition_mapping(child, asset_key)
                         child_partitions_subset = (
                             partition_mapping.get_downstream_partitions_for_partitions(
                                 partitions_subset,

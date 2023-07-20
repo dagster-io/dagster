@@ -805,7 +805,6 @@ def execute_asset_backfill_iteration_inner(
             parent_materialized_asset_partitions,
             next_latest_storage_id,
         ) = instance_queryer.asset_partitions_with_newly_updated_parents_and_new_latest_storage_id(
-            asset_graph=asset_graph,
             target_asset_keys=frozenset(asset_backfill_data.target_subset.asset_keys),
             target_asset_keys_and_parents=frozenset(target_asset_keys_and_parents),
             latest_storage_id=asset_backfill_data.latest_storage_id,

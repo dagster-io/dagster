@@ -213,7 +213,6 @@ def determine_asset_partitions_to_auto_materialize(
         latest_storage_id=cursor.latest_storage_id,
         target_asset_keys=frozenset(target_asset_keys),
         target_asset_keys_and_parents=frozenset(target_asset_keys_and_parents),
-        asset_graph=asset_graph,
         can_reconcile_fn=can_reconcile_candidate,
         map_old_time_partitions=False,
     )
