@@ -504,7 +504,7 @@ def test_my_simple_asset():
     assert result == [1, 2, 3]
 ```
 
-If you have an asset with upstream dependencies:
+If you have an asset with managed-loading upstream dependencies:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_more_complex_asset endbefore=end_more_complex_asset
 @asset
@@ -544,7 +544,7 @@ def test_uses_resource() -> None:
     assert result == {"foo": "bar"}
 ```
 
-If you use a context object in your function, you can use <PyObject object="build_op_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.
+If you use a context object in your function, you can use <PyObject object="build_asset_context" /> to generate the `context` object, because under the hood the function decorated by `@asset` is an op.
 
 Consider the following asset that uses a context object:
 
