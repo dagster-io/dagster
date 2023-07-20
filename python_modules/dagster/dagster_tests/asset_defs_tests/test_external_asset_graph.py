@@ -52,7 +52,7 @@ def downstream(asset1):
 downstream_defs = Definitions(assets=[asset1_source, downstream])
 
 
-@asset(non_argument_deps={"asset1"})
+@asset(deps=[asset1])
 def downstream_non_arg_dep():
     ...
 
@@ -66,12 +66,11 @@ partitioned_source = SourceAsset(
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
-    non_argument_deps={"partitioned_source"},
+    deps=[partitioned_source],
     auto_materialize_policy=AutoMaterializePolicy(
         on_missing=True,
         for_freshness=True,
         on_new_parent_data=True,
-        time_window_partition_scope_minutes=(24 + 7) * 60,
         max_materializations_per_minute=75,
     ),
 )
@@ -266,7 +265,6 @@ def test_auto_materialize_policy():
         on_missing=True,
         for_freshness=True,
         on_new_parent_data=True,
-        time_window_partition_scope_minutes=(24 + 7) * 60,
         max_materializations_per_minute=75,
     )
 

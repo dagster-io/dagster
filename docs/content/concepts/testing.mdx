@@ -20,11 +20,12 @@ This page demonstrates how Dagster addresses these challenges:
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                                                          |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
-| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
-| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
+| Name                                                               | Description                                                                                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.                           |
+| <PyObject object="build_op_context"  />                            | A method to construct an <PyObject object="OpExecutionContext" />, typically to provide to the invocation of an op for testing.       |
+| <PyObject object="build_asset_context"  />                         | A method to construct an <PyObject object="AssetExecutionContext" />, typically to provide to the invocation of an asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                                      |
 
 ---
 
@@ -483,7 +484,7 @@ def test_event_stream():
         DagsterEventType.STEP_SUCCESS,
     ]
 
-    # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
+    # ops communicate what they did via the event stream, viewable in tools (e.g. the Dagster UI)
     (
         _start,
         expectation_event,

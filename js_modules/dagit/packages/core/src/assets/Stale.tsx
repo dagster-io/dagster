@@ -8,7 +8,6 @@ import {
   Colors,
   Icon,
   Popover,
-  Tooltip,
 } from '@dagster-io/ui';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
@@ -26,8 +25,6 @@ export const isAssetMissing = (liveData?: LiveDataForNode) =>
 
 export const isAssetStale = (liveData?: LiveDataForNode) =>
   liveData && liveData.staleStatus === StaleStatus.STALE;
-
-const NO_CAUSES = 'No reasons available.';
 
 const LABELS = {
   self: {
@@ -53,9 +50,14 @@ export const StaleReasonsLabel: React.FC<{
 
   return (
     <Body color={Colors.Yellow700}>
-      <Tooltip position="top" content={<StaleCausesSummary causes={liveData.staleCauses} />}>
+      <Popover
+        position="top"
+        content={<StaleCausesPopoverSummary causes={liveData.staleCauses} />}
+        interactionKind="hover"
+        className="chunk-popover-target"
+      >
         {Object.keys(groupedCauses(assetKey, include, liveData)).join(', ')}
-      </Tooltip>
+      </Popover>
     </Body>
   );
 };
@@ -75,7 +77,7 @@ export const StaleReasonsTags: React.FC<{
       {Object.entries(groupedCauses(assetKey, include, liveData)).map(([label, causes]) => (
         <Popover
           key={label}
-          content={<StaleCausesSummary causes={causes} />}
+          content={<StaleCausesPopoverSummary causes={causes} />}
           position="top"
           interactionKind="hover"
           className="chunk-popover-target"
@@ -116,20 +118,9 @@ function groupedCauses(
   return groupBy(all, (cause) => cause.label);
 }
 
-export const StaleCausesInfoDot: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({
+const StaleCausesPopoverSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({
   causes,
 }) => (
-  <Popover
-    content={causes && causes.length > 0 ? <StaleCausesSummary causes={causes} /> : NO_CAUSES}
-    position="top"
-    interactionKind="hover"
-    className="chunk-popover-target"
-  >
-    <Icon name="info" size={12} color={Colors.Yellow700} />
-  </Popover>
-);
-
-const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({causes}) => (
   <Box style={{width: '300px'}}>
     <Box
       padding={12}

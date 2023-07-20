@@ -10,7 +10,7 @@ from . import subschema
 class DagsterHelmValues(BaseModel):
     __doc__ = "@" + "generated"
 
-    dagit: subschema.Dagit
+    dagsterWebserver: subschema.Webserver
     dagsterUserDeployments: UserDeployments = Field(..., alias="dagster-user-deployments")
     postgresql: subschema.PostgreSQL
     generatePostgresqlPasswordSecret: bool

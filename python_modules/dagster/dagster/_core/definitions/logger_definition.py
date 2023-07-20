@@ -88,16 +88,22 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     @public
     @property
     def logger_fn(self) -> "InitLoggerFunction":
+        """Callable[[InitLoggerContext], logging.Logger]: The function that will be invoked to
+        instantiate the logger.
+        """
         return self._logger_fn
 
     @public
     @property
     def config_schema(self) -> Any:
+        """Any: The schema for the logger's config. Configuration data available in `init_context.logger_config`.
+        """
         return self._config_schema
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A human-readable description of the logger."""
         return self._description
 
     def copy_for_configured(

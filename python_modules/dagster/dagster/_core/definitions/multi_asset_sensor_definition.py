@@ -770,11 +770,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, Optional[AssetsDefinition]]:
+        """Mapping[AssetKey, Optional[AssetsDefinition]]: A mapping from AssetKey to the
+        AssetsDefinition object which produces it. If a given asset is monitored by this sensor, but
+        is not produced within the same code location as this sensor, then the value will be None.
+        """
         return self._assets_by_key
 
     @public
     @property
     def asset_keys(self) -> Sequence[AssetKey]:
+        """Sequence[AssetKey]: The asset keys which are monitored by this sensor."""
         return self._monitored_asset_keys
 
 

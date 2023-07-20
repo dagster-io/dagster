@@ -4,6 +4,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Dict,
     Iterable,
     Iterator,
@@ -32,7 +33,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidIn
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    deprecation_warning,
     experimental_arg_warning,
 )
 from dagster._utils.merger import merge_dicts
@@ -103,8 +103,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_attributes
-        # and from_graph methods
+        # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
+        # get_attributes_dict methods
     ):
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -616,21 +616,36 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def can_subset(self) -> bool:
+        """bool: If True, indicates that this AssetsDefinition may materialize any subset of its
+        asset keys in a given computation (as opposed to being required to materialize all asset
+        keys).
+        """
         return self._can_subset
 
     @public
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
+        """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
+        to the group names assigned to them. If there is no assigned group name for a given AssetKey,
+        it will not be present in this dictionary.
+        """
         return self._group_names_by_key
 
     @public
     @property
     def descriptions_by_key(self) -> Mapping[AssetKey, str]:
+        """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
+        to the descriptions assigned to them. If there is no assigned description for a given AssetKey,
+        it will not be present in this dictionary.
+        """
         return self._descriptions_by_key
 
     @public
     @property
     def op(self) -> OpDefinition:
+        """OpDefinition: Returns the OpDefinition that is used to materialize the assets in this
+        AssetsDefinition.
+        """
         check.invariant(
             isinstance(self._node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
@@ -640,6 +655,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def node_def(self) -> NodeDefinition:
+        """NodeDefinition: Returns the OpDefinition or GraphDefinition that is used to materialize
+        the assets in this AssetsDefinition.
+        """
         return self._node_def
 
     @public
@@ -654,11 +672,17 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @property
     def input_names(self) -> Iterable[str]:
+        """Iterable[str]: The set of input names of the underlying NodeDefinition for this
+        AssetsDefinition.
+        """
         return self.keys_by_input_name.keys()
 
     @public
     @property
     def key(self) -> AssetKey:
+        """AssetKey: The asset key associated with this AssetsDefinition. If this AssetsDefinition
+        has more than one asset key, this will produce an error.
+        """
         check.invariant(
             len(self.keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
@@ -667,33 +691,26 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         return next(iter(self.keys))
 
-    @property
-    def asset_key(self) -> AssetKey:
-        deprecation_warning(
-            "AssetsDefinition.asset_key", "1.0.0", "Use AssetsDefinition.key instead."
-        )
-        return self.key
-
     @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        """Mapping[str, ResourceDefinition]: A mapping from resource name to ResourceDefinition for
+        the resources bound to this AssetsDefinition.
+        """
         return dict(self._resource_defs)
 
     @public
     @property
     def keys(self) -> AbstractSet[AssetKey]:
+        """AbstractSet[AssetKey]: The asset keys associated with this AssetsDefinition."""
         return self._selected_asset_keys
-
-    @property
-    def asset_keys(self) -> AbstractSet[AssetKey]:
-        deprecation_warning(
-            "AssetsDefinition.asset_keys", "1.0.0", "Use AssetsDefinition.keys instead."
-        )
-        return self.keys
 
     @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
+        """Iterable[AssetKey]: The asset keys which are upstream of any asset included in this
+        AssetsDefinition.
+        """
         # the input asset keys that are directly upstream of a selected asset key
         upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         input_keys = set(self._keys_by_input_name.values())
@@ -733,6 +750,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
+        """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any).
+        """
         return self._partitions_def
 
     @property
@@ -749,6 +768,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
+        """Returns the partition mapping between keys in this AssetsDefinition and a given input
+        asset key (if any).
+        """
         return self._partition_mappings.get(in_asset_key)
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
@@ -781,6 +803,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     def with_attributes(
         self,
+        *,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
@@ -898,7 +921,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, metadata in metadata_by_key.items()
         }
 
-        return __class__.dagster_internal_init(
+        replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
                 for input_name, key in self._keys_by_input_name.items()
@@ -907,8 +930,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 output_name: output_asset_key_replacements.get(key, key)
                 for output_name, key in self._keys_by_output_name.items()
             },
-            node_def=self.node_def,
-            partitions_def=self.partitions_def,
             partition_mappings={
                 input_asset_key_replacements.get(key, key): partition_mapping
                 for key, partition_mapping in self._partition_mappings.items()
@@ -924,11 +945,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 }
                 for key, value in self.asset_deps.items()
             },
-            can_subset=self.can_subset,
             selected_asset_keys={
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
             },
-            resource_defs=self.resource_defs,
             group_names_by_key={
                 **replaced_group_names_by_key,
                 **group_names_by_key,
@@ -938,6 +957,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
         )
+
+        return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     def _subset_graph_backed_asset(
         self,
@@ -962,10 +983,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         return get_graph_subset(self.node_def, op_selection)
 
-    def subset_for(
-        self,
-        selected_asset_keys: AbstractSet[AssetKey],
-    ) -> "AssetsDefinition":
+    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
         """Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
 
@@ -1019,41 +1037,19 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 for out_asset_key in subsetted_keys_by_output_name.values()
             }
 
-            return AssetsDefinition.dagster_internal_init(
+            replaced_attributes = dict(
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,
                 node_def=subsetted_node,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
                 asset_deps=subsetted_asset_deps,
-                can_subset=self.can_subset,
                 selected_asset_keys=selected_asset_keys & self.keys,
-                resource_defs=self.resource_defs,
-                group_names_by_key=self.group_names_by_key,
-                metadata_by_key=self.metadata_by_key,
-                freshness_policies_by_key=self.freshness_policies_by_key,
-                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-                descriptions_by_key=self.descriptions_by_key,
             )
+
+            return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
         else:
             # multi_asset subsetting
-            return AssetsDefinition.dagster_internal_init(
-                # keep track of the original mapping
-                keys_by_input_name=self._keys_by_input_name,
-                keys_by_output_name=self._keys_by_output_name,
-                node_def=self.node_def,
-                partitions_def=self.partitions_def,
-                partition_mappings=self._partition_mappings,
-                asset_deps=self._asset_deps,
-                can_subset=self.can_subset,
-                selected_asset_keys=asset_subselection,
-                resource_defs=self.resource_defs,
-                group_names_by_key=self.group_names_by_key,
-                metadata_by_key=self.metadata_by_key,
-                freshness_policies_by_key=self.freshness_policies_by_key,
-                auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-                descriptions_by_key=self.descriptions_by_key,
-            )
+            replaced_attributes = dict(selected_asset_keys=asset_subselection)
+            return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
@@ -1137,15 +1133,15 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
+        """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition.
+        """
         return {requirement.key for requirement in self.get_resource_requirements()}
 
     def __str__(self):
-        if len(self.asset_keys) == 1:
-            return f"AssetsDefinition with key {self.asset_key.to_string()}"
+        if len(self.keys) == 1:
+            return f"AssetsDefinition with key {self.key.to_string()}"
         else:
-            asset_keys = ", ".join(
-                sorted(([asset_key.to_string() for asset_key in self.asset_keys]))
-            )
+            asset_keys = ", ".join(sorted(([asset_key.to_string() for asset_key in self.keys])))
             return f"AssetsDefinition with keys {asset_keys}"
 
     @property
@@ -1160,7 +1156,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if overlapping_keys:
             overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
             raise DagsterInvalidInvocationError(
-                f"{str(self)} has conflicting resource "
+                f"{self} has conflicting resource "
                 "definitions with provided resources for the following keys: "
                 f"{overlapping_keys_str}. Either remove the existing "
                 "resources from the asset or change the resource keys so that "
@@ -1183,21 +1179,26 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             if key in relevant_keys
         }
 
-        return AssetsDefinition.dagster_internal_init(
+        attributes_dict = self.get_attributes_dict()
+        attributes_dict["resource_defs"] = relevant_resource_defs
+        return self.__class__(**attributes_dict)
+
+    def get_attributes_dict(self) -> Dict[str, Any]:
+        return dict(
             keys_by_input_name=self._keys_by_input_name,
             keys_by_output_name=self._keys_by_output_name,
-            node_def=self.node_def,
+            node_def=self._node_def,
             partitions_def=self._partitions_def,
             partition_mappings=self._partition_mappings,
-            asset_deps=self._asset_deps,
+            asset_deps=self.asset_deps,
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
-            resource_defs=relevant_resource_defs,
-            group_names_by_key=self.group_names_by_key,
-            metadata_by_key=self.metadata_by_key,
-            freshness_policies_by_key=self.freshness_policies_by_key,
-            auto_materialize_policies_by_key=self.auto_materialize_policies_by_key,
-            descriptions_by_key=self.descriptions_by_key,
+            resource_defs=self._resource_defs,
+            group_names_by_key=self._group_names_by_key,
+            metadata_by_key=self._metadata_by_key,
+            freshness_policies_by_key=self._freshness_policies_by_key,
+            auto_materialize_policies_by_key=self._auto_materialize_policies_by_key,
+            descriptions_by_key=self._descriptions_by_key,
         )
 
 
@@ -1275,7 +1276,7 @@ def _build_invocation_context_with_included_resources(
     for resource_key in sorted(list(invocation_resources.keys())):
         if resource_key in resource_defs:
             raise DagsterInvalidInvocationError(
-                f"Error when invoking {str(assets_def)}: resource '{resource_key}' "
+                f"Error when invoking {assets_def}: resource '{resource_key}' "
                 "provided on both the definition and invocation context. Please "
                 "provide on only one or the other."
             )
@@ -1288,6 +1289,7 @@ def _build_invocation_context_with_included_resources(
             resources_config=context._resources_config,  # noqa: SLF001
             instance=context._instance,  # noqa: SLF001
             partition_key=context._partition_key,  # noqa: SLF001
+            partition_key_range=context._partition_key_range,  # noqa: SLF001
             mapping_key=context._mapping_key,  # noqa: SLF001
             _assets_def=assets_def,
         )

@@ -437,6 +437,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             else []
         ),
         pytest_tox_factors=[
+            "dbt_13X_legacy",
+            "dbt_14X_legacy",
+            "dbt_15X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",

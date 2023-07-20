@@ -6,6 +6,10 @@ from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_ma
 
 
 class InMemoryIOManager(IOManager):
+    """I/O manager that stores and retrieves values in memory. After execution is complete, the values will
+    be garbage-collected. Note that this means that each run will not have access to values from previous runs.
+    """
+
     def __init__(self):
         self.values: Dict[Tuple[object, ...], object] = {}
 

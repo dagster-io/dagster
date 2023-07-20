@@ -2,9 +2,9 @@ from dagster import (
     AssetSelection,
     Definitions,
     asset,
-    build_asset_reconciliation_sensor,
     load_assets_from_current_module,
 )
+from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
 
 
 @asset

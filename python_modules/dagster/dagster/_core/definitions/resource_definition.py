@@ -138,16 +138,23 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
     @public
     @property
     def description(self) -> Optional[str]:
+        """A human-readable description of the resource."""
         return self._description
 
     @public
     @property
     def version(self) -> Optional[str]:
+        """A string which can be used to identify a particular code version of a resource definition.
+        """
         return self._version
 
     @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
+        """A set of the resource keys that this resource depends on. These keys will be made available
+        to the resource's init context during execution, and the resource will not be instantiated
+        until all required resources are available.
+        """
         return self._required_resource_keys
 
     def _is_dagster_maintained(self) -> bool:
@@ -201,6 +208,16 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
     @public
     @staticmethod
     def string_resource(description: Optional[str] = None) -> "ResourceDefinition":
+        """Creates a ``ResourceDefinition`` which takes in a single string as configuration
+        and returns this configured string to any ops or assets which depend on it.
+
+        Args:
+            description ([Optional[str]]): The description of the string resource. Defaults to None.
+
+        Returns:
+            [ResourceDefinition]: A resource that takes in a single string as configuration and
+                returns that string.
+        """
         return ResourceDefinition(
             resource_fn=lambda init_context: init_context.resource_config,
             config_schema=str,

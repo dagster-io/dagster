@@ -36,7 +36,7 @@ def materialize(
         assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
             The assets to materialize.
 
-            Unless you're using `non_argument_deps`, you must also include all assets that are
+            Unless you're using `deps` or `non_argument_deps`, you must also include all assets that are
             upstream of the assets that you want to materialize. This is because those upstream
             asset definitions have information that is needed to load their contents while
             materializing the downstream assets.

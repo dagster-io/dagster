@@ -1,3 +1,4 @@
+from dagster import AssetKey
 from dagster._core.definitions.asset_reconciliation_sensor import (
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
@@ -121,7 +122,14 @@ basic_scenarios = {
         ),
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
-        expected_conditions={"asset2": {ParentMaterializedAutoMaterializeCondition()}},
+        expected_conditions={
+            "asset2": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
+                )
+            }
+        },
     ),
     "parent_rematerialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
@@ -148,7 +156,14 @@ basic_scenarios = {
             unevaluated_runs=[run(["parent1", "parent2", "child"])],
         ),
         expected_run_requests=[run_request(asset_keys=["child"])],
-        expected_conditions={"child": {ParentMaterializedAutoMaterializeCondition()}},
+        expected_conditions={
+            "child": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("parent1")]),
+                    will_update_asset_keys=frozenset(),
+                )
+            }
+        },
     ),
     "diamond_never_materialized": AssetReconciliationScenario(
         assets=diamond,
@@ -169,9 +184,24 @@ basic_scenarios = {
         ),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
         expected_conditions={
-            "asset2": {ParentMaterializedAutoMaterializeCondition()},
-            "asset3": {ParentMaterializedAutoMaterializeCondition()},
-            "asset4": {ParentMaterializedAutoMaterializeCondition()},
+            "asset2": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
+                )
+            },
+            "asset3": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
+                )
+            },
+            "asset4": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset(),
+                    will_update_asset_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")]),
+                )
+            },
         },
     ),
     "diamond_root_and_one_in_middle_rematerialized": AssetReconciliationScenario(
@@ -227,7 +257,7 @@ basic_scenarios = {
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
         # don't need to run asset4 for reconciliation but asset4 must run when asset3 does
-        expected_run_requests=[run_request(asset_keys=["asset3", "asset4", "asset5"])],
+        expected_run_requests=[run_request(asset_keys=["asset3", "asset4", "asset5", "asset6"])],
     ),
     "multi_asset_in_middle_single_parent_rematerialized_subsettable": AssetReconciliationScenario(
         assets=multi_asset_in_middle_subsettable,
@@ -250,5 +280,10 @@ basic_scenarios = {
         assets=two_assets_in_sequence,
         unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
         expected_run_requests=[],
+    ),
+    "partial_run_with_another_attempt": AssetReconciliationScenario(
+        assets=two_assets_in_sequence,
+        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"]), run(["asset1"])],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
 }

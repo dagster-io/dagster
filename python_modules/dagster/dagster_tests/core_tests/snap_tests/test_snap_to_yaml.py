@@ -69,18 +69,7 @@ def test_print_root() -> None:
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
     assert (
         default_values_yaml_from_type_snap(external_a_job.config_schema_snapshot, root_type)
-        == """execution:
-  config:
-    multiprocess:
-      max_concurrent: 0
-      retries:
-        enabled: {}
-loggers: {}
-ops:
-  an_op: {}
-resources:
-  io_manager: {}
-"""
+        == "{}\n"
     )
 
 
@@ -109,19 +98,10 @@ def test_print_root_op_config() -> None:
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
     assert (
         default_values_yaml_from_type_snap(external_a_job.config_schema_snapshot, root_type)
-        == """execution:
-  config:
-    multiprocess:
-      max_concurrent: 0
-      retries:
-        enabled: {}
-loggers: {}
-ops:
+        == """ops:
   an_op:
     config:
       a_str_with_default: foo
-resources:
-  io_manager: {}
 """
     )
 
@@ -153,14 +133,7 @@ def test_print_root_complex_op_config() -> None:
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
     assert (
         default_values_yaml_from_type_snap(external_a_job.config_schema_snapshot, root_type)
-        == """execution:
-  config:
-    multiprocess:
-      max_concurrent: 0
-      retries:
-        enabled: {}
-loggers: {}
-ops:
+        == """ops:
   an_op:
     config:
       my_list:
@@ -168,7 +141,5 @@ ops:
         foo: 1
       nested:
         a_default_int: 1
-resources:
-  io_manager: {}
 """
     )

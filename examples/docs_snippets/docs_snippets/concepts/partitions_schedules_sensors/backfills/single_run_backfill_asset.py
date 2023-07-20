@@ -1,10 +1,10 @@
 # start_marker
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetKey, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    non_argument_deps={"raw_events"},
+    deps=[AssetKey("raw_events")],
 )
 def events(context):
     (

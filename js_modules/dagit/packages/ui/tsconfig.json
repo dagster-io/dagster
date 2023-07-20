@@ -13,6 +13,7 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": true,
     "types": ["jest", "node"],
     "skipLibCheck": true,
     "esModuleInterop": true,

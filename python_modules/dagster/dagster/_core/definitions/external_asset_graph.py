@@ -179,7 +179,7 @@ class ExternalAssetGraph(AssetGraph):
                 downstream[upstream_key].add(asset_key)
 
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-        for _, asset_keys in asset_keys_by_atomic_execution_unit_id.items():
+        for asset_keys in asset_keys_by_atomic_execution_unit_id.values():
             if len(asset_keys) > 1:
                 for asset_key in asset_keys:
                     required_multi_asset_sets_by_key[asset_key] = asset_keys
@@ -215,7 +215,7 @@ class ExternalAssetGraph(AssetGraph):
         """Returns asset keys that are targeted for materialization in the given job."""
         return [
             k
-            for k in self.non_source_asset_keys
+            for k in self.materializable_asset_keys
             if job_name in self.get_materialization_job_names(k)
         ]
 

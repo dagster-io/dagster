@@ -151,4 +151,4 @@ cli = create_dagster_daemon_cli()
 
 
 def main() -> None:
-    cli(obj={})  # pylint:disable=E1123
+    cli(obj={})

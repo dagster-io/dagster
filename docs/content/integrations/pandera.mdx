@@ -5,7 +5,7 @@ description: Generate Dagster types for dataframes with Pandera.
 
 # Using Dagster with Pandera
 
-The `dagster-pandera` integration library provides an API for generating [Dagster Types](/concepts/types) from [Pandera](https://github.com/pandera-dev/pandera) dataframe schemas. Like all Dagster types, `dagster-pandera`-generated types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows [Dagit](/concepts/dagit/dagit) to display information about a dataframe's structure.
+The `dagster-pandera` integration library provides an API for generating [Dagster Types](/concepts/types) from [Pandera](https://github.com/pandera-dev/pandera) dataframe schemas. Like all Dagster types, `dagster-pandera`-generated types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows [the Dagster UI](/concepts/webserver/ui) to display information about a dataframe's structure.
 
 <Note>
   Though Pandera currently supports validation on DataFrames from a variety of
@@ -61,7 +61,7 @@ def stocks_job():
 
 In the above code, we've defined a toy job `stocks_job` with a single asset, `apple_stock_prices_dirty`, which returns a Pandas `DataFrame` containing the opening and closing prices of Apple stock (AAPL) for a random week. The `_dirty` suffix is included because we've corrupted the data with a few random nulls.
 
-Let's look at this job in Dagit:
+Let's look at this job in the UI:
 
 <Image
 alt="PLACEHOLDER"

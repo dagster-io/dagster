@@ -1,6 +1,8 @@
 import {Box, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {AssetKey} from '../types';
+
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {ConditionType, ConditionsWithPartitions} from './Conditions';
 import {EvaluationOrEmpty} from './types';
@@ -73,6 +75,26 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
     [conditionToPartitions],
   );
 
+  const parentOutdatedWaitingOnAssetKeys: Record<string, AssetKey[]> = React.useMemo(() => {
+    const conditions = selectedEvaluation?.conditions;
+    const map = {} as Record<string, AssetKey[]>;
+    if (conditions?.length) {
+      conditions.forEach((condition) => {
+        if (condition.__typename === 'ParentOutdatedAutoMaterializeCondition') {
+          const {waitingOnAssetKeys, partitionKeysOrError} = condition;
+          if (partitionKeysOrError?.__typename === 'PartitionKeys') {
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(map[partitionKey] || [])];
+              target.push(...(waitingOnAssetKeys || []));
+              map[partitionKey] = target;
+            });
+          }
+        }
+      });
+    }
+    return map;
+  }, [selectedEvaluation]);
+
   const headerRight = () => {
     const runIds =
       selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
@@ -109,6 +131,7 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
         conditionResults={conditionResults}
         conditionToPartitions={conditionToPartitions}
         maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
       />
     </Box>
   );

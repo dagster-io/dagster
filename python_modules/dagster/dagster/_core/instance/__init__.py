@@ -18,6 +18,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -34,6 +35,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -202,7 +204,7 @@ class _EventListenerLogHandler(logging.Handler):
         try:
             self._instance.handle_new_event(event)
         except Exception as e:
-            sys.stderr.write(f"Exception while writing logger call to event log: {str(e)}\n")
+            sys.stderr.write(f"Exception while writing logger call to event log: {e}\n")
             if event.dagster_event:
                 # Swallow user-generated log failures so that the entire step/run doesn't fail, but
                 # raise failures writing system-generated log events since they are the source of
@@ -350,6 +352,7 @@ class DagsterInstance(DynamicPartitionsStore):
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
+        **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
@@ -456,6 +459,19 @@ class DagsterInstance(DynamicPartitionsStore):
         preload: Optional[Sequence["DebugRunPayload"]] = None,
         settings: Optional[Dict] = None,
     ) -> "DagsterInstance":
+        """Create a `DagsterInstance` suitable for ephemeral execution, useful in test contexts. An
+        ephemeral instance uses mostly in-memory components. Use `local_temp` to create a test
+        instance that is fully persistent.
+
+        Args:
+            tempdir (Optional[str]): The path of a directory to be used for local artifact storage.
+            preload (Optional[Sequence[DebugRunPayload]]): A sequence of payloads to load into the
+                instance's run storage. Useful for debugging.
+            settings (Optional[Dict]): Settings for the instance.
+
+        Returns:
+            DagsterInstance: An ephemeral DagsterInstance.
+        """
         from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster._core.run_coordinator import DefaultRunCoordinator
         from dagster._core.storage.event_log import InMemoryEventLogStorage
@@ -482,6 +498,11 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @staticmethod
     def get() -> "DagsterInstance":
+        """Get the current `DagsterInstance` as specified by the ``DAGSTER_HOME`` environment variable.
+
+        Returns:
+            DagsterInstance: The current DagsterInstance.
+        """
         dagster_home_path = os.getenv("DAGSTER_HOME")
 
         if not dagster_home_path:
@@ -524,6 +545,17 @@ class DagsterInstance(DynamicPartitionsStore):
         tempdir: Optional[str] = None,
         overrides: Optional[DagsterInstanceOverrides] = None,
     ) -> "DagsterInstance":
+        """Create a DagsterInstance that uses a temporary directory for local storage. This is a
+        regular, fully persistent instance. Use `ephemeral` to get an ephemeral instance with
+        in-memory components.
+
+        Args:
+            tempdir (Optional[str]): The path of a directory to be used for local artifact storage.
+            overrides (Optional[DagsterInstanceOverrides]): Override settings for the instance.
+
+        Returns:
+            DagsterInstance
+        """
         if tempdir is None:
             created_dir = TemporaryDirectory()
             i = DagsterInstance.from_ref(
@@ -700,8 +732,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_coordinator(self) -> "RunCoordinator":
-        from dagster._core.run_coordinator import RunCoordinator
-
         # Lazily load in case the run coordinator requires dependencies that are not available
         # everywhere that loads the instance
         if not self._run_coordinator:
@@ -710,7 +740,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
             run_coordinator = cast(InstanceRef, self._ref).run_coordinator
             check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
-            self._run_coordinator = cast(RunCoordinator, run_coordinator)
+            self._run_coordinator = cast("RunCoordinator", run_coordinator)
             self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
@@ -718,15 +748,13 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def run_launcher(self) -> "RunLauncher":
-        from dagster._core.launcher import RunLauncher
-
         # Lazily load in case the launcher requires dependencies that are not available everywhere
         # that loads the instance (e.g. The EcsRunLauncher requires boto3)
         if not self._run_launcher:
             check.invariant(self._ref, "Run launcher not provided, and no instance ref available")
             launcher = cast(InstanceRef, self._ref).run_launcher
             check.invariant(launcher, "Run launcher not configured in instance ref")
-            self._run_launcher = cast(RunLauncher, launcher)
+            self._run_launcher = cast("RunLauncher", launcher)
             self._run_launcher.register_instance(self)
         return self._run_launcher
 
@@ -734,8 +762,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def compute_log_manager(self) -> "ComputeLogManager":
-        from dagster._core.storage.compute_log_manager import ComputeLogManager
-
         if not self._compute_log_manager:
             check.invariant(
                 self._ref, "Compute log manager not provided, and no instance ref available"
@@ -744,7 +770,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.invariant(
                 compute_log_manager, "Compute log manager not configured in instance ref"
             )
-            self._compute_log_manager = cast(ComputeLogManager, compute_log_manager)
+            self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
@@ -931,6 +957,15 @@ class DagsterInstance(DynamicPartitionsStore):
     # run storage
     @public
     def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+        """Get a :py:class:`DagsterRun` matching the provided `run_id`.
+
+        Args:
+            run_id (str): The id of the run to retrieve.
+
+        Returns:
+            Optional[DagsterRun]: The run corresponding to the given id. If no run matching the id
+                is found, return `None`.
+        """
         record = self.get_run_record_by_id(run_id)
         if record is None:
             return None
@@ -939,6 +974,15 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+        """Get a :py:class:`RunRecord` matching the provided `run_id`.
+
+        Args:
+            run_id (str): The id of the run record to retrieve.
+
+        Returns:
+            Optional[RunRecord]: The run record corresponding to the given id. If no run matching
+                the id is found, return `None`.
+        """
         records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
         if not records:
             return None
@@ -1668,6 +1712,11 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def delete_run(self, run_id: str) -> None:
+        """Delete a run and all events generated by that from storage.
+
+        Args:
+            run_id (str): The id of the run to delete.
+        """
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)
 
@@ -1742,22 +1791,46 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Sequence[AssetKey]:
+        """Return a filtered subset of asset keys managed by this instance.
+
+        Args:
+            prefix (Optional[Sequence[str]]): Return only assets having this key prefix.
+            limit (Optional[int]): Maximum number of keys to return.
+            cursor (Optional[str]): Cursor to use for pagination.
+
+        Returns:
+            Sequence[AssetKey]: List of asset keys.
+        """
         return self._event_storage.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
 
     @public
     @traced
     def has_asset_key(self, asset_key: AssetKey) -> bool:
+        """Return true if this instance manages the given asset key.
+
+        Args:
+            asset_key (AssetKey): Asset key to check.
+        """
         return self._event_storage.has_asset_key(asset_key)
 
     @traced
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         return self._event_storage.get_latest_materialization_events(asset_keys)
 
     @public
     @traced
     def get_latest_materialization_event(self, asset_key: AssetKey) -> Optional["EventLogEntry"]:
+        """Fetch the latest materialization event for the given asset key.
+
+        Args:
+            asset_key (AssetKey): Asset key to return materialization for.
+
+        Returns:
+            Optional[AssetMaterialization]: The latest materialization event for the given asset
+                key, or `None` if the asset has not been materialized.
+        """
         return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
 
     @public
@@ -1785,14 +1858,18 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def get_status_by_partition(
-        self, asset_key: AssetKey, partitions_def: PartitionsDefinition, partition_keys: List[str]
+        self,
+        asset_key: AssetKey,
+        partition_keys: Sequence[str],
+        partitions_def: PartitionsDefinition,
     ) -> Optional[Mapping[str, AssetPartitionStatus]]:
-        """Get the current status of provided partition_keys.
+        """Get the current status of provided partition_keys for the provided asset.
 
         Args:
-            asset_key (AssetKey):
-            partitions_def (PartitionsDefinition):
-            partition_keys (List[str]):
+            asset_key (AssetKey): The asset to get per-partition status for.
+            partition_keys (Sequence[str]): The partitions to get status for.
+            partitions_def (PartitionsDefinition): The PartitionsDefinition of the asset to get
+                per-partition status for.
 
         Returns:
             Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
@@ -1834,6 +1911,14 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Sequence["AssetRecord"]:
+        """Return an `AssetRecord` for each of the given asset keys.
+
+        Args:
+            asset_keys (Optional[Sequence[AssetKey]]): List of asset keys to retrieve records for.
+
+        Returns:
+            Sequence[AssetRecord]: List of asset records.
+        """
         return self._event_storage.get_asset_records(asset_keys)
 
     @traced
@@ -1865,6 +1950,11 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def wipe_assets(self, asset_keys: Sequence[AssetKey]) -> None:
+        """Wipes asset event history from the event log for the given asset keys.
+
+        Args:
+            asset_keys (Sequence[AssetKey]): Asset keys to wipe.
+        """
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
@@ -1888,6 +1978,11 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the set of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+        """
         check.str_param(partitions_def_name, "partitions_def_name")
         return self._event_storage.get_dynamic_partitions(partitions_def_name)
 
@@ -1896,8 +1991,12 @@ class DagsterInstance(DynamicPartitionsStore):
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
-        """Add partitions to the specified dynamic partitions definition idempotently.
+        """Add partitions to the specified :py:class:`DynamicPartitionsDefinition` idempotently.
         Does not add any partitions that already exist.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_keys (Sequence[str]): Partition keys to add.
         """
         from dagster._core.definitions.partition import (
             raise_error_on_invalid_partition_key_substring,
@@ -1914,8 +2013,12 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
-        """Delete a partition for the specified dynamic partitions definition.
+        """Delete a partition for the specified :py:class:`DynamicPartitionsDefinition`.
         If the partition does not exist, exits silently.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_key (Sequence[str]): Partition key to delete.
         """
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_key, "partition_key", of_type=str)
@@ -1924,7 +2027,12 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        """Checks if a partition key exists for the dynamic partitions definition."""
+        """Check if a partition key exists for the :py:class:`DynamicPartitionsDefinition`.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_key (Sequence[str]): Partition key to check.
+        """
         check.str_param(partitions_def_name, "partitions_def_name")
         check.str_param(partition_key, "partition_key")
         return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
@@ -2645,3 +2753,32 @@ class DagsterInstance(DynamicPartitionsStore):
             materialization = next(iter(materializations), None)
 
         return materialization or observation
+
+    @public
+    def get_latest_materialization_code_versions(
+        self, asset_keys: Iterable[AssetKey]
+    ) -> Mapping[AssetKey, Optional[str]]:
+        """Returns the code version used for the latest materialization of each of the provided
+        assets.
+
+        Args:
+            asset_keys (Iterable[AssetKey]): The asset keys to find latest materialization code
+                versions for.
+
+        Returns:
+            Mapping[AssetKey, Optional[str]]: A dictionary with a key for each of the provided asset
+                keys. The values will be None if the asset has no materializations. If an asset does
+                not have a code version explicitly assigned to its definitions, but was
+                materialized, Dagster assigns the run ID as its code version.
+        """
+        result: Dict[AssetKey, Optional[str]] = {}
+        latest_materialization_events = self.get_latest_materialization_events(asset_keys)
+        for asset_key in asset_keys:
+            event_log_entry = latest_materialization_events.get(asset_key)
+            if event_log_entry is None:
+                result[asset_key] = None
+            else:
+                data_provenance = extract_data_provenance_from_entry(event_log_entry)
+                result[asset_key] = data_provenance.code_version if data_provenance else None
+
+        return result

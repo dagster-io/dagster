@@ -30,13 +30,13 @@ Preemptively declaring assets offers distinct advantages, including:
 
 ### Lineage
 
-As software-defined assets know what other assets they depend on, an asset's lineage can be [viewed easily in Dagit](/concepts/assets/software-defined-assets#viewing-assets-in-dagit).
+As software-defined assets know what other assets they depend on, an asset's lineage can be [viewed easily in the Dagster UI](/concepts/assets/software-defined-assets#viewing-assets-in-the-ui).
 
 Assets help track and define cross-job dependencies. For example, when viewing a job that materializes assets, you can navigate to the jobs that produce the assets that it depends on. Additionally, when an upstream asset has been updated more recently than a downstream asset, Dagster will indicate that the downstream asset might be out of date.
 
 ### Direct operation
 
-Using software-defined assets enables you to directly operate them in Dagit. On the [Asset's Details page](/concepts/dagit/dagit#asset-details), you can:
+Using software-defined assets enables you to directly operate them in the UI. On the [Asset's Details page](/concepts/webserver/ui#asset-details), you can:
 
 - View the materialization history of the asset
 - Check when the next materialization will occur
@@ -56,7 +56,7 @@ Software-defined assets provide sizeable improvements when it comes to code ergo
   - Contain everything in a single mega-job, which allows for easy dependency tracking but creates maintenance difficulties, OR
   - Split your pipeline into smaller jobs, which allows for easy maintenance but makes dependency tracking difficult
 
-  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for root input managers.
+  As assets track their dependencies, you can avoid interruptions in dependency graphs and eliminate the need for input managers.
 
 ---
 
@@ -174,7 +174,7 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 <TabGroup>
 <TabItem name="Without software-defined assets">
 
-This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and root input managers.
+This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and input managers.
 
 The goal of each op in the job is to produce an asset. However, because the job doesn't use the software-defined asset APIs, Dagster is unaware of this:
 
@@ -187,7 +187,7 @@ from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
 
 @op(
-    ins={"raw_users": In(root_manager_key="warehouse")},
+    ins={"raw_users": In(input_manager_key="warehouse")},
     out={"users": Out(io_manager_key="warehouse")},
 )
 def build_users(raw_users: DataFrame) -> DataFrame:
@@ -259,7 +259,7 @@ defs = Definitions(
 <TabGroup>
 <TabItem name="Without software-defined assets">
 
-This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and root input managers:
+This example does the same things as the [previous example](#materialize-two-interdependent-tables), with one difference. This job performs I/O inside of the ops instead of delegating it to I/O managers and input managers:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_nothing.py
 from pandas import read_sql
@@ -301,19 +301,19 @@ Here's an example of an equivalent job that uses software-defined assets:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
 from pandas import read_sql
 
-from dagster import Definitions, asset, define_asset_job
+from dagster import AssetKey, Definitions, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
 
-@asset(non_argument_deps={"raw_users"})
+@asset(deps=[AssetKey("raw_users")])
 def users():
     raw_users_df = read_sql("select * from raw_users", con=create_db_connection())
     users_df = raw_users_df.dropna()
     users_df.to_sql(name="users", con=create_db_connection())
 
 
-@asset(non_argument_deps={"users"})
+@asset(deps=[users])
 def user_recommender_model():
     users_df = read_sql("select * from users", con=create_db_connection())
     users_recommender_model = train_recommender_model(users_df)
@@ -473,10 +473,10 @@ Still not sure how software-defined assets fit into your current Dagster usage? 
 
 ### Dagster types
 
-| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Op outputs and inputs can have [Dagster types](/concepts/types)                                                                           | Software-defined assets can have [Dagster types](/concepts/types)                                                                                                                                                                                  |
-| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The [`non_argument_deps`](/concepts/assets/software-defined-assets#non-argument-dependencies) argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
+| Without software-defined assets                                                                                                           | With software-defined assets                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Op outputs and inputs can have [Dagster types](/concepts/types)                                                                           | Software-defined assets can have [Dagster types](/concepts/types)                                                                                                                                                                       |
+| The `Nothing` Dagster type enables declaring that Dagster doesn't need to store or load the object corresponding to an op output or input | The [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) argument when defining an asset enables specifying dependencies without relying on Dagster to store or load objects corresponding to that dependency |
 
 </TabItem>
 <TabItem name="Code locations">

@@ -2,7 +2,7 @@ def read_some_file():
     return "foo"
 
 
-# isort: split
+# ruff: isort: split
 # start_plain
 from hashlib import sha256
 
@@ -19,7 +19,7 @@ def foo_source_asset():  # type: ignore  # (didactic)
 
 # end_plain
 
-# isort: split
+# ruff: isort: split
 # start_schedule
 from dagster import (
     DataVersion,

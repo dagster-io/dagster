@@ -5,19 +5,17 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {AssetLink} from '../assets/AssetLink';
 import {InstigationStatus, InstigationType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SensorTargetList} from '../sensors/SensorTargetList';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
@@ -47,8 +45,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     start,
     height,
   } = props;
-
-  const repo = useRepository(repoAddress);
 
   const [querySensor, queryResult] = useLazyQuery<SingleSensorQuery, SingleSensorQueryVariables>(
     SINGLE_SENSOR_QUERY,
@@ -140,27 +136,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         </RowCell>
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            {sensorData?.targets && sensorData.targets.length ? (
-              <Box flex={{direction: 'column', gap: 2}}>
-                {sensorData.targets.map((target) => (
-                  <PipelineReference
-                    key={target.pipelineName}
-                    showIcon
-                    size="small"
-                    pipelineName={target.pipelineName}
-                    pipelineHrefContext={repoAddress}
-                    isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
-                  />
-                ))}
-              </Box>
-            ) : null}
-            {sensorData?.metadata.assetKeys && sensorData.metadata.assetKeys.length ? (
-              <Box flex={{direction: 'column', gap: 2}}>
-                {sensorData.metadata.assetKeys.map((key) => (
-                  <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
-                ))}
-              </Box>
-            ) : null}
+            <SensorTargetList targets={sensorData?.targets} repoAddress={repoAddress} />
           </Box>
         </RowCell>
         <RowCell>
@@ -229,7 +205,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
         </HeaderCell>
       ) : null}
       <HeaderCell>Name</HeaderCell>
-      <HeaderCell>Job / Asset</HeaderCell>
+      <HeaderCell>Target</HeaderCell>
       <HeaderCell>Running</HeaderCell>
       <HeaderCell>Frequency</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>

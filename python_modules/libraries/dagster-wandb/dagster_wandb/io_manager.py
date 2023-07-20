@@ -722,7 +722,7 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         "wandb_run_name": wandb_run_name,
         "wandb_run_id": wandb_run_id,
         "wandb_run_tags": wandb_run_tags,
-        "base_dir": base_dir,  # type: ignore
+        "base_dir": base_dir,
         "cache_duration_in_minutes": cache_duration_in_minutes,
     }
     return ArtifactsIOManager(wandb_client, config)

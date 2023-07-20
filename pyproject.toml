@@ -19,7 +19,7 @@ preview = true
 required-version = "22.12.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+target-version = ['py38', 'py39', 'py310', 'py311']
 
 # ########################
 # ##### PYRIGHT
@@ -69,7 +69,7 @@ analyzeUnannotatedFunctions = false
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
-pythonVersion = "3.7"
+pythonVersion = "3.8"
 
 # Use "basic" ruleset. This differs from strict in several ways, but most
 # importantly it does not flag untyped code as an error.
@@ -109,9 +109,9 @@ filterwarnings = [
 # ########################
 
 # [Docs root]
-#   https://github.com/charliermarsh/ruff#ruff
+#   https://beta.ruff.rs/docs/
 # [Config option reference]
-#   https://github.com/charliermarsh/ruff#reference
+#   https://beta.ruff.rs/docs/configuration/
 #
 # As of 2022-12-05, the entire documentation of Ruff is in its very long
 # README.
@@ -161,8 +161,15 @@ ignore = [
   # readable.
   "E731",
 
+  # (try-except-in-loop) we use this pattern in many places and the performance impact is negligible
+  "PERF203",
+
   # (no concatenation) Existing codebase has many concatentations, no reason to disallow them.
   "RUF005",
+
+  # (use ClassVar for attr declarations with defaults) This is a good rule for vanilla Python, but
+  # triggers false positives for many libs that have DSLs that make use of attr defaults.
+  "RUF012",
 
   ##### TEMPORARY DISABLES
 
@@ -172,6 +179,9 @@ ignore = [
   "D205",  # (blank line after summary)
   "D417",  # (missing arg in docstring)
 
+  # (assorted perf rules) We have a lot of violations, enable when autofix is available
+  "PERF401",  # (manual-list-comprehension)
+  "PERF402",  # (manual-list-copy)
 ]
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
@@ -193,14 +203,17 @@ select = [
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
 
-  # (pycodestyle) use all pycodestyle rules
+  # (pycodestyle) pycodestyle rules
   "E",
 
-  # (pyflakes) use all pyflakes rules
+  # (pyflakes) pyflakes rules
   "F",
 
   # (isort) detect improperly sorted imports
   "I001",
+
+  # (performance) perflint rules
+  "PERF",
 
   # (pylint) use all pylint rules from categories "Convention", "Error", and "Warning" (ruff
   # currently implements only a subset of pylint's rules)
@@ -229,7 +242,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.255"
+required-version = "0.0.277"
 
 [tool.ruff.flake8-builtins]
 

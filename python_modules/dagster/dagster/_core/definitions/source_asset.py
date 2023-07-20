@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 import warnings
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -53,12 +50,6 @@ from dagster._core.errors import (
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 from dagster._utils.merger import merge_dicts
-
-if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import (
-        OpExecutionContext,
-    )
-
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
@@ -177,6 +168,11 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def op(self) -> OpDefinition:
+        """OpDefinition: The OpDefinition associated with the observation function of an observable
+        source asset.
+
+        Throws an error if the asset is not observable.
+        """
         check.invariant(
             isinstance(self.node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
@@ -186,12 +182,16 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def is_observable(self) -> bool:
+        """bool: Whether the asset is observable."""
         return self.node_def is not None
 
     def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
             is_context_provided,
+        )
+        from dagster._core.execution.context.compute import (
+            OpExecutionContext,
         )
 
         observe_fn_has_context = is_context_provided(get_function_params(observe_fn))

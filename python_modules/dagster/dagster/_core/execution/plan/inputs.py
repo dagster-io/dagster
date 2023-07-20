@@ -260,10 +260,12 @@ class FromSourceAsset(
         return {input_manager_key}
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromRootInputManager(
+@whitelist_for_serdes(
+    storage_name="FromRootInputManager", storage_field_names={"node_handle": "solid_handle"}
+)
+class FromInputManager(
     NamedTuple(
-        "_FromRootInputManager",
+        "_FromInputManager",
         [
             ("node_handle", NodeHandle),
             ("input_name", str),
@@ -271,7 +273,7 @@ class FromRootInputManager(
     ),
     StepInputSource,
 ):
-    """Load input value via a RootInputManager."""
+    """Load input value via a InputManager."""
 
     def load_input_object(
         self,
@@ -283,7 +285,7 @@ class FromRootInputManager(
         check.invariant(
             step_context.node_handle == self.node_handle and input_def.name == self.input_name,
             (
-                "RootInputManager source must be op input and not one along composition mapping. "
+                "InputManager source must be op input and not one along composition mapping. "
                 f"Loading for op {step_context.node_handle}.{input_def.name} "
                 f"but source is {self.node_handle}.{self.input_name}."
             ),
@@ -294,11 +296,7 @@ class FromRootInputManager(
         op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
-        input_manager_key = check.not_none(
-            input_def.root_manager_key
-            if input_def.root_manager_key
-            else input_def.input_manager_key
-        )
+        input_manager_key = check.not_none(input_def.input_manager_key)
 
         loader = getattr(step_context.resources, input_manager_key)
 
@@ -332,9 +330,7 @@ class FromRootInputManager(
 
         node = job_def.get_node(self.node_handle)
         input_manager_key: str = check.not_none(
-            node.input_def_named(self.input_name).root_manager_key
-            if node.input_def_named(self.input_name).root_manager_key
-            else node.input_def_named(self.input_name).input_manager_key
+            node.input_def_named(self.input_name).input_manager_key
         )
         input_manager_def = job_def.resource_defs[input_manager_key]
 
@@ -350,34 +346,30 @@ class FromRootInputManager(
         )
 
         if job_def.version_strategy is not None:
-            root_manager_def_version = job_def.version_strategy.get_resource_version(
+            input_manager_def_version = job_def.version_strategy.get_resource_version(
                 version_context
             )
         else:
-            root_manager_def_version = input_manager_def.version
+            input_manager_def_version = input_manager_def.version
 
-        if root_manager_def_version is None:
+        if input_manager_def_version is None:
             raise DagsterInvariantViolationError(
                 f"While using memoization, version for input manager '{input_manager_key}' was "
                 "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the root_input_manager or input_manager decorator."
+                "version using the input_manager decorator."
             )
 
-        check_valid_version(root_manager_def_version)
+        check_valid_version(input_manager_def_version)
         return join_and_hash(
             resolve_config_version(input_config),
             resolve_config_version(resource_config),
-            root_manager_def_version,
+            input_manager_def_version,
         )
 
     def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
         input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
 
-        input_manager_key: str = check.not_none(
-            input_def.root_manager_key
-            if input_def.root_manager_key
-            else input_def.input_manager_key
-        )
+        input_manager_key: str = check.not_none(input_def.input_manager_key)
 
         return {input_manager_key}
 

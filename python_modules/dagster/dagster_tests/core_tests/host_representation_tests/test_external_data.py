@@ -18,6 +18,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
@@ -145,7 +146,7 @@ def test_two_asset_job():
 def test_input_name_matches_output_name():
     not_result = SourceAsset(key=AssetKey("not_result"), description=None)
 
-    @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
+    @asset(ins={"result": AssetIn(key=AssetKey("not_result"))})
     def something(result):
         pass
 
@@ -194,8 +195,12 @@ def test_assets_excluded_from_subset_not_in_job():
         return c
 
     all_assets = [abc, a2, c2]
-    as_job = define_asset_job("as_job", selection="a*").resolve(all_assets, [])
-    cs_job = define_asset_job("cs_job", selection="*c2").resolve(all_assets, [])
+    as_job = define_asset_job("as_job", selection="a*").resolve(
+        asset_graph=AssetGraph.from_assets(all_assets)
+    )
+    cs_job = define_asset_job("cs_job", selection="*c2").resolve(
+        asset_graph=AssetGraph.from_assets(all_assets)
+    )
 
     external_asset_nodes = external_asset_graph_from_defs([as_job, cs_job], source_assets_by_key={})
 
@@ -429,7 +434,7 @@ def test_inter_op_dependency():
         pass
 
     subset_job = define_asset_job("subset_job", selection="mixed").resolve(
-        [in1, in2, assets, downstream], []
+        asset_graph=AssetGraph.from_assets([in1, in2, assets, downstream]),
     )
     all_assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
 

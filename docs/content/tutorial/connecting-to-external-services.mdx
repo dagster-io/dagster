@@ -1,9 +1,9 @@
 ---
-title: "Tutorial, part eight: Connecting to external services | Dagster Docs"
+title: "Tutorial, part seven: Connecting to external services | Dagster Docs"
 description: Learn how to connect to external services in Dagster with resources
 ---
 
-# Tutorial, part 8: Connecting to external services
+# Tutorial, part 7: Connecting to external services
 
 Throughout the tutorial, you built a data pipeline that connects to different external services, such as Hacker News. By building this asset graph, Dagster acts as a control plane of multiple different external services. However, connecting to these services and managing their use can be difficult. Resources are the recommended way to manage these connections in Dagster.
 
@@ -99,18 +99,21 @@ from ..resources import DataGeneratorResource
 
 
 @asset
-def signups(hackernews_api: DataGeneratorResource):
+def signups(
+    context: AssetExecutionContext, hackernews_api: DataGeneratorResource
+) -> pd.DataFrame:
     signups = pd.DataFrame(hackernews_api.get_signups())
 
-    return Output(
-        value=signups,
+    context.add_output_metadata(
         metadata={
             "Record Count": len(signups),
             "Preview": MetadataValue.md(signups.head().to_markdown()),
             "Earliest Signup": signups["registered_at"].min(),
             "Latest Signup": signups["registered_at"].max(),
-        },
+        }
     )
+
+    return signups
 ```
 
 Verify this new asset works by reloading your definitions and materializing the `signups` asset. If you navigate to the `hackernews_api`'s resource page from earlier, you’ll notice its **Uses** value now says `2`: one for the asset using it and another for the job using this asset. Click on the number and ensure that your `signups` asset uses the `hackernews_api` resource.

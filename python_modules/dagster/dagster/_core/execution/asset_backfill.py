@@ -475,7 +475,7 @@ def execute_asset_backfill_iteration(
             if unloadable_locations
             else ""
         )
-        raise DagsterAssetBackfillDataLoadError(f"{str(ex)}. {unloadable_locations_error}")
+        raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
 
     backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
 

@@ -114,9 +114,6 @@ from dagster._config.source import (
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    build_asset_reconciliation_sensor as build_asset_reconciliation_sensor,
-)
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
@@ -484,6 +481,7 @@ from dagster._core.storage.fs_io_manager import (
 )
 from dagster._core.storage.input_manager import (
     InputManager as InputManager,
+    InputManagerDefinition as InputManagerDefinition,
     input_manager as input_manager,
 )
 from dagster._core.storage.io_manager import (
@@ -498,11 +496,6 @@ from dagster._core.storage.mem_io_manager import (
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
 from dagster._core.storage.partition_status_cache import (
     AssetPartitionStatus as AssetPartitionStatus,
-)
-from dagster._core.storage.root_input_manager import (
-    RootInputManager as RootInputManager,
-    RootInputManagerDefinition as RootInputManagerDefinition,
-    root_input_manager as root_input_manager,
 )
 from dagster._core.storage.tags import (
     MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
@@ -545,7 +538,7 @@ from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
 from dagster.version import __version__ as __version__
 
-# isort: split
+# ruff: isort: split
 
 # ########################
 # ##### DYNAMIC IMPORTS
@@ -574,12 +567,7 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-
-    # JobExecutionResult used to be called ExecuteJobResult because it was only returned from
-    # `execute_job`.
-    from dagster._core.execution.job_execution_result import (
-        JobExecutionResult as ExecuteJobResult,  # noqa: F401
-    )
+    pass
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
@@ -594,7 +582,6 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
 _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
-    "ExecuteJobResult": (JobExecutionResult, "1.4.0"),
 }
 
 

@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -24,6 +25,7 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping, Metadat
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import (
@@ -59,7 +61,7 @@ def asset(
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -78,6 +80,7 @@ def asset(
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
     key: Optional[CoercibleToAssetKey] = None,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -88,7 +91,7 @@ def asset(
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -107,6 +110,7 @@ def asset(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -132,8 +136,9 @@ def asset(
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
-            upstream dependencies, but do not pass an input to the asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]):
+            The assets that are upstream dependencies, but do not correspond to a parameter of the
+            decorated function.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -172,6 +177,8 @@ def asset(
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
+            Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
 
     Examples:
         .. code-block:: python
@@ -182,11 +189,15 @@ def asset(
     """
 
     def create_asset():
+        upstream_asset_deps = _type_check_deps_and_non_argument_deps(
+            deps=deps, non_argument_deps=non_argument_deps
+        )
+
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
             ins=ins,
-            non_argument_deps=_make_asset_keys(non_argument_deps),
+            deps=_make_asset_keys(upstream_asset_deps),
             metadata=metadata,
             description=description,
             config_schema=config_schema,
@@ -238,7 +249,7 @@ class _Asset:
         name: Optional[str] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
-        non_argument_deps: Optional[Set[AssetKey]] = None,
+        deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
@@ -264,7 +275,7 @@ class _Asset:
             key_prefix = [key_prefix]
         self.key_prefix = key_prefix
         self.ins = ins or {}
-        self.non_argument_deps = non_argument_deps
+        self.deps = deps
         self.metadata = metadata
         self.description = description
         self.required_resource_keys = check.opt_set_param(
@@ -302,7 +313,7 @@ class _Asset:
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
+        asset_ins = build_asset_ins(fn, self.ins or {}, self.deps)
 
         out_asset_key = (
             AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
@@ -402,7 +413,7 @@ class _Asset:
             asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
-            metadata_by_key=None,  # not supported for now
+            metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
         )
 
@@ -412,7 +423,7 @@ def multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -425,6 +436,7 @@ def multi_asset(
     group_name: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -441,8 +453,9 @@ def multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are upstream
-            dependencies, but do not pass an input to the multi_asset.
+        deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, AssetKey, str]]]):
+            The assets that are upstream dependencies, but do not correspond to a parameter of the
+            decorated function.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
@@ -471,6 +484,8 @@ def multi_asset(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead. Set of asset keys that are upstream
+            dependencies, but do not pass an input to the multi_asset.
 
     Examples:
         .. code-block:: python
@@ -492,7 +507,7 @@ def multi_asset(
                     "asset1": AssetOut(),
                     "asset2": AssetOut(),
                 },
-                non_argument_deps={"asset0"},
+                deps={"asset0"},
             )
             def my_function():
                 asset0_value = load(path="asset0")
@@ -501,6 +516,10 @@ def multi_asset(
                 write(asset2_result, path="asset2")
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+    upstream_asset_deps = _type_check_deps_and_non_argument_deps(
+        deps=deps, non_argument_deps=non_argument_deps
+    )
 
     if resource_defs is not None:
         experimental_arg_warning("resource_defs", "multi_asset")
@@ -525,19 +544,9 @@ def multi_asset(
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
-    for out in outs.values():
-        if isinstance(out, Out) and not isinstance(out, AssetOut):
-            deprecation_warning(
-                "Passing Out objects as values for the out argument of @multi_asset",
-                "1.0.0",
-                additional_warn_txt="Use AssetOut instead.",
-            )
-
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
-        asset_ins = build_asset_ins(
-            fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
-        )
+        asset_ins = build_asset_ins(fn, ins or {}, deps=_make_asset_keys(upstream_asset_deps))
         asset_outs = build_asset_outs(outs)
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -602,7 +611,7 @@ def multi_asset(
         group_names_by_key = {
             keys_by_output_name[output_name]: out.group_name
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.group_name is not None
+            if out.group_name is not None
         }
         if group_name:
             check.invariant(
@@ -620,17 +629,22 @@ def multi_asset(
         freshness_policies_by_key = {
             keys_by_output_name[output_name]: out.freshness_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.freshness_policy is not None
+            if out.freshness_policy is not None
         }
         auto_materialize_policies_by_key = {
             keys_by_output_name[output_name]: out.auto_materialize_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
+            if out.auto_materialize_policy is not None
         }
         partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in (ins or {}).items()
             if asset_in.partition_mapping is not None
+        }
+        metadata_by_key = {
+            keys_by_output_name[output_name]: out.metadata
+            for output_name, out in outs.items()
+            if out.metadata is not None
         }
 
         return AssetsDefinition.dagster_internal_init(
@@ -647,7 +661,7 @@ def multi_asset(
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
-            metadata_by_key=None,  # not supported for now
+            metadata_by_key=metadata_by_key,
         )
 
     return inner
@@ -656,10 +670,10 @@ def multi_asset(
 def build_asset_ins(
     fn: Callable,
     asset_ins: Mapping[str, AssetIn],
-    non_argument_deps: Optional[AbstractSet[AssetKey]],
+    deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
+    deps = check.opt_set_param(deps, "deps", AssetKey)
 
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
@@ -717,7 +731,7 @@ def build_asset_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_key in non_argument_deps:
+    for asset_key in deps:
         stringified_asset_key = "_".join(asset_key.path).replace("-", "_")
         # mypy doesn't realize that Nothing is a valid type here
         ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
@@ -993,12 +1007,77 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
     return outs_by_asset_key
 
 
-def _make_asset_keys(deps: Optional[Union[Set[AssetKey], Set[str]]]) -> Optional[Set[AssetKey]]:
-    """Convert all str items to AssetKey in the set."""
+def _type_check_deps_and_non_argument_deps(
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]],
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
+):
+    """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
+    Ensures:
+    1. only one of deps and non_argument_deps is provided.
+    2. multi assets AssetsDefinition is not passed to deps.
+    3. deprecation warning is fired for non_argument_deps.
+    """
+    if non_argument_deps is not None and deps is not None:
+        raise DagsterInvalidDefinitionError(
+            "Cannot specify both deps and non_argument_deps to @asset. Use only deps instead."
+        )
+
+    upstream_asset_deps: Optional[
+        Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
+    ] = None
+    if deps is not None:
+        for dep in deps:
+            if isinstance(dep, AssetsDefinition):
+                # Only AssetsDefinition with a single asset can be passed
+                if len(dep.keys) > 1:
+                    raise DagsterInvalidDefinitionError(
+                        "Cannot pass a multi_asset AssetsDefinition as an argument to deps."
+                        " Instead, specify dependencies on the assets created by the multi_asset"
+                        f" via AssetKeys or strings. For the multi_asset {dep.node_def.name}, the"
+                        f" available keys are: {dep.keys}."
+                    )
+            elif isinstance(dep, SourceAsset):
+                # no additional type checking needed for SourceAssets
+                continue
+            else:
+                # confirm that dep is coercible to AssetKey
+                try:
+                    AssetKey.from_coercible(dep)
+                except check.CheckError:
+                    raise DagsterInvalidDefinitionError(
+                        f"Cannot pass an instance of type {type(dep)} to deps parameter of @asset."
+                        " Instead, pass AssetsDefinitions or AssetKeys."
+                    )
+
+        upstream_asset_deps = deps
+
+    if non_argument_deps is not None:
+        deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
+        # this set -> list conversion is a side effect of the type changing from
+        # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
+        check.set_param(non_argument_deps, "non_argument_deps", of_type=(AssetKey, str))
+        upstream_asset_deps = list(non_argument_deps)
+
+    return upstream_asset_deps
+
+
+def _make_asset_keys(
+    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
+) -> Optional[Set[AssetKey]]:
+    """Convert all items to AssetKey in a set. By putting all of the AssetKeys in a set, it will also deduplicate them.
+    """
     if deps is None:
         return deps
 
-    deps_asset_keys = {
-        AssetKey.from_user_string(dep) if isinstance(dep, str) else dep for dep in deps
-    }
+    deps_asset_keys: Set[AssetKey] = set()
+    for dep in deps:
+        if isinstance(dep, AssetsDefinition):
+            # this will error if the AssetsDefinition is a multi_asset, but we should have caught that
+            # earlier in execution
+            deps_asset_keys.add(dep.key)
+        elif isinstance(dep, SourceAsset):
+            deps_asset_keys.add(dep.key)
+        else:
+            deps_asset_keys.add(AssetKey.from_coercible(dep))
+
     return deps_asset_keys

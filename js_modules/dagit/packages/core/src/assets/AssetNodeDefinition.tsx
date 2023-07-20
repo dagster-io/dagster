@@ -26,8 +26,8 @@ import {
   automaterializePolicyDescription,
   AutomaterializePolicyTag,
 } from './AutomaterializePolicyTag';
-import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
@@ -109,9 +109,10 @@ export const AssetNodeDefinition: React.FC<{
                 <Body style={{flex: 1}}>
                   {freshnessPolicyDescription(assetNode.freshnessPolicy)}
                 </Body>
-                <CurrentMinutesLateTag
+                <OverdueTag
                   liveData={liveDataForNode}
                   policy={assetNode.freshnessPolicy}
+                  assetKey={assetNode.assetKey}
                 />
               </Box>
             </>

@@ -12,7 +12,11 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG, AUTO_OBSERVE_TAG
+from dagster._core.storage.tags import (
+    ASSET_EVALUATION_ID_TAG,
+    AUTO_MATERIALIZE_TAG,
+    AUTO_OBSERVE_TAG,
+)
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
@@ -84,7 +88,7 @@ class AssetDaemon(IntervalDaemon):
         asset_graph = ExternalAssetGraph.from_workspace(workspace)
         target_asset_keys = {
             target_key
-            for target_key in asset_graph.non_source_asset_keys
+            for target_key in asset_graph.materializable_asset_keys
             if asset_graph.get_auto_materialize_policy(target_key) is not None
         }
 
@@ -124,7 +128,17 @@ class AssetDaemon(IntervalDaemon):
 
             asset_keys = check.not_none(run_request.asset_selection)
 
-            run = submit_asset_run(run_request, instance, workspace, asset_graph)
+            run = submit_asset_run(
+                run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        ASSET_EVALUATION_ID_TAG: str(new_cursor.evaluation_id),
+                    }
+                ),
+                instance,
+                workspace,
+                asset_graph,
+            )
 
             # add run id to evaluations
             for asset_key in asset_keys:

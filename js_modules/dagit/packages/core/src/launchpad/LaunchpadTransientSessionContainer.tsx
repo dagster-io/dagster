@@ -35,12 +35,12 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     rootDefaultYaml,
   } = props;
 
-  const {flagAutoLoadDefaults} = useFeatureFlags();
+  const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialData = useInitialDataForMode(
     pipeline,
     partitionSets,
     rootDefaultYaml,
-    flagAutoLoadDefaults,
+    !flagDisableAutoLoadDefaults,
   );
   const initialSessionComplete = createSingleSession({
     ...sessionPresets,
@@ -62,6 +62,7 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
       pipeline={pipeline}
       partitionSets={partitionSets}
       repoAddress={repoAddress}
+      rootDefaultYaml={rootDefaultYaml}
     />
   );
 };

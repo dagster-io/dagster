@@ -88,7 +88,7 @@ def _check_node_defs_arg(
                 )
             )
         else:
-            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {repr(node_def)}")
+            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")
 
     return node_defs
 
@@ -204,7 +204,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[ConfigMapping] = None,
         tags: Optional[Mapping[str, str]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
-        **kwargs: object,
+        **kwargs: Any,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
 

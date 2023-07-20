@@ -165,7 +165,7 @@ def test_from_asset_partitions_target_subset(
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=partition_keys,
         asset_graph=asset_graph,
-        asset_selection=list(asset_graph.all_asset_keys),
+        asset_selection=list(asset_graph.materializable_asset_keys),
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
         backfill_start_time=scenarios[scenario_name].evaluation_time,

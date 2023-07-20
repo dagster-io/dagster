@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -126,6 +127,12 @@ class AssetEntry(
         if self.last_materialization_record is None:
             return None
         return self.last_materialization_record.event_log_entry
+
+    @property
+    def last_materialization_storage_id(self) -> Optional[int]:
+        if self.last_materialization_record is None:
+            return None
+        return self.last_materialization_record.storage_id
 
 
 class AssetRecord(NamedTuple):
@@ -338,7 +345,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         pass
 

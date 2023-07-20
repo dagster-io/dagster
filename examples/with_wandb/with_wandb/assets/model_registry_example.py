@@ -30,7 +30,7 @@ class PromoteBestModelToProductionConfig(Config):
 @asset(
     compute_kind="wandb",
     name="registered-model",
-    ins={"artifact": AssetIn(asset_key=MODEL_NAME)},
+    ins={"artifact": AssetIn(key=MODEL_NAME)},
     output_required=False,
 )
 def promote_best_model_to_production(

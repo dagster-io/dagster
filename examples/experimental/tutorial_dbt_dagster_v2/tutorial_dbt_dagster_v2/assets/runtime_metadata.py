@@ -1,15 +1,18 @@
+import json
+
 from dagster import OpExecutionContext, Output
-from dagster_dbt import DbtCli, DbtManifest, dbt_assets
+from dagster_dbt import DbtCliResource, dbt_assets
 from dateutil import parser
 
 from ..constants import MANIFEST_PATH
 
-manifest = DbtManifest.read(path=MANIFEST_PATH)
+with MANIFEST_PATH.open() as f:
+    manifest = json.load(f)
 
 
 @dbt_assets(manifest=manifest)
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCli):
-    for event in dbt.cli(["build"], manifest=manifest, context=context).stream_raw_events():
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    for event in dbt.cli(["build"], context=context).stream_raw_events():
         for dagster_event in event.to_default_asset_events(manifest=manifest):
             if isinstance(dagster_event, Output):
                 event_node_info = event.raw_event["data"]["node_info"]
