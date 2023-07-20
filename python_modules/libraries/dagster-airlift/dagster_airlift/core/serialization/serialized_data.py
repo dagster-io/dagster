@@ -37,7 +37,7 @@ class DagInfo:
     Users should not instantiate this class directly. It is provided when customizing which DAGs are included
     in the generated definitions using the `dag_selector_fn` argument of :py:func:`build_defs_from_airflow_instance`.
 
-    Attributes:
+    Args:
         metadata (Dict[str, Any]): The metadata associated with the dag, retrieved by the Airflow REST API:
             https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dags
     """

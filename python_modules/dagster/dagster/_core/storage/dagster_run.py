@@ -299,12 +299,25 @@ class DagsterRun(
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
 
-    Attributes:
-        job_name (str): The name of the job executed in this run
-        run_id (str): The ID of the run
-        run_config (Mapping[str, object]): The config for the run
-        tags (Mapping[str, str]): The tags applied to the run
-
+    Args:
+        job_name (str): The name of the job executed in this run.
+        run_id (str): The ID of the run.
+        run_config (Mapping[str, object]): The config for the run.
+        asset_selection (Optional[AbstractSet[AssetKey]]): The assets selected for this run.
+        asset_check_selection (Optional[AbstractSet[AssetCheckKey]]): The asset checks selected for this run.
+        op_selection (Optional[Sequence[str]]): The op queries provided by the user.
+        resolved_op_selection (Optional[AbstractSet[str]]): The resolved set of op names to execute.
+        step_keys_to_execute (Optional[Sequence[str]]): The step keys to execute.
+        status (DagsterRunStatus): The status of the run.
+        tags (Mapping[str, str]): The tags applied to the run.
+        root_run_id (Optional[str]): The ID of the root run in the run's group.
+        parent_run_id (Optional[str]): The ID of the parent run in the run's group.
+        job_snapshot_id (Optional[str]): The ID of the job snapshot.
+        execution_plan_snapshot_id (Optional[str]): The ID of the execution plan snapshot.
+        remote_job_origin (Optional[RemoteJobOrigin]): The origin of the executed job.
+        job_code_origin (Optional[JobPythonOrigin]): The origin of the job code.
+        has_repository_load_data (bool): Whether the run has repository load data.
+        run_op_concurrency (Optional[RunOpConcurrency]): The op concurrency information for the run.
     """
 
     def __new__(
