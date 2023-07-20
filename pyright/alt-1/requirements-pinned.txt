@@ -171,7 +171,7 @@ pendulum==2.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==10.0.0
-platformdirs==3.8.1
+platformdirs==3.9.1
 pluggy==1.2.0
 -e examples/project_fully_featured
 prometheus-client==0.17.1
