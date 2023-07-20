@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-// eslint-disable-next-line no-restricted-imports
-import {Tag as BlueprintTag} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -12,6 +10,7 @@ import {
   Spinner,
   Tag,
   TextInput,
+  Caption,
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -34,7 +33,7 @@ import {
 interface Props {
   runIds?: string[];
   partitionKeys: string[];
-  intent?: React.ComponentProps<typeof BlueprintTag>['intent'];
+  intent?: React.ComponentProps<typeof Tag>['intent'];
 }
 
 export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, intent}: Props) => {
@@ -74,12 +73,10 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
 
   return (
     <>
-      <Box>
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Tag intent={intent}>{label}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
-          <small style={{marginLeft: 10}}>
-            <a>View details</a>
-          </small>
+          <Caption>View details</Caption>
         </ButtonLink>
       </Box>
       <Dialog
