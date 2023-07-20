@@ -51,10 +51,17 @@
 - `asset_key(s)` properties on `AssetIn` and `AssetDefinition` have been removed in favor of `key(s)`. These APIs were deprecated in 1.0.
 - `root_input_manager` and `RootInputManagerDefinition` have been removed in favor of `input_manager` and `InputManagerDefinition`. These APIs were deprecated in 1.0.
 - [dagster-pandas] The `event_metadata_fn` parameter on `create_dagster_pandas_dataframe_type` has been removed in favor of `metadata_fn`.
-- [dagster-dbt] Group names for dbt assets are now taken from a dbt model's group. Before, group names were determined using the model's subdirectory path.
-- [dagster-dbt] Support for `dbt-rpc` has been removed.
-- [dagster-dbt] The class alias `DbtCloudResourceV2` has been removed.
-- [dagster-dbt] `DbtCli` has been renamed to `DbtCliResource`
+- [dagster-dbt] The library has been substantially revamped to support the new `@dbt_assets` and `DbtCliResource`. See the migration guide for details.
+  - Group names for dbt assets are now taken from a dbt model's group. Before, group names were determined using the model's subdirectory path.
+  - Support for `dbt-rpc` has been removed.
+  - The class alias `DbtCloudResourceV2` has been removed.
+  - `DbtCli` has been renamed to `DbtCliResource`. Previously, `DbtCliResource` was a class alias for `DbtCliClientResource`.
+  - `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now default to `use_build=True`.
+  - The default assignment of groups to dbt models loaded from `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` has changed. Rather than assigning a group name using the model’s subdirectory, a group name will be assigned using the dbt model’s [dbt group](https://docs.getdbt.com/docs/build/groups).
+  - The argument `node_info_to_definition_metadata_fn` for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now overrides metadata instead of adding to it.
+  - The arguments for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now must be specified using keyword arguments.
+  - When using the new `DbtCliResource` with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, stdout logs from the dbt process will now appear in the compute logs instead of the event logs.
+
 ### Deprecations
 
 - The `dagit` python package is deprecated and will be removed in 2.0 in favor  of `dagster-webserver`. See the migration guide for details.
@@ -63,6 +70,8 @@
     - `ingress.dagit` → `ingress.dagsterWebserver`
     - `ingress.readOnlyDagit` → `ingress.readOnlyDagsterWebserver`
 - [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
+- `DbtCliClientResource`, `dbt_cli_resource` and `DbtCliOutput` are now being deprecated in favor of `DbtCliResource`.
+- A number of arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. See the migration for details.
 
 ### Community Contributions
 
