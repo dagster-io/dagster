@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.4.1 / 0.20.1 (libraries)
+
+### Bugfixes
+
+- Fixes a bug in `dagster-dbt` that was preventing it efficiently loading dbt projects from a manifest.
+
 # 1.4.0 / 0.20.0 (libraries) "Material Girl"
 
 ## ****Major Changes since 1.3.0 (core) / 0.19.0 (libraries)****
