@@ -156,7 +156,7 @@ class AssetValueLoader:
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
                 name=name,
-                metadata=combined_metadata,
+                # metadata=combined_metadata,
                 asset_key=asset_key,
                 op_def=op_def,
                 resource_config=resource_config,
@@ -169,6 +169,7 @@ class AssetValueLoader:
             else None,
             asset_partitions_def=asset_partitions_def,
             instance=self._instance,
+            metadata=combined_metadata,
         )
 
         return io_manager.load_input(input_context)
