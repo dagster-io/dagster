@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
 from dagster import AssetKey
@@ -188,3 +189,8 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
             return base_key.with_prefix(self._source_asset_key_prefix)
         else:
             return base_key.with_prefix(self._asset_key_prefix)
+
+
+@dataclass
+class DbtManifestWrapper:
+    manifest: Mapping[str, Any]
