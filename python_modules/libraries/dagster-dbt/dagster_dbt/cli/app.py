@@ -31,6 +31,7 @@ app.add_typer(
 )
 
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
+DBT_PROFILES_YML_NAME = "profiles.yml"
 
 
 def validate_dagster_project_name(project_name: str) -> str:
@@ -55,6 +56,19 @@ def validate_dbt_project_dir(dbt_project_dir: Path) -> Path:
     return dbt_project_dir
 
 
+def dbt_adapter_pypi_package_for_target_type(target_type: str) -> str:
+    """See https://docs.getdbt.com/docs/connect-adapters for a list of dbt adapter packages."""
+    custom_pypi_package_by_target_type = {
+        "athena": "dbt-athena-adapter",
+        "layer": "dbt-layer-bigquery",
+    }
+    dbt_adapter_pypi_package = custom_pypi_package_by_target_type.get(
+        target_type, f"dbt-{target_type}"
+    )
+
+    return dbt_adapter_pypi_package
+
+
 def copy_scaffold(
     project_name: str,
     dagster_project_dir: Path,
@@ -64,9 +78,16 @@ def copy_scaffold(
     dagster_project_dir.joinpath("__init__.py").unlink()
 
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
-    with dbt_project_yaml_path.open() as fd:
-        dbt_project_yaml: Dict[str, Any] = yaml.safe_load(fd)
-        dbt_project_name: str = dbt_project_yaml["name"]
+    dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
+    dbt_project_name: str = dbt_project_yaml["name"]
+
+    dbt_profiles_path = dbt_project_dir.joinpath(DBT_PROFILES_YML_NAME)
+    dbt_profiles_yaml: Dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
+    dbt_adapter_packages = [
+        dbt_adapter_pypi_package_for_target_type(target["type"])
+        for profile in dbt_profiles_yaml.values()
+        for target in profile["outputs"].values()
+    ]
 
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
@@ -95,6 +116,7 @@ def copy_scaffold(
                 dbt_project_name=dbt_project_name,
                 dbt_parse_command=dbt_parse_command,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
+                dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
             ).dump(destination_path)
 
