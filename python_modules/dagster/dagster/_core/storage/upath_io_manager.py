@@ -267,6 +267,8 @@ class UPathIOManager(MemoizableIOManager):
         Otherwise, raise an error.
 
         Args:
+            context (InputContext): IOManager Input context
+            partition_key (str): the partition key corresponding to the partition being loaded
             path (UPath): The path to the partition.
             backcompat_path (Optional[UPath]): The path to the partition in the backcompat location.
 
