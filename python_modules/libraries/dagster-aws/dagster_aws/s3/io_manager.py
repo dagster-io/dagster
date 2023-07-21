@@ -35,8 +35,11 @@ class PickledObjectS3IOManager(UPathIOManager):
         base_path = UPath(s3_prefix) if s3_prefix else None
         super().__init__(base_path=base_path)
 
-    def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read())
+    async def load_from_path(self, context: InputContext, path: UPath) -> Any:
+        fs = self.get_async_filesystem(path)
+        file = await fs.open_async(str(path), "rb")
+        data = await file.read()
+        return pickle.loads(data)
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         if self.path_exists(path):
