@@ -753,8 +753,7 @@ def load_assets_from_dbt_manifest(
         Union[Mapping[str, Any], Path], check.inst_param(manifest, "manifest", (Path, dict))
     )
     if isinstance(manifest, Path):
-        with manifest.open("r") as handle:
-            manifest = cast(Mapping[str, Any], json.load(handle))
+        manifest = cast(Mapping[str, Any], json.loads(manifest.read_bytes()))
 
     _raise_warnings_for_deprecated_args(
         "load_assets_from_dbt_manifest",
