@@ -1,4 +1,4 @@
-from dagster import graph, job, op, repository
+from dagster import Definitions, graph, job, op
 from dagster_graphql import DagsterGraphQLClient
 
 
@@ -13,9 +13,9 @@ def ingest(x):
 
 
 @op
-def ping_dagit():
+def ping_dagster_webserver():
     client = DagsterGraphQLClient(
-        "dagit",
+        "dagster_webserver",
         port_number=3000,
     )
     return client._execute("{__typename}")  # noqa: SLF001
@@ -28,12 +28,11 @@ def basic():
 
 @job
 def test_graphql():
-    ping_dagit()
+    ping_dagster_webserver()
 
 
 the_job = basic.to_job(name="the_job")
 
-
-@repository
-def basic_repo():
-    return [the_job, test_graphql]
+defs = Definitions(
+    jobs=[the_job, test_graphql],
+)

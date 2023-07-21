@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: "postgres_password"
       POSTGRES_DB: "postgres_db"
     networks:
-      - dagit_service_network
+      - webserver_service_network
 
   dagster_grpc_server:
     container_name: dagster_grpc_server
@@ -22,15 +22,25 @@ services:
       DAGSTER_POSTGRES_DB: "postgres_db"
       DAGSTER_CURRENT_IMAGE: "dagster_grpc_image"
     networks:
-      - dagit_service_network
+      - webserver_service_network
+    entrypoint:
+      - dagster
+      - api
+      - grpc
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "8090"
+      - -f
+      - ${USER_CODE_DEFINITIONS_FILE}
 
-  dagit:
-    container_name: dagit
+  dagster_webserver:
+    container_name: dagster_webserver
     networks:
-      - dagit_service_network
+      - webserver_service_network
     build:
       context: .
-      dockerfile: ${DAGIT_DOCKERFILE}
+      dockerfile: ${WEBSERVER_DOCKERFILE}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -38,7 +48,7 @@ services:
     expose:
       - "3000"
     entrypoint:
-      - dagit
+      - ${WEBSERVER_PACKAGE}
       - -h
       - "0.0.0.0"
       - -p
@@ -57,7 +67,7 @@ services:
   docker_daemon:
     build:
       context: .
-      dockerfile: ${DAGIT_DOCKERFILE}
+      dockerfile: ${WEBSERVER_DOCKERFILE}
     entrypoint:
       - dagster-daemon
       - run
@@ -70,12 +80,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - dagit_service_network
+      - webserver_service_network
     depends_on:
       - docker_postgresql
       - dagster_grpc_server
 
 networks:
-  dagit_service_network:
+  webserver_service_network:
     driver: bridge
-    name: dagit_service_network
+    name: webserver_service_network
