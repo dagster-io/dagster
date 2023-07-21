@@ -16,7 +16,7 @@ description: I/O Managers determine how to store asset/op outputs and load asset
   </a> guide.
 </Note>
 
-I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
+I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that helps you reduce boilerplate code and easily change where your data is stored.
 
 <center>
   <Image
@@ -81,6 +81,33 @@ Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3
 ### I/O managers are resources
 
 I/O managers are provided through the [resources](/concepts/resources) system which means you can supply different I/O managers for the same assets or ops in different situations. For example, you might use an in-memory I/O manager for unit-testing and an Amazon S3 I/O manager in production.
+
+
+### When to use I/O managers
+
+I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. However, they are not required, nor are they the best option, in all scenarios.
+
+Some assets do not need an I/O manager. For example, you may write an asset that executes a Snowflake query that creates a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
+
+```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
+@asset(deps=[orders])
+def returns():
+    conn = get_snowflake_connection()
+    conn.execute(
+        "CREATE TABLE returns AS SELECT * from orders WHERE status = 'RETURNED'"
+    )
+```
+
+Other reasons you may not want to use I/O managers:
+
+- You want to run a SQL query that creates or updates a table in a database (the above example).
+- Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
+- You have unique and custom storage requirements for each asset.
+- Your assets won't fit in memory (for example, a database table with billions of rows).
+- You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
+- You simply prefer to have the reading and writing code explicitly defined in each asset.
+
+As a general rule, if you find yourself getting tripped up writing your pipeline to use I/O managers, or you find yourself making your pipeline more complicated in order to use I/O managers, you will likely have more success not using I/O managers. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
 
 ---
 
