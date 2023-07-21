@@ -222,7 +222,7 @@ const ExpandablePartitionName = ({
         style={{transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)'}}
       />
       <div>{partitionName}</div>
-      <div>{assetCount === 1 ? `(Waiting on 1 asset)` : `Waiting on ${assetCount} assets`}</div>
+      <div>{assetCount === 1 ? `(Waiting on 1 asset)` : `(Waiting on ${assetCount} assets)`}</div>
     </PartitionNameButton>
   );
 };
