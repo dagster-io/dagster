@@ -56,6 +56,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
     assert dagster_project_dir.exists()
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
+    assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
 
     subprocess.run(["dbt", "compile"], cwd=dbt_project_dir, check=True)
 
@@ -105,6 +106,7 @@ def test_project_scaffold_command_with_runtime_manifest(
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
     assert not dbt_project_dir.joinpath("target", "manifest.json").exists()
+    assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
 
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
