@@ -34,6 +34,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_datadog_tests*"]),
-    install_requires=["dagster==1.4.0", "datadog"],
+    install_requires=["dagster==1.4.1", "datadog"],
     zip_safe=False,
 )

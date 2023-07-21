@@ -37,7 +37,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "acryl-datahub[datahub-rest, datahub-kafka]<=0.10.2",
-        "dagster==1.4.0",
+        "dagster==1.4.1",
         "packaging",
         "requests",
     ],
