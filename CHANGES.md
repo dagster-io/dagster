@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.4.2 / 0.20.2 (libraries)
+
+### Bugfixes
+
+- Fixes a bug in `dagster-dbt` that was preventing it from correctly materializing subselections of dbt asset.
+
 # 1.4.1 / 0.20.1 (libraries)
 
 ### Bugfixes
