@@ -32,7 +32,7 @@ from .asset_utils import (
     default_freshness_policy_fn,
     get_deps,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator
+from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 from .utils import (
     ASSET_RESOURCE_TYPES,
     get_node_info_by_dbt_unique_id_from_manifest,
@@ -149,7 +149,7 @@ def get_dbt_multi_asset_args(
             is_required=False,
             metadata={  # type: ignore
                 **dagster_dbt_translator.get_metadata(node_info),
-                MANIFEST_METADATA_KEY: manifest,
+                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
             group_name=dagster_dbt_translator.get_group_name(node_info),
