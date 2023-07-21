@@ -96,14 +96,19 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
           if (partitionKeysOrError?.__typename === 'PartitionKeys') {
             partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
               const target = [...(parentUpdated[partitionKey] || [])];
-              target.push(...(condition.parentAssetKeys || []));
+              target.push(...(updatedAssetKeys || []));
               parentUpdated[partitionKey] = target;
+            });
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(parentWillupdate[partitionKey] || [])];
+              target.push(...(willUpdateAssetKeys || []));
+              parentWillupdate[partitionKey] = target;
             });
           }
         }
       });
     }
-    return {waitingOn};
+    return {waitingOn, parentUpdated, parentWillupdate};
   }, [selectedEvaluation]);
 
   const headerRight = () => {
@@ -143,7 +148,9 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
         conditionResults={conditionResults}
         conditionToPartitions={conditionToPartitions}
         maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
+        parentOutdatedWaitingOnAssetKeys={assetKeyDetails.waitingOn}
+        parentUpdatedAssetKeys={assetKeyDetails.parentUpdated}
+        parentWillUpdateAssetKeys={assetKeyDetails.parentWillupdate}
       />
     </Box>
   );

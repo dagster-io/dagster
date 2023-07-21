@@ -6,6 +6,7 @@ import {AssetKey} from '../types';
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
 import {ParentUpdatedLink} from './ParentUpdatedLink';
+import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnPartitionAssetKeysLink} from './WaitingOnPartitionAssetKeysLink';
 import {AutoMateralizeWithConditionFragment} from './types/GetEvaluationsQuery.types';
@@ -38,6 +39,8 @@ interface ConditionsWithPartitionsProps {
   maxMaterializationsPerMinute: number;
   conditionToPartitions: Record<ConditionType, string[]>;
   parentOutdatedWaitingOnAssetKeys: Record<string, AssetKey[]>;
+  parentUpdatedAssetKeys: Record<string, AssetKey[]>;
+  parentWillUpdateAssetKeys: Record<string, AssetKey[]>;
 }
 
 export const ConditionsWithPartitions = ({
@@ -45,6 +48,8 @@ export const ConditionsWithPartitions = ({
   conditionToPartitions,
   maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
+  parentUpdatedAssetKeys,
+  parentWillUpdateAssetKeys,
 }: ConditionsWithPartitionsProps) => {
   const buildRightElement = (
     partitionKeys: string[],
@@ -75,9 +80,16 @@ export const ConditionsWithPartitions = ({
           <Condition
             text="Upstream data has changed since latest materialization"
             met={conditionResults.has('ParentMaterializedAutoMaterializeCondition')}
-            rightElement={buildRightElement(
-              conditionToPartitions['ParentMaterializedAutoMaterializeCondition'],
-            )}
+            rightElement={
+              Object.keys(parentUpdatedAssetKeys).length +
+                Object.keys(parentWillUpdateAssetKeys).length >
+              0 ? (
+                <ParentUpdatedPartitionLink
+                  updatedAssetKeys={parentUpdatedAssetKeys}
+                  willUpdateAssetKeys={parentWillUpdateAssetKeys}
+                />
+              ) : null
+            }
           />
           <Condition
             text="Required to meet this asset's freshness policy"

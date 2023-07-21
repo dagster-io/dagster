@@ -19,16 +19,29 @@ import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {AssetLink} from '../AssetLink';
 import {AssetKey} from '../types';
 
+type AssetPartitionDetails = Record<string, {updated: AssetKey[]; willUpdate: AssetKey[]}>;
 interface Props {
-  assetKeysByPartition: Record<string, AssetKey[]>;
+  updatedAssetKeys: Record<string, AssetKey[]>;
+  willUpdateAssetKeys: Record<string, AssetKey[]>;
 }
 
-export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) => {
+export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [queryString, setQueryString] = React.useState('');
   const queryLowercase = queryString.toLocaleLowerCase();
 
-  const partitionNames = Object.keys(assetKeysByPartition);
+  // combine keys of updatedAssetKeys and willUpdateAssetKeys in to a set with use memo
+  const partitionNames = React.useMemo(() => {
+    const partitionNames = new Set<string>();
+    Object.keys(updatedAssetKeys).forEach((partitionName) => {
+      partitionNames.add(partitionName);
+    });
+    Object.keys(willUpdateAssetKeys).forEach((partitionName) => {
+      partitionNames.add(partitionName);
+    });
+    return Array.from(partitionNames);
+  }, [updatedAssetKeys, willUpdateAssetKeys]);
+
   const count = partitionNames.length;
 
   const filteredPartitionNames = React.useMemo(() => {
@@ -59,18 +72,21 @@ export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) =
       );
     }
 
-    const visiblePartitions = {} as Record<string, AssetKey[]>;
+    const visiblePartitions = {} as AssetPartitionDetails;
     filteredPartitionNames.forEach((partitionName) => {
-      visiblePartitions[partitionName] = assetKeysByPartition[partitionName]!;
+      visiblePartitions[partitionName] = {
+        updated: updatedAssetKeys[partitionName] || [],
+        willUpdate: willUpdateAssetKeys[partitionName] || [],
+      };
     });
 
-    return <VirtualizedPartitionsWaitingOnAssetList assetKeysByPartition={visiblePartitions} />;
+    return <VirtualizedPartitionsUpdatedAssetList assetPartitionDetails={visiblePartitions} />;
   };
 
   return (
     <>
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <Tag intent="warning">{label}</Tag>
+        <Tag>{label}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
           <Caption>View details</Caption>
         </ButtonLink>
@@ -109,8 +125,8 @@ export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) =
   );
 };
 
-interface VirtualizedPartitionsWaitingOnAssetListProps {
-  assetKeysByPartition: Record<string, AssetKey[]>;
+interface VirtualizedPartitionsUpdatedAssetListProps {
+  assetPartitionDetails: AssetPartitionDetails;
 }
 
 type Row =
@@ -120,11 +136,11 @@ type Row =
       expanded: boolean;
       assetCount: number;
     }
-  | {type: 'asset-key'; assetKey: AssetKey};
+  | {type: 'updated-asset-key' | 'will-update-asset-key'; assetKey: AssetKey};
 
-const VirtualizedPartitionsWaitingOnAssetList = ({
-  assetKeysByPartition,
-}: VirtualizedPartitionsWaitingOnAssetListProps) => {
+const VirtualizedPartitionsUpdatedAssetList = ({
+  assetPartitionDetails,
+}: VirtualizedPartitionsUpdatedAssetListProps) => {
   const [expandedPartitions, setExpandedPartitions] = React.useState<Set<string>>(
     () => new Set([]),
   );
@@ -132,16 +148,29 @@ const VirtualizedPartitionsWaitingOnAssetList = ({
 
   const allRows = React.useMemo(() => {
     const rows = [] as Row[];
-    Object.entries(assetKeysByPartition).forEach(([partitionName, assetKeys]) => {
+    Object.entries(assetPartitionDetails).forEach(([partitionName, {updated, willUpdate}]) => {
       const expanded = expandedPartitions.has(partitionName);
-      rows.push({type: 'partition-name', partitionName, expanded, assetCount: assetKeys.length});
+      rows.push({
+        type: 'partition-name',
+        partitionName,
+        expanded,
+        assetCount: updated.length + willUpdate.length,
+      });
       if (expanded) {
-        const assetRows: Row[] = assetKeys.map((assetKey) => ({type: 'asset-key', assetKey}));
-        rows.push(...assetRows);
+        const updatedRows: Row[] = updated.map((assetKey) => ({
+          type: 'updated-asset-key',
+          assetKey,
+        }));
+        rows.push(...updatedRows);
+        const willUpdateRows: Row[] = willUpdate.map((assetKey) => ({
+          type: 'will-update-asset-key',
+          assetKey,
+        }));
+        rows.push(...willUpdateRows);
       }
     });
     return rows;
-  }, [assetKeysByPartition, expandedPartitions]);
+  }, [assetPartitionDetails, expandedPartitions]);
 
   const rowVirtualizer = useVirtualizer({
     count: allRows.length,
@@ -188,9 +217,15 @@ const VirtualizedPartitionsWaitingOnAssetList = ({
                     assetCount={row.assetCount}
                     onToggle={onToggle}
                   />
+                ) : row.type === 'updated-asset-key' ? (
+                  <Box padding={{left: 24}}>
+                    <AssetLink path={row.assetKey.path} icon="asset" />
+                    &nbsp; (Updated)
+                  </Box>
                 ) : (
                   <Box padding={{left: 24}}>
                     <AssetLink path={row.assetKey.path} icon="asset" />
+                    &nbsp; (Will update)
                   </Box>
                 )}
               </Box>
@@ -222,7 +257,7 @@ const ExpandablePartitionName = ({
         style={{transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)'}}
       />
       <div>{partitionName}</div>
-      <div>{assetCount === 1 ? `(Waiting on 1 asset)` : `Waiting on ${assetCount} assets`}</div>
+      <div>{assetCount === 1 ? `(1 parent updated)` : `(${assetCount} parents updated)`}</div>
     </PartitionNameButton>
   );
 };

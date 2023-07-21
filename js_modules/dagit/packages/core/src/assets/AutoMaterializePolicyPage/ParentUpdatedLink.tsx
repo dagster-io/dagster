@@ -67,7 +67,7 @@ export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props
       );
     }
 
-    return <VirtualizedWaitingOnAssetList assetKeyDetails={filteredAssetKeys} />;
+    return <VirtualizedUpdatedAssetList assetKeyDetails={filteredAssetKeys} />;
   };
 
   return (
@@ -105,11 +105,11 @@ export const ParentUpdatedLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props
   );
 };
 
-interface VirtualizedWaitingOnAssetListProps {
+interface VirtualizedUpdatedAssetListProps {
   assetKeyDetails: AssetKeyDetail[];
 }
 
-const VirtualizedWaitingOnAssetList = ({assetKeyDetails}: VirtualizedWaitingOnAssetListProps) => {
+const VirtualizedUpdatedAssetList = ({assetKeyDetails}: VirtualizedUpdatedAssetListProps) => {
   const container = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
