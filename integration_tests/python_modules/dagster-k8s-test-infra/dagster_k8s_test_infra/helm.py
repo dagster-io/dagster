@@ -751,6 +751,7 @@ def helm_chart_for_k8s_run_launcher(
                     "pollIntervalSeconds": 5,
                     "startTimeoutSeconds": 60,
                     "maxResumeRunAttempts": 3,
+                    "freeSlotsAfterRunEndSeconds": 300,
                 }
                 if run_monitoring
                 else {},
