@@ -139,25 +139,21 @@ def test_dbt_with_partial_parse() -> None:
 
 
 def test_dbt_cli_subsetted_execution() -> None:
+    dbt_select = " ".join(
+        [
+            "fqn:dagster_dbt_test_project.subdir.least_caloric",
+            "fqn:dagster_dbt_test_project.sort_by_calories",
+        ]
+    )
+
     @dbt_assets(
         manifest=manifest,
-        select=(
-            "fqn:dagster_dbt_test_project.subdir.least_caloric"
-            " fqn:dagster_dbt_test_project.sort_by_calories"
-        ),
+        select=dbt_select,
     )
     def my_dbt_assets(context, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
 
-        assert dbt_cli_invocation.process.args == [
-            "dbt",
-            "run",
-            "--select",
-            (
-                "fqn:dagster_dbt_test_project.subdir.least_caloric"
-                " fqn:dagster_dbt_test_project.sort_by_calories"
-            ),
-        ]
+        assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
 
         yield from dbt_cli_invocation.stream()
 
@@ -171,19 +167,20 @@ def test_dbt_cli_subsetted_execution() -> None:
 
 
 def test_dbt_cli_asset_selection() -> None:
+    dbt_select = [
+        "fqn:dagster_dbt_test_project.subdir.least_caloric",
+        "fqn:dagster_dbt_test_project.sort_by_calories",
+    ]
+
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
 
-        assert dbt_cli_invocation.process.args == [
-            "dbt",
-            "run",
-            "--select",
-            (
-                "fqn:dagster_dbt_test_project.subdir.least_caloric"
-                " fqn:dagster_dbt_test_project.sort_by_calories"
-            ),
-        ]
+        dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
+        *dbt_args, dbt_select_args = dbt_cli_args
+
+        assert dbt_args == ["dbt", "run", "--select"]
+        assert set(dbt_select_args.split()) == set(dbt_select)
 
         yield from dbt_cli_invocation.stream()
 
