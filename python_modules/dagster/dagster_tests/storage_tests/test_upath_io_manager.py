@@ -237,7 +237,7 @@ def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(
             partition_key=partition_key,
         )
 
-    result = materialize([downstream_asset])
+    result = materialize([upstream_asset.to_source_asset(), downstream_asset])
 
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
