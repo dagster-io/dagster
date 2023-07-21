@@ -549,7 +549,9 @@ def get_subset_selection_for_context(
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
-    is_subsetted_execution = len(context.selected_output_names) != len(context.assets_def.keys)
+    is_subsetted_execution = len(context.selected_output_names) != len(
+        context.assets_def.node_keys_by_output_name
+    )
     if not is_subsetted_execution:
         logger.info(
             "A dbt subsetted execution is not being performed. Using the default dbt selection"
