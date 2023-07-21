@@ -218,6 +218,31 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     assert set(downstream_asset_data.keys()) == {"A", "B"}
 
 
+def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(
+    dummy_io_manager: DummyIOManager,
+):
+    upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
+
+    @asset(partitions_def=upstream_partitions_def)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())})
+    def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
+        return upstream_asset
+
+    for partition_key in ["A", "B"]:
+        materialize(
+            [upstream_asset],
+            partition_key=partition_key,
+        )
+
+    result = materialize([downstream_asset])
+
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert set(downstream_asset_data.keys()) == {"A", "B"}
+
+
 def test_upath_io_manager_static_partitions_with_dot():
     partitions_def = StaticPartitionsDefinition(["0.0-to-1.0", "1.0-to-2.0"])
 
