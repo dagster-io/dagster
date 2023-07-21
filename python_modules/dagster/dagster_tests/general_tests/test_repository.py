@@ -200,12 +200,19 @@ def test_asset_value_loader_with_metadata():
     def asset1():
         ...
 
+    @asset(metadata={"return": 20})
+    def asset2():
+        ...
+
     @repository
     def repo():
-        return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
+        return with_resources([asset1, asset2], resource_defs={"io_manager": my_io_manager})
 
     value = repo.load_asset_value(AssetKey("asset1"))
     assert value == 5
 
     value = repo.load_asset_value(AssetKey("asset1"), metadata={"return": 10})
     assert value == 10
+
+    value = repo.load_asset_value(AssetKey("asset2"))
+    assert value == 5
