@@ -32,7 +32,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_shell_tests*"]),
-    install_requires=["dagster==1.4.1"],
+    install_requires=["dagster==1.4.2"],
     extras_require={"test": ["psutil"]},
     zip_safe=False,
 )
