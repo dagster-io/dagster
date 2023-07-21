@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import signal
 import subprocess
@@ -44,7 +42,7 @@ def ipc_write_unary_response(output_file: str, obj: NamedTuple) -> None:
 
 
 def read_unary_response(
-    output_file: str, timeout: int = 30, ipc_process: Optional[Popen[bytes]] = None
+    output_file: str, timeout: int = 30, ipc_process: "Optional[Popen[bytes]]" = None
 ) -> Optional[NamedTuple]:
     messages = list(ipc_read_event_stream(output_file, timeout=timeout, ipc_process=ipc_process))
     check.invariant(len(messages) == 1)
@@ -141,7 +139,7 @@ def _process_line(file_pointer: TextIOWrapper, sleep_interval: float = 0.1) -> O
         sleep(sleep_interval)
 
 
-def _poll_process(ipc_process: Optional[Popen[bytes]]) -> None:
+def _poll_process(ipc_process: "Optional[Popen[bytes]]") -> None:
     if not ipc_process:
         return
     if ipc_process.poll() is not None:
@@ -153,7 +151,7 @@ def _poll_process(ipc_process: Optional[Popen[bytes]]) -> None:
 
 
 def ipc_read_event_stream(
-    file_path: str, timeout: int = 30, ipc_process: Optional[Popen[bytes]] = None
+    file_path: str, timeout: int = 30, ipc_process: "Optional[Popen[bytes]]" = None
 ) -> Iterator[Optional[NamedTuple]]:
     # Wait for file to be ready
     sleep_interval = 0.1
@@ -197,7 +195,7 @@ def ipc_read_event_stream(
 # https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 
 
-def open_ipc_subprocess(parts: Sequence[str], **kwargs: Any) -> Popen[bytes]:
+def open_ipc_subprocess(parts: Sequence[str], **kwargs: Any) -> "Popen[bytes]":
     """Sets the correct flags to support graceful termination."""
     check.list_param(parts, "parts", str)
 
@@ -212,7 +210,7 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: Any) -> Popen[bytes]:
     )
 
 
-def interrupt_ipc_subprocess(proc: Popen[bytes]) -> None:
+def interrupt_ipc_subprocess(proc: "Popen[bytes]") -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     if sys.platform == "win32":
         proc.send_signal(signal.CTRL_BREAK_EVENT)

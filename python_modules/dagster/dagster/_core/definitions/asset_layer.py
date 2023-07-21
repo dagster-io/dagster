@@ -812,8 +812,6 @@ def _subset_assets_defs(
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
-    from dagster._core.definitions import AssetsDefinition
-
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, cast
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
@@ -16,6 +15,8 @@ from ..utils import (
 from .run_lifecycle import create_valid_pipeline_run
 
 if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
+
     from dagster_graphql.schema.runs import GrapheneLaunchRunSuccess
     from dagster_graphql.schema.util import ResolveInfo
 

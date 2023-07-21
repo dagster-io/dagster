@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, cast
 
 import pendulum
 
@@ -13,13 +13,15 @@ from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..base import Executor
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.step import ExecutionStep
 
 DEFAULT_SLEEP_SECONDS = float(
     os.environ.get("DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS", "1.0")

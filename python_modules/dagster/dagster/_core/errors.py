@@ -15,8 +15,6 @@ The wrapped exceptions include additional context for the original exceptions, i
 Dagster runtime.
 """
 
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
@@ -257,9 +255,9 @@ def raise_execution_interrupts() -> Iterator[None]:
 
 @contextmanager
 def user_code_error_boundary(
-    error_cls: Type[DagsterUserCodeExecutionError],
+    error_cls: Type["DagsterUserCodeExecutionError"],
     msg_fn: Callable[[], str],
-    log_manager: Optional[DagsterLogManager] = None,
+    log_manager: Optional["DagsterLogManager"] = None,
     **kwargs: object,
 ) -> Iterator[None]:
     """Wraps the execution of user-space code in an error boundary. This places a uniform
