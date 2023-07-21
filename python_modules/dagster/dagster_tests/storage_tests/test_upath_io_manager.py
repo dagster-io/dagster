@@ -237,7 +237,10 @@ def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path:
     def upstream_asset(context: AssetExecutionContext) -> str:
         return context.partition_key
 
-    @asset(ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())}, io_manager_def=my_io_manager)
+    @asset(
+        ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())},
+        io_manager_def=my_io_manager,
+    )
     def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
         return upstream_asset
 
