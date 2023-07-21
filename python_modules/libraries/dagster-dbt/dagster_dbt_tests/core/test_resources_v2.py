@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import List, Optional
@@ -7,14 +8,15 @@ import pytest
 from dagster import (
     AssetObservation,
     FloatMetadataValue,
+    OpExecutionContext,
     Output,
     TextMetadataValue,
     job,
     materialize,
     op,
 )
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster_dbt import dbt_assets
+from dagster._core.events import ASSET_EVENTS
+from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
@@ -23,10 +25,11 @@ from dagster_dbt.core.resources_v2 import (
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
-from ..conftest import TEST_PROJECT_DIR
-
 pytest.importorskip("dbt.version", minversion="1.4")
 
+TEST_PROJECT_DIR = os.fspath(
+    Path(__file__).parent.joinpath("..", "dbt_projects", "test_dagster_metadata")
+)
 
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
 with open(manifest_path, "r") as f:
@@ -224,7 +227,10 @@ def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
 def test_dbt_cli_op_execution() -> None:
     @op
     def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
-        dbt.cli(["run"], context=context, manifest=manifest).wait()
+        dbt.cli(["build"], context=context, manifest=manifest).wait()
+
+        # invoke without context
+        dbt.cli(["build"], manifest=manifest).wait()
 
     @job
     def my_dbt_job():
@@ -237,6 +243,33 @@ def test_dbt_cli_op_execution() -> None:
     )
 
     assert result.success
+    assert all(event.event_type not in ASSET_EVENTS for event in result.all_events)
+
+
+def test_dbt_cli_op_yield_materializations() -> None:
+    @op
+    def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context, manifest=manifest).stream(
+            yield_asset_materialization=True
+        )
+
+        # invoke without context
+        yield from dbt.cli(["build"], manifest=manifest).stream(yield_asset_materialization=True)
+
+        yield Output(None)
+
+    @job
+    def my_dbt_job():
+        my_dbt_op()
+
+    result = my_dbt_job.execute_in_process(
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        }
+    )
+
+    assert result.success
+    assert any(event.event_type in ASSET_EVENTS for event in result.all_events)
 
 
 @pytest.mark.parametrize(

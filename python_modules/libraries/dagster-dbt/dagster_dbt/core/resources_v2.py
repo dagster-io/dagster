@@ -19,6 +19,7 @@ from typing import (
 import dateutil.parser
 import orjson
 from dagster import (
+    AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
     ConfigurableResource,
@@ -73,9 +74,11 @@ class DbtCliEventMessage:
     @public
     def to_default_asset_events(
         self,
+        *,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
-    ) -> Iterator[Union[Output, AssetObservation]]:
+        yield_asset_materialization: bool = False,
+    ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
@@ -103,14 +106,23 @@ class DbtCliEventMessage:
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             duration_seconds = (finished_at - started_at).total_seconds()
 
-            yield Output(
-                value=None,
-                output_name=output_name_fn(event_node_info),
-                metadata={
-                    "unique_id": unique_id,
-                    "Execution Duration": duration_seconds,
-                },
-            )
+            metadata = {
+                "unique_id": unique_id,
+                "Execution Duration": duration_seconds,
+            }
+
+            if not yield_asset_materialization:
+                yield Output(
+                    value=None,
+                    output_name=output_name_fn(event_node_info),
+                    metadata=metadata,
+                )
+            else:
+                manifest_node_info = manifest["nodes"].get(unique_id)
+                yield AssetMaterialization(
+                    asset_key=dagster_dbt_translator.get_asset_key(manifest_node_info),
+                    metadata=metadata,
+                )
         elif node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
 
@@ -214,7 +226,7 @@ class DbtCliInvocation:
                 manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["build"], manifest=manifest).wait()
         """
         self._raise_on_error()
 
@@ -238,35 +250,58 @@ class DbtCliInvocation:
                 manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest, raise_on_error=False)
+                dbt_cli_invocation = dbt.cli(["build"], manifest=manifest, raise_on_error=False)
 
                 if dbt_cli_invocation.is_successful():
                     ...
         """
         return self.process.wait() == 0
 
-    @public
-    def stream(self) -> Iterator[Union[Output, AssetObservation]]:
-        """Stream the events from the dbt CLI process and convert them to Dagster events.
+    def stream(
+        self, yield_asset_materialization: bool = False
+    ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation]]:
+        """Stream the events from the dbt CLI invocation and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetObservation]]: A set of corresponding Dagster events.
-                - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetObservations for test results.
+            Iterator[Union[Output, AssetMaterialization, AssetObservation]]: A set of corresponding
+                Dagster events created from the dbt CLI invocation. For dbt refables (e.g. models,
+                seeds, snapshots), we emit AssetMaterialization or Output's. For dbt tests, we emit
+                AssetObservations.
 
         Examples:
             .. code-block:: python
 
                 from pathlib import Path
+
                 from dagster_dbt import DbtCliResource, dbt_assets
+
 
                 @dbt_assets(manifest=Path("target", "manifest.json"))
                 def my_dbt_assets(context, dbt: DbtCliResource):
-                    yield from dbt.cli(["run"], context=context).stream()
+                    yield from dbt.cli(["build"], context=context).stream()
+
+            .. code-block:: python
+
+                import json
+                from pathlib import Path
+
+                from dagster import Output, op
+                from dagster_dbt import DbtCliResource
+
+                manifest = json.loads(Path("target", "manifest.json").read_text())
+
+
+                @op
+                def my_dbt_op(dbt: DbtCliResource):
+                    yield from dbt.cli(["build"], manifest=manifest).stream(yield_asset_materialization=True)
+                    yield Output(None)
+
         """
         for event in self.stream_raw_events():
             yield from event.to_default_asset_events(
-                manifest=self.manifest, dagster_dbt_translator=self.dagster_dbt_translator
+                manifest=self.manifest,
+                dagster_dbt_translator=self.dagster_dbt_translator,
+                yield_asset_materialization=yield_asset_materialization,
             )
 
     @public
@@ -325,7 +360,7 @@ class DbtCliInvocation:
                 manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["build"], manifest=manifest).wait()
 
                 # Retrieve the run_results.json artifact.
                 run_results = dbt_cli_invocation.get_artifact("run_results.json")
@@ -459,9 +494,10 @@ class DbtCliResource(ConfigurableResource):
                 from pathlib import Path
                 from dagster_dbt import DbtCliResource, dbt_assets
 
+
                 @dbt_assets(manifest=Path("target", "manifest.json"))
                 def my_dbt_assets(context, dbt: DbtCliResource):
-                    yield from dbt.cli(["run"], context=context).stream()
+                    yield from dbt.cli(["build"], context=context).stream()
         """
         target_path = self._get_unique_target_path(context=context)
         env = {

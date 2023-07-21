@@ -21,12 +21,15 @@ from typing import (
 import dateutil
 from dagster import (
     AssetKey,
+    AssetMaterialization,
+    AssetObservation,
     AssetsDefinition,
     AutoMaterializePolicy,
     FreshnessPolicy,
     In,
     OpExecutionContext,
     Out,
+    Output,
     PartitionsDefinition,
     PermissiveConfig,
     _check as check,
@@ -34,10 +37,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.events import (
-    AssetMaterialization,
-    AssetObservation,
     CoercibleToAssetKeyPrefix,
-    Output,
 )
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -246,7 +246,7 @@ def _stream_event_iterator(
     ],
     kwargs: Dict[str, Any],
     manifest_json: Mapping[str, Any],
-) -> Iterator[Union[AssetObservation, Output]]:
+) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
     emitted.
     """
