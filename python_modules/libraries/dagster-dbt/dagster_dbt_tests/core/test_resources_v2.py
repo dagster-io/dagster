@@ -36,43 +36,43 @@ with open(manifest_path, "r") as f:
 @pytest.mark.parametrize("command", ["run", "parse"])
 def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
-    dbt_cli_task = dbt.cli([command], manifest=manifest)
+    dbt_cli_invocation = dbt.cli([command], manifest=manifest)
 
-    assert dbt_cli_task.process.args == ["dbt", *global_config_flags, command]
-    assert dbt_cli_task.is_successful()
-    assert dbt_cli_task.process.returncode == 0
+    assert dbt_cli_invocation.process.args == ["dbt", *global_config_flags, command]
+    assert dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.process.returncode == 0
 
 
 def test_dbt_cli_failure() -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_task = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
+    dbt_cli_invocation = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
 
     with pytest.raises(DagsterDbtCliRuntimeError):
-        dbt_cli_task.wait()
+        dbt_cli_invocation.wait()
 
-    assert not dbt_cli_task.is_successful()
-    assert dbt_cli_task.process.returncode == 2
+    assert not dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.process.returncode == 2
 
 
 def test_dbt_cli_get_artifact() -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    dbt_cli_task_1 = dbt.cli(["run"], manifest=manifest).wait()
-    dbt_cli_task_2 = dbt.cli(["compile"], manifest=manifest).wait()
+    dbt_cli_invocation_1 = dbt.cli(["run"], manifest=manifest).wait()
+    dbt_cli_invocation_2 = dbt.cli(["compile"], manifest=manifest).wait()
 
     # `dbt run` produces a manifest.json and run_results.json
-    manifest_json_1 = dbt_cli_task_1.get_artifact("manifest.json")
+    manifest_json_1 = dbt_cli_invocation_1.get_artifact("manifest.json")
     assert manifest_json_1
-    assert dbt_cli_task_1.get_artifact("run_results.json")
+    assert dbt_cli_invocation_1.get_artifact("run_results.json")
 
     # `dbt compile` produces a manifest.json and run_results.json
-    manifest_json_2 = dbt_cli_task_2.get_artifact("manifest.json")
+    manifest_json_2 = dbt_cli_invocation_2.get_artifact("manifest.json")
     assert manifest_json_2
-    assert dbt_cli_task_2.get_artifact("run_results.json")
+    assert dbt_cli_invocation_2.get_artifact("run_results.json")
 
     # `dbt compile` does not produce a sources.json
     with pytest.raises(Exception):
-        dbt_cli_task_2.get_artifact("sources.json")
+        dbt_cli_invocation_2.get_artifact("sources.json")
 
     # Artifacts are stored in separate paths by manipulating DBT_TARGET_PATH.
     # As a result, their contents should be different, and newer artifacts
@@ -83,10 +83,17 @@ def test_dbt_cli_get_artifact() -> None:
 def test_dbt_profile_configuration() -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
 
-    dbt_cli_task = dbt.cli(["parse"], manifest=manifest).wait()
+    dbt_cli_invocation = dbt.cli(["parse"], manifest=manifest).wait()
 
-    assert dbt_cli_task.process.args == ["dbt", "parse", "--profile", "duckdb", "--target", "dev"]
-    assert dbt_cli_task.is_successful()
+    assert dbt_cli_invocation.process.args == [
+        "dbt",
+        "parse",
+        "--profile",
+        "duckdb",
+        "--target",
+        "dev",
+    ]
+    assert dbt_cli_invocation.is_successful()
 
 
 def test_dbt_without_partial_parse() -> None:
@@ -94,12 +101,12 @@ def test_dbt_without_partial_parse() -> None:
 
     dbt.cli(["clean"], manifest=manifest).wait()
 
-    dbt_cli_compile_without_partial_parse_task = dbt.cli(["compile"], manifest=manifest)
+    dbt_cli_compile_without_partial_parse_invocation = dbt.cli(["compile"], manifest=manifest)
 
-    assert dbt_cli_compile_without_partial_parse_task.is_successful()
+    assert dbt_cli_compile_without_partial_parse_invocation.is_successful()
     assert any(
         "Unable to do partial parsing" in event.raw_event["info"]["msg"]
-        for event in dbt_cli_compile_without_partial_parse_task.stream_raw_events()
+        for event in dbt_cli_compile_without_partial_parse_invocation.stream_raw_events()
     )
 
 
@@ -109,11 +116,11 @@ def test_dbt_with_partial_parse() -> None:
     dbt.cli(["clean"], manifest=manifest).wait()
 
     # Run `dbt compile` to generate the partial parse file
-    dbt_cli_compile_task = dbt.cli(["compile"], manifest=manifest).wait()
+    dbt_cli_compile_invocation = dbt.cli(["compile"], manifest=manifest).wait()
 
     # Copy the partial parse file to the target directory
     partial_parse_file_path = Path(
-        TEST_PROJECT_DIR, dbt_cli_compile_task.target_path, PARTIAL_PARSE_FILE_NAME
+        TEST_PROJECT_DIR, dbt_cli_compile_invocation.target_path, PARTIAL_PARSE_FILE_NAME
     )
     original_target_path = Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME)
 
@@ -121,12 +128,12 @@ def test_dbt_with_partial_parse() -> None:
     shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
 
     # Assert that partial parsing was used.
-    dbt_cli_compile_with_partial_parse_task = dbt.cli(["compile"], manifest=manifest).wait()
+    dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"], manifest=manifest).wait()
 
-    assert dbt_cli_compile_with_partial_parse_task.is_successful()
+    assert dbt_cli_compile_with_partial_parse_invocation.is_successful()
     assert not any(
         "Unable to do partial parsing" in event.raw_event["info"]["msg"]
-        for event in dbt_cli_compile_with_partial_parse_task.stream_raw_events()
+        for event in dbt_cli_compile_with_partial_parse_invocation.stream_raw_events()
     )
 
 
@@ -140,11 +147,11 @@ def test_dbt_cli_subsetted_execution() -> None:
     )
     def my_dbt_assets(context):
         dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
-        dbt_cli_task = dbt.cli(["run"], context=context)
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
-        dbt_cli_task.wait()
+        dbt_cli_invocation.wait()
 
-        assert dbt_cli_task.process.args == [
+        assert dbt_cli_invocation.process.args == [
             "dbt",
             "run",
             "--select",
@@ -153,9 +160,9 @@ def test_dbt_cli_subsetted_execution() -> None:
                 " fqn:dagster_dbt_test_project.sort_by_calories"
             ),
         ]
-        assert dbt_cli_task.process.returncode is not None
+        assert dbt_cli_invocation.process.returncode is not None
 
-        yield from dbt_cli_task.stream()
+        yield from dbt_cli_invocation.stream()
 
     assert materialize([my_dbt_assets]).success
 
@@ -165,18 +172,18 @@ def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
     def my_dbt_assets(context):
         dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
-        dbt_cli_task = dbt.cli(["run"], context=context)
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
-        dbt_cli_task.wait()
+        dbt_cli_invocation.wait()
 
         expected_args = ["dbt", "run", "--select", "fqn:*"]
         if exclude:
             expected_args += ["--exclude", exclude]
 
-        assert dbt_cli_task.process.args == expected_args
-        assert dbt_cli_task.process.returncode is not None
+        assert dbt_cli_invocation.process.args == expected_args
+        assert dbt_cli_invocation.process.returncode is not None
 
-        yield from dbt_cli_task.stream()
+        yield from dbt_cli_invocation.stream()
 
     assert materialize([my_dbt_assets]).success
 

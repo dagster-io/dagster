@@ -81,8 +81,7 @@ def dbt_assets(
     """
     check.inst_param(manifest, "manifest", (Path, dict))
     if isinstance(manifest, Path):
-        with manifest.open("rb") as handle:
-            manifest = cast(Mapping[str, Any], orjson.loads(handle.read()))
+        manifest = cast(Mapping[str, Any], orjson.loads(manifest.read_bytes()))
 
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest

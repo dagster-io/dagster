@@ -204,14 +204,14 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
+                from pathlib import Path
+
                 from dagster_dbt import DbtCliResource
 
-                with open("path/to/manifest.json", "r") as f:
-                    manifest = json.load(f)
-
+                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
         """
         self._raise_on_error()
 
@@ -227,16 +227,16 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
+                from pathlib import Path
+
                 from dagster_dbt import DbtCliResource
 
-                with open("path/to/manifest.json", "r") as f:
-                    manifest = json.load(f)
-
+                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest, raise_on_error=False)
 
-                if dbt_cli_task.is_successful():
+                if dbt_cli_invocation.is_successful():
                     ...
         """
         return self.process.wait() == 0
@@ -311,22 +311,21 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
+                from pathlib import Path
+
                 from dagster_dbt import DbtCliResource
 
-                with open("path/to/manifest.json", "r") as f:
-                    manifest = json.load(f)
-
+                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
 
                 # Retrieve the run_results.json artifact.
-                if dbt_cli_task.is_successful():
-                    run_results = dbt_cli_task.get_artifact("run_results.json")
+                run_results = dbt_cli_invocation.get_artifact("run_results.json")
         """
         artifact_path = self.target_path.joinpath(artifact)
-        with artifact_path.open() as handle:
-            return orjson.loads(handle.read())
+
+        return orjson.loads(artifact_path.read_bytes())
 
     def _raise_on_error(self) -> None:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
@@ -443,7 +442,8 @@ class DbtCliResource(ConfigurableResource):
             context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
 
         Returns:
-            DbtCliInvocation: A task that can be used to retrieve the output of the dbt CLI command.
+            DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
+                dbt CLI command.
 
         Examples:
             .. code-block:: python
