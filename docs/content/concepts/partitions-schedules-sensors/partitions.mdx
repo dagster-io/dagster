@@ -231,7 +231,7 @@ A few rules govern default partition-to-partition dependencies:
 <Note>
 Currently, partition mappings are only supported for <a href="/concepts/assets/software-defined-assets#defining-basic-managed-loading-dependencies">
     managed-loading dependencies
-  </a>{" "}
+</a>{" "}
 </Note>
 
 You can override the default partition dependency rules by providing a <PyObject object="PartitionMapping" /> when specifying a dependency on an asset. For example, here's how to specify that each partition of a daily-partitioned asset depends on the prior day's partition in an upstream asset:
