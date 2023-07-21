@@ -15,6 +15,7 @@ from dagster import (
 )
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster_dbt import dbt_assets
+from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCliEventMessage,
@@ -139,33 +140,64 @@ def test_dbt_with_partial_parse() -> None:
 
 
 def test_dbt_cli_subsetted_execution() -> None:
+    dbt_select = " ".join(
+        [
+            "fqn:dagster_dbt_test_project.subdir.least_caloric",
+            "fqn:dagster_dbt_test_project.sort_by_calories",
+        ]
+    )
+
     @dbt_assets(
         manifest=manifest,
-        select=(
-            "fqn:dagster_dbt_test_project.subdir.least_caloric"
-            " fqn:dagster_dbt_test_project.sort_by_calories"
-        ),
+        select=dbt_select,
     )
-    def my_dbt_assets(context):
-        dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    def my_dbt_assets(context, dbt: DbtCliResource):
         dbt_cli_task = dbt.cli(["run"], context=context)
-
         dbt_cli_task.wait()
 
-        assert dbt_cli_task.process.args == [
-            "dbt",
-            "run",
-            "--select",
-            (
-                "fqn:dagster_dbt_test_project.subdir.least_caloric"
-                " fqn:dagster_dbt_test_project.sort_by_calories"
-            ),
-        ]
-        assert dbt_cli_task.process.returncode is not None
+        assert dbt_cli_task.process.args == ["dbt", "run", "--select", dbt_select]
 
         yield from dbt_cli_task.stream()
 
-    assert materialize([my_dbt_assets]).success
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
+
+
+def test_dbt_cli_asset_selection() -> None:
+    dbt_select = [
+        "fqn:dagster_dbt_test_project.subdir.least_caloric",
+        "fqn:dagster_dbt_test_project.sort_by_calories",
+    ]
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context, dbt: DbtCliResource):
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
+        dbt_cli_invocation.wait()
+
+        dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
+        *dbt_args, dbt_select_args = dbt_cli_args
+
+        assert dbt_args == ["dbt", "run", "--select"]
+        assert set(dbt_select_args.split()) == set(dbt_select)
+
+        yield from dbt_cli_invocation.stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+        selection=build_dbt_asset_selection(
+            [my_dbt_assets],
+            dbt_select=" ".join(dbt_select),
+        ),
+    )
+    assert result.success
 
 
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
