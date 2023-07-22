@@ -50,7 +50,12 @@ from dagster._core.storage.dagster_run import (
     DagsterRunStatus,
     RunsFilter,
 )
-from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+)
 from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
@@ -812,7 +817,7 @@ def _get_failed_and_downstream_asset_partitions(
                 asset_partition in asset_backfill_data.target_subset
                 for asset_partition in asset_partitions
             ),
-            _get_failed_asset_partitions(instance_queryer, backfill_id),
+            _get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph),
             evaluation_time=backfill_start_time,
         ),
         asset_graph,
@@ -903,7 +908,9 @@ def execute_asset_backfill_iteration_inner(
     )
 
     run_requests = build_run_requests(
-        asset_partitions_to_request, asset_graph, {**run_tags, BACKFILL_ID_TAG: backfill_id}
+        asset_partitions=asset_partitions_to_request,
+        asset_graph=asset_graph,
+        run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
     )
 
     if request_roots:
@@ -978,7 +985,7 @@ def should_backfill_atomic_asset_partitions_unit(
 
 
 def _get_failed_asset_partitions(
-    instance_queryer: CachingInstanceQueryer, backfill_id: str
+    instance_queryer: CachingInstanceQueryer, backfill_id: str, asset_graph: ExternalAssetGraph
 ) -> Sequence[AssetKeyPartitionKey]:
     """Returns asset partitions that materializations were requested for as part of the backfill, but
     will not be materialized.
@@ -996,16 +1003,62 @@ def _get_failed_asset_partitions(
     result: List[AssetKeyPartitionKey] = []
 
     for run in runs:
-        partition_key = run.tags.get(PARTITION_NAME_TAG)
-        planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
-            run_id=run.run_id
-        )
-        completed_asset_keys = instance_queryer.get_current_materializations_for_run(
-            run_id=run.run_id
-        )
-        result.extend(
-            AssetKeyPartitionKey(asset_key, partition_key)
-            for asset_key in planned_asset_keys - completed_asset_keys
-        )
+        if (
+            run.tags.get(ASSET_PARTITION_RANGE_START_TAG)
+            and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+            and run.tags.get(PARTITION_NAME_TAG) is None
+        ):
+            """it was a chunked backfill run previously, so we need to reconstruct the partition keys
+            """
+            planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
+                run_id=run.run_id
+            )
+            check.invariant(
+                len(planned_asset_keys) == 1, "chunked backfill run should only have one asset key"
+            )
+            completed_asset_keys = instance_queryer.get_current_materializations_for_run(
+                run_id=run.run_id
+            )
+            failed_asset_keys = planned_asset_keys - completed_asset_keys
+
+            if failed_asset_keys:
+                asset_key = next(iter(failed_asset_keys))
+                partition_range = PartitionKeyRange(
+                    start=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_START_TAG)),
+                    end=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_END_TAG)),
+                )
+                result.extend(
+                    _get_asset_key_partition_key_in_range(
+                        asset_key, partition_range, asset_graph, instance_queryer
+                    )
+                )
+        else:
+            """a regular backfill run that run on a single partition"""
+            partition_key = run.tags.get(PARTITION_NAME_TAG)
+            planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
+                run_id=run.run_id
+            )
+            completed_asset_keys = instance_queryer.get_current_materializations_for_run(
+                run_id=run.run_id
+            )
+            result.extend(
+                AssetKeyPartitionKey(asset_key, partition_key)
+                for asset_key in planned_asset_keys - completed_asset_keys
+            )
 
     return result
+
+
+def _get_asset_key_partition_key_in_range(
+    asset_key: AssetKey,
+    partition_key_range: PartitionKeyRange,
+    asset_graph: AssetGraph,
+    dynamic_partitions_store: DynamicPartitionsStore,
+) -> Sequence[AssetKeyPartitionKey]:
+    partition_def = asset_graph.get_partitions_def(asset_key)
+    partition_keys_in_range = check.not_none(partition_def).get_partition_keys_in_range(
+        partition_key_range, dynamic_partitions_store
+    )
+    return [
+        AssetKeyPartitionKey(asset_key, partition_key) for partition_key in partition_keys_in_range
+    ]
