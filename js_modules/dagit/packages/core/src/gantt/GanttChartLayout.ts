@@ -393,7 +393,7 @@ const positionUntimedBoxes = (boxes: GanttChartBox[], beginUntimedBoxesAtX = 0) 
       }
     }
 
-    box.x = Math.max(box.x, beginUntimedBoxesAtX, parentX);
+    box.x = Math.max(box.x, beginUntimedBoxesAtX || LEFT_INSET, parentX);
 
     const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
     for (const child of box.children) {
