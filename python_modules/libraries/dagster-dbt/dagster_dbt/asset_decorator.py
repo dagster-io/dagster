@@ -75,10 +75,39 @@ def dbt_assets(
             from dagster import OpExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
+
             @dbt_assets(manifest=Path("target", "manifest.json"))
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                ...
+
+
+            @dbt_assets(
+                manifest=Path("target", "manifest.json"),
+                dagster_dbt_translator=CustomDagsterDbtTranslator(),
+            )
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                yield from dbt.cli(["build"], context=context).stream()
     """
+    check.inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
     check.inst_param(manifest, "manifest", (Path, dict))
     if isinstance(manifest, Path):
         manifest = cast(Mapping[str, Any], orjson.loads(manifest.read_bytes()))
