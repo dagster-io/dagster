@@ -87,6 +87,18 @@ def test_repository_construction():
     assert dagster_test_repository
 
 
+@repository(metadata={"string": "foo", "integer": 123})
+def metadata_repository():
+    return []
+
+
+def test_repository_metadata():
+    assert metadata_repository.repository_metadata == {
+        "string": "foo",
+        "integer": 123,
+    }
+
+
 @repository
 def empty_repository():
     return []

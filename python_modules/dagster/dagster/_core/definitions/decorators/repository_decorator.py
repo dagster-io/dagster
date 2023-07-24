@@ -17,6 +17,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -57,6 +58,7 @@ class _Repository:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        metadata: Optional[MetadataMapping] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -64,6 +66,7 @@ class _Repository:
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
+        self.metadata = check.opt_nullable_mapping_param(metadata, "metadata", key_type=str)
         self.default_executor_def = check.opt_inst_param(
             default_executor_def, "default_executor_def", ExecutorDefinition
         )
@@ -189,6 +192,7 @@ class _Repository:
                 self.name,
                 repository_definitions=list(_flatten(repository_definitions)),
                 description=self.description,
+                metadata=self.metadata,
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
                 _top_level_resources=self.top_level_resources,
@@ -197,6 +201,7 @@ class _Repository:
             repository_def = RepositoryDefinition(
                 name=self.name,
                 description=self.description,
+                repository_metadata=self.metadata,
                 repository_data=repository_data,
             )
 
@@ -225,6 +230,7 @@ def repository(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
+    metadata: Optional[MetadataMapping] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
@@ -243,6 +249,7 @@ def repository(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    metadata: Optional[MetadataMapping] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -381,6 +388,7 @@ def repository(
     return _Repository(
         name=name,
         description=description,
+        metadata=metadata,
         default_executor_def=default_executor_def,
         default_logger_defs=default_logger_defs,
         top_level_resources=_top_level_resources,
