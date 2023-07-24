@@ -14,6 +14,8 @@ from typing import (
     Tuple,
     cast,
 )
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 import pendulum
 
@@ -272,6 +274,11 @@ class AssetDaemonContext:
         return (
             # the parent must have the same partitioning
             self.asset_graph.have_same_partitioning(child_key, parent_key)
+            # the parent must have a simple partition mapping to the child
+            and (
+                not self.asset_graph.is_partitioned(parent_key) or
+                isinstance(self.asset_graph.get_partition_mapping(child_key, parent_key), (TimeWindowPartitionMapping, IdentityPartitionMapping))
+            )
             # the parent must be in the same repository to be materialized alongside the candidate
             and (
                 not isinstance(self.asset_graph, ExternalAssetGraph)
