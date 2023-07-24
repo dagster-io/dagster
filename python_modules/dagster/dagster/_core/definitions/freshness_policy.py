@@ -20,6 +20,7 @@ class FreshnessConstraint(NamedTuple):
     required_data_time: datetime.datetime
     required_by_time: datetime.datetime
 
+
 class FreshnessMinutes(NamedTuple):
     overdue_minutes: float
     lag_minutes: float
@@ -188,7 +189,7 @@ class FreshnessPolicy(
         if evaluation_tick is None:
             return None
         required_time = evaluation_tick - self.maximum_lag_delta
-        
+
         return FreshnessMinutes(
             lag_minutes=max(0.0, (evaluation_tick - data_time).total_seconds() / 60),
             overdue_minutes=max(0.0, (required_time - data_time).total_seconds() / 60),

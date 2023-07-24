@@ -6,10 +6,11 @@ import {createAppCache} from '../../app/AppCache';
 import {
   LiveDataForNodeMaterialized,
   LiveDataForNodeMaterializedAndOverdue,
-  LiveDataForNodeMaterializedAndFresh,
 } from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
+  AssetFreshnessInfo,
   FreshnessPolicy,
+  buildAssetFreshnessInfo,
   buildAssetKey,
   buildAssetNode,
   buildFreshnessPolicy,
@@ -21,7 +22,8 @@ import {OverduePopoverQuery, OverduePopoverQueryVariables} from '../types/Overdu
 // eslint-disable-next-line import/no-default-export
 export default {component: OverdueTag};
 
-const TEST_TIME = 1689561000000;
+const TEST_LAG_MINUTES = 4 * 60 + 30;
+const TEST_TIME = Date.now();
 const LAST_MATERIALIZATION_TIME = TEST_TIME - 4 * 60 * 1000;
 
 const mockLiveData = {
@@ -32,29 +34,9 @@ const mockLiveData = {
   },
 };
 
-const mockFreshnessPolicyCron = buildFreshnessPolicy({
-  cronSchedule: '30 2 * * 1', // Monday at 2:30 Central
-  cronScheduleTimezone: 'America/Chicago',
-  maximumLagMinutes: 5,
-  lastEvaluationTimestamp: `${TEST_TIME}`,
-});
-
-const mockFreshnessPolicy = buildFreshnessPolicy({
-  cronSchedule: null,
-  cronScheduleTimezone: null,
-  maximumLagMinutes: 24 * 60,
-  lastEvaluationTimestamp: `${TEST_TIME}`,
-});
-
-const mockFreshnessPolicyMet = buildFreshnessPolicy({
-  cronSchedule: null,
-  cronScheduleTimezone: null,
-  maximumLagMinutes: 365 * 24 * 60,
-  lastEvaluationTimestamp: `${TEST_TIME}`,
-});
-
 function buildOverduePopoverMock(
   policy: FreshnessPolicy,
+  freshnessInfo: Partial<AssetFreshnessInfo>,
   hasUsedData = true,
 ): MockedResponse<OverduePopoverQuery, OverduePopoverQueryVariables> {
   return {
@@ -70,10 +52,11 @@ function buildOverduePopoverMock(
         assetNodeOrError: buildAssetNode({
           id: 'test.py.repo.["inp8"]',
           freshnessPolicy: policy,
+          freshnessInfo: buildAssetFreshnessInfo(freshnessInfo),
           assetMaterializationUsedData: hasUsedData
             ? [
                 {
-                  timestamp: `${TEST_TIME - 24 * 60 * 60 * 1000}`,
+                  timestamp: `${TEST_TIME - TEST_LAG_MINUTES * 60 * 1000}`,
                   assetKey: buildAssetKey({
                     path: ['inp1'],
                   }),
@@ -101,30 +84,58 @@ function buildOverduePopoverMock(
 }
 
 export const OverdueCronSchedule = () => {
+  const mockFreshnessPolicyCron = buildFreshnessPolicy({
+    cronSchedule: '30 2 * * 1', // Monday at 2:30 Central
+    cronScheduleTimezone: 'America/Chicago',
+    maximumLagMinutes: 5,
+    lastEvaluationTimestamp: `${TEST_TIME}`,
+  });
+  const freshnessInfo = {
+    __typename: 'AssetFreshnessInfo' as const,
+    currentMinutesLate: Math.max(0, TEST_LAG_MINUTES - mockFreshnessPolicyCron.maximumLagMinutes),
+    currentLagMinutes: TEST_LAG_MINUTES,
+  };
+
   return (
     <MockedProvider
       cache={createAppCache()}
-      mocks={[buildOverduePopoverMock(mockFreshnessPolicyCron)]}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicyCron, freshnessInfo)]}
     >
       <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
         <OverdueTag
           assetKey={{path: ['inp8']}}
-          liveData={mockLiveData}
+          liveData={{...mockLiveData, freshnessInfo}}
           policy={mockFreshnessPolicyCron}
         />
-        {' Hover for details, times are relative to last cron tick (eg: "earlier")'}
+        Hover for details, times are relative to last cron tick (eg: earlier). Note: The relative
+        materialization times in the modal are not mocked to align with the cron schedule tick.
       </Box>
     </MockedProvider>
   );
 };
 
 export const OverdueNoSchedule = () => {
+  const mockFreshnessPolicy = buildFreshnessPolicy({
+    cronSchedule: null,
+    cronScheduleTimezone: null,
+    maximumLagMinutes: 60,
+    lastEvaluationTimestamp: `${TEST_TIME}`,
+  });
+  const freshnessInfo = {
+    __typename: 'AssetFreshnessInfo' as const,
+    currentMinutesLate: Math.max(0, TEST_LAG_MINUTES - mockFreshnessPolicy.maximumLagMinutes),
+    currentLagMinutes: TEST_LAG_MINUTES,
+  };
+
   return (
-    <MockedProvider cache={createAppCache()} mocks={[buildOverduePopoverMock(mockFreshnessPolicy)]}>
+    <MockedProvider
+      cache={createAppCache()}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicy, freshnessInfo)]}
+    >
       <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
         <OverdueTag
           assetKey={{path: ['inp8']}}
-          liveData={mockLiveData}
+          liveData={{...mockLiveData, freshnessInfo}}
           policy={mockFreshnessPolicy}
         />
         {' Hover for details, times are relative to now (eg: "ago")'}
@@ -134,15 +145,29 @@ export const OverdueNoSchedule = () => {
 };
 
 export const OverdueNoUpstreams = () => {
+  const mockFreshnessPolicy = buildFreshnessPolicy({
+    cronSchedule: null,
+    cronScheduleTimezone: null,
+    maximumLagMinutes: 2,
+    lastEvaluationTimestamp: `${TEST_TIME}`,
+  });
+
+  const currentLagMinutes = (TEST_TIME - LAST_MATERIALIZATION_TIME) / (60 * 1000);
+  const freshnessInfo = {
+    __typename: 'AssetFreshnessInfo' as const,
+    currentMinutesLate: Math.max(0, currentLagMinutes - mockFreshnessPolicy.maximumLagMinutes),
+    currentLagMinutes,
+  };
+
   return (
     <MockedProvider
       cache={createAppCache()}
-      mocks={[buildOverduePopoverMock(mockFreshnessPolicy, false)]}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicy, freshnessInfo, false)]}
     >
       <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
         <OverdueTag
           assetKey={{path: ['inp8']}}
-          liveData={mockLiveData}
+          liveData={{...mockLiveData, freshnessInfo}}
           policy={mockFreshnessPolicy}
         />
         {' Hover for details. "derived from upstream data" omitted from description.'}
@@ -152,39 +177,63 @@ export const OverdueNoUpstreams = () => {
 };
 
 export const NeverMaterialized = () => {
+  const mockFreshnessPolicy = buildFreshnessPolicy({
+    cronSchedule: null,
+    cronScheduleTimezone: null,
+    maximumLagMinutes: 24 * 60,
+    lastEvaluationTimestamp: `${TEST_TIME}`,
+  });
+  const freshnessInfo = {
+    __typename: 'AssetFreshnessInfo' as const,
+    currentMinutesLate: null,
+    currentLagMinutes: null,
+  };
+
   return (
     <MockedProvider cache={createAppCache()} mocks={[]}>
       <OverdueTag
         assetKey={{path: ['inp8']}}
         policy={mockFreshnessPolicy}
-        liveData={{
-          ...mockLiveData,
-          freshnessInfo: {__typename: 'AssetFreshnessInfo', currentMinutesLate: null},
-        }}
+        liveData={{...mockLiveData, freshnessInfo}}
       />
     </MockedProvider>
   );
 };
 
 export const Fresh = () => {
+  const mockFreshnessPolicyMet = buildFreshnessPolicy({
+    cronSchedule: null,
+    cronScheduleTimezone: null,
+    maximumLagMinutes: 24 * 60,
+    lastEvaluationTimestamp: `${TEST_TIME}`,
+  });
+  const freshnessInfo = {
+    __typename: 'AssetFreshnessInfo' as const,
+    currentMinutesLate: 0,
+    currentLagMinutes: TEST_LAG_MINUTES,
+  };
+
   return (
     <MockedProvider
       cache={createAppCache()}
-      mocks={[buildOverduePopoverMock(mockFreshnessPolicyMet)]}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicyMet, freshnessInfo)]}
     >
       <OverdueTag
         assetKey={{path: ['inp8']}}
         policy={mockFreshnessPolicyMet}
-        liveData={{
-          ...mockLiveData,
-          freshnessInfo: {__typename: 'AssetFreshnessInfo', currentMinutesLate: 0},
-        }}
+        liveData={{...mockLiveData, freshnessInfo}}
       />
     </MockedProvider>
   );
 };
 
-export const NotLate = () => {
+export const NoFreshnessInfo = () => {
+  const mockFreshnessPolicy = buildFreshnessPolicy({
+    cronSchedule: null,
+    cronScheduleTimezone: null,
+    maximumLagMinutes: 24 * 60,
+    lastEvaluationTimestamp: `${TEST_TIME}`,
+  });
   return (
     <MockedProvider cache={createAppCache()} mocks={[]}>
       <OverdueTag

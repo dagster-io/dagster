@@ -138,8 +138,8 @@ def test_policies_available_equals_evaluation_time(
         evaluation_time=evaluation_time,
     )
 
-    assert getattr(result, 'overdue_minutes', None) == expected_minutes_overdue
-    assert getattr(result, 'lag_minutes', None) == expected_minutes_lag
+    assert getattr(result, "overdue_minutes", None) == expected_minutes_overdue
+    assert getattr(result, "lag_minutes", None) == expected_minutes_lag
 
 
 def test_invalid_freshness_policies():
