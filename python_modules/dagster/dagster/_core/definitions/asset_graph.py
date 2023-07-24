@@ -678,6 +678,11 @@ class InternalAssetGraph(AssetGraph):
 def sort_key_for_asset_partition(
     asset_graph: AssetGraph, asset_partition: AssetKeyPartitionKey
 ) -> int:
+    """Returns an integer sort key such that asset partitions are sorted in the order in which they
+    should be materialized. For assets without a time window partition dimension, this is always 0.
+    Assets with a time window partition dimension will be sorted from newest to oldest, unless they
+    have a self-dependency, in which case they are sorted from oldest to newest.
+    """
     partitions_def = asset_graph.get_partitions_def(asset_partition.asset_key)
     time_partitions_def = get_time_partitions_def(partitions_def)
     if time_partitions_def is None:

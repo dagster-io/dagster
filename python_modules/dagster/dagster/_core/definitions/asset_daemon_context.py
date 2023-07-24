@@ -50,24 +50,6 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
-class ConditionsContainer(NamedTuple):
-    asset_partitions: AbstractSet[AssetKeyPartitionKey]
-    asset_partitions_by_condition: Mapping[
-        AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]
-    ]
-
-    @staticmethod
-    def from_conditions(
-        asset_partitions_by_conditions: Mapping[
-            AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]
-        ]
-    ) -> "ConditionsContainer":
-        return ConditionsContainer(
-            asset_partitions=set().union(*asset_partitions_by_conditions.values()),
-            asset_partitions_by_condition=asset_partitions_by_conditions,
-        )
-
-
 class AssetDaemonContext:
     def __init__(
         self,
@@ -137,6 +119,32 @@ class AssetDaemonContext:
             for asset_key in self.target_asset_keys
             for parent in self.asset_graph.get_parents(asset_key)
         } | self.target_asset_keys
+
+    def get_implicit_auto_materialize_policy(
+        self, asset_key: AssetKey
+    ) -> Optional[AutoMaterializePolicy]:
+        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
+        """
+        auto_materialize_policy = self.asset_graph.get_auto_materialize_policy(asset_key)
+        if auto_materialize_policy is None:
+            time_partitions_def = get_time_partitions_def(
+                self.asset_graph.get_partitions_def(asset_key)
+            )
+            if time_partitions_def is None:
+                max_materializations_per_minute = None
+            elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+                max_materializations_per_minute = 24
+            else:
+                max_materializations_per_minute = 1
+            return AutoMaterializePolicy(
+                on_missing=True,
+                on_new_parent_data=not bool(
+                    self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+                ),
+                for_freshness=True,
+                max_materializations_per_minute=max_materializations_per_minute,
+            )
+        return auto_materialize_policy
 
     @cached_method
     def _get_never_handled_and_newly_handled_root_asset_partitions(
@@ -542,32 +550,6 @@ class AssetDaemonContext:
                     visited.add(neighbor_key)
 
         return condition_mapping, set().union(*will_materialize_mapping.values())
-
-    def get_implicit_auto_materialize_policy(
-        self, asset_key: AssetKey
-    ) -> Optional[AutoMaterializePolicy]:
-        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
-        """
-        auto_materialize_policy = self.asset_graph.get_auto_materialize_policy(asset_key)
-        if auto_materialize_policy is None:
-            time_partitions_def = get_time_partitions_def(
-                self.asset_graph.get_partitions_def(asset_key)
-            )
-            if time_partitions_def is None:
-                max_materializations_per_minute = None
-            elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
-                max_materializations_per_minute = 24
-            else:
-                max_materializations_per_minute = 1
-            return AutoMaterializePolicy(
-                on_missing=True,
-                on_new_parent_data=not bool(
-                    self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
-                ),
-                for_freshness=True,
-                max_materializations_per_minute=max_materializations_per_minute,
-            )
-        return auto_materialize_policy
 
     def evaluate(
         self,
