@@ -66,6 +66,8 @@ def dbt_assets(
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
+            dbt models, seeds, etc. to asset keys and asset metadata.
 
     Examples:
         .. code-block:: python

@@ -516,7 +516,7 @@ def load_assets_from_dbt_project(
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
-        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allow customizing how to map
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
             dbt models, seeds, etc. to asset keys and asset metadata.
         key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all assets loaded
             from the dbt project. Does not apply to input assets. Deprecated: use
@@ -683,7 +683,7 @@ def load_assets_from_dbt_manifest(
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
-        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allow customizing how to map
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
             dbt models, seeds, etc. to asset keys and asset metadata.
         key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all assets loaded
             from the dbt project. Does not apply to input assets. Deprecated: use
