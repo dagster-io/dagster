@@ -43,20 +43,19 @@ export const OverdueTag: React.FC<{
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
 }> = ({liveData, policy, assetKey}) => {
-  console.log(liveData);
-
   if (!liveData?.freshnessInfo) {
     return null;
   }
 
   const {freshnessInfo} = liveData;
-  const policyDescription = freshnessPolicyDescription(policy);
 
   if (freshnessInfo.currentMinutesLate === null) {
     return (
       <Tooltip
         content={
-          <div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${policyDescription}`}</div>
+          <div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${freshnessPolicyDescription(
+            policy,
+          )}`}</div>
         }
       >
         <Tag intent="danger" icon="warning">
@@ -67,12 +66,10 @@ export const OverdueTag: React.FC<{
   }
 
   if (freshnessInfo.currentMinutesLate === 0) {
-    return policyDescription ? (
-      <Tooltip content={<div style={{maxWidth: 400}}>{policyDescription}</div>}>
+    return (
+      <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
         <Tag intent="success" icon="check_circle" />
-      </Tooltip>
-    ) : (
-      <Tag intent="success" icon="check_circle" />
+      </OverdueLineagePopover>
     );
   }
 

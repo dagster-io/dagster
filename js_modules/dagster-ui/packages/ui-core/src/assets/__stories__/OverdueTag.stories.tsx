@@ -46,6 +46,13 @@ const mockFreshnessPolicy = buildFreshnessPolicy({
   lastEvaluationTimestamp: `${TEST_TIME}`,
 });
 
+const mockFreshnessPolicyMet = buildFreshnessPolicy({
+  cronSchedule: null,
+  cronScheduleTimezone: null,
+  maximumLagMinutes: 365 * 24 * 60,
+  lastEvaluationTimestamp: `${TEST_TIME}`,
+});
+
 function buildOverduePopoverMock(
   policy: FreshnessPolicy,
   hasUsedData = true,
@@ -161,11 +168,17 @@ export const NeverMaterialized = () => {
 
 export const Fresh = () => {
   return (
-    <MockedProvider cache={createAppCache()} mocks={[]}>
+    <MockedProvider
+      cache={createAppCache()}
+      mocks={[buildOverduePopoverMock(mockFreshnessPolicyMet)]}
+    >
       <OverdueTag
         assetKey={{path: ['inp8']}}
-        policy={mockFreshnessPolicy}
-        liveData={LiveDataForNodeMaterializedAndFresh}
+        policy={mockFreshnessPolicyMet}
+        liveData={{
+          ...mockLiveData,
+          freshnessInfo: {__typename: 'AssetFreshnessInfo', currentMinutesLate: 0},
+        }}
       />
     </MockedProvider>
   );
