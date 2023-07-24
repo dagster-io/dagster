@@ -1,5 +1,7 @@
 # ruff: isort: skip_file
 
+MANIFEST_PATH = ""
+
 
 def scope_load_assets_from_dbt_project():
     # start_load_assets_from_dbt_project
@@ -69,28 +71,93 @@ def scope_schedule_assets(dbt_assets):
 
 
 def scope_downstream_asset():
-    from dagster import AssetIn, asset
+    from dagster import OpExecutionContext, DbtCliResource
+    from dagster_dbt import dbt_assets
+
+    @dbt_assets(manifest=MANIFEST_PATH)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        ...
 
     # start_downstream_asset
+    from dagster_dbt import get_asset_key_for_model
+    from dagster import asset
+
+    @asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
+    def my_downstream_asset():
+        ...
+
+    # end_downstream_asset_pandas_df_manager
+
+
+def scope_downstream_asset_pandas_df_manager():
+    from dagster import OpExecutionContext, DbtCliResource
+    from dagster_dbt import dbt_assets
+
+    @dbt_assets(manifest=MANIFEST_PATH)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        ...
+
+    # start_downstream_asset_pandas_df_manager
+    from dagster_dbt import get_asset_key_for_model
+    from dagster import AssetIn, asset
+
     @asset(
-        ins={"my_dbt_model": AssetIn(input_manager_key="pandas_df_manager")},
+        ins={
+            "my_dbt_model": AssetIn(
+                input_manager_key="pandas_df_manager",
+                key=get_asset_key_for_model([my_dbt_assets], "my_dbt_model"),
+            )
+        },
     )
     def my_downstream_asset(my_dbt_model):
         # my_dbt_model is a Pandas dataframe
         return my_dbt_model.where(foo="bar")
 
-    # end_downstream_asset
+    # end_downstream_asset_pandas_df_manager
 
 
 def scope_upstream_asset():
-    from dagster import asset
-
     # start_upstream_asset
-    @asset(key_prefix="jaffle_shop")
+    from dagster import asset, OpExecutionContext
+    from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
+
+    @dbt_assets(manifest=MANIFEST_PATH)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        ...
+
+    @asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
     def orders():
         return ...
 
     # end_upstream_asset
+
+
+def scope_upstream_multi_asset():
+    from dagster import OpExecutionContext
+    from dagster_dbt import DbtCliResource, dbt_assets
+
+    @dbt_assets(manifest=MANIFEST_PATH)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        ...
+
+    # start_upstream_multi_asset
+    from dagster import multi_asset, AssetOut, Output
+    from dagster_dbt import get_asset_keys_by_output_name_for_source
+
+    @multi_asset(
+        outs={
+            name: AssetOut(key=asset_key)
+            for name, asset_key in get_asset_keys_by_output_name_for_source(
+                [my_dbt_assets], "jaffle_shop"
+            ).items()
+        }
+    )
+    def jaffle_shop(context):
+        output_names = list(context.selected_output_names)
+        yield Output(value=..., output_name=output_names[0])
+        yield Output(value=..., output_name=output_names[1])
+
+    # end_upstream_multi_asset
 
 
 def scope_input_manager():
