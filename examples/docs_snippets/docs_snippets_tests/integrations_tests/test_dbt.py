@@ -1,14 +1,18 @@
+from path import Path
+import json
 from dagster_dbt import (
-    DbtCliClientResource,
     DbtCloudClientResource,
     load_assets_from_dbt_cloud_job,
-    load_assets_from_dbt_project,
+    dbt_assets,
 )
 
-from dagster import Definitions, asset, file_relative_path, with_resources
+from dagster import asset
 from dagster._core.definitions import materialize
 from dagster._core.instance_for_test import environ
-from docs_snippets.integrations.dbt.dbt import scope_schedule_assets
+from docs_snippets.integrations.dbt.dbt import (
+    scope_schedule_assets_dbt_and_downstream,
+    scope_schedule_assets_dbt_only,
+)
 from docs_snippets.integrations.dbt.dbt_cloud import (
     scope_define_instance,
     scope_schedule_dbt_cloud_assets,
@@ -16,24 +20,16 @@ from docs_snippets.integrations.dbt.dbt_cloud import (
 
 
 def test_scope_schedule_assets_can_load():
-    DBT_PROJECT_PATH = file_relative_path(
-        __file__, "../../../assets_dbt_python/dbt_project"
-    )
-    DBT_PROFILES_DIR = file_relative_path(
-        __file__,
-        "../../../assets_dbt_python/dbt_project/config",
-    )
-    dbt_assets = with_resources(
-        load_assets_from_dbt_project(DBT_PROJECT_PATH),
-        {
-            "dbt": DbtCliClientResource(
-                project_dir=DBT_PROJECT_PATH,
-                profiles_dir=DBT_PROFILES_DIR,
-            )
-        },
-    )
+    MANIFEST_PATH = Path(__file__).dirname() / "manifest.json"
+    with open(MANIFEST_PATH) as f:
+        manifest = json.load(f)
 
-    scope_schedule_assets(dbt_assets)
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    scope_schedule_assets_dbt_only(my_dbt_assets)
+    scope_schedule_assets_dbt_and_downstream(my_dbt_assets)
 
 
 def test_scope_schedule_dbt_cloud_assets_can_load():
