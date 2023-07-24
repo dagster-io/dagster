@@ -414,6 +414,8 @@ To specify limits on the number of ops/assets tagged with a particular concurren
 
 The concurrency key should match the name that the op/asset is tagged with. For example, if the op/asset is tagged with `dagster/concurrency_key: redshift`, then the concurrency key should be `redshift`.
 
+#### Freeing concurrency slots
+
 With a global concurrency limit set, it is useful to configure your instance to automatically free slots for canceled/failed runs. Certain execution errors can cause steps to exit without freeing an occupied concurrency slot.
 
 To automatically recover from this state, you can configure your instance's run monitoring to automatically free concurrency slots for runs that have reached some terminal state (e.g. failed or canceled runs). 
