@@ -8,4 +8,5 @@ export type RunDetailsFragment = {
   startTime: number | null;
   endTime: number | null;
   status: Types.RunStatus;
+  hasConcurrencyKeySlots: boolean;
 };
