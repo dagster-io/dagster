@@ -124,13 +124,11 @@ export const ConditionsWithPartitions = ({
 
 interface ConditionsProps {
   conditionResults: Set<ConditionType>;
-  maxMaterializationsPerMinute: number;
   parentOutdatedWaitingOnAssetKeys: AssetKey[];
 }
 
 export const ConditionsNoPartitions = ({
   conditionResults,
-  maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
 }: ConditionsProps) => {
   return (
@@ -164,16 +162,6 @@ export const ConditionsNoPartitions = ({
               <WaitingOnAssetKeysLink assetKeys={parentOutdatedWaitingOnAssetKeys} />
             ) : null
           }
-        />
-      </CollapsibleSection>
-      <CollapsibleSection header="Discard conditions met">
-        <Condition
-          text={`Exceeds ${
-            maxMaterializationsPerMinute === 1
-              ? '1 materialization'
-              : `${maxMaterializationsPerMinute} materializations`
-          } per minute`}
-          met={conditionResults.has('MaxMaterializationsExceededAutoMaterializeCondition')}
         />
       </CollapsibleSection>
     </>
