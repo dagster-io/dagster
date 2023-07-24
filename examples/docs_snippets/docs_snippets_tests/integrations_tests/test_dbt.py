@@ -1,10 +1,11 @@
-from path import Path
 import json
+
 from dagster_dbt import (
     DbtCloudClientResource,
-    load_assets_from_dbt_cloud_job,
     dbt_assets,
+    load_assets_from_dbt_cloud_job,
 )
+from pathlib import Path
 
 from dagster import asset
 from dagster._core.definitions import materialize
