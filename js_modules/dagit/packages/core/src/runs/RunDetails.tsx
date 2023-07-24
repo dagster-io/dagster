@@ -35,13 +35,13 @@ import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
+import {doneStatuses} from './RunStatuses';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetails.types';
 import {RunFragment} from './types/RunFragments.types';
-import {doneStatuses} from './RunStatuses';
 
 export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
