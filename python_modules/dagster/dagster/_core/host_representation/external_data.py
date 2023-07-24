@@ -61,6 +61,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
+    MetadataMapping,
     MetadataUserInput,
     MetadataValue,
     normalize_metadata,
@@ -108,6 +109,7 @@ class ExternalRepositoryData(
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
+            ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
     )
@@ -122,6 +124,7 @@ class ExternalRepositoryData(
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
+        metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
@@ -154,6 +157,7 @@ class ExternalRepositoryData(
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
             ),
+            metadata=check.opt_nullable_mapping_param(metadata, "metadata", key_type=str),
             utilized_env_vars=check.opt_nullable_mapping_param(
                 utilized_env_vars,
                 "utilized_env_vars",
@@ -1324,6 +1328,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
+        metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
                 EnvVarConsumer(type=EnvVarConsumerType.RESOURCE, name=res_name)

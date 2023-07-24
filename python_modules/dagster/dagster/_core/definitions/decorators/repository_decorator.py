@@ -201,7 +201,7 @@ class _Repository:
             repository_def = RepositoryDefinition(
                 name=self.name,
                 description=self.description,
-                repository_metadata=self.metadata,
+                metadata=self.metadata,
                 repository_data=repository_data,
             )
 

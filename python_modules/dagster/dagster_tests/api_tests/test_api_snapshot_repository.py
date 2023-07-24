@@ -35,6 +35,7 @@ def test_streaming_external_repositories_api_grpc(instance):
 
         assert isinstance(external_repository_data, ExternalRepositoryData)
         assert external_repository_data.name == "bar_repo"
+        assert external_repository_data.metadata == {"string": "foo", "integer": 123}
 
 
 def test_streaming_external_repositories_error(instance):

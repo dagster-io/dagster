@@ -93,10 +93,7 @@ def metadata_repository():
 
 
 def test_repository_metadata():
-    assert metadata_repository.metadata == {
-        "string": "foo",
-        "integer": 123,
-    }
+    assert metadata_repository.metadata == {"string": "foo", "integer": 123}
 
 
 @repository

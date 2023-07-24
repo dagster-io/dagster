@@ -91,8 +91,7 @@ class RepositoryDefinition:
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the
-            repository.
+        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the repository.
     """
 
     def __init__(
@@ -110,7 +109,6 @@ class RepositoryDefinition:
             repository_data, "repository_data", RepositoryData
         )
         self._metadata = check.opt_nullable_mapping_param(metadata, "metadata", key_type=str)
-
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )
