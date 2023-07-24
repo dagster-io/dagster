@@ -25,8 +25,8 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     get_input_event_pointer_tag,
 )
-from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
