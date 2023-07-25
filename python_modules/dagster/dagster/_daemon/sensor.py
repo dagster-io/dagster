@@ -899,8 +899,15 @@ def _fetch_existing_runs(
         return {}
 
     # fetch runs from the DB with only the run key tag
-    # note: while possible to filter more at DB level with tags - it is avoided here due to observed perf problems
-    runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
+    # note: while possible to filter more at DB level with tags - it is avoided here due to observed
+    # perf problems
+    runs_with_run_keys = set()
+    for run_key in run_keys:
+        # do serial fetching, which has better perf than a single query with an IN clause, due to
+        # how the query planner does the runs/run_tags join
+        runs_with_run_keys.update(
+            set(instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_key})))
+        )
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
     valid_runs: List[DagsterRun] = []
