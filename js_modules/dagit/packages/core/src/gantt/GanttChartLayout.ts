@@ -374,20 +374,26 @@ const positionAndSplitBoxes = (
 /** Traverse the graph from the root and place boxes that still have x=0 locations.
 (Unstarted or skipped boxes) so that they appear downstream of running boxes
 we have position / time data for. */
-const positionUntimedBoxes = (boxes: GanttChartBox[], earliestAllowedX: number) => {
-  const unstarted = boxes.filter((box) => box.x === 0);
+const positionUntimedBoxes = (boxes: GanttChartBox[], beginUntimedBoxesAtX = 0) => {
+  // If we have been provided a minimum X position for un-timed boxes (the "future" time
+  // on the far right of the Gantt chart), we only need to visit untimed boxes because
+  // their placement isn't based on their parents. If no "future" time is provided,
+  // (waterfall mode) we visit the whole graph once, placing untimed boxes after their
+  // timed ancestors.
+  const queue = beginUntimedBoxesAtX ? boxes.filter((box) => box.x === 0) : [...boxes];
 
   const visit = (box: GanttChartBox, parentX: number) => {
     if (box.x === 0) {
-      // If we are visiting the box for the first time (by traversing the tree from
-      // another starting box), starting another pass using it as the root is unnecessary.
-      const idx = unstarted.indexOf(box);
+      // If we are visiting the box for the first time and it's still in our queue,
+      // remove that planned "visit". This happens if we reach this box by traversing
+      // the tree from another starting box.
+      const idx = queue.indexOf(box);
       if (idx !== -1) {
-        unstarted.splice(idx, 1);
+        queue.splice(idx, 1);
       }
     }
 
-    box.x = Math.max(box.x, earliestAllowedX, parentX);
+    box.x = Math.max(box.x, beginUntimedBoxesAtX || LEFT_INSET, parentX);
 
     const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
     for (const child of box.children) {
@@ -398,8 +404,8 @@ const positionUntimedBoxes = (boxes: GanttChartBox[], earliestAllowedX: number) 
   };
 
   let box: GanttChartBox | undefined;
-  while ((box = unstarted.shift())) {
-    visit(box, earliestAllowedX);
+  while ((box = queue.shift())) {
+    visit(box, beginUntimedBoxesAtX);
   }
 };
 
@@ -469,10 +475,11 @@ export const adjustLayoutWithRunMetadata = (
       boxes = boxes.filter((b) => !!metadata.steps[b.node.name]?.state);
     }
   } else if (options.mode === GanttChartMode.WATERFALL) {
-    positionAndSplitBoxes(boxes, metadata, (box, _run, runIdx) => ({
-      x: box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0),
+    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+      x: run ? box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0) : 0,
       width: BOX_WIDTH,
     }));
+    positionUntimedBoxes(boxes);
   } else if (options.mode === GanttChartMode.FLAT) {
     positionAndSplitBoxes(boxes, metadata, (box, _run, runIdx) => ({
       x: box.x + (runIdx ? (2 + BOX_WIDTH) * runIdx : 0),
