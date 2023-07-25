@@ -69,7 +69,6 @@ class DataGenerator:
         self.random = Random(seed)
 
     def generate_signup(self, date) -> Signup:
-        # TODO: `date_time_between_dates` is being hijacked by the Faker.seed call
         registered_at = self.fake.date_time_between_dates(date, date + timedelta(days=1))
 
         return Signup(
