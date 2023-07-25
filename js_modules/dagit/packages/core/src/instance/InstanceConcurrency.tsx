@@ -570,7 +570,7 @@ const SET_CONCURRENCY_LIMIT_MUTATION = gql`
   }
 `;
 
-const FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION = gql`
+export const FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION = gql`
   mutation FreeConcurrencySlotsForRun($runId: String!) {
     freeConcurrencySlotsForRun(runId: $runId)
   }
