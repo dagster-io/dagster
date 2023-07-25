@@ -160,6 +160,17 @@ def scope_upstream_multi_asset():
     # end_upstream_multi_asset
 
 
+def scope_existing_asset():
+    # start_upstream_dagster_asset
+    from dagster import asset
+
+    @asset
+    def upstream():
+        ...
+
+    # end_upstream_dagster_asset
+
+
 def scope_input_manager():
     # start_input_manager
     import pandas as pd
