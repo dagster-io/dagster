@@ -117,7 +117,7 @@ setup(
             "pytest-runner==5.2",
             "pytest-xdist==2.1.0",
             "pytest==7.0.1",  # last version supporting python 3.6
-            "responses",
+            "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "yamllint",
