@@ -1,14 +1,15 @@
-import {Box, Colors, Icon, Subheading} from '@dagster-io/ui';
+import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 interface Props {
   header: React.ReactNode;
+  details: JSX.Element | string;
   headerRightSide?: React.ReactNode;
   children: React.ReactNode;
 }
 
-export const CollapsibleSection = ({header, headerRightSide, children}: Props) => {
+export const CollapsibleSection = ({header, details, headerRightSide, children}: Props) => {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   return (
     <Box
@@ -31,6 +32,9 @@ export const CollapsibleSection = ({header, headerRightSide, children}: Props) =
               style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
             />
             <Subheading>{header}</Subheading>
+            <Tooltip content={details} placement="top">
+              <Icon color={Colors.Gray500} name="info" />
+            </Tooltip>
           </Box>
           {headerRightSide}
         </Box>
