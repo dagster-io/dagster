@@ -342,51 +342,6 @@ def my_downstream_asset(my_dbt_model):
     return my_dbt_model.where(foo="bar")
 ```
 
-#### Defining an I/O manager
-
-To materialize your dbt assets, you need to tell Dagster how to handle the assets' inputs and outputs. You can do this using an [I/O manager](/concepts/io-management/io-managers).
-
-The implementation of your I/O manager depends on:
-
-- The Python object you want to use to represent your table, and
-- The database that dbt writes tables to
-
-A simple I/O manager implementation that loads data from a dbt-managed table into a Pandas dataframe would look something like the following:
-
-```python startafter=start_input_manager endbefore=end_input_manager file=/integrations/dbt/dbt.py dedent=4
-import pandas as pd
-
-from dagster import ConfigurableIOManager
-
-class PandasIOManager(ConfigurableIOManager):
-    connection_str: str
-
-    def handle_output(self, context, obj):
-        # dbt handles outputs for us
-        pass
-
-    def load_input(self, context) -> pd.DataFrame:
-        """Load the contents of a table as a pandas DataFrame."""
-        table_name = context.asset_key.path[-1]
-        return pd.read_sql(f"SELECT * FROM {table_name}", con=self.connection_str)
-```
-
-Once the I/O manager is defined, you can supply it like any other resource when calling <PyObject object="with_resources"/> :
-
-```python startafter=start_input_manager_resources endbefore=end_input_manager_resources file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=load_assets_from_dbt_project(...),
-    resources={
-        "dbt": DbtCliResource(project_dir="path/to/dbt_project"),
-        "pandas_df_manager": PandasIOManager(connection_str=...),
-    },
-)
-```
-
 ---
 
 ## Related
