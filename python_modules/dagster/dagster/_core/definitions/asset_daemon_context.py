@@ -7,15 +7,12 @@ from typing import (
     Dict,
     Iterable,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
     Tuple,
     cast,
 )
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 import pendulum
 
@@ -26,7 +23,9 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_conditions_for_asset_key,
 )
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
@@ -276,8 +275,11 @@ class AssetDaemonContext:
             self.asset_graph.have_same_partitioning(child_key, parent_key)
             # the parent must have a simple partition mapping to the child
             and (
-                not self.asset_graph.is_partitioned(parent_key) or
-                isinstance(self.asset_graph.get_partition_mapping(child_key, parent_key), (TimeWindowPartitionMapping, IdentityPartitionMapping))
+                not self.asset_graph.is_partitioned(parent_key)
+                or isinstance(
+                    self.asset_graph.get_partition_mapping(child_key, parent_key),
+                    (TimeWindowPartitionMapping, IdentityPartitionMapping),
+                )
             )
             # the parent must be in the same repository to be materialized alongside the candidate
             and (
