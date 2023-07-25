@@ -141,6 +141,8 @@ In Dagster, each asset definition has attributes. Dagster automatically generate
 - [Customizing group names](#customizing-group-names)
 - [Customizing descriptions](#customizing-descriptions)
 - [Customizing metadata](#customizing-metadata)
+- [Customizing auto materialize policies](#customizing-auto-materialize-policies)
+- [Customizing freshness policies](#customizing-freshness-policies)
 
 ### Customizing asset keys
 
@@ -302,6 +304,45 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 )
 def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
+```
+
+### Customizing Auto-Materialize Policies
+
+For dbt models, seeds, and snapshots, the default <PyObject object="AutoMaterializePolicy"/> will be `None`.
+
+An AutoMaterializePolicy may be added to a dbt node by defining [meta config](https://docs.getdbt.com/reference/resource-configs/meta) on your dbt node. This policy may be one of two types, `"eager"` or `"lazy"`.
+
+The following example applies an eager AutoMaterializePolicy to the "customers" dbt model:
+
+```yaml
+models:
+  - name: customers
+    config:
+      meta:
+        dagster:
+          auto_materialize_policy:
+            type:
+              eager
+```
+
+### Customizing Freshness Policies
+
+For dbt models, seeds, and snapshots, the default <PyObject object="FreshnessPolicy"/> will be `None`.
+
+A FreshnessPolicy may be added to a dbt node by defining [meta config](https://docs.getdbt.com/reference/resource-configs/meta) on your dbt node. This config accepts identical arguments to the <PyObject object="FreshnessPolicy"/> class.
+
+The following example applies a FreshnessPolicy to the "customers" dbt model:
+
+```yaml
+models:
+  - name: customers
+    config:
+      meta:
+        dagster:
+          freshness_policy:
+            maximum_lag_minutes: 10
+            cron_schedule: 0 * * * *
+            cron_schedule_timezone: US/Pacific
 ```
 
 ---
