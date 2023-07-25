@@ -1,0 +1,6 @@
+include README.rst
+include LICENSE
+include dagster_webserver/py.typed
+recursive-include dagster_webserver/graphql-playground *
+recursive-include dagster_webserver/webapp/build *
+recursive-include dagster_webserver/templates/assets *

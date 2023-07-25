@@ -7,7 +7,7 @@ export type SingleSensorQueryVariables = Types.Exact<{
 }>;
 
 export type SingleSensorQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   sensorOrError:
     | {__typename: 'PythonError'}
     | {

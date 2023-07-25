@@ -7,7 +7,7 @@ export type AssetViewDefinitionQueryVariables = Types.Exact<{
 }>;
 
 export type AssetViewDefinitionQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetOrError:
     | {
         __typename: 'Asset';

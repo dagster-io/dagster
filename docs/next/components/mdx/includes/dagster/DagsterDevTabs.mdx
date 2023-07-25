@@ -46,6 +46,7 @@ To load definitions without supplying command line arguments, you can use the `p
 ```toml
 [tool.dagster]
 module_name = "your_module_name"  ## name of project's Python module
+code_location_name = "your_code_location_name"  ## optional, name of code location to display in the Dagster UI
 ```
 
 When defined, you can run this in the same directory as the `pyproject.toml` file:

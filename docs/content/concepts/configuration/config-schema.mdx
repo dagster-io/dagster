@@ -100,7 +100,7 @@ For more information on using resources, refer to the [Resources guide](/concept
 To execute a job or materialize an asset that specifies config, you'll need to provide values for its parameters. How we provide these values depends on the interface we are using:
 
 - [Python](#python)
-- [Dagit](#dagit)
+- [Dagster UI](#dagster-ui)
 - [Command line](#command-line)
 
 <TabGroup persistentKey="configtype">
@@ -128,15 +128,15 @@ asset_result = materialize(
 ```
 
 </TabItem>
-<TabItem name="Dagit">
+<TabItem name="Dagster UI">
 
-### Dagit
+### Dagster UI
 
-From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad-tab), we supply config as YAML using the config editor. Here, the YAML schema matches the layout of the config class we defined. The editor has typeahead, schema validation, and schema documentation. You can also click the **Scaffold Missing Config** button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config`.
+From the UI's [Launchpad](/concepts/webserver/ui#launchpad-tab), we supply config as YAML using the config editor. Here, the YAML schema matches the layout of the config class we defined. The editor has typeahead, schema validation, and schema documentation. You can also click the **Scaffold Missing Config** button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config`.
 
 <Image
-alt="Config in Dagit"
-src="/images/concepts/config-dagit.png"
+alt="Config in the Dagster UI"
+src="/images/concepts/config-ui.png"
 width={3808}
 height={2414}
 />

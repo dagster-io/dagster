@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 import warnings
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -54,12 +51,6 @@ from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
 from dagster._utils.merger import merge_dicts
 
-if TYPE_CHECKING:
-    from dagster._core.execution.context.compute import (
-        OpExecutionContext,
-    )
-
-
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
@@ -92,6 +83,7 @@ class SourceAsset(ResourceAddable):
     resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     _node_def: Optional[OpDefinition]  # computed lazily
+    auto_observe_interval_minutes: Optional[float]
 
     def __init__(
         self,
@@ -104,6 +96,8 @@ class SourceAsset(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, object]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
+        *,
+        auto_observe_interval_minutes: Optional[float] = None,
         # This is currently private because it is necessary for source asset observation functions,
         # but we have not yet decided on a final API for associated one or more ops with a source
         # asset. If we were to make this public, then we would have a canonical public
@@ -156,6 +150,9 @@ class SourceAsset(ResourceAddable):
             _required_resource_keys, "_required_resource_keys", of_type=str
         )
         self._node_def = None
+        self.auto_observe_interval_minutes = check.opt_numeric_param(
+            auto_observe_interval_minutes, "auto_observe_interval_minutes"
+        )
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
@@ -171,6 +168,11 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def op(self) -> OpDefinition:
+        """OpDefinition: The OpDefinition associated with the observation function of an observable
+        source asset.
+
+        Throws an error if the asset is not observable.
+        """
         check.invariant(
             isinstance(self.node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
@@ -180,12 +182,16 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def is_observable(self) -> bool:
+        """bool: Whether the asset is observable."""
         return self.node_def is not None
 
     def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
             is_context_provided,
+        )
+        from dagster._core.execution.context.compute import (
+            OpExecutionContext,
         )
 
         observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
@@ -310,6 +316,7 @@ class SourceAsset(ResourceAddable):
                 resource_defs=relevant_resource_defs,
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
+                auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 _required_resource_keys=self._required_resource_keys,
             )
 
@@ -335,6 +342,7 @@ class SourceAsset(ResourceAddable):
                 group_name=group_name,
                 resource_defs=self.resource_defs,
                 observe_fn=self.observe_fn,
+                auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 _required_resource_keys=self._required_resource_keys,
             )
 

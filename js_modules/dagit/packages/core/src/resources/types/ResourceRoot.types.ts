@@ -59,7 +59,7 @@ export type ResourceRootQueryVariables = Types.Exact<{
 }>;
 
 export type ResourceRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   topLevelResourceDetailsOrError:
     | {
         __typename: 'PythonError';

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import AbstractSet, Any, Mapping, Optional
 
@@ -8,18 +9,53 @@ from dagster import (
     DailyPartitionsDefinition,
     FreshnessPolicy,
     PartitionsDefinition,
+    asset,
+    materialize,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtManifest
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
-manifest = DbtManifest.read(path=manifest_path)
+with open(manifest_path, "r") as f:
+    manifest = json.load(f)
 
 test_dagster_metadata_manifest_path = Path(__file__).parent.joinpath(
     "dbt_projects", "test_dagster_metadata", "manifest.json"
 )
-test_dagster_metadata_manifest = DbtManifest.read(path=test_dagster_metadata_manifest_path)
+with open(test_dagster_metadata_manifest_path, "r") as f:
+    test_dagster_metadata_manifest = json.load(f)
+
+
+def test_materialize(test_project_dir):
+    @dbt_assets(manifest=manifest)
+    def all_dbt_assets(context, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    assert materialize(
+        [all_dbt_assets], resources={"dbt": DbtCliResource(project_dir=test_project_dir)}
+    ).success
+
+
+@pytest.mark.parametrize("manifest", [json.load(manifest_path.open()), manifest_path])
+def test_manifest_argument(manifest):
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    assert my_dbt_assets.keys == {
+        AssetKey.from_user_string(key)
+        for key in [
+            "sort_by_calories",
+            "cold_schema/sort_cold_cereals_by_calories",
+            "subdir_schema/least_caloric",
+            "sort_hot_cereals_by_calories",
+            "orders_snapshot",
+            "cereals",
+        ]
+    }
 
 
 @pytest.mark.parametrize(
@@ -153,14 +189,12 @@ def test_io_manager_key(io_manager_key: Optional[str]) -> None:
 
 
 def test_with_asset_key_replacements() -> None:
-    class CustomizedDbtManifest(DbtManifest):
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_asset_key(cls, node_info: Mapping[str, Any]) -> AssetKey:
-            return AssetKey(["prefix", *super().node_info_to_asset_key(node_info).path])
+        def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            return AssetKey(["prefix", *super().get_asset_key(dbt_resource_props).path])
 
-    manifest = CustomizedDbtManifest.read(path=manifest_path)
-
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
         ...
 
@@ -178,14 +212,12 @@ def test_with_asset_key_replacements() -> None:
 def test_with_description_replacements() -> None:
     expected_description = "customized description"
 
-    class CustomizedDbtManifest(DbtManifest):
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_description(cls, node_info: Mapping[str, Any]) -> str:
+        def get_description(cls, node_info: Mapping[str, Any]) -> str:
             return expected_description
 
-    manifest = CustomizedDbtManifest.read(path=manifest_path)
-
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
         ...
 
@@ -196,19 +228,33 @@ def test_with_description_replacements() -> None:
 def test_with_metadata_replacements() -> None:
     expected_metadata = {"customized": "metadata"}
 
-    class CustomizedDbtManifest(DbtManifest):
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def node_info_to_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+        def get_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
             return expected_metadata
 
-    manifest = CustomizedDbtManifest.read(path=manifest_path)
-
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
     def my_dbt_assets():
         ...
 
     for metadata in my_dbt_assets.metadata_by_key.values():
         assert metadata["customized"] == "metadata"
+
+
+def test_with_group_replacements() -> None:
+    expected_group = "customized_group"
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_group_name(cls, node_info: Mapping[str, Any]) -> Optional[str]:
+            return expected_group
+
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
+    def my_dbt_assets():
+        ...
+
+    for group in my_dbt_assets.group_names_by_key.values():
+        assert group == expected_group
 
 
 def test_dbt_meta_auto_materialize_policy() -> None:
@@ -262,11 +308,43 @@ def test_dbt_config_group() -> None:
 
     assert my_dbt_assets.group_names_by_key == {
         AssetKey(["customers"]): "default",
+        # If a model has a Dagster group name specified under `meta`, use that.
         AssetKey(["customized", "staging", "customers"]): "customized_dagster_group",
-        AssetKey(["customized", "staging", "orders"]): "staging",
-        AssetKey(["customized", "staging", "payments"]): "staging",
+        # If a model has a dbt group name specified under `group`, use that.
+        AssetKey(["customized", "staging", "orders"]): "customized_dbt_group",
+        # If a model has both a Dagster group and dbt group, use the Dagster group.
+        AssetKey(["customized", "staging", "payments"]): "customized_dagster_group",
         AssetKey(["orders"]): "default",
         AssetKey(["raw_customers"]): "default",
         AssetKey(["raw_orders"]): "default",
         AssetKey(["raw_payments"]): "default",
     }
+
+
+def test_dbt_with_downstream_asset_errors():
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot pass a multi_asset AssetsDefinition as an argument to deps.",
+    ):
+
+        @asset(deps=[my_dbt_assets])
+        def downstream_of_dbt():
+            return None
+
+
+def test_dbt_with_downstream_asset():
+    @dbt_assets(manifest=test_dagster_metadata_manifest)
+    def my_dbt_assets():
+        ...
+
+    @asset(deps=[AssetKey("orders"), AssetKey(["customized", "staging", "payments"])])
+    def downstream_of_dbt():
+        return None
+
+    assert len(downstream_of_dbt.input_names) == 2
+    assert downstream_of_dbt.op.ins["orders"].dagster_type.is_nothing
+    assert downstream_of_dbt.op.ins["customized_staging_payments"].dagster_type.is_nothing

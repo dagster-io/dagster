@@ -79,7 +79,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         return 1
 
     @multi_asset(
-        non_argument_deps={AssetKey("a")},
+        deps=[AssetKey("a")],
         outs={
             "b": AssetOut(is_required=False),
             "c": AssetOut(is_required=False),
@@ -96,11 +96,11 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         for output_name in sorted(context.selected_output_names):
             yield Output(output_name, output_name)
 
-    @asset(non_argument_deps={AssetKey("c")})
+    @asset(deps=[AssetKey("c")])
     def e():
         return 1
 
-    @asset(non_argument_deps={AssetKey("d")})
+    @asset(deps=[AssetKey("d")])
     def f():
         return 1
 
@@ -170,7 +170,7 @@ def partitioned_asset():
     pass
 
 
-@asset(non_argument_deps={AssetKey("partitioned_asset")})
+@asset(deps=[AssetKey("partitioned_asset")])
 def unpartitioned_asset():
     pass
 
@@ -299,22 +299,22 @@ def sB():
     return DataVersion(str(random.random()))
 
 
-@asset(non_argument_deps={"sA"})
+@asset(deps=[sA])
 def A():
     pass
 
 
-@asset(non_argument_deps={"sB"})
+@asset(deps=[sB])
 def B():
     pass
 
 
-@asset(non_argument_deps={"B"})
+@asset(deps=[B])
 def B2():
     pass
 
 
-@asset(non_argument_deps={"sA", "sB"})
+@asset(deps=[sA, sB])
 def AB():
     pass
 

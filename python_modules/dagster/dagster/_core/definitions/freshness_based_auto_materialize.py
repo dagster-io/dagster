@@ -9,11 +9,10 @@
 """
 import datetime
 from collections import defaultdict
-from typing import AbstractSet, Dict, Mapping, Optional, Set, Tuple, cast
+from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Set, Tuple, cast
 
 import pendulum
 
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
@@ -26,15 +25,15 @@ from .auto_materialize_condition import (
     FreshnessAutoMaterializeCondition,
 )
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.data_time import CachingDataTimeResolver
+
 
 def get_execution_period_for_policy(
     freshness_policy: FreshnessPolicy,
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
 ) -> pendulum.Period:
-    if effective_data_time is None:
-        return pendulum.Period(start=current_time, end=current_time)
-
     if freshness_policy.cron_schedule:
         tick_iterator = cron_string_iterator(
             start_timestamp=current_time.timestamp(),
@@ -51,6 +50,14 @@ def get_execution_period_for_policy(
                 return pendulum.Period(start=required_data_time, end=tick)
 
     else:
+        # occurs when asset is missing
+        if effective_data_time is None:
+            return pendulum.Period(
+                # require data from at most maximum_lag_delta ago
+                start=current_time - freshness_policy.maximum_lag_delta,
+                # this data should be available as soon as possible
+                end=current_time,
+            )
         return pendulum.Period(
             # we don't want to execute this too frequently
             start=effective_data_time + 0.9 * freshness_policy.maximum_lag_delta,
@@ -121,7 +128,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
         for key in level:
             if (
                 key not in target_asset_keys_and_parents
-                or key not in asset_graph.non_source_asset_keys
+                or key not in asset_graph.materializable_asset_keys
                 or not asset_graph.get_downstream_freshness_policies(asset_key=key)
             ):
                 continue
@@ -208,6 +215,7 @@ def determine_asset_partitions_to_auto_materialize_for_freshness(
                 execution_period is not None
                 and execution_period.start <= current_time
                 and expected_data_time is not None
+                # if this is False, then executing it would still leave the asset overdue
                 and expected_data_time >= execution_period.start
                 and all(
                     condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE

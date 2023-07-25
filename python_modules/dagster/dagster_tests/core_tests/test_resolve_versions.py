@@ -21,13 +21,13 @@ from dagster import (
     op,
     reconstructable,
     resource,
-    root_input_manager,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.resolve_versions import join_and_hash, resolve_config_version
+from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -550,13 +550,13 @@ def test_memoized_plan_disable_memoization():
         assert len(unmemoized_again.step_keys_to_execute) == 1
 
 
-def test_memoized_plan_root_input_manager():
-    @root_input_manager(version="foo")
+def test_memoized_plan_input_manager():
+    @input_manager(version="foo")
     def my_input_manager():
         return 5
 
     @op(
-        ins={"x": In(root_manager_key="my_input_manager")},
+        ins={"x": In(input_manager_key="my_input_manager")},
         version="foo",
     )
     def my_op_takes_input(x):
@@ -580,13 +580,13 @@ def test_memoized_plan_root_input_manager():
         )
 
 
-def test_memoized_plan_root_input_manager_input_config():
-    @root_input_manager(version="foo", input_config_schema={"my_str": str})
+def test_memoized_plan_input_manager_input_config():
+    @input_manager(version="foo", input_config_schema={"my_str": str})
     def my_input_manager():
         return 5
 
     @op(
-        ins={"x": In(root_manager_key="my_input_manager")},
+        ins={"x": In(input_manager_key="my_input_manager")},
         version="foo",
     )
     def my_op_takes_input(x):
@@ -632,13 +632,13 @@ def test_memoized_plan_root_input_manager_input_config():
         assert not new_output_version == output_version
 
 
-def test_memoized_plan_root_input_manager_resource_config():
-    @root_input_manager(version="foo", config_schema={"my_str": str})
+def test_memoized_plan_input_manager_resource_config():
+    @input_manager(version="foo", config_schema={"my_str": str})
     def my_input_manager():
         return 5
 
     @op(
-        ins={"x": In(root_manager_key="my_input_manager")},
+        ins={"x": In(input_manager_key="my_input_manager")},
         version="foo",
     )
     def my_op_takes_input(x):
@@ -727,8 +727,8 @@ def get_graph_reqs_resource():
     return my_graph
 
 
-def get_graph_reqs_root_input_manager():
-    @op(ins={"x": In(root_manager_key="my_key")})
+def get_graph_reqs_input_manager():
+    @op(ins={"x": In(input_manager_key="my_key")})
     def my_op(x):
         return x
 
@@ -744,7 +744,7 @@ def get_graph_reqs_root_input_manager():
     [
         (get_basic_graph(), BadopStrategy()),
         (get_graph_reqs_resource(), BadResourceStrategy()),
-        (get_graph_reqs_root_input_manager(), BadResourceStrategy()),
+        (get_graph_reqs_input_manager(), BadResourceStrategy()),
     ],
 )
 def test_bad_version_str(graph_for_test, strategy):
@@ -752,7 +752,7 @@ def test_bad_version_str(graph_for_test, strategy):
     def my_resource():
         pass
 
-    @root_input_manager
+    @input_manager
     def my_manager():
         pass
 
@@ -863,12 +863,12 @@ def test_memoization_multiprocess_execution():
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
-def test_source_hash_with_root_input_manager():
-    @root_input_manager
+def test_source_hash_with_input_manager():
+    @input_manager
     def my_input_manager():
         return 5
 
-    @op(ins={"x": In(root_manager_key="manager")})
+    @op(ins={"x": In(input_manager_key="manager")})
     def the_op(x):
         return x + 1
 

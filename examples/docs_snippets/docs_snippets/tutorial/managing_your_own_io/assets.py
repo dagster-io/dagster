@@ -18,7 +18,7 @@ def stopwords_zip() -> None:
 import zipfile  # Note: remember to add imports to the top of the file
 
 
-@asset(non_argument_deps={"stopwords_zip"})
+@asset(deps=[stopwords_zip])
 def stopwords_csv() -> None:
     with zipfile.ZipFile("data/stopwords.zip", "r") as zip_ref:
         zip_ref.extractall("data")
@@ -37,7 +37,7 @@ import csv  # Note: Remember to add all new imports to the top
 
 
 @asset(
-    non_argument_deps={"stopwords_csv"},  # Addition: added the dependency
+    deps=[stopwords_csv],  # Addition: added the dependency
 )
 def most_frequent_words(topstories):
     # stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]

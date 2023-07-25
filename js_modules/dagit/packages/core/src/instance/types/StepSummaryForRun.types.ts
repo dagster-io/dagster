@@ -7,7 +7,7 @@ export type StepSummaryForRunQueryVariables = Types.Exact<{
 }>;
 
 export type StepSummaryForRunQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
     | {

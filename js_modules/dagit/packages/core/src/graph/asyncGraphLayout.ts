@@ -110,7 +110,7 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   React.useEffect(() => {
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
-      const layout = await asyncGetFullOpLayout(ops, parentOp, staticPathRoot);
+      const layout = await asyncGetFullOpLayout(ops, {parentOp}, staticPathRoot);
       dispatch({
         type: 'layout',
         payload: {layout, cacheKey},

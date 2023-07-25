@@ -87,7 +87,7 @@ def get_config_dir(config_yaml=None):
             )
         if "config_source" in validated_config and validated_config["config_source"]:
             for key, value in validated_config["config_source"].items():
-                fd.write(f"{key} = {repr(value)}\n")
+                fd.write(f"{key} = {value!r}\n")
 
     # n.b. right now we don't attempt to clean up this cache, but it might make sense to delete
     # any files older than some time if there are more than some number of files present, etc.

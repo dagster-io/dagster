@@ -7,7 +7,7 @@ export type SingleGraphQueryVariables = Types.Exact<{
 }>;
 
 export type SingleGraphQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   graphOrError:
     | {__typename: 'Graph'; id: string; name: string; description: string | null}
     | {__typename: 'GraphNotFoundError'}

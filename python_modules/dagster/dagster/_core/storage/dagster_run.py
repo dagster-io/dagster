@@ -377,7 +377,7 @@ class DagsterRun(
         repository_tags = {}
         if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
-            # per-repository filtering of runs from dagit.
+            # per-repository filtering of runs from the Dagster UI.
             repository_tags[
                 REPOSITORY_LABEL_TAG
             ] = self.external_job_origin.external_repository_origin.get_label()
@@ -390,26 +390,31 @@ class DagsterRun(
     @public
     @property
     def is_finished(self) -> bool:
+        """bool: If this run has completely finished execution."""
         return self.status in FINISHED_STATUSES
 
     @public
     @property
     def is_success(self) -> bool:
+        """bool: If this run has successfully finished executing."""
         return self.status == DagsterRunStatus.SUCCESS
 
     @public
     @property
     def is_failure(self) -> bool:
+        """bool: If this run has failed."""
         return self.status == DagsterRunStatus.FAILURE
 
     @public
     @property
-    def is_failure_or_canceled(self):
+    def is_failure_or_canceled(self) -> bool:
+        """bool: If this run has either failed or was canceled."""
         return self.status == DagsterRunStatus.FAILURE or self.status == DagsterRunStatus.CANCELED
 
     @public
     @property
     def is_resume_retry(self) -> bool:
+        """bool: If this run was created from retrying another run from the point of failure."""
         return self.tags.get(RESUME_RETRY_TAG) == "true"
 
     @property

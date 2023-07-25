@@ -1,11 +1,10 @@
-from dagster import asset
-
 # start_w_context
+from dagster import AssetExecutionContext, asset
 
 
 @asset
-def context_asset(context):
-    context.log.info("My run ID is {context.run_id}")
+def context_asset(context: AssetExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
     ...
 
 

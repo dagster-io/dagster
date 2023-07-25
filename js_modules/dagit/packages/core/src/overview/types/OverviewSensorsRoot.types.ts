@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type OverviewSensorsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type OverviewSensorsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   workspaceOrError:
     | {
         __typename: 'PythonError';
@@ -100,7 +100,7 @@ export type OverviewSensorsQuery = {
 export type UnloadableSensorsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type UnloadableSensorsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   unloadableInstigationStatesOrError:
     | {
         __typename: 'InstigationStates';

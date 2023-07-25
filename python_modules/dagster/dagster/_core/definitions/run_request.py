@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import DynamicPartitionsStore
@@ -33,7 +33,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
     why no runs were requested.
 
     Attributes:
-        skip_message (Optional[str]): A message displayed in dagit for why this evaluation resulted
+        skip_message (Optional[str]): A message displayed in the Dagster UI for why this evaluation resulted
             in no requested runs.
     """
 
@@ -126,7 +126,7 @@ class RunRequest(
             Required for sensors that target multiple jobs.
         asset_selection (Optional[Sequence[AssetKey]]): A sequence of AssetKeys that should be
             launched with this run.
-        stale_assets_only (Optional[Sequence[AssetKey]]): Set to true to further narrow the asset
+        stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
         partition_key (Optional[str]): The partition key for this run request.
@@ -341,7 +341,6 @@ class DagsterRunReaction(
         )
 
 
-@experimental
 class SensorResult(
     NamedTuple(
         "_SensorResult",

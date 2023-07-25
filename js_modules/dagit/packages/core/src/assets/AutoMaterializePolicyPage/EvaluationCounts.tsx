@@ -20,7 +20,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
         key="requested"
         color={selected ? Colors.Blue700 : numRequested ? Colors.Green700 : Colors.Gray700}
       >
-        {isPartitionedAsset ? `${compactNumber(numRequested)} requested` : 'Requested'}
+        {isPartitionedAsset ? `${compactNumber(numRequested)} launched` : 'Launched'}
       </Caption>
     ) : null;
 

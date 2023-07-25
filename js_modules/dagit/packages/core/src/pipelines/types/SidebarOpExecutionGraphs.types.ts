@@ -8,7 +8,7 @@ export type SidebarOpGraphsQueryVariables = Types.Exact<{
 }>;
 
 export type SidebarOpGraphsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineOrError:
     | {__typename: 'InvalidSubsetError'}
     | {

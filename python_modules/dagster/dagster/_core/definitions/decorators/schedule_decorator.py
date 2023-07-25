@@ -1,7 +1,6 @@
 import copy
 from functools import update_wrapper
 from typing import (
-    TYPE_CHECKING,
     Callable,
     List,
     Mapping,
@@ -37,9 +36,6 @@ from ..schedule_definition import (
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
-
-if TYPE_CHECKING:
-    pass
 
 
 def schedule(
@@ -96,7 +92,7 @@ def schedule(
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             that should execute when this schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 

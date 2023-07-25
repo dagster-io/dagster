@@ -5,7 +5,7 @@ import * as Types from '../../../graphql/types';
 export type RunActionButtonsTestQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type RunActionButtonsTestQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
     | {

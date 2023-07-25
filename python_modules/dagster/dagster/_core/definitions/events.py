@@ -276,16 +276,19 @@ class Output(Generic[T]):
     @public
     @property
     def value(self) -> Any:
+        """Any: The value returned by the compute function."""
         return self._value
 
     @public
     @property
     def output_name(self) -> str:
+        """str: Name of the corresponding :py:class:`Out`."""
         return self._output_name
 
     @public
     @property
     def data_version(self) -> Optional[DataVersion]:
+        """Optional[DataVersion]: A data version that was manually set on the `Output`."""
         return self._data_version
 
     def __eq__(self, other: object) -> bool:
@@ -342,16 +345,20 @@ class DynamicOutput(Generic[T]):
     @public
     @property
     def mapping_key(self) -> str:
+        """The mapping_key that was set for this DynamicOutput at instantiation."""
         return self._mapping_key
 
     @public
     @property
     def value(self) -> T:
+        """The value that is returned by the compute function for this DynamicOut."""
         return self._value
 
     @public
     @property
     def output_name(self) -> str:
+        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with.
+        """
         return self._output_name
 
     def __eq__(self, other: object) -> bool:
@@ -476,7 +483,7 @@ class AssetMaterialization(
     framework.
 
     Op authors should use these events to organize metadata about the side effects of their
-    computations, enabling tooling like the Assets dashboard in Dagit.
+    computations, enabling tooling like the Assets dashboard in the Dagster UI.
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across

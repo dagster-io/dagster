@@ -88,12 +88,12 @@ class DagsterEventType(str, Enum):
     STEP_SKIPPED = "STEP_SKIPPED"
 
     # The process carrying out step execution is starting/started. Shown as a
-    # marker start/end in Dagit
+    # marker start/end in the Dagster UI.
     STEP_WORKER_STARTING = "STEP_WORKER_STARTING"
     STEP_WORKER_STARTED = "STEP_WORKER_STARTED"
 
     # Resource initialization for execution has started/succeede/failed. Shown
-    # as a marker start/end in Dagit
+    # as a marker start/end in the Dagster UI.
     RESOURCE_INIT_STARTED = "RESOURCE_INIT_STARTED"
     RESOURCE_INIT_SUCCESS = "RESOURCE_INIT_SUCCESS"
     RESOURCE_INIT_FAILURE = "RESOURCE_INIT_FAILURE"
@@ -106,7 +106,7 @@ class DagsterEventType(str, Enum):
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
-    # We want to display RUN_* events in dagit and in our LogManager output, but in order to
+    # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
     # of the form "PIPELINE_*".  We may have user code that pass in the DagsterEventType
     # enum values into storage APIs (like get_event_records, which takes in an EventRecordsFilter).
@@ -515,14 +515,15 @@ class DagsterEvent(
     @public
     @property
     def is_step_event(self) -> bool:
+        """bool: If this event relates to a specific step."""
         return self.event_type in STEP_EVENTS
 
     @public
     @property
     def is_hook_event(self) -> bool:
+        """bool: If this event relates to the execution of a hook."""
         return self.event_type in HOOK_EVENTS
 
-    @public
     @property
     def is_alert_event(self) -> bool:
         return self.event_type in ALERT_EVENTS
@@ -536,41 +537,49 @@ class DagsterEvent(
     @public
     @property
     def is_step_success(self) -> bool:
+        """bool: If this event is of type STEP_SUCCESS."""
         return self.event_type == DagsterEventType.STEP_SUCCESS
 
     @public
     @property
     def is_successful_output(self) -> bool:
+        """bool: If this event is of type STEP_OUTPUT."""
         return self.event_type == DagsterEventType.STEP_OUTPUT
 
     @public
     @property
     def is_step_start(self) -> bool:
+        """bool: If this event is of type STEP_START."""
         return self.event_type == DagsterEventType.STEP_START
 
     @public
     @property
     def is_step_failure(self) -> bool:
+        """bool: If this event is of type STEP_FAILURE."""
         return self.event_type == DagsterEventType.STEP_FAILURE
 
     @public
     @property
     def is_resource_init_failure(self) -> bool:
+        """bool: If this event is of type RESOURCE_INIT_FAILURE."""
         return self.event_type == DagsterEventType.RESOURCE_INIT_FAILURE
 
     @public
     @property
     def is_step_skipped(self) -> bool:
+        """bool: If this event is of type STEP_SKIPPED."""
         return self.event_type == DagsterEventType.STEP_SKIPPED
 
     @public
     @property
     def is_step_up_for_retry(self) -> bool:
+        """bool: If this event is of type STEP_UP_FOR_RETRY."""
         return self.event_type == DagsterEventType.STEP_UP_FOR_RETRY
 
     @public
     @property
     def is_step_restarted(self) -> bool:
+        """bool: If this event is of type STEP_RESTARTED."""
         return self.event_type == DagsterEventType.STEP_RESTARTED
 
     @property
@@ -588,6 +597,7 @@ class DagsterEvent(
     @public
     @property
     def is_failure(self) -> bool:
+        """bool: If this event represents the failure of a run or step."""
         return self.event_type in FAILURE_EVENTS
 
     @property
@@ -597,41 +607,52 @@ class DagsterEvent(
     @public
     @property
     def is_engine_event(self) -> bool:
+        """bool: If this event is of type ENGINE_EVENT."""
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
     @public
     @property
     def is_handled_output(self) -> bool:
+        """bool: If this event is of type HANDLED_OUTPUT."""
         return self.event_type == DagsterEventType.HANDLED_OUTPUT
 
     @public
     @property
     def is_loaded_input(self) -> bool:
+        """bool: If this event is of type LOADED_INPUT."""
         return self.event_type == DagsterEventType.LOADED_INPUT
 
     @public
     @property
     def is_step_materialization(self) -> bool:
+        """bool: If this event is of type ASSET_MATERIALIZATION."""
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
     @public
     @property
     def is_expectation_result(self) -> bool:
+        """bool: If this event is of type STEP_EXPECTATION_RESULT."""
         return self.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
 
     @public
     @property
     def is_asset_observation(self) -> bool:
+        """bool: If this event is of type ASSET_OBSERVATION."""
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 
     @public
     @property
     def is_asset_materialization_planned(self) -> bool:
+        """bool: If this event is of type ASSET_MATERIALIZATION_PLANNED."""
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
 
     @public
     @property
     def asset_key(self) -> Optional[AssetKey]:
+        """Optional[AssetKey]: For events that correspond to a specific asset_key / partition
+        (ASSET_MATERIALIZTION, ASSET_OBSERVATION, ASSET_MATERIALIZATION_PLANNED), returns that
+        asset key. Otherwise, returns None.
+        """
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             return self.step_materialization_data.materialization.asset_key
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
@@ -644,6 +665,10 @@ class DagsterEvent(
     @public
     @property
     def partition(self) -> Optional[str]:
+        """Optional[AssetKey]: For events that correspond to a specific asset_key / partition
+        (ASSET_MATERIALIZTION, ASSET_OBSERVATION, ASSET_MATERIALIZATION_PLANNED), returns that
+        partition. Otherwise, returns None.
+        """
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             return self.step_materialization_data.materialization.partition
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:

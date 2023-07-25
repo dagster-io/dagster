@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type PermissionsQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type PermissionsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   unscopedPermissions: Array<{
     __typename: 'Permission';
     permission: string;

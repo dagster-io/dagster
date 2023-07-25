@@ -22,6 +22,7 @@ from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 if TYPE_CHECKING:
+    from typing_extensions import Literal
     from upath import UPath
 
 
@@ -294,8 +295,8 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
     def __init__(self, base_dir: Optional[str] = None):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
-        self.write_mode = "wb"
-        self.read_mode = "rb"
+        self.write_mode: Literal["wb"] = "wb"
+        self.read_mode: Literal["rb"] = "rb"
 
     def _get_path(self, path: str) -> str:
         return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)

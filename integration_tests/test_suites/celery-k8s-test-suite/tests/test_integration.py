@@ -51,7 +51,7 @@ def test_execute_on_celery_k8s_default(
     dagster_docker_image,
     dagster_instance,
     helm_namespace,
-    dagit_url,
+    webserver_url,
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -66,7 +66,7 @@ def test_execute_on_celery_k8s_default(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -81,7 +81,7 @@ def test_execute_on_celery_k8s_default(
 
 
 def test_execute_on_celery_k8s_job_api(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -96,7 +96,7 @@ def test_execute_on_celery_k8s_job_api(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -111,7 +111,7 @@ def test_execute_on_celery_k8s_job_api(
 
 
 def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     # Originally, jobs needed to include "dagster-pipeline-env" to pick up needed config when
     # using the helm chart - it's no longer needed, but verify that nothing breaks if it's included
@@ -130,7 +130,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -144,7 +144,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
 
 
 def test_execute_on_celery_k8s_image_from_origin(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     # Like the previous test, but the image is found from the job origin
     # rather than the executor config
@@ -159,7 +159,7 @@ def test_execute_on_celery_k8s_image_from_origin(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="demo_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="demo_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -172,7 +172,7 @@ def test_execute_on_celery_k8s_image_from_origin(
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
 
 
-def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagit_url):
+def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, webserver_url):
     run_config = merge_dicts(
         merge_yamls(
             [
@@ -186,7 +186,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url,
+        webserver_url,
         run_config=run_config,
         job_name="demo_job_celery_k8s",
         op_selection=["count_letters"],
@@ -200,7 +200,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
 
 
 def test_execute_on_celery_k8s_retry_job(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     run_config = merge_dicts(
         merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml")]),
@@ -210,7 +210,7 @@ def test_execute_on_celery_k8s_retry_job(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="retry_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="retry_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -248,7 +248,7 @@ def test_execute_on_celery_k8s_retry_job(
 
 
 def test_execute_on_celery_k8s_with_resource_requirements(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -262,7 +262,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="resources_limit_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="resources_limit_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -272,9 +272,9 @@ def test_execute_on_celery_k8s_with_resource_requirements(
     assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
 
-def _test_termination(dagit_url, dagster_instance, run_config):
+def _test_termination(webserver_url, dagster_instance, run_config):
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="resource_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="resource_job_celery_k8s"
     )
 
     # Wait for run to start
@@ -284,7 +284,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
         dagster_run = dagster_instance.get_run_by_id(run_id)
-        if can_terminate_run_over_graphql(dagit_url, run_id):
+        if can_terminate_run_over_graphql(webserver_url, run_id):
             break
         time.sleep(5)
 
@@ -308,8 +308,8 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     assert step_start_found
 
     # Terminate run
-    assert can_terminate_run_over_graphql(dagit_url, run_id=run_id)
-    terminate_run_over_graphql(dagit_url, run_id=run_id)
+    assert can_terminate_run_over_graphql(webserver_url, run_id=run_id)
+    terminate_run_over_graphql(webserver_url, run_id=run_id)
 
     # Check that run is marked as canceled
     dagster_run_status_canceled = False
@@ -323,7 +323,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     assert dagster_run_status_canceled
 
     # Check that terminate cannot be called again
-    assert not can_terminate_run_over_graphql(dagit_url, run_id=run_id)
+    assert not can_terminate_run_over_graphql(webserver_url, run_id=run_id)
 
     # Check for step failure and resource tear down
     expected_events_found = False
@@ -370,7 +370,7 @@ def test_execute_on_celery_k8s_with_termination(
     dagster_docker_image,
     dagster_instance,
     helm_namespace,
-    dagit_url,
+    webserver_url,
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -383,7 +383,7 @@ def test_execute_on_celery_k8s_with_termination(
         ),
     )
 
-    _test_termination(dagit_url, dagster_instance, run_config)
+    _test_termination(webserver_url, dagster_instance, run_config)
 
 
 @pytest.fixture(scope="function")
@@ -399,7 +399,7 @@ def set_dagster_k8s_dagster_run_namespace_env(helm_namespace):
 
 
 def test_execute_on_celery_k8s_with_env_var_and_termination(
-    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env, dagit_url
+    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env, webserver_url
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -413,11 +413,11 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(
         ),
     )
 
-    _test_termination(dagit_url, dagster_instance, run_config)
+    _test_termination(webserver_url, dagster_instance, run_config)
 
 
 def test_execute_on_celery_k8s_with_hard_failure(
-    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env, dagit_url
+    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env, webserver_url
 ):
     run_config = merge_dicts(
         merge_dicts(
@@ -435,7 +435,7 @@ def test_execute_on_celery_k8s_with_hard_failure(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, job_name="hard_failer_job_celery_k8s"
+        webserver_url, run_config=run_config, job_name="hard_failer_job_celery_k8s"
     )
 
     # Check that run is marked as failed
@@ -477,7 +477,7 @@ def _get_step_events(event_logs):
 
 
 def test_memoization_on_celery_k8s(
-    dagster_docker_image, dagster_instance, helm_namespace, dagit_url
+    dagster_docker_image, dagster_instance, helm_namespace, webserver_url
 ):
     ephemeral_prefix = str(uuid.uuid4())
     run_config = deep_merge_dicts(
@@ -495,7 +495,7 @@ def test_memoization_on_celery_k8s(
         run_ids = []
         for _ in range(2):
             run_id = launch_run_over_graphql(
-                dagit_url,
+                webserver_url,
                 run_config=run_config,
                 job_name="memoization_job_celery_k8s",
             )
@@ -523,7 +523,7 @@ def test_memoization_on_celery_k8s(
 
 
 @pytest.mark.integration
-def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, dagit_url):
+def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, webserver_url):
     run_config = deep_merge_dicts(
         merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml")]),
         get_celery_engine_config(
@@ -532,7 +532,7 @@ def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, d
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url,
+        webserver_url,
         run_config=run_config,
         job_name="volume_mount_job_celery_k8s",
     )

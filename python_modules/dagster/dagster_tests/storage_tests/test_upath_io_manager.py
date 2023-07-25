@@ -1,6 +1,8 @@
+import inspect
 import json
 import pickle
-from datetime import datetime
+import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
@@ -9,6 +11,8 @@ from dagster import (
     AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
+    ConfigurableIOManager,
+    DagsterInvariantViolationError,
     DagsterType,
     DailyPartitionsDefinition,
     Field,
@@ -16,8 +20,10 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
+    OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     build_init_resource_context,
     build_input_context,
@@ -30,6 +36,11 @@ from dagster._core.definitions import build_assets_job
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
+from fsspec.asyn import AsyncFileSystem
+from pydantic import (
+    Field as PydanticField,
+    PrivateAttr,
+)
 from upath import UPath
 
 
@@ -415,3 +426,188 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
     ].event_specific_data
     assert isinstance(handled_output_data, HandledOutputData)
     assert handled_output_data.metadata["length"] == MetadataValue.int(get_length(json_data))
+
+
+class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
+    base_dir: str = PydanticField(None, description="Base directory for storing files.")
+
+    _base_path: UPath = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._base_path = UPath(self.base_dir)
+
+    def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+        with path.open("w") as file:
+            json.dump(obj, file)
+
+    async def load_from_path(self, context: InputContext, path: UPath) -> Any:
+        fs = self.get_async_filesystem(path)
+
+        if inspect.iscoroutinefunction(fs.open_async):
+            # S3FileSystem has this interface
+            file = await fs.open_async(str(path), "rb")
+            data = await file.read()
+        else:
+            # AsyncLocalFileSystem has this interface
+            async with fs.open_async(str(path), "rb") as file:
+                data = await file.read()
+
+        return json.loads(data)
+
+    @staticmethod
+    def get_async_filesystem(path: "Path") -> AsyncFileSystem:
+        """A helper method, is useful inside an async `load_from_path`.
+        The returned `fsspec` FileSystem will have async IO methods.
+        https://filesystem-spec.readthedocs.io/en/latest/async.html.
+        """
+        if isinstance(path, Path) and not isinstance(path, UPath):
+            try:
+                from morefs.asyn_local import AsyncLocalFileSystem  # type: ignore
+
+                return AsyncLocalFileSystem()
+            except ImportError as e:
+                raise RuntimeError(
+                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
+                    " filesystem"
+                ) from e
+        elif isinstance(path, UPath):
+            kwargs = path._kwargs.copy()  # noqa
+            kwargs["asynchronous"] = True
+            return path._default_accessor(path._url, **kwargs)._fs  # noqa
+        else:
+            raise DagsterInvariantViolationError(
+                f"Path type {type(path)} is not supported by the UPathIOManager"
+            )
+
+
+requires_python38 = pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
+
+
+@pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
+@requires_python38
+def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(io_manager_def=manager)
+    def non_partitioned_asset():
+        return json_data
+
+    result = materialize([non_partitioned_asset])
+
+    assert result.output_for_node("non_partitioned_asset") == json_data
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]), io_manager_def=manager)
+    def partitioned_asset(context: OpExecutionContext):
+        return context.partition_key
+
+    result = materialize([partitioned_asset], partition_key="a")
+
+    assert result.output_for_node("partitioned_asset") == "a"
+
+
+@requires_python38
+def test_upath_io_manager_async_multiple_time_partitions(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1))
+        },
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]):
+        return upstream_asset
+
+    for days in range(2):
+        materialize(
+            [upstream_asset],
+            partition_key=(start + timedelta(days=days)).strftime(daily.fmt),
+        )
+
+    result = materialize(
+        [upstream_asset.to_source_asset(), downstream_asset],
+        partition_key=(start + timedelta(days=1)).strftime(daily.fmt),
+    )
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert len(downstream_asset_data) == 2, "downstream day should map to 2 upstream days"
+
+
+@requires_python38
+def test_upath_io_manager_async_fail_on_missing_partitions(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1))
+        },
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]):
+        return upstream_asset
+
+    materialize(
+        [upstream_asset],
+        partition_key=start.strftime(daily.fmt),
+    )
+
+    with pytest.raises(RuntimeError):
+        materialize(
+            [upstream_asset.to_source_asset(), downstream_asset],
+            partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
+        )
+
+
+@requires_python38
+def test_upath_io_manager_async_allow_missing_partitions(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1),
+                metadata={"allow_missing_partitions": True},
+            )
+        },
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]):
+        return upstream_asset
+
+    materialize(
+        [upstream_asset],
+        partition_key=start.strftime(daily.fmt),
+    )
+
+    result = materialize(
+        [upstream_asset.to_source_asset(), downstream_asset],
+        partition_key=(start + timedelta(days=1)).strftime(daily.fmt),
+    )
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert len(downstream_asset_data) == 1, "1 partition should be missing"

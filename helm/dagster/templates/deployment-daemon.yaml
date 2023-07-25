@@ -136,7 +136,7 @@ spec:
         {{- if $userDeployments.enabled }}
         - name: dagster-workspace-yaml
           configMap:
-            name: {{ include "dagit.workspace.configmapName" . }}
+            name: {{ include "dagster.workspace.configmapName" . }}
         {{- end }}
         {{- if .Values.dagsterDaemon.volumes }}
         {{- range $volume := .Values.dagsterDaemon.volumes }}

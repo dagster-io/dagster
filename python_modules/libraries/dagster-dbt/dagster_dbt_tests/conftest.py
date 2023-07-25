@@ -4,7 +4,7 @@ import subprocess
 import dbt.version
 import pytest
 from dagster._utils import file_relative_path, pushd
-from dagster_dbt import DbtCli, DbtCliClientResource, dbt_cli_resource
+from dagster_dbt import DbtCliClientResource, DbtCliResource, dbt_cli_resource
 from packaging import version
 
 # ======= CONFIG ========
@@ -52,13 +52,13 @@ def dbt_python_config_dir():
 @pytest.fixture(
     scope="session",
     params=[
-        "legacy",
-        "DbtCliClientResource",
+        pytest.param("legacy", marks=pytest.mark.legacy),
+        pytest.param("DbtCliClientResource", marks=pytest.mark.legacy),
         pytest.param(
-            "DbtCli",
+            "DbtCliResource",
             marks=pytest.mark.skipif(
                 version.parse(dbt.version.__version__) < version.parse("1.4.0"),
-                reason="DbtCli resource only supports dbt 1.4+",
+                reason="DbtCliResource only supports dbt 1.4+",
             ),
         ),
     ],
@@ -70,8 +70,8 @@ def dbt_cli_resource_factory(request):
             profiles_dir=kwargs.get("profiles_dir"),
             json_log_format=kwargs.get("json_log_format", True),
         )
-    elif request.param == "DbtCli":
-        return lambda **kwargs: DbtCli(
+    elif request.param == "DbtCliResource":
+        return lambda **kwargs: DbtCliResource(
             project_dir=kwargs["project_dir"], profile=kwargs.get("profile")
         )
     else:
@@ -82,15 +82,6 @@ def dbt_cli_resource_factory(request):
 def dbt_seed(dbt_executable, dbt_config_dir):
     with pushd(TEST_PROJECT_DIR):
         subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
-
-
-@pytest.fixture(scope="session")
-def dbt_seed_python(dbt_executable, dbt_python_config_dir):
-    with pushd(TEST_PYTHON_PROJECT_DIR):
-        subprocess.run(
-            [dbt_executable, "seed", "--threads", "1", "--profiles-dir", dbt_python_config_dir],
-            check=True,
-        )
 
 
 @pytest.fixture(scope="session")

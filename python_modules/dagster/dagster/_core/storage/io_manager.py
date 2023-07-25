@@ -14,9 +14,8 @@ from dagster._core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.storage.input_manager import InputManager
+from dagster._core.storage.input_manager import IInputManagerDefinition, InputManager
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
-from dagster._core.storage.root_input_manager import IInputManagerDefinition
 
 from ..decorator_utils import get_function_params
 

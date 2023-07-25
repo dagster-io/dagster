@@ -399,8 +399,8 @@ def test_multipartitions_def_partition_mapping_infer_identity():
         )
         return 1
 
-    assets_job = define_asset_job("foo", [upstream, downstream]).resolve([upstream, downstream], [])
     asset_graph = AssetGraph.from_assets([upstream, downstream])
+    assets_job = define_asset_job("foo", [upstream, downstream]).resolve(asset_graph=asset_graph)
 
     assert (
         asset_graph.get_partition_mapping(upstream.key, downstream.key)

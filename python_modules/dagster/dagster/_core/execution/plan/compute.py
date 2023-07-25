@@ -198,6 +198,6 @@ def execute_core_compute(
     omitted_outputs = op_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
-            f"{step_context.op_def.node_type_str} '{str(step.node_handle)}' did not fire "
-            f"outputs {repr(omitted_outputs)}"
+            f"{step_context.op_def.node_type_str} '{step.node_handle}' did not fire "
+            f"outputs {omitted_outputs!r}"
         )

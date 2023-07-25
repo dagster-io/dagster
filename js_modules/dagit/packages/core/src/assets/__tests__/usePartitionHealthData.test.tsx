@@ -29,7 +29,7 @@ const DIMENSION_ONE_KEYS = [
 const DIMENSION_TWO_KEYS = ['TN', 'CA', 'VA', 'NY', 'MN'];
 
 const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
-  __typename: 'DagitQuery',
+  __typename: 'Query',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',
@@ -44,7 +44,7 @@ const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
 };
 
 const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
-  __typename: 'DagitQuery',
+  __typename: 'Query',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',
@@ -81,7 +81,7 @@ const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
 };
 
 const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
-  __typename: 'DagitQuery',
+  __typename: 'Query',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',
@@ -161,7 +161,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
 };
 
 const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
-  __typename: 'DagitQuery',
+  __typename: 'Query',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',
@@ -215,7 +215,7 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
 };
 
 const TWO_DIMENSIONAL_ASSET_EMPTY: PartitionHealthQuery = {
-  __typename: 'DagitQuery',
+  __typename: 'Query',
   assetNodeOrError: {
     __typename: 'AssetNode',
     id: '1234',

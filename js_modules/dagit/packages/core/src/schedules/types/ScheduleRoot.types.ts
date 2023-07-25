@@ -7,7 +7,7 @@ export type ScheduleRootQueryVariables = Types.Exact<{
 }>;
 
 export type ScheduleRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   scheduleOrError:
     | {
         __typename: 'PythonError';
@@ -117,7 +117,7 @@ export type PreviousRunsForScheduleQueryVariables = Types.Exact<{
 }>;
 
 export type PreviousRunsForScheduleQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
     | {__typename: 'PythonError'; message: string}

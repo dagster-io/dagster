@@ -170,7 +170,7 @@ Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/conf
 
 ### Separately Deploying Dagster Infrastructure and User Code
 
-It may be desirable to manage two Helm releases for your Dagster deployment: one release for the Dagster infrastructure, which consists of Dagit and the Daemon, and another release for your User Code, which contains the definitions of your pipelines written in Dagster. This way, changes to User Code can be decoupled from upgrades to core Dagster infrastructure.
+It may be desirable to manage two Helm releases for your Dagster deployment: one release for the Dagster infrastructure, which consists of the Dagster webserver and the Dagster daemon, and another release for your User Code, which contains the definitions of your pipelines written in Dagster. This way, changes to User Code can be decoupled from upgrades to core Dagster infrastructure.
 
 To do this, we offer the [`dagster` chart](https://artifacthub.io/packages/helm/dagster/dagster) and the [`dagster-user-deployments` chart](https://artifacthub.io/packages/helm/dagster/dagster-user-deployments).
 
@@ -186,10 +186,10 @@ dagster-user-deployments:
   enableSubchart: false
 ```
 
-Next, the workspace for Dagit must be configured with the future hosts and ports of the services exposing access to the User Code.
+Next, the workspace for the webserver must be configured with the future hosts and ports of the services exposing access to the User Code.
 
 ```yaml
-dagit:
+dagsterWebserver:
   workspace:
     enabled: true
     servers:

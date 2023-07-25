@@ -61,7 +61,7 @@ const buildSidebarQueryMock = (
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset1"]',
@@ -135,7 +135,7 @@ const EventsMock: MockedResponse<AssetEventsQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetOrError: {
         __typename: 'Asset',
         key: MockAssetKey,

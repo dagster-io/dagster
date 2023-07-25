@@ -1,16 +1,18 @@
+# libraries that have already been imported
+from .assets_initial_state import topstory_ids  # noqa: I001
+import json
+import requests
+import pandas as pd
+
 # start_topstories_asset_with_metadata
 import base64
 from io import BytesIO
 
 import matplotlib.pyplot as plt
-import pandas as pd
-import requests
 
 from dagster import (
-    AssetKey,
-    DagsterInstance,
+    AssetExecutionContext,
     MetadataValue,
-    Output,
     asset,
     get_dagster_logger,
 )
@@ -18,9 +20,12 @@ from dagster import (
 # Add the imports above to the top of `assets.py`
 
 
-@asset
-def topstories(topstory_ids):
+@asset(deps=[topstory_ids])
+def topstories(context: AssetExecutionContext) -> None:
     logger = get_dagster_logger()
+
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = json.load(f)
 
     results = []
     for item_id in topstory_ids:
@@ -33,14 +38,14 @@ def topstories(topstory_ids):
             logger.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
+    df.to_csv("data/topstories.csv")
 
-    return Output(  # The return value is updated to wrap it in `Output` class
-        value=df,  # The original df is passed in with the `value` parameter
+    context.add_output_metadata(
         metadata={
             "num_records": len(df),  # Metadata can be any key-value pair
             "preview": MetadataValue.md(df.head().to_markdown()),
             # The `MetadataValue` class has useful static methods to build Metadata
-        },
+        }
     )
 
 
@@ -48,9 +53,11 @@ def topstories(topstory_ids):
 
 
 # start_most_frequent_words_asset_with_metadata
-@asset
-def most_frequent_words(topstories):
+@asset(deps=[topstories])
+def most_frequent_words(context: AssetExecutionContext) -> None:
     stopwords = ["a", "the", "an", "of", "to", "in", "for", "and", "with", "on", "is"]
+
+    topstories = pd.read_csv("data/topstories.csv")
 
     # loop through the titles and count the frequency of each word
     word_counts = {}
@@ -82,11 +89,11 @@ def most_frequent_words(topstories):
     # Convert the image to Markdown to preview it within Dagster
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
+    with open("data/most_frequent_words.json", "w") as f:
+        json.dump(top_words, f)
+
     # Attach the Markdown content as metadata to the asset
-    return Output(
-        value=top_words,
-        metadata={"plot": MetadataValue.md(md_content)},
-    )
+    context.add_output_metadata(metadata={"plot": MetadataValue.md(md_content)})
 
 
 # end_most_frequent_words_asset_with_metadata

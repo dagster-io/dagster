@@ -14,7 +14,7 @@ export const AssetGraphEmpty: MockedResponse<AssetGraphQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [],
     },
   },
@@ -29,7 +29,7 @@ export const AssetViewDefinitionNonSDA: MockedResponse<AssetViewDefinitionQuery>
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetOrError: {
         id: '["non_sda_asset"]',
         key: {
@@ -58,7 +58,7 @@ export const AssetViewDefinitionSourceAsset: MockedResponse<AssetViewDefinitionQ
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetOrError: {
         id: 'test.py.repo.["observable_source_asset"]',
         key: {
@@ -124,7 +124,7 @@ export const AssetViewDefinitionSDA: MockedResponse<AssetViewDefinitionQuery> = 
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetOrError: {
         id: 'test.py.repo.["sda_asset"]',
         key: {

@@ -4,7 +4,7 @@ import React from 'react';
 
 import {
   buildAssetKey,
-  buildDagitSubscription,
+  buildSubscription,
   buildMaterializationEvent,
   buildPipelineRunLogsSubscriptionSuccess,
 } from '../../graphql/types';
@@ -22,7 +22,7 @@ const SubscriptionMock: MockedResponse<AssetLiveRunLogsSubscription> = {
     variables: {runId: '12345'},
   },
   result: jest.fn(() => ({
-    data: buildDagitSubscription({
+    data: buildSubscription({
       pipelineRunLogs: buildPipelineRunLogsSubscriptionSuccess({
         messages: [
           buildMaterializationEvent({

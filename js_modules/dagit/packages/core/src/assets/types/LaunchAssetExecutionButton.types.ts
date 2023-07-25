@@ -602,7 +602,7 @@ export type LaunchAssetLoaderQueryVariables = Types.Exact<{
 }>;
 
 export type LaunchAssetLoaderQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
@@ -1208,7 +1208,7 @@ export type LaunchAssetLoaderResourceQueryVariables = Types.Exact<{
 }>;
 
 export type LaunchAssetLoaderResourceQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   partitionSetsOrError:
     | {
         __typename: 'PartitionSets';
@@ -1796,7 +1796,7 @@ export type LaunchAssetCheckUpstreamQueryVariables = Types.Exact<{
 }>;
 
 export type LaunchAssetCheckUpstreamQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;

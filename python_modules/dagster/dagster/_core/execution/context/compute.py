@@ -43,7 +43,6 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
@@ -130,6 +129,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def op_config(self) -> Any:
+        """Any: The parsed config specific to this op."""
         return self._step_execution_context.op_config
 
     @property
@@ -199,6 +199,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
 
+    @public
     @property
     def job_def(self) -> JobDefinition:
         """JobDefinition: The currently executing pipeline."""
@@ -262,12 +263,24 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
+    @deprecated
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The asset partition key for the current run.
+        """The range of partition keys for the current run. (DEPRECATED: Use `partition_key_range` instead).
 
-        Raises an error if the current run is not a partitioned run.
+        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+        """
+        return self.partition_key_range
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The range of partition keys for the current run.
+
+        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        end. Raises an error if the current run is not a partitioned run.
         """
         return self._step_execution_context.asset_partition_key_range
 
@@ -495,34 +508,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         else:
             return key
 
-    @deprecated
-    def output_asset_partition_key(self, output_name: str = "result") -> str:
-        deprecation_warning(
-            "OpExecutionContext.output_asset_partition_key",
-            "1.0.0",
-            additional_warn_txt="Use OpExecutionContext.asset_partition_key_for_output instead.",
-        )
-
-        return self.asset_partition_key_for_output(output_name)
-
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
-
-    @deprecated
-    def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
-        deprecation_warning(
-            "OpExecutionContext.output_asset_partitions_time_window",
-            "1.0.0",
-            additional_warn_txt=(
-                "Use OpExecutionContext.asset_partitions_time_window_for_output instead."
-            ),
-        )
-
-        return self.asset_partitions_time_window_for_output(output_name)
 
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:

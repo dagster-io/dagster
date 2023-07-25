@@ -100,8 +100,7 @@ def test_invalid_config() -> None:
     with pytest.raises(
         ValidationError,
     ):
-        # pyright: reportGeneralTypeIssues=false
-        MyResource(foo="why")
+        MyResource(foo="why")  # pyright: ignore[reportGeneralTypeIssues]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8")
@@ -899,7 +898,7 @@ def test_from_resource_context_and_to_config_empty() -> None:
 
     @resource(config_schema=NoConfigResource.to_config_schema())
     def string_resource_function_style(context: InitResourceContext) -> str:
-        return NoConfigResource.from_resource_context(context).get_string()
+        return NoConfigResource.from_resource_context(context).get_string()  # type: ignore  # (??)
 
     assert string_resource_function_style(build_init_resource_context()) == "foo"
 
@@ -919,7 +918,7 @@ def test_context_on_resource_basic() -> None:
     # Can access context after binding one
     ContextUsingResource().with_replaced_resource_context(
         build_init_resource_context()
-    ).access_context()
+    ).access_context()  # type: ignore  # (??)
 
     @asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -963,7 +962,7 @@ def test_context_on_resource_use_instance() -> None:
             assert (
                 OutputDirResource(output_dir=None)
                 .with_replaced_resource_context(build_init_resource_context(instance=instance))
-                .get_effective_output_dir()
+                .get_effective_output_dir()  # type: ignore  # (??)
                 == "/tmp"
             )
 

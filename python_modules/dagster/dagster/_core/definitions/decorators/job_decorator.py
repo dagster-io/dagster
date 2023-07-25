@@ -178,7 +178,7 @@ def job(
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
-            The values provided will be viewable and editable in the Dagit playground, so be
+            The values provided will be viewable and editable in the Dagster UI, so be
             careful with secrets.
 
             If a :py:class:`RunConfig` object is provided, then it will be used directly as the run config
@@ -191,14 +191,14 @@ def job(
             If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
             values that can parameterize the job, as well as a function for mapping those
             values to the base config. The values provided will be viewable and editable in the
-            Dagit playground, so be careful with secrets.
+            Dagster UI, so be careful with secrets.
         tags (Optional[Dict[str, Any]]):
             Arbitrary information that will be attached to the execution of the Job.
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
         metadata (Optional[Dict[str, RawMetadataValue]]):
-            Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+            Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI.
             Keys must be strings, and values must be python primitive types or one of the provided
             MetadataValue types
         logger_defs (Optional[Dict[str, LoggerDefinition]]):

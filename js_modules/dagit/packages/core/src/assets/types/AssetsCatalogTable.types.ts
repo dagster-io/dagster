@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type AssetCatalogTableQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type AssetCatalogTableQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetsOrError:
     | {
         __typename: 'AssetConnection';
@@ -50,7 +50,7 @@ export type AssetCatalogGroupTableQueryVariables = Types.Exact<{
 }>;
 
 export type AssetCatalogGroupTableQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;

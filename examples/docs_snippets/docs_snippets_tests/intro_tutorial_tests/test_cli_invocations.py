@@ -3,7 +3,7 @@ import runpy
 from urllib.parse import urlencode
 
 import pytest
-from dagit.app import create_app_from_workspace_process_context
+from dagster_webserver.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
 
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs

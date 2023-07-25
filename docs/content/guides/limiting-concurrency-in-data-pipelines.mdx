@@ -201,10 +201,10 @@ With this configuration, each unique value of the `use-case` tag will be limited
 ## Configuring op/asset-level concurrency
 
 <Note>
-  <strong>Looking for global op/asset concurrency?</strong> Dagster doesn’t
-  currently support global (across multiple runs) op/asset concurrency
-  out-of-the-box. If you require concurrency that applies to all ops/assets in a
-  deployment, check out our{" "}
+  <strong>Looking for global op/asset concurrency?</strong> Check out Dagster's
+  experimental support for [global op/asset concurrency
+  limits](#limiting-opasset-concurrency-across-runs). For more fine-grained
+  control, you can also check out our{" "}
   <a href="/deployment/guides/celery">integration with Celery</a>.
 </Note>
 
@@ -449,7 +449,7 @@ If runs aren’t being dequeued in Dagster Open Source, the root cause is likely
 
      If the daemon isn’t running, proceed to step 2.
 
-  2. **Verify the Dagster daemon can access the same storage as the Dagit process**. Both the Dagit (Dagster UI) process and Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used [`dagster dev`](/guides/running-dagster-locally) to start the Dagster UI, both processes should be using the same storage.
+  2. **Verify the Dagster daemon can access the same storage as the Dagster webserver process**. Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used [`dagster dev`](/guides/running-dagster-locally) to start the Dagster UI, both processes should be using the same storage.
 
      Refer to the [Dagster Instance docs](/deployment/dagster-instance) for more information.
 

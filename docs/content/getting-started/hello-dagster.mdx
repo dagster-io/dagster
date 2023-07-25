@@ -7,7 +7,7 @@ description: Run dagster for the first time
 
 Welcome to Dagster! In this guide, you'll build a simple data pipeline in Dagster that downloads the top 10 HackerNews stories. In three quick steps, you'll have functional code and begin exploring Dagster's user interface.
 
-**Note**: Before you dive in, make sure you have [Python 3.7+ installed](https://www.python.org/).
+**Note**: Before you dive in, make sure you have [Python 3.8+ installed](https://www.python.org/).
 
 Let's get started!
 
@@ -18,10 +18,12 @@ Let's get started!
 Create a file named `hello-dagster.py` that contains the following code:
 
 ```python file=/getting-started/hello-dagster/hello-dagster.py
+import json
+
 import pandas as pd
 import requests
 
-from dagster import MetadataValue, Output, asset
+from dagster import AssetExecutionContext, MetadataValue, asset
 
 
 @asset
@@ -33,13 +35,18 @@ def hackernews_top_story_ids():
     top_story_ids = requests.get(
         "https://hacker-news.firebaseio.com/v0/topstories.json"
     ).json()
-    return top_story_ids[:10]
+
+    with open("hackernews_top_story_ids.json", "w") as f:
+        json.dump(top_story_ids[:10], f)
 
 
 # asset dependencies can be inferred from parameter names
-@asset
-def hackernews_top_stories(hackernews_top_story_ids):
+@asset(deps=[hackernews_top_story_ids])
+def hackernews_top_stories(context: AssetExecutionContext):
     """Get items based on story ids from the HackerNews items endpoint."""
+    with open("hackernews_top_story_ids.json", "r") as f:
+        hackernews_top_story_ids = json.load(f)
+
     results = []
     for item_id in hackernews_top_story_ids:
         item = requests.get(
@@ -48,6 +55,7 @@ def hackernews_top_stories(hackernews_top_story_ids):
         results.append(item)
 
     df = pd.DataFrame(results)
+    df.to_csv("hackernews_top_stories.csv")
 
     # recorded metadata can be customized
     metadata = {
@@ -55,7 +63,7 @@ def hackernews_top_stories(hackernews_top_story_ids):
         "preview": MetadataValue.md(df[["title", "by", "url"]].to_markdown()),
     }
 
-    return Output(value=df, metadata=metadata)
+    context.add_output_metadata(metadata=metadata)
 ```
 
 ---
@@ -66,14 +74,14 @@ Next, install the Python packages you'll need to run your code in your favorite 
 
 ```bash
 # run in a terminal in your favorite python environment
-pip install dagster dagit pandas
+pip install dagster dagster-webserver pandas
 ```
 
 Unsure? Check out the [installation guide](/getting-started/install).
 
 ---
 
-## Step 3: Start the UI and materialize assets
+## Step 3: Start the Dagster UI and materialize assets
 
 1. In the same directory as `hello-dagster.py`, run `dagster dev`. This command starts a web server to host Dagster's user interface:
 

@@ -12,6 +12,7 @@ import {
   tryPrettyPrintJSON,
   Table,
   DialogBody,
+  CaptionMono,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -341,11 +342,22 @@ const MetadataEntryModalAction: React.FC<{
   );
 };
 
-const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({entry}) => {
+export const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({entry}) => {
   const [showSchema, setShowSchema] = React.useState(false);
 
   const schema = entry.table.schema;
-  const records = entry.table.records.map((record) => JSON.parse(record));
+  const invalidRecords: string[] = [];
+
+  const records = entry.table.records
+    .map((record) => {
+      try {
+        return JSON.parse(record);
+      } catch (e) {
+        invalidRecords.push(record);
+        return null;
+      }
+    })
+    .filter((record): record is Record<string, any> => record !== null);
 
   return (
     <Box flex={{direction: 'column', gap: 8}}>
@@ -364,6 +376,26 @@ const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({ent
               {schema.columns.map((column) => (
                 <td key={column.name}>{record[column.name]?.toString()}</td>
               ))}
+            </tr>
+          ))}
+          {invalidRecords.map((record, ii) => (
+            <tr key={`invalid-${ii}`}>
+              <td colSpan={schema.columns.length}>
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                  <Icon name="warning" />
+                  <div>Could not parse record:</div>
+                </Box>
+                <div>
+                  <Tooltip
+                    content={<div style={{maxWidth: '400px'}}>{record}</div>}
+                    placement="top"
+                  >
+                    <CaptionMono>
+                      {record.length > 20 ? `${record.slice(0, 20)}…` : record}
+                    </CaptionMono>
+                  </Tooltip>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

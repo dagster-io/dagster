@@ -7,7 +7,6 @@ setup(
     license="Apache-2.0",
     url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -16,8 +15,8 @@ setup(
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=[
-        "dagit",
         "dagster",
+        "dagster-webserver",
         "dagstermill",
         "dagster-airbyte",
         "dagster-airflow",
@@ -55,10 +54,10 @@ setup(
             "seaborn",
             "scikit-learn",
             "slack_sdk",
-            "snapshottest",
+            "syrupy<4",  # 3.7 compatible,
             "dbt-duckdb",
             "xgboost",
-            "dagit[test]",
+            "dagster-webserver[test]",
         ]
     },
 )

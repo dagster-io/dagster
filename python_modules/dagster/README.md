@@ -27,7 +27,7 @@
   </a>
 </div>
 
-__Dagster is a cloud-native data pipeline orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.__
+**Dagster is a cloud-native data pipeline orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.**
 
 It is designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
 
@@ -58,6 +58,7 @@ def continent_stats(country_populations: DataFrame, continent_change_model: Line
     result["pop_change_factor"] = continent_change_model.coef_
     return result
 ```
+
 The graph loaded into Dagster's web UI:
 
 <p align="center">
@@ -70,7 +71,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
-Dagster is available on PyPI and officially supports Python 3.7+.
+Dagster is available on PyPI and officially supports Python 3.8+.
 
 ```bash
 pip install dagster dagit
@@ -96,12 +97,15 @@ You can find the full Dagster documentation [here](https://docs.dagster.io), inc
   </p>
 
 ### Dagster as a productivity platform
+
 Identify the key assets you need to create using a declarative approach, or you can focus on running basic tasks. Embrace CI/CD best practices from the get-go: build reusable components, spot data quality issues, and flag bugs early.
 
 ### Dagster as a robust orchestration engine
+
 Put your pipelines into production with a robust multi-tenant, multi-tool engine that scales technically and organizationally.
 
 ### Dagster as a unified control plane
+
 Maintain control over your data as the complexity scales. Centralize your metadata in one tool with built-in observability, diagnostics, cataloging, and lineage. Spot any issues and identify performance improvement opportunities.
 
 <hr />

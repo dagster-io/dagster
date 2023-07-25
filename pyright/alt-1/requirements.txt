@@ -13,7 +13,7 @@
 ### examples/assets_smoke_test
 # -e examples/assets_smoke_test
 #   -e python_modules/dagster[pyright,test]
-#   -e python_modules/dagit
+#   -e python_modules/dagster-webserver
 #   -e python_modules/dagster-graphql
 #   -e python_modules/libraries/dagster-pandas/
 #   -e python_modules/libraries/dagster-dbt/
@@ -23,14 +23,14 @@
 ### examples/assets_pandas_type_metadata
 -e examples/assets_pandas_type_metadata
   -e python_modules/dagster[pyright,test]
-  -e python_modules/dagit
+  -e python_modules/dagster-webserver
   -e python_modules/dagster-graphql
   -e python_modules/libraries/dagster-pandera/
 
 ### examples/project_fully_featured (and experimental version)
 -e examples/project_fully_featured[tests]
   -e python_modules/dagster[pyright,test]
-  -e python_modules/dagit
+  -e python_modules/dagster-webserver
   -e python_modules/dagster-graphql
   -e python_modules/libraries/dagster-aws/
   -e python_modules/libraries/dagster-dbt/

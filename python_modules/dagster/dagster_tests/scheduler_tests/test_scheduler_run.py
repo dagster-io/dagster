@@ -47,6 +47,7 @@ from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.test_utils import (
+    BlockingThreadPoolExecutor,
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
@@ -99,6 +100,9 @@ def get_schedule_executors():
     ]
 
 
+FUTURES_TIMEOUT = 75
+
+
 def evaluate_schedules(
     workspace_context: WorkspaceProcessContext,
     executor: Optional[ThreadPoolExecutor],
@@ -106,7 +110,7 @@ def evaluate_schedules(
     max_tick_retries: int = 0,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
-    timeout: int = 75,
+    timeout: int = FUTURES_TIMEOUT,
     submit_executor: Optional[ThreadPoolExecutor] = None,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
@@ -2628,3 +2632,53 @@ def test_schedule_mutation(
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(origin_two.get_id(), schedule_two.selector_id)
         assert len(ticks) == 1
+
+
+def test_stale_request_context(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    freeze_datetime = feb_27_2019_start_of_day()
+    with pendulum.test(freeze_datetime):
+        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+
+        schedule_origin = external_schedule.get_external_origin()
+
+        instance.start_schedule(external_schedule)
+        executor = ThreadPoolExecutor()
+        blocking_executor = BlockingThreadPoolExecutor()
+
+        futures = {}
+        list(
+            launch_scheduled_runs(
+                workspace_context,
+                get_default_daemon_logger("SchedulerDaemon"),
+                pendulum.now("UTC"),
+                threadpool_executor=executor,
+                scheduler_run_futures=futures,
+                submit_threadpool_executor=blocking_executor,
+            )
+        )
+
+        # Reload the workspace (and kill previous server) before unblocking the threads.
+        # This will cause failures if the threads do not refresh their request contexts.
+        p = workspace_context._grpc_server_registry._all_processes[0]  # noqa: SLF001
+        workspace_context.reload_workspace()
+        p.server_process.kill()
+        p.wait()
+        blocking_executor.allow()
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        runs = instance.get_runs()
+        assert len(runs) == 15, ticks[0].error
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs],
+        )

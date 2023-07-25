@@ -1,5 +1,10 @@
+import json
+import os
+
 import pandas as pd
 
+from dagster import build_asset_context
+from dagster._utils import pushd
 from docs_snippets.tutorial.building_an_asset_graph import (
     asset_with_logger,
     assets_initial_state,
@@ -7,7 +12,7 @@ from docs_snippets.tutorial.building_an_asset_graph import (
 )
 
 
-def test_most_frequent_words():
+def test_most_frequent_words(tmpdir):
     data = pd.DataFrame(
         [
             {"title": "The quick brown fox"},
@@ -25,12 +30,19 @@ def test_most_frequent_words():
         "dog": 1,
     }
 
-    results = assets_initial_state.most_frequent_words(data)
+    with pushd(tmpdir):
+        os.makedirs("data", exist_ok=True)
+        data.to_csv("data/topstories.csv")
+
+        assets_initial_state.most_frequent_words()
+
+        with open("data/most_frequent_words.json") as f:
+            results = json.load(f)
 
     assert results == expected
 
 
-def test_most_frequent_words_with_metadata():
+def test_most_frequent_words_with_metadata(tmpdir):
     data = pd.DataFrame(
         [
             {"title": "The quick brown fox"},
@@ -48,7 +60,14 @@ def test_most_frequent_words_with_metadata():
         "dog": 1,
     }
 
-    results = assets_with_metadata.most_frequent_words(data)
+    with pushd(tmpdir):
+        os.makedirs("data", exist_ok=True)
+        data.to_csv("data/topstories.csv")
 
-    assert results.value == expected
-    assert results.metadata is not None
+        context = build_asset_context()
+        assets_with_metadata.most_frequent_words(context)
+
+        with open("data/most_frequent_words.json") as f:
+            results = json.load(f)
+
+    assert results == expected

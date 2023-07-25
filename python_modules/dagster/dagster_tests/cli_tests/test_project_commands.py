@@ -134,7 +134,11 @@ def test_available_examples_in_sync_with_example_folder():
     available_examples_in_folder = [
         e
         for e in os.listdir(example_folder)
-        if (e not in EXAMPLES_TO_IGNORE and not _should_skip_file(e))
+        if (
+            os.path.isdir(os.path.join(example_folder, e))
+            and e not in EXAMPLES_TO_IGNORE
+            and not _should_skip_file(e)
+        )
     ]
     assert set(available_examples_in_folder) == set(AVAILABLE_EXAMPLES)
 

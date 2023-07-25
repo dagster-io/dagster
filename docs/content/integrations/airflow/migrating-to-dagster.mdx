@@ -75,12 +75,12 @@ In the root of your repository, create a `dagster_migration.py` file.
   for help.
 </Note>
 
-In this step, you'll install the `dagster`, `dagster-airflow`, and `dagit` Python packages alongside Airflow. **We strongly recommend using a virtualenv.**
+In this step, you'll install the `dagster`, `dagster-airflow`, and `dagster-webserver` Python packages alongside Airflow. **We strongly recommend using a virtualenv.**
 
 To install everything, run:
 
 ```bash
-pip install dagster dagster-airflow dagit
+pip install dagster dagster-airflow dagster-webserver
 ```
 
 We also suggest verifying that you're installing the correct versions of your Airflow dependencies. Verifying the dependency versions will likely save you from debugging tricky errors later.
@@ -111,9 +111,9 @@ migrated_airflow_definitions = make_dagster_definitions_from_airflow_dags_path(
 
 ## Step 4: Verify the DAGs are loading
 
-In this step, you'll spin up Dagit, Dagster's web-based UI, and verify that your migrated DAGs are loading. **Note**: Unless the migrated DAGs depend on no Airflow configuration state or permissions, it's unlikely they'll execute correctly at this point. That's okay - we'll fix it in a bit. Starting Dagit is the first step in our development loop, allowing you to make a local change, view it in Dagit, and debug any errors.
+In this step, you'll spin up Dagster's web-based UI, and verify that your migrated DAGs are loading. **Note**: Unless the migrated DAGs depend on no Airflow configuration state or permissions, it's unlikely they'll execute correctly at this point. That's okay - we'll fix it in a bit. Starting the Dagster UI is the first step in our development loop, allowing you to make a local change, view it in the UI, and debug any errors.
 
-1. Run the following to start Dagit:
+1. Run the following to start the UI:
 
    ```bash
    dagster dev -f ./migrate_repo.py

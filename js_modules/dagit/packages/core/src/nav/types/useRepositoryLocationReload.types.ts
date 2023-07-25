@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type RepositoryLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type RepositoryLocationStatusQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   workspaceOrError:
     | {
         __typename: 'PythonError';
@@ -53,7 +53,7 @@ export type RepositoryLocationStatusQuery = {
 export type ReloadWorkspaceMutationVariables = Types.Exact<{[key: string]: never}>;
 
 export type ReloadWorkspaceMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   reloadWorkspace:
     | {
         __typename: 'PythonError';
@@ -105,7 +105,7 @@ export type ReloadRepositoryLocationMutationVariables = Types.Exact<{
 }>;
 
 export type ReloadRepositoryLocationMutation = {
-  __typename: 'DagitMutation';
+  __typename: 'Mutation';
   reloadRepositoryLocation:
     | {
         __typename: 'PythonError';

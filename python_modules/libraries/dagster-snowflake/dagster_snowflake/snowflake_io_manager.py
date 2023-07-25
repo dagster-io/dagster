@@ -56,7 +56,7 @@ def build_snowflake_io_manager(
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": snowflake_pandas_io_manager.configured({
+                    "io_manager": snowflake_io_manager.configured({
                         "database": "my_database",
                         "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                         ...

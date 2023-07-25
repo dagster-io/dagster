@@ -10,7 +10,6 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
-from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from .partition_mapping import PartitionMapping
 
@@ -53,12 +52,10 @@ class AssetIn(
         key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
         dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
     ):
-        key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "1.0.0")
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
 

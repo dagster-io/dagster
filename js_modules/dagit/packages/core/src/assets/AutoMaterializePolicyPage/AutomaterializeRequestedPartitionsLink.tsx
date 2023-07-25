@@ -10,6 +10,7 @@ import {
   Spinner,
   Tag,
   TextInput,
+  Caption,
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
@@ -32,9 +33,10 @@ import {
 interface Props {
   runIds?: string[];
   partitionKeys: string[];
+  intent?: React.ComponentProps<typeof Tag>['intent'];
 }
 
-export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: Props) => {
+export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, intent}: Props) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [queryString, setQueryString] = React.useState('');
   const queryLowercase = queryString.toLocaleLowerCase();
@@ -52,7 +54,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
 
   const label = React.useMemo(() => {
     if (runIds) {
-      return count === 1 ? '1 partition requested' : `${count} partitions requested`;
+      return count === 1 ? '1 partition launched' : `${count} partitions launched`;
     }
     return count === 1 ? '1 partition' : `${count} partitions`;
   }, [count, runIds]);
@@ -63,7 +65,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
     }
 
     return runIds ? (
-      <PartitionAndRunList runIds={runIds} partitionKeys={filteredPartitionKeys} />
+      <PartitionAndRunList runIds={runIds} partitionKeys={filteredPartitionKeys} intent={intent} />
     ) : (
       <VirtualizedPartitionList partitionKeys={partitionKeys} />
     );
@@ -71,7 +73,12 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys}: 
 
   return (
     <>
-      <ButtonLink onClick={() => setIsOpen(true)}>{label}</ButtonLink>
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <Tag intent={intent}>{label}</Tag>
+        <ButtonLink onClick={() => setIsOpen(true)}>
+          <Caption>View details</Caption>
+        </ButtonLink>
+      </Box>
       <Dialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

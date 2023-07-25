@@ -1,4 +1,3 @@
-import datetime
 from enum import Enum
 from typing import NamedTuple, Optional
 
@@ -13,7 +12,7 @@ class AutoMaterializePolicyType(Enum):
 
 
 @experimental
-@whitelist_for_serdes
+@whitelist_for_serdes(old_fields={"time_window_partition_scope_minutes": 1e-6})
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
@@ -21,7 +20,6 @@ class AutoMaterializePolicy(
             ("on_missing", bool),
             ("on_new_parent_data", bool),
             ("for_freshness", bool),
-            ("time_window_partition_scope_minutes", Optional[float]),
             ("max_materializations_per_minute", Optional[int]),
         ],
     )
@@ -71,7 +69,6 @@ class AutoMaterializePolicy(
         on_missing: bool,
         on_new_parent_data: bool,
         for_freshness: bool,
-        time_window_partition_scope_minutes: Optional[float],
         max_materializations_per_minute: Optional[int] = 1,
     ):
         check.invariant(
@@ -84,15 +81,8 @@ class AutoMaterializePolicy(
             on_missing=on_missing,
             on_new_parent_data=on_new_parent_data,
             for_freshness=for_freshness,
-            time_window_partition_scope_minutes=time_window_partition_scope_minutes,
             max_materializations_per_minute=max_materializations_per_minute,
         )
-
-    @property
-    def time_window_partition_scope(self) -> Optional[datetime.timedelta]:
-        if self.time_window_partition_scope_minutes is None:
-            return None
-        return datetime.timedelta(minutes=self.time_window_partition_scope_minutes)
 
     @public
     @staticmethod
@@ -109,7 +99,6 @@ class AutoMaterializePolicy(
             on_missing=True,
             on_new_parent_data=True,
             for_freshness=True,
-            time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
             ),
@@ -130,7 +119,6 @@ class AutoMaterializePolicy(
             on_missing=False,
             on_new_parent_data=False,
             for_freshness=True,
-            time_window_partition_scope_minutes=datetime.timedelta.resolution.total_seconds() / 60,
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
             ),

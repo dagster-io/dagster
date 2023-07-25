@@ -3,8 +3,8 @@
     "description": "@generated",
     "type": "object",
     "properties": {
-        "dagit": {
-            "$ref": "#/definitions/Dagit"
+        "dagsterWebserver": {
+            "$ref": "#/definitions/Webserver"
         },
         "dagster-user-deployments": {
             "$ref": "#/definitions/UserDeployments"
@@ -78,7 +78,7 @@
         }
     },
     "required": [
-        "dagit",
+        "dagsterWebserver",
         "dagster-user-deployments",
         "postgresql",
         "generatePostgresqlPasswordSecret",
@@ -334,8 +334,8 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
-        "Dagit": {
-            "title": "Dagit",
+        "Webserver": {
+            "title": "Webserver",
             "type": "object",
             "properties": {
                 "replicaCount": {
@@ -562,6 +562,12 @@
                 "enabled"
             ]
         },
+        "ReadinessProbeWithEnabled": {
+            "title": "ReadinessProbeWithEnabled",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -650,7 +656,7 @@
                     "$ref": "#/definitions/LivenessProbe"
                 },
                 "readinessProbe": {
-                    "$ref": "#/definitions/ReadinessProbe"
+                    "$ref": "#/definitions/ReadinessProbeWithEnabled"
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
@@ -1066,8 +1072,8 @@
                 "servicePort"
             ]
         },
-        "DagitIngressConfiguration": {
-            "title": "DagitIngressConfiguration",
+        "FlowerIngressConfiguration": {
+            "title": "FlowerIngressConfiguration",
             "type": "object",
             "properties": {
                 "host": {
@@ -1108,8 +1114,8 @@
                 "succeedingPaths"
             ]
         },
-        "FlowerIngressConfiguration": {
-            "title": "FlowerIngressConfiguration",
+        "WebserverIngressConfiguration": {
+            "title": "WebserverIngressConfiguration",
             "type": "object",
             "properties": {
                 "host": {
@@ -1168,23 +1174,23 @@
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
                 },
-                "dagit": {
-                    "$ref": "#/definitions/DagitIngressConfiguration"
-                },
-                "readOnlyDagit": {
-                    "$ref": "#/definitions/DagitIngressConfiguration"
-                },
                 "flower": {
                     "$ref": "#/definitions/FlowerIngressConfiguration"
+                },
+                "dagsterWebserver": {
+                    "$ref": "#/definitions/WebserverIngressConfiguration"
+                },
+                "readOnlyDagsterWebserver": {
+                    "$ref": "#/definitions/WebserverIngressConfiguration"
                 }
             },
             "required": [
                 "enabled",
                 "labels",
                 "annotations",
-                "dagit",
-                "readOnlyDagit",
-                "flower"
+                "flower",
+                "dagsterWebserver",
+                "readOnlyDagsterWebserver"
             ]
         },
         "ComputeLogManagerType": {

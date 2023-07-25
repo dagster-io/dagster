@@ -146,13 +146,13 @@ def input_manager(
 
     .. code-block:: python
 
-        from dagster import root_input_manager, op, job, In
+        from dagster import input_manager, op, job, In
 
         @input_manager
         def csv_loader(_):
             return read_csv("some/path")
 
-        @op(ins={"input1": In(root_manager_key="csv_loader_key")})
+        @op(ins={"input1": In(input_manager_key="csv_loader_key")})
         def my_op(_, input1):
             do_stuff(input1)
 
@@ -230,7 +230,7 @@ class _InputManagerDecoratorCallable:
         def _resource_fn(_):
             return InputManagerWrapper(load_fn)
 
-        root_input_manager_def = InputManagerDefinition(
+        input_manager_def = InputManagerDefinition(
             resource_fn=_resource_fn,
             config_schema=self.config_schema,
             description=self.description,
@@ -240,6 +240,6 @@ class _InputManagerDecoratorCallable:
         )
 
         # `update_wrapper` typing cannot currently handle a Union of Callables correctly
-        update_wrapper(root_input_manager_def, wrapped=load_fn)  # type: ignore
+        update_wrapper(input_manager_def, wrapped=load_fn)  # type: ignore
 
-        return root_input_manager_def
+        return input_manager_def

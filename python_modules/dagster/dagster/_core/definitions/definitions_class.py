@@ -16,6 +16,7 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._config.pythonic_config import (
     attach_resource_id_to_key_mapping,
 )
+from dagster._core.definitions.asset_graph import InternalAssetGraph
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -175,7 +176,19 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 
     # Create a mapping of job id to a version of the job with the resource defs bound
     unsatisfied_job_to_resource_bound_job = {
-        id(job): job.with_top_level_resources(resource_defs)
+        id(job): job.with_top_level_resources(
+            {
+                **resource_defs,
+                **job.resource_defs,
+                # special case for IO manager - the job-level IO manager does not take precedence
+                # if it is the default and a top-level IO manager is provided
+                **(
+                    {"io_manager": resource_defs["io_manager"]}
+                    if _io_manager_needs_replacement(job, resource_defs)
+                    else {}
+                ),
+            }
+        )
         for job in jobs
         if job in unsatisfied_jobs
     }
@@ -517,3 +530,7 @@ class Definitions:
         point is to defer that resolution until later.
         """
         return self._created_pending_or_normal_repo
+
+    def get_asset_graph(self) -> InternalAssetGraph:
+        """Get the AssetGraph for this set of definitions."""
+        return self.get_repository_def().asset_graph

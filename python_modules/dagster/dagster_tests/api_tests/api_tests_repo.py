@@ -15,6 +15,7 @@ from dagster import (
     schedule,
     usable_as_dagster_type,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import (
     PartitionedConfig,
@@ -179,7 +180,7 @@ def bar_repo():
             "baz": lambda: baz_job,
             "dynamic_job": define_asset_job(
                 "dynamic_job", [dynamic_asset], partitions_def=dynamic_partitions_def
-            ).resolve([dynamic_asset], []),
+            ).resolve(asset_graph=AssetGraph.from_assets([dynamic_asset])),
             "fail": fail_job,
             "foo": foo_job,
             "forever": forever_job,

@@ -179,8 +179,8 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived dagit process.
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        """Allows for optimizing database connection / use in the context of a long lived webserver process.
         """
 
     def alembic_version(self) -> Optional[AlembicVersion]:
