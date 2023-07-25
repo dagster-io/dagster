@@ -102,12 +102,3 @@ def tag_concurrency_job():
 
 
 # end_tag_concurrency
-
-
-# start_global_concurrency
-@op(tags={"dagster/concurrency_key": "redshift"})
-def my_redshift_op():
-    ...
-
-
-# end_global_concurrency
