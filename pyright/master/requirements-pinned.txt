@@ -59,7 +59,7 @@ cachetools==5.3.1
 callee==0.3.1
 cattrs==23.1.2
 celery==5.3.1
-certifi==2023.5.7
+certifi==2023.7.22
 cffi==1.15.1
 chardet==5.1.0
 charset-normalizer==3.2.0
