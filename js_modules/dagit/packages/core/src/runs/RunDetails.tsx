@@ -164,7 +164,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
     if (resp.data?.freeConcurrencySlotsForRun) {
       await showSharedToaster({
         intent: 'success',
-        icon: 'copy_to_clipboard_done',
+        icon: 'check_circle',
         message: 'Freed concurrency slots',
       });
     }
