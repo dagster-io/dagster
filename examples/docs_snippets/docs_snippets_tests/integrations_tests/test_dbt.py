@@ -1,11 +1,11 @@
 import json
+from pathlib import Path
 
 from dagster_dbt import (
     DbtCloudClientResource,
     dbt_assets,
     load_assets_from_dbt_cloud_job,
 )
-from pathlib import Path
 
 from dagster import asset
 from dagster._core.definitions import materialize
@@ -21,7 +21,7 @@ from docs_snippets.integrations.dbt.dbt_cloud import (
 
 
 def test_scope_schedule_assets_can_load():
-    MANIFEST_PATH = Path(__file__).dirname() / "manifest.json"
+    MANIFEST_PATH = Path(__file__).parent / "manifest.json"
     with open(MANIFEST_PATH) as f:
         manifest = json.load(f)
 
