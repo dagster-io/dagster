@@ -75,7 +75,7 @@ class AssetValueLoader:
         *,
         python_type: Optional[Type[object]] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        input_metadata: Optional[Dict[str, Any]] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
         """Loads the contents of an asset as a Python object.
@@ -87,7 +87,8 @@ class AssetValueLoader:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
-            metadata (Optional[Dict[str, Any]]): A dict of metadata to pass (or override) to the IOManager.
+            input_metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
+                (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
                 to the :py:class:`IOManager`.
 
@@ -163,7 +164,7 @@ class AssetValueLoader:
             else None,
             asset_partitions_def=asset_partitions_def,
             instance=self._instance,
-            metadata=metadata,
+            metadata=input_metadata,
         )
 
         return io_manager.load_input(input_context)
