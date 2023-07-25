@@ -23,12 +23,13 @@ app = typer.Typer(
     help="CLI tools for working with Dagster and dbt.",
     add_completion=False,
 )
-project_app = typer.Typer(no_args_is_help=True)
-app.add_typer(
-    project_app,
+project_app = typer.Typer(
     name="project",
+    no_args_is_help=True,
     help="Commands to initialize a new Dagster project with an existing dbt project.",
+    add_completion=False,
 )
+app.add_typer(project_app)
 
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
@@ -142,10 +143,12 @@ def project_scaffold_command(
         typer.Option(
             default=...,
             callback=validate_dbt_project_dir,
-            is_eager=True,
+            show_default=False,
             help=(
-                "The path of your dbt project directory. By default, we use the current"
-                " working directory."
+                "The path of your dbt project directory. This path must contain a dbt_project.yml"
+                " file. By default, this command will assume that the current working directory"
+                " contains a dbt project, but you can set a different directory by setting this"
+                " option."
             ),
             exists=True,
             file_okay=False,
@@ -193,3 +196,6 @@ def project_scaffold_command(
             padding=1,
         ),
     )
+
+
+project_app_typer_click_object = typer.main.get_command(project_app)
