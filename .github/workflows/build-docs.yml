@@ -60,6 +60,7 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: {{BRANCH}}-dagster-elementl.vercel.app
 
       - name: Publish to Vercel
         uses: amondnet/vercel-action@v25
