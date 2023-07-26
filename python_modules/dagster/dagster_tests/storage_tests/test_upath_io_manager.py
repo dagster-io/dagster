@@ -54,6 +54,16 @@ class DummyIOManager(UPathIOManager):
         return str(path)
 
 
+class PickleIOManager(UPathIOManager):
+    def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+        with path.open("wb") as file:
+            pickle.dump(obj, file)
+
+    def load_from_path(self, context: InputContext, path: UPath) -> List:
+        with path.open("rb") as file:
+            return pickle.load(file)
+
+
 @pytest.fixture
 def dummy_io_manager(tmp_path: Path) -> IOManagerDefinition:
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
@@ -214,6 +224,34 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
         resource_defs={"io_manager": dummy_io_manager},
     )
     result = my_job.execute_in_process(partition_key="A")
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert set(downstream_asset_data.keys()) == {"A", "B"}
+
+
+def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path: Path):
+    my_io_manager = PickleIOManager(UPath(tmp_path))
+
+    upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
+
+    @asset(partitions_def=upstream_partitions_def, io_manager_def=my_io_manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())},
+        io_manager_def=my_io_manager,
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
+        return upstream_asset
+
+    for partition_key in ["A", "B"]:
+        materialize(
+            [upstream_asset],
+            partition_key=partition_key,
+        )
+
+    result = materialize([upstream_asset.to_source_asset(), downstream_asset])
+
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
 
