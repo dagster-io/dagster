@@ -1,10 +1,8 @@
 from dagster import AssetKey, DagsterInstance, observable_source_asset
+from dagster._core.definitions.asset_daemon_context import get_auto_observe_run_requests
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    get_auto_observe_run_requests,
-    reconcile,
-)
+from dagster._core.definitions.asset_reconciliation_sensor import reconcile
 from pytest import fixture
 
 
