@@ -518,10 +518,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key in self.get_dynamic_partitions(partitions_def_name)
 
-    @cached_method
     def asset_partitions_with_newly_updated_parents_and_new_latest_storage_id(
         self,
-        *,
         latest_storage_id: Optional[int],
         target_asset_keys: FrozenSet[AssetKey],
         target_asset_keys_and_parents: FrozenSet[AssetKey],

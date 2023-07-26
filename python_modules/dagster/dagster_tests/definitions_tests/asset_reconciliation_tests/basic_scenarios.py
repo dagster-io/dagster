@@ -81,7 +81,13 @@ basic_scenarios = {
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
         expected_conditions={
             "asset1": {MissingAutoMaterializeCondition()},
-            "asset2": {MissingAutoMaterializeCondition()},
+            "asset2": {
+                MissingAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset(),
+                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
+                ),
+            },
         },
     ),
     "one_asset_already_launched": AssetReconciliationScenario(
@@ -98,7 +104,13 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
         expected_conditions={
-            "asset2": {MissingAutoMaterializeCondition()},
+            "asset2": {
+                MissingAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
+                ),
+            },
         },
     ),
     "parent_materialized_launch_two_children": AssetReconciliationScenario(
@@ -106,8 +118,20 @@ basic_scenarios = {
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
         expected_conditions={
-            "asset2": {MissingAutoMaterializeCondition()},
-            "asset3": {MissingAutoMaterializeCondition()},
+            "asset2": {
+                MissingAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
+                ),
+            },
+            "asset3": {
+                MissingAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
+                ),
+            },
         },
     ),
     "parent_materialized_with_source_asset_launch_child": AssetReconciliationScenario(
@@ -145,7 +169,13 @@ basic_scenarios = {
         expected_run_requests=[run_request(asset_keys=["parent2", "child"])],
         expected_conditions={
             "parent2": {MissingAutoMaterializeCondition()},
-            "child": {MissingAutoMaterializeCondition()},
+            "child": {
+                MissingAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset([AssetKey("parent1")]),
+                    will_update_asset_keys=frozenset([AssetKey("parent2")]),
+                ),
+            },
         },
     ),
     "one_parent_materialized_others_materialized_before": AssetReconciliationScenario(
