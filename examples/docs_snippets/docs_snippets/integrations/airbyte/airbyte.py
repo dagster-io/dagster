@@ -143,7 +143,12 @@ def scope_add_downstream_assets():
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets
         import json
-        from dagster import asset, Definitions, define_asset_job, AssetSelection
+        from dagster import (
+            AssetSelection,
+            Definitions,
+            asset,
+            define_asset_job,
+        )
         from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
         from dagster_snowflake_pandas import SnowflakePandasIOManager
         import pandas as pd
@@ -187,11 +192,11 @@ def scope_add_downstream_assets_w_deps():
         # start_with_deps_add_downstream_assets
         import json
         from dagster import (
-            asset,
-            Definitions,
-            define_asset_job,
             AssetSelection,
             AssetKey,
+            Definitions,
+            asset,
+            define_asset_job,
         )
         from dagster_airbyte import load_assets_from_airbyte_instance, AirbyteResource
         from dagster_snowflake import SnowflakeResource
@@ -237,7 +242,13 @@ def scope_add_downstream_assets_cloud():
     with mock.patch("dagster_snowflake_pandas.SnowflakePandasIOManager"):
         # start_add_downstream_assets_cloud
         import json
-        from dagster import asset, Definitions, define_asset_job, AssetSelection, EnvVar
+        from dagster import (
+            AssetSelection,
+            EnvVar,
+            Definitions,
+            asset,
+            define_asset_job,
+        )
         from dagster_airbyte import (
             build_airbyte_assets,
             AirbyteCloudResource,
@@ -285,19 +296,18 @@ def scope_add_downstream_assets_cloud_with_deps():
         # start_with_deps_add_downstream_assets_cloud
         import json
         from dagster import (
-            asset,
-            Definitions,
-            define_asset_job,
+            AssetKey,
             AssetSelection,
             EnvVar,
-            AssetKey,
+            Definitions,
+            asset,
+            define_asset_job,
         )
         from dagster_airbyte import (
             build_airbyte_assets,
             AirbyteCloudResource,
         )
         from dagster_snowflake import SnowflakeResource
-        import pandas as pd
 
         airbyte_instance = AirbyteCloudResource(
             api_key=EnvVar("AIRBYTE_API_KEY"),

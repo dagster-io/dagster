@@ -136,7 +136,13 @@ In this case, we have an Airbyte Cloud connection that stores data in our Snowfl
 
 ```python startafter=start_add_downstream_assets_cloud endbefore=end_add_downstream_assets_cloud file=/integrations/airbyte/airbyte.py dedent=8
 import json
-from dagster import asset, Definitions, define_asset_job, AssetSelection, EnvVar
+from dagster import (
+    AssetSelection,
+    EnvVar,
+    Definitions,
+    asset,
+    define_asset_job,
+)
 from dagster_airbyte import (
     build_airbyte_assets,
     AirbyteCloudResource,
@@ -178,24 +184,23 @@ defs = Definitions(
 </TabItem>
 <TabItem name="Without an I/O manager">
 
-In this case, we have an Airbyte connection which is storing data in the `stargazers` table in our Snowflake warehouse. Since we are not using an I/O manager to fetch the data in downstream assets, we will use `deps` to define dependencies. Then within the downstream asset, we can fetch the data if necessary or launch other commands that work with data in external processes.
+In this case, we have an Airbyte connection that stores data in the `stargazers` table in our Snowflake warehouse. Since we are not using an I/O manager to fetch the data in downstream assets, we will use `deps` to define dependencies. Then within the downstream asset, we can fetch the data if necessary or launch other commands that work with data in external processes.
 
 ```python startafter=start_with_deps_add_downstream_assets_cloud endbefore=end_with_deps_add_downstream_assets_cloud file=/integrations/airbyte/airbyte.py dedent=8
 import json
 from dagster import (
-    asset,
-    Definitions,
-    define_asset_job,
+    AssetKey,
     AssetSelection,
     EnvVar,
-    AssetKey,
+    Definitions,
+    asset,
+    define_asset_job,
 )
 from dagster_airbyte import (
     build_airbyte_assets,
     AirbyteCloudResource,
 )
 from dagster_snowflake import SnowflakeResource
-import pandas as pd
 
 airbyte_instance = AirbyteCloudResource(
     api_key=EnvVar("AIRBYTE_API_KEY"),
