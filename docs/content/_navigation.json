@@ -120,23 +120,17 @@
           {
             "title": "Op retries",
             "path": "/concepts/ops-jobs-graphs/op-retries"
-          }
-        ]
-      },
-      {
-        "title": "Graphs",
-        "path": "/concepts/ops-jobs-graphs/graphs",
-        "children": [
+          },
           {
-            "title": "Graphs",
+            "title": "Op graphs",
             "path": "/concepts/ops-jobs-graphs/graphs"
           },
           {
-            "title": "Nesting Graphs",
+            "title": "Nesting op graphs",
             "path": "/concepts/ops-jobs-graphs/nesting-graphs"
           },
           {
-            "title": "Dynamic Graphs",
+            "title": "Dynamic op graphs",
             "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
           }
         ]

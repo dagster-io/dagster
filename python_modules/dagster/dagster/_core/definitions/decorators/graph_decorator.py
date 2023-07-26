@@ -134,14 +134,14 @@ def graph(
     tags: Optional[Mapping[str, Any]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
 ) -> Union[GraphDefinition, _Graph]:
-    """Create a graph with the specified parameters from the decorated composition function.
+    """Create an op graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a
     function that invokes ops (or other graphs) and passes the output to subsequent invocations.
 
     Args:
         name (Optional[str]):
-            The name of the graph. Must be unique within any :py:class:`RepositoryDefinition` containing the graph.
+            The name of the op graph. Must be unique within any :py:class:`RepositoryDefinition` containing the graph.
         description (Optional[str]):
             A human-readable description of the graph.
         input_defs (Optional[List[InputDefinition]]):

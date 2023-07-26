@@ -1,11 +1,11 @@
 ---
 title: Graph-Backed Assets | Dagster
-description: Defining a software-defined asset with multiple discrete computations combined in a graph.
+description: Defining a software-defined asset with multiple discrete computations combined in an op graph.
 ---
 
 # Graph-Backed Assets
 
-[Basic software-defined assets](/concepts/assets/software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
+[Basic software-defined assets](/concepts/assets/software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and assembling them into an op graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
 
 ---
 
@@ -138,7 +138,7 @@ def foo(context, bar_1):
         yield Output(bar_1 + 2, output_name="foo_2")
 ```
 
-Because Dagster flattens each graph into a flat input/output mapping between ops under the hood, any op that produces an output of the graph must be structured to yield its outputs optionally, enabling the outputs to be returned independently.
+Because Dagster flattens each op graph into a flat input/output mapping between ops under the hood, any op that produces an output of the graph must be structured to yield its outputs optionally, enabling the outputs to be returned independently.
 
 In the example, `foo` and `baz` produce outputs of `my_graph`. Subsequently, their outputs need to be yielded optionally. Because `foo` yields multiple outputs, we must structure our code to conditionally yield its outputs like in the code snippet above.
 
