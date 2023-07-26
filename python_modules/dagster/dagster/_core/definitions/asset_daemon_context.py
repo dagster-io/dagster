@@ -271,8 +271,11 @@ class AssetDaemonContext:
         from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
         return (
+            # both assets must be materializable
+            child_key in self.asset_graph.materializable_asset_keys
+            and parent_key in self.asset_graph.materializable_asset_keys
             # the parent must have the same partitioning
-            self.asset_graph.have_same_partitioning(child_key, parent_key)
+            and self.asset_graph.have_same_partitioning(child_key, parent_key)
             # the parent must have a simple partition mapping to the child
             and (
                 not self.asset_graph.is_partitioned(parent_key)
