@@ -229,7 +229,7 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
 
 
 def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path: Path):
-    my_io_manager = PickleIOManager(tmp_path)
+    my_io_manager = PickleIOManager(UPath(tmp_path))
 
     upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
 
