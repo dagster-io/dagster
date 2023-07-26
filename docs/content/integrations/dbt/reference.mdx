@@ -326,9 +326,7 @@ models:
 
 For dbt models, seeds, and snapshots, the default <PyObject object="FreshnessPolicy"/> will be `None`.
 
-To add a FreshnessPolicy to a dbt node, you can define a `meta` key in your dbt project file, on your dbt node's property file, or on the node's in-file config block. This config accepts identical arguments to the <PyObject object="FreshnessPolicy"/> class. The following example provides an eager AutoMaterializePolicy for the following model:
-
-The following example applies a FreshnessPolicy to the "customers" dbt model:
+To add a FreshnessPolicy to a dbt node, you can define a `meta` key in your dbt project file, on your dbt node's property file, or on the node's in-file config block. This config accepts identical arguments to the <PyObject object="FreshnessPolicy"/> class. The following example applies a FreshnessPolicy for the following model:
 
 ```yaml
 models:
