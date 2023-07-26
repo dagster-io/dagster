@@ -241,6 +241,35 @@ def test_non_partitioned_depends_on_specific_partitions():
     )
 
 
+def test_specific_partitions_partition_mapping_downstream_partitions():
+    downstream_partitions_def = StaticPartitionsDefinition(["x", "y", "z"])
+    partition_mapping = SpecificPartitionsPartitionMapping(["a", "b"])
+
+    # cases where at least one of the specific partitions is in the upstream partitions subset
+    for partition_subset in [
+        PartitionsSubset(["a"]),
+        PartitionsSubset(["a", "b"]),
+        PartitionsSubset(["a", "b", "c", "d"]),
+    ]:
+        assert (
+            partition_mapping.get_downstream_partitions_for_partitions(
+                partition_subset, downstream_partitions_def
+            )
+            == downstream_partitions_def.subset_with_all_partitions()
+        )
+
+    for partition_subset in [
+        PartitionsSubset(["c"]),
+        PartitionsSubset(["x", "y", "z"]),
+    ]:
+        assert (
+            partition_mapping.get_downstream_partitions_for_partitions(
+                partition_subset, downstream_partitions_def
+            )
+            == downstream_partitions_def.empty_subset()
+        )
+
+
 def test_non_partitioned_depends_on_all_partitions():
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
     def upstream():
