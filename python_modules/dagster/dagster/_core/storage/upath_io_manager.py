@@ -203,7 +203,7 @@ class UPathIOManager(MemoizableIOManager):
 
         asset_path = self._get_path_without_extension(context)
         return {
-            partition: self._with_extension(
+            partition.replace("/", "|"): self._with_extension(
                 self.get_path_for_partition(context, asset_path, partition)
             )
             for partition in formatted_partition_keys
