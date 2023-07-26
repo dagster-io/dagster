@@ -36,7 +36,7 @@ def scope_dbt_cli_resource_config():
     defs = Definitions(
         assets=load_assets_from_dbt_project(DBT_PROJECT_PATH),
         resources={
-            "dbt": DbtCliResource(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET)
+            "dbt": DbtCliResource(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET),
         },
     )
     # end_dbt_cli_resource
@@ -134,18 +134,98 @@ def scope_input_manager_resources():
     # end_input_manager_resources
 
 
-def scope_key_prefixes():
-    from dagster_dbt import load_assets_from_dbt_project
+def scope_custom_asset_key_dagster_dbt_translator():
+    # start_custom_asset_key_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetKey, OpExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
 
-    # start_key_prefix
-    dbt_assets = load_assets_from_dbt_project(
-        "path/to/dbt_project",
-        key_prefix="snowflake",
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            return self.get_asset_key(dbt_resource_props).with_prefix("snowflake")
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
-    # end_key_prefix
-    # start_source_key_prefix
-    dbt_assets = load_assets_from_dbt_project(
-        "path/to/dbt_project",
-        source_key_prefix="snowflake",
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_asset_key_dagster_dbt_translator
+
+
+def scope_custom_group_name_dagster_dbt_translator():
+    # start_custom_group_name_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import OpExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_group_name(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[str]:
+            return "snowflake"
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
-    # end_source_key_prefix
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_group_name_dagster_dbt_translator
+
+
+def scope_custom_description_dagster_dbt_translator():
+    # start_custom_description_dagster_dbt_translator
+    import textwrap
+    from pathlib import Path
+    from dagster import OpExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
+            return textwrap.indent(dbt_resource_props.get("raw_sql", ""), "\t")
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_description_dagster_dbt_translator
+
+
+def scope_custom_metadata_dagster_dbt_translator():
+    # start_custom_metadata_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import MetadataValue, OpExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_metadata(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Mapping[str, Any]:
+            return {"meta": MetadataValue.json(dbt_resource_props.get("meta", {}))}
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_metadata_dagster_dbt_translator

@@ -24,8 +24,8 @@ class DagsterDbtTranslator:
     is derived.
     """
 
-    @public
     @classmethod
+    @public
     def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster asset key that represents that resource.
@@ -59,8 +59,8 @@ class DagsterDbtTranslator:
         """
         return default_asset_key_fn(dbt_resource_props)
 
-    @public
     @classmethod
+    @public
     def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster description for that resource.
@@ -93,8 +93,8 @@ class DagsterDbtTranslator:
         """
         return default_description_fn(dbt_resource_props)
 
-    @public
     @classmethod
+    @public
     def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster metadata for that resource.
@@ -127,8 +127,8 @@ class DagsterDbtTranslator:
         """
         return default_metadata_from_dbt_resource_props(dbt_resource_props)
 
-    @public
     @classmethod
+    @public
     def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster group name for that resource.
