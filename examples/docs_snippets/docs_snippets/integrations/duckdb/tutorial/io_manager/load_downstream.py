@@ -10,8 +10,8 @@ from dagster import asset
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
-    return iris_dataset.dropna().drop_duplicates()
+def iris_setosa(iris_dataset: pd.DataFrame) -> pd.DataFrame:
+    return iris_dataset[iris_dataset["species"] == "Iris-setosa"]
 
 
 # end_example
