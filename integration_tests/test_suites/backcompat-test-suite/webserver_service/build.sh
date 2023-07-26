@@ -1,26 +1,25 @@
 #!/bin/bash
-DAGIT_BACKCOMPAT_VERSION=$1
-DAGIT_BACKCOMPAT_LIBRARY_VERSION=$2
-USER_CODE_BACKCOMPAT_VERSION=$3
-USER_CODE_BACKCOMPAT_LIBRARY_VERSION=$4
-USER_CODE_MAJOR_VERSION=$5
+WEBSERVER_VERSION=$1
+WEBSERVER_LIBRARY_VERSION=$2
+WEBSERVER_PACKAGE=$3
+USER_CODE_VERSION=$4
+USER_CODE_LIBRARY_VERSION=$5
+USER_CODE_DEFINITIONS_FILE=$6
 
-if [ "$DAGIT_BACKCOMPAT_VERSION" = "current_branch" ]; then
-    export DAGIT_DOCKERFILE="./Dockerfile_dagit_source"
+if [ "$WEBSERVER_VERSION" = "current_branch" ]; then
+    export WEBSERVER_DOCKERFILE="./Dockerfile_webserver_source"
 else
-    export DAGIT_DOCKERFILE="./Dockerfile_dagit_release"
+    export WEBSERVER_DOCKERFILE="./Dockerfile_webserver_release"
 fi
 
-if [ "$USER_CODE_BACKCOMPAT_VERSION" = "current_branch" ]; then
+if [ "$USER_CODE_VERSION" = "current_branch" ]; then
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_source"
-elif [ "$USER_CODE_MAJOR_VERSION" = "0" ]; then # If the dagster version is 0.x.x, then use the legacy dockerfile, which will test pipeline code.
-    export USER_CODE_DOCKERFILE="./Dockerfile_user_code_legacy_release"
 else
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_release"
 fi
 
 ROOT=$(git rev-parse --show-toplevel)
-BASE_DIR="${ROOT}/integration_tests/test_suites/backcompat-test-suite/dagit_service"
+BASE_DIR="${ROOT}/integration_tests/test_suites/backcompat-test-suite/webserver_service"
 
 function cleanup {
     rm -rf "${BASE_DIR}/python_modules"
@@ -63,7 +62,9 @@ copy_py $ROOT/python_modules/libraries/dagster-postgres \
 
 echo -e "--- \033[32m:docker: Building Docker images\033[0m"
 docker-compose build \
-    --build-arg DAGIT_BACKCOMPAT_VERSION="${DAGIT_BACKCOMPAT_VERSION}" \
-    --build-arg DAGIT_BACKCOMPAT_LIBRARY_VERSION="${DAGIT_BACKCOMPAT_LIBRARY_VERSION}" \
-    --build-arg USER_CODE_BACKCOMPAT_VERSION="${USER_CODE_BACKCOMPAT_VERSION}" \
-    --build-arg USER_CODE_BACKCOMPAT_LIBRARY_VERSION="${USER_CODE_BACKCOMPAT_LIBRARY_VERSION}"
+    --build-arg WEBSERVER_VERSION="${WEBSERVER_VERSION}" \
+    --build-arg WEBSERVER_LIBRARY_VERSION="${WEBSERVER_LIBRARY_VERSION}" \
+    --build-arg WEBSERVER_PACKAGE="${WEBSERVER_PACKAGE}" \
+    --build-arg USER_CODE_VERSION="${USER_CODE_VERSION}" \
+    --build-arg USER_CODE_LIBRARY_VERSION="${USER_CODE_LIBRARY_VERSION}" \
+    --build-arg USER_CODE_DEFINITIONS_FILE="${USER_CODE_DEFINITIONS_FILE}"

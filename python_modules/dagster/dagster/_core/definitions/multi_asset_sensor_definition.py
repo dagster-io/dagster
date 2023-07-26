@@ -230,7 +230,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
-        from dagster._core.storage.event_log.base import EventLogRecord
 
         self._repository_def = normalize_to_repository(
             check.opt_inst_param(definitions, "definitions", Definitions),
@@ -388,8 +387,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             materialization event for the asset. If there is no materialization event for the asset,
             the value in the mapping will be None.
         """
-        from dagster._core.storage.event_log.base import EventLogRecord
-
         # Do not evaluate unconsumed events, only events newer than the cursor
         # if there are no new events after the cursor, the cursor points to the most
         # recent event.

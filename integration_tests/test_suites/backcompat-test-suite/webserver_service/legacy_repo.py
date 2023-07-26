@@ -39,7 +39,7 @@ def basic():
 @solid
 def ping_dagit():
     client = DagsterGraphQLClient(
-        "dagit",
+        "dagster_webserver",
         port_number=3000,
     )
     return client._execute("{__typename}")  # noqa: SLF001

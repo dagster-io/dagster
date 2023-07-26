@@ -12,7 +12,7 @@ target-version = ['py38', 'py39', 'py310', 'py311']
 
 [tool.ruff]
 
-# Extend root configuration.
+# Extend example root configuration.
 extend = "../pyproject.toml"
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
@@ -34,6 +34,8 @@ extend-ignore = [
   # purposes.
   "F841",
 
+  # (flake8-type-checking) No need to complicate docs snippets with `if TYPE_CHECKING` blocks.
+  "TCH",
 ]
 
 [tool.ruff.isort]

@@ -66,7 +66,7 @@ If you make any changes to your dbt project that change the structure of the pro
 
 ---
 
-## Using the DbtCli for dbt CLI commands
+## Using the DbtCliResource for dbt CLI commands
 
 <Note>
   Check out{" "}
@@ -76,16 +76,16 @@ If you make any changes to your dbt project that change the structure of the pro
   to see this concept in context.
 </Note>
 
-Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="DbtCli" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
+Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="DbtCliResource" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
 
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="DbtCli" /> API docs.
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="DbtCliResource" /> API docs.
 
 You can configure this resource and add it to your dbt assets by doing the following:
 
 ```python startafter=start_dbt_cli_resource endbefore=end_dbt_cli_resource file=/integrations/dbt/dbt.py dedent=4
 import os
 
-from dagster_dbt import DbtCli, load_assets_from_dbt_project
+from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
 
 from dagster import Definitions
 
@@ -94,7 +94,9 @@ DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
 
 defs = Definitions(
     assets=load_assets_from_dbt_project(DBT_PROJECT_PATH),
-    resources={"dbt": DbtCli(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET)},
+    resources={
+        "dbt": DbtCliResource(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET),
+    },
 )
 ```
 
@@ -131,62 +133,175 @@ Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/sch
 
 ---
 
-## Understanding asset keys
+## Understanding asset definition attributes
 
-In Dagster, each asset has an asset key to identify it. Dagster automatically generates these keys for each dbt node in the project as well as the sources for each node.
+In Dagster, each asset definition has attributes. Dagster automatically generates these attributes for each software-defined asset loaded from the dbt project. These attributes can optionally be overridden by the user.
 
-- [Default asset keys for dbt models, seeds, and snapshots](#for-dbt-models-seeds-and-snapshots)
-- [Default asset keys for dbt sources](#for-dbt-sources)
-- [Adding a prefix to asset keys](#adding-a-prefix-to-asset-keys)
+- [Customizing asset keys](#customizing-asset-keys)
+- [Customizing group names](#customizing-group-names)
+- [Customizing descriptions](#customizing-descriptions)
+- [Customizing metadata](#customizing-metadata)
 
-### For dbt models, seeds, and snapshots
+### Customizing asset keys
 
-For [models](https://docs.getdbt.com/docs/building-a-dbt-project/building-models), [seeds](https://docs.getdbt.com/docs/building-a-dbt-project/seeds), and [snapshots](https://docs.getdbt.com/docs/building-a-dbt-project/snapshots), the default asset key will be the configured schema for that node (if any), concatenated with the name of the node.
+For dbt models, seeds, and snapshots, the default asset key will be the configured schema for that node, concatenated with the name of the node.
 
-For example, if you have configured a [custom schema](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/using-custom-schemas) for a subdirectory in your `dbt_project.yml` file:
+| dbt node type         | Schema    | Model name   | Resulting asset key |
+| --------------------- | --------- | ------------ | ------------------- |
+| model, seed, snapshot | `None`    | `MODEL_NAME` | `MODEL_NAME`        |
+|                       | `SCHEMA`  | `MODEL_NAME` | `SCHEMA/MODEL_NAME` |
+|                       | `None`    | my_model     | some_model          |
+|                       | marketing | my_model     | marketing/my_model  |
 
-```yaml
-models:
-  my_project:
-    marketing:
-      +schema: marketing
-```
+For dbt sources, the default asset key will be the name of the source concatenated with the name of the source table.
 
-Then the asset key for a model named `some_model` will be `marketing/some_model`. If you haven't configured a custom schema, then the asset key will be `some_model`.
+| dbt node type | Source name   | Table name   | Resulting asset key      |
+| ------------- | ------------- | ------------ | ------------------------ |
+| source        | `SOURCE_NAME` | `TABLE_NAME` | `SOURCE_NAME/TABLE_NAME` |
+|               | jaffle_shop   | orders       | jaffle_shop/orders       |
 
-### For dbt sources
+There are two ways to customize the asset keys generated by Dagster for dbt assets:
 
-For [sources](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), the default asset key will be the name of the source concatenated with the name of the source table.
+1. Defining [meta config](https://docs.getdbt.com/reference/resource-configs/meta) on your dbt node, or
+2. Overriding Dagster's asset key generation by implementing a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />.
 
-For example, the source table defined in the following `sources.yaml` will be `jaffle_shop/orders`:
+To override an asset key generated by Dagster for a dbt node, you can define a `meta` key on your dbt node's `.yml` file. The following example overrides the asset key for a source and table as `snowflake/jaffle_shop/orders`:
 
 ```yaml
 sources:
   - name: jaffle_shop
     tables:
       - name: orders
+        meta:
+          dagster:
+            asset_key: ["snowflake", "jaffle_shop", "orders"]
 ```
 
-### Adding a prefix to asset keys
+Alternatively, to override the asset key generation for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_asset_key"/>. The following example adds a `snowflake` prefix to the default generated asset key:
 
-A common pattern is to use the prefix of an asset key to indicate what database an asset is stored in. For example, you might want all of your assets stored in Snowflake to start with the prefix `snowflake`.
+```python startafter=start_custom_asset_key_dagster_dbt_translator endbefore=end_custom_asset_key_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetKey, OpExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping
 
-To add a prefix to the models generated by your dbt project, you can pass in a `key_prefix` argument to either the <PyObject module="dagster_dbt" object="load_assets_from_dbt_manifest" /> or <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function:
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
 
-```python startafter=start_key_prefix endbefore=end_key_prefix file=/integrations/dbt/dbt.py dedent=4
-dbt_assets = load_assets_from_dbt_project(
-    "path/to/dbt_project",
-    key_prefix="snowflake",
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        return self.get_asset_key(dbt_resource_props).with_prefix("snowflake")
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 ```
 
-**Note**: The `key_prefix` argument only applies to assets loaded from this method. If you want to apply a prefix to the source keys that Dagster generates, pass in a `source_key_prefix` argument:
+### Customizing group names
 
-```python startafter=start_source_key_prefix endbefore=end_source_key_prefix file=/integrations/dbt/dbt.py dedent=4
-dbt_assets = load_assets_from_dbt_project(
-    "path/to/dbt_project",
-    source_key_prefix="snowflake",
+For dbt models, seeds, and snapshots, the default Dagster group name will be the [dbt group](https://docs.getdbt.com/docs/build/groups) defined for that node.
+
+| dbt node type         | dbt group name | Resulting Dagster group name |
+| --------------------- | -------------- | ---------------------------- |
+| model, seed, snapshot | `GROUP_NAME`   | `GROUP_NAME`                 |
+|                       | `None`         | `None`                       |
+|                       | finance        | finance                      |
+
+There are two ways to customize the asset keys generated by Dagster for dbt assets:
+
+1. Defining [meta config](https://docs.getdbt.com/reference/resource-configs/meta) on your dbt node, or
+2. Overriding Dagster's group name generation by implementing a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />
+
+To override the group name generated by Dagster for a dbt node, you can define a `meta` key in your dbt project file, on your dbt node's property file, or on the node's in-file config block. The following example overrides the Dagster group name for the following model as `marketing`:
+
+```yaml
+models:
+  - name: customers
+    config:
+      meta:
+        dagster:
+          group: marketing
+```
+
+Alternatively, to override the Dagster group name generation for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_group_name"/>. The following example defines `snowflake` as the group name for all dbt nodes:
+
+```python startafter=start_custom_group_name_dagster_dbt_translator endbefore=end_custom_group_name_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import OpExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping, Optional
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_group_name(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[str]:
+        return "snowflake"
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
 )
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+### Customizing descriptions
+
+For dbt models, seeds, and snapshots, the default Dagster description will be the dbt node's description.
+
+To override the Dagster description for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_description"/>. The following example defines the raw SQL of the dbt node as the Dagster description:
+
+```python startafter=start_custom_description_dagster_dbt_translator endbefore=end_custom_description_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+import textwrap
+from pathlib import Path
+from dagster import OpExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
+        return textwrap.indent(dbt_resource_props.get("raw_sql", ""), "\t")
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
+)
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+### Customizing metadata
+
+For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's table schema.
+
+To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata:
+
+```python startafter=start_custom_metadata_dagster_dbt_translator endbefore=end_custom_metadata_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import MetadataValue, OpExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def get_metadata(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        return {"meta": MetadataValue.json(dbt_resource_props.get("meta", {}))}
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=CustomDagsterDbtTranslator(),
+)
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 ```
 
 ---
@@ -299,14 +414,14 @@ class PandasIOManager(ConfigurableIOManager):
 Once the I/O manager is defined, you can supply it like any other resource when calling <PyObject object="with_resources"/> :
 
 ```python startafter=start_input_manager_resources endbefore=end_input_manager_resources file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import DbtCli, load_assets_from_dbt_project
+from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
 
 from dagster import Definitions
 
 defs = Definitions(
     assets=load_assets_from_dbt_project(...),
     resources={
-        "dbt": DbtCli(project_dir="path/to/dbt_project"),
+        "dbt": DbtCliResource(project_dir="path/to/dbt_project"),
         "pandas_df_manager": PandasIOManager(connection_str=...),
     },
 )

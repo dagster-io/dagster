@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import hashlib
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional, cast

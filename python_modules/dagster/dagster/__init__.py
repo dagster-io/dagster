@@ -567,7 +567,7 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-    pass
+    pass  # noqa: TCH005
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {

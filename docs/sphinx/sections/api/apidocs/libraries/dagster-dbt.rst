@@ -12,6 +12,14 @@ Related documentation pages: `dbt </integrations/dbt>`_ and
 
 .. currentmodule:: dagster_dbt
 
+***********
+dagster-dbt
+***********
+
+.. click:: dagster_dbt.cli.app:project_app_typer_click_object
+    :prog: dagster-dbt project scaffold
+    :nested:
+
 ********
 dbt Core
 ********
@@ -46,7 +54,12 @@ Resources (dbt Core)
 CLI Resource
 ------------
 
-.. autoclass:: DbtCliResource
+.. autoconfigurable:: DbtCliResource
+    :annotation: ResourceDefinition
+
+.. autoclass:: DbtCliInvocation
+
+.. autoclass:: DbtCliEventMessage
 
 Deprecated (dbt Core)
 -----------------------
@@ -142,4 +155,3 @@ Utils
 .. currentmodule:: dagster_dbt.utils
 
 .. autofunction:: generate_materializations
-

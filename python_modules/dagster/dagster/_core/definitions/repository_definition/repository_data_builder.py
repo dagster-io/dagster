@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 from inspect import isfunction
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -24,7 +25,6 @@ from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -41,6 +41,9 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.events import AssetKey
 
 
 def _find_env_vars(config_entry: Any) -> Set[str]:

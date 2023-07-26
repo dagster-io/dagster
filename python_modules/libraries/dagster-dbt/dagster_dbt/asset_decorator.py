@@ -32,7 +32,7 @@ from .asset_utils import (
     default_freshness_policy_fn,
     get_deps,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator
+from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 from .utils import (
     ASSET_RESOURCE_TYPES,
     get_node_info_by_dbt_unique_id_from_manifest,
@@ -66,6 +66,8 @@ def dbt_assets(
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
+            dbt models, seeds, etc. to asset keys and asset metadata.
 
     Examples:
         .. code-block:: python
@@ -75,14 +77,42 @@ def dbt_assets(
             from dagster import OpExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
+
             @dbt_assets(manifest=Path("target", "manifest.json"))
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                ...
+
+
+            @dbt_assets(
+                manifest=Path("target", "manifest.json"),
+                dagster_dbt_translator=CustomDagsterDbtTranslator(),
+            )
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                yield from dbt.cli(["build"], context=context).stream()
     """
+    check.inst_param(
+        dagster_dbt_translator,
+        "dagster_dbt_translator",
+        DagsterDbtTranslator,
+        additional_message=(
+            "Ensure that the argument is an instantiated class that subclasses"
+            " DagsterDbtTranslator."
+        ),
+    )
     check.inst_param(manifest, "manifest", (Path, dict))
     if isinstance(manifest, Path):
-        with manifest.open("rb") as handle:
-            manifest = cast(Mapping[str, Any], orjson.loads(handle.read()))
+        manifest = cast(Mapping[str, Any], orjson.loads(manifest.read_bytes()))
 
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest
@@ -149,7 +179,7 @@ def get_dbt_multi_asset_args(
             is_required=False,
             metadata={  # type: ignore
                 **dagster_dbt_translator.get_metadata(node_info),
-                MANIFEST_METADATA_KEY: manifest,
+                MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
             group_name=dagster_dbt_translator.get_group_name(node_info),

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
+from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
 
 import pendulum
 
@@ -35,9 +35,6 @@ from .sensor_definition import (
     get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 @whitelist_for_serdes

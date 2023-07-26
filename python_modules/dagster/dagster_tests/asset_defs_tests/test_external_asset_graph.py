@@ -15,6 +15,7 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -298,3 +299,51 @@ def test_partition_mapping():
         ),
         IdentityPartitionMapping,
     )
+
+
+@asset(
+    partitions_def=static_partition,
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def static_partitioned_single_run_backfill_asset():
+    pass
+
+
+@asset(
+    partitions_def=None,
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def non_partitioned_single_run_backfill_asset():
+    pass
+
+
+@asset(
+    partitions_def=static_partition,
+    backfill_policy=BackfillPolicy.multi_run(5),
+)
+def static_partitioned_multi_run_backfill_asset():
+    pass
+
+
+backfill_assets_defs = Definitions(
+    assets=[
+        static_partitioned_single_run_backfill_asset,
+        non_partitioned_single_run_backfill_asset,
+        static_partitioned_multi_run_backfill_asset,
+    ]
+)
+
+
+def test_assets_with_backfill_policies():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["backfill_assets_defs"]))
+    assert (
+        asset_graph.get_backfill_policy(AssetKey("static_partitioned_single_run_backfill_asset"))
+        == BackfillPolicy.single_run()
+    )
+    assert (
+        asset_graph.get_backfill_policy(AssetKey("non_partitioned_single_run_backfill_asset"))
+        == BackfillPolicy.single_run()
+    )
+    assert asset_graph.get_backfill_policy(
+        AssetKey("static_partitioned_multi_run_backfill_asset")
+    ) == BackfillPolicy.multi_run(5)

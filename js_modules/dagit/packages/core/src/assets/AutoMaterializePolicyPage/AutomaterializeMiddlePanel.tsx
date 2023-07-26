@@ -112,10 +112,5 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     );
   }
 
-  return (
-    <AutomaterializeMiddlePanelNoPartitions
-      selectedEvaluation={selectedEvaluation}
-      maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-    />
-  );
+  return <AutomaterializeMiddlePanelNoPartitions selectedEvaluation={selectedEvaluation} />;
 };

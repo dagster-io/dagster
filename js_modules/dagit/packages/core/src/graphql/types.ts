@@ -3159,6 +3159,7 @@ export type Run = PipelineRun & {
   endTime: Maybe<Scalars['Float']>;
   eventConnection: EventConnection;
   executionPlan: Maybe<ExecutionPlan>;
+  hasConcurrencyKeySlots: Scalars['Boolean'];
   hasDeletePermission: Scalars['Boolean'];
   hasReExecutePermission: Scalars['Boolean'];
   hasTerminatePermission: Scalars['Boolean'];
@@ -10104,6 +10105,10 @@ export const buildRun = (
         : relationshipsToOmit.has('ExecutionPlan')
         ? ({} as ExecutionPlan)
         : buildExecutionPlan({}, relationshipsToOmit),
+    hasConcurrencyKeySlots:
+      overrides && overrides.hasOwnProperty('hasConcurrencyKeySlots')
+        ? overrides.hasConcurrencyKeySlots!
+        : true,
     hasDeletePermission:
       overrides && overrides.hasOwnProperty('hasDeletePermission')
         ? overrides.hasDeletePermission!

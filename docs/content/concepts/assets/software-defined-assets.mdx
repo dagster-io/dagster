@@ -257,14 +257,17 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 ### Asset context
 
-When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the asset which provides access to system information like loggers and the current run id. Since a software-defined asset contains an op, this is an <PyObject object="OpExecutionContext"/>.
+When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run id.
 
 For example, to access the logger and log a info message:
 
 ```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+from dagster import AssetExecutionContext, asset
+
+
 @asset
-def context_asset(context):
-    context.log.info("My run ID is {context.run_id}")
+def context_asset(context: AssetExecutionContext):
+    context.log.info(f"My run ID is {context.run_id}")
     ...
 ```
 
@@ -504,7 +507,7 @@ def test_my_simple_asset():
     assert result == [1, 2, 3]
 ```
 
-If you have an asset with upstream dependencies:
+If you have an asset with managed-loading upstream dependencies:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_more_complex_asset endbefore=end_more_complex_asset
 @asset

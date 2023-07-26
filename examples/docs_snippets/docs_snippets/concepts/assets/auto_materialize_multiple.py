@@ -11,8 +11,8 @@ def asset1():
     ...
 
 
-@asset
-def asset2(asset1):
+@asset(deps=[asset1])
+def asset2():
     ...
 
 

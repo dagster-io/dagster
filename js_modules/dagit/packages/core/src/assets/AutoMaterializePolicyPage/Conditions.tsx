@@ -1,4 +1,4 @@
-import {Colors, Box, Icon} from '@dagster-io/ui';
+import {Colors, Box, Icon, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {AssetKey} from '../types';
@@ -19,7 +19,10 @@ interface ConditionProps {
 
 const Condition = ({text, met, rightElement}: ConditionProps) => {
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+    <Box
+      flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+      style={{height: 24}}
+    >
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Icon name={met ? 'done' : 'close'} color={met ? Colors.Dark : Colors.Gray500} />
         <div style={{color: met ? Colors.Dark : Colors.Gray500}}>{text}</div>
@@ -42,16 +45,24 @@ export const ConditionsWithPartitions = ({
   maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
 }: ConditionsWithPartitionsProps) => {
-  const buildRightElement = (partitionKeys: string[]) => {
+  const buildRightElement = (
+    partitionKeys: string[],
+    intent?: React.ComponentProps<typeof Tag>['intent'],
+  ) => {
     if (partitionKeys?.length) {
-      return <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} />;
+      return (
+        <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} intent={intent} />
+      );
     }
     return <div style={{color: Colors.Gray400}}>&ndash;</div>;
   };
 
   return (
     <>
-      <CollapsibleSection header="Materialization conditions met">
+      <CollapsibleSection
+        header="Materialization conditions met"
+        details="These conditions trigger materializations, unless they are overriden by a skip or discard condition."
+      >
         <Box flex={{direction: 'column', gap: 8}}>
           <Condition
             text="Materialization is missing"
@@ -83,7 +94,10 @@ export const ConditionsWithPartitions = ({
           />
         </Box>
       </CollapsibleSection>
-      <CollapsibleSection header="Skip conditions met">
+      <CollapsibleSection
+        header="Skip conditions met"
+        details="Skipped partitions will be materialized in a future evaluation, once the skip condition is resolved."
+      >
         <Condition
           text="Waiting on upstream data"
           met={conditionResults.has('ParentOutdatedAutoMaterializeCondition')}
@@ -96,7 +110,10 @@ export const ConditionsWithPartitions = ({
           }
         />
       </CollapsibleSection>
-      <CollapsibleSection header="Discard conditions met">
+      <CollapsibleSection
+        header="Discard conditions met"
+        details="Discarded partitions will not be materialized unless new materialization conditions occur. You may want to run a manual backfill to respond to the materialize conditions."
+      >
         <Condition
           text={`Exceeds ${
             maxMaterializationsPerMinute === 1
@@ -106,6 +123,7 @@ export const ConditionsWithPartitions = ({
           met={conditionResults.has('MaxMaterializationsExceededAutoMaterializeCondition')}
           rightElement={buildRightElement(
             conditionToPartitions['MaxMaterializationsExceededAutoMaterializeCondition'],
+            'danger',
           )}
         />
       </CollapsibleSection>
@@ -115,18 +133,19 @@ export const ConditionsWithPartitions = ({
 
 interface ConditionsProps {
   conditionResults: Set<ConditionType>;
-  maxMaterializationsPerMinute: number;
   parentOutdatedWaitingOnAssetKeys: AssetKey[];
 }
 
 export const ConditionsNoPartitions = ({
   conditionResults,
-  maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
 }: ConditionsProps) => {
   return (
     <>
-      <CollapsibleSection header="Materialization conditions met">
+      <CollapsibleSection
+        header="Materialization conditions met"
+        details="These conditions trigger a materialization, unless they are blocked by a skip or discard condition."
+      >
         <Box flex={{direction: 'column', gap: 8}}>
           <Condition
             text="Materialization is missing"
@@ -146,7 +165,10 @@ export const ConditionsNoPartitions = ({
           />
         </Box>
       </CollapsibleSection>
-      <CollapsibleSection header="Skip conditions met">
+      <CollapsibleSection
+        header="Skip conditions met"
+        details="Skips will materialize in a future evaluation, once the skip condition is resolved."
+      >
         <Condition
           text="Waiting on upstream data"
           met={conditionResults.has('ParentOutdatedAutoMaterializeCondition')}
@@ -155,16 +177,6 @@ export const ConditionsNoPartitions = ({
               <WaitingOnAssetKeysLink assetKeys={parentOutdatedWaitingOnAssetKeys} />
             ) : null
           }
-        />
-      </CollapsibleSection>
-      <CollapsibleSection header="Discard conditions met">
-        <Condition
-          text={`Exceeds ${
-            maxMaterializationsPerMinute === 1
-              ? '1 materialization'
-              : `${maxMaterializationsPerMinute} materializations`
-          } per minute`}
-          met={conditionResults.has('MaxMaterializationsExceededAutoMaterializeCondition')}
         />
       </CollapsibleSection>
     </>

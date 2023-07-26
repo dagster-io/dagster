@@ -394,11 +394,16 @@ height={1638}
 
 Limits can be specified on the Dagster instance using the special op tag `dagster/concurrency_key`. If this instance limit would be exceeded by launching an op/asset, then the op/asset will be queued.
 
-For example, to globally limit the number of running ops touching Redshift to two, the op must be first tagged with the global concurrency key:
+For example, to globally limit the number of running ops touching Redshift to two, the op/asset must be first tagged with the global concurrency key:
 
-```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_global_concurrency endbefore=end_global_concurrency
+```python file=/deploying/concurrency_limits/concurrency_limits.py startafter=start_global_concurrency endbefore=end_global_concurrency
 @op(tags={"dagster/concurrency_key": "redshift"})
 def my_redshift_op():
+    ...
+
+
+@asset(op_tags={"dagster/concurrency_key": "redshift"})
+def my_redshift_table():
     ...
 ```
 
@@ -414,7 +419,19 @@ To specify limits on the number of ops/assets tagged with a particular concurren
 
 The concurrency key should match the name that the op/asset is tagged with. For example, if the op/asset is tagged with `dagster/concurrency_key: redshift`, then the concurrency key should be `redshift`.
 
----
+#### Freeing concurrency slots
+
+With a global concurrency limit set, it is useful to configure your instance to automatically free slots for canceled/failed runs. Certain execution errors can cause steps to exit without freeing an occupied concurrency slot.
+
+To automatically recover from this state, you can configure your instance's run monitoring to automatically free concurrency slots for runs that have reached some terminal state (e.g. failed or canceled runs).
+
+In `dagster.yaml`, you can configure the interval between a run end and the slot clean up like so:
+
+```yaml file=/deploying/concurrency_limits/dagster.yaml startafter=start_free_slots endbefore=end_free_slots
+run_monitoring:
+  enabled: true
+  free_slots_after_run_end_seconds: 300 # free any hanging concurrency slots after 5 minutes from the end of a run
+```
 
 ## Troubleshooting
 

@@ -21,7 +21,6 @@ export const WithoutPartitions = () => {
     >
       <div style={{width: '800px'}}>
         <AutomaterializeMiddlePanelNoPartitions
-          maxMaterializationsPerMinute={1}
           selectedEvaluation={SINGLE_MATERIALIZE_RECORD_NO_PARTITIONS}
         />
       </div>

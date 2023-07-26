@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {
   Button,
   Colors,
@@ -21,14 +21,21 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
+import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
+import {FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION} from '../instance/InstanceConcurrency';
+import {
+  FreeConcurrencySlotsForRunMutation,
+  FreeConcurrencySlotsForRunMutationVariables,
+} from '../instance/types/InstanceConcurrency.types';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
+import {doneStatuses} from './RunStatuses';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
@@ -125,10 +132,11 @@ export const RunDetails: React.FC<{
   );
 };
 
-type VisibleDialog = 'config' | 'delete' | 'terminate' | null;
+type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
 
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const {runConfigYaml} = run;
+  const {flagInstanceConcurrencyLimits} = useFeatureFlags();
   const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);
 
   const {rootServerURI} = React.useContext(AppContext);
@@ -137,6 +145,11 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   const copy = useCopyToClipboard();
   const history = useHistory();
 
+  const [freeSlots] = useMutation<
+    FreeConcurrencySlotsForRunMutation,
+    FreeConcurrencySlotsForRunMutationVariables
+  >(FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION);
+
   const copyConfig = async () => {
     copy(runConfigYaml);
     await showSharedToaster({
@@ -144,6 +157,17 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
       icon: 'copy_to_clipboard_done',
       message: 'Copied!',
     });
+  };
+
+  const freeConcurrencySlots = async () => {
+    const resp = await freeSlots({variables: {runId: run.id}});
+    if (resp.data?.freeConcurrencySlotsForRun) {
+      await showSharedToaster({
+        intent: 'success',
+        icon: 'check_circle',
+        message: 'Freed concurrency slots',
+      });
+    }
   };
 
   const jobPath = workspacePathFromRunDetails({
@@ -182,6 +206,15 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
+              {flagInstanceConcurrencyLimits &&
+              run.hasConcurrencyKeySlots &&
+              doneStatuses.has(run.status) ? (
+                <MenuItem
+                  text="Free concurrency slots"
+                  icon={<Icon name="lock" />}
+                  onClick={freeConcurrencySlots}
+                />
+              ) : null}
               {run.hasDeletePermission ? (
                 <MenuItem
                   icon="delete"
@@ -296,5 +329,6 @@ export const RUN_DETAILS_FRAGMENT = gql`
     startTime
     endTime
     status
+    hasConcurrencyKeySlots
   }
 `;

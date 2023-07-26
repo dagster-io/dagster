@@ -1,5 +1,4 @@
 import {DocSearchModal, useDocSearchKeyboardEvents} from '@docsearch/react';
-import debounce from 'lodash/debounce';
 import Head from 'next/head';
 import Link from 'next/link';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -22,26 +21,6 @@ function Hit({hit, children}) {
   };
   return <a onClick={onClick}>{children}</a>;
 }
-
-// Set up docs search dark launch. As the user types into the search dialog input,
-// perform a debounced query to retrieve results.
-const handleDarkSearch = debounce(async (e: InputEvent) => {
-  const node = e.target;
-  if (node instanceof HTMLInputElement && node.closest('.search-container')) {
-    const query = node.value;
-    if (query) {
-      const response = await fetch('/api/search', {
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({query}),
-        method: 'POST',
-      });
-      if (process.env.NODE_ENV === 'development') {
-        const result = await response.json();
-        console.log(result);
-      }
-    }
-  }
-}, 300);
 
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,13 +53,6 @@ export function Search() {
     onInput,
     searchButtonRef,
   });
-
-  useEffect(() => {
-    document.addEventListener('input', handleDarkSearch);
-    return () => {
-      document.removeEventListener('input', handleDarkSearch);
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined') {

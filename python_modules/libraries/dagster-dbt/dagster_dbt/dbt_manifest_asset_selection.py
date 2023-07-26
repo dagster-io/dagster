@@ -28,10 +28,11 @@ class DbtManifestAssetSelection(AssetSelection):
         .. code-block:: python
 
             import json
+            from pathlib import Path
+
             from dagster_dbt import DbtManifestAssetSelection
 
-            with open("path/to/manifest.json", "r") as f:
-                manifest = json.load(f)
+            manifest = json.loads(Path("path/to/manifest.json").read_text())
 
             # select the dbt assets that have the tag "foo".
             my_selection = DbtManifestAssetSelection(manifest=manifest, select="tag:foo")

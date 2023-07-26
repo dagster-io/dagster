@@ -762,10 +762,6 @@
             "path": "/guides/dagster/testing-assets"
           },
           {
-            "title": "Assets without I/O",
-            "path": "/guides/dagster/non-argument-deps"
-          },
-          {
             "title": "Migrating to Pythonic resources and config",
             "path": "/guides/dagster/migrating-to-pythonic-resources-and-config"
           }
