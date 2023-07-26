@@ -211,7 +211,7 @@ def test_asset_value_loader_with_metadata():
     value = repo.load_asset_value(AssetKey("asset1"))
     assert value == 5
 
-    value = repo.load_asset_value(AssetKey("asset1"), input_metadata={"return": 10})
+    value = repo.load_asset_value(AssetKey("asset1"), metadata={"return": 10})
     assert value == 10
 
     value = repo.load_asset_value(AssetKey("asset2"))
