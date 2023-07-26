@@ -93,17 +93,7 @@ In this example, you create a <PyObject object="SourceAsset" /> for a pre-existi
 
 Before you can materialize your assets, the DuckDB resource requires some configuration. You must set a path to a duckdb database as the `database` configuration value. If the database does not already exist, it will be created for you:
 
-```python file=/integrations/duckdb/tutorial/resource/configuration.py
-from dagster import asset
-
-
-@asset
-def iris_dataset():
-    return None
-
-
-# start_example
-
+```python file=/integrations/duckdb/tutorial/resource/configuration.py startafter=start_example endbefore_end_example
 from dagster_duckdb import DuckDBResource
 
 from dagster import Definitions
@@ -132,8 +122,6 @@ Once you have created an asset or source asset that represents a table in DuckDB
 ```python file=/integrations/duckdb/tutorial/resource/downstream.py startafter=start_example endbefore=end_example
 from dagster import asset
 
-from ..io_manager.source_asset import iris_harvest_data
-
 # this example uses the iris_dataset asset from Step 1
 
 
@@ -152,8 +140,49 @@ In this asset, you create second table that just contains the data for the Iris 
 
 When finished, your code should look like the following:
 
-```python file=/integrations/duckdb/tutorial/resource/full_example.py startafter=start_example endbefore=end_example
-No match for startAfter value "start_example"
+```python file=/integrations/duckdb/tutorial/resource/full_example.py
+import pandas as pd
+from dagster_duckdb import DuckDBResource
+
+from dagster import Definitions, SourceAsset, asset
+
+iris_harvest_data = SourceAsset(key="iris_harvest_data")
+
+
+@asset
+def iris_dataset(duckdb: DuckDBResource) -> None:
+    iris_df = pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+    with duckdb.get_connection() as conn:
+        conn.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
+
+
+@asset(deps=[iris_dataset])
+def iris_setosa(duckdb: DuckDBResource) -> None:
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
+            " species = 'Iris-setosa'"
+        )
+
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "duckdb": DuckDBResource(
+            database="path/to/my_duckdb_database.duckdb",
+        )
+    },
+)
 ```
 
 ## Part 2: Using the DuckDB I/O Manager

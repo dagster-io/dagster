@@ -4,8 +4,6 @@ from dagster_duckdb.resource import DuckDBResource
 # start_example
 from dagster import asset
 
-from ..io_manager.source_asset import iris_harvest_data
-
 # this example uses the iris_dataset asset from Step 1
 
 
