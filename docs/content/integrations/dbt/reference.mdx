@@ -310,9 +310,7 @@ def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
 
 For dbt models, seeds, and snapshots, the default <PyObject object="AutoMaterializePolicy"/> will be `None`.
 
-An AutoMaterializePolicy may be added to a dbt node by defining [meta config](https://docs.getdbt.com/reference/resource-configs/meta) on your dbt node. This policy may be one of two types, `"eager"` or `"lazy"`.
-
-The following example applies an eager AutoMaterializePolicy to the "customers" dbt model:
+To add an AutoMaterializePolicy to a dbt node, you can define a `meta` key in your dbt project file, on your dbt node's property file, or on the node's in-file config block. This policy may be one of two types, `"eager"` or `"lazy"`. The following example provides an eager AutoMaterializePolicy for the following model:
 
 ```yaml
 models:
@@ -328,7 +326,7 @@ models:
 
 For dbt models, seeds, and snapshots, the default <PyObject object="FreshnessPolicy"/> will be `None`.
 
-A FreshnessPolicy may be added to a dbt node by defining [meta config](https://docs.getdbt.com/reference/resource-configs/meta) on your dbt node. This config accepts identical arguments to the <PyObject object="FreshnessPolicy"/> class.
+To add a FreshnessPolicy to a dbt node, you can define a `meta` key in your dbt project file, on your dbt node's property file, or on the node's in-file config block. This config accepts identical arguments to the <PyObject object="FreshnessPolicy"/> class. The following example provides an eager AutoMaterializePolicy for the following model:
 
 The following example applies a FreshnessPolicy to the "customers" dbt model:
 
