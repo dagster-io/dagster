@@ -404,7 +404,7 @@ def test_k8s_job_op_with_restart_policy(namespace, cluster_provider):
             "load_incluster_config": False,
             "kubeconfig_file": cluster_provider.kubeconfig_file,
             "job_spec_config": {
-                "backoffLimit": 4,
+                "backoffLimit": 5,
                 "parallelism": 2,
                 "completions": 2,
             },
