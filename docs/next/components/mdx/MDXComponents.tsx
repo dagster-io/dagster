@@ -368,8 +368,16 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
 
 const Experimental = () => {
   return (
-    <div className="inline-flex items-center px-3 py-0.5 rounded-full align-baseline text-xs uppercase font-medium bg-sea-foam text-gable-green">
-      Experimental
+    <div className="experimental-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green">
+      <span className="hidden">(</span>Experimental<span className="hidden">)</span>
+    </div>
+  );
+};
+
+const Legacy = () => {
+  return (
+    <div className="legacy-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700">
+      <span className="hidden">(</span>Legacy<span className="hidden">)</span>
     </div>
   );
 };
@@ -757,6 +765,7 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Legacy,
   Icons,
   ReferenceTable,
   ReferenceTableItem,
