@@ -298,6 +298,50 @@ def execute_k8s_job(
         start_time=start_time,
     )
 
+    restart_policy = user_defined_k8s_config.pod_spec_config.get("restart_policy", "Never")
+
+    if restart_policy == "Never":
+        container_name = container_config.get("name", "dagster")
+
+        pods = api_client.wait_for_job_to_have_pods(
+            job_name,
+            namespace,
+            wait_timeout=timeout,
+            start_time=start_time,
+        )
+
+        pod_names = [p.metadata.name for p in pods]
+
+        if not pod_names:
+            raise Exception("No pod names in job after it started")
+
+        pod_to_watch = pod_names[0]
+        watch = kubernetes.watch.Watch()  # consider moving in to api_client
+
+        api_client.wait_for_pod(
+            pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
+        )
+
+        log_stream = watch.stream(
+            api_client.core_api.read_namespaced_pod_log,
+            name=pod_to_watch,
+            namespace=namespace,
+            container=container_name,
+        )
+
+        while True:
+            if timeout and time.time() - start_time > timeout:
+                watch.stop()
+                raise Exception("Timed out waiting for pod to finish")
+
+            try:
+                log_entry = next(log_stream)
+                print(log_entry)  # noqa: T201
+            except StopIteration:
+                break
+    else:
+        context.log.info("Pod logs are disabled, because restart_policy is not Never")
+
     if job_spec_config and job_spec_config.get("parallelism"):
         num_pods_to_wait_for = job_spec_config["parallelism"]
     else:

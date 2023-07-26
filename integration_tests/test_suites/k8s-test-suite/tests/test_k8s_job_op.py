@@ -151,7 +151,7 @@ def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
     def timeout_job():
         timeout_op()
 
-    with pytest.raises(DagsterK8sError, match=r"Timed out while waiting for job \w+ to complete"):
+    with pytest.raises(DagsterK8sError, match=r"Timed out while waiting for pod to become ready"):
         timeout_job.execute_in_process()
 
 
