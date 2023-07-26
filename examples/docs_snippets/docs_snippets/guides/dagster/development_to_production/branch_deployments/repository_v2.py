@@ -31,7 +31,7 @@ resources = {
             }
         ),
     },
-    "production": {
+    "prod": {
         "snowflake_io_manager": SnowflakePandasIOManager(
             **snowflake_config,
             database="PRODUCTION",
