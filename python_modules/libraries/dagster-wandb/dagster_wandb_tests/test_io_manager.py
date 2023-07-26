@@ -2,6 +2,7 @@ import os
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
+import wandb
 from callee import EndsWith, Regex
 from dagster import (
     AssetKey,
@@ -18,8 +19,6 @@ from dagster_wandb import (
     wandb_artifacts_io_manager,
     wandb_resource,
 )
-
-import wandb
 from wandb import Artifact
 
 DAGSTER_RUN_ID = "unit-testing"
