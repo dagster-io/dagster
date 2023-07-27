@@ -22,15 +22,10 @@ from docs_snippets.integrations.dbt.dbt_cloud import (
 
 def test_scope_schedule_assets_can_load():
     MANIFEST_PATH = Path(__file__).parent / "manifest.json"
-    with open(MANIFEST_PATH) as f:
-        manifest = json.load(f)
+    manifest = json.loads(MANIFEST_PATH.read_bytes())
 
-    @dbt_assets(manifest=manifest)
-    def my_dbt_assets():
-        ...
-
-    scope_schedule_assets_dbt_only(my_dbt_assets)
-    scope_schedule_assets_dbt_and_downstream(my_dbt_assets)
+    scope_schedule_assets_dbt_only(manifest)
+    scope_schedule_assets_dbt_and_downstream(manifest)
 
 
 def test_scope_schedule_dbt_cloud_assets_can_load():

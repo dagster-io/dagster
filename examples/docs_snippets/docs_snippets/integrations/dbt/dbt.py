@@ -40,9 +40,13 @@ def scope_dbt_cli_resource_config():
     # end_dbt_cli_resource
 
 
-def scope_schedule_assets_dbt_only(my_dbt_assets):
+def scope_schedule_assets_dbt_only(manifest):
     # start_schedule_assets_dbt_only
-    from dagster_dbt import build_schedule_from_dbt_selection
+    from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
 
     daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
         [my_dbt_assets],
@@ -53,10 +57,14 @@ def scope_schedule_assets_dbt_only(my_dbt_assets):
     # end_schedule_assets_dbt_only
 
 
-def scope_schedule_assets_dbt_and_downstream(my_dbt_assets):
+def scope_schedule_assets_dbt_and_downstream(manifest):
     # start_schedule_assets_dbt_downstream
     from dagster import define_asset_job, ScheduleDefinition
-    from dagster_dbt import build_dbt_asset_selection
+    from dagster_dbt import build_dbt_asset_selection, dbt_assets
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
 
     # selects all models tagged with "daily", and all their downstream asset dependencies
     daily_selection = build_dbt_asset_selection(

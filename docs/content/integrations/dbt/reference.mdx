@@ -106,10 +106,14 @@ Once you have your dbt assets, you can define a job to materialize a selection o
 
 ### Scheduling jobs that contain only dbt assets
 
-In this example, we use the <PyObject module="dagster_dbt" object="build_schedule_from_dbt_selection" /> function to create a job, `"daily_dbt_models"`, as well as a schedule which will execute this job once a day. We define the set of models we'd like to execute using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work), in this case selecting only the models with the tag "daily".
+In this example, we use the <PyObject module="dagster_dbt" object="build_schedule_from_dbt_selection" /> function to create a job, `daily_dbt_models`, as well as a schedule which will execute this job once a day. We define the set of models we'd like to execute using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work), in this case selecting only the models with the tag `daily`.
 
 ```python startafter=start_schedule_assets_dbt_only endbefore=end_schedule_assets_dbt_only file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import build_schedule_from_dbt_selection
+from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
+
+@dbt_assets(manifest=manifest)
+def my_dbt_assets():
+    ...
 
 daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
     [my_dbt_assets],
@@ -119,13 +123,17 @@ daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
 )
 ```
 
-### Scheduling jobs that contain both dbt assets and non-dbt assets
+### Scheduling jobs that contain dbt assets and non-dbt assets
 
 In many cases, it's useful to be able to schedule dbt assets alongside non-dbt assets. In this example, we build an <PyObject module="dagster" object="AssetSelection" /> of dbt assets using <PyObject module="dagster_dbt" object="build_dbt_asset_selection" />, then select all assets (dbt-related or not) which are downstream of these dbt models. From there, we create a job that targets that selection of assets and schedule it to run daily.
 
 ```python startafter=start_schedule_assets_dbt_downstream endbefore=end_schedule_assets_dbt_downstream file=/integrations/dbt/dbt.py dedent=4
 from dagster import define_asset_job, ScheduleDefinition
-from dagster_dbt import build_dbt_asset_selection
+from dagster_dbt import build_dbt_asset_selection, dbt_assets
+
+@dbt_assets(manifest=manifest)
+def my_dbt_assets():
+    ...
 
 # selects all models tagged with "daily", and all their downstream asset dependencies
 daily_selection = build_dbt_asset_selection(
