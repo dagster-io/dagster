@@ -89,10 +89,7 @@ export function VirtualizedAssetPartitionListForDialog<A>({
                     onToggle={onToggle}
                   />
                 ) : (
-                  <Box padding={{left: 24}}>
-                    {renderItem(row.assetKey)}
-                    {/* <AssetLink path={row.assetKey.path} icon="asset" /> */}
-                  </Box>
+                  <Box padding={{left: 24}}>{renderItem(row.assetKey)}</Box>
                 )}
               </Box>
             </Row>
