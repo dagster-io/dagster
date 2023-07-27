@@ -125,6 +125,7 @@ export function Search() {
                 distinct: 1,
               }}
               onClose={onClose}
+              insights
               indexName={process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME}
               apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
               appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
