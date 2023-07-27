@@ -157,7 +157,7 @@ class ExternalRepositoryData(
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
             ),
-            metadata=check.opt_nullable_mapping_param(metadata, "metadata", key_type=str),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             utilized_env_vars=check.opt_nullable_mapping_param(
                 utilized_env_vars,
                 "utilized_env_vars",

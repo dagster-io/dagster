@@ -36,9 +36,6 @@ from dagster._utils import hash_collection
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
-    SINGLETON_REPOSITORY_NAME as SINGLETON_REPOSITORY_NAME,
-    VALID_REPOSITORY_DATA_DICT_KEYS as VALID_REPOSITORY_DATA_DICT_KEYS,
-    PendingRepositoryListDefinition as PendingRepositoryListDefinition,
     RepositoryListDefinition as RepositoryListDefinition,
 )
 
@@ -108,7 +105,7 @@ class RepositoryDefinition:
         self._repository_data: RepositoryData = check.inst_param(
             repository_data, "repository_data", RepositoryData
         )
-        self._metadata = check.opt_nullable_mapping_param(metadata, "metadata", key_type=str)
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )

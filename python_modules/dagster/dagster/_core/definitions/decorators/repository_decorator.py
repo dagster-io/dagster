@@ -17,7 +17,10 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.metadata import (
+    RawMetadataValue,
+    normalize_metadata,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -58,7 +61,7 @@ class _Repository:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        metadata: Optional[MetadataMapping] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -66,7 +69,9 @@ class _Repository:
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
-        self.metadata = check.opt_nullable_mapping_param(metadata, "metadata", key_type=str)
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
         self.default_executor_def = check.opt_inst_param(
             default_executor_def, "default_executor_def", ExecutorDefinition
         )
@@ -230,7 +235,7 @@ def repository(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    metadata: Optional[MetadataMapping] = ...,
+    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
@@ -249,7 +254,7 @@ def repository(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    metadata: Optional[MetadataMapping] = None,
+    metadata: Optional[Dict[str, RawMetadataValue]] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -285,7 +290,7 @@ def repository(
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[Dict[str, Any]]): Arbitrary metadata for the repository.
+        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository.
         top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
             resource keys to defintions, for resources which should be displayed in the UI.
 
