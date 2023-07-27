@@ -120,7 +120,9 @@ def freshness_conditions_for_asset_key(
     """
     from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-    if not asset_graph.get_downstream_freshness_policies(asset_key=asset_key):
+    if not asset_graph.get_downstream_freshness_policies(
+        asset_key=asset_key
+    ) or asset_graph.is_partitioned(asset_key):
         return {}, set(), None
 
     # figure out the current contents of this asset
@@ -151,35 +153,29 @@ def freshness_conditions_for_asset_key(
     else:
         expected_data_time = current_time
 
-    # currently, freshness logic has no effect on partitioned assets
-    if not asset_graph.is_partitioned(asset_key):
-        # calculate the data times you would expect after all currently-executing runs
-        # were to successfully complete
-        in_progress_data_time = data_time_resolver.get_in_progress_data_time(
-            asset_key, current_time
-        )
+    # calculate the data times you would expect after all currently-executing runs
+    # were to successfully complete
+    in_progress_data_time = data_time_resolver.get_in_progress_data_time(asset_key, current_time)
 
-        # calculate the data times you would have expected if the most recent run succeeded
-        failed_data_time = data_time_resolver.get_ignored_failure_data_time(asset_key, current_time)
+    # calculate the data times you would have expected if the most recent run succeeded
+    failed_data_time = data_time_resolver.get_ignored_failure_data_time(asset_key, current_time)
 
-        effective_data_time = max(
-            filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
-            default=None,
-        )
+    effective_data_time = max(
+        filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
+        default=None,
+    )
 
-        # figure out a time period that you can execute this asset within to solve a maximum
-        # number of constraints
-        (
-            execution_period,
-            execution_conditions,
-        ) = get_execution_period_and_conditions_for_policies(
-            local_policy=asset_graph.freshness_policies_by_key.get(asset_key),
-            policies=asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
-            effective_data_time=effective_data_time,
-            current_time=current_time,
-        )
-    else:
-        execution_period, execution_conditions = None, set()
+    # figure out a time period that you can execute this asset within to solve a maximum
+    # number of constraints
+    (
+        execution_period,
+        execution_conditions,
+    ) = get_execution_period_and_conditions_for_policies(
+        local_policy=asset_graph.freshness_policies_by_key.get(asset_key),
+        policies=asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
+        effective_data_time=effective_data_time,
+        current_time=current_time,
+    )
 
     asset_partition = AssetKeyPartitionKey(asset_key, None)
     if (

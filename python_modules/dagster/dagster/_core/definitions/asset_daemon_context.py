@@ -423,6 +423,15 @@ class AssetDaemonContext:
     ]:
         """Evaluates the auto materialize policy of a given asset key.
 
+        Params:
+            - asset_key: The asset key to evaluate.
+            - will_materialize_mapping: A mapping of AssetKey to the set of AssetKeyPartitionKeys
+                that will be materialized this tick. As this function is called in topological order,
+                this mapping will contain the expected materializations of all upstream assets.
+            - expected_data_time_mapping: A mapping of AssetKey to the expected data time of the
+                asset after this tick. As this function is called in topological order, this mapping
+                will contain the expected data times of all upstream assets.
+
         Returns:
             - A mapping of AutoMaterializeCondition to the set of AssetKeyPartitionKeys that the
                 condition applies to.
@@ -433,9 +442,12 @@ class AssetDaemonContext:
             self.get_implicit_auto_materialize_policy(asset_key)
         )
 
-        conditions = defaultdict(set)
-        candidates = set()
-        expected_data_time = None
+        # a mapping from AutoMaterializeCondition to the asset partitions that it applies to
+        conditions: Dict[AutoMaterializeCondition, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        # a set of asset partitions that should be materialized
+        candidates: Set[AssetKeyPartitionKey] = set()
+        # the expected data time of the asset after this tick
+        expected_data_time: Optional[datetime.datetime] = None
 
         # FreshnessAutoMaterializeCondition, DownstreamFreshnessAutoMaterializeCondition
         if auto_materialize_policy.for_freshness:
@@ -503,7 +515,7 @@ class AssetDaemonContext:
                 candidates.difference_update(asset_partitions)
 
         # MaxMaterializationsExceededAutoMaterializeCondition
-        if auto_materialize_policy.max_materializations_per_minute:
+        if auto_materialize_policy.max_materializations_per_minute is not None:
             for (
                 condition,
                 asset_partitions,
@@ -532,10 +544,10 @@ class AssetDaemonContext:
             set
         )
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
-        visited = set()
+        visited_multi_asset_keys = set()
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
-            if asset_key not in self.target_asset_keys or asset_key in visited:
+            if asset_key not in self.target_asset_keys or asset_key in visited_multi_asset_keys:
                 continue
             (
                 conditions_for_key,
@@ -559,7 +571,7 @@ class AssetDaemonContext:
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize
                     }
                     expected_data_time_mapping[neighbor_key] = expected_data_time
-                    visited.add(neighbor_key)
+                    visited_multi_asset_keys.add(neighbor_key)
 
         return condition_mapping, set().union(*will_materialize_mapping.values())
 
