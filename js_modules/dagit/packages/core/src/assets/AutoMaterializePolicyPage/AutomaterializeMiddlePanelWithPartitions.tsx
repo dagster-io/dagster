@@ -75,24 +75,40 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
     [conditionToPartitions],
   );
 
-  const parentOutdatedWaitingOnAssetKeys: Record<string, AssetKey[]> = React.useMemo(() => {
+  const assetKeyDetails = React.useMemo(() => {
     const conditions = selectedEvaluation?.conditions;
-    const map = {} as Record<string, AssetKey[]>;
+    const waitingOn = {} as Record<string, AssetKey[]>;
+    const parentUpdated = {} as Record<string, AssetKey[]>;
+    const parentWillupdate = {} as Record<string, AssetKey[]>;
     if (conditions?.length) {
       conditions.forEach((condition) => {
         if (condition.__typename === 'ParentOutdatedAutoMaterializeCondition') {
           const {waitingOnAssetKeys, partitionKeysOrError} = condition;
           if (partitionKeysOrError?.__typename === 'PartitionKeys') {
             partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
-              const target = [...(map[partitionKey] || [])];
+              const target = [...(waitingOn[partitionKey] || [])];
               target.push(...(waitingOnAssetKeys || []));
-              map[partitionKey] = target;
+              waitingOn[partitionKey] = target;
+            });
+          }
+        } else if (condition.__typename === 'ParentMaterializedAutoMaterializeCondition') {
+          const {updatedAssetKeys, willUpdateAssetKeys, partitionKeysOrError} = condition;
+          if (partitionKeysOrError?.__typename === 'PartitionKeys') {
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(parentUpdated[partitionKey] || [])];
+              target.push(...(updatedAssetKeys || []));
+              parentUpdated[partitionKey] = target;
+            });
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(parentWillupdate[partitionKey] || [])];
+              target.push(...(willUpdateAssetKeys || []));
+              parentWillupdate[partitionKey] = target;
             });
           }
         }
       });
     }
-    return map;
+    return {waitingOn, parentUpdated, parentWillupdate};
   }, [selectedEvaluation]);
 
   const headerRight = () => {
@@ -132,7 +148,9 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
         conditionResults={conditionResults}
         conditionToPartitions={conditionToPartitions}
         maxMaterializationsPerMinute={maxMaterializationsPerMinute}
-        parentOutdatedWaitingOnAssetKeys={parentOutdatedWaitingOnAssetKeys}
+        parentOutdatedWaitingOnAssetKeys={assetKeyDetails.waitingOn}
+        parentUpdatedAssetKeys={assetKeyDetails.parentUpdated}
+        parentWillUpdateAssetKeys={assetKeyDetails.parentWillupdate}
       />
     </Box>
   );
