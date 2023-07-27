@@ -319,14 +319,39 @@ Note that Dagster allows the optional specification of a [`code_version`](/conce
 
 ### Upstream dependencies
 
-<Note>
-  Check out parts{" "}
-  <a href="/integrations/dbt/using-dbt-with-dagster/load-dbt-models">two</a> and{" "}
-  <a href="/integrations/dbt/using-dbt-with-dagster/upstream-assets">
-    three of the dbt + Dagster tutorial
-  </a>{" "}
-  to see this concept in context.
-</Note>
+#### Defining an asset as an upstream dependency of a dbt model
+
+Dagster allows you to define existing assets as upstream dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
+
+```python startafter=start_upstream_dagster_asset endbefore=end_upstream_dagster_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster import asset
+
+@asset
+def upstream():
+    ...
+```
+
+In order to define this asset as an upstream dependency for a dbt model, you'll need to first declare it as a [data source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) in the `sources.yml` file. Here, you can explicitly provide your asset key to a source table:
+
+```yaml
+sources:
+  - name: dagster
+    tables:
+      - name: upstream
+        meta:
+          dagster:
+            asset_key: ["upstream"]
+```
+
+Then, in the downstream model, you can select from this source data. This defines a dependency relationship between your upstream asset and dbt model:
+
+```sql
+select *
+  from {{ source("dagster", "upstream") }}
+ where foo=1
+```
+
+#### Defining a dbt source as a Dagster asset
 
 Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
 
@@ -347,84 +372,87 @@ select *
  where foo=1
 ```
 
-Then the asset created for that model will be given an upstream asset key of `jaffle_shop/orders`. In many cases, this upstream asset might also be managed by Dagster.
+Then this model has an upstream source with the `jaffle_shop/orders` asset key.
 
-If you add an asset definition to your repository which produces `jaffle_shop/orders`, then this asset will be upstream of your dbt model:
+In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject module="dagster_dbt" object="get_asset_key_for_source"/>:
 
 ```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
-@asset(key_prefix="jaffle_shop")
+from dagster import asset, OpExecutionContext
+from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
+
+@dbt_assets(manifest=MANIFEST_PATH)
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    ...
+
+@asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
 def orders():
     return ...
 ```
 
+This allows you to change asset keys within your dbt project without having to update the corresponding Dagster definitions.
+
+The <PyObject module="dagster_dbt" object="get_asset_key_for_source" /> method is used when a source has only one table. However, if a source contains multiple tables, like this example:
+
+```yaml
+sources:
+  - name: clients_data
+    tables:
+      - name: names
+      - name: history
+```
+
+You can use define a <PyObject object="multi_asset" decorator/> with keys from <PyObject module="dagster_dbt" object="get_asset_keys_by_output_name_for_source"/> instead:
+
+```python startafter=start_upstream_multi_asset endbefore=end_upstream_multi_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster import multi_asset, AssetOut, Output
+from dagster_dbt import get_asset_keys_by_output_name_for_source
+
+@multi_asset(
+    outs={
+        name: AssetOut(key=asset_key)
+        for name, asset_key in get_asset_keys_by_output_name_for_source(
+            [my_dbt_assets], "jaffle_shop"
+        ).items()
+    }
+)
+def jaffle_shop(context):
+    output_names = list(context.selected_output_names)
+    yield Output(value=..., output_name=output_names[0])
+    yield Output(value=..., output_name=output_names[1])
+```
+
 ### Downstream dependencies
 
-<Note>
-  Check out{" "}
-  <a href="/integrations/dbt/using-dbt-with-dagster/downstream-assets">
-    part four of the dbt + Dagster tutorial
-  </a>{" "}
-  to see this concept in context.
-</Note>
-
-Dagster allows you to define assets that are downstream of specific dbt models. One property of dbt-based assets is that the external tool - in this case, dbt - handles storing each model in the database internally, rather than Dagster directly storing the tables that are updated.
-
-This means that there's a range of ways to load a dbt model as input to a Python function. For example, you might want to load the contents as a Pandas dataframe or into a PySpark session. You can specify this loading behavior on each downstream asset.
-
-For example, if you wanted to consume a dbt model with the asset key `my_dbt_model` as a Pandas dataframe, that would look something like the following:
+Dagster allows you to define assets that are downstream of specific dbt models via <PyObject module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
 
 ```python startafter=start_downstream_asset endbefore=end_downstream_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster_dbt import get_asset_key_for_model
+from dagster import asset
+
+@asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
+def my_downstream_asset():
+    ...
+```
+
+In the downstream asset, you may want direct access to the contents of the dbt model. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
+
+Dagster alternatively allows you to delegate loading data to an I/O manager. For example, if you wanted to consume a dbt model with the asset key `my_dbt_model` as a Pandas dataframe, that would look something like the following:
+
+```python startafter=start_downstream_asset_pandas_df_manager endbefore=end_downstream_asset_pandas_df_manager file=/integrations/dbt/dbt.py dedent=4
+from dagster_dbt import get_asset_key_for_model
+from dagster import AssetIn, asset
+
 @asset(
-    ins={"my_dbt_model": AssetIn(input_manager_key="pandas_df_manager")},
+    ins={
+        "my_dbt_model": AssetIn(
+            input_manager_key="pandas_df_manager",
+            key=get_asset_key_for_model([my_dbt_assets], "my_dbt_model"),
+        )
+    },
 )
 def my_downstream_asset(my_dbt_model):
     # my_dbt_model is a Pandas dataframe
     return my_dbt_model.where(foo="bar")
-```
-
-#### Defining an I/O manager
-
-To materialize your dbt assets, you need to tell Dagster how to handle the assets' inputs and outputs. You can do this using an [I/O manager](/concepts/io-management/io-managers).
-
-The implementation of your I/O manager depends on:
-
-- The Python object you want to use to represent your table, and
-- The database that dbt writes tables to
-
-A simple I/O manager implementation that loads data from a dbt-managed table into a Pandas dataframe would look something like the following:
-
-```python startafter=start_input_manager endbefore=end_input_manager file=/integrations/dbt/dbt.py dedent=4
-import pandas as pd
-
-from dagster import ConfigurableIOManager
-
-class PandasIOManager(ConfigurableIOManager):
-    connection_str: str
-
-    def handle_output(self, context, obj):
-        # dbt handles outputs for us
-        pass
-
-    def load_input(self, context) -> pd.DataFrame:
-        """Load the contents of a table as a pandas DataFrame."""
-        table_name = context.asset_key.path[-1]
-        return pd.read_sql(f"SELECT * FROM {table_name}", con=self.connection_str)
-```
-
-Once the I/O manager is defined, you can supply it like any other resource when calling <PyObject object="with_resources"/> :
-
-```python startafter=start_input_manager_resources endbefore=end_input_manager_resources file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=load_assets_from_dbt_project(...),
-    resources={
-        "dbt": DbtCliResource(project_dir="path/to/dbt_project"),
-        "pandas_df_manager": PandasIOManager(connection_str=...),
-    },
-)
 ```
 
 ---

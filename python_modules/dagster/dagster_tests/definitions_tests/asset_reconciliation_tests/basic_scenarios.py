@@ -1,5 +1,5 @@
 from dagster import AssetKey
-from dagster._core.definitions.asset_reconciliation_sensor import (
+from dagster._core.definitions.auto_materialize_condition import (
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
 )
