@@ -42,30 +42,43 @@ def scope_dbt_cli_resource_config():
     # end_dbt_cli_resource
 
 
-def scope_schedule_assets(dbt_assets):
-    # start_schedule_assets
-    from dagster import ScheduleDefinition, define_asset_job, Definitions
+def scope_schedule_assets_dbt_only(manifest):
+    # start_schedule_assets_dbt_only
+    from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
 
-    run_everything_job = define_asset_job("run_everything", selection="*")
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
 
-    # only `order_stats` and its children
-    run_something_job = define_asset_job("run_something", selection="order_stats*")
+    daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
+        [my_dbt_assets],
+        job_name="daily_dbt_models",
+        cron_schedule="@daily",
+        dbt_select="tag:daily",
+    )
+    # end_schedule_assets_dbt_only
 
-    defs = Definitions(
-        assets=dbt_assets,
-        schedules=[
-            ScheduleDefinition(
-                job=run_something_job,
-                cron_schedule="@daily",
-            ),
-            ScheduleDefinition(
-                job=run_everything_job,
-                cron_schedule="@weekly",
-            ),
-        ],
+
+def scope_schedule_assets_dbt_and_downstream(manifest):
+    # start_schedule_assets_dbt_downstream
+    from dagster import define_asset_job, ScheduleDefinition
+    from dagster_dbt import build_dbt_asset_selection, dbt_assets
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets():
+        ...
+
+    # selects all models tagged with "daily", and all their downstream asset dependencies
+    daily_selection = build_dbt_asset_selection(
+        [my_dbt_assets], dbt_select="tag:daily"
+    ).downstream()
+
+    daily_dbt_assets_and_downstream_schedule = ScheduleDefinition(
+        job=define_asset_job("daily_assets", selection=daily_selection),
+        cron_schedule="@daily",
     )
 
-    # end_schedule_assets
+    # end_schedule_assets_dbt_downstream
 
 
 def scope_downstream_asset():
