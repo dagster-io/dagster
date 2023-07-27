@@ -81,9 +81,8 @@ export const ConditionsWithPartitions = ({
             text="Upstream data has changed since latest materialization"
             met={conditionResults.has('ParentMaterializedAutoMaterializeCondition')}
             rightElement={
-              Object.keys(parentUpdatedAssetKeys).length +
-                Object.keys(parentWillUpdateAssetKeys).length >
-              0 ? (
+              Object.keys(parentUpdatedAssetKeys).length ||
+              Object.keys(parentWillUpdateAssetKeys).length ? (
                 <ParentUpdatedPartitionLink
                   updatedAssetKeys={parentUpdatedAssetKeys}
                   willUpdateAssetKeys={parentWillUpdateAssetKeys}
@@ -172,7 +171,7 @@ export const ConditionsNoPartitions = ({
             text="Upstream data has changed since latest materialization"
             met={conditionResults.has('ParentMaterializedAutoMaterializeCondition')}
             rightElement={
-              parentUpdatedAssetKeys.length + parentWillUpdateAssetKeys.length ? (
+              parentUpdatedAssetKeys.length || parentWillUpdateAssetKeys.length ? (
                 <ParentUpdatedLink
                   updatedAssetKeys={parentUpdatedAssetKeys}
                   willUpdateAssetKeys={parentWillUpdateAssetKeys}
