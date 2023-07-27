@@ -6,32 +6,51 @@ import {AssetKey} from '../types';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
 import {VirtualizedAssetPartitionListForDialog} from './VirtualizedAssetPartitionListForDialog';
+import {AssetDetailType, detailTypeToLabel} from './assetDetailUtils';
 import {useFilterPartitionNames} from './assetFilters';
 
 interface Props {
-  assetKeysByPartition: Record<string, AssetKey[]>;
+  updatedAssetKeys: Record<string, AssetKey[]>;
+  willUpdateAssetKeys: Record<string, AssetKey[]>;
 }
 
-export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) => {
+export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [queryString, setQueryString] = React.useState('');
-  const partitionNames = Object.keys(assetKeysByPartition);
+
+  const partitionNames = React.useMemo(() => {
+    return Array.from(
+      new Set([...Object.keys(updatedAssetKeys), ...Object.keys(willUpdateAssetKeys)]),
+    );
+  }, [updatedAssetKeys, willUpdateAssetKeys]);
+
   const count = partitionNames.length;
   const filteredPartitionNames = useFilterPartitionNames(partitionNames, queryString);
 
   const visiblePartitions = React.useMemo(() => {
     return Object.fromEntries(
-      filteredPartitionNames.map((partitionName) => [
-        partitionName,
-        assetKeysByPartition[partitionName]!,
-      ]),
+      filteredPartitionNames.map((partitionName) => {
+        return [
+          partitionName,
+          [
+            ...(updatedAssetKeys[partitionName]?.map((assetKey) => ({
+              assetKey,
+              detailType: AssetDetailType.Updated,
+            })) || []),
+            ...(willUpdateAssetKeys[partitionName]?.map((assetKey) => ({
+              assetKey,
+              detailType: AssetDetailType.WillUpdate,
+            })) || []),
+          ],
+        ];
+      }),
     );
-  }, [assetKeysByPartition, filteredPartitionNames]);
+  }, [updatedAssetKeys, willUpdateAssetKeys, filteredPartitionNames]);
 
   return (
     <>
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <Tag intent="warning">{count === 1 ? `1 partition` : `${count} partitions`}</Tag>
+        <Tag>{count === 1 ? `1 partition` : `${count} partitions`}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
           <Caption>View details</Caption>
         </ButtonLink>
@@ -42,10 +61,10 @@ export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) =
         header={
           <AssetKeysDialogHeader
             title={count === 1 ? '1 partition' : `${count} partitions`}
+            placeholder="Filter by partition…"
             queryString={queryString}
             setQueryString={setQueryString}
             showSearch={count > 0}
-            placeholder="Filter by partition…"
           />
         }
         content={
@@ -62,9 +81,14 @@ export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) =
             <VirtualizedAssetPartitionListForDialog
               assetKeysByPartition={visiblePartitions}
               renderPartitionDetail={({assetCount}) =>
-                assetCount === 1 ? `(Waiting on 1 asset)` : `(Waiting on ${assetCount} assets)`
+                assetCount === 1 ? `(1 parent updated)` : `(${assetCount} parents updated)`
               }
-              renderItem={(item: AssetKey) => <AssetLink path={item.path} icon="asset" />}
+              renderItem={(item) => (
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                  <AssetLink path={item.assetKey.path} icon="asset" />
+                  <span>({detailTypeToLabel(item.detailType)})</span>
+                </Box>
+              )}
             />
           )
         }

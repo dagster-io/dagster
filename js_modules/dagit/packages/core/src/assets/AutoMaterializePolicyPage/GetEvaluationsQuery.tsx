@@ -41,5 +41,13 @@ export const GET_EVALUATIONS_QUERY = gql`
         path
       }
     }
+    ... on ParentMaterializedAutoMaterializeCondition {
+      updatedAssetKeys {
+        path
+      }
+      willUpdateAssetKeys {
+        path
+      }
+    }
   }
 `;

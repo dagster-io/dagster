@@ -5,6 +5,8 @@ import {AssetKey} from '../types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {CollapsibleSection} from './CollapsibleSection';
+import {ParentUpdatedLink} from './ParentUpdatedLink';
+import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnPartitionAssetKeysLink} from './WaitingOnPartitionAssetKeysLink';
 import {AutoMateralizeWithConditionFragment} from './types/GetEvaluationsQuery.types';
@@ -37,13 +39,19 @@ interface ConditionsWithPartitionsProps {
   maxMaterializationsPerMinute: number;
   conditionToPartitions: Record<ConditionType, string[]>;
   parentOutdatedWaitingOnAssetKeys: Record<string, AssetKey[]>;
+  parentUpdatedAssetKeys: Record<string, AssetKey[]>;
+  parentWillUpdateAssetKeys: Record<string, AssetKey[]>;
 }
+
+const EMPTY_RIGHT_ELEMENT = <div style={{color: Colors.Gray400}}>&ndash;</div>;
 
 export const ConditionsWithPartitions = ({
   conditionResults,
   conditionToPartitions,
   maxMaterializationsPerMinute,
   parentOutdatedWaitingOnAssetKeys,
+  parentUpdatedAssetKeys,
+  parentWillUpdateAssetKeys,
 }: ConditionsWithPartitionsProps) => {
   const buildRightElement = (
     partitionKeys: string[],
@@ -54,7 +62,7 @@ export const ConditionsWithPartitions = ({
         <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} intent={intent} />
       );
     }
-    return <div style={{color: Colors.Gray400}}>&ndash;</div>;
+    return EMPTY_RIGHT_ELEMENT;
   };
 
   return (
@@ -74,9 +82,17 @@ export const ConditionsWithPartitions = ({
           <Condition
             text="Upstream data has changed since latest materialization"
             met={conditionResults.has('ParentMaterializedAutoMaterializeCondition')}
-            rightElement={buildRightElement(
-              conditionToPartitions['ParentMaterializedAutoMaterializeCondition'],
-            )}
+            rightElement={
+              Object.keys(parentUpdatedAssetKeys).length ||
+              Object.keys(parentWillUpdateAssetKeys).length ? (
+                <ParentUpdatedPartitionLink
+                  updatedAssetKeys={parentUpdatedAssetKeys}
+                  willUpdateAssetKeys={parentWillUpdateAssetKeys}
+                />
+              ) : (
+                EMPTY_RIGHT_ELEMENT
+              )
+            }
           />
           <Condition
             text="Required to meet this asset's freshness policy"
@@ -106,7 +122,9 @@ export const ConditionsWithPartitions = ({
               <WaitingOnPartitionAssetKeysLink
                 assetKeysByPartition={parentOutdatedWaitingOnAssetKeys}
               />
-            ) : null
+            ) : (
+              EMPTY_RIGHT_ELEMENT
+            )
           }
         />
       </CollapsibleSection>
@@ -134,11 +152,15 @@ export const ConditionsWithPartitions = ({
 interface ConditionsProps {
   conditionResults: Set<ConditionType>;
   parentOutdatedWaitingOnAssetKeys: AssetKey[];
+  parentUpdatedAssetKeys: AssetKey[];
+  parentWillUpdateAssetKeys: AssetKey[];
 }
 
 export const ConditionsNoPartitions = ({
   conditionResults,
   parentOutdatedWaitingOnAssetKeys,
+  parentUpdatedAssetKeys,
+  parentWillUpdateAssetKeys,
 }: ConditionsProps) => {
   return (
     <>
@@ -150,18 +172,31 @@ export const ConditionsNoPartitions = ({
           <Condition
             text="Materialization is missing"
             met={conditionResults.has('MissingAutoMaterializeCondition')}
+            rightElement={EMPTY_RIGHT_ELEMENT}
           />
           <Condition
             text="Upstream data has changed since latest materialization"
             met={conditionResults.has('ParentMaterializedAutoMaterializeCondition')}
+            rightElement={
+              parentUpdatedAssetKeys.length || parentWillUpdateAssetKeys.length ? (
+                <ParentUpdatedLink
+                  updatedAssetKeys={parentUpdatedAssetKeys}
+                  willUpdateAssetKeys={parentWillUpdateAssetKeys}
+                />
+              ) : (
+                EMPTY_RIGHT_ELEMENT
+              )
+            }
           />
           <Condition
             text="Required to meet this asset's freshness policy"
             met={conditionResults.has('FreshnessAutoMaterializeCondition')}
+            rightElement={EMPTY_RIGHT_ELEMENT}
           />
           <Condition
             text="Required to meet a downstream freshness policy"
             met={conditionResults.has('DownstreamFreshnessAutoMaterializeCondition')}
+            rightElement={EMPTY_RIGHT_ELEMENT}
           />
         </Box>
       </CollapsibleSection>
@@ -175,7 +210,9 @@ export const ConditionsNoPartitions = ({
           rightElement={
             parentOutdatedWaitingOnAssetKeys.length ? (
               <WaitingOnAssetKeysLink assetKeys={parentOutdatedWaitingOnAssetKeys} />
-            ) : null
+            ) : (
+              EMPTY_RIGHT_ELEMENT
+            )
           }
         />
       </CollapsibleSection>
