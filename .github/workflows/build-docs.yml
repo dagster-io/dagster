@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Get branch preview subdomain
         if: github.event_name == 'pull_request'
-        run: echo "BRANCH_PREVIEW_SUBDOMAIN=$(( echo "${{ github.head_ref || github.ref_name }}" | sed 's/\//-/g' ))" >> "${GITHUB_ENV}"
+        run: echo "BRANCH_PREVIEW_SUBDOMAIN=$(( echo \"${{ github.head_ref || github.ref_name }}\" | sed 's/\//-/g' ))" >> "${GITHUB_ENV}"
       - name: Checkout
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/checkout@v3
