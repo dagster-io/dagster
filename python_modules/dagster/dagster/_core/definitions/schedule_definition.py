@@ -1,5 +1,6 @@
 import copy
 import logging
+import warnings
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
@@ -31,7 +32,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import is_valid_cron_schedule
+from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
 
 from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
@@ -577,6 +578,14 @@ class ScheduleDefinition(IHasInternalInit):
             raise DagsterInvalidDefinitionError(
                 f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
                 "Dagster recognizes standard cron expressions consisting of 5 fields."
+            )
+        if has_out_of_range_cron_interval(self._cron_schedule):  # type: ignore
+            warnings.warn(
+                "Found a cron schedule with an interval greater than the expected range for"
+                f" schedule '{name}'. Dagster currently normalizes this to an interval that may"
+                " fire more often than expected. You may want to break this cron schedule up into"
+                " a sequence of cron schedules. See"
+                " https://github.com/dagster-io/dagster/issues/15294 for more information."
             )
 
         if job is not None:
