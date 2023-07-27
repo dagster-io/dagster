@@ -285,6 +285,7 @@ def repository(
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
+        metadata (Optional[Dict[str, Any]]): Arbitrary metadata for the repository.
         top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
             resource keys to defintions, for resources which should be displayed in the UI.
 
@@ -327,6 +328,22 @@ def repository(
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 
+            ######################################################################
+            # A simple repository using the first form of the decorated function
+            # and custom metadata that will be displayed in the UI
+            ######################################################################
+
+            ...
+
+            @repository(
+                name='my_repo',
+                metadata={
+                    'team': 'Team A',
+                    'repository_version': '1.2.3',
+                    'environment': 'production',
+             })
+            def simple_repository():
+                return [simple_job, some_sensor, my_schedule]
 
             ######################################################################
             # A lazy-loaded repository
