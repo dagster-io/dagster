@@ -2130,6 +2130,7 @@ type Instance {
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
+  supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
 }
 

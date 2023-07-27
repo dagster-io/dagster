@@ -125,6 +125,7 @@ class GrapheneInstance(graphene.ObjectType):
     hasInfo = graphene.NonNull(graphene.Boolean)
     hasCapturedLogManager = graphene.NonNull(graphene.Boolean)
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
+    supportsConcurrencyLimits = graphene.NonNull(graphene.Boolean)
     concurrencyLimits = non_null_list(GrapheneConcurrencyKeyInfo)
 
     class Meta:
@@ -166,6 +167,9 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_autoMaterializePaused(self, _graphene_info: ResolveInfo):
         return get_auto_materialize_paused(self._instance)
+
+    def resolve_supportsConcurrencyLimits(self, _graphene_info: ResolveInfo):
+        return self._instance.event_log_storage.supports_global_concurrency_limits
 
     def resolve_concurrencyLimits(self, _graphene_info: ResolveInfo):
         res = []
