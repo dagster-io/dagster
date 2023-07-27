@@ -1292,6 +1292,7 @@ export type Instance = {
   info: Maybe<Scalars['String']>;
   runLauncher: Maybe<RunLauncher>;
   runQueuingSupported: Scalars['Boolean'];
+  supportsConcurrencyLimits: Scalars['Boolean'];
 };
 
 export type InstigationEvent = {
@@ -6592,6 +6593,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('runQueuingSupported')
         ? overrides.runQueuingSupported!
         : true,
+    supportsConcurrencyLimits:
+      overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
+        ? overrides.supportsConcurrencyLimits!
+        : false,
   };
 };
 
