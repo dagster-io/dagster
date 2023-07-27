@@ -216,7 +216,7 @@ class DbtCliInvocation:
 
                 dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
         """
-        self._raise_on_error()
+        list(self.stream_raw_events())
 
         return self
 
