@@ -74,6 +74,7 @@ def copy_scaffold(
     project_name: str,
     dagster_project_dir: Path,
     dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
 ) -> None:
     shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
     dagster_project_dir.joinpath("__init__.py").unlink()
@@ -89,6 +90,9 @@ def copy_scaffold(
         for profile in dbt_profiles_yaml.values()
         for target in profile["outputs"].values()
     ]
+
+    if use_dbt_project_package_data_dir:
+        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
 
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
@@ -119,6 +123,7 @@ def copy_scaffold(
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
+                use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
             ).dump(destination_path)
 
             path.unlink()
@@ -157,6 +162,15 @@ def project_scaffold_command(
             resolve_path=True,
         ),
     ] = Path.cwd(),
+    use_dbt_project_package_data_dir: Annotated[
+        bool,
+        typer.Option(
+            default=...,
+            help="Controls whether the dbt project package data directory is used.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
 ) -> None:
     """This command will initialize a new Dagster project and create directories and files that
     load assets from an existing dbt project.
@@ -176,6 +190,7 @@ def project_scaffold_command(
         project_name=project_name,
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
     console.print(
