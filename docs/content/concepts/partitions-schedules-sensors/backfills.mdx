@@ -70,7 +70,7 @@ def events(context):
     )
 ```
 
-Alternatively, if you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O manager, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box.
+Alternatively, if you are using an I/O manager to handle saving and loading your data, you'll need to ensure the I/O manager is also using these methods. If you're using any of the built-in database I/O managers, like [Snowflake](/integrations/snowflake), [BigQuery](/integrations/bigquery), or [DuckDB](/\_apidocs/libraries/dagster-duckdb), you'll have this out-of-the-box.
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_io_manager.py startafter=start_marker endbefore=end_marker
 from dagster import IOManager
