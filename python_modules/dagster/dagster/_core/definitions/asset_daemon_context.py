@@ -553,6 +553,7 @@ def build_auto_materialize_asset_evaluations(
             asset_graph, asset_key, conditions, dynamic_partitions_store
         )
         for asset_key, conditions in conditions_by_asset_key.items()
+        if conditions
     ]
 
 
