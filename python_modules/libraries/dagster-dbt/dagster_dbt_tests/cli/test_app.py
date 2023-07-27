@@ -33,12 +33,16 @@ def dbt_project_dir_fixture(tmp_path: Path) -> Path:
     return dbt_project_dir
 
 
+@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_precompiled_manifest(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, dbt_project_dir: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = "test_dagster_scaffold"
+    project_name = f"test_dagster_scaffold_{use_dbt_project_package_data_dir}"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     result = runner.invoke(
@@ -50,6 +54,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
+            *(["--use-dbt-project-package-data-dir"] if use_dbt_project_package_data_dir else []),
         ],
     )
 
@@ -60,6 +65,13 @@ def test_project_scaffold_command_with_precompiled_manifest(
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
     assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
+
+    if use_dbt_project_package_data_dir:
+        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
+        shutil.copytree(
+            src=test_dagster_metadata_dbt_project_path,
+            dst=dbt_project_dir,
+        )
 
     subprocess.run(["dbt", "compile"], cwd=dbt_project_dir, check=True)
 
@@ -82,12 +94,16 @@ def test_project_scaffold_command_with_precompiled_manifest(
     assert materialize_dbt_models_schedule.cron_schedule == "0 0 * * *"
 
 
+@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_runtime_manifest(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, dbt_project_dir: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = "test_dagster_scaffold_runtime_manifest"
+    project_name = f"test_dagster_scaffold_runtime_manifest_{use_dbt_project_package_data_dir}"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     result = runner.invoke(
@@ -99,6 +115,7 @@ def test_project_scaffold_command_with_runtime_manifest(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
+            *(["--use-dbt-project-package-data-dir"] if use_dbt_project_package_data_dir else []),
         ],
     )
 
@@ -110,6 +127,13 @@ def test_project_scaffold_command_with_runtime_manifest(
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
     assert not dbt_project_dir.joinpath("target", "manifest.json").exists()
     assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
+
+    if use_dbt_project_package_data_dir:
+        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
+        shutil.copytree(
+            src=test_dagster_metadata_dbt_project_path,
+            dst=dbt_project_dir,
+        )
 
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
