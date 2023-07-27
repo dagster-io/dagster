@@ -614,7 +614,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         )
         self._workspace_id = workspace_id
         self._airbyte_instance: AirbyteResource = (
-            airbyte_resource_def
+            airbyte_resource_def.process_config_and_initialize()
             if isinstance(airbyte_resource_def, AirbyteResource)
             else airbyte_resource_def(build_init_resource_context())
         )

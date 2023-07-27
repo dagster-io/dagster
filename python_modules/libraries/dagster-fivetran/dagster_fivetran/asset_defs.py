@@ -320,7 +320,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     ):
         self._fivetran_resource_def = fivetran_resource_def
         self._fivetran_instance: FivetranResource = (
-            fivetran_resource_def
+            fivetran_resource_def.process_config_and_initialize()
             if isinstance(fivetran_resource_def, FivetranResource)
             else fivetran_resource_def(build_init_resource_context())
         )
