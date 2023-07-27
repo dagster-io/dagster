@@ -16,10 +16,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Print environment
-        run: env
-      - name: ECHO branch
-        run: echo "Branch is ${{ github.head_ref || github.ref_name }}"
+      - name: Get branch preview subdomain
+        if: github.event_name == 'pull_request'
+        run: echo "BRANCH_PREVIEW_SUBDOMAIN=$(( echo "${{ github.head_ref || github.ref_name }}" | sed 's/\//-/g' ))" >> "${GITHUB_ENV}"
       - name: Checkout
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/checkout@v3
@@ -64,7 +63,7 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: ${{ github.head_ref || github.ref_name }}.dagster-docs.io
+          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.dagster.dagster-docs.io
 
       - name: Publish to Vercel
         uses: amondnet/vercel-action@v25
