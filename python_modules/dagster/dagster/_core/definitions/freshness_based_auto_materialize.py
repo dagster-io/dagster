@@ -8,8 +8,7 @@
     maximum lag minutes.
 """
 import datetime
-from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Set, Tuple, cast
+from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Tuple
 
 import pendulum
 
@@ -102,136 +101,100 @@ def get_execution_period_and_conditions_for_policies(
     return merged_period, conditions
 
 
-def determine_asset_partitions_to_auto_materialize_for_freshness(
+def freshness_conditions_for_asset_key(
+    asset_key: AssetKey,
     data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
-    target_asset_keys: AbstractSet[AssetKey],
-    target_asset_keys_and_parents: AbstractSet[AssetKey],
     current_time: datetime.datetime,
-) -> Mapping[AssetKeyPartitionKey, Set[AutoMaterializeCondition]]:
+    will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+    expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+) -> Tuple[
+    Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]],
+    AbstractSet[AssetKeyPartitionKey],
+    Optional[datetime.datetime],
+]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
-    FreshnessPolicies, as well as a set of AssetKeyPartitionKeys which will be materialized at
-    some point within the plan window.
+    FreshnessPolicies.
 
     Attempts to minimize the total number of asset executions.
     """
     from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
-    # now we have a full set of constraints, we can find solutions for them as we move down
-    conditions_by_asset_partition: Mapping[
-        AssetKeyPartitionKey, Set[AutoMaterializeCondition]
-    ] = defaultdict(set)
-    waiting_to_materialize: Set[AssetKey] = set()
-    expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
+    if not asset_graph.get_downstream_freshness_policies(
+        asset_key=asset_key
+    ) or asset_graph.is_partitioned(asset_key):
+        return {}, set(), None
 
-    for level in asset_graph.toposort_asset_keys():
-        for key in level:
+    # figure out the current contents of this asset
+    current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
+
+    expected_data_time = None
+    # figure out the expected data time of this asset if it were to be executed on this tick
+    # for root assets, this would just be the current time
+    if asset_graph.has_non_source_parents(asset_key):
+        for parent_key in asset_graph.get_parents(asset_key):
+            # if the parent will be materialized on this tick, and it's not in the same repo, then
+            # we must wait for this asset to be materialized
             if (
-                key not in target_asset_keys_and_parents
-                or key not in asset_graph.materializable_asset_keys
-                or not asset_graph.get_downstream_freshness_policies(asset_key=key)
+                isinstance(asset_graph, ExternalAssetGraph)
+                and AssetKeyPartitionKey(parent_key) in will_materialize_mapping[parent_key]
             ):
-                continue
-
-            parents = asset_graph.get_parents(key)
-
-            if any(p in waiting_to_materialize for p in parents):
-                # we can't materialize this asset yet, because we're waiting on a parent
-                waiting_to_materialize.add(key)
-                continue
-
-            # if we're going to materialize a parent of this asset that's in a different repository,
-            # then we need to wait
-            if isinstance(asset_graph, ExternalAssetGraph):
-                repo = asset_graph.get_repository_handle(key)
-                if any(
-                    AssetKeyPartitionKey(p, None) in conditions_by_asset_partition
-                    and asset_graph.get_repository_handle(p) is not repo
-                    for p in parents
-                ):
-                    waiting_to_materialize.add(key)
-                    continue
-
-            # figure out the current contents of this asset with respect to its constraints
-            current_data_time = data_time_resolver.get_current_data_time(key, current_time)
-
-            # figure out the expected data time of this asset if it were to be executed on this tick
-            # for root assets, this would just be the current time
-            expected_data_time = (
-                min(
-                    (
-                        cast(datetime.datetime, expected_data_time_by_key[k])
-                        for k in parents
-                        if k in expected_data_time_by_key
-                        and expected_data_time_by_key[k] is not None
-                    ),
-                    default=None,
-                )
-                if asset_graph.has_non_source_parents(key)
-                else current_time
+                parent_repo = asset_graph.get_repository_handle(parent_key)
+                if parent_repo != asset_graph.get_repository_handle(asset_key):
+                    return {}, set(), current_data_time
+            # find the minimum non-None data time of your parents
+            parent_expected_data_time = expected_data_time_mapping.get(
+                parent_key
+            ) or data_time_resolver.get_current_data_time(parent_key, current_time)
+            expected_data_time = min(
+                filter(None, [expected_data_time, parent_expected_data_time]),
+                default=None,
             )
+    else:
+        expected_data_time = current_time
 
-            # currently, freshness logic has no effect on partitioned assets
-            if key in target_asset_keys and not asset_graph.is_partitioned(key):
-                # calculate the data times you would expect after all currently-executing runs
-                # were to successfully complete
-                in_progress_data_time = data_time_resolver.get_in_progress_data_time(
-                    key, current_time
-                )
+    # calculate the data times you would expect after all currently-executing runs
+    # were to successfully complete
+    in_progress_data_time = data_time_resolver.get_in_progress_data_time(asset_key, current_time)
 
-                # calculate the data times you would have expected if the most recent run succeeded
-                failed_data_time = data_time_resolver.get_ignored_failure_data_time(
-                    key, current_time
-                )
+    # calculate the data times you would have expected if the most recent run succeeded
+    failed_data_time = data_time_resolver.get_ignored_failure_data_time(asset_key, current_time)
 
-                effective_data_time = max(
-                    filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
-                    default=None,
-                )
+    effective_data_time = max(
+        filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
+        default=None,
+    )
 
-                # figure out a time period that you can execute this asset within to solve a maximum
-                # number of constraints
-                (
-                    execution_period,
-                    execution_conditions,
-                ) = get_execution_period_and_conditions_for_policies(
-                    local_policy=asset_graph.freshness_policies_by_key.get(key),
-                    policies=asset_graph.get_downstream_freshness_policies(asset_key=key),
-                    effective_data_time=effective_data_time,
-                    current_time=current_time,
-                )
-            else:
-                execution_period, execution_conditions = None, set()
+    # figure out a time period that you can execute this asset within to solve a maximum
+    # number of constraints
+    (
+        execution_period,
+        execution_conditions,
+    ) = get_execution_period_and_conditions_for_policies(
+        local_policy=asset_graph.freshness_policies_by_key.get(asset_key),
+        policies=asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
+        effective_data_time=effective_data_time,
+        current_time=current_time,
+    )
 
-            # a key may already be in conditions by the time we get here if a required
-            # neighbor was selected to be updated
-            asset_partition = AssetKeyPartitionKey(key, None)
-            if asset_partition in conditions_by_asset_partition and all(
-                condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-                for condition in conditions_by_asset_partition[asset_partition]
-            ):
-                expected_data_time_by_key[key] = expected_data_time
-            elif (
-                execution_period is not None
-                and execution_period.start <= current_time
-                and expected_data_time is not None
-                # if this is False, then executing it would still leave the asset overdue
-                and expected_data_time >= execution_period.start
-                and all(
-                    condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-                    for condition in execution_conditions
-                )
-            ):
-                expected_data_time_by_key[key] = expected_data_time
-                conditions_by_asset_partition[asset_partition].update(execution_conditions)
-                # all required neighbors will be updated on the same tick
-                for required_key in asset_graph.get_required_multi_asset_keys(key):
-                    conditions_by_asset_partition[
-                        (AssetKeyPartitionKey(required_key, None))
-                    ].update(execution_conditions)
-            else:
-                # if downstream assets consume this, they should expect data time equal to the
-                # current time for this asset, as it's not going to be updated
-                expected_data_time_by_key[key] = current_data_time
-
-    return conditions_by_asset_partition
+    asset_partition = AssetKeyPartitionKey(asset_key, None)
+    if (
+        execution_period is not None
+        and execution_period.start <= current_time
+        and expected_data_time is not None
+        # if this is False, then executing it would still leave the asset overdue
+        and expected_data_time >= execution_period.start
+        and all(
+            condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+            for condition in execution_conditions
+        )
+    ):
+        return (
+            {condition: {asset_partition} for condition in execution_conditions},
+            {asset_partition},
+            expected_data_time,
+        )
+    else:
+        # if downstream assets consume this, they should expect data time equal to the
+        # current time for this asset, as it's not going to be updated
+        return {}, set(), current_data_time

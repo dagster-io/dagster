@@ -190,18 +190,6 @@ auto_materialize_policy_scenarios = {
                     PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
                 )
             },
-            ("daily", "2013-01-05"): {
-                ParentOutdatedAutoMaterializeCondition(
-                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
-                ),
-                MissingAutoMaterializeCondition(),
-            },
-            ("daily", "2013-01-06"): {
-                ParentOutdatedAutoMaterializeCondition(
-                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
-                ),
-                MissingAutoMaterializeCondition(),
-            },
         },
     ),
     "auto_materialize_policy_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(

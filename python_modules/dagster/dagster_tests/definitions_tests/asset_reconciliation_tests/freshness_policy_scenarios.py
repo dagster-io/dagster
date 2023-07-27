@@ -8,7 +8,9 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_condition import (
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
 )
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -336,7 +338,22 @@ freshness_policy_scenarios = {
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         # need to run assets 1, 2 and 3 as they're all part of the same non-subsettable multi asset
-        expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset5"])],
+        # need to run asset 4 as it eagerly updates after asset 1
+        expected_run_requests=[
+            run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5"])
+        ],
+        expected_conditions={
+            "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
+            "asset5": {FreshnessAutoMaterializeCondition()},
+            "asset4": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset(),
+                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
+                )
+            },
+        },
     ),
     "freshness_subsettable_multi_asset_on_top": AssetReconciliationScenario(
         assets=subsettable_multi_asset_on_top,
