@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 import sys
-import time
+import uuid
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -174,7 +174,7 @@ class DbtCliInvocation:
                 " to take advantage of partial parsing."
             )
 
-            partial_parse_destination_target_path.parent.mkdir(parents=True)
+            partial_parse_destination_target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(partial_parse_file_path, partial_parse_destination_target_path)
 
         # Create a subprocess that runs the dbt CLI command.
@@ -418,10 +418,10 @@ class DbtCliResource(ConfigurableResource):
         Returns:
             str: A unique target path for the dbt CLI invocation.
         """
-        current_unix_timestamp = str(int(time.time()))
-        path = current_unix_timestamp
+        unique_id = str(uuid.uuid4())[:7]
+        path = unique_id
         if context:
-            path = f"{context.op.name}-{context.run_id[:7]}-{current_unix_timestamp}"
+            path = f"{context.op.name}-{context.run_id[:7]}-{unique_id}"
 
         return f"target/{path}"
 
