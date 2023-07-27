@@ -143,7 +143,7 @@ def check_concurrency_support(instance: DagsterInstance):
     if isinstance(instance.event_log_storage, SqliteEventLogStorage):
         raise click.ClickException(
             "This instance storage does not support global concurrency limits. You will need "
-            "to configure a different storage implementation (e.g. postgres/mysql) to use this "
+            "to configure a different storage implementation (e.g. Postgres/MySQL) to use this "
             "feature."
         )
 

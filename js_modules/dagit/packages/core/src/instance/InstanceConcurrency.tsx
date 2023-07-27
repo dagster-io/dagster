@@ -148,7 +148,7 @@ export const ConcurrencyLimits: React.FC<{
           title="No concurrency support"
           description={
             'This instance does not support global concurrency limits. You will need to ' +
-            'configure a different storage implementation (e.g. postgres/mysql) to use this ' +
+            'configure a different storage implementation (e.g. Postgres/MySQL) to use this ' +
             'feature.'
           }
         />
