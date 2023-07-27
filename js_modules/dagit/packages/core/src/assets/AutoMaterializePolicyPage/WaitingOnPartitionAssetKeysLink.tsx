@@ -62,7 +62,7 @@ export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) =
             <VirtualizedAssetPartitionListForDialog
               assetKeysByPartition={visiblePartitions}
               renderPartitionDetail={({assetCount}) =>
-                assetCount === 1 ? `(Waiting on 1 asset)` : `Waiting on ${assetCount} assets`
+                assetCount === 1 ? `(Waiting on 1 asset)` : `(Waiting on ${assetCount} assets)`
               }
               renderItem={(item: AssetKey) => <AssetLink path={item.path} icon="asset" />}
             />
