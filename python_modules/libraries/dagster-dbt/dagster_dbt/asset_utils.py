@@ -208,7 +208,12 @@ def build_dbt_asset_selection(
                 ...
 
             # Select the dbt assets that have the tag "foo".
-            my_selection = build_dbt_asset_selection([dbt_assets], dbt_select="tag:foo")
+            foo_selection = build_dbt_asset_selection([dbt_assets], dbt_select="tag:foo")
+
+            # Select the dbt assets that have the tag "foo" and all Dagster assets downstream
+            # of them (dbt-related or otherwise)
+            foo_and_downstream_selection = foo_selection.downstream()
+
     """
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
     from .dbt_manifest_asset_selection import DbtManifestAssetSelection
