@@ -29,7 +29,7 @@ from dagster import (
 from dagster._core.definitions import asset, build_assets_job
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition import DefaultPartitionsSubset, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
@@ -239,6 +239,36 @@ def test_non_partitioned_depends_on_specific_partitions():
         [AssetMaterialization(AssetKey(["downstream_a_b"]))],
         exclude_fields=["tags"],
     )
+
+
+def test_specific_partitions_partition_mapping_downstream_partitions():
+    upstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    downstream_partitions_def = StaticPartitionsDefinition(["x", "y", "z"])
+    partition_mapping = SpecificPartitionsPartitionMapping(["a", "b"])
+
+    # cases where at least one of the specific partitions is in the upstream partitions subset
+    for partition_subset in [
+        DefaultPartitionsSubset(upstream_partitions_def, {"a"}),
+        DefaultPartitionsSubset(upstream_partitions_def, {"a", "b"}),
+        DefaultPartitionsSubset(upstream_partitions_def, {"a", "b", "c", "d"}),
+    ]:
+        assert (
+            partition_mapping.get_downstream_partitions_for_partitions(
+                partition_subset, downstream_partitions_def
+            )
+            == downstream_partitions_def.subset_with_all_partitions()
+        )
+
+    for partition_subset in [
+        DefaultPartitionsSubset(upstream_partitions_def, {"c"}),
+        DefaultPartitionsSubset(upstream_partitions_def, {"c", "d"}),
+    ]:
+        assert (
+            partition_mapping.get_downstream_partitions_for_partitions(
+                partition_subset, downstream_partitions_def
+            )
+            == downstream_partitions_def.empty_subset()
+        )
 
 
 def test_non_partitioned_depends_on_all_partitions():

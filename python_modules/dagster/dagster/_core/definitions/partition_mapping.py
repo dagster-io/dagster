@@ -280,7 +280,13 @@ class SpecificPartitionsPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
+        # if any of the partition keys in this partition mapping are contained within the upstream
+        # partitions subset, then all partitions of the downstream asset are dependencies
+        if any(key in upstream_partitions_subset for key in self.partition_keys):
+            return downstream_partitions_def.subset_with_all_partitions(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        return downstream_partitions_def.empty_subset()
 
 
 @experimental
