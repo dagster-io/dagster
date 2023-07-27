@@ -113,10 +113,10 @@ type DialogAction =
   | undefined;
 
 export const ConcurrencyLimits: React.FC<{
-  instanceConfig: string | null;
-  hasSupport: boolean;
   limits: ConcurrencyLimitFragment[];
   refetch: () => void;
+  instanceConfig?: string | null;
+  hasSupport?: boolean;
 }> = ({instanceConfig, hasSupport, limits, refetch}) => {
   const [action, setAction] = React.useState<DialogAction>();
   const [selectedRuns, setSelectedRuns] = React.useState<string[] | undefined>(undefined);
@@ -154,7 +154,7 @@ export const ConcurrencyLimits: React.FC<{
         />
       </Box>
     );
-  } else if (!hasSupport) {
+  } else if (hasSupport === false) {
     return (
       <Box margin={24}>
         <NonIdealState
