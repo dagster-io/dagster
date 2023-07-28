@@ -20,6 +20,8 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
@@ -30,8 +32,6 @@ from dagster import (
     build_output_context,
     io_manager,
     materialize,
-    MultiPartitionsDefinition,
-    MultiPartitionKey,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
