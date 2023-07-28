@@ -22,8 +22,13 @@ test_dagster_metadata_dbt_project_path = Path(__file__).parent.joinpath(
 runner = CliRunner()
 
 
+@pytest.fixture(name="disable_openblas_threading_affinity")
+def disable_openblas_threading_affinity_fixture(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENBLAS_MAIN_FREE", "1")
+
+
 @pytest.fixture(name="dbt_project_dir")
-def dbt_project_dir_fixture(tmp_path: Path) -> Path:
+def dbt_project_dir_fixture(tmp_path: Path, disable_openblas_threading_affinity) -> Path:
     dbt_project_dir = tmp_path.joinpath("test_dagster_metadata")
     shutil.copytree(
         src=test_dagster_metadata_dbt_project_path,
