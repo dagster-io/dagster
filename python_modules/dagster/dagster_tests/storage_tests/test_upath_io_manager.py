@@ -255,7 +255,7 @@ def test_upath_io_manager_load_multiple_inputs(dummy_io_manager: DummyIOManager)
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"1|a", "1|b"}
 
-    
+
 def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path: Path):
     my_io_manager = PickleIOManager(UPath(tmp_path))
 
@@ -282,7 +282,6 @@ def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path:
 
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
-
 
 
 def test_upath_io_manager_static_partitions_with_dot():
