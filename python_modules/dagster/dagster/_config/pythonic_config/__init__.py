@@ -1797,7 +1797,7 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """
     keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
     data_with_annotation: List[Tuple[str, Any, Type]] = [
-        (k, v, keys_by_alias[k].annotation) for k, v in data.items() if k in keys_by_alias
+        (k, v, keys_by_alias[k].outer_type_) for k, v in data.items() if k in keys_by_alias
     ]
     out = SeparatedResourceParams(
         resources={k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)},
