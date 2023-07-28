@@ -323,6 +323,7 @@ class TimeWindowPartitionsDefinition(
     def time_windows_for_partition_keys(
         self,
         partition_keys: Sequence[str],
+        validate: bool = True,
     ) -> Sequence[TimeWindow]:
         if len(partition_keys) == 0:
             return []
@@ -348,20 +349,21 @@ class TimeWindowPartitionsDefinition(
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
 
-        start_time_window = self.get_first_partition_window()
-        end_time_window = self.get_last_partition_window()
+        if validate:
+            start_time_window = self.get_first_partition_window()
+            end_time_window = self.get_last_partition_window()
 
-        if end_time_window is None or start_time_window is None:
-            check.failed("No partitions in the PartitionsDefinition")
+            if start_time_window is None or end_time_window is None:
+                check.failed("No partitions in the PartitionsDefinition")
 
-        start_timestamp = start_time_window.start.timestamp()
-        end_timestamp = end_time_window.end.timestamp()
+            start_timestamp = start_time_window.start.timestamp()
+            end_timestamp = end_time_window.end.timestamp()
 
-        partition_key_time_windows = [
-            tw
-            for tw in partition_key_time_windows
-            if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
-        ]
+            partition_key_time_windows = [
+                tw
+                for tw in partition_key_time_windows
+                if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
+            ]
         return partition_key_time_windows
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
@@ -1395,6 +1397,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             result_time_windows, _ = self._add_partitions_to_time_windows(
                 initial_windows=[],
                 partition_keys=list(check.not_none(self._included_partition_keys)),
+                validate=False,
             )
             self._included_time_windows = result_time_windows
         return self._included_time_windows
@@ -1474,14 +1477,17 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         ]
 
     def _add_partitions_to_time_windows(
-        self, initial_windows: Sequence[TimeWindow], partition_keys: Sequence[str]
+        self,
+        initial_windows: Sequence[TimeWindow],
+        partition_keys: Sequence[str],
+        validate: bool = True,
     ) -> Tuple[Sequence[TimeWindow], int]:
         """Merges a set of partition keys into an existing set of time windows, returning the
         minimized set of time windows and the number of partitions added.
         """
         result_windows = [*initial_windows]
         time_windows = self._partitions_def.time_windows_for_partition_keys(
-            list(partition_keys),
+            list(partition_keys), validate=validate
         )
         num_added_partitions = 0
         for window in sorted(time_windows):
