@@ -41,7 +41,7 @@ setup(
         "orjson",
         "requests",
         "rich",
-        "typer",
+        "typer>=0.9.0",
     ],
     extras_require={
         "test": [
