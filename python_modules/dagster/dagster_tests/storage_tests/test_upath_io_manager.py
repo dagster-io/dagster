@@ -20,6 +20,8 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
@@ -226,6 +228,32 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     result = my_job.execute_in_process(partition_key="A")
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
+
+
+def test_upath_io_manager_load_multiple_inputs(dummy_io_manager: DummyIOManager):
+    upstream_partitions_def = MultiPartitionsDefinition(
+        {
+            "a": StaticPartitionsDefinition(["a", "b"]),
+            "1": StaticPartitionsDefinition(["1"]),
+        }
+    )
+
+    @asset(partitions_def=upstream_partitions_def)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset
+    def downstream_asset(upstream_asset):
+        return upstream_asset
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream_asset, downstream_asset],
+        resource_defs={"io_manager": dummy_io_manager},
+    )
+    result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert set(downstream_asset_data.keys()) == {"1|a", "1|b"}
 
 
 def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path: Path):

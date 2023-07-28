@@ -196,17 +196,19 @@ class UPathIOManager(MemoizableIOManager):
             ]
             return "/".join(ordered_dimension_keys)
 
-        formatted_partition_keys = [
-            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
-            for pk in context.asset_partition_keys
-        ]
+        formatted_partition_keys = {
+            partition_key: _formatted_multipartitioned_path(partition_key)
+            if isinstance(partition_key, MultiPartitionKey)
+            else partition_key
+            for partition_key in context.asset_partition_keys
+        }
 
         asset_path = self._get_path_without_extension(context)
         return {
-            partition: self._with_extension(
+            partition_key: self._with_extension(
                 self.get_path_for_partition(context, asset_path, partition)
             )
-            for partition in formatted_partition_keys
+            for partition_key, partition in formatted_partition_keys.items()
         }
 
     def _get_multipartition_backcompat_paths(
