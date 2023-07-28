@@ -271,6 +271,10 @@ class ArtifactsIOManager(IOManager):
                 if context.has_partition_key:
                     artifact_name = f"{artifact_name}.{context.partition_key}"
 
+                # We replace the | character with - because it is not allowed in artifact names
+                # The | character is used in multi-dimensional partition keys
+                artifact_name = str(artifact_name).replace("|", "-")
+
                 # Creates an artifact to hold the obj
                 artifact = self.wandb.Artifact(
                     name=artifact_name,
@@ -729,7 +733,7 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         "wandb_run_name": wandb_run_name,
         "wandb_run_id": wandb_run_id,
         "wandb_run_tags": wandb_run_tags,
-        "base_dir": base_dir,  # type: ignore
+        "base_dir": base_dir,
         "cache_duration_in_minutes": cache_duration_in_minutes,
     }
     return ArtifactsIOManager(wandb_client, config)

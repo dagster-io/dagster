@@ -10,23 +10,24 @@ import {
   SetAutoMaterializePausedMutationVariables,
 } from './types/AutomaterializeDaemonStatusTag.types';
 
-export const AutomaterializeDaemonStatusTag: React.FC = () => {
+export const AutomaterializeDaemonStatusTag = () => {
   const {paused} = useAutomaterializeDaemonStatus();
 
   return (
-    <Link to="/health">
-      {paused ? (
-        <Tooltip content="Auto-materializing is paused. New materializations will not be triggered by auto-materialization policies.">
-          <Tag icon="toggle_off" intent="warning">
-            Auto-materialize
-          </Tag>
-        </Tooltip>
-      ) : (
-        <Tag icon="toggle_on" intent="success">
-          Auto-materialize
+    <Tooltip
+      content={
+        paused
+          ? 'Auto-materializing is paused. New materializations will not be triggered by auto-materialization policies.'
+          : ''
+      }
+      canShow={paused}
+    >
+      <Link to="/health" style={{outline: 'none'}}>
+        <Tag icon={paused ? 'toggle_off' : 'toggle_on'} intent={paused ? 'warning' : 'success'}>
+          {paused ? 'Auto-materialize off' : 'Auto-materialize on'}
         </Tag>
-      )}
-    </Link>
+      </Link>
+    </Tooltip>
   );
 };
 

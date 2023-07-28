@@ -12,7 +12,7 @@ T = TypeVar("T")
 
 class ResourceWithS3Configuration(ConfigurableResource):
     use_unsigned_session: bool = Field(
-        default=False, description="Specifiesw whether to use an unsigned S3 session."
+        default=False, description="Specifies whether to use an unsigned S3 session."
     )
     region_name: Optional[str] = Field(
         default=None, description="Specifies a custom region for the S3 session."

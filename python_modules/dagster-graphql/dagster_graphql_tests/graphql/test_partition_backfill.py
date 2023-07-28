@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from typing import List, Optional, Tuple, cast
@@ -9,6 +10,7 @@ from dagster import (
     asset,
     define_asset_job,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
@@ -213,7 +215,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
         instance_queryer=CachingInstanceQueryer(
-            graphql_context.instance, asset_backfill_data.backfill_start_time
+            graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_time
         ),
         asset_graph=asset_graph,
         run_tags=backfill.tags,
@@ -239,7 +241,11 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
     """
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
-        list(execute_asset_backfill_iteration(backfill, context, graphql_context.instance))
+        list(
+            execute_asset_backfill_iteration(
+                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+            )
+        )
 
 
 def _mock_asset_backfill_runs(
@@ -262,7 +268,9 @@ def _mock_asset_backfill_runs(
             raise Exception("fail")
         return Output(5)
 
-    define_asset_job("my_job", [dummy_asset]).resolve([dummy_asset], []).execute_in_process(
+    define_asset_job("my_job", [dummy_asset]).resolve(
+        asset_graph=AssetGraph.from_assets([dummy_asset])
+    ).execute_in_process(
         tags={**DagsterRun.tags_for_backfill_id(backfill_id)},
         partition_key=partition_key,
         raise_on_error=False,

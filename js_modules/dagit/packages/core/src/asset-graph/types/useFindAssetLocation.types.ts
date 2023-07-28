@@ -7,7 +7,7 @@ export type AssetForNavigationQueryVariables = Types.Exact<{
 }>;
 
 export type AssetForNavigationQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetOrError:
     | {
         __typename: 'Asset';

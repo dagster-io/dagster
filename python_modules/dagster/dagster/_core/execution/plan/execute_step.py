@@ -322,7 +322,7 @@ def core_dagster_event_sequence_for_step(
 
     inputs = {}
 
-    if step_context.step_materializes_assets:
+    if step_context.is_sda_step:
         step_context.fetch_external_input_asset_records()
 
     for step_input in step_context.step.step_inputs:

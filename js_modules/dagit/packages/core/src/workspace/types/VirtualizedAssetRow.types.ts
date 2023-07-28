@@ -7,7 +7,7 @@ export type SingleNonSdaAssetQueryVariables = Types.Exact<{
 }>;
 
 export type SingleNonSdaAssetQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetOrError:
     | {
         __typename: 'Asset';

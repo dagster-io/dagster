@@ -7,7 +7,7 @@ In buildkite the backcompat test suite uploads the docker logs of all of the con
 see these tests failing, looking at the logs should be your first step in debugging.
 
 Logs from the following containers should get uploaded:
-* dagit
+* dagster_webserver
 * docker_daemon
 * dagster_grpc_server
 * docker_postgresql
@@ -34,21 +34,21 @@ export EARLIEST_TESTED_RELEASE="0.12.8"
 If you are on MacOS, ensure you have docker running
 
 From `integration_tests/test_suites/backcompat-test-suite` run any of the following commands
-* `pytest -m dagit-latest-release -xvv -ff tests/test_backcompat.py`
-* `pytest -m dagit-earliest-release -xvv -ff tests/test_backcompat.py`
+* `pytest -m webserver-latest-release -xvv -ff tests/test_backcompat.py`
+* `pytest -m webserver-earliest-release -xvv -ff tests/test_backcompat.py`
 * `pytest -m user-code-latest-release -xvv -ff tests/test_backcompat.py`
 * `pytest -m user-code-earliest-release -xvv -ff tests/test_backcompat.py`
-* `tox dagit-latest-release`
-* `tox dagit-earliest-release`
+* `tox webserver-latest-release`
+* `tox webserver-earliest-release`
 * `tox user-code-latest-release`
 * `tox user-code-earliest-release`
 
 
 where:
-* dagit-latest-release: Dagit on most recent release and user code on current branch
-* dagit-earliest-release: Dagit on earliest release to maintain backcompat for, and user code on current branch
-* user-code-latest-release: Dagit on current branch and user code on latest minor release
-* user-code-earliest-release: Dagit on current branch and user code on earliest release to maintain backcompat for
+* webserver-latest-release: webserver on most recent release (`dagster-webserver`) and user code on current branch
+* webserver-earliest-release: webserver on earliest release (this will run the deprecated `dagit` package if `EARLIEST_TESTED_RELEASE` is less than 1.3.14) to maintain backcompat for, and user code on current branch
+* user-code-latest-release: webserver on current branch and user code on latest minor release
+* user-code-earliest-release: webserver on current branch and user code on earliest release to maintain backcompat for
 
 
 ## Debugging tips
@@ -83,10 +83,13 @@ in this setup, you can emulate what the test is doing using two clones of dagste
 3. activate your new virtual env and cd into `dagster_2`
 4. checkout the version of dagster you want to test against (ie. checkout release/0.14.17)
 5. `make dev install` in `dagster_2`
-6. In `dagster` start up a grpc server pointing at `repo.py` in `dagit_service`: `dagster api grpc --python-file dagit_service/repo.py --host 0.0.0.0 --port 4266`
-7. In `dagster_2` update `integration_tests/test_suites/backcompat-test-suite/dagit_service/workspace.yaml` to tell dagit that the grpc service host is localhost and the port is 4266
-8. In `dagster_2` run dagit: `dagit -w integration_tests/test_suites/backcompat-test-suite/dagit_service/workspace.yaml`
+6. In `dagster` start up a grpc server pointing at `repo.py` in `webserver_service`: `dagster api grpc --python-file webserver_service/repo.py --host 0.0.0.0 --port 4266`
+7. In `dagster_2` update `integration_tests/test_suites/backcompat-test-suite/webserver_service/workspace.yaml` to tell the webserver that the grpc service host is localhost and the port is 4266
+8. In `dagster_2` run the webserver: `dagster-webserver -w integration_tests/test_suites/backcompat-test-suite/webserver_service/workspace.yaml`
 9. In `dagster` open a python interpreter and run the following
+
+(NOTE: For step 8, run `dagit -w ...` instead of `dagster-webserver` if the version on `dagster_2` < `1.3.14`.
+
 ```python
 from dagster_graphql import DagsterGraphQLClient
 

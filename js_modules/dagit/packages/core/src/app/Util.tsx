@@ -131,13 +131,13 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
   });
 }
 
-export function asyncMemoize<T, R>(
-  fn: (arg: T, ...rest: any[]) => PromiseLike<R>,
+export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => PromiseLike<R>>(
+  fn: U,
   hashFn?: (arg: T, ...rest: any[]) => any,
   hashSize?: number,
-): (arg: T, ...rest: any[]) => Promise<R> {
+): U {
   const cache = new LRU(hashSize || 50);
-  return async (arg: T, ...rest: any[]) => {
+  return (async (arg: T, ...rest: any[]) => {
     const key = hashFn ? hashFn(arg, ...rest) : arg;
     if (cache.has(key)) {
       return Promise.resolve(cache.get(key) as R);
@@ -145,7 +145,7 @@ export function asyncMemoize<T, R>(
     const r = (await fn(arg, ...rest)) as R;
     cache.set(key, r);
     return r;
-  };
+  }) as any;
 }
 
 // Simple memoization function for methods that take a single object argument.

@@ -277,6 +277,20 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[MultiPartitionKey]:
+        """Returns a list of MultiPartitionKeys representing the partition keys of the
+        PartitionsDefinition.
+
+        Args:
+            current_time (Optional[datetime]): A datetime object representing the current time, only
+                applicable to time-based partition dimensions.
+            dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
+                object that is responsible for fetching dynamic partitions. Required when a
+                dimension is a DynamicPartitionsDefinition with a name defined. Users can pass the
+                DagsterInstance fetched via `context.instance` to this argument.
+
+        Returns:
+            Sequence[MultiPartitionKey]
+        """
         partition_key_sequences = [
             partition_dim.partitions_def.get_partition_keys(
                 current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
@@ -339,8 +353,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         dimension_2 = self._partitions_defs[1]
         partition_str = (
             "Multi-partitioned, with dimensions: \n"
-            f"{dimension_1.name.capitalize()}: {str(dimension_1.partitions_def)} \n"
-            f"{dimension_2.name.capitalize()}: {str(dimension_2.partitions_def)}"
+            f"{dimension_1.name.capitalize()}: {dimension_1.partitions_def} \n"
+            f"{dimension_2.name.capitalize()}: {dimension_2.partitions_def}"
         )
         return partition_str
 
@@ -477,7 +491,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     ) -> int:
         # Static partitions definitions can contain duplicate keys (will throw error in 1.3.0)
         # In the meantime, relying on get_num_partitions to handle duplicates to display
-        # correct counts in Dagit
+        # correct counts in the Dagster UI.
         dimension_counts = [
             dim.partitions_def.get_num_partitions(
                 current_time=current_time, dynamic_partitions_store=dynamic_partitions_store

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
+from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
 
 import pendulum
 
@@ -35,9 +35,6 @@ from .sensor_definition import (
     get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 @whitelist_for_serdes
@@ -196,7 +193,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def __init__(
@@ -247,10 +244,10 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             asset_graph = context.repository_def.asset_graph
-            instance_queryer = CachingInstanceQueryer(context.instance, evaluation_time)
-            data_time_resolver = CachingDataTimeResolver(
-                instance_queryer=instance_queryer, asset_graph=asset_graph
+            instance_queryer = CachingInstanceQueryer(
+                context.instance, asset_graph, evaluation_time
             )
+            data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
             monitored_keys = asset_selection.resolve(asset_graph)
 
             # get the previous status from the cursor
@@ -366,7 +363,7 @@ def freshness_policy_sensor(
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def inner(fn: Callable[..., None]) -> FreshnessPolicySensorDefinition:

@@ -17,5 +17,5 @@ setup(
         "google-cloud-bigquery",
         "psycopg2-binary",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

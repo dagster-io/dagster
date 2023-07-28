@@ -239,7 +239,7 @@ def test_executor_init_override_in_cluster_config(
     mock_load_incluster_config,
     mock_load_kubeconfig_file,
 ):
-    k8s_run_launcher_instance.run_launcher
+    k8s_run_launcher_instance.run_launcher  # noqa: B018
     mock_load_kubeconfig_file.reset_mock()
     _get_executor(
         k8s_run_launcher_instance,
@@ -260,7 +260,7 @@ def test_executor_init_override_kubeconfig_file(
     mock_load_incluster_config,
     mock_load_kubeconfig_file,
 ):
-    k8s_run_launcher_instance.run_launcher
+    k8s_run_launcher_instance.run_launcher  # noqa: B018
     mock_load_kubeconfig_file.reset_mock()
     _get_executor(
         k8s_run_launcher_instance,

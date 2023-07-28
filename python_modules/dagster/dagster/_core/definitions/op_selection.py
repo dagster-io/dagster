@@ -1,5 +1,6 @@
 import itertools
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -25,9 +26,11 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
-from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import parse_op_queries
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.node_definition import NodeDefinition
 
 
 class OpSelection:

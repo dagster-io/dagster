@@ -308,3 +308,27 @@ def test_multiprocess_executor_config():
     assert executor._retries == RetryMode.DISABLED  # noqa: SLF001
     assert executor._max_concurrent == 2  # noqa: SLF001
     assert executor._tag_concurrency_limits == tag_concurrency_limits  # noqa: SLF001
+
+
+def test_multiprocess_executor_config_none_is_sentinel() -> None:
+    executor = _core_multiprocess_executor_creation(
+        {
+            "retries": {
+                "disabled": {},
+            },
+            "max_concurrent": None,
+        }
+    )
+    assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
+
+
+def test_multiprocess_executor_config_zero_is_sentinel() -> None:
+    executor = _core_multiprocess_executor_creation(
+        {
+            "retries": {
+                "disabled": {},
+            },
+            "max_concurrent": 0,
+        }
+    )
+    assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001

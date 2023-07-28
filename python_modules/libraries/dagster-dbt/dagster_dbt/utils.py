@@ -201,16 +201,12 @@ def generate_materializations(
 
     Information parsed from a :py:class:`~DbtOutput` object.
 
-    Note that this will not work with output from the `dbt_rpc_resource`, because this resource does
-    not wait for a response from the RPC server before returning. Instead, use the
-    `dbt_rpc_sync_resource`, which will wait for execution to complete.
-
     Examples:
         .. code-block:: python
 
             from dagster import op, Output
             from dagster_dbt.utils import generate_materializations
-            from dagster_dbt import dbt_cli_resource, dbt_rpc_sync_resource
+            from dagster_dbt import dbt_cli_resource
 
             @op(required_resource_keys={"dbt"})
             def my_custom_dbt_run(context):
@@ -222,10 +218,6 @@ def generate_materializations(
 
             @job(resource_defs={{"dbt":dbt_cli_resource}})
             def my_dbt_cli_job():
-                my_custom_dbt_run()
-
-            @job(resource_defs={{"dbt":dbt_rpc_sync_resource}})
-            def my_dbt_rpc_job():
                 my_custom_dbt_run()
     """
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
@@ -252,14 +244,13 @@ def select_unique_ids_from_manifest(
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest, WritableManifest
     from dbt.contracts.state import PreviousState
-    from dbt.graph import SelectionSpec
-    from dbt.graph.selector_spec import IndirectSelection
+    from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
     if state_path is not None:
         previous_state = PreviousState(
-            path=Path(state_path),
-            current_path=Path("/tmp/null")
+            path=Path(state_path),  # type: ignore  # (unused path, slated for deletion)
+            current_path=Path("/tmp/null")  # type: ignore  # (unused path, slated for deletion)
             if manifest_json_path is None
             else Path(manifest_json_path),
         )
@@ -321,3 +312,16 @@ def select_unique_ids_from_manifest(
     selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
     selected, _ = selector.select_nodes(parsed_spec)
     return selected
+
+
+def get_node_info_by_dbt_unique_id_from_manifest(
+    manifest: Mapping[str, Any]
+) -> Mapping[str, Mapping[str, Any]]:
+    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest.
+    """
+    return {
+        **manifest["nodes"],
+        **manifest["sources"],
+        **manifest["exposures"],
+        **manifest["metrics"],
+    }

@@ -6,6 +6,8 @@ import React from 'react';
 import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components/macro';
 
+import {TimeContext} from '../../app/time/TimeContext';
+import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -60,17 +62,19 @@ type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 type Args = {
   name: string;
   icon: IconName;
-  timezone: string;
   initialState?: TimeRangeState;
   onStateChanged?: (state: TimeRangeState) => void;
 };
 export function useTimeRangeFilter({
   name,
   icon,
-  timezone,
   initialState,
   onStateChanged,
 }: Args): TimeRangeFilter {
+  const {
+    timezone: [_timezone],
+  } = React.useContext(TimeContext);
+  const timezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
   const [state, setState] = React.useState<TimeRangeState>(initialState || [null, null]);
   React.useEffect(() => {
     onStateChanged?.(state);
@@ -178,8 +182,7 @@ export function ActiveFilterState({
         year: 'numeric',
         month: 'numeric',
         day: 'numeric',
-        timeZone:
-          timezone === 'Automatic' ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone,
+        timeZone: timezone,
       }),
     [timezone],
   );

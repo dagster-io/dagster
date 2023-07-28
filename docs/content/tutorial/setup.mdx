@@ -24,13 +24,13 @@ To verify that you successfully installed Dagster, let's create your first Dagst
 To create the project, run:
 
 ```bash
-dagster project from-example --example tutorial --name my-tutorial-project
+dagster project from-example --example tutorial
 ```
 
-After running this command, you should see a new directory called `tutorial-project` in your current directory. This directory contains the files that make up your Dagster project. Next, you'll install the Python dependencies you'll be using during the tutorial.
+After running this command, you should see a new directory called `tutorial` in your current directory. This directory contains the files that make up your Dagster project. Next, you'll install the Python dependencies you'll be using during the tutorial.
 
 ```bash
-cd tutorial-project
+cd tutorial
 pip install -e ".[dev]"
 ```
 
@@ -39,7 +39,7 @@ This command also installs packages that aren't necessary for every Dagster proj
 - `requests` will be used to download data from the internet
 - `pandas` is a popular library for working with tabular data
 - `matplotlib` makes it easy to make charts in Python
-- `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-memory data warehouse similar to SQLite, that you'll use for this tutorial
+- `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-process data warehouse similar to SQLite, that you'll use for this tutorial
 - `dagster_duckdb_pandas` allows loading data from DuckDB into Pandas DataFrames
 - `Faker` is a library for generating fake data
 

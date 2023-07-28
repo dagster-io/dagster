@@ -747,7 +747,7 @@ const GanttChartContainer = styled.div`
       border: 1px solid ${Colors.Gray800};
     }
     &.dynamic {
-      filter: brightness(125%);
+      filter: brightness(115%);
     }
 
     ${SpinnerWrapper} {

@@ -5,7 +5,7 @@ from typing import List
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import MetadataValue, OpExecutionContext, asset
+from dagster import AssetExecutionContext, MetadataValue, asset
 from wordcloud import STOPWORDS, WordCloud
 
 
@@ -22,7 +22,7 @@ def hackernews_topstory_ids() -> List[int]:
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
-    context: OpExecutionContext, hackernews_topstory_ids: List[int]
+    context: AssetExecutionContext, hackernews_topstory_ids: List[int]
 ) -> pd.DataFrame:
     """Get items based on story ids from the HackerNews items endpoint. It may take 1-2 minutes to fetch all 500 items.
 
@@ -52,7 +52,7 @@ def hackernews_topstories(
 
 @asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(
-    context: OpExecutionContext, hackernews_topstories: pd.DataFrame
+    context: AssetExecutionContext, hackernews_topstories: pd.DataFrame
 ) -> bytes:
     """Exploratory analysis: Generate a word cloud from the current top 500 HackerNews top stories.
     Embed the plot into a Markdown metadata for quick view.

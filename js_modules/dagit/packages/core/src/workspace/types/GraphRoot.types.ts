@@ -9,7 +9,7 @@ export type GraphExplorerRootQueryVariables = Types.Exact<{
 }>;
 
 export type GraphExplorerRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   graphOrError:
     | {
         __typename: 'Graph';

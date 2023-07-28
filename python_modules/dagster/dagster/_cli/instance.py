@@ -49,9 +49,20 @@ def migrate_command():
 
         click.echo(f"$DAGSTER_HOME: {home}\n")
 
+        click.echo("\nInstance configuration:\n-----------------------")
+        click.echo(instance.info_str())
+
+        click.echo(
+            "\nStorage schema state before migration:\n--------------------------------------"
+        )
+        click.echo(instance.schema_str())
+
+        click.echo("\nRunning migration:\n------------------")
+
         instance.upgrade(click.echo)
 
-        click.echo(instance.info_str())
+        click.echo("\nStorage schema state after migration:\n-------------------------------------")
+        click.echo(instance.schema_str())
 
 
 @instance_cli.command(name="reindex", help="Rebuild index over historical runs for performance.")
@@ -74,7 +85,7 @@ def reindex_command():
 
 @instance_cli.group(name="concurrency")
 def concurrency_cli():
-    """Commands for working with the instance-wide op concurrency."""
+    """Commands for working with the instance-wide op concurrency (Experimental)."""
 
 
 @concurrency_cli.command(name="get", help="Get op concurrency limits")
@@ -87,6 +98,7 @@ def concurrency_cli():
 @click.argument("key", required=False)
 def get_concurrency(key, **kwargs):
     with DagsterInstance.get() as instance:
+        check_concurrency_support(instance)
         if kwargs.get("all"):
             keys = instance.event_log_storage.get_concurrency_keys()
             if not keys:
@@ -117,5 +129,28 @@ def concurrency_print_key(instance: DagsterInstance, key: str):
 @click.argument("limit", required=True, type=click.INT)
 def set_concurrency(key, limit):
     with DagsterInstance.get() as instance:
+        check_concurrency_support(instance)
         instance.event_log_storage.set_concurrency_slots(key, limit)
         click.echo(f"Set concurrency limit for {key} to {limit}.")
+
+
+def check_concurrency_support(instance: DagsterInstance):
+    from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+
+    if instance.event_log_storage.supports_global_concurrency_limits:
+        return
+
+    if isinstance(instance.event_log_storage, SqliteEventLogStorage):
+        raise click.ClickException(
+            "This instance storage does not support global concurrency limits. You will need "
+            "to configure a different storage implementation (e.g. Postgres/MySQL) to use this "
+            "feature."
+        )
+
+    # not a sqlite storage, but may not have run `dagster instance migrate` to add the tables for
+    # concurrency support
+    raise click.ClickException(
+        "This instance storage does not currently support global concurrency limits. You may need "
+        "to run `dagster instance migrate` to add the necessary tables in your dagster storage to "
+        "support this feature."
+    )

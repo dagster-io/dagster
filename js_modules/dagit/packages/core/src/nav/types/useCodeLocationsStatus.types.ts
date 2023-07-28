@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type CodeLocationStatusQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   locationStatusesOrError:
     | {__typename: 'PythonError'}
     | {

@@ -376,6 +376,7 @@ class GrapheneRun(graphene.ObjectType):
     hasReExecutePermission = graphene.NonNull(graphene.Boolean)
     hasTerminatePermission = graphene.NonNull(graphene.Boolean)
     hasDeletePermission = graphene.NonNull(graphene.Boolean)
+    hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -582,6 +583,14 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_updateTime(self, graphene_info: ResolveInfo):
         run_record = self._get_run_record(graphene_info.context.instance)
         return datetime_as_float(run_record.update_timestamp)
+
+    def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
+        instance = graphene_info.context.instance
+        if not instance.event_log_storage.supports_global_concurrency_limits:
+            return False
+
+        active_run_ids = instance.event_log_storage.get_concurrency_run_ids()
+        return self.runId in active_run_ids
 
 
 class GrapheneIPipelineSnapshotMixin:

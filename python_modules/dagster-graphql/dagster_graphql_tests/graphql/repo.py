@@ -12,6 +12,7 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -39,7 +40,6 @@ from dagster import (
     Map,
     Noneable,
     Nothing,
-    OpExecutionContext,
     Out,
     Output,
     PythonObjectDagsterType,
@@ -729,7 +729,7 @@ def eventually_successful():
     @op(
         required_resource_keys={"retry_count"},
     )
-    def fail(context: OpExecutionContext, depth: int) -> int:
+    def fail(context: AssetExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
@@ -1588,12 +1588,12 @@ def asset_1():
     yield Output(3)
 
 
-@asset(non_argument_deps={AssetKey("asset_1")})
+@asset(deps=[AssetKey("asset_1")])
 def asset_2():
     raise Exception("foo")
 
 
-@asset(non_argument_deps={AssetKey("asset_2")})
+@asset(deps=[AssetKey("asset_2")])
 def asset_3():
     yield Output(7)
 
@@ -1604,31 +1604,31 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context: OpExecutionContext):
+def foo(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context: OpExecutionContext):
+def bar(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context: OpExecutionContext, foo, bar):
+def foo_bar(context: AssetExecutionContext, foo, bar):
     assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context: OpExecutionContext, foo_bar):
+def baz(context: AssetExecutionContext, foo_bar):
     assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context: OpExecutionContext):
+def unconnected(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
 
 
@@ -1675,7 +1675,7 @@ def untyped_asset(typed_asset):
     return typed_asset
 
 
-@asset(non_argument_deps={AssetKey("diamond_source")})
+@asset(deps=[AssetKey("diamond_source")])
 def fresh_diamond_top():
     return 1
 

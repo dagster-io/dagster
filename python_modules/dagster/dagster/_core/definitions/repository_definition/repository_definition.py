@@ -2,6 +2,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -116,11 +117,13 @@ class RepositoryDefinition:
     @public
     @property
     def name(self) -> str:
+        """str: The name of the repository."""
         return self._name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A human-readable description of the repository."""
         return self._description
 
     def load_all_definitions(self):
@@ -186,27 +189,47 @@ class RepositoryDefinition:
     @public
     @property
     def schedule_defs(self) -> Sequence[ScheduleDefinition]:
+        """List[ScheduleDefinition]: All schedules in the repository."""
         return self._repository_data.get_all_schedules()
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Get a schedule definition by name.
+
+        Args:
+            name (str): The name of the schedule.
+
+        Returns:
+            ScheduleDefinition: The schedule definition.
+        """
         return self._repository_data.get_schedule(name)
 
     @public
     def has_schedule_def(self, name: str) -> bool:
+        """bool: Check if a schedule with a given name is present in the repository."""
         return self._repository_data.has_schedule(name)
 
     @public
     @property
     def sensor_defs(self) -> Sequence[SensorDefinition]:
+        """Sequence[SensorDefinition]: All sensors in the repository."""
         return self._repository_data.get_all_sensors()
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
+        """Get a sensor definition by name.
+
+        Args:
+            name (str): The name of the sensor.
+
+        Returns:
+            SensorDefinition: The sensor definition.
+        """
         return self._repository_data.get_sensor(name)
 
     @public
     def has_sensor_def(self, name: str) -> bool:
+        """bool: Check if a sensor with a given name is present in the repository."""
         return self._repository_data.has_sensor(name)
 
     @property
@@ -249,7 +272,11 @@ class RepositoryDefinition:
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
             base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
-            if all(key in base_job.asset_layer.assets_defs_by_key for key in asset_keys):
+            if all(
+                key in base_job.asset_layer.assets_defs_by_key
+                or base_job.asset_layer.is_observable_for_asset(key)
+                for key in asset_keys
+            ):
                 return base_job
         else:
             i = 0
@@ -284,6 +311,7 @@ class RepositoryDefinition:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
@@ -299,6 +327,8 @@ class RepositoryDefinition:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
+                (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
                 to the :py:class:`IOManager`.
 
@@ -314,6 +344,7 @@ class RepositoryDefinition:
                 asset_key,
                 python_type=python_type,
                 partition_key=partition_key,
+                metadata=metadata,
                 resource_config=resource_config,
             )
 

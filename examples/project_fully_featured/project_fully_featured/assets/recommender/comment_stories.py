@@ -1,3 +1,4 @@
+import pandas as pd
 from dagster import AssetIn, asset
 from pandas import DataFrame, Series
 
@@ -36,7 +37,7 @@ def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
             stories, left_on="parent", right_index=True
         )
         comment_stories_at_depth.rename(columns={"parent": "story_id"}, inplace=True)
-        full_comment_stories = full_comment_stories.append(comment_stories_at_depth)
+        full_comment_stories = pd.concat([full_comment_stories, comment_stories_at_depth])
         remaining_comments = remaining_comments.drop(comment_stories_at_depth.index)
 
         # join comments with comments and replace comments with that

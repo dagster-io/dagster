@@ -1143,7 +1143,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 2
         assert result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 0
 
-        # in progress partitions don't count towards failed
+        # in progress partitions that have both materialized and failed before don't screw up materialized counts
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1152,7 +1152,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "mode": "default",
-                    "executionMetadata": {"tags": [{"key": "dagster/partition", "value": "a"}]},
+                    "executionMetadata": {"tags": [{"key": "dagster/partition", "value": "b"}]},
                 }
             },
         )

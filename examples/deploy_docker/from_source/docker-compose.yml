@@ -43,7 +43,7 @@ services:
       context: .
       dockerfile: ./Dockerfile_dagster
     entrypoint:
-      - dagit
+      - dagster-webserver
       - -h
       - "0.0.0.0"
       - -p

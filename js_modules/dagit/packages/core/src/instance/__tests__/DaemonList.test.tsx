@@ -53,7 +53,7 @@ function autoMaterializePausedMock(paused: boolean): MockedResponse<GetAutoMater
     result: jest.fn(() => {
       return {
         data: {
-          __typename: 'DagitQuery',
+          __typename: 'Query',
           instance: buildInstance({
             autoMaterializePaused: paused,
           }),

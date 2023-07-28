@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, NamedTuple, Optional, Sequence, Union
+from typing import Any, List, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
 
@@ -109,12 +109,19 @@ class SensorInstigatorData(
 class ScheduleInstigatorData(
     NamedTuple(
         "_ScheduleInstigatorData",
-        [("cron_schedule", Union[str, Sequence[str]]), ("start_timestamp", Optional[float])],
+        [
+            ("cron_schedule", Union[str, Sequence[str]]),
+            ("start_timestamp", Optional[float]),
+            ("last_iteration_timestamp", Optional[float]),
+        ],
     )
 ):
     # removed scheduler, 1/5/2022 (0.13.13)
     def __new__(
-        cls, cron_schedule: Union[str, Sequence[str]], start_timestamp: Optional[float] = None
+        cls,
+        cron_schedule: Union[str, Sequence[str]],
+        start_timestamp: Optional[float] = None,
+        last_iteration_timestamp: Optional[float] = None,
     ):
         cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, list))
         if not isinstance(cron_schedule, str):
@@ -127,6 +134,9 @@ class ScheduleInstigatorData(
             # `start_date` on partition-based schedules, which is used to define
             # the range of partitions)
             check.opt_float_param(start_timestamp, "start_timestamp"),
+            # Time in UTC at which the schedule was last evaluated.  This enables the cron schedule
+            # to change for running schedules and the previous iteration is not backfilled.
+            check.opt_float_param(last_iteration_timestamp, "last_iteration_timestamp"),
         )
 
 
@@ -259,7 +269,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             check.inst_param(tick_data, "tick_data", TickData),
         )
 
-    def with_status(self, status: TickStatus, **kwargs: object):
+    def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
         return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 

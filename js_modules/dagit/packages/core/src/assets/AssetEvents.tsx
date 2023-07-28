@@ -1,7 +1,7 @@
 import {Box, ButtonGroup, Colors, Spinner, Subheading, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {RepositorySelector} from '../graphql/types';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
@@ -12,15 +12,16 @@ import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey} from './types';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {
   assetKey: AssetKey;
+  assetNode: AssetViewDefinitionNodeFragment | null;
   liveData?: LiveDataForNode;
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
-  assetHasDefinedPartitions: boolean;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
@@ -32,7 +33,7 @@ interface Props {
 
 export const AssetEvents: React.FC<Props> = ({
   assetKey,
-  assetHasDefinedPartitions,
+  assetNode,
   params,
   setParams,
   liveData,
@@ -78,7 +79,7 @@ export const AssetEvents: React.FC<Props> = ({
   // on it's materializations but no defined partition set.
   //
   const assetHasUndefinedPartitions =
-    !assetHasDefinedPartitions && grouped.some((g) => g.partition);
+    !assetNode?.partitionDefinition && grouped.some((g) => g.partition);
   const assetHasLineage = materializations.some((m) => m.assetLineage.length > 0);
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
@@ -122,15 +123,17 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
       )}
 
-      {!assetHasDefinedPartitions && (
+      {assetNode && !assetNode.partitionDefinition && (
         <>
           <FailedRunSinceMaterializationBanner
-            run={liveData?.runWhichFailedToMaterialize || null}
+            stepKey={stepKeyForAsset(assetNode)}
             border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            run={liveData?.runWhichFailedToMaterialize || null}
           />
           <CurrentRunsBanner
-            liveData={liveData}
+            stepKey={stepKeyForAsset(assetNode)}
             border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            liveData={liveData}
           />
         </>
       )}
@@ -172,6 +175,7 @@ export const AssetEvents: React.FC<Props> = ({
                   group={focused}
                   hasLineage={assetHasLineage}
                   assetKey={assetKey}
+                  stepKey={assetNode ? stepKeyForAsset(assetNode) : undefined}
                   latestRunForPartition={null}
                 />
               ) : (

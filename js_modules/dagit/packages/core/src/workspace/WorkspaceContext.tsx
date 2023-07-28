@@ -374,6 +374,16 @@ export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobNam
   return !!pipelineOrJob?.isJob;
 };
 
+export const isThisThingAnAssetJob = (
+  repo: DagsterRepoOption | null,
+  pipelineOrJobName: string,
+) => {
+  const pipelineOrJob = repo?.repository.pipelines.find(
+    (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
+  );
+  return !!pipelineOrJob?.isAssetJob;
+};
+
 export const buildPipelineSelector = (
   repoAddress: RepoAddress | null,
   pipelineName: string,

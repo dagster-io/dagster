@@ -15,8 +15,6 @@ The wrapped exceptions include additional context for the original exceptions, i
 Dagster runtime.
 """
 
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
@@ -103,7 +101,7 @@ Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 {PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
     ).format(
-        config_class=f" {repr(config_class)}" if config_class else "",
+        config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
         PYTHONIC_CONFIG_ERROR_VERBIAGE=pythonic_config_error_verbiage,
@@ -257,9 +255,9 @@ def raise_execution_interrupts() -> Iterator[None]:
 
 @contextmanager
 def user_code_error_boundary(
-    error_cls: Type[DagsterUserCodeExecutionError],
+    error_cls: Type["DagsterUserCodeExecutionError"],
     msg_fn: Callable[[], str],
-    log_manager: Optional[DagsterLogManager] = None,
+    log_manager: Optional["DagsterLogManager"] = None,
     **kwargs: object,
 ) -> Iterator[None]:
     """Wraps the execution of user-space code in an error boundary. This places a uniform
@@ -662,6 +660,12 @@ class DagsterUnknownPartitionError(DagsterError):
 
 class DagsterUndefinedDataVersionError(DagsterError):
     """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """
+
+
+class DagsterAssetBackfillDataLoadError(DagsterError):
+    """Indicates that an asset backfill is now unloadable. May happen when (1) a code location containing
+    targeted assets is unloadable or (2) and asset or an asset's partitions definition has been removed.
     """
 
 

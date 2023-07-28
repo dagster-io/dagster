@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, cast
 
 import pendulum
 
@@ -13,13 +13,15 @@ from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..base import Executor
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.step import ExecutionStep
 
 DEFAULT_SLEEP_SECONDS = float(
     os.environ.get("DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS", "1.0")
@@ -203,7 +205,7 @@ class StepDelegatingExecutor(Executor):
                                 "Executor received termination signal, forwarding to steps",
                                 EngineEventData.interrupted(list(running_steps.keys())),
                             )
-                            for _, step in running_steps.items():
+                            for step in running_steps.values():
                                 list(
                                     self._step_handler.terminate_step(
                                         self._get_step_handler_context(
@@ -264,7 +266,7 @@ class StepDelegatingExecutor(Executor):
                         curr_time - last_check_step_health_time
                     ).total_seconds() >= self._check_step_health_interval_seconds:
                         last_check_step_health_time = curr_time
-                        for _, step in running_steps.items():
+                        for step in running_steps.values():
                             step_context = plan_context.for_step(step)
 
                             try:

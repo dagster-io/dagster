@@ -48,8 +48,10 @@ HEARTBEAT_CHECK_INTERVAL = 15
 
 RELOAD_WORKSPACE_INTERVAL = 60
 
-DAEMON_GRPC_SERVER_RELOAD_INTERVAL = 60
-DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
+# Amount of time that a local code server spun up by the daemon will keep running
+# after it is no longer receiving any heartbeat pings - for this duration there may be
+# multiple code server processes running
+DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 20
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:

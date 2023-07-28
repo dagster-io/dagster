@@ -24,7 +24,7 @@ def with_auto_materialize_policy(
     for assets_def in assets_defs:
         new_assets_def = copy.copy(assets_def)
         new_assets_def._auto_materialize_policies_by_key = {  # noqa: SLF001
-            asset_key: auto_materialize_policy for asset_key in new_assets_def.asset_keys
+            asset_key: auto_materialize_policy for asset_key in new_assets_def.keys
         }
         ret.append(new_assets_def)
     return ret
@@ -135,7 +135,6 @@ multi_code_location_scenarios = {
                     for_freshness=True,
                     on_missing=False,
                     on_new_parent_data=False,
-                    time_window_partition_scope_minutes=0,
                     max_materializations_per_minute=None,
                 ),
             ),
@@ -145,7 +144,6 @@ multi_code_location_scenarios = {
                     for_freshness=True,
                     on_missing=False,
                     on_new_parent_data=False,
-                    time_window_partition_scope_minutes=0,
                     max_materializations_per_minute=None,
                 ),
             ),
@@ -162,7 +160,6 @@ multi_code_location_scenarios = {
                     for_freshness=True,
                     on_missing=False,
                     on_new_parent_data=False,
-                    time_window_partition_scope_minutes=0,
                     max_materializations_per_minute=None,
                 ),
             ),
@@ -172,7 +169,6 @@ multi_code_location_scenarios = {
                     for_freshness=True,
                     on_missing=False,
                     on_new_parent_data=False,
-                    time_window_partition_scope_minutes=0,
                     max_materializations_per_minute=None,
                 ),
             ),

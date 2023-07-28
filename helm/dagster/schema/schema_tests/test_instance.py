@@ -799,6 +799,46 @@ def test_s3_compute_log_manager(template: HelmTemplate):
     assert compute_logs_config["config"].keys() == S3ComputeLogManager.config_type().keys()
 
 
+def test_s3_compute_log_manager_no_verify(template: HelmTemplate):
+    bucket = "bucket"
+    local_dir = "/dir"
+
+    # extra test just to check for verify: false
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.S3,
+            config=ComputeLogManagerConfig.construct(
+                s3ComputeLogManager=S3ComputeLogManagerModel(
+                    bucket=bucket,
+                    localDir=local_dir,
+                    prefix=None,
+                    useSsl=None,
+                    verify=False,
+                    verifyCertPath=None,
+                    endpointUrl=None,
+                    skipEmptyFiles=None,
+                    uploadInterval=None,
+                    uploadExtraArgs=None,
+                    showUrlOnly=None,
+                    region=None,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster_aws.s3.compute_log_manager"
+    assert compute_logs_config["class"] == "S3ComputeLogManager"
+    assert compute_logs_config["config"] == {
+        "bucket": bucket,
+        "local_dir": local_dir,
+        "verify": False,
+    }
+
+
 def test_custom_compute_log_manager_config(template: HelmTemplate):
     module = "a_module"
     class_ = "Class"

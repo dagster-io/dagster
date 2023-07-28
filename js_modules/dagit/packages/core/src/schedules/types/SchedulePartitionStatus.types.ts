@@ -7,7 +7,7 @@ export type SchedulePartitionStatusQueryVariables = Types.Exact<{
 }>;
 
 export type SchedulePartitionStatusQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   scheduleOrError:
     | {__typename: 'PythonError'}
     | {

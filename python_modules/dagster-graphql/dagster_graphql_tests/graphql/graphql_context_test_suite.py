@@ -742,7 +742,8 @@ def graphql_context_variants_fixture(context_variants):
 
     def _wrap(fn):
         return pytest.fixture(
-            name="graphql_context",
+            name="class_scoped_graphql_context",
+            scope="class",
             params=[
                 pytest.param(
                     context_variant,
@@ -786,9 +787,20 @@ def make_graphql_context_test_suite(context_variants):
 
     class _SpecificTestSuiteBase(_GraphQLContextTestSuite):
         @graphql_context_variants_fixture(context_variants=context_variants)
-        def yield_graphql_context(self, request):
+        def yield_class_scoped_graphql_context(self, request):
             with self.graphql_context_for_request(request) as graphql_context:
                 yield graphql_context
+
+        @pytest.fixture(name="graphql_context")
+        def yield_graphql_context(self, class_scoped_graphql_context):
+            instance = class_scoped_graphql_context.instance
+            instance.wipe()
+            instance.wipe_all_schedules()
+            yield class_scoped_graphql_context
+            # ensure that any runs launched by the test are cleaned up
+            # Since launcher is lazy loaded, we don't need to do anyting if it's None
+            if instance._run_launcher:  # noqa: SLF001
+                instance._run_launcher.join()  # noqa: SLF001
 
         @pytest.fixture(name="graphql_client")
         def yield_graphql_client(self, graphql_context):

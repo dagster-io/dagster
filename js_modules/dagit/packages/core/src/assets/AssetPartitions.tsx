@@ -1,4 +1,14 @@
-import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
+import {
+  Box,
+  Colors,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+  Subheading,
+  Tooltip,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -50,6 +60,13 @@ const DISPLAYED_STATUSES = [
   AssetPartitionStatus.FAILED,
 ].sort();
 
+enum SortType {
+  CREATION,
+  REVERSE_CREATION,
+  ALPHABETICAL,
+  REVERSE_ALPHABETICAL,
+}
+
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionDimensions,
@@ -65,7 +82,7 @@ export const AssetPartitions: React.FC<Props> = ({
     shouldReadPartitionQueryStringParam: false,
   });
 
-  const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
+  const [sortTypes, setSortTypes] = React.useState<Array<SortType>>([]);
 
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
@@ -122,14 +139,14 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {dimension, selectedRanges} = selections[idx]!;
     const allKeys = dimension.partitionKeys;
-    const sort = selectionSorts[idx] || defaultSort(selections[idx]!.dimension.type);
+    const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
 
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
       const result = getSelectionKeys();
-      return sort === 1 ? result : result.reverse();
+      return sortResults(result, sortType);
     }
 
     const healthRangesInSelection = rangesClippedToSelection(
@@ -164,7 +181,7 @@ export const AssetPartitions: React.FC<Props> = ({
       result = matching;
     }
 
-    return sort === 1 ? result : result.reverse();
+    return sortResults(result, sortType);
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
@@ -207,73 +224,132 @@ export const AssetPartitions: React.FC<Props> = ({
         />
       </Box>
       <Box style={{flex: 1, minHeight: 0, outline: 'none'}} flex={{direction: 'row'}} tabIndex={-1}>
-        {selections.map((selection, idx) => (
-          <Box
-            key={selection.dimension.name}
-            style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
-            flex={{direction: 'column'}}
-            border={{side: 'right', color: Colors.KeylineGray, width: 1}}
-            background={Colors.Gray50}
-            data-testid={testId(`partitions-${selection.dimension.name}`)}
-          >
+        {selections.map((selection, idx) => {
+          const sortType = getSort(sortTypes, idx, selection.dimension.type);
+          return (
             <Box
-              flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-              background={Colors.White}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-              padding={{horizontal: 24, vertical: 8}}
+              key={selection.dimension.name}
+              style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
+              flex={{direction: 'column'}}
+              border={{side: 'right', color: Colors.KeylineGray, width: 1}}
+              background={Colors.Gray50}
+              data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
-              <div>
-                {selection.dimension.name !== 'default' && (
-                  <Box flex={{gap: 8, alignItems: 'center'}}>
-                    <Icon name="partition" />
-                    <Subheading>{selection.dimension.name}</Subheading>
-                  </Box>
-                )}
-              </div>
-              <SortButton
-                style={{marginRight: '-16px'}}
-                data-testid={`sort-${idx}`}
-                onClick={() => {
-                  setSelectionSorts((sorts) => {
-                    const copy = [...sorts];
-                    if (copy[idx]) {
-                      copy[idx] = copy[idx] === -1 ? 1 : -1;
-                    } else {
-                      copy[idx] = (defaultSort(selections[idx]!.dimension.type) * -1) as -1 | 1;
-                    }
-                    return copy;
-                  });
-                }}
+              <Box
+                flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+                background={Colors.White}
+                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                padding={{horizontal: 24, vertical: 8}}
               >
-                <Icon name="sort_by_alpha" color={Colors.Gray400} />
-              </SortButton>
-            </Box>
-
-            {!assetHealth ? (
-              <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
-                <Spinner purpose="section" />
-              </Box>
-            ) : (
-              <AssetPartitionList
-                partitions={dimensionKeysInSelection(idx)}
-                statusForPartition={(dimensionKey) => {
-                  if (idx === 1 && focusedDimensionKeys[0]) {
-                    return [assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])];
+                <div>
+                  {selection.dimension.name !== 'default' && (
+                    <Box flex={{gap: 8, alignItems: 'center'}}>
+                      <Icon name="partition" />
+                      <Subheading>{selection.dimension.name}</Subheading>
+                    </Box>
+                  )}
+                </div>
+                <Popover
+                  content={
+                    <Menu>
+                      <MenuItem
+                        text={
+                          <Tooltip content="The order in which partitions were created">
+                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                              <span>Creation sort</span>
+                              <Icon name="info" />
+                            </Box>
+                          </Tooltip>
+                        }
+                        active={SortType.CREATION === sortType}
+                        onClick={() => {
+                          setSortTypes((sorts) => {
+                            const copy = [...sorts];
+                            copy[idx] = SortType.CREATION;
+                            return copy;
+                          });
+                        }}
+                        data-testId={testId('sort-creation')}
+                      />
+                      <MenuItem
+                        text={
+                          <Tooltip content="The order in which partitions were created, reversed">
+                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                              <span>Reverse creation sort</span>
+                              <Icon name="info" />
+                            </Box>
+                          </Tooltip>
+                        }
+                        active={SortType.REVERSE_CREATION === sortType}
+                        onClick={() => {
+                          setSortTypes((sorts) => {
+                            const copy = [...sorts];
+                            copy[idx] = SortType.REVERSE_CREATION;
+                            return copy;
+                          });
+                        }}
+                        data-testId={testId('sort-reverse-creation')}
+                      />
+                      <MenuItem
+                        text="Alphabetical sort"
+                        active={SortType.ALPHABETICAL === sortType}
+                        onClick={() => {
+                          setSortTypes((sorts) => {
+                            const copy = [...sorts];
+                            copy[idx] = SortType.ALPHABETICAL;
+                            return copy;
+                          });
+                        }}
+                        data-testId={testId('sort-alphabetical')}
+                      />
+                      <MenuItem
+                        text="Reverse alphabetical sort"
+                        active={SortType.REVERSE_ALPHABETICAL === sortType}
+                        onClick={() => {
+                          setSortTypes((sorts) => {
+                            const copy = [...sorts];
+                            copy[idx] = SortType.REVERSE_ALPHABETICAL;
+                            return [...copy];
+                          });
+                        }}
+                        data-testId={testId('sort-reverse-alphabetical')}
+                      />
+                    </Menu>
                   }
-                  const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
-                  return partitionStatusAtIndex(
-                    rangesForEachDimension[idx]!,
-                    dimensionKeyIdx,
-                  ).filter((s) => statusFilters.includes(s));
-                }}
-                focusedDimensionKey={focusedDimensionKeys[idx]}
-                setFocusedDimensionKey={(dimensionKey) => {
-                  setFocusedDimensionKey(idx, dimensionKey);
-                }}
-              />
-            )}
-          </Box>
-        ))}
+                  position="bottom-left"
+                >
+                  <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
+                    <Icon name="sort_by_alpha" color={Colors.Gray400} />
+                  </SortButton>
+                </Popover>
+              </Box>
+
+              {!assetHealth ? (
+                <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
+                  <Spinner purpose="section" />
+                </Box>
+              ) : (
+                <AssetPartitionList
+                  partitions={dimensionKeysInSelection(idx)}
+                  statusForPartition={(dimensionKey) => {
+                    if (idx === 1 && focusedDimensionKeys[0]) {
+                      return [assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])];
+                    }
+                    const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
+                    return partitionStatusAtIndex(
+                      rangesForEachDimension[idx]!,
+                      dimensionKeyIdx,
+                    ).filter((s) => statusFilters.includes(s));
+                  }}
+                  focusedDimensionKey={focusedDimensionKeys[idx]}
+                  setFocusedDimensionKey={(dimensionKey) => {
+                    setFocusedDimensionKey(idx, dimensionKey);
+                  }}
+                />
+              )}
+            </Box>
+          );
+        })}
 
         <Box style={{flex: 3, minWidth: 0, overflowY: 'auto'}} flex={{direction: 'column'}}>
           {params.partition && focusedDimensionKeys.length === selections.length ? (
@@ -287,10 +363,25 @@ export const AssetPartitions: React.FC<Props> = ({
   );
 };
 
-function defaultSort(definitionType: PartitionDefinitionType) {
-  if (definitionType === PartitionDefinitionType.TIME_WINDOW) {
-    return -1;
-  } else {
-    return 1;
+const alphabeticalCollator = new Intl.Collator(navigator.language, {sensitivity: 'base'});
+
+function sortResults(results: string[], sortType: SortType) {
+  switch (sortType) {
+    case SortType.CREATION:
+      return results;
+    case SortType.REVERSE_CREATION:
+      return [...results].reverse();
+    case SortType.ALPHABETICAL:
+      return [...results].sort(alphabeticalCollator.compare);
+    case SortType.REVERSE_ALPHABETICAL:
+      return [...results].sort((a, b) => -alphabeticalCollator.compare(a, b));
   }
+}
+
+function getSort(sortTypes: Array<SortType>, idx: number, definitionType: PartitionDefinitionType) {
+  return sortTypes[idx] === undefined
+    ? definitionType === PartitionDefinitionType.TIME_WINDOW
+      ? SortType.REVERSE_CREATION
+      : SortType.CREATION
+    : sortTypes[idx]!;
 }

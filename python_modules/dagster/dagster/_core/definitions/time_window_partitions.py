@@ -548,6 +548,9 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def schedule_type(self) -> Optional[ScheduleType]:
+        """Optional[ScheduleType]: An enum representing the partition cadence (hourly, daily,
+        weekly, or monthly).
+        """
         if re.fullmatch(r"\d+ \* \* \* \*", self.cron_schedule):
             return ScheduleType.HOURLY
         elif re.fullmatch(r"\d+ \d+ \* \* \*", self.cron_schedule):
@@ -562,6 +565,10 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def minute_offset(self) -> int:
+        """int: Number of minutes past the hour to "split" partitions. Defaults to 0.
+
+        For example, returns 15 if each partition starts at 15 minutes past the hour.
+        """
         match = re.fullmatch(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no minute offset")
@@ -570,6 +577,10 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def hour_offset(self) -> int:
+        """int: Number of hours past 00:00 to "split" partitions. Defaults to 0.
+
+        For example, returns 1 if each partition starts at 01:00.
+        """
         match = re.fullmatch(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no hour offset")
@@ -578,6 +589,18 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def day_offset(self) -> int:
+        """int: For a weekly or monthly partitions definition, returns the day to "split" partitions
+        by. Each partition will start on this day, and end before this day in the following
+        week/month. Returns 0 if the day_offset parameter is unset in the
+        WeeklyPartitionsDefinition, MonthlyPartitionsDefinition, or the provided cron schedule.
+
+        For weekly partitions, returns a value between 0 (representing Sunday) and 6 (representing
+        Saturday). Providing a value of 1 means that a partition will exist weekly from Monday to
+        the following Sunday.
+
+        For monthly partitions, returns a value between 0 (the first day of the month) and 31 (the
+        last possible day of the month).
+        """
         schedule_type = self.schedule_type
         if schedule_type == ScheduleType.WEEKLY:
             match = re.fullmatch(r"(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+)", self.cron_schedule)
@@ -1616,13 +1639,12 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def __eq__(self, other):
         return (
             isinstance(other, TimeWindowPartitionsSubset)
-            and self._partitions_def == other._partitions_def  # noqa: SLF001
+            and self._partitions_def == other._partitions_def
             and (
                 # faster comparison, but will not catch all cases
                 (
-                    self._included_time_windows == other._included_time_windows  # noqa: SLF001
-                    and self._included_partition_keys
-                    == other._included_partition_keys  # noqa: SLF001
+                    self._included_time_windows == other._included_time_windows
+                    and self._included_partition_keys == other._included_partition_keys
                 )
                 # slower comparison, catches all cases
                 or self.included_time_windows == other.included_time_windows
@@ -1802,21 +1824,24 @@ def has_one_dimension_time_window_partitioning(
 
 def get_time_partitions_def(
     partitions_def: Optional[PartitionsDefinition],
-) -> TimeWindowPartitionsDefinition:
+) -> Optional[TimeWindowPartitionsDefinition]:
+    """For a given PartitionsDefinition, return the associated TimeWindowPartitionsDefinition if it
+    exists.
+    """
     from .multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None:
-        check.failed("Cannot get time partitions def from None object")
+        return None
     elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return partitions_def
-    elif isinstance(partitions_def, MultiPartitionsDefinition):
+    elif isinstance(
+        partitions_def, MultiPartitionsDefinition
+    ) and has_one_dimension_time_window_partitioning(partitions_def):
         return cast(
             TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
         )
     else:
-        check.failed(
-            f"Cannot return time partitions def from non-time partitions def {partitions_def}"
-        )
+        return None
 
 
 def get_time_partition_key(

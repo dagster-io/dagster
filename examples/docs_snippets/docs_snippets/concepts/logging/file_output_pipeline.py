@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 from dagster import job, op
 
 # start_custom_file_output_log

@@ -199,7 +199,7 @@ export const buildLaunchAssetWarningsMock = (
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [],
       instance: buildInstance({
         daemonHealth: buildDaemonHealth({
@@ -227,7 +227,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["asset_daily"]',
         partitionKeysByDimension: [
@@ -300,7 +300,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["asset_weekly"]',
         partitionKeysByDimension: [
@@ -336,7 +336,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["asset_weekly_root"]',
         partitionKeysByDimension: [
@@ -372,7 +372,7 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionSetsOrError: {
         results: [
           {
@@ -477,7 +477,7 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionSetsOrError: {
         results: [
           {
@@ -582,7 +582,7 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionSetsOrError: {
         results: [
           {
@@ -617,7 +617,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           ...ASSET_DAILY,
@@ -686,7 +686,7 @@ export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetC
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["asset_weekly_root"]',
@@ -728,7 +728,7 @@ export function buildConfigPartitionSelectionLatestPartitionMock(
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         partitionSetOrError: {
           __typename: 'PartitionSet',
           id: '5b10aae97b738c48a4262b1eca530f89b13e9afc',
@@ -946,7 +946,7 @@ export function buildLaunchAssetLoaderMock(
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         assetNodeDefinitionCollisions: [],
         assetNodes: LOADER_RESULTS.filter((a) =>
           assetKeys.some((k) => tokenForAssetKey(k) === tokenForAssetKey(a.assetKey)),
@@ -966,7 +966,7 @@ export function buildExpectedLaunchBackfillMutation(
     },
     result: jest.fn(() => ({
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         launchPartitionBackfill: {__typename: 'LaunchBackfillSuccess', backfillId: 'backfillid'},
       },
     })),
@@ -983,7 +983,7 @@ export function buildExpectedLaunchSingleRunMutation(
     },
     result: jest.fn(() => ({
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         launchPipelineExecution: {
           __typename: 'LaunchRunSuccess',
           run: {

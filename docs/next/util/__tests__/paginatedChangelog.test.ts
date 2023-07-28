@@ -43,10 +43,10 @@ describe('getPaginatedChangeLog', () => {
     // Each version on its own page
     expect((await getPaginatedChangeLog({versionCountPerPage: 1})).pageContentList)
       .toMatchInlineSnapshot(`
-      Array [
+      [
         "# Changelog
 
-      # 1.3.0 (core) / 0.19.0 (libraries) \\"Smooth Operator\\"
+      # 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
       ## Header
 
@@ -74,10 +74,10 @@ describe('getPaginatedChangeLog', () => {
     // Two pages in total, where the second page is shorter
     expect((await getPaginatedChangeLog({versionCountPerPage: 2})).pageContentList)
       .toMatchInlineSnapshot(`
-      Array [
+      [
         "# Changelog
 
-      # 1.3.0 (core) / 0.19.0 (libraries) \\"Smooth Operator\\"
+      # 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
       ## Header
 

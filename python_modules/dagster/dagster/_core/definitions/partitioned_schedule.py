@@ -46,7 +46,7 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
             )
 
         partitions_def = _check_valid_schedule_partitions_def(partitions_def)
-        time_partitions_def = get_time_partitions_def(partitions_def)
+        time_partitions_def = check.not_none(get_time_partitions_def(partitions_def))
 
         return ScheduleDefinition(
             job=resolved_job,
@@ -145,7 +145,7 @@ def build_schedule_from_partitioned_job(
             check.failed("The provided job is not partitioned")
 
         partitions_def = _check_valid_schedule_partitions_def(partitions_def)
-        time_partitions_def = get_time_partitions_def(partitions_def)
+        time_partitions_def = check.not_none(get_time_partitions_def(partitions_def))
 
         return schedule(
             cron_schedule=time_partitions_def.get_cron_schedule(

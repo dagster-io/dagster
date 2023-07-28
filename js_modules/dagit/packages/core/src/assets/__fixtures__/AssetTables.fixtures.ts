@@ -11,6 +11,7 @@ import {
   buildRepository,
   buildAssetKey,
   buildPartitionDefinition,
+  buildFreshnessPolicy,
 } from '../../graphql/types';
 import {SINGLE_NON_SDA_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {SingleNonSdaAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
@@ -26,7 +27,7 @@ export const AssetCatalogGroupTableMock: MockedResponse<AssetCatalogGroupTableQu
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [],
     },
   },
@@ -39,7 +40,7 @@ export const SingleAssetQueryTrafficDashboard: MockedResponse<SingleNonSdaAssetQ
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetOrError: {
         id: '["dashboards", "traffic_dashboard"]',
         assetMaterializations: [
@@ -73,7 +74,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<AssetGrap
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["good_asset"]',
@@ -133,7 +134,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<AssetGraph
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["late_asset"]',
@@ -189,7 +190,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<AssetGraphLiveQuery> 
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodes: [
         {
           id: 'test.py.repo.["run_failing_asset"]',
@@ -281,12 +282,11 @@ export const AssetCatalogTableMockAssets: Extract<
       id: 'test.py.repo.["late_asset"]',
       groupName: 'GROUP2',
       partitionDefinition: null,
-      freshnessPolicy: {
+      freshnessPolicy: buildFreshnessPolicy({
         maximumLagMinutes: 2,
         cronSchedule: null,
         cronScheduleTimezone: null,
-        __typename: 'FreshnessPolicy',
-      },
+      }),
       hasMaterializePermission: true,
       computeKind: null,
       description: null,
@@ -332,7 +332,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetsOrError: {
         __typename: 'AssetConnection',
         nodes: AssetCatalogTableMockAssets,

@@ -10,7 +10,7 @@ export type PipelineExplorerRootQueryVariables = Types.Exact<{
 }>;
 
 export type PipelineExplorerRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineSnapshotOrError:
     | {__typename: 'PipelineNotFoundError'; message: string}
     | {

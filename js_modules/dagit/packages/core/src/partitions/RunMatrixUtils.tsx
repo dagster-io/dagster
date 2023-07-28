@@ -10,7 +10,7 @@ const STEP_STATUS_COLORS = {
   FAILURE: Colors.Red500,
   FAILURE_SKIPPED: Colors.Red200,
   SKIPPED: Colors.Yellow500,
-  IN_PROGRESS: '#eee',
+  IN_PROGRESS: Colors.Blue500,
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
@@ -148,6 +148,13 @@ export const GridColumn = styled.div<{
     &.skipped {
       &:before {
         background: ${STEP_STATUS_COLORS.SKIPPED};
+      }
+    }
+    &.started,
+    &.starting,
+    &.canceling {
+      &:before {
+        background: ${STEP_STATUS_COLORS.IN_PROGRESS};
       }
     }
   }

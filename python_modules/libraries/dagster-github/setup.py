@@ -24,7 +24,6 @@ setup(
     description="A Github client resource for interacting with the github API with a github App",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

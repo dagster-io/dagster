@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
@@ -44,10 +45,10 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -86,6 +87,9 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_layer import AssetOutputInfo
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
@@ -467,7 +471,7 @@ class ExternalTargetData(
 class ExternalSensorMetadata(
     NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[Sequence[AssetKey]])])
 ):
-    """Stores additional sensor metadata which is available on the Dagit frontend."""
+    """Stores additional sensor metadata which is available in the Dagster UI."""
 
     def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
@@ -679,6 +683,18 @@ class ExternalTimeWindowPartitionsDefinitionData(
             )
 
 
+def _dedup_partition_keys(keys: Sequence[str]):
+    # Use both a set and a list here to preserve lookup performance in case of large inputs. (We
+    # can't just use a set because we need to preserve ordering.)
+    seen_keys: Set[str] = set()
+    new_keys: List[str] = []
+    for key in keys:
+        if key not in seen_keys:
+            new_keys.append(key)
+            seen_keys.add(key)
+    return new_keys
+
+
 @whitelist_for_serdes
 class ExternalStaticPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
@@ -690,7 +706,11 @@ class ExternalStaticPartitionsDefinitionData(
         )
 
     def get_partitions_definition(self):
-        return StaticPartitionsDefinition(self.partition_keys)
+        # v1.4 made `StaticPartitionsDefinition` error if given duplicate keys. This caused
+        # host process errors for users who had not upgraded their user code to 1.4 and had dup
+        # keys, since the host process `StaticPartitionsDefinition` would throw an error.
+        keys = _dedup_partition_keys(self.partition_keys)
+        return StaticPartitionsDefinition(keys)
 
 
 @whitelist_for_serdes
@@ -1074,6 +1094,8 @@ class ExternalAssetNode(
             ("atomic_execution_unit_id", Optional[str]),
             ("required_top_level_resources", Optional[Sequence[str]]),
             ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
+            ("backfill_policy", Optional[BackfillPolicy]),
+            ("auto_observe_interval_minutes", Optional[float]),
         ],
     )
 ):
@@ -1106,6 +1128,8 @@ class ExternalAssetNode(
         atomic_execution_unit_id: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
+        auto_observe_interval_minutes: Optional[float] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1160,6 +1184,12 @@ class ExternalAssetNode(
                 auto_materialize_policy,
                 "auto_materialize_policy",
                 AutoMaterializePolicy,
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
+            ),
+            auto_observe_interval_minutes=check.opt_numeric_param(
+                auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
         )
 
@@ -1315,6 +1345,7 @@ def external_asset_graph_from_defs(
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
     auto_materialize_policy_by_asset_key: Dict[AssetKey, AutoMaterializePolicy] = dict()
+    backfill_policy_by_asset_key: Dict[AssetKey, Optional[BackfillPolicy]] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
@@ -1365,6 +1396,9 @@ def external_asset_graph_from_defs(
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
             auto_materialize_policy_by_asset_key.update(assets_def.auto_materialize_policies_by_key)
+            backfill_policy_by_asset_key.update(
+                {key: assets_def.backfill_policy for key in assets_def.keys}
+            )
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
@@ -1422,6 +1456,7 @@ def external_asset_graph_from_defs(
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
+                    auto_observe_interval_minutes=source_asset.auto_observe_interval_minutes,
                     partitions_def_data=external_partitions_definition_from_def(
                         source_asset.partitions_def
                     )
@@ -1491,6 +1526,7 @@ def external_asset_graph_from_defs(
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
                 auto_materialize_policy=auto_materialize_policy_by_asset_key.get(asset_key),
+                backfill_policy=backfill_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
             )
@@ -1743,7 +1779,7 @@ def external_dynamic_partitions_definition_from_def(
     check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
     if partitions_def.name is None:
         raise DagsterInvalidDefinitionError(
-            "Dagit does not support dynamic partitions definitions without a name parameter."
+            "Dagster does not support dynamic partitions definitions without a name parameter."
         )
     return ExternalDynamicPartitionsDefinitionData(name=partitions_def.name)
 

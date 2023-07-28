@@ -8,7 +8,7 @@ export type TickLogEventsQueryVariables = Types.Exact<{
 }>;
 
 export type TickLogEventsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   instigationStateOrError:
     | {
         __typename: 'InstigationState';

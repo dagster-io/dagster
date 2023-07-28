@@ -49,7 +49,7 @@ CustomTripDataFrame = create_dagster_pandas_dataframe_type(
 
 @op(out=Out(CustomTripDataFrame))
 def load_custom_trip_dataframe() -> DataFrame:
-    return read_csv(
+    return read_csv(  # type: ignore  # (bad stubs)
         file_relative_path(__file__, "./ebike_trips.csv"),
         parse_dates=["start_time", "end_time"],
         date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f"),

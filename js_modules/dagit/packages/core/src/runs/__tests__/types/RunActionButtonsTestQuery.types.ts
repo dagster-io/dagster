@@ -5,7 +5,7 @@ import * as Types from '../../../graphql/types';
 export type RunActionButtonsTestQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type RunActionButtonsTestQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
     | {
@@ -28,6 +28,7 @@ export type RunActionButtonsTestQuery = {
         updateTime: number | null;
         startTime: number | null;
         endTime: number | null;
+        hasConcurrencyKeySlots: boolean;
         repositoryOrigin: {
           __typename: 'RepositoryOrigin';
           id: string;

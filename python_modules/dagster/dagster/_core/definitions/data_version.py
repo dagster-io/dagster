@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import functools
 from collections import OrderedDict
 from enum import Enum
@@ -25,9 +23,11 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph
-    from dagster._core.definitions.events import AssetKey
+    from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 class UnknownValue:
@@ -134,7 +134,7 @@ class DataProvenance(
         )
 
     @staticmethod
-    def from_tags(tags: Mapping[str, str]) -> Optional[DataProvenance]:
+    def from_tags(tags: Mapping[str, str]) -> Optional["DataProvenance"]:
         from dagster._core.definitions.events import AssetKey
 
         code_version = tags.get(CODE_VERSION_TAG)
@@ -230,7 +230,7 @@ def compute_logical_data_version(
 
 
 def extract_data_version_from_entry(
-    entry: EventLogEntry,
+    entry: "EventLogEntry",
 ) -> Optional[DataVersion]:
     tags = entry.tags or {}
     value = tags.get(DATA_VERSION_TAG) or tags.get(_OLD_DATA_VERSION_TAG)
@@ -238,7 +238,7 @@ def extract_data_version_from_entry(
 
 
 def extract_data_provenance_from_entry(
-    entry: EventLogEntry,
+    entry: "EventLogEntry",
 ) -> Optional[DataProvenance]:
     tags = entry.tags or {}
     return DataProvenance.from_tags(tags)
@@ -268,10 +268,10 @@ class StaleCauseCategory(Enum):
 
 
 class StaleCause(NamedTuple):
-    key: AssetKey
+    key: "AssetKey"
     category: StaleCauseCategory
     reason: str
-    dependency: Optional[AssetKey] = None
+    dependency: Optional["AssetKey"] = None
     children: Optional[Sequence["StaleCause"]] = None
 
 
@@ -282,6 +282,7 @@ class CachingStaleStatusResolver:
     """
 
     _instance: "DagsterInstance"
+    _instance_queryer: Optional["CachingInstanceQueryer"]
     _asset_graph: Optional["AssetGraph"]
     _asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
 
@@ -293,6 +294,7 @@ class CachingStaleStatusResolver:
         from dagster._core.definitions.asset_graph import AssetGraph
 
         self._instance = instance
+        self._instance_queryer = None
         if isinstance(asset_graph, AssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -300,20 +302,20 @@ class CachingStaleStatusResolver:
             self._asset_graph = None
             self._asset_graph_load_fn = asset_graph
 
-    def get_status(self, key: AssetKey) -> StaleStatus:
+    def get_status(self, key: "AssetKey") -> StaleStatus:
         return self._get_status(key=key)
 
-    def get_stale_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+    def get_stale_causes(self, key: "AssetKey") -> Sequence[StaleCause]:
         return self._get_stale_causes(key=key)
 
-    def get_stale_root_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+    def get_stale_root_causes(self, key: "AssetKey") -> Sequence[StaleCause]:
         return self._get_stale_root_causes(key=key)
 
-    def get_current_data_version(self, key: AssetKey) -> DataVersion:
+    def get_current_data_version(self, key: "AssetKey") -> DataVersion:
         return self._get_current_data_version(key=key)
 
     @cached_method
-    def _get_status(self, key: AssetKey) -> StaleStatus:
+    def _get_status(self, key: "AssetKey") -> StaleStatus:
         current_version = self._get_current_data_version(key=key)
         if current_version == NULL_DATA_VERSION:
             return StaleStatus.MISSING
@@ -324,7 +326,7 @@ class CachingStaleStatusResolver:
             return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
 
     @cached_method
-    def _get_stale_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+    def _get_stale_causes(self, key: "AssetKey") -> Sequence[StaleCause]:
         current_version = self._get_current_data_version(key=key)
         if (
             current_version == NULL_DATA_VERSION
@@ -335,13 +337,13 @@ class CachingStaleStatusResolver:
         else:
             return list(self._get_stale_causes_materialized(key))
 
-    def _get_stale_causes_materialized(self, key: AssetKey) -> Iterator[StaleCause]:
+    def _get_stale_causes_materialized(self, key: "AssetKey") -> Iterator[StaleCause]:
         code_version = self.asset_graph.get_code_version(key)
         provenance = self._get_current_data_provenance(key=key)
         dependency_keys = self.asset_graph.get_parents(key)
 
         # only used if no provenance available
-        materialization = check.not_none(self._get_latest_materialization_event(key=key))
+        materialization = check.not_none(self._get_latest_data_version_record(key=key))
         materialization_time = materialization.timestamp
 
         if provenance:
@@ -405,7 +407,7 @@ class CachingStaleStatusResolver:
             # provenance is on all newer materializations. If dep is a source, then we'll never
             # provide a stale reason here.
             elif not self.asset_graph.is_source(dep_key):
-                dep_materialization = self._get_latest_materialization_event(key=dep_key)
+                dep_materialization = self._get_latest_data_version_record(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
                     yield StaleCause(key, StaleCauseCategory.DATA, "has a new input", dep_key)
@@ -425,7 +427,7 @@ class CachingStaleStatusResolver:
                     )
 
     @cached_method
-    def _get_stale_root_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+    def _get_stale_root_causes(self, key: "AssetKey") -> Sequence[StaleCause]:
         causes = self._get_stale_causes(key=key)
         root_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
         # After sorting the pairs, we can drop the level and de-dup using an
@@ -450,27 +452,31 @@ class CachingStaleStatusResolver:
             self._asset_graph = check.not_none(self._asset_graph_load_fn)()
         return self._asset_graph
 
+    # This is lazily constructed because it depends on the asset graph, which needs to be lazily
+    # constructed for GQL performance reasons.
+    @property
+    def instance_queryer(self) -> "CachingInstanceQueryer":
+        from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+        if self._instance_queryer is None:
+            self._instance_queryer = CachingInstanceQueryer(self._instance, self.asset_graph)
+        return self._instance_queryer
+
     @cached_method
-    def _get_current_data_version(self, *, key: AssetKey) -> DataVersion:
-        is_source = self.asset_graph.is_source(key)
-        event = self._instance.get_latest_data_version_record(
-            key,
-            is_source,
-        )
-        if event is None and is_source:
+    def _get_current_data_version(self, *, key: "AssetKey") -> DataVersion:
+        # Currently we can only use asset records, which are fetched in one shot, for non-source
+        # assets. This is because the most recent AssetObservation is not stored on the AssetRecord.
+        record = self._get_latest_data_version_record(key=key)
+        if self.asset_graph.is_source(key) and record is None:
             return DEFAULT_DATA_VERSION
-        elif event is None:
+        elif record is None:
             return NULL_DATA_VERSION
         else:
-            data_version = extract_data_version_from_entry(event.event_log_entry)
+            data_version = extract_data_version_from_entry(record.event_log_entry)
             return data_version or DEFAULT_DATA_VERSION
 
     @cached_method
-    def _get_latest_materialization_event(self, *, key: AssetKey) -> Optional[EventLogEntry]:
-        return self._instance.get_latest_materialization_event(key)
-
-    @cached_method
-    def _is_current_data_version_user_provided(self, *, key: AssetKey) -> bool:
+    def _is_current_data_version_user_provided(self, *, key: "AssetKey") -> bool:
         if self.asset_graph.is_source(key):
             return True
         else:
@@ -478,15 +484,15 @@ class CachingStaleStatusResolver:
             return provenance is not None and provenance.is_user_provided
 
     @cached_method
-    def _get_current_data_provenance(self, *, key: AssetKey) -> Optional[DataProvenance]:
-        materialization = self._get_latest_materialization_event(key=key)
-        if materialization is None:
+    def _get_current_data_provenance(self, *, key: "AssetKey") -> Optional[DataProvenance]:
+        record = self._get_latest_data_version_record(key=key)
+        if record is None:
             return None
         else:
-            return extract_data_provenance_from_entry(materialization)
+            return extract_data_provenance_from_entry(record.event_log_entry)
 
     @cached_method
-    def _is_partitioned_or_downstream(self, *, key: AssetKey) -> bool:
+    def _is_partitioned_or_downstream(self, *, key: "AssetKey") -> bool:
         if self.asset_graph.get_partitions_def(key):
             return True
         elif self.asset_graph.is_source(key):
@@ -502,9 +508,34 @@ class CachingStaleStatusResolver:
     # determine if a source asset has changed. We assume that regular assets are volatile if they
     # are at the root of the graph (have no dependencies) or are downstream of a volatile asset.
     @cached_method
-    def _is_volatile(self, *, key: AssetKey) -> bool:
+    def _is_volatile(self, *, key: "AssetKey") -> bool:
         if self.asset_graph.is_source(key):
             return self.asset_graph.is_observable(key)
         else:
             deps = self.asset_graph.get_parents(key)
             return len(deps) == 0 or any(self._is_volatile(key=dep_key) for dep_key in deps)
+
+    @cached_method
+    def _get_latest_data_version_event(
+        self, *, key: "AssetKey"
+    ) -> Optional[Union["AssetMaterialization", "AssetObservation"]]:
+        record = self._get_latest_data_version_record(key=key)
+        if record:
+            entry = record.event_log_entry
+            return entry.asset_materialization or entry.asset_observation
+        else:
+            return None
+
+    @cached_method
+    def _get_latest_data_version_record(self, key: "AssetKey") -> Optional["EventLogRecord"]:
+        from dagster._core.definitions.events import AssetKeyPartitionKey
+
+        # If an asset record is cached, all of its ancestors have already been cached.
+        if not self.asset_graph.is_source(
+            key
+        ) and not self.instance_queryer.has_cached_asset_record(key):
+            ancestors = self.asset_graph.get_ancestors(key, include_self=True)
+            self.instance_queryer.prefetch_asset_records(ancestors)
+        return self.instance_queryer.get_latest_materialization_or_observation_record(
+            asset_partition=AssetKeyPartitionKey(key)
+        )

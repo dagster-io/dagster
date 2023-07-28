@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import itertools
+import logging
 import os
 import random
 import sys
@@ -40,13 +41,12 @@ from dagster import (
     observable_source_asset,
     repository,
 )
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
-    AutoMaterializeCondition,
-    reconcile,
-)
+from dagster._core.definitions.asset_reconciliation_sensor import reconcile
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -54,6 +54,7 @@ from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
+from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -123,6 +124,16 @@ class AssetReconciliationScenario(NamedTuple):
             # add any runs to the instance
             for dagster_run in self.dagster_runs or []:
                 instance.add_run(dagster_run)
+                # make sure to log the planned events
+                for asset_key in dagster_run.asset_selection:
+                    event = DagsterEvent(
+                        event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        job_name=dagster_run.job_name,
+                        event_specific_data=AssetMaterializationPlannedData(
+                            asset_key, partition=(dagster_run.tags or {}).get("dagster/partition")
+                        ),
+                    )
+                    instance.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
             # add any events to the instance
             for event_log_entry in self.event_log_entries or []:
@@ -184,12 +195,10 @@ class AssetReconciliationScenario(NamedTuple):
                     )
 
                 # make sure we can deserialize it using the new asset graph
-                cursor = AssetReconciliationCursor.from_serialized(
-                    cursor.serialize(), repo.asset_graph
-                )
+                cursor = AssetDaemonCursor.from_serialized(cursor.serialize(), repo.asset_graph)
 
             else:
-                cursor = AssetReconciliationCursor.empty()
+                cursor = AssetDaemonCursor.empty()
 
         start = datetime.datetime.now()
 
@@ -242,15 +251,17 @@ class AssetReconciliationScenario(NamedTuple):
             target_asset_keys = (
                 self.asset_selection.resolve(asset_graph)
                 if self.asset_selection
-                else asset_graph.non_source_asset_keys
+                else asset_graph.materializable_asset_keys
             )
 
             run_requests, cursor, evaluations = reconcile(
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
-                run_tags={},
+                materialize_run_tags={},
+                observe_run_tags={},
                 cursor=cursor,
+                auto_observe=True,
             )
 
         for run_request in run_requests:
@@ -409,10 +420,10 @@ def asset_def(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinition:
     if deps is None:
-        non_argument_deps = set()
+        non_argument_deps = None
         ins = None
     elif isinstance(deps, list):
-        non_argument_deps = set(deps)
+        non_argument_deps = deps
         ins = None
     else:
         non_argument_deps = None
@@ -424,7 +435,7 @@ def asset_def(
     @asset(
         name=key,
         partitions_def=partitions_def,
-        non_argument_deps=non_argument_deps,
+        deps=non_argument_deps,
         ins=ins,
         config_schema={"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
@@ -446,13 +457,13 @@ def multi_asset_def(
     freshness_policies: Optional[Mapping[str, FreshnessPolicy]] = None,
 ) -> AssetsDefinition:
     if deps is None:
-        non_argument_deps = set()
+        non_argument_deps = None
         internal_asset_deps = None
     elif isinstance(deps, list):
-        non_argument_deps = set(deps)
+        non_argument_deps = deps
         internal_asset_deps = None
     else:
-        non_argument_deps = set().union(*deps.values()) - set(deps.keys())
+        non_argument_deps = list(set().union(*deps.values()) - set(deps.keys()))
         internal_asset_deps = {k: {AssetKey(vv) for vv in v} for k, v in deps.items()}
 
     @multi_asset(
@@ -464,7 +475,7 @@ def multi_asset_def(
             for key in keys
         },
         name="_".join(keys),
-        non_argument_deps=non_argument_deps,
+        deps=non_argument_deps,
         internal_asset_deps=internal_asset_deps,
         can_subset=can_subset,
     )
@@ -476,9 +487,23 @@ def multi_asset_def(
     return _assets
 
 
-def observable_source_asset_def(key: str):
-    @observable_source_asset(name=key)
+def observable_source_asset_def(
+    key: str, partitions_def: Optional[PartitionsDefinition] = None, minutes_to_change: int = 0
+):
+    def _data_version() -> DataVersion:
+        return (
+            DataVersion(str(pendulum.now().minute // minutes_to_change))
+            if minutes_to_change
+            else DataVersion(str(random.random()))
+        )
+
+    @observable_source_asset(name=key, partitions_def=partitions_def)
     def _observable():
-        return DataVersion(str(random.random()))
+        if partitions_def is None:
+            return _data_version()
+        else:
+            return DataVersionsByPartition(
+                {partition: _data_version() for partition in partitions_def.get_partition_keys()}
+            )
 
     return _observable

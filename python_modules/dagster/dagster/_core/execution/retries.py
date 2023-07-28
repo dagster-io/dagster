@@ -28,7 +28,7 @@ class RetryMode(Enum):
 
     @staticmethod
     def from_config(config_value: Mapping[str, Mapping]) -> Optional["RetryMode"]:
-        for selector, _ in config_value.items():
+        for selector in config_value.keys():
             return RetryMode(selector)
         return None
 

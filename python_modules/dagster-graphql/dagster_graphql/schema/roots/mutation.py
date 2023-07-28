@@ -748,11 +748,11 @@ class GrapheneFreeConcurrencySlotsForRunMutation(graphene.Mutation):
         return True
 
 
-class GrapheneDagitMutation(graphene.ObjectType):
+class GrapheneMutation(graphene.ObjectType):
     """The root for all mutations to modify data in your Dagster instance."""
 
     class Meta:
-        name = "DagitMutation"
+        name = "Mutation"
 
     launchPipelineExecution = GrapheneLaunchRunMutation.Field()
     launchRun = GrapheneLaunchRunMutation.Field()

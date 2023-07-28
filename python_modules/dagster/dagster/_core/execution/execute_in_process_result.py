@@ -50,11 +50,13 @@ class ExecuteInProcessResult(ExecutionResult):
     @public
     @property
     def job_def(self) -> JobDefinition:
+        """JobDefinition: The job definition that was executed."""
         return self._job_def
 
     @public
     @property
     def dagster_run(self) -> DagsterRun:
+        """DagsterRun: The Dagster run that was executed."""
         return self._dagster_run
 
     @public
@@ -66,6 +68,7 @@ class ExecuteInProcessResult(ExecutionResult):
     @public
     @property
     def run_id(self) -> str:
+        """str: The run ID of the executed :py:class:`DagsterRun`."""
         return self.dagster_run.run_id
 
     def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
@@ -120,6 +123,14 @@ class ExecuteInProcessResult(ExecutionResult):
 
     @public
     def asset_value(self, asset_key: CoercibleToAssetKey) -> Any:
+        """Retrieves the value of an asset that was materialized during the execution of the job.
+
+        Args:
+            asset_key (CoercibleToAssetKey): The key of the asset to retrieve.
+
+        Returns:
+            Any: The value of the retrieved asset.
+        """
         node_output_handle = self._job_def.asset_layer.node_output_handle_for_asset(
             AssetKey.from_coercible(asset_key)
         )

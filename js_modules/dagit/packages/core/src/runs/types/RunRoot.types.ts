@@ -7,7 +7,7 @@ export type RunRootQueryVariables = Types.Exact<{
 }>;
 
 export type RunRootQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunOrError:
     | {__typename: 'PythonError'}
     | {
@@ -30,6 +30,7 @@ export type RunRootQuery = {
         updateTime: number | null;
         startTime: number | null;
         endTime: number | null;
+        hasConcurrencyKeySlots: boolean;
         repositoryOrigin: {
           __typename: 'RepositoryOrigin';
           id: string;

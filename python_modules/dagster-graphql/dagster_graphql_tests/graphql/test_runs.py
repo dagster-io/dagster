@@ -1,4 +1,5 @@
 import copy
+import tempfile
 
 import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
@@ -248,6 +249,20 @@ query AssetRunsQuery($assetKey: AssetKeyInput!) {
             }
         }
     }
+}
+"""
+
+RUN_CONCURRENCY_QUERY = """
+{
+  pipelineRunsOrError {
+    ... on PipelineRuns {
+      results {
+        runId
+        status
+        hasConcurrencyKeySlots
+      }
+    }
+  }
 }
 """
 
@@ -839,8 +854,12 @@ def test_filtered_runs_multiple_filters():
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.STARTED).run_id
-        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE).run_id
+        instance.create_run_for_job(  # noqa: B018
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
+        ).run_id
+        instance.create_run_for_job(  # noqa: B018
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
                 context,
@@ -1011,3 +1030,42 @@ def test_asset_batching():
             counts = counter.counts()
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
+
+
+def test_run_has_concurrency_slots():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as instance:
+            repo = get_asset_repo()
+            instance.event_log_storage.set_concurrency_slots("foo", 1)
+            run_id = instance.create_run_for_job(
+                repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+            ).run_id
+
+            with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+                result = execute_dagster_graphql(context, RUN_CONCURRENCY_QUERY)
+                assert result.data
+                assert len(result.data["pipelineRunsOrError"]["results"]) == 1
+                assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
+                assert not result.data["pipelineRunsOrError"]["results"][0][
+                    "hasConcurrencyKeySlots"
+                ]
+
+            claim = instance.event_log_storage.claim_concurrency_slot(
+                "foo", run_id, "fake_step_key"
+            )
+            assert claim.is_claimed
+
+            with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+                result = execute_dagster_graphql(context, RUN_CONCURRENCY_QUERY)
+                assert result.data
+                assert len(result.data["pipelineRunsOrError"]["results"]) == 1
+                assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
+                assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]

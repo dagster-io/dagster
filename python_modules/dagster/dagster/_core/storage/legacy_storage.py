@@ -300,8 +300,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.run_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.run_storage.optimize_for_dagit(statement_timeout, pool_recycle)
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        return self._storage.run_storage.optimize_for_webserver(statement_timeout, pool_recycle)
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         return self._storage.run_storage.add_daemon_heartbeat(daemon_heartbeat)
@@ -432,8 +432,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.event_log_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.event_log_storage.optimize_for_dagit(statement_timeout, pool_recycle)
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        return self._storage.event_log_storage.optimize_for_webserver(
+            statement_timeout, pool_recycle
+        )
 
     def get_event_records(
         self,
@@ -467,7 +469,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_asset_keys(prefix, limit, cursor)
 
     def get_latest_materialization_events(
-        self, asset_keys: Sequence["AssetKey"]
+        self, asset_keys: Iterable["AssetKey"]
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._storage.event_log_storage.get_latest_materialization_events(asset_keys)
 
@@ -482,6 +484,26 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Mapping["AssetKey", Mapping[str, int]]:
         return self._storage.event_log_storage.get_materialization_count_by_partition(
             asset_keys, after_cursor
+        )
+
+    def get_latest_storage_id_by_partition(
+        self, asset_key: "AssetKey", event_type: "DagsterEventType"
+    ) -> Mapping[str, int]:
+        return self._storage.event_log_storage.get_latest_storage_id_by_partition(
+            asset_key, event_type
+        )
+
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: "AssetKey",
+        event_type: "DagsterEventType",
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        return self._storage.event_log_storage.get_latest_tags_by_partition(
+            asset_key, event_type, tag_keys, asset_partitions, before_cursor, after_cursor
         )
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
@@ -710,8 +732,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.schedule_storage.optimize_for_dagit(statement_timeout, pool_recycle)
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        return self._storage.schedule_storage.optimize_for_webserver(
+            statement_timeout, pool_recycle
+        )
 
     def dispose(self) -> None:
         return self._storage.schedule_storage.dispose()

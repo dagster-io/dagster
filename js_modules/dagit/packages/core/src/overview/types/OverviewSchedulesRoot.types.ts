@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type OverviewSchedulesQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type OverviewSchedulesQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   workspaceOrError:
     | {
         __typename: 'PythonError';
@@ -99,7 +99,7 @@ export type OverviewSchedulesQuery = {
 export type UnloadableSchedulesQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type UnloadableSchedulesQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   unloadableInstigationStatesOrError:
     | {
         __typename: 'InstigationStates';

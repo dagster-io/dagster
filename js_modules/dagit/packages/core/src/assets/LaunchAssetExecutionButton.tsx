@@ -27,7 +27,7 @@ import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {partitionDefinitionsEqual} from './MultipartitioningSupport';
-import {isAssetStale} from './Stale';
+import {isAssetMissing, isAssetStale} from './Stale';
 import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
@@ -135,13 +135,15 @@ function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): La
   });
 
   if (liveDataForStale) {
-    const missingOrStale = assets.filter((a) =>
-      isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
+    const missingOrStale = assets.filter(
+      (a) =>
+        isAssetMissing(liveDataForStale[toGraphId(a.assetKey)]) ||
+        isAssetStale(liveDataForStale[toGraphId(a.assetKey)]),
     );
 
     options.push({
       assetKeys: missingOrStale.map((a) => a.assetKey),
-      label: `Propagate changes${countOrBlank(missingOrStale)}`,
+      label: `Materialize changed and missing${countOrBlank(missingOrStale)}`,
       hasMaterializePermission,
       icon: <Icon name="changes_present" />,
     });
@@ -209,13 +211,6 @@ export const LaunchAssetExecutionButton: React.FC<{
           position="bottom-right"
           content={
             <Menu>
-              <MenuItem
-                text="Open in launchpad"
-                icon={<Icon name="open_in_new" />}
-                onClick={(e: React.MouseEvent<any>) => {
-                  onClick(firstOption.assetKeys, e, true);
-                }}
-              />
               {options.slice(1).map((option) => (
                 <MenuItem
                   key={option.label}
@@ -225,6 +220,13 @@ export const LaunchAssetExecutionButton: React.FC<{
                   onClick={(e) => onClick(option.assetKeys, e)}
                 />
               ))}
+              <MenuItem
+                text="Open launchpad"
+                icon={<Icon name="open_in_new" />}
+                onClick={(e: React.MouseEvent<any>) => {
+                  onClick(firstOption.assetKeys, e, true);
+                }}
+              />
             </Menu>
           }
         >

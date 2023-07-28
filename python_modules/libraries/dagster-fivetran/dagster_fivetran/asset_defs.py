@@ -26,7 +26,6 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -134,7 +133,6 @@ def _build_fivetran_assets(
     return [_assets]
 
 
-@experimental
 def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
@@ -322,7 +320,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     ):
         self._fivetran_resource_def = fivetran_resource_def
         self._fivetran_instance: FivetranResource = (
-            fivetran_resource_def
+            fivetran_resource_def.process_config_and_initialize()
             if isinstance(fivetran_resource_def, FivetranResource)
             else fivetran_resource_def(build_init_resource_context())
         )
@@ -415,7 +413,6 @@ def _clean_name(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
-@experimental
 def load_assets_from_fivetran_instance(
     fivetran: Union[FivetranResource, ResourceDefinition],
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,

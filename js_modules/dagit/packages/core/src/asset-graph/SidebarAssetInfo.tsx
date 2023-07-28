@@ -32,7 +32,13 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
+import {
+  LiveDataForNode,
+  displayNameForAssetKey,
+  GraphNode,
+  nodeDependsOnSelf,
+  stepKeyForAsset,
+} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
@@ -98,6 +104,7 @@ export const SidebarAssetInfo: React.FC<{
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
         isSourceAsset={definition.isSource}
+        stepKey={stepKeyForAsset(definition)}
         liveData={liveData}
       />
 

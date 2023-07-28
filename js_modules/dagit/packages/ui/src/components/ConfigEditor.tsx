@@ -157,7 +157,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               },
               hintOptions: {
                 completeSingle: false,
-                closeOnUnfocus: false,
                 schema: this.props.configSchema,
               },
               keyMap: 'sublime',

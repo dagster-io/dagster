@@ -36,16 +36,6 @@ export interface RunsFilterInputProps {
   enabledFilters?: RunFilterTokenType[];
 }
 
-export const RunsFilterInput = (props: RunsFilterInputProps) => {
-  const {button, activeFiltersJsx} = useRunsFilterInput(props);
-  return (
-    <div>
-      {button}
-      {activeFiltersJsx}
-    </div>
-  );
-};
-
 export type RunFilterTokenType =
   | 'id'
   | 'status'
@@ -466,7 +456,6 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       useTimeRangeFilter({
         name: 'Created date',
         icon: 'date',
-        timezone: 'UTC',
         initialState: React.useMemo(() => {
           const before = tokens.find((token) => token.token === 'created_date_before');
           const after = tokens.find((token) => token.token === 'created_date_after');

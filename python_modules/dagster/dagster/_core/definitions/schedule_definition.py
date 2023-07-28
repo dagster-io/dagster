@@ -296,6 +296,7 @@ class ScheduleEvaluationContext:
     @public
     @property
     def instance(self) -> "DagsterInstance":
+        """DagsterInstance: The current DagsterInstance."""
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
         # constructed under test.
         if not self._instance_ref:
@@ -506,7 +507,7 @@ class ScheduleDefinition(IHasInternalInit):
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
@@ -780,24 +781,28 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def name(self) -> str:
+        """str: The name of the schedule."""
         return self._name
 
     @public
     @property
     def job_name(self) -> str:
+        """str: The name of the job targeted by this schedule."""
         return self._target.job_name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A description for this schedule."""
         return self._description
 
     @public
     @property
     def cron_schedule(self) -> Union[str, Sequence[str]]:
+        """Union[str, Sequence[str]]: The cron schedule representing when this schedule will be evaluated.
+        """
         return self._cron_schedule  # type: ignore
 
-    @public
     @deprecated
     @property
     def environment_vars(self) -> Mapping[str, str]:
@@ -806,16 +811,21 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
+        """Set[str]: The set of keys for resources that must be provided to this schedule."""
         return self._required_resource_keys
 
     @public
     @property
     def execution_timezone(self) -> Optional[str]:
+        """Optional[str]: The timezone in which this schedule will be evaluated."""
         return self._execution_timezone
 
     @public
     @property
     def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
+        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+        targeted by this schedule.
+        """
         if isinstance(self._target, DirectTarget):
             return self._target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
@@ -928,4 +938,7 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def default_status(self) -> DefaultScheduleStatus:
+        """DefaultScheduleStatus: The default status for this schedule when it is first loaded in
+        a code location.
+        """
         return self._default_status

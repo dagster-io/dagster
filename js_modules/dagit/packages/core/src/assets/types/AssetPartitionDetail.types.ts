@@ -8,11 +8,12 @@ export type AssetPartitionDetailQueryVariables = Types.Exact<{
 }>;
 
 export type AssetPartitionDetailQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodeOrError:
     | {
         __typename: 'AssetNode';
         id: string;
+        opNames: Array<string>;
         latestRunForPartition: {
           __typename: 'Run';
           id: string;

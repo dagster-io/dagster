@@ -176,7 +176,9 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             partition_names=backfill_params.get("partitionNames"),
             dynamic_partitions_store=CachingInstanceQueryer(
-                graphene_info.context.instance, utc_datetime_from_timestamp(backfill_timestamp)
+                graphene_info.context.instance,
+                asset_graph,
+                utc_datetime_from_timestamp(backfill_timestamp),
             ),
             all_partitions=backfill_params.get("allPartitions", False),
         )

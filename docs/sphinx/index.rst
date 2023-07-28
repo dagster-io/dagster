@@ -56,6 +56,7 @@
    sections/api/apidocs/libraries/dagster-mysql
    sections/api/apidocs/libraries/dagster-pagerduty
    sections/api/apidocs/libraries/dagster-pandas
+   sections/api/apidocs/libraries/dagster-pandera
    sections/api/apidocs/libraries/dagster-papertrail
    sections/api/apidocs/libraries/dagster-postgres
    sections/api/apidocs/libraries/dagster-prometheus

@@ -4,14 +4,13 @@ from typing import NamedTuple, Optional, cast
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import MappedPartitionsResult, PartitionMapping
+from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.backcompat import (
@@ -112,21 +111,13 @@ class TimeWindowPartitionMapping(
             ),
         )
 
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> MappedPartitionsResult:
+    ) -> UpstreamPartitionsResult:
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
 
@@ -134,44 +125,10 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
-            raise_error_on_invalid_mapped_partition=False,
+            start_offset=self.start_offset,
+            end_offset=self.end_offset,
             current_time=current_time,
         )
-
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        """Returns the partitions in the upstream asset that map to the given downstream partitions.
-
-        Raises an error if upstream partitions do not exist at the given current_time, fetching the
-        current time if not provided.
-        """
-        if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
-
-        return self._map_partitions(
-            downstream_partitions_subset.partitions_def,
-            upstream_partitions_def,
-            downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
-            raise_error_on_invalid_mapped_partition=True,
-            current_time=current_time,
-        ).partitions_subset
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -189,9 +146,8 @@ class TimeWindowPartitionMapping(
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
-            -self.start_offset,
-            -self.end_offset,
-            raise_error_on_invalid_mapped_partition=False,
+            end_offset=-self.start_offset,
+            start_offset=-self.end_offset,
             current_time=current_time,
         ).partitions_subset
 
@@ -202,9 +158,8 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: PartitionsSubset,
         start_offset: int,
         end_offset: int,
-        raise_error_on_invalid_mapped_partition: bool,
         current_time: Optional[datetime] = None,
-    ) -> MappedPartitionsResult:
+    ) -> UpstreamPartitionsResult:
         """Maps the partitions in from_partitions_subset to partitions in to_partitions_def.
 
         If partitions in from_partitions_subset represent time windows that do not exist in
@@ -238,7 +193,7 @@ class TimeWindowPartitionMapping(
 
         # skip fancy mapping logic in the simple case
         if from_partitions_def == to_partitions_def and start_offset == 0 and end_offset == 0:
-            return MappedPartitionsResult(from_partitions_subset, [])
+            return UpstreamPartitionsResult(from_partitions_subset, [])
 
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
@@ -282,7 +237,7 @@ class TimeWindowPartitionMapping(
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
 
         filtered_time_windows = []
-        invalid_partitions_mapped_to = set()
+        required_but_nonexistent_partition_keys = set()
 
         for time_window in time_windows:
             if (
@@ -315,7 +270,7 @@ class TimeWindowPartitionMapping(
                     )
 
                 if invalid_time_window:
-                    invalid_partitions_mapped_to.update(
+                    required_but_nonexistent_partition_keys.update(
                         set(
                             to_partitions_def.get_partition_keys_in_time_window(
                                 time_window=invalid_time_window
@@ -323,17 +278,7 @@ class TimeWindowPartitionMapping(
                         )
                     )
 
-        if (
-            filtered_time_windows != time_windows
-            and not self.allow_nonexistent_upstream_partitions
-            and raise_error_on_invalid_mapped_partition
-        ):
-            raise DagsterInvalidInvocationError(
-                f"Provided time windows {time_windows} contain nonexistent time windows for"
-                f" partitions definition {to_partitions_def}"
-            )
-
-        return MappedPartitionsResult(
+        return UpstreamPartitionsResult(
             TimeWindowPartitionsSubset(
                 to_partitions_def,
                 num_partitions=sum(
@@ -342,7 +287,7 @@ class TimeWindowPartitionMapping(
                 ),
                 included_time_windows=filtered_time_windows,
             ),
-            sorted(list(invalid_partitions_mapped_to)),
+            sorted(list(required_but_nonexistent_partition_keys)),
         )
 
 

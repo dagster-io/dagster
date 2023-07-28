@@ -25,15 +25,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
 
     example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
 
-    # TODO: these tests were failing to install due to using editable install dagster and published
-    # dagster-cloud.
-    example_packages_filtered = [
-        pkg
-        for pkg in example_packages
-        if pkg.directory not in ["examples/assets_dbt_python", "examples/assets_modern_data_stack"]
-    ]
-
-    return _build_steps_from_package_specs(example_packages_filtered)
+    return _build_steps_from_package_specs(example_packages)
 
 
 def build_library_packages_steps() -> List[BuildkiteStep]:
@@ -207,7 +199,7 @@ def docker_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-dagit_extra_cmds = ["make rebuild_dagit"]
+ui_extra_cmds = ["make rebuild_ui"]
 
 
 mysql_extra_cmds = [
@@ -276,9 +268,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/assets_dbt_python",
-    ),
-    PackageSpec(
         "examples/assets_smoke_test",
     ),
     PackageSpec(
@@ -330,11 +319,36 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_11,
         ],
     ),
+    # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
+    PackageSpec(
+        "examples/assets_modern_data_stack",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/assets_dbt_python",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_aws",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_etl",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_gcp",
+        pytest_tox_factors=["pypi"],
+    ),
+    PackageSpec(
+        "examples/quickstart_snowflake",
+        pytest_tox_factors=["pypi"],
+    ),
 ]
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
-    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
+    PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         env_vars=["AWS_ACCOUNT_ID"],
@@ -423,6 +437,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             else []
         ),
         pytest_tox_factors=[
+            "dbt_13X_legacy",
+            "dbt_14X_legacy",
+            "dbt_15X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",

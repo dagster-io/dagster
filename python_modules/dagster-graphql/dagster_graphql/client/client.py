@@ -47,7 +47,7 @@ class DagsterGraphQLClient:
 
     Args:
         hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
-            `dagit.dagster.YOUR_ORG_HERE`.
+            `dagster.YOUR_ORG_HERE`.
         port_number (Optional[int], optional): Optional port number to connect to on the host.
             Defaults to None.
         transport (Optional[Transport], optional): A custom transport to use to connect to the
@@ -298,7 +298,7 @@ class DagsterGraphQLClient:
     ) -> ReloadRepositoryLocationInfo:
         """Reloads a Dagster Repository Location, which reloads all repositories in that repository location.
 
-        This is useful in a variety of contexts, including refreshing Dagit without restarting
+        This is useful in a variety of contexts, including refreshing the Dagster UI without restarting
         the server.
 
         Args:

@@ -9,7 +9,7 @@ export type AssetJobPartitionSetsQueryVariables = Types.Exact<{
 }>;
 
 export type AssetJobPartitionSetsQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   partitionSetsOrError:
     | {
         __typename: 'PartitionSets';

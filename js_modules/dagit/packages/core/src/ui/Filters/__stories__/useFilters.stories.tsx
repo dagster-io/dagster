@@ -84,7 +84,6 @@ const TestComponent: React.FC = () => {
   const timeRangeFilter = useTimeRangeFilter({
     name: 'Timestamp',
     icon: 'date',
-    timezone: 'UTC',
   });
 
   const filters = React.useMemo(() => [userFilter, deploymentFilter, timeRangeFilter, testFilter], [

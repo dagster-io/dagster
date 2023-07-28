@@ -1,26 +1,32 @@
+from typing import Sequence
+
 import pendulum
 import pytest
 from dagster import (
     AssetMaterialization,
     AssetSelection,
     DagsterInstance,
-    build_asset_reconciliation_sensor,
     build_sensor_context,
     job,
     op,
     repository,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_daemon_context import build_auto_materialize_asset_evaluations
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import (
-    build_auto_materialize_asset_evaluations,
+    AutoMaterializeAssetEvaluation,
+    build_asset_reconciliation_sensor,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from .asset_reconciliation_scenario import AssetReconciliationScenario, asset_def
+from .asset_reconciliation_scenario import (
+    AssetReconciliationScenario,
+    asset_def,
+)
 from .scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
@@ -33,7 +39,23 @@ def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _, evaluations = scenario.do_sensor_scenario(instance)
 
-    if scenario.expected_conditions:
+    def _sorted_evaluations(
+        evaluations: Sequence[AutoMaterializeAssetEvaluation],
+    ) -> Sequence[AutoMaterializeAssetEvaluation]:
+        """Allows a stable ordering for comparison."""
+        return sorted(
+            [
+                evaluation._replace(
+                    partition_subsets_by_condition=sorted(
+                        evaluation.partition_subsets_by_condition, key=repr
+                    )
+                )
+                for evaluation in evaluations
+            ],
+            key=repr,
+        )
+
+    if scenario.expected_conditions is not None:
         reasons = {
             (
                 AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
@@ -42,14 +64,13 @@ def test_reconciliation(scenario):
             ): rs
             for key, rs in (scenario.expected_conditions or {}).items()
         }
-        assert sorted(
+        assert _sorted_evaluations(
             build_auto_materialize_asset_evaluations(
                 AssetGraph.from_assets(scenario.assets), reasons, dynamic_partitions_store=instance
-            ),
-            key=lambda x: x.asset_key,
-        ) == sorted(evaluations, key=lambda x: x.asset_key)
+            )
+        ) == _sorted_evaluations(evaluations)
 
-    assert len(run_requests) == len(scenario.expected_run_requests), run_requests
+    assert len(run_requests) == len(scenario.expected_run_requests), evaluations
 
     def sort_run_request_key_fn(run_request):
         return (min(run_request.asset_selection), run_request.partition_key)

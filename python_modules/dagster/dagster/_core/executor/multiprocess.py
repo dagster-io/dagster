@@ -109,7 +109,7 @@ class MultiprocessExecutor(Executor):
     def __init__(
         self,
         retries: RetryMode,
-        max_concurrent: int,
+        max_concurrent: Optional[int],
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,

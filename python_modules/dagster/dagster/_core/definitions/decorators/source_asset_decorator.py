@@ -30,6 +30,7 @@ def observable_source_asset(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    auto_observe_interval_minutes: Optional[float] = None,
 ) -> "_ObservableSourceAsset":
     ...
 
@@ -48,6 +49,7 @@ def observable_source_asset(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    auto_observe_interval_minutes: Optional[float] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
     """Create a `SourceAsset` with an associated observation function.
 
@@ -78,6 +80,8 @@ def observable_source_asset(
             the `io_manager_def` argument.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
+        auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
+            of the observation function for this asset will be launched at this interval.
         observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
     """
     if observe_fn is not None:
@@ -94,6 +98,7 @@ def observable_source_asset(
         required_resource_keys,
         resource_defs,
         partitions_def,
+        auto_observe_interval_minutes,
     )
 
 
@@ -110,6 +115,7 @@ class _ObservableSourceAsset:
         required_resource_keys: Optional[AbstractSet[str]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        auto_observe_interval_minutes: Optional[float] = None,
     ):
         self.name = name
         if isinstance(key_prefix, str):
@@ -125,6 +131,7 @@ class _ObservableSourceAsset:
         self.required_resource_keys = required_resource_keys
         self.resource_defs = resource_defs
         self.partitions_def = partitions_def
+        self.auto_observe_interval_minutes = auto_observe_interval_minutes
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
         source_asset_name = self.name or observe_fn.__name__
@@ -152,4 +159,5 @@ class _ObservableSourceAsset:
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
             partitions_def=self.partitions_def,
+            auto_observe_interval_minutes=self.auto_observe_interval_minutes,
         )

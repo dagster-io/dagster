@@ -64,7 +64,7 @@ export const buildStartAlaskaSuccess = (delay = 0): MockedResponse<StartThisSche
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         startSchedule: buildScheduleStateResult({
           scheduleState: buildInstigationState({
             status: InstigationStatus.RUNNING,
@@ -90,7 +90,7 @@ export const buildStartColoradoSuccess = (delay = 0): MockedResponse<StartThisSc
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         startSchedule: buildScheduleStateResult({
           scheduleState: buildInstigationState({
             status: InstigationStatus.RUNNING,
@@ -116,7 +116,7 @@ export const buildStartColoradoError = (delay = 0): MockedResponse<StartThisSche
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         startSchedule: buildUnauthorizedError({
           message: 'lol u cannot',
         }),
@@ -137,7 +137,7 @@ export const buildStopDelawareSuccess = (delay = 0): MockedResponse<StopSchedule
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         stopRunningSchedule: buildScheduleStateResult({
           scheduleState: buildInstigationState({
             status: InstigationStatus.STOPPED,
@@ -160,7 +160,7 @@ export const buildStopHawaiiSuccess = (delay = 0): MockedResponse<StopScheduleMu
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         stopRunningSchedule: buildScheduleStateResult({
           scheduleState: buildInstigationState({
             status: InstigationStatus.STOPPED,
@@ -183,7 +183,7 @@ export const buildStopHawaiiError = (delay = 0): MockedResponse<StopScheduleMuta
     },
     result: {
       data: {
-        __typename: 'DagitMutation',
+        __typename: 'Mutation',
         stopRunningSchedule: buildUnauthorizedError({
           message: 'lol u cannot',
         }),

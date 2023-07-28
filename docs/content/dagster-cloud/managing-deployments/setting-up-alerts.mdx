@@ -211,34 +211,6 @@ alert_policies:
 
 ---
 
-## Using system tags to configure alert emails
-
-For a job, alert emails can be configured by setting the `dagster-cloud/alert_emails` tag on a job. When a job run fails, a notification will be sent to the alert emails.
-
-In this example, we've defined two alert emails for the `important_job` job: `richard.hendricks@hooli.com` and `nelson.bighetti@hooli.com`. On run failure, these two emails will be sent a notification:
-
-```python
-from dagster import job, op
-from dagster_cloud import ALERT_EMAILS_TAG
-
-
-@op
-def important_computation():
-    ...
-
-
-@job(
-    tags={
-        ALERT_EMAILS_TAG: [
-            "richard.hendricks@hooli.com",
-            "nelson.bighetti@hooli.com",
-        ]
-    }
-)
-def important_job():
-    important_computation()
-```
-
 ### Compatible event types
 
 When creating an alert policy using the CLI, only certain `event_types` can be specified together. You can specify multiple job run-based event types together (`JOB_SUCCESS`, `JOB_FAILURE`), or a tick-based event type (`TICK_FAILURE`), but attempting to mix these will result in an error.
