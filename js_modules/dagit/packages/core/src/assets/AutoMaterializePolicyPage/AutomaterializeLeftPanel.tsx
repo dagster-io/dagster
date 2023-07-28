@@ -65,49 +65,38 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         const isSelected = selectedEvaluation?.evaluationId === evaluation.evaluationId;
         if (evaluation.__typename === 'no_conditions_met') {
           return (
-            <>
-              <EvaluationListItem
-                key={`skip-${evaluation.evaluationId}`}
-                onClick={() => {
-                  onSelectEvaluation(evaluation);
-                }}
-                $selected={isSelected}
-              >
-                <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
-                  <div>
-                    {evaluation.startTimestamp ? (
-                      evaluation.amount === 1 ? (
-                        '1 evaluation'
-                      ) : (
-                        `${compactNumber(evaluation.amount)} evaluations`
-                      )
+            <EvaluationListItem
+              key={`skip-${evaluation.evaluationId}`}
+              onClick={() => {
+                onSelectEvaluation(evaluation);
+              }}
+              $selected={isSelected}
+            >
+              <Box flex={{direction: 'column', gap: 4}} style={{width: '100%'}}>
+                <div>
+                  {evaluation.startTimestamp ? (
+                    evaluation.amount === 1 ? (
+                      '1 evaluation'
                     ) : (
-                      <>
-                        {evaluation.endTimestamp === 'now' ? (
-                          'Before now'
-                        ) : (
-                          <>
-                            Before <TimestampDisplay timestamp={evaluation.endTimestamp} />
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <Caption color={isSelected ? Colors.Blue700 : Colors.Gray700}>
-                    No conditions met
-                  </Caption>
-                </Box>
-              </EvaluationListItem>
-              {!evaluation.startTimestamp ? (
-                <Box
-                  border={{side: 'top', color: Colors.KeylineGray, width: 1}}
-                  flex={{direction: 'column', gap: 4}}
-                  style={{width: '100%', padding: '20px 12px', marginTop: '12px'}}
-                >
-                  <small>Evaluations are retained for 1 week.</small>
-                </Box>
-              ) : null}
-            </>
+                      `${compactNumber(evaluation.amount)} evaluations`
+                    )
+                  ) : (
+                    <>
+                      {evaluation.endTimestamp === 'now' ? (
+                        'Before now'
+                      ) : (
+                        <>
+                          Before <TimestampDisplay timestamp={evaluation.endTimestamp} />
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+                <Caption color={isSelected ? Colors.Blue700 : Colors.Gray700}>
+                  No conditions met
+                </Caption>
+              </Box>
+            </EvaluationListItem>
           );
         }
 
@@ -134,6 +123,13 @@ export const AutomaterializeLeftList = (props: ListProps) => {
           </EvaluationListItem>
         );
       })}
+      <Box
+        border={{side: 'top', color: Colors.KeylineGray, width: 1}}
+        padding={{vertical: 20, horizontal: 12}}
+        margin={{top: 12}}
+      >
+        <Caption>Evaluations are retained for 1 week</Caption>
+      </Box>
     </Box>
   );
 };
