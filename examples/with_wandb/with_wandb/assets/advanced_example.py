@@ -152,7 +152,7 @@ def get_artifact(context: AssetExecutionContext, artifact: Artifact) -> None:
     compute_kind="wandb",
     ins={
         "artifact": AssetIn(
-            asset_key=MY_ASSET,
+            key=MY_ASSET,
             metadata={
                 "wandb_artifact_configuration": {
                     "version": "v0",
@@ -176,7 +176,7 @@ def get_version(context: AssetExecutionContext, artifact: Artifact) -> None:
     compute_kind="wandb",
     ins={
         "artifact": AssetIn(
-            asset_key=MY_ASSET,
+            key=MY_ASSET,
             metadata={
                 "wandb_artifact_configuration": {
                     "alias": "first_alias",

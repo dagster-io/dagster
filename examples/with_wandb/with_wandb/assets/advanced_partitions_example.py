@@ -40,7 +40,7 @@ def write_advanced_artifact(context):
     compute_kind="wandb",
     ins={
         "partitions": AssetIn(
-            asset_key=ARTIFACT_NAME,
+            key=ARTIFACT_NAME,
             metadata={
                 "wandb_artifact_configuration": {
                     "partitions": {
