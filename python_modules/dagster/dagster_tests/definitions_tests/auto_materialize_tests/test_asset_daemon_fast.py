@@ -1,23 +1,16 @@
 from typing import Sequence
 
-import pendulum
 import pytest
 from dagster import (
     AssetMaterialization,
     AssetSelection,
     DagsterInstance,
-    build_sensor_context,
     job,
     op,
-    repository,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.asset_daemon_context import build_auto_materialize_asset_evaluations
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AutoMaterializeAssetEvaluation,
-    build_asset_reconciliation_sensor,
-)
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
@@ -28,6 +21,12 @@ from .base_scenario import (
     asset_def,
 )
 from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
+
+#############################
+# FAST auto materialize tests
+#############################
+#
+# Run the auto materialize scenarios, but use an InternalAssetGraph instead of External to speed things up.
 
 
 @pytest.mark.parametrize(
@@ -112,35 +111,6 @@ def test_reconciliation_no_tags(scenario):
         assert run_request.partition_key == expected_run_request.partition_key
 
 
-@pytest.mark.parametrize(
-    "scenario",
-    [
-        ASSET_RECONCILIATION_SCENARIOS["diamond_never_materialized"],
-        ASSET_RECONCILIATION_SCENARIOS["one_asset_daily_partitions_never_materialized"],
-    ],
-)
-def test_sensor(scenario):
-    assert scenario.cursor_from is None
-
-    @repository
-    def repo():
-        return scenario.assets
-
-    reconciliation_sensor = build_asset_reconciliation_sensor(AssetSelection.all())
-    instance = DagsterInstance.ephemeral()
-
-    with pendulum.test(scenario.current_time):
-        context = build_sensor_context(instance=instance, repository_def=repo)
-        result = reconciliation_sensor(context)
-        assert len(list(result)) == len(scenario.expected_run_requests)
-
-        context2 = build_sensor_context(
-            cursor=context.cursor, instance=instance, repository_def=repo
-        )
-        result2 = reconciliation_sensor(context2)
-        assert len(list(result2)) == 0
-
-
 def test_bad_partition_key():
     hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
     assets = [
@@ -165,24 +135,3 @@ def test_bad_partition_key():
     )
     run_requests, _, _ = scenario.do_sensor_scenario(instance)
     assert len(run_requests) == 0
-
-
-def test_sensor_fails_on_auto_materialize_policy():
-    scenario = ASSET_RECONCILIATION_SCENARIOS[
-        "auto_materialize_policy_eager_with_freshness_policies"
-    ]
-
-    @repository
-    def repo():
-        return scenario.assets
-
-    reconciliation_sensor = build_asset_reconciliation_sensor(AssetSelection.all())
-    instance = DagsterInstance.ephemeral()
-
-    context = build_sensor_context(instance=instance, repository_def=repo)
-
-    with pytest.raises(
-        CheckError,
-        match=r"build_asset_reconciliation_sensor: Asset '.*' has an AutoMaterializePolicy set",
-    ):
-        reconciliation_sensor(context)

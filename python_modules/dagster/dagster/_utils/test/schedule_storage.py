@@ -5,10 +5,10 @@ import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.asset_reconciliation_sensor import (
+from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeAssetEvaluation,
+    MissingAutoMaterializeCondition,
 )
-from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.host_representation import (
