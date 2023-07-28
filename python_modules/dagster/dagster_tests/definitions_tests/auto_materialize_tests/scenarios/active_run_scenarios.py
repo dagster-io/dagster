@@ -13,7 +13,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._seven.compat.pendulum import create_pendulum_time
 
-from .asset_reconciliation_scenario import (
+from ..base_scenario import (
     AssetReconciliationScenario,
     asset_def,
     observable_source_asset_def,

@@ -3,7 +3,7 @@ import datetime
 from dagster import PartitionKeyRange
 from dagster._seven.compat.pendulum import create_pendulum_time
 
-from .asset_reconciliation_scenario import (
+from ..base_scenario import (
     AssetReconciliationScenario,
     asset_def,
     observable_source_asset_def,

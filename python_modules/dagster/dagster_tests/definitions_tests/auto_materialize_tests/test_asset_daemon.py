@@ -5,10 +5,10 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
-from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
-from .auto_observe_scenarios import auto_observe_scenarios
-from .multi_code_location_scenarios import multi_code_location_scenarios
-from .scenarios import ASSET_RECONCILIATION_SCENARIOS
+from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
+from .scenarios.auto_observe_scenarios import auto_observe_scenarios
+from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
+from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
 @pytest.fixture

@@ -115,7 +115,7 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
 
 
 def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
-    from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
+    from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.exotic_partition_mapping_scenarios import (
         root_assets_different_partitions_same_downstream,
     )
 
