@@ -2,20 +2,20 @@
 version: "3.8"
 
 services:
-  # This service runs dagit. It has no user code; instead it loads its
+  # This service runs dagster-webserver. It has no user code; instead it loads its
   # jobs from the gRPC server running in the user_code service.
   # Because our instance uses the QueuedRunCoordinator, any runs submitted from
-  # dagit will be put on a queue and later dequeued and launched by
+  # the websever will be put on a queue and later dequeued and launched by
   # the dagster-daemon service.
-  dagit:
+  webserver:
     platform: linux/amd64
     build:
       context: .
       dockerfile: ./Dockerfile
-      target: dagit
-    image: "$REGISTRY_URL/deploy_ecs/dagit"
-    container_name: dagit
-    command: "dagit -h 0.0.0.0 -p 3000 -w workspace.yaml"
+      target: webserver
+    image: "$REGISTRY_URL/deploy_ecs/webserver"
+    container_name: webserver
+    command: "dagster-webserver -h 0.0.0.0 -p 3000 -w workspace.yaml"
     ports:
       - "3000:3000"
     environment:

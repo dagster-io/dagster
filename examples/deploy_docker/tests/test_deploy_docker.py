@@ -126,7 +126,7 @@ def test_deploy_docker():
 
         start_time = time.time()
 
-        webserver_host = os.environ.get("DEPLOY_DOCKER_DAGIT_HOST", "localhost")
+        webserver_host = os.environ.get("DEPLOY_DOCKER_WEBSERVER_HOST", "localhost")
 
         while True:
             if time.time() - start_time > 15:
