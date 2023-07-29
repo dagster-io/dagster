@@ -172,7 +172,7 @@ def sensor_raises_dagster_error(_):
     raise DagsterError("Dagster error")
 
 
-@repository
+@repository(metadata={"string": "foo", "integer": 123})
 def bar_repo():
     return {
         "jobs": {

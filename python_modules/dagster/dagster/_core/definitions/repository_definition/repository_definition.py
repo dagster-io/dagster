@@ -24,6 +24,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -36,9 +37,6 @@ from dagster._utils import hash_collection
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
-    SINGLETON_REPOSITORY_NAME as SINGLETON_REPOSITORY_NAME,
-    VALID_REPOSITORY_DATA_DICT_KEYS as VALID_REPOSITORY_DATA_DICT_KEYS,
-    PendingRepositoryListDefinition as PendingRepositoryListDefinition,
     RepositoryListDefinition as RepositoryListDefinition,
 )
 
@@ -91,6 +89,7 @@ class RepositoryDefinition:
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
+        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the repository.
     """
 
     def __init__(
@@ -99,6 +98,7 @@ class RepositoryDefinition:
         *,
         repository_data,
         description=None,
+        metadata=None,
         repository_load_data=None,
     ):
         self._name = check_valid_name(name)
@@ -106,6 +106,7 @@ class RepositoryDefinition:
         self._repository_data: RepositoryData = check.inst_param(
             repository_data, "repository_data", RepositoryData
         )
+        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )
@@ -125,6 +126,12 @@ class RepositoryDefinition:
     def description(self) -> Optional[str]:
         """Optional[str]: A human-readable description of the repository."""
         return self._description
+
+    @public
+    @property
+    def metadata(self) -> Optional[MetadataMapping]:
+        """Optional[MetadataMapping]: Arbitrary metadata for the repository."""
+        return self._metadata
 
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
@@ -392,6 +399,7 @@ class PendingRepositoryDefinition:
             Union[RepositoryListDefinition, "CacheableAssetsDefinition"]
         ],
         description: Optional[str] = None,
+        metadata: Optional[MetadataMapping] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -406,6 +414,7 @@ class PendingRepositoryDefinition:
         )
         self._name = name
         self._description = description
+        self._metadata = metadata
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
@@ -463,6 +472,7 @@ class PendingRepositoryDefinition:
             self._name,
             repository_data=repository_data,
             description=self._description,
+            metadata=self._metadata,
             repository_load_data=repository_load_data,
         )
 
