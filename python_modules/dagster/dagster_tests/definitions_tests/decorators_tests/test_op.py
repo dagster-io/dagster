@@ -1086,7 +1086,7 @@ def test_output_generic_correct_inner_type():
         DagsterInvariantViolationError,
         match=(
             'Error with output for op "the_op_not_using_output": output '
-            "'result' has generic output annotation, but did not receive an Output "
+            "'result' has generic Output annotation, but did not receive Output "
             "object for this output."
         ),
     ):
@@ -1095,8 +1095,8 @@ def test_output_generic_correct_inner_type():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "output 'result' has generic output annotation, but did not "
-            "receive an Output object for this output."
+            "output 'result' has generic Output annotation, but did not "
+            "receive Output object for this output."
         ),
     ):
         the_op_not_using_output()
@@ -1562,7 +1562,7 @@ def test_dynamic_output_bad_list_entry():
         DagsterInvariantViolationError,
         match=(
             "Error with output for op \"basic_multi_output\": output 'out1' "
-            "has generic output annotation, but did not receive an Output object "
+            "has generic Output annotation, but did not receive Output object "
             "for this output. Received instead an object of type <class 'int'>."
         ),
     ):
@@ -1572,7 +1572,7 @@ def test_dynamic_output_bad_list_entry():
         DagsterInvariantViolationError,
         match=(
             "Error with output for op \"basic_multi_output\": output 'out1' "
-            "has generic output annotation, but did not receive an Output object "
+            "has generic Output annotation, but did not receive Output object "
             "for this output. Received instead an object of type <class 'int'>."
         ),
     ):

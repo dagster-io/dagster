@@ -26,6 +26,7 @@ from dagster._core.definitions import (
     Output,
 )
 from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.events import PartitionedOutput
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
@@ -191,7 +192,7 @@ def execute_core_compute(
     emitted_result_names = set()
     for step_output in _yield_compute_results(step_context, inputs, compute_fn):
         yield step_output
-        if isinstance(step_output, (DynamicOutput, Output)):
+        if isinstance(step_output, (DynamicOutput, Output, PartitionedOutput)):
             emitted_result_names.add(step_output.output_name)
 
     op_output_names = {output.name for output in step.step_outputs}

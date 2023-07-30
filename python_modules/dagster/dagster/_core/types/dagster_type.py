@@ -10,6 +10,7 @@ from typing import (
     Optional as TypingOptional,
     Sequence,
     Type as TypingType,
+    Union,
     cast,
 )
 
@@ -23,7 +24,7 @@ from dagster._config import (
     ConfigType,
     Noneable as ConfigNoneable,
 )
-from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
+from dagster._core.definitions.events import DynamicOutput, Output, PartitionedOutput, TypeCheck
 from dagster._core.definitions.metadata import (
     MetadataValue,
     RawMetadataValue,
@@ -951,8 +952,12 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
     return False
 
 
-def is_generic_output_annotation(dagster_type: object) -> bool:
-    return dagster_type == Output or get_origin(dagster_type) == Output
+def is_generic_output_annotation(
+    dagster_type: object,
+    target_type: TypingOptional[Union[TypingType[Output], TypingType[PartitionedOutput]]] = None,
+) -> bool:
+    target_types = [target_type] if target_type else [Output, PartitionedOutput]
+    return dagster_type == Output or get_origin(dagster_type) in target_types
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:

@@ -5,16 +5,18 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
     Generic,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
-    TypeVar,
     Union,
     cast,
 )
+
+from typing_extensions import TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
@@ -26,6 +28,7 @@ from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
+    MetadataByPartitionMapping,
     MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
@@ -298,6 +301,71 @@ class Output(Generic[T]):
             and self.output_name == other.output_name
             and self.metadata == other.metadata
         )
+
+
+U = TypeVar("U", default=Mapping[str, Any])
+
+
+class PartitionedOutput(Generic[U]):
+    """Event corresponding to an op output representing multiple partitions.
+
+    Op compute functions must explicitly yield events of this type when they are returning a value
+    representing multiple partitions that will be processed by `UPathIOManager` or one of its
+    descendants.
+
+    Args:
+        value (U): The value returned by the compute function. Most often this will be a dictionary
+            or similar structure where the output values for individual partitions are indexed.
+        output_name (Optional[str]): Name of the corresponding out. (default:
+            "result")
+        metadata_by_partition (Optional[Dict[str, Dict[str, RawMetadataValue]]]):
+            Arbitrary metadata associated with each output partition. Top-level keys are partition
+            keys. Values are metadata dictionaries.
+        data_version (Optional[DataVersion]): (Experimental):
+            Data versions to associate with each partition. Top-level keys are partition keys,
+            values are `DataVersion` objects. This is only valid when the `PartitionedOutput` is
+            being used for an asset.
+    """
+
+    def __init__(
+        self,
+        value: U,
+        output_name: Optional[str] = DEFAULT_OUTPUT,
+        metadata_by_partition: Optional[Mapping[str, Mapping[str, RawMetadataValue]]] = None,
+        data_version_by_partition: Optional[Mapping[str, DataVersion]] = None,
+    ):
+        self._value = value
+        self._output_name = check.str_param(output_name, "output_name")
+        if data_version_by_partition is not None:
+            experimental_class_param_warning("data_version", "PartitionedOutput")
+        self._data_version_by_partition = check.opt_mapping_param(
+            data_version_by_partition, "data_version_by_partition", str, DataVersion
+        )
+        self._metadata_by_partition: Dict[str, MetadataMapping] = {}
+        for k, v in check.opt_mapping_param(
+            metadata_by_partition, "metadata_by_partition", key_type=str
+        ).items():
+            self._metadata_by_partition[k] = normalize_metadata(v)
+
+    @public
+    @property
+    def metadata_by_partition(self) -> MetadataByPartitionMapping:
+        return self._metadata_by_partition
+
+    @public
+    @property
+    def value(self) -> U:
+        return self._value
+
+    @public
+    @property
+    def output_name(self) -> str:
+        return self._output_name
+
+    @public
+    @property
+    def data_version_by_partition(self) -> Optional[Mapping[str, DataVersion]]:
+        return self._data_version_by_partition
 
 
 class DynamicOutput(Generic[T]):

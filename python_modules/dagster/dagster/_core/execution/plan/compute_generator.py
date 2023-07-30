@@ -27,6 +27,7 @@ from dagster._core.definitions import (
     OutputDefinition,
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+from dagster._core.definitions.events import PartitionedOutput
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
@@ -176,7 +177,9 @@ def _get_annotation_for_output_position(
 
 
 def _check_output_object_name(
-    output: Union[DynamicOutput, Output], output_def: OutputDefinition, position: int
+    output: Union[DynamicOutput, Output, PartitionedOutput],
+    output_def: OutputDefinition,
+    position: int,
 ) -> None:
     from dagster._core.definitions.events import DEFAULT_OUTPUT
 
@@ -247,7 +250,7 @@ def validate_and_coerce_op_result_to_iterator(
                         )
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
-                    annotation
+                    annotation, Output
                 ):
                     raise DagsterInvariantViolationError(
                         f"Error with output for {context.describe_op()}: received Output object for"
@@ -265,14 +268,40 @@ def validate_and_coerce_op_result_to_iterator(
                         metadata=element.metadata,
                         data_version=element.data_version,
                     )
+            elif isinstance(element, PartitionedOutput):
+                if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
+                    annotation, PartitionedOutput
+                ):
+                    raise DagsterInvariantViolationError(
+                        f"Error with output for {context.describe_op()}: received PartitionedOutput"
+                        f" object for output '{output_def.name}' which does not have an"
+                        f" PartitionedOutput annotation. Annotation has type {annotation}."
+                    )
+                _check_output_object_name(element, output_def, position)
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+
+                    yield PartitionedOutput(
+                        output_name=output_def.name,
+                        value=element.value,
+                        metadata_by_partition=element.metadata_by_partition,
+                        data_version_by_partition=element.data_version_by_partition,
+                    )
+
             else:
                 # If annotation indicates a generic output annotation, and an
                 # output object was not received, throw an error.
-                if is_generic_output_annotation(annotation):
+                expects_output = is_generic_output_annotation(annotation, Output)
+                expects_partitioned_output = is_generic_output_annotation(
+                    annotation, PartitionedOutput
+                )
+                if expects_output or expects_partitioned_output:
+                    target_type = "Output" if expects_output else "PartitionedOutput"
                     raise DagsterInvariantViolationError(
                         f"Error with output for {context.describe_op()}: output "
-                        f"'{output_def.name}' has generic output annotation, "
-                        "but did not receive an Output object for this output. "
+                        f"'{output_def.name}' has generic {target_type} annotation, "
+                        f"but did not receive {target_type} object for this output. "
                         f"Received instead an object of type {type(element)}."
                     )
                 if result is None and output_def.is_required is False:
