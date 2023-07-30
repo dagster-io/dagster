@@ -29,9 +29,12 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
+    MetadataByPartitionMapping,
     MetadataFieldSerializer,
     MetadataValue,
     RawMetadataValue,
+    flatten_metadata_by_partition,
+    is_metadata_by_partition_mapping,
     normalize_metadata,
 )
 from dagster._core.errors import HookExecutionError
@@ -1243,7 +1246,7 @@ class DagsterEvent(
         output_name: str,
         manager_key: str,
         message_override: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, Mapping[str, MetadataValue]]] = None,
     ) -> "DagsterEvent":
         message = f'Handled output "{output_name}" using IO manager "{manager_key}"'
         return DagsterEvent.from_step(
@@ -1252,7 +1255,7 @@ class DagsterEvent(
             event_specific_data=HandledOutputData(
                 output_name=output_name,
                 manager_key=manager_key,
-                metadata=metadata if metadata else {},
+                metadata=metadata,
             ),
             message=message_override or message,
         )
@@ -1661,15 +1664,21 @@ class HandledOutputData(
         cls,
         output_name: str,
         manager_key: str,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Union[Mapping[str, MetadataValue], MetadataByPartitionMapping]] = None,
     ):
+        metadata_dict = check.opt_mapping_param(metadata, "metadata")
+        # Need to flatten to a depth-1 dict for backcompat
+        flattened_metadata = (
+            normalize_metadata(flatten_metadata_by_partition(metadata_dict))
+            if is_metadata_by_partition_mapping(metadata_dict)  # type: ignore  # (pyright bug)
+            else metadata_dict
+        )
+
         return super(HandledOutputData, cls).__new__(
             cls,
             output_name=check.str_param(output_name, "output_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
-            metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
-            ),
+            metadata=flattened_metadata,  # type: ignore  # (pyright bug)
         )
 
 

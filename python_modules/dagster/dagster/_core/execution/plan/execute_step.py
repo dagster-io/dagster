@@ -38,7 +38,10 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
+    NO_PARTITION_METADATA_KEY,
+    MetadataByPartitionMapping,
     MetadataValue,
+    get_metadata_for_partition,
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -64,7 +67,8 @@ from dagster._core.execution.resolve_versions import resolve_step_output_version
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
-from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
+from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.merger import merge_dicts
 from dagster._utils.timing import time_execution_scope
 
 from .compute import OpOutputUnion
@@ -485,10 +489,14 @@ def _get_output_asset_materializations(
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
-    io_manager_metadata: Mapping[str, MetadataValue],
+    io_manager_metadata: MetadataByPartitionMapping,
     step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
-    all_metadata = {**output.metadata, **io_manager_metadata}
+    all_metadata = {**io_manager_metadata}
+    all_metadata[NO_PARTITION_METADATA_KEY] = {
+        **io_manager_metadata.get(NO_PARTITION_METADATA_KEY, {}),
+        **output.metadata,
+    }
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
@@ -533,18 +541,21 @@ def _get_output_asset_materializations(
                     if isinstance(partition, MultiPartitionKey)
                     else {}
                 )
-
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata=all_metadata,
+                    metadata=get_metadata_for_partition(all_metadata, partition),
                     tags=tags,
                 )
     else:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=DeprecationWarning)
 
-            yield AssetMaterialization(asset_key=asset_key, metadata=all_metadata, tags=tags)
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                metadata=all_metadata.get(NO_PARTITION_METADATA_KEY, {}),
+                tags=tags,
+            )
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
@@ -613,7 +624,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata: Dict[str, MetadataValue] = {}
+    manager_metadata: Dict[str, Mapping[str, MetadataValue]] = {}
 
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to
@@ -646,16 +657,11 @@ def _store_output(
         for event in output_context.consume_events():
             yield event
 
-        manager_metadata = {**manager_metadata, **output_context.consume_logged_metadata()}
+        manager_metadata = merge_dicts(manager_metadata, output_context.consume_logged_metadata())
         if isinstance(elt, DagsterEvent):
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, dict):  # should remove this?
-            experimental_functionality_warning(
-                "Yielding metadata from an IOManager's handle_output() function"
-            )
-            manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
         else:
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
@@ -666,10 +672,12 @@ def _store_output(
     for event in output_context.consume_events():
         yield event
 
-    manager_metadata = {**manager_metadata, **output_context.consume_logged_metadata()}
+    manager_metadata = merge_dicts(manager_metadata, output_context.consume_logged_metadata())
     # do not alter explicitly created AssetMaterializations
     for mgr_materialization in manager_materializations:
-        if mgr_materialization.metadata and manager_metadata:
+        metadata_key = mgr_materialization.partition or NO_PARTITION_METADATA_KEY
+        scoped_manager_metadata = manager_metadata.get(metadata_key, {})
+        if mgr_materialization.metadata and scoped_manager_metadata:
             raise DagsterInvariantViolationError(
                 f"When handling output '{output_context.name}' of"
                 f" {output_context.op_def.node_type_str} '{output_context.op_def.name}', received a"
@@ -685,7 +693,7 @@ def _store_output(
                 materialization = AssetMaterialization(
                     asset_key=mgr_materialization.asset_key,
                     description=mgr_materialization.description,
-                    metadata=manager_metadata,
+                    metadata=scoped_manager_metadata,
                     partition=mgr_materialization.partition,
                 )
         else:

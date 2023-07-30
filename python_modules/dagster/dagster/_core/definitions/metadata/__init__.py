@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Self, TypeAlias, TypeVar
+from typing_extensions import Self, TypeAlias, TypeGuard, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
@@ -966,6 +966,49 @@ class MetadataFieldSerializer(FieldSerializer):
         context: UnpackContext,
     ) -> Mapping[str, MetadataValue]:
         return {e.label: e.entry_data for e in metadata_entries}
+
+
+MetadataByPartitionMapping: TypeAlias = Mapping[str, Mapping[str, MetadataValue]]
+
+# This is used as a key in dictionaries (in e.g. the output context) that store metadata keyed by
+# partition-- it represents the case where no partition is specified.
+NO_PARTITION_METADATA_KEY = "__NO_PARTITION"
+
+
+def is_metadata_by_partition_mapping(
+    mapping: Union[Mapping[str, MetadataValue], MetadataByPartitionMapping]
+) -> TypeGuard[MetadataByPartitionMapping]:
+    return NO_PARTITION_METADATA_KEY in mapping
+
+
+def flatten_metadata_by_partition(
+    metadata_by_partition: MetadataByPartitionMapping,
+) -> Mapping[str, MetadataValue]:
+    # This is an unpartitioned output
+    if set(metadata_by_partition.keys()) == {NO_PARTITION_METADATA_KEY}:
+        return metadata_by_partition.get(NO_PARTITION_METADATA_KEY, {})
+    # For partitioned output, make a flat dict with keys of form `<partition>/<metadata-key>`
+    else:
+        common_metadata = metadata_by_partition.get(NO_PARTITION_METADATA_KEY) or {}
+        keys = [k for k in metadata_by_partition.keys() if k is not NO_PARTITION_METADATA_KEY]
+        flattened: Dict[str, MetadataValue] = {}
+        for partition_key in keys:
+            metadata_for_partition = {
+                **common_metadata,
+                **metadata_by_partition.get(partition_key, {}),
+            }
+            for inner_key, val in metadata_for_partition.items():
+                flattened[f"{partition_key}/{inner_key}"] = val
+        return flattened
+
+
+def get_metadata_for_partition(
+    metadata_by_partition: MetadataByPartitionMapping, partition_key: str
+) -> Mapping[str, MetadataValue]:
+    return {
+        **metadata_by_partition.get(NO_PARTITION_METADATA_KEY, {}),
+        **metadata_by_partition.get(partition_key, {}),
+    }
 
 
 T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)

@@ -849,7 +849,6 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield {"baz": "baz"}
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
@@ -869,18 +868,18 @@ def test_context_logging_metadata():
     output_event = result.all_node_events[4]
     metadata = output_event.event_specific_data.metadata
     # Ensure that ordering is preserved among yields and calls to log
-    assert set(metadata.keys()) == {"foo", "baz", "bar"}
+    assert set(metadata.keys()) == {"foo", "bar"}
 
     materialization_event = result.all_node_events[2]
     metadata = materialization_event.event_specific_data.materialization.metadata
 
-    assert len(metadata) == 3
-    assert set(metadata.keys()) == {"foo", "baz", "bar"}
+    assert len(metadata) == 2
+    assert set(metadata.keys()) == {"foo", "bar"}
 
     implicit_materialization_event = result.all_node_events[3]
     metadata = implicit_materialization_event.event_specific_data.materialization.metadata
-    assert len(metadata) == 3
-    assert set(metadata.keys()) == {"foo", "baz", "bar"}
+    assert len(metadata) == 2
+    assert set(metadata.keys()) == {"foo", "bar"}
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -934,7 +933,7 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
-            yield {"handle_output": "I come from handle_output"}
+            context.add_output_metadata({"handle_output": "I come from handle_output"})
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_identifier())

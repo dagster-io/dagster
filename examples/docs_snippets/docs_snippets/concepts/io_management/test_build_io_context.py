@@ -11,6 +11,7 @@ from dagster import (
     resource,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.output import NO_PARTITION_METADATA_KEY
 
 
 def test_basic_build_input_context():
@@ -118,7 +119,7 @@ def test_context_logging_metadata():
 
     context.add_output_metadata({"foo": "bar"})
 
-    assert "foo" in context.get_logged_metadata()
+    assert "foo" in context.get_logged_metadata()[NO_PARTITION_METADATA_KEY]
 
 
 def test_output_context_partition_key():

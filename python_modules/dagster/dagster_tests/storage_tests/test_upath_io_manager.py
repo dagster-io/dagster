@@ -37,6 +37,10 @@ from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from fsspec.asyn import AsyncFileSystem
 from pydantic import (
@@ -376,6 +380,41 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(
         resources={"io_manager": dummy_io_manager},
     )
     assert result.output_for_node("daily_asset").endswith("2022-01-01")
+
+
+def test_multiple_partition_output(
+    start: datetime,
+    daily: DailyPartitionsDefinition,
+    hourly: HourlyPartitionsDefinition,
+    dummy_io_manager: DummyIOManager,
+):
+    @asset(partitions_def=hourly)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(partitions_def=daily)
+    def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
+        return {"2022-01-01": "ok", "2022-01-02": "ok"}
+
+    result = materialize(
+        [*upstream_asset.to_source_assets(), downstream_asset],
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: start.strftime(daily.fmt),
+            ASSET_PARTITION_RANGE_END_TAG: (start + timedelta(days=1)).strftime(daily.fmt),
+        },
+        resources={"io_manager": dummy_io_manager},
+    )
+    mats = sorted(
+        result.asset_materializations_for_node("downstream_asset"),
+        key=lambda m: str(m.metadata["path"].value),
+    )
+    assert len(mats) == 2
+    path_1 = mats[0].metadata["path"].value
+    assert isinstance(path_1, str)
+    assert path_1.endswith("downstream_asset/2022-01-01")
+    path_2 = mats[1].metadata["path"].value
+    assert isinstance(path_2, str)
+    assert path_2.endswith("downstream_asset/2022-01-02")
 
 
 def test_user_forgot_dict_type_annotation_for_multiple_partitions(

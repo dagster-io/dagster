@@ -205,10 +205,10 @@ class UPathIOManager(MemoizableIOManager):
 
         asset_path = self._get_path_without_extension(context)
         return {
-            partition_key: self._with_extension(
-                self.get_path_for_partition(context, asset_path, partition)
+            key: self._with_extension(
+                self.get_path_for_partition(context, asset_path, formatted_key)
             )
-            for partition_key, partition in formatted_partition_keys.items()
+            for key, formatted_key in formatted_partition_keys.items()
         }
 
     def _get_multipartition_backcompat_paths(
@@ -435,11 +435,21 @@ class UPathIOManager(MemoizableIOManager):
             return None
 
         if context.has_asset_partitions:
-            paths = self._get_paths_for_partitions(context)
-            assert len(paths) == 1
-            path = list(paths.values())[0]
+            asset_partition_keys = context.asset_partition_keys
+            if len(asset_partition_keys) > 1:
+                self._handle_multiple_outputs(context, obj)
+            else:
+                paths = self._get_paths_for_partitions(context)
+                assert len(paths) == 1
+                key, path = list(paths.items())[0]
+                self._dump_one_output(context, path, obj, key)
         else:
             path = self._get_path(context)
+            self._dump_one_output(context, path, obj)
+
+    def _dump_one_output(
+        self, context: OutputContext, path: "UPath", obj: Any, partition_key: Optional[str] = None
+    ):
         self.make_directory(path.parent)
         context.log.debug(self.get_writing_output_log_message(path))
         self.dump_to_path(context=context, obj=obj, path=path)
@@ -448,7 +458,12 @@ class UPathIOManager(MemoizableIOManager):
         custom_metadata = self.get_metadata(context=context, obj=obj)
         metadata.update(custom_metadata)  # type: ignore
 
-        context.add_output_metadata(metadata)
+        context.add_output_metadata(metadata, partition_key=partition_key)
+
+    def _handle_multiple_outputs(self, context: OutputContext, obj: Dict[str, Any]):
+        paths = self._get_paths_for_partitions(context)
+        for key, path in paths.items():
+            self._dump_one_output(context, path, obj[key], key)
 
 
 def is_dict_type(type_obj) -> bool:

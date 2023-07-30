@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ContextManager,
+    Dict,
     Iterator,
     List,
     Mapping,
@@ -22,7 +23,9 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
 )
 from dagster._core.definitions.metadata import (
+    NO_PARTITION_METADATA_KEY,
     ArbitraryMetadataMapping,
+    MetadataByPartitionMapping,
     MetadataValue,
     RawMetadataValue,
 )
@@ -69,7 +72,7 @@ class OutputContext:
     _job_name: Optional[str]
     _run_id: Optional[str]
     _metadata: ArbitraryMetadataMapping
-    _user_generated_metadata: Mapping[str, MetadataValue]
+    _user_generated_metadata: Dict[str, Mapping[str, MetadataValue]]
     _mapping_key: Optional[str]
     _config: object
     _op_def: Optional["OpDefinition"]
@@ -411,6 +414,24 @@ class OutputContext:
 
     @public
     @property
+    def has_multiple_asset_partitions(self) -> bool:
+        """Returns True if this output represents multiple partitions for an associated asset."""
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.has_multiple_asset_partitions"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        return (
+            self._step_context is not None
+            and self._step_context.has_asset_partitions_for_output(self.name)
+            and len(self.asset_partition_keys) > 1
+        )
+
+    @public
+    @property
     def asset_partition_key(self) -> str:
         """The partition key for output asset.
 
@@ -666,10 +687,17 @@ class OutputContext:
         return self._user_events
 
     @public
-    def add_output_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> None:
+    def add_output_metadata(
+        self, metadata: Mapping[str, RawMetadataValue], partition_key: Optional[str] = None
+    ) -> None:
         """Add a dictionary of metadata to the handled output.
 
-        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
+        When an output represents multiple partitions, a partition key can be provided to assign
+        metadata to a particular partition. If the output has multiple partitions and no partition
+        key is passed, an error will be raised.
+
+        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events
+        associated with the output.
 
         Args:
             metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
@@ -685,26 +713,31 @@ class OutputContext:
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
-        overlapping_labels = set(self._user_generated_metadata.keys()) & metadata.keys()
+        if self.has_multiple_asset_partitions and partition_key is None:
+            raise DagsterInvariantViolationError("No partition key provided for output metadata.")
+
+        storage_key = NO_PARTITION_METADATA_KEY if partition_key is None else partition_key
+        existing_metadata = self._user_generated_metadata.get(storage_key, {})
+        overlapping_labels = set(existing_metadata.keys()) & metadata.keys()
         if overlapping_labels:
             raise DagsterInvalidMetadata(
                 f"Tried to add metadata for key(s) that already have metadata: {overlapping_labels}"
             )
 
-        self._user_generated_metadata = {
-            **self._user_generated_metadata,
+        self._user_generated_metadata[storage_key] = {
+            **existing_metadata,
             **normalize_metadata(metadata),
         }
 
     def get_logged_metadata(
         self,
-    ) -> Mapping[str, MetadataValue]:
+    ) -> MetadataByPartitionMapping:
         """Get the mapping of metadata entries that have been logged for use with this output."""
         return self._user_generated_metadata
 
     def consume_logged_metadata(
         self,
-    ) -> Mapping[str, MetadataValue]:
+    ) -> MetadataByPartitionMapping:
         """Pops and yields all user-generated metadata entries that have been recorded from this context.
 
         If consume_logged_metadata has not yet been called, this will yield all logged events since
@@ -714,7 +747,7 @@ class OutputContext:
         """
         result = self._user_generated_metadata
         self._user_generated_metadata = {}
-        return result or {}
+        return result
 
 
 def get_output_context(
