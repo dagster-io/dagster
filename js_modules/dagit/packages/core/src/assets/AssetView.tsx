@@ -77,6 +77,7 @@ export interface AssetViewParams {
   partition?: string;
   time?: string;
   asOf?: string;
+  evaluation?: string;
 }
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {

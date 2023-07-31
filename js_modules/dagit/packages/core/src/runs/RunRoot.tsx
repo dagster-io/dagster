@@ -6,6 +6,7 @@ import {useParams} from 'react-router-dom';
 import {formatElapsedTime} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -18,6 +19,7 @@ import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
+import {DagsterTag} from './RunTag';
 import {assetKeysForRun} from './RunUtils';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 
@@ -42,6 +44,11 @@ export const RunRoot = () => {
   const isJob = React.useMemo(
     () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
+  );
+
+  const automaterializeTag = React.useMemo(
+    () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
+    [run],
   );
 
   return (
@@ -135,6 +142,12 @@ export const RunRoot = () => {
                         </span>
                       </Tag>
                     </Popover>
+                  ) : null}
+                  {automaterializeTag && run.assetSelection?.length ? (
+                    <AutomaterializeTagWithEvaluation
+                      assetKeys={run.assetSelection}
+                      evaluationId={automaterializeTag.value}
+                    />
                   ) : null}
                 </Box>
               </>

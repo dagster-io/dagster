@@ -24,6 +24,7 @@ export enum DagsterTag {
   AssetEventDataVersion = 'dagster/data_version',
   AssetEventDataVersionDeprecated = 'dagster/logical_version',
   AssetEventCodeVersion = 'dagster/code_version',
+  AssetEvaluationID = 'dagster/asset_evaluation_id',
   SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
   User = 'user',
 
