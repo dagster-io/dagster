@@ -318,9 +318,6 @@ class AssetDaemonContext:
                 will_update_parents_by_asset_partition[asset_partition].add(parent_key)
                 has_parents_that_will_update.add(asset_partition)
 
-        print("%" * 2000)
-        print(asset_key)
-        print(self.get_asset_partitions_with_newly_updated_parents_for_key(asset_key))
         # next, for each asset partition of this asset which has newly-updated parents, or
         # has a parent that will update, create a ParentMaterializedAutoMaterializeCondition
         has_or_will_update = (
@@ -341,7 +338,6 @@ class AssetDaemonContext:
             ) = self.instance_queryer.get_updated_and_missing_parent_asset_partitions(
                 asset_partition,
                 parent_asset_partitions,
-                check_asset_version=len(has_or_will_update) < 10,
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
