@@ -280,7 +280,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
         # ensure at least 1 method is provided
         check.invariant(
-            auths_set > 0,
+            auths_set > 0 or values.get("authenticator") is not None,
             (
                 "Missing config: Password or private key authentication required for Snowflake"
                 " resource."
@@ -289,7 +289,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
         # ensure that only 1 method is provided
         check.invariant(
-            auths_set == 1,
+            auths_set <= 1,
             (
                 "Incorrect config: Cannot provide both password and private key authentication to"
                 " Snowflake Resource."
@@ -368,6 +368,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         ):
             # sqlalchemy passes private key args separately, so store them in a new dict
             sqlalchemy_engine_args["private_key"] = self._snowflake_private_key(config)
+        if config.get("authenticator", None) is not None:
+            sqlalchemy_engine_args["authenticator"] = config["authenticator"]
 
         return sqlalchemy_engine_args
 

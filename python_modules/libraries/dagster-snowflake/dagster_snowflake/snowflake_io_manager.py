@@ -216,6 +216,10 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
+    authenticator: Optional[str] = Field(
+        default=None,
+        description="Optional parameter to specify the authentication mechanism to use.",
+    )
 
     @staticmethod
     @abstractmethod
