@@ -156,7 +156,7 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_group(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+                    def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
                         return "custom_group_prefix" + node_info.get("config", {}).get("group")
         """
         return default_group_from_dbt_resource_props(dbt_resource_props)
