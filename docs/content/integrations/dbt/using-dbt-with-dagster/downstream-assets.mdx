@@ -13,12 +13,12 @@ description: Dagster can orchestrate dbt alongside other technologies.
   tutorial.
 </Note>
 
-By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project), [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models), and [created assets upstream of your dbt models](/integrations/dbt/using-dbt-with-dagster/upstream-assets).
+By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project), [loaded dbt models into Dagster as assets](/integrations/dbt/using-dbt-with-dagster/load-dbt-models), and [defined assets upstream of your dbt models](/integrations/dbt/using-dbt-with-dagster/upstream-assets).
 
 In this step, you'll:
 
-- [Install the plotly library](#step-1-create-the-order_count_chart-asset)
-- [Create a downstream asset that computes a chart using plotly](#step-2-create-the-order_count_chart-asset)
+- [Install the plotly library](#step-1-install-the-plotly-library)
+- [Define a downstream asset that computes a chart using plotly](#step-2-define-the-order_count_chart-asset)
 - [Materialize the `order_count_chart` asset](#step-3-materialize-the-order_count_chart-asset)
 
 ---
@@ -29,11 +29,13 @@ In this step, you'll:
 pip install plotly
 ```
 
-## Step 2: Create the order_count_chart asset
+---
 
-You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll create a Dagster asset called `order_count_chart` that uses the data in the `customers` dbt model to computes a plotly chart of the number of orders per customer.
+## Step 2: Define the order_count_chart asset
 
-Like the `raw_customers` asset that we added in the [previous section](/integrations/dbt/using-dbt-with-dagster/upstream-assets#create-upstream-dagster-assets), we'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory.
+You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll define a Dagster asset called `order_count_chart` that uses the data in the `customers` dbt model to computes a plotly chart of the number of orders per customer.
+
+Like the `raw_customers` asset that we added in the [previous section](/integrations/dbt/using-dbt-with-dagster/upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory.
 
 To add the `order_count_chart` asset:
 
@@ -98,7 +100,7 @@ To add the `order_count_chart` asset:
 
 ---
 
-## Step 2: Materialize the order_count_chart asset
+## Step 3: Materialize the order_count_chart asset
 
 If the Dagster UI is still running from the previous section, you can just click the "Reload Definitions" button in the upper right corner. If you shut it down, then you can launch it again with the same command from the previous section:
 
