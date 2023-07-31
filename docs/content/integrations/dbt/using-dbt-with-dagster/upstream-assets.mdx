@@ -42,7 +42,7 @@ pip install pandas duckdb
 
 ## Step 2: Define an upstream Dagster asset
 
-To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that loads our dbt models, which we reviewed at the end of the [last section](/integrations/dbt/using-dbt-with-dagster/load-dbt-models#understand-the-python-code-in-your-dagster-project). Copy and paste this code into that file, replacing everything up to `dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))`:
+To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that loads our dbt models, which we reviewed at the end of the [last section](/integrations/dbt/using-dbt-with-dagster/load-dbt-models#step-5-understand-the-python-code-in-your-dagster-project). Copy and paste this code into that file, replacing everything up to `dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))`:
 
 ```python file=integrations/dbt/tutorial/upstream_assets/definitions.py startafter=start_python_assets endbefore=end_python_assets
 import os
