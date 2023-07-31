@@ -17,6 +17,8 @@ from typing import (
     cast,
 )
 
+import pendulum
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import (
@@ -29,8 +31,6 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
-from dagster._utils.cached_method import cached_method
-import pendulum
 
 from .partition import (
     DefaultPartitionsSubset,

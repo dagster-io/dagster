@@ -30,7 +30,6 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes

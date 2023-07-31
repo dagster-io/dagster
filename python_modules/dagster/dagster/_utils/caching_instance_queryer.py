@@ -7,7 +7,6 @@ from typing import (
     Dict,
     FrozenSet,
     Iterable,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -278,7 +277,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
                 greater than this value will be considered.
         """
-
         if not self.asset_graph.is_source(asset_partition.asset_key):
             asset_record = self.get_asset_record(asset_partition.asset_key)
             if (
