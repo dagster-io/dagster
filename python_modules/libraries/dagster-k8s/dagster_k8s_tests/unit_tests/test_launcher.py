@@ -202,7 +202,10 @@ def test_launcher_with_k8s_config(kubeconfig_file):
     container_context_config = {
         "k8s": {
             "run_k8s_config": {
-                "container_config": {"command": ["echo", "REPLACED"]},
+                "container_config": {
+                    "command": ["echo", "REPLACED"],
+                    "args": ["&&", "shutdown.sh"],
+                },
             }
         }
     }
@@ -265,6 +268,10 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         # config from container context applied
         command = container.command
         assert command == ["echo", "REPLACED"]
+
+        args = container.args
+        assert args[-2] == "&&"
+        assert args[-1] == "shutdown.sh"
 
         # config from run launcher applied
         assert container.tty

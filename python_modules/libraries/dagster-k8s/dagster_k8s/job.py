@@ -714,7 +714,7 @@ def construct_dagster_k8s_job(
     container_config = copy.deepcopy(user_defined_k8s_config.container_config)
 
     if args is not None:
-        container_config["args"] = args
+        container_config["args"] = args + container_config["args"]
 
     user_defined_env_vars = container_config.pop("env", [])
 
