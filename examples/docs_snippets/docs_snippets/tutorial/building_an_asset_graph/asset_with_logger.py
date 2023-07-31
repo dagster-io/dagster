@@ -1,13 +1,19 @@
+import json  # noqa: I001
+
 import pandas as pd
 import requests
+from .assets_initial_state import topstory_ids
 
 # start_topstories_asset_with_logger
 from dagster import asset, get_dagster_logger
 
 
-@asset
-def topstories(topstory_ids):
+@asset(deps=[topstory_ids])
+def topstories() -> None:
     logger = get_dagster_logger()
+
+    with open("data/topstory_ids.json", "r") as f:
+        topstory_ids = json.load(f)
 
     results = []
     for item_id in topstory_ids:
@@ -20,8 +26,7 @@ def topstories(topstory_ids):
             logger.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
-
-    return df
+    df.to_csv("data/topstories.csv")
 
 
 # end_topstories_asset_with_logger

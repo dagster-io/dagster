@@ -123,6 +123,13 @@ export const AutomaterializeLeftList = (props: ListProps) => {
           </EvaluationListItem>
         );
       })}
+      <Box
+        border={{side: 'top', color: Colors.KeylineGray, width: 1}}
+        padding={{vertical: 20, horizontal: 12}}
+        margin={{top: 12}}
+      >
+        <Caption>Evaluations are retained for 1 week</Caption>
+      </Box>
     </Box>
   );
 };

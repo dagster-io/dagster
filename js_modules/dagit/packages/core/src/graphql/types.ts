@@ -1112,6 +1112,7 @@ export type FreshnessPolicy = {
   __typename: 'FreshnessPolicy';
   cronSchedule: Maybe<Scalars['String']>;
   cronScheduleTimezone: Maybe<Scalars['String']>;
+  lastEvaluationTimestamp: Maybe<Scalars['String']>;
   maximumLagMinutes: Scalars['Float'];
 };
 
@@ -1291,6 +1292,7 @@ export type Instance = {
   info: Maybe<Scalars['String']>;
   runLauncher: Maybe<RunLauncher>;
   runQueuingSupported: Scalars['Boolean'];
+  supportsConcurrencyLimits: Scalars['Boolean'];
 };
 
 export type InstigationEvent = {
@@ -2134,6 +2136,8 @@ export type ParentMaterializedAutoMaterializeCondition = AutoMaterializeConditio
   __typename: 'ParentMaterializedAutoMaterializeCondition';
   decisionType: AutoMaterializeDecisionType;
   partitionKeysOrError: Maybe<PartitionKeysOrError>;
+  updatedAssetKeys: Maybe<Array<AssetKey>>;
+  willUpdateAssetKeys: Maybe<Array<AssetKey>>;
 };
 
 export type ParentOutdatedAutoMaterializeCondition = AutoMaterializeConditionWithDecisionType & {
@@ -3156,6 +3160,7 @@ export type Run = PipelineRun & {
   endTime: Maybe<Scalars['Float']>;
   eventConnection: EventConnection;
   executionPlan: Maybe<ExecutionPlan>;
+  hasConcurrencyKeySlots: Scalars['Boolean'];
   hasDeletePermission: Scalars['Boolean'];
   hasReExecutePermission: Scalars['Boolean'];
   hasTerminatePermission: Scalars['Boolean'];
@@ -6206,6 +6211,10 @@ export const buildFreshnessPolicy = (
       overrides && overrides.hasOwnProperty('cronScheduleTimezone')
         ? overrides.cronScheduleTimezone!
         : 'recusandae',
+    lastEvaluationTimestamp:
+      overrides && overrides.hasOwnProperty('lastEvaluationTimestamp')
+        ? overrides.lastEvaluationTimestamp!
+        : 'neque',
     maximumLagMinutes:
       overrides && overrides.hasOwnProperty('maximumLagMinutes')
         ? overrides.maximumLagMinutes!
@@ -6584,6 +6593,10 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('runQueuingSupported')
         ? overrides.runQueuingSupported!
         : true,
+    supportsConcurrencyLimits:
+      overrides && overrides.hasOwnProperty('supportsConcurrencyLimits')
+        ? overrides.supportsConcurrencyLimits!
+        : false,
   };
 };
 
@@ -8235,6 +8248,12 @@ export const buildParentMaterializedAutoMaterializeCondition = (
         : relationshipsToOmit.has('PartitionKeys')
         ? ({} as PartitionKeys)
         : buildPartitionKeys({}, relationshipsToOmit),
+    updatedAssetKeys:
+      overrides && overrides.hasOwnProperty('updatedAssetKeys') ? overrides.updatedAssetKeys! : [],
+    willUpdateAssetKeys:
+      overrides && overrides.hasOwnProperty('willUpdateAssetKeys')
+        ? overrides.willUpdateAssetKeys!
+        : [],
   };
 };
 
@@ -10091,6 +10110,10 @@ export const buildRun = (
         : relationshipsToOmit.has('ExecutionPlan')
         ? ({} as ExecutionPlan)
         : buildExecutionPlan({}, relationshipsToOmit),
+    hasConcurrencyKeySlots:
+      overrides && overrides.hasOwnProperty('hasConcurrencyKeySlots')
+        ? overrides.hasConcurrencyKeySlots!
+        : true,
     hasDeletePermission:
       overrides && overrides.hasOwnProperty('hasDeletePermission')
         ? overrides.hasDeletePermission!

@@ -4,12 +4,12 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
+from typing import Any
 from unittest import mock
 
 import pendulum
 import pytest
 from dagster import (
-    Any,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -29,7 +29,6 @@ from dagster import (
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
-    build_asset_reconciliation_sensor,
     define_asset_job,
     load_assets_from_current_module,
     materialize,
@@ -61,6 +60,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
+    BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
     wait_for_futures,
@@ -861,75 +861,13 @@ def asset_sensor_repo():
         depends_on_source,
         the_job,
         monitor_source_asset_sensor,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_AND",
-            run_tags={"hello": "world"},
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(waits_on_sleep),
-            name="in_progress_condition_sensor",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(depends_on_source),
-            name="source_asset_sensor",
-        ),
     ]
 
 
-def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=75):
+FUTURES_TIMEOUT = 75
+
+
+def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=FUTURES_TIMEOUT):
     logger = get_default_daemon_logger("SensorDaemon")
     futures = {}
     list(
@@ -3302,3 +3240,98 @@ def test_code_location_construction():
         raise Exception("never executed")
 
     assert cross_code_location_sensor
+
+
+def test_stale_request_context(instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+
+    executor = ThreadPoolExecutor()
+    blocking_executor = BlockingThreadPoolExecutor()
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                external_sensor.get_external_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 0
+
+        futures = {}
+        list(
+            execute_sensor_iteration(
+                workspace_context,
+                get_default_daemon_logger("SensorDaemon"),
+                threadpool_executor=executor,
+                sensor_tick_futures=futures,
+            )
+        )
+        blocking_executor.allow()
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+    blocking_executor.block()
+    freeze_datetime = freeze_datetime.add(seconds=30)
+
+    with pendulum.test(freeze_datetime):
+        futures = {}
+        list(
+            execute_sensor_iteration(
+                workspace_context,
+                get_default_daemon_logger("SensorDaemon"),
+                threadpool_executor=executor,
+                sensor_tick_futures=futures,
+                submit_threadpool_executor=blocking_executor,
+            )
+        )
+
+        # Reload the workspace (and kill previous server) before unblocking the threads.
+        # This will cause failures if the threads do not refresh their request contexts.
+        p = workspace_context._grpc_server_registry._all_processes[0]  # noqa: SLF001
+        workspace_context.reload_workspace()
+        p.server_process.kill()
+        p.wait()
+
+        blocking_executor.allow()
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2
+
+        wait_for_all_runs_to_start(instance)
+        assert instance.get_runs_count() == 1, ticks[0].error
+        run = instance.get_runs()[0]
+        validate_run_started(run)
+
+        expected_datetime = create_pendulum_time(
+            year=2019, month=2, day=28, hour=0, minute=0, second=29
+        )
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id],
+        )

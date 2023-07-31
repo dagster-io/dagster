@@ -126,7 +126,7 @@ class RunRequest(
             Required for sensors that target multiple jobs.
         asset_selection (Optional[Sequence[AssetKey]]): A sequence of AssetKeys that should be
             launched with this run.
-        stale_assets_only (Optional[Sequence[AssetKey]]): Set to true to further narrow the asset
+        stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
         partition_key (Optional[str]): The partition key for this run request.

@@ -17,6 +17,8 @@ export type InstanceConcurrencyLimitsQuery = {
   instance: {
     __typename: 'Instance';
     id: string;
+    info: string | null;
+    supportsConcurrencyLimits: boolean;
     concurrencyLimits: Array<{
       __typename: 'ConcurrencyKeyInfo';
       concurrencyKey: string;

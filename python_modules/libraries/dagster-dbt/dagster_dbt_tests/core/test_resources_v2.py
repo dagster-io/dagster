@@ -1,17 +1,27 @@
+import json
 import shutil
 from pathlib import Path
 from typing import List, Optional
 
 import pytest
-from dagster import AssetObservation, FloatMetadataValue, Output, TextMetadataValue
+from dagster import (
+    AssetObservation,
+    FloatMetadataValue,
+    Output,
+    TextMetadataValue,
+    job,
+    materialize,
+    op,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster_dbt import dbt_assets
+from dagster_dbt.asset_utils import build_dbt_asset_selection
 from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
-    DbtCli,
     DbtCliEventMessage,
-    DbtManifest,
+    DbtCliResource,
 )
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
-from pytest_mock import MockerFixture
 
 from ..conftest import TEST_PROJECT_DIR
 
@@ -19,55 +29,51 @@ pytest.importorskip("dbt.version", minversion="1.4")
 
 
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
-manifest = DbtManifest.read(path=manifest_path)
+with open(manifest_path, "r") as f:
+    manifest = json.load(f)
 
 
-@pytest.mark.parametrize("global_config_flags", [[], ["--debug"]])
+@pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
 @pytest.mark.parametrize("command", ["run", "parse"])
 def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
-    dbt_cli_task = dbt.cli([command], manifest=manifest)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, global_config_flags=global_config_flags)
+    dbt_cli_invocation = dbt.cli([command], manifest=manifest)
 
-    dbt_cli_task.wait()
-
-    assert dbt_cli_task.process.args == ["dbt", *global_config_flags, command]
-    assert dbt_cli_task.is_successful()
-    assert dbt_cli_task.process.returncode == 0
+    assert dbt_cli_invocation.process.args == ["dbt", *global_config_flags, command]
+    assert dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.process.returncode == 0
 
 
 def test_dbt_cli_failure() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_task = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    dbt_cli_invocation = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
 
     with pytest.raises(DagsterDbtCliRuntimeError):
-        dbt_cli_task.wait()
+        dbt_cli_invocation.wait()
 
-    assert not dbt_cli_task.is_successful()
-    assert dbt_cli_task.process.returncode == 2
+    assert not dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.process.returncode == 2
 
 
 def test_dbt_cli_get_artifact() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
-    dbt_cli_task_1 = dbt.cli(["run"], manifest=manifest)
-    dbt_cli_task_1.wait()
-
-    dbt_cli_task_2 = dbt.cli(["compile"], manifest=manifest)
-    dbt_cli_task_2.wait()
+    dbt_cli_invocation_1 = dbt.cli(["run"], manifest=manifest).wait()
+    dbt_cli_invocation_2 = dbt.cli(["compile"], manifest=manifest).wait()
 
     # `dbt run` produces a manifest.json and run_results.json
-    manifest_json_1 = dbt_cli_task_1.get_artifact("manifest.json")
+    manifest_json_1 = dbt_cli_invocation_1.get_artifact("manifest.json")
     assert manifest_json_1
-    assert dbt_cli_task_1.get_artifact("run_results.json")
+    assert dbt_cli_invocation_1.get_artifact("run_results.json")
 
     # `dbt compile` produces a manifest.json and run_results.json
-    manifest_json_2 = dbt_cli_task_2.get_artifact("manifest.json")
+    manifest_json_2 = dbt_cli_invocation_2.get_artifact("manifest.json")
     assert manifest_json_2
-    assert dbt_cli_task_2.get_artifact("run_results.json")
+    assert dbt_cli_invocation_2.get_artifact("run_results.json")
 
     # `dbt compile` does not produce a sources.json
     with pytest.raises(Exception):
-        dbt_cli_task_2.get_artifact("sources.json")
+        dbt_cli_invocation_2.get_artifact("sources.json")
 
     # Artifacts are stored in separate paths by manipulating DBT_TARGET_PATH.
     # As a result, their contents should be different, and newer artifacts
@@ -75,42 +81,47 @@ def test_dbt_cli_get_artifact() -> None:
     assert manifest_json_1 != manifest_json_2
 
 
-def test_dbt_profile_configuration(monkeypatch) -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
+def test_dbt_profile_configuration() -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, profile="duckdb", target="dev")
 
-    dbt_cli_task = dbt.cli(["parse"], manifest=manifest)
-    dbt_cli_task.wait()
+    dbt_cli_invocation = dbt.cli(["parse"], manifest=manifest).wait()
 
-    assert dbt_cli_task.process.args == ["dbt", "parse", "--profile", "duckdb", "--target", "dev"]
-    assert dbt_cli_task.is_successful()
+    assert dbt_cli_invocation.process.args == [
+        "dbt",
+        "parse",
+        "--profile",
+        "duckdb",
+        "--target",
+        "dev",
+    ]
+    assert dbt_cli_invocation.is_successful()
 
 
 def test_dbt_without_partial_parse() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
     dbt.cli(["clean"], manifest=manifest).wait()
 
-    dbt_cli_compile_without_partial_parse_task = dbt.cli(["compile"], manifest=manifest)
+    dbt_cli_compile_without_partial_parse_invocation = dbt.cli(["compile"], manifest=manifest)
 
-    assert dbt_cli_compile_without_partial_parse_task.is_successful()
+    assert dbt_cli_compile_without_partial_parse_invocation.is_successful()
     assert any(
         "Unable to do partial parsing" in event.raw_event["info"]["msg"]
-        for event in dbt_cli_compile_without_partial_parse_task.stream_raw_events()
+        for event in dbt_cli_compile_without_partial_parse_invocation.stream_raw_events()
     )
 
 
 def test_dbt_with_partial_parse() -> None:
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
 
     dbt.cli(["clean"], manifest=manifest).wait()
 
     # Run `dbt compile` to generate the partial parse file
-    dbt_cli_compile_task = dbt.cli(["compile"], manifest=manifest)
-    dbt_cli_compile_task.wait()
+    dbt_cli_compile_invocation = dbt.cli(["compile"], manifest=manifest).wait()
 
     # Copy the partial parse file to the target directory
     partial_parse_file_path = Path(
-        TEST_PROJECT_DIR, dbt_cli_compile_task.target_path, PARTIAL_PARSE_FILE_NAME
+        TEST_PROJECT_DIR, dbt_cli_compile_invocation.target_path, PARTIAL_PARSE_FILE_NAME
     )
     original_target_path = Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME)
 
@@ -118,71 +129,114 @@ def test_dbt_with_partial_parse() -> None:
     shutil.copy(partial_parse_file_path, Path(TEST_PROJECT_DIR, "target", PARTIAL_PARSE_FILE_NAME))
 
     # Assert that partial parsing was used.
-    dbt_cli_compile_with_partial_parse_task = dbt.cli(["compile"], manifest=manifest)
-    dbt_cli_compile_with_partial_parse_task.wait()
+    dbt_cli_compile_with_partial_parse_invocation = dbt.cli(["compile"], manifest=manifest).wait()
 
-    assert dbt_cli_compile_with_partial_parse_task.is_successful()
+    assert dbt_cli_compile_with_partial_parse_invocation.is_successful()
     assert not any(
         "Unable to do partial parsing" in event.raw_event["info"]["msg"]
-        for event in dbt_cli_compile_with_partial_parse_task.stream_raw_events()
+        for event in dbt_cli_compile_with_partial_parse_invocation.stream_raw_events()
     )
 
 
-def test_dbt_cli_subsetted_execution(mocker: MockerFixture) -> None:
-    mock_context = mocker.MagicMock()
-    mock_selected_output_names = ["least_caloric", "sort_by_calories"]
-
-    type(mock_context.op).tags = mocker.PropertyMock(return_value={})
-    type(mock_context).selected_output_names = mocker.PropertyMock(
-        return_value=mock_selected_output_names
+def test_dbt_cli_subsetted_execution() -> None:
+    dbt_select = " ".join(
+        [
+            "fqn:dagster_dbt_test_project.subdir.least_caloric",
+            "fqn:dagster_dbt_test_project.sort_by_calories",
+        ]
     )
 
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_task = dbt.cli(["run"], manifest=manifest, context=mock_context)
+    @dbt_assets(
+        manifest=manifest,
+        select=dbt_select,
+    )
+    def my_dbt_assets(context, dbt: DbtCliResource):
+        dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
 
-    dbt_cli_task.wait()
+        assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
 
-    assert dbt_cli_task.process.args == [
-        "dbt",
-        "run",
-        "--select",
-        (
-            "fqn:dagster_dbt_test_project.subdir.least_caloric"
-            " fqn:dagster_dbt_test_project.sort_by_calories"
-        ),
+        yield from dbt_cli_invocation.stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
+
+
+def test_dbt_cli_asset_selection() -> None:
+    dbt_select = [
+        "fqn:dagster_dbt_test_project.subdir.least_caloric",
+        "fqn:dagster_dbt_test_project.sort_by_calories",
     ]
-    assert dbt_cli_task.process.returncode is not None
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context, dbt: DbtCliResource):
+        dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
+
+        dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
+        *dbt_args, dbt_select_args = dbt_cli_args
+
+        assert dbt_args == ["dbt", "run", "--select"]
+        assert set(dbt_select_args.split()) == set(dbt_select)
+
+        yield from dbt_cli_invocation.stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+        selection=build_dbt_asset_selection(
+            [my_dbt_assets],
+            dbt_select=(
+                "fqn:dagster_dbt_test_project.subdir.least_caloric"
+                " fqn:dagster_dbt_test_project.sort_by_calories"
+            ),
+        ),
+    )
+    assert result.success
 
 
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
-def test_dbt_cli_default_selection(mocker: MockerFixture, exclude: Optional[str]) -> None:
-    mock_context = mocker.MagicMock()
-    mock_selected_output_names = ["least_caloric", "sort_by_calories"]
+def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
+    @dbt_assets(manifest=manifest, exclude=exclude)
+    def my_dbt_assets(context):
+        dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+        dbt_cli_invocation = dbt.cli(["run"], context=context)
 
-    type(mock_context.op).tags = mocker.PropertyMock(
-        return_value={
-            "dagster-dbt/select": "fqn:*",
-            **({"dagster-dbt/exclude": exclude} if exclude else {}),
+        dbt_cli_invocation.wait()
+
+        expected_args = ["dbt", "run", "--select", "fqn:*"]
+        if exclude:
+            expected_args += ["--exclude", exclude]
+
+        assert dbt_cli_invocation.process.args == expected_args
+        assert dbt_cli_invocation.process.returncode is not None
+
+        yield from dbt_cli_invocation.stream()
+
+    assert materialize([my_dbt_assets]).success
+
+
+def test_dbt_cli_op_execution() -> None:
+    @op
+    def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
+        dbt.cli(["run"], context=context, manifest=manifest).wait()
+
+    @job
+    def my_dbt_job():
+        my_dbt_op()
+
+    result = my_dbt_job.execute_in_process(
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
         }
     )
-    type(mock_context).selected_output_names = mocker.PropertyMock(
-        return_value=mock_selected_output_names
-    )
-    mock_context.assets_def.node_keys_by_output_name.__len__.return_value = len(
-        mock_selected_output_names
-    )
 
-    dbt = DbtCli(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_task = dbt.cli(["run"], manifest=manifest, context=mock_context)
-
-    dbt_cli_task.wait()
-
-    expected_args = ["dbt", "run", "--select", "fqn:*"]
-    if exclude:
-        expected_args += ["--exclude", exclude]
-
-    assert dbt_cli_task.process.args == expected_args
-    assert dbt_cli_task.process.returncode is not None
+    assert result.success
 
 
 @pytest.mark.parametrize(
@@ -229,16 +283,12 @@ def test_dbt_cli_default_selection(mocker: MockerFixture, exclude: Optional[str]
     ],
 )
 def test_no_default_asset_events_emitted(data: dict) -> None:
-    manifest = DbtManifest(raw_manifest={})
-    asset_events = DbtCliEventMessage(raw_event={"data": data}).to_default_asset_events(
-        manifest=manifest
-    )
+    asset_events = DbtCliEventMessage(raw_event={"data": data}).to_default_asset_events(manifest={})
 
     assert list(asset_events) == []
 
 
 def test_to_default_asset_output_events() -> None:
-    manifest = DbtManifest(raw_manifest={})
     raw_event = {
         "data": {
             "node_info": {
@@ -251,7 +301,7 @@ def test_to_default_asset_output_events() -> None:
         }
     }
     asset_events = list(
-        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)
+        DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest={})
     )
 
     assert len(asset_events) == 1
@@ -263,30 +313,28 @@ def test_to_default_asset_output_events() -> None:
 
 
 def test_to_default_asset_observation_events() -> None:
-    manifest = DbtManifest(
-        raw_manifest={
-            "nodes": {
-                "a.b.c.d": {
-                    "resource_type": "model",
-                    "config": {},
-                    "name": "model",
-                }
-            },
-            "sources": {
-                "a.b.c.d.e": {
-                    "resource_type": "source",
-                    "source_name": "test",
-                    "name": "source",
-                }
-            },
-            "parent_map": {
-                "a.b.c": [
-                    "a.b.c.d",
-                    "a.b.c.d.e",
-                ]
-            },
-        }
-    )
+    manifest = {
+        "nodes": {
+            "a.b.c.d": {
+                "resource_type": "model",
+                "config": {},
+                "name": "model",
+            }
+        },
+        "sources": {
+            "a.b.c.d.e": {
+                "resource_type": "source",
+                "source_name": "test",
+                "name": "source",
+            }
+        },
+        "parent_map": {
+            "a.b.c": [
+                "a.b.c.d",
+                "a.b.c.d.e",
+            ]
+        },
+    }
     raw_event = {
         "data": {
             "node_info": {

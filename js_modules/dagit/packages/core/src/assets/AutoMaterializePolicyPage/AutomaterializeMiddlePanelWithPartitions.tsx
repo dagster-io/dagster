@@ -1,6 +1,8 @@
 import {Box, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {AssetKey} from '../types';
+
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {ConditionType, ConditionsWithPartitions} from './Conditions';
 import {EvaluationOrEmpty} from './types';
@@ -73,6 +75,42 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
     [conditionToPartitions],
   );
 
+  const assetKeyDetails = React.useMemo(() => {
+    const conditions = selectedEvaluation?.conditions;
+    const waitingOn = {} as Record<string, AssetKey[]>;
+    const parentUpdated = {} as Record<string, AssetKey[]>;
+    const parentWillupdate = {} as Record<string, AssetKey[]>;
+    if (conditions?.length) {
+      conditions.forEach((condition) => {
+        if (condition.__typename === 'ParentOutdatedAutoMaterializeCondition') {
+          const {waitingOnAssetKeys, partitionKeysOrError} = condition;
+          if (partitionKeysOrError?.__typename === 'PartitionKeys') {
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(waitingOn[partitionKey] || [])];
+              target.push(...(waitingOnAssetKeys || []));
+              waitingOn[partitionKey] = target;
+            });
+          }
+        } else if (condition.__typename === 'ParentMaterializedAutoMaterializeCondition') {
+          const {updatedAssetKeys, willUpdateAssetKeys, partitionKeysOrError} = condition;
+          if (partitionKeysOrError?.__typename === 'PartitionKeys') {
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(parentUpdated[partitionKey] || [])];
+              target.push(...(updatedAssetKeys || []));
+              parentUpdated[partitionKey] = target;
+            });
+            partitionKeysOrError.partitionKeys.forEach((partitionKey) => {
+              const target = [...(parentWillupdate[partitionKey] || [])];
+              target.push(...(willUpdateAssetKeys || []));
+              parentWillupdate[partitionKey] = target;
+            });
+          }
+        }
+      });
+    }
+    return {waitingOn, parentUpdated, parentWillupdate};
+  }, [selectedEvaluation]);
+
   const headerRight = () => {
     const runIds =
       selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
@@ -90,6 +128,7 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
       <AutomaterializeRequestedPartitionsLink
         runIds={runIds}
         partitionKeys={Array.from(partitionKeys)}
+        intent="success"
       />
     );
   };
@@ -109,6 +148,9 @@ export const AutomaterializeMiddlePanelWithPartitions = ({
         conditionResults={conditionResults}
         conditionToPartitions={conditionToPartitions}
         maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+        parentOutdatedWaitingOnAssetKeys={assetKeyDetails.waitingOn}
+        parentUpdatedAssetKeys={assetKeyDetails.parentUpdated}
+        parentWillUpdateAssetKeys={assetKeyDetails.parentWillupdate}
       />
     </Box>
   );

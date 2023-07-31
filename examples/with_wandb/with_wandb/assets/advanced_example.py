@@ -69,7 +69,7 @@ def write_advanced_artifact() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
     compute_kind="wandb",
     ins={
         "table": AssetIn(
-            asset_key=MY_ASSET,
+            key=MY_ASSET,
             metadata={
                 "wandb_artifact_configuration": {
                     "get": MY_TABLE,
@@ -98,7 +98,7 @@ def get_table(context: AssetExecutionContext, table: wandb.Table) -> None:
     compute_kind="wandb",
     ins={
         "path": AssetIn(
-            asset_key=MY_ASSET,
+            key=MY_ASSET,
             metadata={
                 "wandb_artifact_configuration": {
                     "get_path": "my_training_script",
@@ -127,7 +127,7 @@ def get_path(context: AssetExecutionContext, path: str) -> None:
     compute_kind="wandb",
     ins={
         "artifact": AssetIn(
-            asset_key=MY_ASSET,
+            key=MY_ASSET,
         )
     },
     output_required=False,

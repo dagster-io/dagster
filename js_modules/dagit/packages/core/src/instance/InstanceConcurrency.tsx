@@ -67,7 +67,12 @@ const InstanceConcurrencyPage = React.memo(() => {
 
   const content = data ? (
     flagInstanceConcurrencyLimits ? (
-      <ConcurrencyLimits limits={data.instance.concurrencyLimits} refetch={queryResult.refetch} />
+      <ConcurrencyLimits
+        instanceConfig={data.instance.info}
+        limits={data.instance.concurrencyLimits}
+        hasSupport={data.instance.supportsConcurrencyLimits}
+        refetch={queryResult.refetch}
+      />
     ) : (
       <Redirect to="/config" />
     )
@@ -110,7 +115,9 @@ type DialogAction =
 export const ConcurrencyLimits: React.FC<{
   limits: ConcurrencyLimitFragment[];
   refetch: () => void;
-}> = ({limits, refetch}) => {
+  instanceConfig?: string | null;
+  hasSupport?: boolean;
+}> = ({instanceConfig, hasSupport, limits, refetch}) => {
   const [action, setAction] = React.useState<DialogAction>();
   const [selectedRuns, setSelectedRuns] = React.useState<string[] | undefined>(undefined);
   const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
@@ -132,6 +139,36 @@ export const ConcurrencyLimits: React.FC<{
   const onDelete = (concurrencyKey: string) => {
     setAction({actionType: 'delete', concurrencyKey});
   };
+
+  if (!hasSupport && instanceConfig && instanceConfig.includes('SqliteEventLogStorage')) {
+    return (
+      <Box margin={24}>
+        <NonIdealState
+          icon="error"
+          title="No concurrency support"
+          description={
+            'This instance does not support global concurrency limits. You will need to ' +
+            'configure a different storage implementation (e.g. Postgres/MySQL) to use this ' +
+            'feature.'
+          }
+        />
+      </Box>
+    );
+  } else if (hasSupport === false) {
+    return (
+      <Box margin={24}>
+        <NonIdealState
+          icon="error"
+          title="No concurrency support"
+          description={
+            'This instance does not currently support global concurrency limits. You may need to ' +
+            'run `dagster instance migrate` to add the necessary tables to your dagster storage ' +
+            'to support this feature.'
+          }
+        />
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -555,6 +592,8 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
   query InstanceConcurrencyLimitsQuery {
     instance {
       id
+      info
+      supportsConcurrencyLimits
       concurrencyLimits {
         ...ConcurrencyLimitFragment
       }
@@ -570,7 +609,7 @@ const SET_CONCURRENCY_LIMIT_MUTATION = gql`
   }
 `;
 
-const FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION = gql`
+export const FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION = gql`
   mutation FreeConcurrencySlotsForRun($runId: String!) {
     freeConcurrencySlotsForRun(runId: $runId)
   }

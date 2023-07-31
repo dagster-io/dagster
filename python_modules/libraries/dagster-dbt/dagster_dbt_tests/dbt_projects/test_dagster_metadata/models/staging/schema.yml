@@ -1,5 +1,10 @@
 version: 2
 
+groups:
+  - name: customized_dbt_group
+    owner:
+      name: Karl Rossmann
+
 models:
   - name: stg_customers
     config:
@@ -15,6 +20,7 @@ models:
 
   - name: stg_orders
     config:
+      group: customized_dbt_group
       meta:
         dagster:
           asset_key: ['customized', 'staging', 'orders']
@@ -30,9 +36,11 @@ models:
 
   - name: stg_payments
     config:
+      group: customized_dbt_group
       meta:
         dagster:
           asset_key: ['customized', 'staging', 'payments']
+          group: customized_dagster_group
     columns:
       - name: payment_id
         tests:

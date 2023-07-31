@@ -1,7 +1,7 @@
 import os
 import pickle
 import uuid
-from typing import AbstractSet, Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, Optional, cast
 
 from dagster import (
     AssetMaterialization,
@@ -19,7 +19,6 @@ from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -46,6 +45,9 @@ from dagster._utils import EventGenerationManager
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
 from .serialize import PICKLE_PROTOCOL
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.node_definition import NodeDefinition
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
@@ -366,7 +368,7 @@ class Manager:
         # deferred import for perf
         import scrapbook
 
-        event_id = f"event-{str(uuid.uuid4())}"
+        event_id = f"event-{uuid.uuid4()}"
         out_file_path = os.path.join(self.marshal_dir, event_id)
         with open(out_file_path, "wb") as fd:
             fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))

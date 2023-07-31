@@ -53,15 +53,11 @@
         "path": "/tutorial/scheduling-your-pipeline"
       },
       {
-        "title": "Part 6: Saving your data",
+        "title": "Part 6: Using Dagster to save your data",
         "path": "/tutorial/saving-your-data"
       },
       {
-        "title": "Part 7: Managing your own I/O",
-        "path": "/tutorial/managing-your-own-io"
-      },
-      {
-        "title": "Part 8: Connecting to external services",
+        "title": "Part 7: Connecting to external services",
         "path": "/tutorial/connecting-to-external-services"
       },
       {
@@ -242,19 +238,19 @@
         ]
       },
       {
-        "title": "Dagit UI & GraphQL API",
+        "title": "Dagster webserver & UI",
         "children": [
           {
-            "title": "Dagit UI",
-            "path": "/concepts/dagit/dagit"
+            "title": "Dagster UI",
+            "path": "/concepts/webserver/ui"
           },
           {
             "title": "GraphQL API",
-            "path": "/concepts/dagit/graphql"
+            "path": "/concepts/webserver/graphql"
           },
           {
             "title": "GraphQL Python client",
-            "path": "/concepts/dagit/graphql-client"
+            "path": "/concepts/webserver/graphql-client"
           }
         ]
       },
@@ -697,10 +693,6 @@
         "path": "/integrations/pandas"
       },
       {
-        "title": "Pandera",
-        "path": "/integrations/pandera"
-      },
-      {
         "title": "PySpark",
         "path": "/integrations/spark"
       },
@@ -768,10 +760,6 @@
           {
             "title": "Testing assets",
             "path": "/guides/dagster/testing-assets"
-          },
-          {
-            "title": "Assets without I/O",
-            "path": "/guides/dagster/non-argument-deps"
           },
           {
             "title": "Migrating to Pythonic resources and config",
@@ -1106,6 +1094,10 @@
           {
             "title": "Pandas (dagster-pandas)",
             "path": "/_apidocs/libraries/dagster-pandas"
+          },
+          {
+            "title": "Pandera (dagster-pandera)",
+            "path": "/_apidocs/libraries/dagster-pandera"
           },
           {
             "title": "Papertrail (dagster-papertrail)",

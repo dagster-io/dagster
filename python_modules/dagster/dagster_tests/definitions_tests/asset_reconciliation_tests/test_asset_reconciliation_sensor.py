@@ -6,17 +6,17 @@ from dagster import (
     AssetMaterialization,
     AssetSelection,
     DagsterInstance,
-    build_asset_reconciliation_sensor,
     build_sensor_context,
     job,
     op,
     repository,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_daemon_context import build_auto_materialize_asset_evaluations
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AutoMaterializeAssetEvaluation,
-    build_auto_materialize_asset_evaluations,
+    build_asset_reconciliation_sensor,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.time_window_partitions import (

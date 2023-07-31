@@ -3,6 +3,7 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -31,6 +32,7 @@ class AssetOut(
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
         ],
     )
 ):
@@ -61,6 +63,7 @@ class AssetOut(
             asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
+        backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
     """
 
     def __new__(
@@ -76,6 +79,7 @@ class AssetOut(
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -100,6 +104,9 @@ class AssetOut(
             ),
             auto_materialize_policy=check.opt_inst_param(
                 auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
 

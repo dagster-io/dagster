@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import inspect
 import json
 import os
@@ -87,7 +85,7 @@ class ReconstructableRepository(
         executable_path: Optional[str] = None,
         entry_point: Optional[Sequence[str]] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-        repository_load_data: Optional[RepositoryLoadData] = None,
+        repository_load_data: Optional["RepositoryLoadData"] = None,
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
 
@@ -119,7 +117,7 @@ class ReconstructableRepository(
     def get_definition(self) -> "RepositoryDefinition":
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
-    def get_reconstructable_job(self, name: str) -> ReconstructableJob:
+    def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
 
     @classmethod
@@ -130,7 +128,7 @@ class ReconstructableRepository(
         working_directory: Optional[str] = None,
         container_image: Optional[str] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-    ) -> ReconstructableRepository:
+    ) -> "ReconstructableRepository":
         if not working_directory:
             working_directory = os.getcwd()
         return cls(
@@ -147,7 +145,7 @@ class ReconstructableRepository(
         working_directory: Optional[str] = None,
         container_image: Optional[str] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-    ) -> ReconstructableRepository:
+    ) -> "ReconstructableRepository":
         return cls(
             ModuleCodePointer(module, fn_name, working_directory),
             container_image=container_image,
@@ -247,13 +245,13 @@ class ReconstructableJob(
 
     def with_repository_load_data(
         self, metadata: Optional["RepositoryLoadData"]
-    ) -> ReconstructableJob:
+    ) -> "ReconstructableJob":
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> JobDefinition:
+    def get_definition(self) -> "JobDefinition":
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.job_name,
             self.op_selection,
@@ -287,18 +285,18 @@ class ReconstructableJob(
         )
 
     @staticmethod
-    def for_file(python_file: str, fn_name: str) -> ReconstructableJob:
+    def for_file(python_file: str, fn_name: str) -> "ReconstructableJob":
         return bootstrap_standalone_recon_job(FileCodePointer(python_file, fn_name, os.getcwd()))
 
     @staticmethod
-    def for_module(module: str, fn_name: str) -> ReconstructableJob:
+    def for_module(module: str, fn_name: str) -> "ReconstructableJob":
         return bootstrap_standalone_recon_job(ModuleCodePointer(module, fn_name, os.getcwd()))
 
     def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
 
     @staticmethod
-    def from_dict(val: Mapping[str, Any]) -> ReconstructableJob:
+    def from_dict(val: Mapping[str, Any]) -> "ReconstructableJob":
         check.mapping_param(val, "val")
 
         inst = unpack_value(val)
@@ -602,7 +600,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
     ):
         raise DagsterInvariantViolationError(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-            f"or RepositoryDefinition. Got {repr(definition)}."
+            f"or RepositoryDefinition. Got {definition!r}."
         )
     return definition
 

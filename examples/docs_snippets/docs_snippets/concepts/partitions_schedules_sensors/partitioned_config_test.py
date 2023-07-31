@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 
 from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import (

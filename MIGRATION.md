@@ -1,6 +1,206 @@
 # Introduction
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
+## Migrating to 1.4.0
+
+### Deprecations
+
+- The `dagit` python package and all references to it are now deprecated. We will continue to publish `dagit` and support APIs that used the term “dagit” until v2.0, but you should transition to newer `dagster-webserver` package. This is a drop-in replacement for `dagit`. Like `dagit`, it exposes an executable of the same name as the package itself, i.e. `dagster-webserver`.
+    - Any Dockerfiles or other Python environment specifications now list `dagster-webserver` instead, e.g.:
+
+```python
+    ### Dockerfile
+    # ...
+
+    # no (deprecated)
+    RUN pip install dagster dagit ...
+    ...
+    ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
+
+    # yes
+    RUN pip install dagster dagster-webserver
+    ...
+    ENTRYPOINT ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
+    ```
+
+    - Three fields containing the term “dagit” in the Dagster helm chart schema have been updated to use “dagsterWebserver” instead. Old `values.yaml`:
+
+```python
+        ### values.yaml
+
+        # no (deprecated)
+        dagit:
+          ...
+          # ...
+        ingress:
+          dagit: ...
+          readOnlyDagit: ...
+
+        # yes
+        dagsterWebserver:
+          ...
+          # ...
+        ingress:
+          dagsterWebserver: ...
+          readOnlyDagsterWebserver: ...
+```
+
+- We’ve deprecated the `non_argument_deps` parameter of `@asset` and `@multi_asset` in favor of a new `deps` parameter. To update your code to use `deps`, simply rename any instances of `non_argument_deps` to `deps` and change the type from a set to list. Additionally, you may also want to begin passing the python symbols for assets, rather than their `AssetKey`s to improve in-editor experience with type-aheads and linting.
+
+```python
+@asset
+def my_asset():
+   ...
+
+@asset(
+   non_argument_deps={"my_asset"}
+)
+def a_downstream_asset():
+   ...
+
+# becomes
+
+@asset
+def my_asset():
+   ...
+
+@asset(
+   deps=["my_asset"]
+)
+def a_downstream_asset():
+   ...
+
+# or
+
+@asset
+def my_asset():
+   ...
+
+@asset(
+   deps=[my_asset]
+)
+def a_downstream_asset():
+   ...
+```
+
+- [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:DescribeResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
+- [dagster-dbt] `DbtCliClientResource`, `dbt_cli_resource` and `DbtCliOutput` are now being deprecated in favor of `DbtCliResource`. `dagster-dbt` Asset APIs like `load_assets_from_dbt_manifest` and `load_assets_from_dbt_project` will continue to work if given either a `DbtCliClientResource` or `DbtCliResource`.
+
+```python
+# old
+@op
+def my_dbt_op(dbt_resource: DbtCliClientResource):
+    dbt: DbtCliClient = dbt.get_client()
+
+    dbt.cli("run")
+
+    dbt.cli("run", full_refresh=True)
+
+    dbt.cli("test")
+    manifest_json = dbt.get_manifest_json()
+
+# new
+with Path("my/dbt/manifest").open() as handle:
+    manifest = json.loads(dbt_manifest.read())
+
+@op
+def my_dbt_op(dbt: DbtCliResource):
+   dbt.cli(["run"], manifest=manifest).stream()
+
+   dbt.cli(["run", "--full-refresh"], manifest=manifest).stream()
+
+   dbt_test_invocation = dbt.cli(["test"], manifest_manifest).stream()
+   manifest_json = dbt_test_invocation.get_artifact("manifest.json")
+
+# old
+dbt_assets = load_assets_from_dbt_project(project_dir="my/dbt/project")
+
+defs = Definitions(
+    assets=dbt_assets,
+    resources={
+        "dbt": DbtCliClientResource(project_dir="my/dbt/project")
+    },
+)
+
+# new
+dbt_assets = load_assets_from_dbt_project(project_dir="my/dbt/project")
+
+defs = Definitions(
+    assets=dbt_assets,
+    resources={
+        "dbt": DbtCliResource(project_dir="my/dbt/project")
+    }
+)
+
+```
+
+- The following arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. Arguments will continue to work when passed into these functions, but a deprecation warning will be emitted.
+
+| Deprecated Arguments | Recommendation |
+| --- | --- |
+| `key_prefix` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key` |
+| `source_key_prefix` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key` |
+| `op_name` | Use the `@dbt_assets` decorator if you need to customize your op name. |
+| `manifest_json` | Use the `manifest` parameter instead. |
+| `display_raw_sql` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_description`. |
+| `selected_unique_ids` | Use the `select` parameter instead. |
+| `dbt_resource_key` | Use the `@dbt_assets` decorator if you need to customize your resource key. |
+| `use_build_command` | Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands. |
+| `partitions_def` | Use the `@dbt_assets` decorator to define partitioned dbt assets. |
+| `partition_key_to_vars_fn` | Use the `@dbt_assets` decorator to define partitioned dbt assets. |
+| `runtime_metadata_fn` | Use the `@dbt_assets` decorator if you need to customize runtime metadata. |
+| `node_info_to_asset_key_fn` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`. |
+| `node_info_to_group_fn` | Instead, configure dagster groups on a dbt resource's meta field, assign dbt groups, or provide a custom `DagsterDbtTranslator` that overrides `get_group_name`. |
+| `node_info_to_auto_materialize_policy_fn` | Instead, configure Dagster auto-materialize policies on a dbt resource's meta field. |
+| `node_info_to_freshness_policy_fn` | Instead, configure Dagster freshness policies on a dbt resource's meta field. |
+| `node_info_to_definition_metadata_fn` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_metadata`. |
+
+### Breaking changes
+
+- From this release forward Dagster will no longer be tested against Python 3.7. Python 3.7 reached end of life on June 27th 2023 meaning it will no longer receive any security fixes. Previously releases will continue to work on 3.7. Details about moving to 3.8 or beyond can be found at https://docs.python.org/3/whatsnew/3.8.html#porting-to-python-3-8 .
+- `build_asset_reconciliation_sensor` (Experimental) has been removed. It was deprecated in 1.3 in favor of `AutoMaterializePolicy`. Docs are [here](https://docs.dagster.io/concepts/assets/asset-auto-execution).
+- The `dagster-dbt` integration with `dbt-rpc` has been removed, as [the dbt plugin is being deprecated](https://github.com/dbt-labs/dbt-rpc).
+- Previously, `DbtCliResource` was a class alias for `DbtCliClientResource`. Now, `DbtCliResource` is a new resource with a different API. Furthermore, it requires at least `dbt-core>=1.4` to run.
+- [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now default to `use_build=True`. To switch back to the previous behavior, use `use_build=False`.
+
+```python
+from dagster_dbt import group_from_dbt_resource_props_fallback_to_directory
+
+load_assets_from_dbt_project(
+    ...,
+    use_build=False,
+)
+```
+
+- [dagster-dbt] The default assignment of groups to dbt models loaded from `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` has changed. Rather than assigning a group name using the model’s subdirectory, a group name will be assigned using the dbt model’s [dbt group](https://docs.getdbt.com/docs/build/groups). To switch back to the previous behavior, use the following utility function, `group_from_dbt_resource_props_fallback_to_directory`:
+
+```python
+from dagster_dbt import group_from_dbt_resource_props_fallback_to_directory
+
+load_assets_from_dbt_project(
+    ...,
+    node_info_to_group_fn=group_from_dbt_resource_props_fallback_to_directory,
+)
+```
+
+- [dagster-dbt] The argument `node_info_to_definition_metadata_fn` for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now overrides metadata instead of adding to it. To switch back to the previous behavior, use the following utility function:
+
+```python
+from dagster_dbt import default_metadata_from_dbt_resource_props
+
+def my_metadata_from_dbt_resource_props(dbt_resource_props):
+    my_metadata = {...}
+    return {**default_metadata_from_dbt_resource_props(dbt_resource_props), **my_metadata}
+
+load_assets_from_dbt_manifest(
+    ...,
+    node_info_to_definition_metadata_fn=my_metadata_from_dbt_resource_props
+)
+```
+
+- [dagster-dbt] The arguments for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now must be specified using keyword arguments.
+- [dagster-dbt] When using the new `DbtCliResource` with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, stdout logs from the dbt process will now appear in the compute logs instead of the event logs.
+
 
 ## Migrating to 1.3.0
 

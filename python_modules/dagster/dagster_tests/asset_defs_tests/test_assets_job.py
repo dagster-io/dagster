@@ -344,7 +344,7 @@ def test_source_op_asset():
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
-def test_non_argument_deps():
+def test_deps():
     with safe_tempfile_path() as path:
 
         @asset
@@ -352,7 +352,7 @@ def test_non_argument_deps():
             with open(path, "w", encoding="utf8") as ff:
                 ff.write("yup")
 
-        @asset(non_argument_deps={AssetKey("foo")})
+        @asset(deps=[AssetKey("foo")])
         def bar():
             # assert that the foo asset already executed
             assert os.path.exists(path)
@@ -364,19 +364,19 @@ def test_non_argument_deps():
         assert _asset_keys_for_node(result, "bar") == {AssetKey("bar")}
 
 
-def test_non_argument_deps_as_str():
+def test_deps_as_str():
     @asset
     def foo():
         pass
 
-    @asset(non_argument_deps={"foo"})
+    @asset(deps=["foo"])
     def bar():
         pass
 
     assert AssetKey("foo") in bar.asset_deps[AssetKey("bar")]
 
 
-def test_multiple_non_argument_deps():
+def test_multiple_deps():
     @asset
     def foo():
         pass
@@ -389,7 +389,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["key_prefix", "bar"])})
+    @asset(deps=[AssetKey("foo"), AssetKey(["key_prefix", "bar"])])
     def qux(baz):
         return baz
 
@@ -2199,7 +2199,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2233,7 +2234,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 

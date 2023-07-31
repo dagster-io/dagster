@@ -27,7 +27,7 @@ interface RunStatusProps {
 }
 
 export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
-  if (status === 'STARTED') {
+  if (status === 'STARTED' || status === 'CANCELING') {
     return <Spinner purpose="caption-text" />;
   }
   if (status === 'SCHEDULED') {

@@ -24,7 +24,6 @@ setup(
     description="Airflow plugin for Dagster",
     url="https://github.com/dagster-io/dagster",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",

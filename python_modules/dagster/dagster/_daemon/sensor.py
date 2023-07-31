@@ -589,7 +589,6 @@ def _submit_run_request(
     run_request: RunRequest,
     workspace_process_context: IWorkspaceProcessContext,
     external_sensor: ExternalSensor,
-    code_location: CodeLocation,
     existing_runs_by_key,
     logger,
     sensor_debug_crash_flags,
@@ -601,6 +600,10 @@ def _submit_run_request(
         external_sensor.get_target_data(run_request.job_name)
     )
 
+    # reload the code_location on each submission, request_context derived data can become out date
+    # * non-threaded: if number of serial submissions is too many
+    # * threaded: if thread sits pending in pool too long
+    code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=sensor_origin.external_repository_origin.repository_name,
@@ -636,12 +639,20 @@ def _submit_run_request(
         )
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(
-            f"Run {run.run_id} created successfully but failed to launch: {str(error_info)}"
-        )
+        logger.error(f"Run {run.run_id} created successfully but failed to launch: {error_info}")
 
     _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
     return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)
+
+
+def _get_code_location_for_sensor(
+    workspace_process_context: IWorkspaceProcessContext,
+    external_sensor: ExternalSensor,
+):
+    sensor_origin = external_sensor.get_external_origin()
+    return workspace_process_context.create_request_context().get_code_location(
+        sensor_origin.external_repository_origin.code_location_origin.location_name
+    )
 
 
 def _evaluate_sensor(
@@ -654,13 +665,8 @@ def _evaluate_sensor(
 ):
     instance = workspace_process_context.instance
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
-
-    sensor_origin = external_sensor.get_external_origin()
+    code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     repository_handle = external_sensor.handle.repository_handle
-    code_location = workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.external_repository_origin.code_location_origin.location_name
-    )
-
     instigator_data = _sensor_instigator_data(state)
 
     sensor_runtime_data = code_location.get_external_sensor_execution_data(
@@ -827,7 +833,6 @@ def _evaluate_sensor(
         run_request,
         workspace_process_context,
         external_sensor,
-        code_location,
         existing_runs_by_key,
         context.logger,
         sensor_debug_crash_flags,
@@ -894,8 +899,15 @@ def _fetch_existing_runs(
         return {}
 
     # fetch runs from the DB with only the run key tag
-    # note: while possible to filter more at DB level with tags - it is avoided here due to observed perf problems
-    runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
+    # note: while possible to filter more at DB level with tags - it is avoided here due to observed
+    # perf problems
+    runs_with_run_keys = []
+    for run_key in run_keys:
+        # do serial fetching, which has better perf than a single query with an IN clause, due to
+        # how the query planner does the runs/run_tags join
+        runs_with_run_keys.extend(
+            instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_key}))
+        )
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
     valid_runs: List[DagsterRun] = []

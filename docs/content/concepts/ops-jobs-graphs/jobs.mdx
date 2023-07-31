@@ -14,7 +14,7 @@ A job does one of two things:
 
 Jobs can be launched in a few different ways:
 
-- Manually from the UI
+- Manually from the Dagster UI
 - At fixed intervals, by [schedules](/concepts/partitions-schedules-sensors/schedules)
 - When external changes occur, using [sensors](/concepts/partitions-schedules-sensors/sensors)
 
@@ -161,7 +161,7 @@ When constructing a job, you can customize how that configuration will be satisf
 
 ### Hardcoded configuration
 
-You can supply a <PyObject object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
+You can supply a <PyObject object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the job whenever the job is launched. It will show up in the UI Launchpad and can be overridden.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
 from dagster import Config, RunConfig, job, op
@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
 ## Making jobs available to Dagster tools
 
-You make jobs available to Dagit, GraphQL, and the command line by including them in <PyObject object="Definitions"/> object at the top-level of Python module or file. The tool loads that module as a code location. If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
+You make jobs available to the UI, GraphQL, and the command line by including them in <PyObject object="Definitions"/> object at the top-level of Python module or file. The tool loads that module as a code location. If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
 
 ```python file=/concepts/ops_jobs_graphs/repo_with_job.py
 from dagster import Definitions, job
@@ -269,8 +269,8 @@ You can run a job in a variety of ways:
 
 - In the Python process where it's defined
 - Via the command line
-- Via a GraphQL API, or
-- In [Dagit](/concepts/dagit/dagit). Dagit centers on jobs, making it a one-stop-shop - you can manually kick off runs for a job and view all historical runs.
+- Via the GraphQL API
+- In [the UI](/concepts/webserver/ui). The UI centers on jobs, making it a one-stop-shop - you can manually kick off runs for a job and view all historical runs.
 
 Refer to the [Job execution guide](/concepts/ops-jobs-graphs/job-execution) for more info and examples.
 

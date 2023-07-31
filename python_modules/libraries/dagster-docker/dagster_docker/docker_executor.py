@@ -275,7 +275,7 @@ class DockerStepHandler(StepHandler):
             return CheckStepHealthResult.healthy()
 
         return CheckStepHealthResult.unhealthy(
-            reason=f"Container status is {container.status}. Return code is {str(ret_code)}."
+            reason=f"Container status is {container.status}. Return code is {ret_code}."
         )
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:

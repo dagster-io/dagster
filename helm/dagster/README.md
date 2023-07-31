@@ -22,12 +22,12 @@ helm install my-release . \
     --create-namespace
 ```
 
-### Installing a specific Chart version
+### Installing a specific chart version
 
-The Dagster Python version and Helm Chart version have a 1:1 correspondence, and ideally should
+The `dagster` Python package version and Helm chart version have a 1:1 correspondence, and ideally should
 only be used together when the version numbers match.
 
-On installation, we can pass the `--version` flag if a specific Chart version is required.
+On installation, we can pass the `--version` flag if a specific chart version is required.
 
 ```bash
 export VERSION=<DAGSTER_VERSION>
@@ -39,9 +39,7 @@ helm install my-release . \
 
 ## Introduction
 
-[Dagster](https://github.com/dagster-io/dagster) is a Python library for building data applications. This chart will bootstrap a Dagit web server deployment on a Kubernetes cluster using the Helm package manager.
-
-In addition, our helm chart allows for Dagster configuration such as:
+[Dagster](https://github.com/dagster-io/dagster) is a Python library for building data applications. This Helm chart bootstraps a Dagster webserver deployment on a Kubernetes cluster. The chart also supports:
 
 - Deploying user code containers separately from Dagster system components
 - Specifying the Dagster run launcher
@@ -53,11 +51,11 @@ In addition, our helm chart allows for Dagster configuration such as:
 
 Please refer to the Kubernetes [getting started guide](https://kubernetes.io/docs/setup/) to set up and run a Kubernetes cluster.
 
-### Installing Helm
+### Install Helm
 
-We use Helm to manage our Kubernetes application in a configurable, replicable, and sharable way. Helm can be installed by following the [Helm installation guide](https://helm.sh/docs/intro/install/).
+Helm can be installed by following the [Helm installation guide](https://helm.sh/docs/intro/install/).
 
-### Adding the Dagster Repo
+### Add Dagster Repo to Helm client
 
 To download and install the Dagster charts, use the following command:
 
@@ -65,7 +63,7 @@ To download and install the Dagster charts, use the following command:
 helm repo add dagster https://dagster-io.github.io/helm
 ```
 
-We can check the most recent version of the Dagster chart in our chart repository by searching through it:
+We can view the most recent version of the Dagster chart in our chart repository by searching:
 
 ```bash
 helm search repo dagster
@@ -81,7 +79,7 @@ helm repo update
 
 We can now use the Helm client to install the Dagster chart! Refer to the guide on [Using Helm](https://helm.sh/docs/intro/using_helm/) for an explanation of useful Helm concepts.
 
-Here, we install a release of the Dagster chart named `my-release`, under the Kubernetes namespace `dagster`:
+Here we install a release of the Dagster chart named `my-release` under the Kubernetes namespace `dagster`:
 
 ```bash
 helm install my-release dagster/dagster \
@@ -97,7 +95,7 @@ To see the full list of configurable settings, check out the `values.yaml` file.
 
 ## Tutorial
 
-For a introductory guide on using Dagster on Helm, [check out our documentation](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm).
+For a introductory guide on deploying Dagster with Helm, [check out our documentation](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm).
 
 ## Contributing
 

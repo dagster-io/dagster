@@ -255,8 +255,8 @@ def test_materialize_multi_asset():
         },
     )
     def multi_asset_with_internal_deps(thing):
-        yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
+        yield Output(1, "my_out_name")
 
     with instance_for_test() as instance:
         result = materialize([thing_asset, multi_asset_with_internal_deps], instance=instance)

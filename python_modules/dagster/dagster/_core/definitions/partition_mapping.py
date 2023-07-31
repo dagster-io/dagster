@@ -245,21 +245,21 @@ class SpecificPartitionsPartitionMapping(
     """Maps to a specific subset of partitions in the upstream asset.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import SpecificPartitionsPartitionMapping, StaticPartitionsDefinition, asset
+            from dagster import SpecificPartitionsPartitionMapping, StaticPartitionsDefinition, asset
 
-        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
-        def upstream():
-            ...
+            @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+            def upstream():
+                ...
 
-        @asset(
-            ins={
-                "upstream": AssetIn(partition_mapping=SpecificPartitionsPartitionMapping(["a"]))
-            }
-        )
-        def a_downstream(upstream):
-            ...
+            @asset(
+                ins={
+                    "upstream": AssetIn(partition_mapping=SpecificPartitionsPartitionMapping(["a"]))
+                }
+            )
+            def a_downstream(upstream):
+                ...
     """
 
     def get_upstream_mapped_partitions_result_for_partitions(
@@ -280,7 +280,13 @@ class SpecificPartitionsPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
+        # if any of the partition keys in this partition mapping are contained within the upstream
+        # partitions subset, then all partitions of the downstream asset are dependencies
+        if any(key in upstream_partitions_subset for key in self.partition_keys):
+            return downstream_partitions_def.subset_with_all_partitions(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        return downstream_partitions_def.empty_subset()
 
 
 @experimental
@@ -396,7 +402,7 @@ class MultiToSingleDimensionPartitionMapping(
         for key in multipartitions_def.get_partition_keys(
             current_time=None, dynamic_partitions_store=dynamic_partitions_store
         ):
-            key = cast(MultiPartitionKey, key)  # noqa: PLW2901
+            key = cast(MultiPartitionKey, key)
             if (
                 key.keys_by_dimension[partition_dimension_name]
                 in partitions_subset.get_partition_keys()
@@ -549,6 +555,7 @@ class MultiPartitionMapping(
 
     Examples:
         .. code-block:: python
+
             weekly_abc = MultiPartitionsDefinition(
                 {
                     "abc": StaticPartitionsDefinition(["a", "b", "c"]),
@@ -581,6 +588,7 @@ class MultiPartitionMapping(
 
     Examples:
         .. code-block:: python
+
             weekly_abc = MultiPartitionsDefinition(
                 {
                     "abc": StaticPartitionsDefinition(["a", "b", "c"]),

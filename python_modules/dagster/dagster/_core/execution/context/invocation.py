@@ -27,6 +27,7 @@ from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
     ResourceDefinition,
@@ -75,6 +76,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         resources_config: Mapping[str, Any],
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
+        partition_key_range: Optional[PartitionKeyRange],
         mapping_key: Optional[str],
         assets_def: Optional[AssetsDefinition],
     ):
@@ -108,7 +110,12 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._log = initialize_console_manager(None)
         self._pdb: Optional[ForkedPdb] = None
         self._cm_scope_entered = False
+        check.invariant(
+            not (partition_key and partition_key_range),
+            "Must supply at most one of partition_key or partition_key_range",
+        )
         self._partition_key = partition_key
+        self._partition_key_range = partition_key_range
         self._user_events: List[UserEvent] = []
         self._output_metadata: Dict[str, Any] = {}
 
@@ -223,6 +230,20 @@ class UnboundOpExecutionContext(OpExecutionContext):
             return self._partition_key
         check.failed("Tried to access partition_key for a non-partitioned run")
 
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The range of partition keys for the current run.
+
+        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+        """
+        if self._partition_key_range:
+            return self._partition_key_range
+        elif self._partition_key:
+            return PartitionKeyRange(self._partition_key, self._partition_key)
+        else:
+            check.failed("Tried to access partition_key range for a non-partitioned run")
+
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return self.partition_key
 
@@ -272,6 +293,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
             partition_key=self._partition_key,
+            partition_key_range=self._partition_key_range,
             assets_def=self._assets_def,
         )
 
@@ -334,6 +356,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             resources_config=self._resources_config,
             instance=self._instance,
             partition_key=self._partition_key,
+            partition_key_range=self._partition_key_range,
             mapping_key=self._mapping_key,
             assets_def=self._assets_def,
         )
@@ -345,6 +368,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             resources_config=self._resources_config,
             instance=self._instance,
             partition_key=self._partition_key,
+            partition_key_range=self._partition_key_range,
             mapping_key=self._mapping_key,
             assets_def=self._assets_def,
         )
@@ -382,6 +406,7 @@ class BoundOpExecutionContext(OpExecutionContext):
     _output_metadata: Dict[str, Any]
     _mapping_key: Optional[str]
     _partition_key: Optional[str]
+    _partition_key_range: Optional[PartitionKeyRange]
     _assets_def: Optional[AssetsDefinition]
 
     def __init__(
@@ -400,6 +425,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         output_metadata: Dict[str, Any],
         mapping_key: Optional[str],
         partition_key: Optional[str],
+        partition_key_range: Optional[PartitionKeyRange],
         assets_def: Optional[AssetsDefinition],
     ):
         self._op_def = op_def
@@ -417,6 +443,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         self._output_metadata = output_metadata
         self._mapping_key = mapping_key
         self._partition_key = partition_key
+        self._partition_key_range = partition_key_range
         self._assets_def = assets_def
 
     @property
@@ -562,6 +589,20 @@ class BoundOpExecutionContext(OpExecutionContext):
             return self._partition_key
         check.failed("Tried to access partition_key for a non-partitioned asset")
 
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The range of partition keys for the current run.
+
+        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+        """
+        if self._partition_key_range:
+            return self._partition_key_range
+        elif self._partition_key:
+            return PartitionKeyRange(self._partition_key, self._partition_key)
+        else:
+            check.failed("Tried to access partition_key range for a non-partitioned run")
+
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return self.partition_key
 
@@ -671,6 +712,7 @@ def build_op_context(
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
     partition_key: Optional[str] = None,
+    partition_key_range: Optional[PartitionKeyRange] = None,
     mapping_key: Optional[str] = None,
     _assets_def: Optional[AssetsDefinition] = None,
 ) -> UnboundOpExecutionContext:
@@ -688,9 +730,10 @@ def build_op_context(
         resources_config (Optional[Mapping[str, Any]]): The config to provide to the resources.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
-        partition_key (Optional[str]): String value representing partition key to execute with.
         mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic
             output. Can be accessed using ``context.get_mapping_key()``.
+        partition_key (Optional[str]): String value representing partition key to execute with.
+        partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
         _assets_def (Optional[AssetsDefinition]): Internal argument that populates the op's assets
             definition, not meant to be populated by users.
 
@@ -718,6 +761,9 @@ def build_op_context(
         op_config=op_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),
+        partition_key_range=check.opt_inst_param(
+            partition_key_range, "partition_key_range", PartitionKeyRange
+        ),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         assets_def=check.opt_inst_param(_assets_def, "_assets_def", AssetsDefinition),
     )
@@ -729,6 +775,7 @@ def build_asset_context(
     asset_config: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     partition_key: Optional[str] = None,
+    partition_key_range: Optional[PartitionKeyRange] = None,
 ):
     """Builds asset execution context from provided parameters.
 
@@ -745,6 +792,7 @@ def build_asset_context(
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
         partition_key (Optional[str]): String value representing partition key to execute with.
+        partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
 
     Examples:
         .. code-block:: python
@@ -760,5 +808,6 @@ def build_asset_context(
         resources=resources,
         resources_config=resources_config,
         partition_key=partition_key,
+        partition_key_range=partition_key_range,
         instance=instance,
     )

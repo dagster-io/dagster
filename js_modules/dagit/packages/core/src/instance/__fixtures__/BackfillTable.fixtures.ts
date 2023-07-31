@@ -437,7 +437,7 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = b
 
 export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPartitionBackfill({
   id: 'likqkgna',
-  status: BulkActionStatus.FAILED,
+  status: BulkActionStatus.CANCELING,
   isValidSerialization: true,
   numPartitions: 30,
   hasCancelPermission: true,

@@ -236,6 +236,7 @@ class RunStatusSensorContext:
     @public
     @property
     def partition_key(self) -> Optional[str]:
+        """Optional[str]: The partition key of the relevant run."""
         return self._partition_key
 
     def __enter__(self) -> "RunStatusSensorContext":

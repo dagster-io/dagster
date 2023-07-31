@@ -319,7 +319,7 @@ def asset_key_to_dep_node_handles(
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
     # handle internal_asset_deps within graph-backed assets
-    for _, assets_def in assets_defs_by_node_handle.items():
+    for assets_def in assets_defs_by_node_handle.values():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
             if asset_key not in assets_def.keys:
                 continue
@@ -586,6 +586,9 @@ class AssetLayer:
         )
         return self._asset_deps[asset_key]
 
+    def downstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        return {k for k, v in self._asset_deps.items() if asset_key in v}
+
     @property
     def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[NodeHandle]]:
         return self._dependency_node_handles_by_asset_key
@@ -605,6 +608,9 @@ class AssetLayer:
     @property
     def has_assets_defs(self) -> bool:
         return len(self.assets_defs_by_key) > 0
+
+    def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.assets_defs_by_key
 
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
@@ -812,8 +818,6 @@ def _subset_assets_defs(
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
-    from dagster._core.definitions import AssetsDefinition
-
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 

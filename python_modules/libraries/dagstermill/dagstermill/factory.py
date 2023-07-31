@@ -237,7 +237,7 @@ def _handle_events_from_notebook(
 
     output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-    for output_name, _ in step_context.op_def.output_dict.items():
+    for output_name in step_context.op_def.output_dict.keys():
         data_dict = output_nb.scraps.data_dict
         if output_name in data_dict:
             # read outputs that were passed out of process via io manager from `yield_result`
@@ -326,7 +326,7 @@ def _make_dagstermill_compute_fn(
                     op_context.log.warning(
                         "Error when attempting to materialize executed notebook using file"
                         " manager:"
-                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        f" {serializable_error_info_from_exc_info(sys.exc_info())}\nNow"
                         " falling back to local: notebook execution was temporarily materialized"
                         f" at {executed_notebook_path}\nIf you have supplied a file manager and"
                         " expect to use it for materializing the notebook, please include"

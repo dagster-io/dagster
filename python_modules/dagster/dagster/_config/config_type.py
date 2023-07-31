@@ -127,7 +127,11 @@ class ConfigScalarKind(PythonEnum):
 
 class ConfigScalar(ConfigType):
     def __init__(
-        self, key: str, given_name: Optional[str], scalar_kind: ConfigScalarKind, **kwargs: object
+        self,
+        key: str,
+        given_name: Optional[str],
+        scalar_kind: ConfigScalarKind,
+        **kwargs: typing.Any,
     ):
         self.scalar_kind = check.inst_param(scalar_kind, "scalar_kind", ConfigScalarKind)
         super(ConfigScalar, self).__init__(
@@ -230,7 +234,8 @@ class Array(ConfigType):
 
     @public
     @property
-    def description(self):
+    def description(self) -> str:
+        """A human-readable description of this Array type."""
         return f"List of {self.key}"
 
     def type_iterator(self) -> Iterator["ConfigType"]:

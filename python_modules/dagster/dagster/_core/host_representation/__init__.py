@@ -52,7 +52,7 @@ from .origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 
-# isort: split
+# ruff: isort: split
 from .code_location import (
     CodeLocation as CodeLocation,
     GrpcServerCodeLocation as GrpcServerCodeLocation,

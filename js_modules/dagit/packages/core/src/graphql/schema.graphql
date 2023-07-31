@@ -703,6 +703,7 @@ type FreshnessPolicy {
   maximumLagMinutes: Float!
   cronSchedule: String
   cronScheduleTimezone: String
+  lastEvaluationTimestamp: String
 }
 
 type AutoMaterializePolicy {
@@ -1244,6 +1245,7 @@ type Run implements PipelineRun {
   hasReExecutePermission: Boolean!
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
+  hasConcurrencyKeySlots: Boolean!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2128,6 +2130,7 @@ type Instance {
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
+  supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
 }
 
@@ -3102,6 +3105,8 @@ type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeCondi
 type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
   partitionKeysOrError: PartitionKeysOrError
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
 }
 
 type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import graphene
 from dagster import (
@@ -14,7 +14,6 @@ from dagster._core.host_representation import (
     GrpcServerCodeLocation,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
@@ -45,6 +44,9 @@ from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
 from .util import ResolveInfo, non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.external_data import ExternalAssetNode
 
 GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 

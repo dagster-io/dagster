@@ -39,6 +39,7 @@ from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -477,6 +478,8 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_assets_with_freshness_policies_in_repo = 0
     num_assets_with_eager_auto_materialize_policies_in_repo = 0
     num_assets_with_lazy_auto_materialize_policies_in_repo = 0
+    num_assets_with_single_run_backfill_policies_in_repo = 0
+    num_assets_with_multi_run_backfill_policies_in_repo = 0
     num_source_assets_in_repo = 0
     num_observable_source_assets_in_repo = 0
     num_dbt_assets_in_repo = 0
@@ -500,6 +503,12 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
                 num_assets_with_eager_auto_materialize_policies_in_repo += 1
             else:
                 num_assets_with_lazy_auto_materialize_policies_in_repo += 1
+
+        if asset.backfill_policy is not None:
+            if asset.backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN:
+                num_assets_with_single_run_backfill_policies_in_repo += 1
+            else:
+                num_assets_with_multi_run_backfill_policies_in_repo += 1
 
         if asset.is_source:
             num_source_assets_in_repo += 1
@@ -538,6 +547,12 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_assets_with_lazy_auto_materialize_policies_in_repo": str(
             num_assets_with_lazy_auto_materialize_policies_in_repo
         ),
+        "num_assets_with_single_run_backfill_policies_in_repo": str(
+            num_assets_with_single_run_backfill_policies_in_repo
+        ),
+        "num_assets_with_multi_run_backfill_policies_in_repo": str(
+            num_assets_with_multi_run_backfill_policies_in_repo
+        ),
         "num_observable_source_assets_in_repo": str(num_observable_source_assets_in_repo),
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
         "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
@@ -545,7 +560,7 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     }
 
 
-def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, str]:
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, Any]:
     used_dagster_resources = []
     used_custom_resources = False
 
@@ -561,7 +576,7 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
             used_custom_resources = True
 
     return {
-        "dagster_resources": str(used_dagster_resources),
+        "dagster_resources": used_dagster_resources,
         "has_custom_resources": str(used_custom_resources),
     }
 

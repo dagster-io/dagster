@@ -28,7 +28,7 @@ All of the processes and services that make up your Dagster deployment should sh
 
 ## Default local behavior
 
-When a Dagster process like Dagit or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
+When a Dagster process like the Dagster webserver or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
 
 If `DAGSTER_HOME` isn't set, Dagster tools will use a temporary directory for storage that is cleaned up when the process exits. This can be useful when using Dagster for temporary local development or testing, when you don't care about the results being persisted.
 
@@ -91,7 +91,7 @@ Here's a breakdown of the files and directories that are generated:
 
 In persistent Dagster deployments, you'll typically want to configure many of the components on the instance. For example, you may want to use a Postgres instance to store runs and the corresponding event logs, but stream compute logs to an Amazon S3 bucket.
 
-To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dagster tools will look for on startup. In this file, you can configure different aspects of your Dagster instance, including:
+To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and all other Dagster tools will look for on startup. In this file, you can configure different aspects of your Dagster instance, including:
 
 <table
   className="table"
@@ -199,7 +199,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which Dagit and all Dag
         <code>data_retention</code>
       </td>
       <td>
-        Controls ow long Dagster retains certain types of data that have
+        Controls how long Dagster retains certain types of data that have
         diminishing value over time, such as schedule/sensor tick data.
       </td>
     </tr>
@@ -729,7 +729,7 @@ Refer to the [Telemetry documentation](/getting-started/telemetry) for more info
 
 The `code_servers` key allows you to configure how Dagster loads the code in a [code location](/concepts/code-locations/workspace-files).
 
-When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), Dagit and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
+When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
 
 If you expect that your code will take longer than 60 seconds to load, set the `code_servers.local_startup_timeout` key. The value should be an integer that indicates the maximum timeout, in seconds.
 

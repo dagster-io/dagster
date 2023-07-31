@@ -62,12 +62,12 @@ class MyIOManager(IOManager):
 Alternative example with an asset that handles its own I/O:
 
 ```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
-from dagster import DailyPartitionsDefinition, asset
+from dagster import AssetKey, DailyPartitionsDefinition, asset
 
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    non_argument_deps={"raw_events"},
+    deps=[AssetKey("raw_events")],
 )
 def events(context):
     (
@@ -90,7 +90,7 @@ def events(context):
 
 ### Partitioned Job Backfills
 
-You can launch and monitor backfills of a job using the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#dagit-partitions-tab).
+You can launch and monitor backfills of a job using the [Partitions tab](/concepts/partitions-schedules-sensors/partitions#dagster-ui-partitions-tab).
 
 To launch a backfill, click the "Launch backfill" button at the top center of the Partitions tab. This opens the "Launch backfill" modal, which lets you select the set of partitions to launch the backfill over. A run will be launched for each partition.
 

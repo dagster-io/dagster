@@ -1,3 +1,4 @@
+import datetime
 from typing import Sequence
 
 from dagster import (
@@ -77,6 +78,16 @@ static_partitioned_eager_after_non_partitioned = [
     ),
 ]
 
+non_auto_to_lazy = [
+    asset_def("non_auto"),
+    asset_def(
+        "auto",
+        ["non_auto"],
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+    ),
+]
+
 
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
@@ -145,15 +156,14 @@ auto_materialize_policy_scenarios = {
             )
         ],
     ),
-    "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
             AutoMaterializePolicy(
                 on_missing=True,
                 for_freshness=True,
                 on_new_parent_data=True,
-                time_window_partition_scope_minutes=24 * 2 * 60,
-                max_materializations_per_minute=None,
+                max_materializations_per_minute=48,
             ),
         ),
         unevaluated_runs=[],
@@ -168,32 +178,28 @@ auto_materialize_policy_scenarios = {
             **{
                 ("hourly", p): {MissingAutoMaterializeCondition()}
                 for p in hourly_partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                    PartitionKeyRange(start="2013-01-05-4:00", end="2013-01-07-03:00")
                 )
             },
-            ("daily", "2013-01-05"): {
-                ParentOutdatedAutoMaterializeCondition(
-                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
-                ),
-                MissingAutoMaterializeCondition(),
-            },
-            ("daily", "2013-01-06"): {
-                ParentOutdatedAutoMaterializeCondition(
-                    waiting_on_asset_keys=frozenset({AssetKey("hourly")}),
-                ),
-                MissingAutoMaterializeCondition(),
+            **{
+                ("hourly", p): {
+                    MaxMaterializationsExceededAutoMaterializeCondition(),
+                    MissingAutoMaterializeCondition(),
+                }
+                for p in hourly_partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
+                )
             },
         },
     ),
-    "auto_materialize_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
+    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
             AutoMaterializePolicy(
                 on_missing=True,
                 for_freshness=True,
                 on_new_parent_data=False,
-                time_window_partition_scope_minutes=24 * 2 * 60,
-                max_materializations_per_minute=None,
+                max_materializations_per_minute=48,
             ),
         ),
         unevaluated_runs=[],
@@ -224,7 +230,6 @@ auto_materialize_policy_scenarios = {
                 on_missing=True,
                 on_new_parent_data=True,
                 for_freshness=False,
-                time_window_partition_scope_minutes=None,
                 max_materializations_per_minute=1,
             ),
         ),
@@ -260,7 +265,6 @@ auto_materialize_policy_scenarios = {
                 on_missing=True,
                 on_new_parent_data=True,
                 for_freshness=False,
-                time_window_partition_scope_minutes=None,
                 max_materializations_per_minute=5,
             ),
         ),
@@ -298,8 +302,18 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"]), run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
         expected_conditions={
-            "asset3": {ParentMaterializedAutoMaterializeCondition()},
-            "asset4": {ParentMaterializedAutoMaterializeCondition()},
+            "asset3": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset({AssetKey("asset1")}),
+                    will_update_asset_keys=frozenset(),
+                )
+            },
+            "asset4": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset({AssetKey("asset2")}),
+                    will_update_asset_keys=frozenset({AssetKey("asset3")}),
+                )
+            },
         },
     ),
     "auto_materialize_policy_diamond_one_side_updated": AssetReconciliationScenario(
@@ -315,7 +329,10 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[],
         expected_conditions={
             "asset4": {
-                ParentMaterializedAutoMaterializeCondition(),
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset({AssetKey("asset2")}),
+                    will_update_asset_keys=frozenset(),
+                ),
                 ParentOutdatedAutoMaterializeCondition(
                     waiting_on_asset_keys=frozenset({AssetKey("asset3")})
                 ),
@@ -402,7 +419,10 @@ auto_materialize_policy_scenarios = {
                 expected_run_requests=[],
                 expected_conditions={
                     "D": {
-                        ParentMaterializedAutoMaterializeCondition(),
+                        ParentMaterializedAutoMaterializeCondition(
+                            updated_asset_keys=frozenset({AssetKey("C"), AssetKey("root2")}),
+                            will_update_asset_keys=frozenset(),
+                        ),
                         ParentOutdatedAutoMaterializeCondition(
                             # waiting on A to be materialized (pulling in the new version of root1)
                             waiting_on_asset_keys=frozenset({AssetKey("A")})
@@ -414,7 +434,10 @@ auto_materialize_policy_scenarios = {
             expected_run_requests=[],
             expected_conditions={
                 "D": {
-                    ParentMaterializedAutoMaterializeCondition(),
+                    ParentMaterializedAutoMaterializeCondition(
+                        updated_asset_keys=frozenset({AssetKey("root2"), AssetKey("C")}),
+                        will_update_asset_keys=frozenset(),
+                    ),
                     ParentOutdatedAutoMaterializeCondition(
                         # now waiting on B to be materialized (pulling in the new version of root1/A)
                         waiting_on_asset_keys=frozenset({AssetKey("B")})
@@ -427,8 +450,32 @@ auto_materialize_policy_scenarios = {
             run_request(["C", "D"]),
         ],
         expected_conditions={
-            "C": {ParentMaterializedAutoMaterializeCondition()},
-            "D": {ParentMaterializedAutoMaterializeCondition()},
+            "C": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset({AssetKey("B")}),
+                    will_update_asset_keys=frozenset(),
+                )
+            },
+            "D": {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset({AssetKey("root2")}),
+                    will_update_asset_keys=frozenset({AssetKey("C")}),
+                )
+            },
         },
+    ),
+    "no_auto_materialize_policy_to_missing_lazy": AssetReconciliationScenario(
+        assets=non_auto_to_lazy,
+        asset_selection=AssetSelection.keys("auto"),
+        unevaluated_runs=[run(["non_auto"])],
+        evaluation_delta=datetime.timedelta(minutes=55),
+        expected_run_requests=[run_request(["auto"])],
+    ),
+    "no_auto_materialize_policy_to_lazy": AssetReconciliationScenario(
+        assets=non_auto_to_lazy,
+        asset_selection=AssetSelection.keys("auto"),
+        unevaluated_runs=[run(["non_auto", "auto"]), run(["non_auto"])],
+        between_runs_delta=datetime.timedelta(minutes=55),
+        expected_run_requests=[run_request(["auto"])],
     ),
 }

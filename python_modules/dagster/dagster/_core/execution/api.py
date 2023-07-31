@@ -1,6 +1,7 @@
 import sys
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -25,7 +26,6 @@ from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvari
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
-from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
@@ -46,6 +46,9 @@ from .context_creation_job import (
     scoped_job_context,
 )
 from .job_execution_result import JobExecutionResult
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |

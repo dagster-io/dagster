@@ -24,7 +24,6 @@ setup(
     description="The GraphQL frontend to python dagster.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

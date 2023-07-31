@@ -1,4 +1,5 @@
 from dagster import asset
+from dagster._core.definitions.asset_graph import AssetGraph
 
 
 # placeholder so that the test works. this isn't used in the docs
@@ -45,4 +46,4 @@ assets_with_resource = with_resources(
 config_asset_job = define_asset_job(
     name="config_asset_job",
     selection=AssetSelection.assets(iris_kmeans_jupyter_notebook).upstream(),
-).resolve(assets_with_resource, [])
+).resolve(asset_graph=AssetGraph.from_assets(assets_with_resource))

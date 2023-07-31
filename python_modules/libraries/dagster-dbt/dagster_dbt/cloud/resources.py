@@ -592,10 +592,6 @@ class DbtCloudResource(DbtCloudClient):
     pass
 
 
-# This is a temporary shim to support the old resource name.
-DbtCloudResourceV2 = DbtCloudResource
-
-
 class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """This resource helps interact with dbt Cloud connectors."""
 

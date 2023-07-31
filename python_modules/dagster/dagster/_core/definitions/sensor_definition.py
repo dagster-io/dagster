@@ -222,6 +222,7 @@ class SensorEvaluationContext:
     @public
     @property
     def resources(self) -> Resources:
+        """Resources: A mapping from resource key to instantiated resources for this sensor."""
         from dagster._core.definitions.scoped_resources_builder import (
             IContainsGenerator,
         )
@@ -274,6 +275,7 @@ class SensorEvaluationContext:
     @public
     @property
     def instance(self) -> DagsterInstance:
+        """DagsterInstance: The current DagsterInstance."""
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
         # constructed under test.
         if not self._instance:
@@ -294,11 +296,15 @@ class SensorEvaluationContext:
     @public
     @property
     def last_completion_time(self) -> Optional[float]:
+        """Optional[float]: Timestamp representing the last time this sensor completed an evaluation.
+        """
         return self._last_completion_time
 
     @public
     @property
     def last_run_key(self) -> Optional[str]:
+        """Optional[str]: The run key supplied to the most recent RunRequest produced by this sensor.
+        """
         return self._last_run_key
 
     @public
@@ -328,11 +334,13 @@ class SensorEvaluationContext:
     @public
     @property
     def repository_name(self) -> Optional[str]:
+        """Optional[str]: The name of the repository that this sensor resides in."""
         return self._repository_name
 
     @public
     @property
     def repository_def(self) -> Optional["RepositoryDefinition"]:
+        """Optional[RepositoryDefinition]: The RepositoryDefinition that this sensor resides in."""
         return self._repository_def
 
     @property
@@ -644,21 +652,26 @@ class SensorDefinition(IHasInternalInit):
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
+        """Set[str]: The set of keys for resources that must be provided to this sensor."""
         return self._required_resource_keys
 
     @public
     @property
     def name(self) -> str:
+        """str: The name of this sensor."""
         return self._name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A description for this sensor."""
         return self._description
 
     @public
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
+        """Optional[int]: The minimum number of seconds between sequential evaluations of this sensor.
+        """
         return self._min_interval
 
     @property
@@ -668,6 +681,9 @@ class SensorDefinition(IHasInternalInit):
     @public
     @property
     def job(self) -> Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+        targeted by this schedule.
+        """
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -680,6 +696,9 @@ class SensorDefinition(IHasInternalInit):
     @public
     @property
     def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        """List[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]: A list of jobs
+        that are targeted by this schedule.
+        """
         if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
             return [target.target for target in self._targets]  # type: ignore  # (illegible conditional)
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
@@ -886,6 +905,7 @@ class SensorDefinition(IHasInternalInit):
     @public
     @property
     def job_name(self) -> Optional[str]:
+        """Optional[str]: The name of the job that is targeted by this sensor."""
         if len(self._targets) > 1:
             raise DagsterInvalidInvocationError(
                 f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
@@ -896,6 +916,9 @@ class SensorDefinition(IHasInternalInit):
     @public
     @property
     def default_status(self) -> DefaultSensorStatus:
+        """DefaultSensorStatus: The default status for this sensor when it is first loaded in
+        a code location.
+        """
         return self._default_status
 
     @property

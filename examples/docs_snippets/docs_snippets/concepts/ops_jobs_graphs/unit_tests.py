@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 from dagster import (
     AssetMaterialization,
@@ -273,7 +273,7 @@ def test_event_stream():
         DagsterEventType.STEP_SUCCESS,
     ]
 
-    # ops communicate what they did via the event stream, viewable in tools (e.g. dagit)
+    # ops communicate what they did via the event stream, viewable in tools (e.g. the Dagster UI)
     (
         _start,
         expectation_event,

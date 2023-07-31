@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -17,7 +18,6 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import (
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
@@ -31,6 +31,7 @@ from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -126,6 +127,12 @@ class AssetEntry(
         if self.last_materialization_record is None:
             return None
         return self.last_materialization_record.event_log_entry
+
+    @property
+    def last_materialization_storage_id(self) -> Optional[int]:
+        if self.last_materialization_record is None:
+            return None
+        return self.last_materialization_record.storage_id
 
 
 class AssetRecord(NamedTuple):
@@ -338,7 +345,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         pass
 

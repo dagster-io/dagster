@@ -187,7 +187,7 @@ def asset_sensor(
 
         # Preserve any resource arguments from the underlying function, for when we inspect the
         # wrapped function later on
-        _wrapped_fn.__signature__ = inspect.signature(fn)
+        _wrapped_fn = update_wrapper(_wrapped_fn, wrapped=fn)
 
         return AssetSensorDefinition(
             name=sensor_name,
