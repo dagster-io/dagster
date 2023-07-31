@@ -398,7 +398,6 @@ class AssetGraph:
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
 
-        print("xxxx", parent_asset_key, child_asset_key, child_partitions_def, partition_key)
         return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
                 [partition_key]
