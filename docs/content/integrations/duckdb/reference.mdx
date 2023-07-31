@@ -7,17 +7,26 @@ description: Store your Dagster assets in DuckDB
 
 This reference page provides information for working with [`dagster-duckdb`](/\_apidocs/libraries/dagster-duckdb) features that are not covered as part of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster).
 
+DuckDB I/O manager customization:
+
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
 - [Using the DuckDB I/O manager with other I/O managers](#using-the-duckdb-io-manager-with-other-io-managers)
 - [Storing and loading PySpark or Polars DataFrames in DuckDB](#storing-and-loading-pyspark-or-polars-dataframes-in-duckdb)
 - [Storing multiple DataFrame types in DuckDB](#storing-multiple-dataframe-types-in-duckdb)
+
+DuckDB resource information:
+
 - [Executing custom SQL commands with the DuckDB resource](#executing-custom-sql-commands-with-the-duckdb-resource)
 
 ---
 
-## Selecting specific columns in a downstream asset
+## Customizing the DuckDB I/O manager's behavior
+
+The DuckDB I/O manager provides several ways to customize how your data is stored and loaded in DuckDB. However, if you find that these do not provide enough customization for your use case, we recommend using the DuckDB resource to save and load your data. By using the resource, you will have more fine grained control over how your data in handled. For more information on the DuckDB resource, see the \[DuckDB resource]\(# TODO LINK) section.
+
+### Selecting specific columns in a downstream asset
 
 Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the DuckDB I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
 
@@ -50,7 +59,7 @@ When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using 
 
 ---
 
-## Storing partitioned assets
+### Storing partitioned assets
 
 The DuckDB I/O manager supports storing and loading partitioned data. To correctly store and load data from the DuckDB table, the DuckDB I/O manager needs to know which column contains the data defining the partition bounds. The DuckDB I/O manager uses this information to construct the correct queries to select or replace the data.
 
@@ -59,7 +68,7 @@ In the following sections, we describe how the I/O manager constructs these quer
 <TabGroup>
 <TabItem name="Static partitioned assets">
 
-### Storing static partitioned assets
+#### Storing static partitioned assets
 
 To store static partitioned assets in DuckDB, specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
@@ -116,7 +125,7 @@ SELECT *
 </TabItem>
 <TabItem name="Time partitioned assets">
 
-### Storing time partitioned assets
+#### Storing time partitioned assets
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
@@ -167,7 +176,7 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 </TabItem>
 <TabItem name="Multi-partitioned assets">
 
-### Storing multi-partitioned assets
+#### Storing multi-partitioned assets
 
 The DuckDB I/O manager can also store data partitioned on multiple dimensions. To do this, specify the column for each partition as a dictionary of `partition_expr` metadata:
 
@@ -229,7 +238,7 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 
 ---
 
-## Storing tables in multiple schemas
+### Storing tables in multiple schemas
 
 You may want to have different assets stored in different DuckDB schemas. The DuckDB I/O manager allows you to specify the schema in several ways.
 
@@ -274,7 +283,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 ---
 
-## Using the DuckDB I/O manager with other I/O managers
+### Using the DuckDB I/O manager with other I/O managers
 
 You may have assets that you don't want to store in DuckDB. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the <PyObject object="asset" decorator /> decorator:
 
@@ -327,7 +336,7 @@ In this example:
 
 ---
 
-## Storing and loading PySpark or Polars DataFrames in DuckDB
+### Storing and loading PySpark or Polars DataFrames in DuckDB
 
 The DuckDB I/O manager also supports storing and loading PySpark and Polars DataFrames.
 
@@ -471,7 +480,7 @@ defs = Definitions(
 </TabItem>
 <TabItem name="Polars DataFrames">
 
-### Storing and loading Polars DataFrames in DuckDB
+#### Storing and loading Polars DataFrames in DuckDB
 
 To use the <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />, first install the package:
 
@@ -502,7 +511,7 @@ defs = Definitions(
 
 ---
 
-## Storing multiple DataFrame types in DuckDB
+### Storing multiple DataFrame types in DuckDB
 
 If you work with several DataFrame libraries and want a single I/O manager to handle storing and loading these DataFrames in DuckDB, you can write a new I/O manager that handles the DataFrame types.
 
@@ -555,9 +564,9 @@ defs = Definitions(
 
 ---
 
-## Executing custom SQL commands with the DuckDB resource
+## DuckDB resource information
 
-In addition to the DuckDB I/O manager, Dagster also provides a DuckDB [resource](/concepts/resources) for executing custom SQL queries.
+The DuckDB resource provides access to a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection) object. This allows you full control over how your data is stored and retrieved in your database.
 
 ```python file=/integrations/duckdb/reference/resource.py startafter=start endbefore=end
 import pandas as pd
@@ -571,28 +580,17 @@ from dagster import Definitions, asset
 
 @asset
 def small_petals(duckdb: DuckDBResource) -> pd.DataFrame:
-    with duckdb.get_connection() as conn:
+    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
         return (
             conn.cursor()
             .execute(
-                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
+                "SELECT * FROM iris.iris_dataset WHERE 'petal_length_cm' < 1 AND"
                 " 'petal_width_cm' < 1"
             )
             .fetch_df()
         )
-
-
-defs = Definitions(
-    assets=[small_petals],
-    resources={
-        "duckdb": DuckDBResource(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        )
-    },
-)
 ```
 
-In this example, we attach the DuckDB resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can use this connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in DuckDB](/integrations/duckdb/using-duckdb-with-dagster#store-a-dagster-asset-as-a-table-in-duckdb) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster).
+In this example, we attach the DuckDB resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can use this connection to execute a custom SQL query against the `iris_dataset` table created in [Step 2: Create tables in DuckDB](/integrations/duckdb/using-duckdb-with-dagster#store-a-dagster-asset-as-a-table-in-duckdb) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster). When the `duckdb.get_connection` context is exited, the created DuckDB connections will be closed.
 
-For more information on the DuckDB resource, including additional configuration settings, see the [DuckDB resource API docs](/\_apidocs/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).
+For more information on the DuckDB resource, see the [DuckDB resource API docs](/\_apidocs/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).

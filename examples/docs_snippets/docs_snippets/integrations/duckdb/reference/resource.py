@@ -13,25 +13,15 @@ from dagster import Definitions, asset
 
 @asset
 def small_petals(duckdb: DuckDBResource) -> pd.DataFrame:
-    with duckdb.get_connection() as conn:
+    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
         return (
             conn.cursor()
             .execute(
-                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
+                "SELECT * FROM iris.iris_dataset WHERE 'petal_length_cm' < 1 AND"
                 " 'petal_width_cm' < 1"
             )
             .fetch_df()
         )
 
-
-defs = Definitions(
-    assets=[small_petals],
-    resources={
-        "duckdb": DuckDBResource(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        )
-    },
-)
 
 # end
