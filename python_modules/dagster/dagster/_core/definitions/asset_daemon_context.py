@@ -337,6 +337,10 @@ class AssetDaemonContext:
             ) = self.instance_queryer.get_updated_and_missing_parent_asset_partitions(
                 asset_partition,
                 parent_asset_partitions,
+                # do a precise check for updated parents, factoring in data versions, as long as
+                # we're within reasonable limits on the number of partitions to check
+                use_asset_versions=len(parent_asset_partitions) < 100
+                and len(has_or_will_update) < 100,
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
@@ -443,6 +447,8 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be materialized.
             - The expected data time of the asset after this tick.
         """
+        print("===============")
+        print(asset_key)
         auto_materialize_policy = check.not_none(
             self.get_implicit_auto_materialize_policy(asset_key)
         )
@@ -480,6 +486,7 @@ class AssetDaemonContext:
             for condition, asset_partitions in parent_updated_conditions.items():
                 conditions[condition].update(asset_partitions)
                 candidates.update(asset_partitions)
+        print("got new parent data")
 
         # MissingAutoMaterializeCondition
         if auto_materialize_policy.on_missing:
@@ -487,6 +494,7 @@ class AssetDaemonContext:
             for condition, asset_partitions in missing_conditions.items():
                 conditions[condition].update(asset_partitions)
                 candidates.update(asset_partitions)
+        print("got missing")
 
         # These should be conditions, but aren't currently, so we just manually strip out things
         # from our materialization set
@@ -509,6 +517,7 @@ class AssetDaemonContext:
                 for condition, asset_partitions in conditions.items():
                     if candidate in asset_partitions:
                         conditions[condition].remove(candidate)
+        print("filtered")
 
         # ParentOutdatedAutoMaterializeCondition (currently no way to disable this)
         if True:
@@ -518,6 +527,7 @@ class AssetDaemonContext:
             for condition, asset_partitions in parent_outdated_conditions.items():
                 conditions[condition].update(asset_partitions)
                 candidates.difference_update(asset_partitions)
+        print("got parent outdated")
 
         # MaxMaterializationsExceededAutoMaterializeCondition
         if auto_materialize_policy.max_materializations_per_minute is not None:
@@ -530,6 +540,7 @@ class AssetDaemonContext:
                 conditions[condition].update(asset_partitions)
                 candidates.difference_update(asset_partitions)
 
+        print("done")
         return conditions, candidates, expected_data_time
 
     def get_auto_materialize_conditions(
