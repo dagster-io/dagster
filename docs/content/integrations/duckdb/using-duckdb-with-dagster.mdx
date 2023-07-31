@@ -33,7 +33,32 @@ This tutorial is divided in two parts. Both parts will create the same assets, b
 
 ## Part 1: Using the DuckDB Resource
 
-### Step 1: Create tables in DuckDB
+
+### Step 1: Configure the DuckDB resource
+
+To use the DuckDB resource, you add it to your `Definitions` object. The DuckDB resource requires some configuration. You must set a path to a duckdb database as the `database` configuration value. If the database does not already exist, it will be created for you:
+
+```python file=/integrations/duckdb/tutorial/resource/configuration.py startafter=start_example endbefore=end_example
+from dagster_duckdb import DuckDBResource
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "duckdb": DuckDBResource(
+            database="path/to/my_duckdb_database.duckdb",  # required
+        )
+    },
+)
+
+
+# end_example
+```
+
+---
+
+### Step 2: Create tables in DuckDB
 
 <TabGroup>
 
@@ -89,27 +114,6 @@ In this example, you create a <PyObject object="SourceAsset" /> for a pre-existi
 
 </TabGroup>
 
-### Step 2: Configure the DuckDB resource
-
-Before you can materialize your assets, the DuckDB resource requires some configuration. You must set a path to a duckdb database as the `database` configuration value. If the database does not already exist, it will be created for you:
-
-```python file=/integrations/duckdb/tutorial/resource/configuration.py startafter=start_example endbefore_end_example
-from dagster_duckdb import DuckDBResource
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "duckdb": DuckDBResource(
-            database="path/to/my_duckdb_database.duckdb",  # required
-        )
-    },
-)
-
-
-# end_example
-```
 
 Now you can run `dagster dev` and materialize the `iris_dataset` asset from the Dagster UI.
 
