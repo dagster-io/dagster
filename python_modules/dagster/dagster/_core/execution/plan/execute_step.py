@@ -118,6 +118,39 @@ def _step_output_error_checked_user_event_sequence(
                     "must yield DynamicOutput, got Output."
                 )
 
+            # For any output associated with an asset, make sure that none of its dependent assets
+            # have already been yielded. If this condition (outputs yielded in topological order) is
+            # not satisfied, automatic data version computation can yield wrong results.
+            #
+            # We look for dependent keys that have already been yielded rather than dependency keys
+            # that have not yet been yielded. This is because we don't always know which
+            # dependencies will actually be computed within the step. If A depends on B, it is
+            # possible that a cached version of B will be used and B will never be yielded. In
+            # contrast, if both A and B are yielded, A should never precede B.
+            asset_layer = step_context.job_def.asset_layer
+            node_handle = step_context.node_handle
+            asset_info = asset_layer.asset_info_for_output(node_handle, output_def.name)
+            if (
+                asset_info is not None
+                and asset_info.is_required
+                and asset_layer.has_assets_def_for_asset(asset_info.key)
+            ):
+                assets_def = asset_layer.assets_def_for_asset(asset_info.key)
+                if assets_def is not None:
+                    all_dependent_keys = asset_layer.downstream_assets_for_asset(asset_info.key)
+                    step_local_asset_keys = step_context.get_output_asset_keys()
+                    step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
+                    for dependent_key in step_local_dependent_keys:
+                        output_name = assets_def.get_output_name_for_asset_key(dependent_key)
+                        # Need to skip self-dependent assets (possible with partitions)
+                        if step_context.has_seen_output(output_name):
+                            raise DagsterInvariantViolationError(
+                                f'Asset "{dependent_key.to_user_string()}" was yielded before its'
+                                f' dependency "{asset_info.key.to_user_string()}".Multiassets'
+                                " yielding multiple asset outputs must yield them in topological"
+                                " order."
+                            )
+
             step_context.observe_output(output.output_name)
 
             metadata = step_context.get_output_metadata(output.output_name)

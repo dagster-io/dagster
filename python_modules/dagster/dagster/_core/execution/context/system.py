@@ -870,15 +870,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     # "external" refers to records for inputs generated outside of this step
     def fetch_external_input_asset_records(self) -> None:
-        output_keys: List[AssetKey] = []
-        for step_output in self.step.step_outputs:
-            asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.node_handle, step_output.name
-            )
-            if asset_info is None or not asset_info.is_required:
-                continue
-            output_keys.append(asset_info.key)
-
+        output_keys = self.get_output_asset_keys()
         all_dep_keys: List[AssetKey] = []
         for output_key in output_keys:
             if output_key not in self.job_def.asset_layer._asset_deps:  # noqa: SLF001
@@ -917,6 +909,17 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def wipe_input_asset_record(self, key: AssetKey) -> None:
         if key in self._input_asset_records:
             del self._input_asset_records[key]
+
+    def get_output_asset_keys(self) -> AbstractSet[AssetKey]:
+        output_keys: Set[AssetKey] = set()
+        for step_output in self.step.step_outputs:
+            asset_info = self.job_def.asset_layer.asset_info_for_output(
+                self.node_handle, step_output.name
+            )
+            if asset_info is None or not asset_info.is_required:
+                continue
+            output_keys.add(asset_info.key)
+        return output_keys
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.job_def.asset_layer

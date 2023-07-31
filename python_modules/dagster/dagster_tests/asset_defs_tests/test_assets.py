@@ -40,6 +40,7 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
@@ -389,6 +390,49 @@ def test_fail_on_subset_for_nonsubsettable():
 
     with pytest.raises(CheckError, match="can_subset=False"):
         abc_.subset_for({AssetKey("start"), AssetKey("a")})
+
+
+def test_fail_for_non_topological_order():
+    @multi_asset(
+        outs={
+            "a": AssetOut(),
+            "b": AssetOut(),
+        },
+        internal_asset_deps={
+            "a": set(),
+            "b": {AssetKey("a")},
+        },
+    )
+    def foo():
+        yield Output(True, "b")
+        yield Output(True, "a")
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Asset "b" was yielded before its dependency "a"'
+    ):
+        materialize_to_memory([foo])
+
+
+def test_from_graph_internal_deps():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(x):
+        return x + 2
+
+    @graph(out={"a": GraphOut(), "b": GraphOut()})
+    def baz():
+        x = foo()
+        return {"a": x, "b": bar(x)}
+
+    baz_asset = AssetsDefinition.from_graph(
+        baz,
+        keys_by_output_name={"a": AssetKey(["a"]), "b": AssetKey(["b"])},
+        internal_asset_deps={"a": set(), "b": {AssetKey("a")}},
+    )
+    assert materialize_to_memory([baz_asset])
 
 
 def test_to_source_assets():
