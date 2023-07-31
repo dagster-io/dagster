@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with dbt, part 3: Add assets upstream of your dbt models"
+title: "Using Dagster with dbt, part 3: Define assets upstream of your dbt models"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
-# Using dbt with Dagster, part three: Add assets upstream of your dbt models
+# Using dbt with Dagster, part three: Define assets upstream of your dbt models
 
 <Note>
   This is part three of the{" "}
@@ -24,7 +24,7 @@ In this section, you'll replace the `raw_customers` dbt seed with a Dagster asse
 You'll:
 
 - [Install the Pandas and DuckDB Python libraries](#step-1-install-the-pandas-and-duckdb-python-libraries)
-- [Create an upstream Dagster asset](#step-2-create-an-upstream-dagster-asset)
+- [Define an upstream Dagster asset](#step-2-define-an-upstream-dagster-asset)
 - [In the dbt project, replace a seed with a source](#step-3-in-the-dbt-project-replace-a-seed-with-a-source)
 - [Materialize the assets using the Dagster UI](#step-4-materialize-the-assets-using-the-dagster-ui)
 
@@ -40,7 +40,7 @@ pip install pandas duckdb
 
 ---
 
-## Step 2: Create an upstream Dagster asset
+## Step 2: Define an upstream Dagster asset
 
 To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that loads our dbt models, which we reviewed at the end of the [last section](/integrations/dbt/using-dbt-with-dagster/load-dbt-models#understand-the-python-code-in-your-dagster-project). Copy and paste this code into that file, replacing everything up to `dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))`:
 
@@ -121,7 +121,7 @@ defs = Definitions(
                asset_key: raw_customers
    ```
 
-This is a standard dbt source definitions, with one addition: it includes metadata, under the `meta` property, that specifies the Dagster asset that it corresponds to. When Dagster reads the contents of the dbt project, it reads this metadata and draws the correspondence. For any dbt model that depends on this dbt source, Dagster then knows that the Dagster asset corresponding to the dbt model should depend on the Dagster asset corresponding to the source.
+This is a standard dbt source definition, with one addition: it includes metadata, under the `meta` property, that specifies the Dagster asset that it corresponds to. When Dagster reads the contents of the dbt project, it reads this metadata and infers the correspondence. For any dbt model that depends on this dbt source, Dagster then knows that the Dagster asset corresponding to the dbt model should depend on the Dagster asset corresponding to the source.
 
 3. Then, update the model that depends on the `raw_customers` seed to instead depend on the source. Replace the contents of `model/staging/stg_customers.sql` with this:
 
