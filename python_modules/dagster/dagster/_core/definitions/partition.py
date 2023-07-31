@@ -228,10 +228,11 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
     def subset_with_all_partitions(
         self,
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset[T_str]":
         return self.subset_with_partition_keys(
-            self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+            self.get_partition_keys(current_time=current_time, dynamic_partitions_store=dynamic_partitions_store)
         )
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset[T_str]":

@@ -1,7 +1,7 @@
 import hashlib
 import itertools
 from datetime import datetime
-from functools import reduce
+from functools import lru_cache, reduce
 from typing import (
     Dict,
     Iterable,
@@ -29,6 +29,8 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
+from dagster._utils.cached_method import cached_method
+import pendulum
 
 from .partition import (
     DefaultPartitionsSubset,
@@ -271,6 +273,24 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 return False
         return True
 
+    @lru_cache(maxsize=1)
+    def _get_partition_keys(
+        self, current_time: datetime, dynamic_partitions_store: Optional[DynamicPartitionsStore]
+    ) -> Sequence[MultiPartitionKey]:
+        partition_key_sequences = [
+            partition_dim.partitions_def.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            for partition_dim in self._partitions_defs
+        ]
+
+        return [
+            MultiPartitionKey(
+                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
+            )
+            for partition_key_tuple in itertools.product(*partition_key_sequences)
+        ]
+
     @public
     def get_partition_keys(
         self,
@@ -291,19 +311,9 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         Returns:
             Sequence[MultiPartitionKey]
         """
-        partition_key_sequences = [
-            partition_dim.partitions_def.get_partition_keys(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-            for partition_dim in self._partitions_defs
-        ]
-
-        return [
-            MultiPartitionKey(
-                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
-            )
-            for partition_key_tuple in itertools.product(*partition_key_sequences)
-        ]
+        return self._get_partition_keys(
+            current_time or pendulum.now("UTC"), dynamic_partitions_store
+        )
 
     def filter_valid_partition_keys(
         self, partition_keys: Set[str], dynamic_partitions_store: DynamicPartitionsStore

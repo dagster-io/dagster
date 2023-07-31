@@ -174,20 +174,9 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        first = upstream_partitions_def.get_first_partition_key(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
+        upstream_subset = upstream_partitions_def.subset_with_all_partitions(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        last = upstream_partitions_def.get_last_partition_key(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
-        )
-
-        upstream_subset = upstream_partitions_def.empty_subset()
-        if first is not None and last is not None:
-            upstream_subset = upstream_subset.with_partition_key_range(
-                PartitionKeyRange(first, last),
-                dynamic_partitions_store=dynamic_partitions_store,
-            )
-
         return UpstreamPartitionsResult(upstream_subset, [])
 
     def get_downstream_partitions_for_partitions(
