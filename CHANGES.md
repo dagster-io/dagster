@@ -1,5 +1,26 @@
 # Changelog
 
+# 1.4.3 / 0.20.3 (libraries)
+
+### New
+
+- [dagster-dbt] When invoking`dagster-dbt project scaffold` on a dbt project directory, if a `profiles.yml` exists in the root of the directory, its contents are used to add dbt adapter packages to the scaffolded `setup.py`.
+- The default sentinel value for the multiprocessing executor’s `max_concurrent` field has been changed from `0` to `None` to more clearly signal its intent. A value of `0` is still interpreted as the sentinel value which dynamically allocates `max_concurrent` based on detected CPU count.
+
+### Bugfixes
+
+- IO managers defined on jobs will now be properly merged with resources defined in `Definitions`, so that jobs are able to override the IO manager used.
+- [dagster-fivetran] Fixed an issue where `EnvVars` in a `FivetranResource` would not be evaluated when loading assets from the Fivetran instance.
+- [dagster-airbyte] Fixed an issue where `EnvVars` in an `AirbyteResource` would not be evaluated when loading assets from the Airbyte resource.
+
+### Documentation
+
+- [dagster-dbt] Added API docs for `DbtCliResource`, `DbtCliInvocation`, `@dbt_assets`, `DagsterDbtTranslator`, `dagster-dbt project scaffold`
+- [dagster-dbt] Expanded references for new APIs:
+  - Added documentation to customize asset definition attributes for dbt assets
+  - Added documentation to define upstream and downstream dependencies to dbt assets
+  - Added documentation to define schedules for dbt assets
+
 # 1.4.2 / 0.20.2 (libraries)
 
 ### Bugfixes
