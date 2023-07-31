@@ -376,8 +376,6 @@ class AssetDaemonContext:
         will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
     ) -> Mapping[ParentOutdatedAutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
         conditions = defaultdict(set)
-        print("&" * 2000)
-        print(asset_key, candidates)
         for candidate in candidates:
             unreconciled_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
@@ -402,7 +400,6 @@ class AssetDaemonContext:
                         waiting_on_asset_keys=frozenset(unreconciled_ancestors)
                     )
                 ].update({candidate})
-        print("done")
         return conditions
 
     def get_max_materializations_exceeded_conditions_for_key(
