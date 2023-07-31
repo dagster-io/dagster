@@ -475,6 +475,10 @@ class ArtifactsIOManager(IOManager):
                     artifact.verify(root=artifacts_path)
                     output[key] = artifact
 
+                if len(output) == 1:
+                    # If there's only one partition, return the value directly
+                    return list(output.values())[0]
+                
                 return output
 
             elif context.has_asset_key:
