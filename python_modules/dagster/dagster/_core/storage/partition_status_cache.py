@@ -573,7 +573,6 @@ def get_and_update_asset_status_cache_value(
         latest_materialization_storage_id=latest_materialization_storage_id,
     )
     if updated_cache_value is not None and updated_cache_value != stored_cache_value:
-        # instance.update_asset_cached_status_data(asset_key, updated_cache_value)
-        pass
+        instance.update_asset_cached_status_data(asset_key, updated_cache_value)
 
     return updated_cache_value
