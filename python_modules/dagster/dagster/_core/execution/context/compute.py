@@ -441,6 +441,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def has_assets_def(self) -> bool:
+        """If there is a backing AssetsDefinition for what is currently executing."""
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        return assets_def is not None
+
+    @public
+    @property
     def assets_def(self) -> AssetsDefinition:
         """The backing AssetsDefinition for what is currently executing, errors if not available."""
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)

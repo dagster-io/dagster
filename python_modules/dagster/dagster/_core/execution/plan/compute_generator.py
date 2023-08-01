@@ -132,7 +132,7 @@ def _zip_and_iterate_op_result(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     if len(output_defs) > 1:
-        _validate_multi_return(context, result, output_defs)
+        result = _validate_multi_return(context, result, output_defs)
         for position, (output_def, element) in enumerate(zip(output_defs, result)):
             yield position, output_def, element
     else:
@@ -143,7 +143,16 @@ def _validate_multi_return(
     context: OpExecutionContext,
     result: Any,
     output_defs: Sequence[OutputDefinition],
-) -> None:
+) -> Any:
+    # special cases for implicit/explicit returned None
+    if result is None:
+        # extrapolate None -> (None, None, ...) when appropriate
+        if all(
+            output_def.dagster_type.is_nothing and output_def.is_required
+            for output_def in output_defs
+        ):
+            return [None for _ in output_defs]
+
     # When returning from an op with multiple outputs, the returned object must be a tuple of the same length as the number of outputs. At the time of the op's construction, we verify that a provided annotation is a tuple with the same length as the number of outputs, so if the result matches the number of output defs on the op, it will transitively also match the annotation.
     if not isinstance(result, tuple):
         raise DagsterInvariantViolationError(
@@ -162,6 +171,7 @@ def _validate_multi_return(
             f"{len(output_tuple)} outputs, while "
             f"{context.op_def.node_type_str} has {len(output_defs)} outputs."
         )
+    return result
 
 
 def _get_annotation_for_output_position(
