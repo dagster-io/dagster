@@ -778,11 +778,11 @@ def construct_dagster_k8s_job(
             },
         ),
         "spec": merge_dicts(
+            {"restart_policy": "Never"},
             pod_spec_config,
             {
                 "image_pull_secrets": job_config.image_pull_secrets,
                 "service_account_name": service_account_name,
-                "restart_policy": "Never",
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
             },
