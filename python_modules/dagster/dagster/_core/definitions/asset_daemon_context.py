@@ -78,7 +78,11 @@ class AssetDaemonContext:
 
         # fetch some data in advance to batch some queries
         self.instance_queryer.prefetch_asset_records(
-            [key for key in self.target_asset_keys if not self.asset_graph.is_source(key)]
+            [
+                key
+                for key in self.target_asset_keys_and_parents
+                if not self.asset_graph.is_source(key)
+            ]
         )
         self.instance_queryer.prefetch_asset_partition_counts(
             [
@@ -239,7 +243,7 @@ class AssetDaemonContext:
             latest_storage_id=self.latest_storage_id,
             target_asset_keys=frozenset(self.target_asset_keys),
             target_asset_keys_and_parents=frozenset(self.target_asset_keys_and_parents),
-            map_old_time_partitions=True,
+            map_old_time_partitions=False,
         )
         ret = defaultdict(set)
         for asset_partition in asset_partitions:
@@ -316,10 +320,11 @@ class AssetDaemonContext:
 
         # next, for each asset partition of this asset which has newly-updated parents, or
         # has a parent that will update, create a ParentMaterializedAutoMaterializeCondition
-        for asset_partition in (
+        has_or_will_update = (
             self.get_asset_partitions_with_newly_updated_parents_for_key(asset_key)
             | has_parents_that_will_update
-        ):
+        )
+        for asset_partition in has_or_will_update:
             parent_asset_partitions = self.asset_graph.get_parents_partitions(
                 dynamic_partitions_store=self.instance_queryer,
                 current_time=self.instance_queryer.evaluation_time,
@@ -331,7 +336,8 @@ class AssetDaemonContext:
                 updated_parent_asset_partitions,
                 _,
             ) = self.instance_queryer.get_updated_and_missing_parent_asset_partitions(
-                asset_partition, parent_asset_partitions
+                asset_partition,
+                parent_asset_partitions,
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
