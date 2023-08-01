@@ -18,7 +18,10 @@ from typing import (
     cast,
 )
 
-from dagster import _check as check
+from dagster import (
+    PartitionKeyRange,
+    _check as check,
+)
 from dagster._core.definitions.asset_daemon_context import build_run_requests
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
