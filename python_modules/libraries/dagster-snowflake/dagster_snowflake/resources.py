@@ -278,16 +278,17 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         auths_set += 1 if values.get("private_key") is not None else 0
         auths_set += 1 if values.get("private_key_path") is not None else 0
 
-        # ensure at least 1 method is provided
+        # if authenticator is set, there can be 0 or 1 additional auth method;
+        # otherwise, ensure at least 1 method is provided
         check.invariant(
             auths_set > 0 or values.get("authenticator") is not None,
             (
-                "Missing config: Password or private key authentication required for Snowflake"
-                " resource."
+                "Missing config: Password, private key, or authenticator authentication required"
+                " for Snowflake resource."
             ),
         )
 
-        # ensure that only 1 method is provided
+        # ensure that only 1 non-authenticator method is provided
         check.invariant(
             auths_set <= 1,
             (
