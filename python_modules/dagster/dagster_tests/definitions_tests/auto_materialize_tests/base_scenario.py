@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import datetime
 import itertools
 import logging
@@ -51,8 +52,9 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import (
-    PartitionsSubset,
+from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
+from dagster._core.definitions.time_window_partitions import (
+    get_time_partitions_def,
 )
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -66,6 +68,64 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import AssetDaemon
+
+
+def _get_implicit_auto_materialize_policy(
+    asset_graph, asset_key: AssetKey
+) -> Optional[AutoMaterializePolicy]:
+    """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
+    auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
+    if auto_materialize_policy is None:
+        time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
+        if time_partitions_def is None:
+            max_materializations_per_minute = None
+        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+            max_materializations_per_minute = 24
+        else:
+            max_materializations_per_minute = 1
+        return AutoMaterializePolicy(
+            on_missing=True,
+            on_new_parent_data=not bool(
+                asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+            ),
+            for_freshness=True,
+            max_materializations_per_minute=max_materializations_per_minute,
+        )
+    return auto_materialize_policy
+
+
+def _get_repo_with_implicit_auto_mterialize_policies(
+    assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]
+) -> Sequence[AssetsDefinition]:
+    """Inject auto materialize policies into the assets that don't have one."""
+
+    # hack in order to use asset_graph.get_downstream_freshness_policies
+    @repository
+    def temp_repo():
+        return assets
+
+    asset_graph = temp_repo.asset_graph
+
+    modified_assets = []
+    for assets_def in assets or []:
+        if (
+            isinstance(assets_def, AssetsDefinition)
+            and not assets_def.auto_materialize_policies_by_key
+        ):
+            new_assets_def = copy.copy(assets_def)
+            new_assets_def._auto_materialize_policies_by_key = {  # noqa: SLF001
+                asset_key: _get_implicit_auto_materialize_policy(asset_graph, asset_key)
+                for asset_key in new_assets_def.keys
+            }
+            modified_assets.append(new_assets_def)
+        else:
+            modified_assets.append(assets_def)
+
+    @repository
+    def repo():
+        return modified_assets
+
+    return repo
 
 
 class RunSpec(NamedTuple):
@@ -120,10 +180,7 @@ class AssetReconciliationScenario(NamedTuple):
         test_time = self.current_time or pendulum.now()
 
         with pendulum.test(test_time):
-
-            @repository
-            def repo():
-                return self.assets
+            repo = _get_repo_with_implicit_auto_mterialize_policies(self.assets)
 
             # add any runs to the instance
             for dagster_run in self.dagster_runs or []:
@@ -177,10 +234,9 @@ class AssetReconciliationScenario(NamedTuple):
                 instance.add_backfill(backfill)
 
             if self.cursor_from is not None:
-
-                @repository
-                def prior_repo():
-                    return self.cursor_from.assets
+                prior_repo = _get_repo_with_implicit_auto_mterialize_policies(
+                    self.cursor_from.assets
+                )
 
                 (
                     run_requests,
