@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name="dagster_buildkite",
     version="0.0.1",
-    author="Elementl",
+    author="Dagster Labs",
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="Tools for buildkite automation",

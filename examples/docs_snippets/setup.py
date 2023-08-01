@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="docs_snippets",
-    author="Elementl",
+    author="Dagster Labs",
     author_email="hello@elementl.com",
     license="Apache-2.0",
     url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",

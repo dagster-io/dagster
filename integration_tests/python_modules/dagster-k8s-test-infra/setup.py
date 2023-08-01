@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="dagster-k8s-test-infra",
-    author="Elementl",
+    author="Dagster Labs",
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="A Dagster integration for k8s-test-infra",

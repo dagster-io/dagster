@@ -17,7 +17,7 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-slack",
     version=ver,
-    author="Elementl",
+    author="Dagster Labs",
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="A Slack client resource for posting to Slack",

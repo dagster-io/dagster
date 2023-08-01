@@ -11,7 +11,7 @@ setup(
         "pyyaml",
         "typing-extensions>=4",
     ],  # external packages as dependencies
-    author="Elementl",
+    author="Dagster Labs",
     license="Apache-2.0",
     description="Utility for taking automated screenshots from dagit",
     classifiers=[
