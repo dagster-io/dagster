@@ -283,6 +283,8 @@ class FivetranConnectionMetadata(
 def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Mapping[str, ResourceDefinition],
+    poll_interval: float,
+    poll_timeout: Optional[float] = None,
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
@@ -303,6 +305,8 @@ def _build_fivetran_assets_from_metadata(
         table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
         resource_defs=resource_defs,
         group_name=assets_defn_meta.group_name,
+        poll_interval=poll_interval,
+        poll_timeout=poll_timeout,
     )[0]
 
 
@@ -315,6 +319,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
         connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
+        poll_interval: float,
+        poll_timeout: Optional[float],
     ):
         self._fivetran_resource_def = fivetran_resource_def
         self._fivetran_instance: FivetranResource = (
@@ -330,6 +336,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] = (
             connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
         )
+        self._poll_interval = poll_interval
+        self._poll_timeout = poll_timeout
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -404,7 +412,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> Sequence[AssetsDefinition]:
         return [
             _build_fivetran_assets_from_metadata(
-                meta, {"fivetran": self._fivetran_instance.get_resource_definition()}
+                meta, {"fivetran": self._fivetran_instance.get_resource_definition()}, poll_interval=self._poll_interval, poll_timeout=self._poll_timeout
             )
             for meta in data
         ]
@@ -425,6 +433,8 @@ def load_assets_from_fivetran_instance(
     connector_to_asset_key_fn: Optional[
         Callable[[FivetranConnectionMetadata, str], AssetKey]
     ] = None,
+    poll_interval: float = DEFAULT_POLL_INTERVAL,
+    poll_timeout: Optional[float] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -496,4 +506,6 @@ def load_assets_from_fivetran_instance(
         connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
         connector_filter=connector_filter,
         connector_to_asset_key_fn=connector_to_asset_key_fn,
+        poll_interval=poll_interval,
+        poll_timeout=poll_timeout,
     )

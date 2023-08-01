@@ -114,6 +114,8 @@ def test_load_from_instance(
                     connector_filter=(lambda _: False) if filter_connector else None,
                     connector_to_asset_key_fn=connector_to_asset_key_fn,
                     connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
+                    poll_interval=10,
+                    poll_timeout=600,
                 )
             else:
                 ft_cacheable_assets = load_assets_from_fivetran_instance(
@@ -121,6 +123,8 @@ def test_load_from_instance(
                     connector_filter=(lambda _: False) if filter_connector else None,
                     connector_to_asset_key_fn=connector_to_asset_key_fn,
                     io_manager_key="test_io_manager",
+                    poll_interval=10,
+                    poll_timeout=600,
                 )
             ft_assets = ft_cacheable_assets.build_definitions(
                 ft_cacheable_assets.compute_cacheable_data()
