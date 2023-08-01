@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="development_to_production",
     version="1!0+dev",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     packages=["development_to_production"],  # same as name
     install_requires=[
         "dagster",

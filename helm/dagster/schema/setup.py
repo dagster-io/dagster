@@ -4,7 +4,7 @@ setup(
     name="dagster-helm",
     version="0.0.1",
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Tools for Dagster Helm schema",
     url="https://github.com/dagster-io/dagster/tree/master/helm/dagster/schema",

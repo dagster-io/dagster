@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name="docs_snippets",
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",
     classifiers=[

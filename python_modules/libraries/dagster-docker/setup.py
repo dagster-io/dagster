@@ -19,7 +19,7 @@ setup(
     name="dagster-docker",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="A Dagster integration for docker",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-docker",

@@ -19,7 +19,7 @@ setup(
     name="dagster-graphql",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="The GraphQL frontend to python dagster.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql",

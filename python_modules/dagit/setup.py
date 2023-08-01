@@ -25,7 +25,7 @@ setup(
     name="dagit",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Web UI for dagster.",
     long_description=long_description(),

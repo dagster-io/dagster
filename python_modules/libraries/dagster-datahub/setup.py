@@ -19,7 +19,7 @@ setup(
     name="dagster-datahub",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for Datahub-specific Dagster framework solid and resource components.",
     url=(

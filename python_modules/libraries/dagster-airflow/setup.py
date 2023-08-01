@@ -19,7 +19,7 @@ setup(
     name="dagster-airflow",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Airflow plugin for Dagster",
     url="https://github.com/dagster-io/dagster",

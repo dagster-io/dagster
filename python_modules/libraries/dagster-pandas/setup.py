@@ -26,7 +26,7 @@ setup(
     name="dagster-pandas",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description=(
         "Utilities and examples for working with pandas and dagster, an opinionated "

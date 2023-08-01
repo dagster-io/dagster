@@ -19,7 +19,7 @@ setup(
     name="dagster-wandb",
     version=get_version(),
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for wandb Dagster components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-wandb",

@@ -19,7 +19,7 @@ setup(
     name="dagster-celery",
     version=ver,
     author="Dagster Labs",
-    author_email="hello@elementl.com",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for using Celery as Dagster's execution engine.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-celery",
