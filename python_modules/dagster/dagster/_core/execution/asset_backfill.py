@@ -332,6 +332,10 @@ class AssetBackfillData(NamedTuple):
         backfill_start_time: datetime,
         partitions_by_assets: Sequence[PartitionsByAssetSelector],
     ) -> "AssetBackfillData":
+        """Create an AssetBackfillData object from a list of PartitionsByAssetSelector objects.
+        Accepts a list of asset partitions selections, used to determine the target partitions to backfill.
+        For targeted assets, if partitioned and no partitions selections are provided, targets all partitions.
+        """
         check.sequence_param(partitions_by_assets, "partitions_by_asset", PartitionsByAssetSelector)
 
         non_partitioned_asset_keys = set()

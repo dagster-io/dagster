@@ -199,6 +199,14 @@ def create_and_launch_partition_backfill(
             all_partitions=backfill_params.get("allPartitions", False),
         )
     elif partitions_by_assets is not None:
+        if backfill_params.get("forceSynchronousSubmission"):
+            raise DagsterError(
+                "forceSynchronousSubmission is not supported for pure asset backfills"
+            )
+
+        if backfill_params.get("fromFailure"):
+            raise DagsterError("fromFailure is not supported for pure asset backfills")
+
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
         _assert_permission_for_asset_graph(
             graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL

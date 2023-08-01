@@ -311,7 +311,6 @@ class PartitionSetSelector(
         }
 
 
-@whitelist_for_serdes
 class PartitionRangeSelector(
     NamedTuple(
         "_PartitionRangeSelector",
@@ -359,7 +358,7 @@ class PartitionsSelector(
 
     def to_graphql_input(self):
         return {
-            "range": self.range.to_graphql_input(),
+            "range": self.partition_range.to_graphql_input(),
         }
 
     @staticmethod
@@ -369,7 +368,6 @@ class PartitionsSelector(
         )
 
 
-@whitelist_for_serdes
 class PartitionsByAssetSelector(
     NamedTuple(
         "PartitionsByAssetSelector",
