@@ -281,19 +281,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         # ensure at least 1 method is provided
         check.invariant(
             auths_set > 0,
-            (
-                "Missing config: Password or private key authentication required for Snowflake"
-                " resource."
-            ),
+            "Missing config: Password or private key authentication required for Snowflake"
+            " resource.",
         )
 
         # ensure that only 1 method is provided
         check.invariant(
             auths_set == 1,
-            (
-                "Incorrect config: Cannot provide both password and private key authentication to"
-                " Snowflake Resource."
-            ),
+            "Incorrect config: Cannot provide both password and private key authentication to"
+            " Snowflake Resource.",
         )
 
         return values

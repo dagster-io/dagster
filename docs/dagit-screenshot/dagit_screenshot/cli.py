@@ -39,12 +39,10 @@ def dagit_screenshot(ctx, output_root: str, spec_db: str, workspace_root: str) -
     ctx.obj["workspace_root"] = workspace_root
 
 
-@dagit_screenshot.command(
-    help="""
+@dagit_screenshot.command(help="""
     Audit a screenshot spec database. Verifies that screenshot specs are valid and that referenced
     workspace files exist. Optionally verify that corresponding output files exist.
-    """
-)
+    """)
 @click.option(
     "--verify-outputs/--no-verify-outputs",
     type=click.BOOL,

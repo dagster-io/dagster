@@ -406,11 +406,11 @@ def build_schedule_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     return ScheduleEvaluationContext(
-        instance_ref=instance_ref
-        if instance_ref
-        else instance.get_ref()
-        if instance and instance.is_persistent
-        else None,
+        instance_ref=(
+            instance_ref
+            if instance_ref
+            else instance.get_ref() if instance and instance.is_persistent else None
+        ),
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
@@ -601,9 +601,9 @@ class ScheduleDefinition(IHasInternalInit):
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[
-                Union[Callable[..., Any], DecoratedScheduleFunction]
-            ] = None
+            self._execution_fn: Optional[Union[Callable[..., Any], DecoratedScheduleFunction]] = (
+                None
+            )
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:
@@ -647,7 +647,9 @@ class ScheduleDefinition(IHasInternalInit):
             def _execution_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of should_execute for schedule {name}",
+                    lambda: (
+                        f"Error occurred during the execution of should_execute for schedule {name}"
+                    ),
                 ):
                     if not self._should_execute(context):
                         yield SkipReason(
@@ -659,7 +661,9 @@ class ScheduleDefinition(IHasInternalInit):
 
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
+                    lambda: (
+                        f"Error occurred during the execution of run_config_fn for schedule {name}"
+                    ),
                 ):
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
@@ -703,10 +707,8 @@ class ScheduleDefinition(IHasInternalInit):
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
-            (
-                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
-                " the decorated function"
-            ),
+            "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+            " the decorated function",
         )
 
         self._required_resource_keys = (
@@ -797,8 +799,7 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def cron_schedule(self) -> Union[str, Sequence[str]]:
-        """Union[str, Sequence[str]]: The cron schedule representing when this schedule will be evaluated.
-        """
+        """Union[str, Sequence[str]]: The cron schedule representing when this schedule will be evaluated."""
         return self._cron_schedule  # type: ignore
 
     @public
@@ -877,10 +878,8 @@ class ScheduleDefinition(IHasInternalInit):
             result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))
             check.invariant(
                 not any(not request.run_key for request in result),
-                (
-                    "Schedules that return multiple RunRequests must specify a run_key in each"
-                    " RunRequest"
-                ),
+                "Schedules that return multiple RunRequests must specify a run_key in each"
+                " RunRequest",
             )
             run_requests = result
             skip_message = None

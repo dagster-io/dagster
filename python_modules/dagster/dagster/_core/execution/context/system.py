@@ -1043,10 +1043,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if len(partition_key_ranges) != 1:
             check.failed(
-                (
-                    "Tried to access asset partition key range, but there are "
-                    f"({len(partition_key_ranges)}) key ranges associated with this input."
-                ),
+                "Tried to access asset partition key range, but there are "
+                f"({len(partition_key_ranges)}) key ranges associated with this input.",
             )
 
         return partition_key_ranges[0]
@@ -1270,8 +1268,7 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     @public
     @property
     def resources(self) -> "Resources":
-        """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator.
-        """
+        """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator."""
         return super(DagsterTypeLoaderContext, self).resources
 
     @public

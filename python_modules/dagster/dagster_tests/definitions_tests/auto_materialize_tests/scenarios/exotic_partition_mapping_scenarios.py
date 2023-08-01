@@ -349,31 +349,35 @@ exotic_partition_mapping_scenarios = {
             run_request(asset_keys=["asset2"], partition_key="2023-01-01-04:00"),
         ],
     ),
-    "one_parent_starts_later_and_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
-        assets=one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
-        unevaluated_runs=[
-            single_asset_run("asset1", "2023-01-01-03:00"),
-            single_asset_run("asset1", "2023-01-01-04:00"),
-        ]
-        + [single_asset_run("asset2", f"2023-01-01-0{x}:00") for x in range(0, 5)],
-        current_time=create_pendulum_time(2023, 1, 1, 5),
-        expected_run_requests=[
-            run_request(asset_keys=["asset3"], partition_key=f"2023-01-01-0{x}:00")
-            for x in range(0, 5)
-        ],
+    "one_parent_starts_later_and_nonexistent_upstream_partitions_allowed": (
+        AssetReconciliationScenario(
+            assets=one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+            unevaluated_runs=[
+                single_asset_run("asset1", "2023-01-01-03:00"),
+                single_asset_run("asset1", "2023-01-01-04:00"),
+            ]
+            + [single_asset_run("asset2", f"2023-01-01-0{x}:00") for x in range(0, 5)],
+            current_time=create_pendulum_time(2023, 1, 1, 5),
+            expected_run_requests=[
+                run_request(asset_keys=["asset3"], partition_key=f"2023-01-01-0{x}:00")
+                for x in range(0, 5)
+            ],
+        )
     ),
-    "one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed": AssetReconciliationScenario(
-        assets=one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
-        unevaluated_runs=[
-            single_asset_run("asset1", "2023-01-01-03:00"),
-            single_asset_run("asset1", "2023-01-01-04:00"),
-        ]
-        + [single_asset_run("asset2", f"2023-01-01-0{x}:00") for x in range(0, 5)],
-        current_time=create_pendulum_time(2023, 1, 1, 5),
-        expected_run_requests=[
-            run_request(asset_keys=["asset3"], partition_key="2023-01-01-03:00"),
-            run_request(asset_keys=["asset3"], partition_key="2023-01-01-04:00"),
-        ],
+    "one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed": (
+        AssetReconciliationScenario(
+            assets=one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
+            unevaluated_runs=[
+                single_asset_run("asset1", "2023-01-01-03:00"),
+                single_asset_run("asset1", "2023-01-01-04:00"),
+            ]
+            + [single_asset_run("asset2", f"2023-01-01-0{x}:00") for x in range(0, 5)],
+            current_time=create_pendulum_time(2023, 1, 1, 5),
+            expected_run_requests=[
+                run_request(asset_keys=["asset3"], partition_key="2023-01-01-03:00"),
+                run_request(asset_keys=["asset3"], partition_key="2023-01-01-04:00"),
+            ],
+        )
     ),
     "hourly_with_daily_downstream_nonexistent_upstream_partitions_allowed": AssetReconciliationScenario(
         assets=hourly_with_daily_downstream_nonexistent_upstream_partitions_allowed,

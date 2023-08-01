@@ -278,8 +278,7 @@ class EnvironmentManagers:
     def managed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Relies on webserver to load the code location in a subprocess and manage its lifecyle.
-            """
+            """Relies on webserver to load the code location in a subprocess and manage its lifecyle."""
             loadable_target_origin = (
                 target if target is not None else get_main_loadable_target_origin()
             )
@@ -316,9 +315,9 @@ class EnvironmentManagers:
             with GrpcServerProcess(
                 instance_ref=instance.get_ref(),
                 location_name=location_name,
-                loadable_target_origin=target
-                if target is not None
-                else get_main_loadable_target_origin(),
+                loadable_target_origin=(
+                    target if target is not None else get_main_loadable_target_origin()
+                ),
                 wait_on_exit=True,
             ) as server_process:
                 api_client = server_process.create_client()

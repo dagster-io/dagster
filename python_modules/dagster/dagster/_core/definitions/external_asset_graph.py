@@ -147,9 +147,9 @@ class ExternalAssetGraph(AssetGraph):
                 # We need to set this even if the node is a regular asset in another code location.
                 # `is_observable` will only ever be consulted in the source asset context.
                 is_observable_by_key[node.asset_key] = node.is_observable
-                auto_observe_interval_minutes_by_key[
-                    node.asset_key
-                ] = node.auto_observe_interval_minutes
+                auto_observe_interval_minutes_by_key[node.asset_key] = (
+                    node.auto_observe_interval_minutes
+                )
 
                 if node.asset_key in all_non_source_keys:
                     # one location's source is another location's non-source

@@ -83,7 +83,7 @@ def test_execute_run_iterator():
         iterator = execute_run_iterator(
             InMemoryJob(job_def),
             dagster_run,
-            instance=instance
+            instance=instance,
             # reconstructable(job_def), dagster_run, instance=instance
         )
 

@@ -552,10 +552,8 @@ class OutputContext:
         if version is not None:
             check.invariant(
                 self.mapping_key is None,
-                (
-                    f"Mapping key and version both provided for output '{name}' of step"
-                    f" '{step_key}'. Dynamic mapping is not supported when using versioning."
-                ),
+                f"Mapping key and version both provided for output '{name}' of step"
+                f" '{step_key}'. Dynamic mapping is not supported when using versioning.",
             )
             identifier = ["versioned_outputs", version, step_key, name]
         else:
@@ -761,11 +759,9 @@ def get_output_context(
     if step_context:
         check.invariant(
             not resources,
-            (
-                "Expected either resources or step context to be set, but "
-                "received both. If step context is provided, resources for IO manager will be "
-                "retrieved off of that."
-            ),
+            "Expected either resources or step context to be set, but "
+            "received both. If step context is provided, resources for IO manager will be "
+            "retrieved off of that.",
         )
         resources = build_resources_for_manager(io_manager_key, step_context)
 

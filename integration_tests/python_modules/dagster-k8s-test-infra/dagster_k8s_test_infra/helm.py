@@ -713,10 +713,11 @@ def helm_chart_for_k8s_run_launcher(
                 "config": {
                     "k8sRunLauncher": {
                         "jobNamespace": user_code_namespace,
-                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
-                        + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
+                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}] + (
+                            [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []
+                        ),
                         "envSecrets": [{"name": TEST_SECRET_NAME}],
-                        "envVars": (["BUILDKITE=1"] if os.getenv("BUILDKITE") else []),
+                        "envVars": ["BUILDKITE=1"] if os.getenv("BUILDKITE") else [],
                         "imagePullPolicy": image_pull_policy(),
                         "volumeMounts": [
                             {
@@ -744,17 +745,19 @@ def helm_chart_for_k8s_run_launcher(
                 "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
                 "heartbeatTolerance": 180,
                 "runCoordinator": {"enabled": False},  # No run queue
-                "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+                "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-                "runMonitoring": {
-                    "enabled": True,
-                    "pollIntervalSeconds": 5,
-                    "startTimeoutSeconds": 60,
-                    "maxResumeRunAttempts": 3,
-                    "freeSlotsAfterRunEndSeconds": 300,
-                }
-                if run_monitoring
-                else {},
+                "runMonitoring": (
+                    {
+                        "enabled": True,
+                        "pollIntervalSeconds": 5,
+                        "startTimeoutSeconds": 60,
+                        "maxResumeRunAttempts": 3,
+                        "freeSlotsAfterRunEndSeconds": 300,
+                    }
+                    if run_monitoring
+                    else {}
+                ),
             },
             "dagsterWebserver": {
                 "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
@@ -855,9 +858,10 @@ def _deployment_config(docker_image):
                 [{"name": "BUILDKITE", "value": os.getenv("BUILDKITE")}]
                 if os.getenv("BUILDKITE")
                 else []
-            )
-            + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
-            "envConfigMaps": ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
+            ) + [
+                {"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}
+            ],
+            "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else [],
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}},
@@ -967,7 +971,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "heartbeatTolerance": 180,
             "runCoordinator": {"enabled": False},  # No run queue
-            "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+            "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
             "runMonitoring": {
                 "enabled": True,
@@ -999,7 +1003,7 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                 "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
                 "heartbeatTolerance": 180,
                 "runCoordinator": {"enabled": True},
-                "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+                "env": {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {},
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
             },
         },

@@ -248,8 +248,7 @@ class RepositoryDefinition:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
-        """Returns true is there is a single implicit asset job for all asset keys in a repository.
-        """
+        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
         return self.has_job(ASSET_BASE_JOB_PREFIX)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
@@ -446,10 +445,8 @@ class PendingRepositoryDefinition:
                 # should always have metadata for each cached defn at this point
                 check.invariant(
                     defn.unique_id in repository_load_data.cached_data_by_key,
-                    (
-                        "No metadata found for CacheableAssetsDefinition with unique_id"
-                        f" {defn.unique_id}."
-                    ),
+                    "No metadata found for CacheableAssetsDefinition with unique_id"
+                    f" {defn.unique_id}.",
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
@@ -484,7 +481,6 @@ class PendingRepositoryDefinition:
         return self._get_repository_definition(repository_load_data)
 
     def compute_repository_definition(self) -> RepositoryDefinition:
-        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition.
-        """
+        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition."""
         repository_load_data = self._compute_repository_load_data()
         return self._get_repository_definition(repository_load_data)

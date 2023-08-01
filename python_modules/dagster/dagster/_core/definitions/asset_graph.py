@@ -134,9 +134,9 @@ class AssetGraph:
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
-        partition_mappings_by_key: Dict[
-            AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
-        ] = {}
+        partition_mappings_by_key: Dict[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]] = (
+            {}
+        )
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         auto_materialize_policies_by_key: Dict[AssetKey, Optional[AutoMaterializePolicy]] = {}
@@ -152,9 +152,9 @@ class AssetGraph:
                 partitions_defs_by_key[asset.key] = asset.partitions_def
                 group_names_by_key[asset.key] = asset.group_name
                 is_observable_by_key[asset.key] = asset.is_observable
-                auto_observe_interval_minutes_by_key[
-                    asset.key
-                ] = asset.auto_observe_interval_minutes
+                auto_observe_interval_minutes_by_key[asset.key] = (
+                    asset.auto_observe_interval_minutes
+                )
             else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -399,11 +399,13 @@ class AssetGraph:
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
 
         return partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-            cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
-                [partition_key]
-            )
-            if partition_key
-            else None,
+            (
+                cast(PartitionsDefinition, child_partitions_def).subset_with_partition_keys(
+                    [partition_key]
+                )
+                if partition_key
+                else None
+            ),
             upstream_partitions_def=parent_partitions_def,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -450,8 +452,7 @@ class AssetGraph:
                     visited.add(parent_key)
 
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """For a given asset_key, return the set of asset keys that must be materialized at the same time.
-        """
+        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
         if self._required_multi_asset_sets_by_key is None:
             raise DagsterInvariantViolationError(
                 "Required neighbor information not set when creating this AssetGraph"
@@ -520,9 +521,11 @@ class AssetGraph:
         queue = deque([initial_asset_key])
 
         queued_subsets_by_asset_key: Dict[AssetKey, Optional[PartitionsSubset]] = {
-            initial_asset_key: initial_subset.get_partitions_subset(initial_asset_key)
-            if self.get_partitions_def(initial_asset_key)
-            else None,
+            initial_asset_key: (
+                initial_subset.get_partitions_subset(initial_asset_key)
+                if self.get_partitions_def(initial_asset_key)
+                else None
+            ),
         }
         result = AssetGraphSubset(self)
 
@@ -534,9 +537,9 @@ class AssetGraph:
                 result |= AssetGraphSubset(
                     self,
                     non_partitioned_asset_keys={asset_key} if partitions_subset is None else set(),
-                    partitions_subsets_by_asset_key={asset_key: partitions_subset}
-                    if partitions_subset is not None
-                    else {},
+                    partitions_subsets_by_asset_key=(
+                        {asset_key: partitions_subset} if partitions_subset is not None else {}
+                    ),
                 )
 
                 for child in self.get_children(asset_key):

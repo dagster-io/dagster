@@ -24,8 +24,7 @@ from .source_asset import SourceAsset
 def _find_assets_in_module(
     module: ModuleType,
 ) -> Generator[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], None, None]:
-    """Finds assets in the given module and adds them to the given sets of assets and source assets.
-    """
+    """Finds assets in the given module and adds them to the given sets of assets and source assets."""
     for attr in dir(module):
         value = getattr(module, attr)
         if isinstance(value, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)):
@@ -452,9 +451,9 @@ def assets_with_attributes(
     if group_name or freshness_policy or auto_materialize_policy or backfill_policy:
         assets_defs = [
             asset.with_attributes(
-                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
-                if group_name
-                else None,
+                group_names_by_key=(
+                    {asset_key: group_name for asset_key in asset.keys} if group_name else None
+                ),
                 freshness_policy=freshness_policy,
                 auto_materialize_policy=auto_materialize_policy,
                 backfill_policy=backfill_policy,

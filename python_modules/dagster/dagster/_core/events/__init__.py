@@ -244,10 +244,8 @@ def _assert_type(
     )
     check.invariant(
         actual_type in _expected_type,
-        (
-            f"{method} only callable when event_type is"
-            f" {','.join([t.value for t in _expected_type])}, called on {actual_type}"
-        ),
+        f"{method} only callable when event_type is"
+        f" {','.join([t.value for t in _expected_type])}, called on {actual_type}",
     )
 
 
@@ -799,17 +797,19 @@ class DagsterEvent(
                     output_name=step_output_data.step_output_handle.output_name,
                     output_type=output_def.dagster_type.display_name,
                     type_check_clause=(
-                        " Warning! Type check failed."
-                        if not step_output_data.type_check_data.success
-                        else " (Type check passed)."
-                    )
-                    if step_output_data.type_check_data
-                    else " (No type check).",
+                        (
+                            " Warning! Type check failed."
+                            if not step_output_data.type_check_data.success
+                            else " (Type check passed)."
+                        )
+                        if step_output_data.type_check_data
+                        else " (No type check)."
+                    ),
                     mapping_clause=(
                         f' mapping key "{step_output_data.step_output_handle.mapping_key}"'
-                    )
-                    if step_output_data.step_output_handle.mapping_key
-                    else "",
+                        if step_output_data.step_output_handle.mapping_key
+                        else ""
+                    ),
                 )
             ),
         )
@@ -838,9 +838,11 @@ class DagsterEvent(
             message=(
                 'Execution of step "{step_key}" failed and has requested a retry{wait_str}.'.format(
                     step_key=step_context.step.key,
-                    wait_str=f" in {step_retry_data.seconds_to_wait} seconds"
-                    if step_retry_data.seconds_to_wait
-                    else "",
+                    wait_str=(
+                        f" in {step_retry_data.seconds_to_wait} seconds"
+                        if step_retry_data.seconds_to_wait
+                        else ""
+                    ),
                 )
             ),
         )
@@ -859,12 +861,14 @@ class DagsterEvent(
                 input_name=step_input_data.input_name,
                 input_type=input_def.dagster_type.display_name,
                 type_check_clause=(
-                    " Warning! Type check failed."
-                    if not step_input_data.type_check_data.success
-                    else " (Type check passed)."
-                )
-                if step_input_data.type_check_data
-                else " (No type check).",
+                    (
+                        " Warning! Type check failed."
+                        if not step_input_data.type_check_data.success
+                        else " (Type check passed)."
+                    )
+                    if step_input_data.type_check_data
+                    else " (No type check)."
+                ),
             ),
         )
 
@@ -921,10 +925,12 @@ class DagsterEvent(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
             step_context=step_context,
             event_specific_data=StepMaterializationData(materialization),
-            message=materialization.description
-            if materialization.description
-            else "Materialized value{label_clause}.".format(
-                label_clause=f" {materialization.label}" if materialization.label else ""
+            message=(
+                materialization.description
+                if materialization.description
+                else "Materialized value{label_clause}.".format(
+                    label_clause=f" {materialization.label}" if materialization.label else ""
+                )
             ),
         )
 

@@ -375,9 +375,11 @@ class Out(
     ):
         return super(Out, cls).__new__(
             cls,
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
             description=description,
             is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=check.opt_str_param(

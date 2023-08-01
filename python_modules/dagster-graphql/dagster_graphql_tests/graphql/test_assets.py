@@ -628,9 +628,9 @@ def _create_partitioned_run(
     return _create_run(
         graphql_context,
         job_name,
-        asset_selection=[{"path": asset_key.path} for asset_key in asset_selection]
-        if asset_selection
-        else None,
+        asset_selection=(
+            [{"path": asset_key.path} for asset_key in asset_selection] if asset_selection else None
+        ),
         tags=all_tags,
     )
 

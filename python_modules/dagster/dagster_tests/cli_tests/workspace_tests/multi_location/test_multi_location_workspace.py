@@ -128,9 +128,7 @@ load_from:
         attribute: named_hello_world_repository
         location_name: named_loaded_from_file_attribute
 
-    """.format(
-        executable=executable
-    )
+    """.format(executable=executable)
 
 
 @pytest.mark.parametrize(

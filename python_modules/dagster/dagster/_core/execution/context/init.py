@@ -73,8 +73,7 @@ class InitResourceContext:
 
     @property
     def dagster_run(self) -> Optional[DagsterRun]:
-        """The dagster run to use. When initializing resources outside of execution context, this will be None.
-        """
+        """The dagster run to use. When initializing resources outside of execution context, this will be None."""
         return self._dagster_run
 
     @public

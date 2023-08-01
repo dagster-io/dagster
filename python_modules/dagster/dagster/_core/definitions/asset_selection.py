@@ -261,10 +261,8 @@ class AssetSelection(ABC):
         resolved_regular_assets = resolved - asset_graph.source_asset_keys
         check.invariant(
             not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
-            (
-                "Asset selection specified both regular assets and source assets. This is not"
-                " currently supported. Selections must be all regular assets or all source assets."
-            ),
+            "Asset selection specified both regular assets and source assets. This is not"
+            " currently supported. Selections must be all regular assets or all source assets.",
         )
         return resolved
 

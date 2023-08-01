@@ -176,17 +176,13 @@ def define_dagstermill_asset(
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,
-            (
-                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
-                " is reserved for use by Dagster"
-            ),
+            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+            " is reserved for use by Dagster",
         )
         check.invariant(
             "kind" not in op_tags,
-            (
-                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
-                " use by Dagster"
-            ),
+            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            " use by Dagster",
         )
 
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}

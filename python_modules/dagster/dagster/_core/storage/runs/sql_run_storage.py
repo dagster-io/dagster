@@ -495,9 +495,9 @@ class SqlRunStorage(RunStorage):
                 dagster_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_time=check.opt_inst(row["start_time"], float)
-                if "start_time" in row
-                else None,
+                start_time=(
+                    check.opt_inst(row["start_time"], float) if "start_time" in row else None
+                ),
                 end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
             )
             for row in rows
@@ -590,10 +590,8 @@ class SqlRunStorage(RunStorage):
         root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
-                (
-                    f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
-                    " instance."
-                ),
+                f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
+                " instance.",
                 invalid_run_id=root_run_id,
             )
 

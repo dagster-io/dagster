@@ -194,10 +194,8 @@ def project_scaffold_command(
     )
 
     console.print(
-        (
-            "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
-            " the following commands:"
-        ),
+        "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
+        " the following commands:",
         Syntax(
             code="\n".join(
                 [

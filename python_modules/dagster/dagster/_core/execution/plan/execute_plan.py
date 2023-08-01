@@ -362,9 +362,11 @@ def dagster_event_sequence_for_step(
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
-            error_source=ErrorSource.FRAMEWORK_ERROR
-            if isinstance(error, DagsterError)
-            else ErrorSource.UNEXPECTED_ERROR,
+            error_source=(
+                ErrorSource.FRAMEWORK_ERROR
+                if isinstance(error, DagsterError)
+                else ErrorSource.UNEXPECTED_ERROR
+            ),
         )
 
         if step_context.raise_on_error:

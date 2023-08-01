@@ -123,9 +123,11 @@ def make_dagster_definitions_from_airflow_dags_path(
         == "AirflowPersistentDatabase"
     ):
         AirflowPersistentDatabase._initialize_database(  # noqa: SLF001
-            uri=os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "")
-            if is_airflow_2_loaded_in_environment()
-            else os.getenv("AIRFLOW__CORE__SQL_ALCHEMY_CONN", ""),
+            uri=(
+                os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "")
+                if is_airflow_2_loaded_in_environment()
+                else os.getenv("AIRFLOW__CORE__SQL_ALCHEMY_CONN", "")
+            ),
             connections=connections,
         )
 

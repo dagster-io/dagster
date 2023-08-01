@@ -264,8 +264,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Explicit lifecycle management."""
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived webserver process.
-        """
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     @abstractmethod
     def get_event_records(
@@ -289,8 +288,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage.
-        """
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
     @abstractmethod

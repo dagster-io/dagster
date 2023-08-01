@@ -191,7 +191,9 @@ class ArtifactsIOManager(IOManager):
                 )
             serialization_module_parameters = serialization_module.get("parameters", {})
             serialization_module_parameters_with_protocol = {
-                "protocol": pickle.HIGHEST_PROTOCOL,  # we use the highest available protocol if we don't pass one
+                "protocol": (
+                    pickle.HIGHEST_PROTOCOL
+                ),  # we use the highest available protocol if we don't pass one
                 **serialization_module_parameters,
             }
 
@@ -304,9 +306,9 @@ class ArtifactsIOManager(IOManager):
                             **{
                                 "source_serialization_module": "dill",
                                 "source_dill_version_used": dill.__version__,
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
+                                "source_pickle_protocol_used": (
+                                    serialization_module_parameters_with_protocol["protocol"]
+                                ),
                             },
                         }
                         with artifact.new_file(DILL_FILENAME, "wb") as file:
@@ -337,9 +339,9 @@ class ArtifactsIOManager(IOManager):
                             **{
                                 "source_serialization_module": "cloudpickle",
                                 "source_cloudpickle_version_used": cloudpickle.__version__,
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
+                                "source_pickle_protocol_used": (
+                                    serialization_module_parameters_with_protocol["protocol"]
+                                ),
                             },
                         }
                         with artifact.new_file(CLOUDPICKLE_FILENAME, "wb") as file:
@@ -370,9 +372,9 @@ class ArtifactsIOManager(IOManager):
                             **{
                                 "source_serialization_module": "joblib",
                                 "source_joblib_version_used": joblib.__version__,
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
+                                "source_pickle_protocol_used": (
+                                    serialization_module_parameters_with_protocol["protocol"]
+                                ),
                             },
                         }
                         with artifact.new_file(JOBLIB_FILENAME, "wb") as file:
@@ -397,9 +399,9 @@ class ArtifactsIOManager(IOManager):
                             **artifact.metadata,
                             **{
                                 "source_serialization_module": "pickle",
-                                "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
-                                    "protocol"
-                                ],
+                                "source_pickle_protocol_used": (
+                                    serialization_module_parameters_with_protocol["protocol"]
+                                ),
                             },
                         }
                         with artifact.new_file(PICKLE_FILENAME, "wb") as file:
@@ -714,9 +716,11 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         wandb_run_tags = context.resource_config.get("run_tags")
         base_dir = context.resource_config.get(
             "base_dir",
-            context.instance.storage_directory()
-            if context.instance
-            else os.environ["DAGSTER_HOME"],
+            (
+                context.instance.storage_directory()
+                if context.instance
+                else os.environ["DAGSTER_HOME"]
+            ),
         )
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 

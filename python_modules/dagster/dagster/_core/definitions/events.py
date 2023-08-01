@@ -355,8 +355,7 @@ class DynamicOutput(Generic[T]):
     @public
     @property
     def output_name(self) -> str:
-        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with.
-        """
+        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with."""
         return self._output_name
 
     def __eq__(self, other: object) -> bool:

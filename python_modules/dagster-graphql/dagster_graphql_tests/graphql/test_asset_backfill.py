@@ -576,12 +576,16 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 target_subset.asset_graph,
                 non_partitioned_asset_keys={AssetKey("non_partitioned")},
                 partitions_subsets_by_asset_key={
-                    AssetKey("hourly"): asset_graph.get_partitions_def(AssetKey("hourly"))
-                    .empty_subset()
-                    .with_partition_keys(hourly_partitions),
-                    AssetKey("daily"): asset_graph.get_partitions_def(AssetKey("daily"))
-                    .empty_subset()
-                    .with_partition_keys(["2020-01-02", "2020-01-03"]),
+                    AssetKey("hourly"): (
+                        asset_graph.get_partitions_def(AssetKey("hourly"))
+                        .empty_subset()
+                        .with_partition_keys(hourly_partitions)
+                    ),
+                    AssetKey("daily"): (
+                        asset_graph.get_partitions_def(AssetKey("daily"))
+                        .empty_subset()
+                        .with_partition_keys(["2020-01-02", "2020-01-03"])
+                    ),
                 },
             )
 

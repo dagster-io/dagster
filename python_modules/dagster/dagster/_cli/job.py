@@ -289,9 +289,11 @@ def add_step_to_table(memoized_plan):
                     output=step_output_handle.output_name,
                 ),
                 version,
-                "stored"
-                if step_output_handle.step_key not in step_keys_not_stored
-                else "to-be-recomputed",
+                (
+                    "stored"
+                    if step_output_handle.step_key not in step_keys_not_stored
+                    else "to-be-recomputed"
+                ),
             ]
         )
     table_str = tabulate(

@@ -2556,11 +2556,9 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                "RunRequest for a sensor lacking a specified target (job_name, job, or "
-                "jobs)."
-            ),
+            "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
+            "RunRequest for a sensor lacking a specified target (job_name, job, or "
+            "jobs).",
         )
 
 
@@ -2583,10 +2581,8 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
-                "job_name config_job. Expected one of: ['the_job']"
-            ),
+            "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
+            "job_name config_job. Expected one of: ['the_job']",
         )
 
 
@@ -2609,11 +2605,9 @@ def test_bad_run_request_unspecified(executor, instance, workspace_context, exte
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
-                "did not specify job_name for the requested run. Expected one of: "
-                "['the_job', 'config_job']"
-            ),
+            "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
+            "did not specify job_name for the requested run. Expected one of: "
+            "['the_job', 'config_job']",
         )
 
 

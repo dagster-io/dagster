@@ -125,10 +125,8 @@ def terminate_pipeline_execution(
                 instance.run_coordinator.cancel_run(run_id)
         except:
             instance.report_engine_event(
-                (
-                    "Exception while attempting to force-terminate run. Run will still be marked as"
-                    " canceled."
-                ),
+                "Exception while attempting to force-terminate run. Run will still be marked as"
+                " canceled.",
                 job_name=run.job_name,
                 run_id=run.run_id,
                 engine_event_data=EngineEventData(

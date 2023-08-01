@@ -53,12 +53,12 @@ def sync_get_external_schedule_execution_data_grpc(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
-                scheduled_execution_timestamp=scheduled_execution_time.timestamp()
-                if scheduled_execution_time
-                else None,
-                scheduled_execution_timezone=scheduled_execution_time.timezone.name
-                if scheduled_execution_time
-                else None,
+                scheduled_execution_timestamp=(
+                    scheduled_execution_time.timestamp() if scheduled_execution_time else None
+                ),
+                scheduled_execution_timezone=(
+                    scheduled_execution_time.timezone.name if scheduled_execution_time else None
+                ),
             )
         ),
         (ScheduleExecutionData, ExternalScheduleExecutionErrorData),

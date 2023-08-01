@@ -86,9 +86,11 @@ class AssetsDefinitionCacheableData(
             metadata_by_output_name=check.opt_nullable_mapping_param(
                 metadata_by_output_name, "metadata_by_output_name", key_type=str
             ),
-            key_prefix=[key_prefix]
-            if isinstance(key_prefix, str)
-            else check.opt_list_param(key_prefix, "key_prefix", of_type=str),
+            key_prefix=(
+                [key_prefix]
+                if isinstance(key_prefix, str)
+                else check.opt_list_param(key_prefix, "key_prefix", of_type=str)
+            ),
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
             extra_metadata=extra_metadata,
             freshness_policies_by_output_name=check.opt_nullable_mapping_param(
@@ -231,7 +233,7 @@ class WrappedCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 def _map_to_hashable(mapping: Mapping[Any, Any]) -> bytes:
     return json.dumps(
-        {json.dumps(k, sort_keys=True): (v) for k, v in mapping.items()},
+        {json.dumps(k, sort_keys=True): v for k, v in mapping.items()},
         sort_keys=True,
     ).encode("utf-8")
 
@@ -275,10 +277,8 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
                 prefix_for_all_assets
                 and (output_asset_key_replacements or input_asset_key_replacements)
             ),
-            (
-                "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
-                " input_asset_key_replacements"
-            ),
+            "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
+            " input_asset_key_replacements",
         )
 
         super().__init__(
@@ -332,9 +332,11 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         output_asset_key_replacements = (
             {
                 k: AssetKey(
-                    path=self._prefix_for_all_assets + list(k.path)
-                    if self._prefix_for_all_assets
-                    else k.path
+                    path=(
+                        self._prefix_for_all_assets + list(k.path)
+                        if self._prefix_for_all_assets
+                        else k.path
+                    )
                 )
                 for k in assets_def.keys
             }
@@ -344,9 +346,11 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         input_asset_key_replacements = (
             {
                 k: AssetKey(
-                    path=self._prefix_for_all_assets + list(k.path)
-                    if self._prefix_for_all_assets
-                    else k.path
+                    path=(
+                        self._prefix_for_all_assets + list(k.path)
+                        if self._prefix_for_all_assets
+                        else k.path
+                    )
                 )
                 for k in assets_def.dependency_keys
             }
@@ -379,8 +383,7 @@ class ResourceWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition)
         )
 
     def _get_hash(self) -> str:
-        """Generate a stable hash of the resource_defs, including the key, config, fn implementation, and description.
-        """
+        """Generate a stable hash of the resource_defs, including the key, config, fn implementation, and description."""
         contents = hashlib.sha1()
         contents.update(
             _map_to_hashable(

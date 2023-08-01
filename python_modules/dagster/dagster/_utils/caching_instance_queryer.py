@@ -189,9 +189,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             EventRecordsFilter(
                 event_type=self._event_type_for_key(asset_partition.asset_key),
                 asset_key=asset_partition.asset_key,
-                asset_partitions=[asset_partition.partition_key]
-                if asset_partition.partition_key
-                else None,
+                asset_partitions=(
+                    [asset_partition.partition_key] if asset_partition.partition_key else None
+                ),
                 before_cursor=before_cursor,
             ),
             ascending=False,
@@ -491,13 +491,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             after_cursor not in self._asset_partition_count_cache
             or asset_key not in self._asset_partition_count_cache[after_cursor]
         ):
-            self._asset_partition_count_cache[after_cursor][
-                asset_key
-            ] = self.instance.get_materialization_count_by_partition(
-                asset_keys=[asset_key], after_cursor=after_cursor
-            )[
-                asset_key
-            ]
+            self._asset_partition_count_cache[after_cursor][asset_key] = (
+                self.instance.get_materialization_count_by_partition(
+                    asset_keys=[asset_key], after_cursor=after_cursor
+                )[asset_key]
+            )
         return self._asset_partition_count_cache[after_cursor][asset_key]
 
     def get_materialized_partitions(
@@ -525,9 +523,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Returns a list of partitions for a partitions definition."""
         if partitions_def_name not in self._dynamic_partitions_cache:
-            self._dynamic_partitions_cache[
-                partitions_def_name
-            ] = self.instance.get_dynamic_partitions(partitions_def_name)
+            self._dynamic_partitions_cache[partitions_def_name] = (
+                self.instance.get_dynamic_partitions(partitions_def_name)
+            )
         return self._dynamic_partitions_cache[partitions_def_name]
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
@@ -699,18 +697,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 tag_keys=[DATA_VERSION_TAG],
                 after_cursor=after_cursor,
                 before_cursor=before_cursor,
-                asset_partitions=[
-                    asset_partition.partition_key
-                    for asset_partition in asset_partitions
-                    if asset_partition.partition_key is not None
-                ]
-                if asset_partitions is not None
-                else None,
+                asset_partitions=(
+                    [
+                        asset_partition.partition_key
+                        for asset_partition in asset_partitions
+                        if asset_partition.partition_key is not None
+                    ]
+                    if asset_partitions is not None
+                    else None
+                ),
             )
             return {
-                AssetKeyPartitionKey(asset_key, partition_key): DataVersion(tags[DATA_VERSION_TAG])
-                if tags.get(DATA_VERSION_TAG)
-                else None
+                AssetKeyPartitionKey(asset_key, partition_key): (
+                    DataVersion(tags[DATA_VERSION_TAG]) if tags.get(DATA_VERSION_TAG) else None
+                )
                 for partition_key, tags in query_result.items()
             }
 

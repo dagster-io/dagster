@@ -139,8 +139,7 @@ class TestDaemonHealth(ExecutingGraphQLContextTestMatrix):
                             "healthy": False,
                             "lastHeartbeatTime": None,
                         },
-                    ]
-                    + (
+                    ] + (
                         [
                             {
                                 "daemonType": "SCHEDULER",

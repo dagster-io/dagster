@@ -314,10 +314,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         if location_name and self._is_location_pausing_dequeues(location_name, now):
             self._logger.info(
-                (
-                    "Pausing dequeues for runs from code location %s to give its code server time"
-                    " to recover"
-                ),
+                "Pausing dequeues for runs from code location %s to give its code server time"
+                " to recover",
                 location_name,
             )
             return False

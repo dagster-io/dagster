@@ -45,14 +45,14 @@ class GrapheneDaemonStatus(graphene.ObjectType):
             daemonType=daemon_status.daemon_type,
             required=daemon_status.required,
             healthy=daemon_status.healthy,
-            lastHeartbeatTime=daemon_status.last_heartbeat.timestamp
-            if daemon_status.last_heartbeat
-            else None,
-            lastHeartbeatErrors=[
-                GraphenePythonError(error) for error in daemon_status.last_heartbeat.errors
-            ]
-            if daemon_status.last_heartbeat and daemon_status.last_heartbeat.errors
-            else [],
+            lastHeartbeatTime=(
+                daemon_status.last_heartbeat.timestamp if daemon_status.last_heartbeat else None
+            ),
+            lastHeartbeatErrors=(
+                [GraphenePythonError(error) for error in daemon_status.last_heartbeat.errors]
+                if daemon_status.last_heartbeat and daemon_status.last_heartbeat.errors
+                else []
+            ),
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo):

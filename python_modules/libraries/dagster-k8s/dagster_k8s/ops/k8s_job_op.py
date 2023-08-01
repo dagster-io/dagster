@@ -198,9 +198,11 @@ def execute_k8s_job(
     """
     run_container_context = K8sContainerContext.create_for_run(
         context.dagster_run,
-        context.instance.run_launcher
-        if isinstance(context.instance.run_launcher, K8sRunLauncher)
-        else None,
+        (
+            context.instance.run_launcher
+            if isinstance(context.instance.run_launcher, K8sRunLauncher)
+            else None
+        ),
         include_run_tags=False,
     )
 

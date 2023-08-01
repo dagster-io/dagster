@@ -327,10 +327,8 @@ def _get_dbt_op(
         check.inst(
             dbt_resource,
             (DbtCliResource, DbtCliClient),
-            (
-                "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
-                f" object, but is a {type(dbt_resource)}"
-            ),
+            "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
+            f" object, but is a {type(dbt_resource)}",
         )
 
         kwargs: Dict[str, Any] = {}
@@ -1003,10 +1001,8 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_group_fn arg of {public_fn_name}",
             "0.21",
-            (
-                "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
-                " groups or provide a custom DagsterDbtTranslator that overrides get_group_name."
-            ),
+            "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
+            " groups or provide a custom DagsterDbtTranslator that overrides get_group_name.",
             stacklevel=4,
         )
 

@@ -88,9 +88,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             class: PostgresEventLogStorage
             config:
                 postgres_url: postgresql://test:test@{hostname}:5432/test
-        """.format(
-            hostname=hostname
-        )
+        """.format(hostname=hostname)
 
         explicit_cfg = """
         event_log_storage:
@@ -102,9 +100,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
                     password: test
                     hostname: {hostname}
                     db_name: test
-        """.format(
-            hostname=hostname
-        )
+        """.format(hostname=hostname)
 
         with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
             from_url = from_url_instance._event_storage  # noqa: SLF001

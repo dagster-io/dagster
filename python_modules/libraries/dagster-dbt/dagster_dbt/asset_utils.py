@@ -435,10 +435,8 @@ def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[Freshn
         deprecation_warning(
             "dagster_freshness_policy",
             "0.21.0",
-            (
-                "Instead, configure a Dagster freshness policy on a dbt model using"
-                " +meta.dagster.freshness_policy."
-            ),
+            "Instead, configure a Dagster freshness policy on a dbt model using"
+            " +meta.dagster.freshness_policy.",
         )
 
     return legacy_freshness_policy
@@ -477,10 +475,8 @@ def default_auto_materialize_policy_fn(
         deprecation_warning(
             "dagster_auto_materialize_policy",
             "0.21.0",
-            (
-                "Instead, configure a Dagster auto-materialize policy on a dbt model using"
-                " +meta.dagster.auto_materialize_policy."
-            ),
+            "Instead, configure a Dagster auto-materialize policy on a dbt model using"
+            " +meta.dagster.auto_materialize_policy.",
         )
 
     return legacy_auto_materialize_policy

@@ -96,7 +96,9 @@ def hello_world_job():
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
+        "output_notebook_io_manager": (
+            ConfigurableLocalOutputNotebookIOManager.configure_at_launch()
+        ),
         "io_manager": FilesystemIOManager(),
     }
 )

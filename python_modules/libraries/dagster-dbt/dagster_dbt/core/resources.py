@@ -163,8 +163,7 @@ class DbtCliClient(DbtClient):
 
     @property
     def default_flags(self) -> Mapping[str, Any]:
-        """A set of params populated from resource config that are passed as flags to each dbt CLI command.
-        """
+        """A set of params populated from resource config that are passed as flags to each dbt CLI command."""
         return self._format_params(self._default_flags, replace_underscores=True)
 
     @property

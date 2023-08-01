@@ -97,8 +97,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
     @public
     @property
     def config_schema(self) -> Any:
-        """Any: The schema for the logger's config. Configuration data available in `init_context.logger_config`.
-        """
+        """Any: The schema for the logger's config. Configuration data available in `init_context.logger_config`."""
         return self._config_schema
 
     @public

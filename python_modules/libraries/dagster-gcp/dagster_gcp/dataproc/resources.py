@@ -232,11 +232,9 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         # ensure that at most 1 method is provided
         check.invariant(
             methods <= 1,
-            (
-                "Dataproc Resource: Incorrect config: Cannot provide cluster config multiple ways."
-                " Choose one of cluster_config_dict, cluster_config_json_path, or"
-                " cluster_config_yaml_path"
-            ),
+            "Dataproc Resource: Incorrect config: Cannot provide cluster config multiple ways."
+            " Choose one of cluster_config_dict, cluster_config_json_path, or"
+            " cluster_config_yaml_path",
         )
 
         cluster_config = None
