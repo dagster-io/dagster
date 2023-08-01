@@ -58,7 +58,7 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
-@experimental_param(param="version")  # type: ignore  # (pyright bug)
+@experimental_param(param="version")
 class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHasInternalInit):
     """Core class for defining resources.
 
