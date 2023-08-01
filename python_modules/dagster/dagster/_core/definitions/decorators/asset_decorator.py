@@ -559,7 +559,7 @@ def multi_asset(
     )
 
     _config_schema = check.opt_mapping_param(
-        config_schema,
+        config_schema,  # type: ignore
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
