@@ -18,7 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -34,7 +34,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidIn
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    experimental_arg_warning,
 )
 from dagster._utils.merger import merge_dicts
 
@@ -323,6 +322,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return op_def(*args, **kwargs)
 
     @public
+    @experimental_param(param="resource_defs")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -397,8 +397,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
         """
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
         return AssetsDefinition._from_node(
             node_def=graph_def,
             keys_by_input_name=keys_by_input_name,

@@ -21,7 +21,7 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
@@ -42,7 +42,6 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .graph_definition import GraphDefinition
@@ -382,6 +381,11 @@ def run_failure_sensor(
     ...
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def run_failure_sensor(
     name: Optional[Union[RunFailureSensorEvaluationFn, str]] = None,
     minimum_interval_seconds: Optional[int] = None,
@@ -454,8 +458,6 @@ def run_failure_sensor(
         else:
             sensor_name = name
 
-        if job_selection:
-            deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         @run_status_sensor(
@@ -838,6 +840,11 @@ class RunStatusSensorDefinition(SensorDefinition):
         return SensorType.RUN_STATUS
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def run_status_sensor(
     run_status: DagsterRunStatus,
     name: Optional[str] = None,
@@ -909,8 +916,6 @@ def run_status_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        if job_selection:
-            deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         if jobs and monitor_all_repositories:

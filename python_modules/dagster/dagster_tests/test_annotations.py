@@ -1,4 +1,5 @@
 import sys
+import warnings
 from abc import abstractmethod
 from typing import NamedTuple, get_type_hints
 
@@ -8,14 +9,19 @@ from dagster._annotations import (
     PUBLIC,
     PublicAttr,
     deprecated,
+    deprecated_param,
     experimental,
+    experimental_param,
     get_deprecated_info,
     get_experimental_info,
     is_deprecated,
+    is_deprecated_param,
     is_experimental,
+    is_experimental_param,
     is_public,
     public,
 )
+from dagster._check import CheckError
 from dagster._utils.backcompat import ExperimentalWarning
 from typing_extensions import Annotated
 
@@ -190,7 +196,7 @@ def test_deprecated_staticmethod(decorators):
 def test_deprecated_classmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
-        def bar(self):
+        def bar(cls):
             pass
 
     assert is_deprecated(Foo.__dict__["bar"])  # __dict__ access to get descriptor
@@ -263,6 +269,148 @@ def test_deprecated_resource():
     ) as warning:
         foo()
         assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_deprecated_suppress_warning():
+    @deprecated(breaking_version="2.0", additional_warn_text="foo", emit_runtime_warning=False)
+    def foo():
+        pass
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        foo()
+
+
+# ########################
+# ##### DEPRECATED PARAM
+# ########################
+
+deprecated_param_bound = deprecated_param(param="baz", breaking_version="2.0")
+
+
+def test_deprecated_param_method():
+    class Foo:
+        @deprecated_param_bound
+        def bar(self, baz=None):
+            pass
+
+    assert is_deprecated_param(Foo.bar, "baz")
+
+    with pytest.warns(
+        DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
+    ) as warning:
+        Foo().bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (deprecated_param_bound, staticmethod),
+        (staticmethod, deprecated_param_bound),
+    ],
+    ids=[
+        "deprecated_param-staticmethod",
+        "staticmethod-deprecated_param",
+    ],
+)
+def test_deprecated_param_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(baz=None):
+            pass
+
+    assert is_deprecated_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+
+    with pytest.warns(
+        DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
+    ) as warning:
+        Foo.bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (deprecated_param_bound, classmethod),
+        (classmethod, deprecated_param_bound),
+    ],
+    ids=[
+        "deprecated_param-classmethod",
+        "classmethod-deprecated_param",
+    ],
+)
+def test_deprecated_param_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls, baz=None):
+            pass
+
+    assert is_deprecated_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+
+    with pytest.warns(
+        DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
+    ) as warning:
+        Foo.bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (deprecated_param_bound, abstractmethod),
+        (abstractmethod, deprecated_param_bound),
+    ],
+    ids=[
+        "experimental-abstractmethod",
+        "abstractmethod-experimental",
+    ],
+)
+def test_deprecated_param_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self, baz=None):
+            ...
+
+    assert is_deprecated_param(Foo.bar, "baz")
+
+
+def test_deprecated_param_class():
+    @deprecated_param_bound
+    class Foo:
+        def __init__(self, baz=None):
+            ...
+
+    assert is_deprecated_param(Foo, "baz")
+
+    with pytest.warns(
+        DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is deprecated"
+    ) as warning:
+        Foo(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_deprecated_param_named_tuple_class():
+    @deprecated_param_bound
+    class Foo(NamedTuple("_", [("baz", str)])):
+        def __new__(cls, baz=None):
+            ...
+
+    assert is_deprecated_param(Foo, "baz")
+
+    with pytest.warns(
+        DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is deprecated"
+    ) as warning:
+        Foo(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_invalid_deprecated_param():
+    with pytest.raises(CheckError, match="undefined parameter"):
+
+        @deprecated_param_bound
+        def foo():
+            pass
 
 
 ########################
@@ -346,7 +494,7 @@ def test_experimental_staticmethod(decorators):
 def test_experimental_classmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
-        def bar(self):
+        def bar(cls):
             pass
 
     assert is_experimental(Foo.__dict__["bar"])  # __dict__ access to get descriptor
@@ -467,6 +615,136 @@ def test_experimental_resource():
     ) as warning:
         foo()
         assert warning[0].filename.endswith("test_annotations.py")
+
+
+# ########################
+# ##### EXPERIMENTAL PARAM
+# ########################
+
+
+def test_experimental_param_method():
+    class Foo:
+        @experimental_param(param="baz")
+        def bar(self, baz=None):
+            pass
+
+    assert is_experimental_param(Foo.bar, "baz")
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
+    ) as warning:
+        Foo().bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (experimental_param(param="baz"), staticmethod),
+        (staticmethod, experimental_param(param="baz")),
+    ],
+    ids=[
+        "experimental_param-staticmethod",
+        "staticmethod-experimental_param",
+    ],
+)
+def test_experimental_param_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(baz=None):
+            pass
+
+    assert is_experimental_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
+    ) as warning:
+        Foo.bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (experimental_param(param="baz"), classmethod),
+        (classmethod, experimental_param(param="baz")),
+    ],
+    ids=[
+        "experimental_param-classmethod",
+        "classmethod-experimental_param",
+    ],
+)
+def test_experimental_param_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls, baz=None):
+            pass
+
+    assert is_experimental_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
+    ) as warning:
+        Foo.bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (experimental_param(param="baz"), abstractmethod),
+        (abstractmethod, experimental_param(param="baz")),
+    ],
+    ids=[
+        "experimental-abstractmethod",
+        "abstractmethod-experimental",
+    ],
+)
+def test_experimental_param_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self, baz=None):
+            ...
+
+    assert is_experimental_param(Foo.bar, "baz")
+
+
+def test_experimental_param_class():
+    @experimental_param(param="baz")
+    class Foo:
+        def __init__(self, baz=None):
+            ...
+
+    assert is_experimental_param(Foo, "baz")
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is experimental"
+    ) as warning:
+        Foo(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_experimental_param_named_tuple_class():
+    @experimental_param(param="baz")
+    class Foo(NamedTuple("_", [("baz", str)])):
+        def __new__(cls, baz=None):
+            ...
+
+    assert is_experimental_param(Foo, "baz")
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is experimental"
+    ) as warning:
+        Foo(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_invalid_experimental_param():
+    with pytest.raises(CheckError, match="undefined parameter"):
+
+        @experimental_param(param="baz")
+        def foo():
+            pass
 
 
 # ########################

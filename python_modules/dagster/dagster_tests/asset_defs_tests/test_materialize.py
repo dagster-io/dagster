@@ -81,7 +81,7 @@ def test_materialize_bad_config():
             )
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_materialize_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")})
     def the_asset(context):
@@ -109,7 +109,7 @@ def test_materialize_resources_not_satisfied():
         ).success
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_materialize_conflicting_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
     def first():
@@ -129,7 +129,7 @@ def test_materialize_conflicting_resources():
             materialize([first, second], instance=instance)
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_materialize_source_assets():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -154,8 +154,8 @@ def test_materialize_source_assets():
         assert result.output_for_node("the_asset") == 6
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_materialize_source_asset_conflicts():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():

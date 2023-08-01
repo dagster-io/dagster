@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, deprecated_param, experimental_param
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -27,7 +27,6 @@ from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
-from dagster._utils.backcompat import experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
@@ -68,6 +67,8 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
     return default_value
 
 
+@experimental_param(param="asset_key")
+@experimental_param(param="asset_partitions")
 class InputDefinition:
     """Defines an argument to an op's compute function.
 
@@ -131,16 +132,12 @@ class InputDefinition:
         self._raw_metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._metadata = normalize_metadata(self._raw_metadata, allow_invalid=True)
 
-        if asset_key:
-            experimental_arg_warning("asset_key", "InputDefinition.__init__")
-
         if not callable(asset_key):
             check.opt_inst_param(asset_key, "asset_key", AssetKey)
 
         self._asset_key = asset_key
 
         if asset_partitions:
-            experimental_arg_warning("asset_partitions", "InputDefinition.__init__")
             check.param_invariant(
                 asset_key is not None,
                 "asset_partitions",
@@ -354,6 +351,14 @@ class FanInInputPointer(
         )
 
 
+@deprecated_param(
+    param="dagster_type",
+    breaking_version="2.0",
+    additional_warn_text="Any defined `dagster_type` should come from the upstream op `Output`.",
+    # Disabling warning here since we're passing this internally and I'm not sure whether it is
+    # actually used or discarded.
+    emit_runtime_warning=False,
+)
 class InputMapping(NamedTuple):
     """Defines an input mapping for a graph.
 
@@ -363,8 +368,8 @@ class InputMapping(NamedTuple):
         mapped_node_input_name (str): Name of the input in the node (op/graph) that is being mapped to.
         fan_in_index (Optional[int]): The index in to a fanned input, otherwise None.
         graph_input_description (Optional[str]): A description of the input in the graph being mapped from.
-        dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's input
-            being mapped from. Users should not use this argument when instantiating the class.
+        dagster_type (Optional[DagsterType]): The dagster type of the graph's input
+            being mapped from.
 
     Examples:
         .. code-block:: python

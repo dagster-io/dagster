@@ -267,7 +267,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The range of partition keys for the current run. (DEPRECATED: Use `partition_key_range` instead).
+        """The range of partition keys for the current run.
 
         If run is for a single partition key, return a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.

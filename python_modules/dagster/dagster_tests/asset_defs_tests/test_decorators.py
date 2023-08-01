@@ -658,7 +658,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -705,8 +705,8 @@ def test_multi_asset_code_versions():
     }
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():
@@ -886,7 +886,7 @@ def test_graph_asset_decorator_no_args():
 
 @ignore_warning("Class `FreshnessPolicy` is experimental")
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_asset_with_args():
     @resource
     def foo_resource():
@@ -990,7 +990,7 @@ def test_graph_asset_w_key_prefix():
 
 @ignore_warning("Class `FreshnessPolicy` is experimental")
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_multi_asset_decorator():
     @resource
     def foo_resource():
@@ -1091,7 +1091,7 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_with_bare_resource():
     class BareResourceObject:
         pass

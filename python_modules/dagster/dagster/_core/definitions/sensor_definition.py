@@ -619,7 +619,7 @@ class SensorDefinition(IHasInternalInit):
         description: Optional[str],
         job: Optional[ExecutableDefinition],
         jobs: Optional[Sequence[ExecutableDefinition]],
-        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        default_status: DefaultSensorStatus,
         asset_selection: Optional[AssetSelection],
         required_resource_keys: Optional[Set[str]],
     ) -> "SensorDefinition":

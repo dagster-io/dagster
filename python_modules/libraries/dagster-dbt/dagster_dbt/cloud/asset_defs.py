@@ -30,14 +30,13 @@ from dagster import (
     multi_asset,
     with_resources,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, experimental_param
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils.backcompat import experimental_arg_warning
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -573,6 +572,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 
 @experimental
+@experimental_param(param="partitions_def")
+@experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
     dbt_cloud: ResourceDefinition,
     job_id: int,
@@ -654,10 +655,7 @@ def load_assets_from_dbt_cloud_job(
             def dbt_cloud_sandbox():
                 return [dbt_cloud_assets]
     """
-    if partitions_def:
-        experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
-        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
         check.invariant(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",

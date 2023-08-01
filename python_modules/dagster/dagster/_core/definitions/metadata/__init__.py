@@ -19,7 +19,7 @@ from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, deprecated, experimental, public
+from dagster._annotations import PublicAttr, deprecated, deprecated_param, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
@@ -30,8 +30,8 @@ from dagster._serdes.serdes import (
     pack_value,
 )
 from dagster._utils.backcompat import (
-    canonicalize_backcompat_args,
     deprecation_warning,
+    normalize_renamed_param,
 )
 
 from .table import (  # re-exported
@@ -978,6 +978,9 @@ T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True
     breaking_version="2.0",
     additional_warn_text="Please use a dict with `MetadataValue` values instead.",
 )
+@deprecated_param(
+    param="entry_data", breaking_version="2.0", additional_warn_text="Use `value` instead."
+)
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
@@ -1017,12 +1020,11 @@ class MetadataEntry(
     ):
         value = cast(
             RawMetadataValue,
-            canonicalize_backcompat_args(
+            normalize_renamed_param(
                 new_val=value,
                 new_arg="value",
                 old_val=entry_data,
                 old_arg="entry_data",
-                breaking_version="2.0.0",
             ),
         )
         value = normalize_metadata_value(value)
