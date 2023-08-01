@@ -87,7 +87,7 @@ def normalize_metadata(
                 deprecation_warning(
                     "Support for arbitrary metadata values",
                     "2.0.0",
-                    additional_warn_txt=(
+                    additional_warn_text=(
                         "In the future, all user-supplied metadata values must be one of"
                         f" {RawMetadataValue}"
                     ),
@@ -971,10 +971,13 @@ class MetadataFieldSerializer(FieldSerializer):
 T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)
 
 
-# NOTE: This currently stores value in the `entry_data` NamedTuple attribute. In the next release,
-# we will change the name of the NamedTuple property to `value`, and need to implement custom
-# serialization so that it continues to be saved as `entry_data` for backcompat purposes.
-@deprecated
+# NOTE: MetadataEntry is no longer accessible via the public API-- all metadata APIs use metadata
+# dicts. This clas shas only been preserved to adhere strictly to our backcompat guarantees. It is
+# still instantiated in the above `MetadataFieldSerializer` but that can easily be changed.
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use a dict with `MetadataValue` values instead.",
+)
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
@@ -1012,13 +1015,6 @@ class MetadataEntry(
         entry_data: Optional["RawMetadataValue"] = None,
         value: Optional["RawMetadataValue"] = None,
     ):
-        deprecation_warning(
-            (
-                "The `MetadataEntry` class is deprecated. Please use a dict with `MetadataValue`"
-                " values instead."
-            ),
-            "2.0.0",
-        )
         value = cast(
             RawMetadataValue,
             canonicalize_backcompat_args(

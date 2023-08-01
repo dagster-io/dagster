@@ -70,7 +70,7 @@ T_PartitionsDefinition = TypeVar(
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 
-@deprecated
+@deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
 class Partition(Generic[T_cov]):
     """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
@@ -639,7 +639,10 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         """
         return self._partitions
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `run_config_for_partition_key_fn` instead.",
+    )
     @public
     @property
     def run_config_for_partition_fn(
@@ -660,7 +663,9 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         and returns a dictionary representing the config to attach to runs for that partition.
         """
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `tags_for_partition_key_fn` instead."
+    )
     @public
     @property
     def tags_for_partition_fn(self) -> Optional[Callable[[Partition], Mapping[str, str]]]:

@@ -34,17 +34,15 @@ sys.meta_path.insert(
 # ##### NOTES ON IMPORT FORMAT
 # ########################
 #
-# ok
 # This file defines dagster's public API. Imports need to be structured/formatted so as to to ensure
-# that the broadest possible set of static analyzers understand Dagster's
-# public API as intended. The below guidelines ensure this is the case.
+# that the broadest possible set of static analyzers understand Dagster's public API as intended.
+# The below guidelines ensure this is the case.
 #
 # (1) All imports in this module intended to define exported symbols should be of the form `from
 # dagster.foo import X as X`. This is because imported symbols are not by default considered public
 # by static analyzers. The redundant alias form `import X as X` overwrites the private imported `X`
 # with a public `X` bound to the same value. It is also possible to expose `X` as public by listing
-# it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability
-# and shorter file length.
+# it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability.
 
 # (2) All imports should target the module in which a symbol is actually defined, rather than a
 # container module where it is imported. This rule also derives from the default private status of
@@ -556,7 +554,7 @@ from typing import (
 
 from typing_extensions import Final
 
-from dagster._utils.backcompat import deprecation_warning, rename_warning
+from dagster._utils.backcompat import deprecation_warning
 
 # NOTE: Unfortunately we have to declare deprecated aliases twice-- the
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
@@ -595,7 +593,12 @@ def __getattr__(name: str) -> TypingAny:
     elif name in _DEPRECATED_RENAMED:
         value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
-        rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
+        deprecation_warning(
+            value.__name__,
+            breaking_version,
+            additional_warn_text=f"Use `{name}` instead.",
+            stacklevel=stacklevel,
+        )
         return value
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

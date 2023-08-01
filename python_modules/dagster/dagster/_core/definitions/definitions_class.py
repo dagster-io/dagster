@@ -299,7 +299,13 @@ def _create_repository_using_definitions_args(
     return created_repo
 
 
-@deprecated
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text=(
+        "Instantiations can be removed. Since it's behavior is now the default, this class is now a"
+        " no-op."
+    ),
+)
 class BindResourcesToJobs(list):
     """Used to instruct Dagster to bind top-level resources to jobs and any jobs attached to schedules
     and sensors. Now deprecated since this behavior is the default.
