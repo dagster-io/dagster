@@ -13,7 +13,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=(
+        text=(
             f'Job "{context.dagster_run.job_name}" failed. Error:'
             f" {context.failure_event.message}"
         ),
@@ -117,7 +117,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.dagster_run.job_name}" succeeded.',
+        text=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 
 
