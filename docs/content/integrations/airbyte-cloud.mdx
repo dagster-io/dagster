@@ -132,6 +132,8 @@ Once you have loaded your Airbyte Cloud assets into Dagster, you can create asse
 
 <TabItem name="With an I/O manager">
 
+### With an I/O manager
+
 In this case, we have an Airbyte Cloud connection that stores data in our Snowflake warehouse's `stargazers` table. We specify the output [I/O manager](/concepts/io-management/io-managers) to tell downstream assets how to retrieve the data.
 
 ```python startafter=start_add_downstream_assets_cloud endbefore=end_add_downstream_assets_cloud file=/integrations/airbyte/airbyte.py dedent=8
@@ -183,6 +185,8 @@ defs = Definitions(
 
 </TabItem>
 <TabItem name="Without an I/O manager">
+
+### Without an I/O manager
 
 In this case, we have an Airbyte connection that stores data in the `stargazers` table in our Snowflake warehouse. Since we are not using an I/O manager to fetch the data in downstream assets, we will use `deps` to define dependencies. Then within the downstream asset, we can fetch the data if necessary or launch other commands that work with data in external processes.
 
