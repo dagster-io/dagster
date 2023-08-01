@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 export enum DagsterTag {
   Automaterialize = 'dagster/auto_materialize',
+  AutoObserve = 'dagster/auto_observe',
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
   CreatedBy = 'dagster/created_by',
