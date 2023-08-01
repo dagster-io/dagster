@@ -630,18 +630,26 @@ def _store_output(
     # catch errors should they be raised before a return value. We can do this by wrapping
     # handle_output in a generator so that errors will be caught within iterate_with_context.
 
-    if not inspect.isgeneratorfunction(output_manager.handle_output):
+    if output.value is not None:
+        if not inspect.isgeneratorfunction(output_manager.handle_output):
 
-        def _gen_fn():
-            gen_output = output_manager.handle_output(output_context, output.value)
-            for event in output_context.consume_events():
-                yield event
-            if gen_output:
-                yield gen_output
+            def _gen_fn():
+                gen_output = output_manager.handle_output(output_context, output.value)
+                for event in output_context.consume_events():
+                    yield event
+                if gen_output:
+                    yield gen_output
 
-        handle_output_gen = _gen_fn()
+            handle_output_gen = _gen_fn()
+        else:
+            handle_output_gen = output_manager.handle_output(output_context, output.value)
+
     else:
-        handle_output_gen = output_manager.handle_output(output_context, output.value)
+        # if None is returned, don't invoke an I/O manager
+        def _no_op():
+            yield {"used_io_manager": False}
+
+        handle_output_gen = _no_op()
 
     for elt in iterate_with_context(
         lambda: op_execution_error_boundary(
@@ -664,6 +672,8 @@ def _store_output(
         elif isinstance(elt, dict):  # should remove this?
             experimental_warning("Yielding metadata from an IOManager's handle_output() function")
             manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
+        elif elt is None:
+            continue
         else:
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "

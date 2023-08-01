@@ -777,6 +777,40 @@ def _load_input_with_input_manager(
     from dagster._core.execution.context.system import StepExecutionContext
 
     step_context = cast(StepExecutionContext, context.step_context)
+
+    instance = (
+        context.instance
+    )  # if use instance here need to test what happens when you make an instance for unit testing
+    if context.has_asset_key:
+        latest_input_materialization = instance.get_latest_materialization_event(
+            asset_key=context.asset_key
+        )
+        if latest_input_materialization is None:
+            raise Exception(
+                f"Cannot materialize asset {step_context.step.key} until {context.asset_key} has"
+                " been materialized"
+            )
+        if latest_input_materialization.asset_materialization is not None:
+            used_io_manager_metadata = (
+                latest_input_materialization.asset_materialization.metadata.get(
+                    "used_io_manager", None
+                )
+            )
+            if used_io_manager_metadata is not None and not used_io_manager_metadata.value:
+                yield None
+            else:
+                yield from _load_input_with_input_manager_helper(
+                    input_manager, context, step_context
+                )
+    else:
+        yield from _load_input_with_input_manager_helper(input_manager, context, step_context)
+
+    # TODO handle op case?
+
+
+def _load_input_with_input_manager_helper(
+    input_manager: "InputManager", context: "InputContext", step_context: "StepExecutionContext"
+):
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
         msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
