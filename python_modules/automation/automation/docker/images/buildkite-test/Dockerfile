@@ -58,7 +58,7 @@ RUN apt-get update -yqq \
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
 # - openjdk-11-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
-# - nodejs/yarn (dagit)
+# - nodejs/yarn (dagster UI)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
 # deb.nodesource script adds node source to apt

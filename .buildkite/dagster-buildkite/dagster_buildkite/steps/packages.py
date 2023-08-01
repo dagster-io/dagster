@@ -144,8 +144,8 @@ deploy_docker_example_extra_cmds = [
     *network_buildkite_container("docker_example_network"),
     *connect_sibling_docker_container(
         "docker_example_network",
-        "docker_example_dagit",
-        "DEPLOY_DOCKER_DAGIT_HOST",
+        "docker_example_webserver",
+        "DEPLOY_DOCKER_WEBSERVER_HOST",
     ),
     "popd",
 ]

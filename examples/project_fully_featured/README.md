@@ -29,10 +29,10 @@ pip install -e ".[dev]"
 Once you've done this, you can run:
 
 ```
-dagit
+dagster-webserver
 ```
 
-to view this example in Dagster's UI, Dagit.
+to view this example in Dagster's UI.
 
 ## Asset groups
 

@@ -12,4 +12,4 @@ RUN pip install \
     -e dagster-k8s \
     -e dagster-celery[flower,redis,kubernetes] \
     -e dagster-celery-k8s \
-    -e dagit
+    -e dagster-webserver
