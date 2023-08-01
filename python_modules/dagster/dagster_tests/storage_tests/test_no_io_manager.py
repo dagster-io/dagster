@@ -1,4 +1,4 @@
-from dagster import AssetOut, IOManager, Output, asset, materialize, multi_asset
+from dagster import AssetOut, IOManager, Output, asset, job, materialize, multi_asset, op
 
 
 class TestIOManager(IOManager):
@@ -82,6 +82,23 @@ def test_multi_asset():
         return None
 
     materialize([returns_nones, downstream], resources={"io_manager": TestIOManager()})
+
+
+def test_ops():
+    # TODO - fails because the op case for loading inputs is not handled
+    @op
+    def returns_none():
+        return None
+
+    @op
+    def asserts_none(x):
+        assert x is None
+
+    @job
+    def return_none_job():
+        asserts_none(returns_none())
+
+    return_none_job.execute_in_process(resources={"io_manager": TestIOManager()})
 
 
 # test partitions

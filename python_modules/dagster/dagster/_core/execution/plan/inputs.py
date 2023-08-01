@@ -778,10 +778,11 @@ def _load_input_with_input_manager(
 
     step_context = cast(StepExecutionContext, context.step_context)
 
-    instance = (
-        context.instance
-    )  # if use instance here need to test what happens when you make an instance for unit testing
     if context.has_asset_key:
+        # check that the asset has been materialized
+        instance = (
+            context.instance
+        )  # if use instance here need to test what happens when you make a context for unit testing
         latest_input_materialization = instance.get_latest_materialization_event(
             asset_key=context.asset_key
         )
@@ -790,22 +791,22 @@ def _load_input_with_input_manager(
                 f"Cannot materialize asset {step_context.step.key} until {context.asset_key} has"
                 " been materialized"
             )
+
+        # check if the output was stored via an I/O manager, or was None, and thus was not stored
         if latest_input_materialization.asset_materialization is not None:
-            used_io_manager_metadata = (
-                latest_input_materialization.asset_materialization.metadata.get(
-                    "used_io_manager", None
-                )
+            io_manager_key = latest_input_materialization.asset_materialization.metadata.get(
+                "io_manager_key", None
             )
-            if used_io_manager_metadata is not None and not used_io_manager_metadata.value:
+            if io_manager_key is None:
+                # I/O manager was not used to store the output of the asset, which means the output was None
                 yield None
             else:
                 yield from _load_input_with_input_manager_helper(
                     input_manager, context, step_context
                 )
     else:
+        # TODO handle op case
         yield from _load_input_with_input_manager_helper(input_manager, context, step_context)
-
-    # TODO handle op case?
 
 
 def _load_input_with_input_manager_helper(

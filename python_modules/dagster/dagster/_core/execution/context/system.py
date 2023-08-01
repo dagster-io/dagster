@@ -587,13 +587,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def describe_op(self) -> str:
         return f'op "{self.node_handle}"'
 
-    def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
+    def get_io_manager_key(self, step_output_handle: StepOutputHandle) -> str:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (
             self.job_def.get_node(step_output.node_handle)
             .output_def_named(step_output.name)
             .io_manager_key
         )
+
+        return io_manager_key
+
+    def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
+        io_manager_key = self.get_io_manager_key(step_output_handle)
 
         output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
