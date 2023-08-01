@@ -17,6 +17,7 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
@@ -25,6 +26,9 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import (
+    get_time_partitions_def,
+)
 from dagster._utils.cached_method import cached_method
 
 from .asset_daemon_cursor import AssetDaemonCursor
@@ -37,14 +41,14 @@ from .auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
+from .partition import (
+    PartitionsDefinition,
+    ScheduleType,
+)
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
-
-    from .partition import (
-        PartitionsDefinition,
-    )
 
 
 class AssetDaemonContext:
@@ -116,6 +120,32 @@ class AssetDaemonContext:
             for asset_key in self.target_asset_keys
             for parent in self.asset_graph.get_parents(asset_key)
         } | self.target_asset_keys
+
+    def get_implicit_auto_materialize_policy(
+        self, asset_key: AssetKey
+    ) -> Optional[AutoMaterializePolicy]:
+        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
+        """
+        auto_materialize_policy = self.asset_graph.get_auto_materialize_policy(asset_key)
+        if auto_materialize_policy is None:
+            time_partitions_def = get_time_partitions_def(
+                self.asset_graph.get_partitions_def(asset_key)
+            )
+            if time_partitions_def is None:
+                max_materializations_per_minute = None
+            elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+                max_materializations_per_minute = 24
+            else:
+                max_materializations_per_minute = 1
+            return AutoMaterializePolicy(
+                on_missing=True,
+                on_new_parent_data=not bool(
+                    self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+                ),
+                for_freshness=True,
+                max_materializations_per_minute=max_materializations_per_minute,
+            )
+        return auto_materialize_policy
 
     @cached_method
     def _get_never_handled_and_newly_handled_root_asset_partitions(
@@ -408,7 +438,9 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be materialized.
             - The expected data time of the asset after this tick.
         """
-        auto_materialize_policy = self.asset_graph.auto_materialize_policies_by_key[asset_key]
+        auto_materialize_policy = check.not_none(
+            self.get_implicit_auto_materialize_policy(asset_key)
+        )
 
         # a mapping from AutoMaterializeCondition to the asset partitions that it applies to
         conditions: Dict[AutoMaterializeCondition, Set[AssetKeyPartitionKey]] = defaultdict(set)
