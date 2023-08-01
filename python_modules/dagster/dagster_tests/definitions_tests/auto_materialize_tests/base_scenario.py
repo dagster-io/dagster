@@ -41,9 +41,9 @@ from dagster import (
     observable_source_asset,
     repository,
 )
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_reconciliation_sensor import reconcile
 from dagster._core.definitions.auto_materialize_condition import AutoMaterializeCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_version import DataVersionsByPartition
@@ -258,7 +258,7 @@ class AssetReconciliationScenario(NamedTuple):
                 else asset_graph.materializable_asset_keys
             )
 
-            run_requests, cursor, evaluations = reconcile(
+            run_requests, cursor, evaluations = AssetDaemonContext(
                 asset_graph=asset_graph,
                 target_asset_keys=target_asset_keys,
                 instance=instance,
@@ -266,7 +266,7 @@ class AssetReconciliationScenario(NamedTuple):
                 observe_run_tags={},
                 cursor=cursor,
                 auto_observe=True,
-            )
+            ).evaluate()
 
         for run_request in run_requests:
             base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)

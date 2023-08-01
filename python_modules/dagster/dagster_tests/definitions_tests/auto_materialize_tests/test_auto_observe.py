@@ -1,8 +1,10 @@
 from dagster import AssetKey, DagsterInstance, observable_source_asset
-from dagster._core.definitions.asset_daemon_context import get_auto_observe_run_requests
+from dagster._core.definitions.asset_daemon_context import (
+    AssetDaemonContext,
+    get_auto_observe_run_requests,
+)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import reconcile
 from pytest import fixture
 
 
@@ -100,7 +102,7 @@ def test_reconcile():
     asset_graph = AssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()
 
-    run_requests, cursor, _ = reconcile(
+    run_requests, cursor, _ = AssetDaemonContext(
         auto_observe=True,
         asset_graph=asset_graph,
         target_asset_keys=set(),
@@ -108,7 +110,7 @@ def test_reconcile():
         cursor=AssetDaemonCursor.empty(),
         materialize_run_tags=None,
         observe_run_tags={"tag1": "tag_value"},
-    )
+    ).evaluate()
     assert len(run_requests) == 1
     assert run_requests[0].tags.get("tag1") == "tag_value"
     assert run_requests[0].asset_selection == [AssetKey(["asset1"])]
