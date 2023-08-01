@@ -9,3 +9,6 @@ MANHATTAN_MAP_FILE_PATH = "data/outputs/manhattan_map.png"
 REQUEST_DESTINATION_TEMPLATE_FILE_PATH = "data/outputs/{}.png"
 
 DATE_FORMAT = "%Y-%m-%d"
+
+START_DATE = "2023-01-01"
+END_DATE = "2023-04-01"
