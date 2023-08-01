@@ -417,12 +417,7 @@ def test_dep_via_deps_and_fn():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        # this is a known bad error experience. TODO - update the error to be helpful
-        match=(
-            "@op 'depends_on_upstream_asset' decorated function has parameter 'the_upstream_asset'"
-            " that is one of the input_defs of type 'Nothing' which should not be included since no"
-            " data will be passed for it."
-        ),
+        match=r"deps value .* also declared as input/AssetIn",
     ):
 
         @asset(deps=[the_upstream_asset])
