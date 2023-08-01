@@ -6,7 +6,7 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-from .asset_reconciliation_scenario import (
+from ..base_scenario import (
     AssetReconciliationScenario,
     run,
     run_request,

@@ -23,11 +23,11 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 
-from .asset_reconciliation_scenario import (
+from .base_scenario import (
     AssetReconciliationScenario,
     asset_def,
 )
-from .scenarios import ASSET_RECONCILIATION_SCENARIOS
+from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
 @pytest.mark.parametrize(

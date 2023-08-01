@@ -98,10 +98,14 @@ class AssetReconciliationScenario(NamedTuple):
     def _get_code_location_origin(
         self, scenario_name, location_name=None
     ) -> InProcessCodeLocationOrigin:
+        """scenarios.py puts all the scenarios in its namespace under different 'hacky_daemon_repo_...' names.
+        """
         return InProcessCodeLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
-                module_name="dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios",
+                module_name=(
+                    "dagster_tests.definitions_tests.auto_materialize_tests.scenarios.scenarios"
+                ),
                 working_directory=os.getcwd(),
                 attribute="hacky_daemon_repo_"
                 + scenario_name

@@ -4,7 +4,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
 )
 
-from .asset_reconciliation_scenario import (
+from ..base_scenario import (
     AssetReconciliationScenario,
     asset_def,
     multi_asset_def,

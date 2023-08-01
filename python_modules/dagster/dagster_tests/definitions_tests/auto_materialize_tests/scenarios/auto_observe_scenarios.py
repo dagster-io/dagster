@@ -8,7 +8,7 @@ from dagster import (
     observable_source_asset,
 )
 
-from .asset_reconciliation_scenario import AssetReconciliationScenario, run_request
+from ..base_scenario import AssetReconciliationScenario, run_request
 
 
 @observable_source_asset(auto_observe_interval_minutes=30)

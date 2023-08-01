@@ -15,7 +15,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._seven.compat.pendulum import create_pendulum_time
 
-from .asset_reconciliation_scenario import (
+from ..base_scenario import (
     AssetReconciliationScenario,
     asset_def,
     run,
