@@ -9,7 +9,7 @@ from ..step_builder import CommandStepBuilder
 from ..utils import CommandStep, is_feature_branch
 
 
-def skip_if_no_dagit_changes():
+def skip_if_no_dagster_ui_changes():
     if not is_feature_branch():
         return None
 
@@ -25,9 +25,9 @@ def skip_if_no_dagit_changes():
     return "No changes that affect the JS webapp"
 
 
-def build_dagit_ui_steps() -> List[CommandStep]:
+def build_dagster_ui_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":typescript: dagit-ui")
+        CommandStepBuilder(":typescript: dagster-ui")
         .run(
             "cd js_modules/dagit",
             # Explicitly install Node 16.x because BK is otherwise running 12.x.
@@ -37,6 +37,6 @@ def build_dagit_ui_steps() -> List[CommandStep]:
             "tox -vv -e py310",
         )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_dagit_changes())
+        .with_skip(skip_if_no_dagster_ui_changes())
         .build(),
     ]

@@ -278,7 +278,8 @@ class EnvironmentManagers:
     def managed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Relies on Dagit to load the code location in a subprocess and manage its lifecyle."""
+            """Relies on webserver to load the code location in a subprocess and manage its lifecyle.
+            """
             loadable_target_origin = (
                 target if target is not None else get_main_loadable_target_origin()
             )

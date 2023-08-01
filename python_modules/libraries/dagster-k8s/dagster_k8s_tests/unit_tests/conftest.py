@@ -42,7 +42,7 @@ def k8s_run_launcher_instance(kubeconfig_file):
                     "class": "K8sRunLauncher",
                     "module": "dagster_k8s",
                     "config": {
-                        "service_account_name": "dagit-admin",
+                        "service_account_name": "webserver-admin",
                         "instance_config_map": "dagster-instance",
                         "postgres_password_secret": "dagster-postgresql-secret",
                         "dagster_home": "/opt/dagster/dagster_home",

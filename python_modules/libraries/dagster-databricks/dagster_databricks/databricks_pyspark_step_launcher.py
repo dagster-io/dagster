@@ -145,9 +145,9 @@ DAGSTER_SYSTEM_ENV_VARS = {
             default_value=True,
             description=(
                 "Determines whether to display debug logs emitted while job is being polled. It can"
-                " be helpful for Dagit performance to set to False when running long-running or"
-                " fan-out Databricks jobs, to avoid forcing the UI to fetch large amounts of debug"
-                " logs."
+                " be helpful for Dagster UI performance to set to False when running long-running"
+                " or fan-out Databricks jobs, to avoid forcing the UI to fetch large amounts of"
+                " debug logs."
             ),
         ),
         "add_dagster_env_variables": Field(

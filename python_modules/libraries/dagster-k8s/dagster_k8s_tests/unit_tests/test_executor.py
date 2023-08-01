@@ -394,7 +394,7 @@ def test_executor_init_container_context(
 @pytest.fixture
 def k8s_instance(kubeconfig_file):
     default_config = {
-        "service_account_name": "dagit-admin",
+        "service_account_name": "webserver-admin",
         "instance_config_map": "dagster-instance",
         "postgres_password_secret": "dagster-postgresql-secret",
         "dagster_home": "/opt/dagster/dagster_home",
