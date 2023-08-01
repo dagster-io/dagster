@@ -631,9 +631,8 @@ def _store_output(
     # handle_output in a generator so that errors will be caught within iterate_with_context.
 
     if output.value is not None:
-        # adding this metadata allows us to later find out if an output was stored using the I/O manager system
-        io_manager_key = step_context.get_io_manager_key(step_output_handle)
-        manager_metadata["io_manager_key"] = MetadataValue.text(io_manager_key)
+        # io_manager_key = step_context.get_io_manager_key(step_output_handle)
+        # manager_metadata["io_manager_key"] = MetadataValue.text(io_manager_key)
 
         if not inspect.isgeneratorfunction(output_manager.handle_output):
 
@@ -651,7 +650,7 @@ def _store_output(
     else:
         # if None is returned, don't invoke an I/O manager
         def _no_op():
-            yield None
+            yield {"used_io_manager": False}
 
         handle_output_gen = _no_op()
 

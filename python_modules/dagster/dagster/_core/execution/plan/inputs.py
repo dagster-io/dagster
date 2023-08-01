@@ -794,10 +794,15 @@ def _load_input_with_input_manager(
 
         # check if the output was stored via an I/O manager, or was None, and thus was not stored
         if latest_input_materialization.asset_materialization is not None:
-            io_manager_key = latest_input_materialization.asset_materialization.metadata.get(
-                "io_manager_key", None
+            # io_manager_key = latest_input_materialization.asset_materialization.metadata.get(
+            #     "io_manager_key", None
+            # )
+            used_io_manager_metadata = (
+                latest_input_materialization.asset_materialization.metadata.get(
+                    "used_io_manager", None
+                )
             )
-            if io_manager_key is None:
+            if used_io_manager_metadata and not used_io_manager_metadata.value:
                 # I/O manager was not used to store the output of the asset, which means the output was None
                 yield None
             else:
