@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from google.cloud import storage
 from pydantic import Field
 
@@ -34,7 +34,7 @@ class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
         return self.get_client()
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema=GCSResource.to_config_schema(),
     description="This resource provides a GCS client",
@@ -67,7 +67,7 @@ class GCSFileManagerResource(ConfigurableResource, IAttachDifferentObjectToOpCon
         return self.get_client()
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(config_schema=GCSFileManagerResource.to_config_schema())
 def gcs_file_manager(context):
     """FileManager that provides abstract access to GCS.

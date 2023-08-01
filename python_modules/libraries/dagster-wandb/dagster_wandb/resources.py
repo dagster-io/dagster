@@ -2,13 +2,13 @@ from typing import Any, Dict
 
 import wandb
 from dagster import Field, InitResourceContext, String, StringSource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from wandb.sdk.internal.internal_api import Api
 
 WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema={
         "api_key": Field(

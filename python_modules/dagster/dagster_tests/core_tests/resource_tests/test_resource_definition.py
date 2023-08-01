@@ -26,7 +26,6 @@ from dagster import (
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.resource_definition import (
-    dagster_maintained_resource,
     make_values_resource,
 )
 from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
@@ -1213,28 +1212,3 @@ def test_context_manager_resource():
 
     assert call_basic.execute_in_process(resources={"cm": cm_resource}).success
     assert event_list == ["foo", "compute", "finally"]
-
-
-def test_telemetry_custom_resource():
-    class MyResource:
-        def foo(self) -> str:
-            return "bar"
-
-    @resource
-    def my_resource():
-        return MyResource()
-
-    assert not my_resource._is_dagster_maintained()  # noqa: SLF001
-
-
-def test_telemetry_dagster_io_manager():
-    class MyResource:
-        def foo(self) -> str:
-            return "bar"
-
-    @dagster_maintained_resource
-    @resource
-    def my_resource():
-        return MyResource()
-
-    assert my_resource._is_dagster_maintained()  # noqa: SLF001

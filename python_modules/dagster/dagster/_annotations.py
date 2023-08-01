@@ -58,6 +58,28 @@ PUBLIC: Final[str] = "public"
 
 PublicAttr: TypeAlias = Annotated[T, PUBLIC]
 
+# ########################
+# ##### DAGSTER MAINTAINED
+# ########################
+
+_DAGSTER_MAINTAINED_ATTR_NAME: Final[str] = "_is_dagster_maintained"
+
+
+def dagster_maintained(obj: T_Annotatable) -> T_Annotatable:
+    """Mark a Dagster definition (e.g. a resource or io_manager) as Dagster-maintained. Definitions
+    marked this way will be rendered with a special identifying tag in the docs.
+    """
+    target = _get_annotation_target(obj)
+    setattr(target, _DAGSTER_MAINTAINED_ATTR_NAME, True)
+    return obj
+
+
+def is_dagster_maintained(obj: Annotatable, attr: Optional[str] = None) -> bool:
+    target = _get_annotation_target(obj, attr)
+    return hasattr(target, _DAGSTER_MAINTAINED_ATTR_NAME) and getattr(
+        target, _DAGSTER_MAINTAINED_ATTR_NAME
+    )
+
 
 # ########################
 # ##### DEPRECATED

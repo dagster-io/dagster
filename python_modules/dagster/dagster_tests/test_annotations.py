@@ -8,12 +8,15 @@ from dagster import resource
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
+    dagster_maintained,
     deprecated,
     deprecated_param,
     experimental,
     experimental_param,
     get_deprecated_info,
     get_experimental_info,
+    experimental_param,
+    is_dagster_maintained,
     is_deprecated,
     is_deprecated_param,
     is_experimental,
@@ -22,6 +25,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._check import CheckError
+from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._utils.backcompat import ExperimentalWarning
 from typing_extensions import Annotated
 
@@ -93,6 +97,66 @@ def test_public_attribute():
         else get_type_hints(Foo)
     )
     assert hints["bar"] == Annotated[int, PUBLIC]
+
+
+# ########################
+# ##### DAGSTER MAINTAINED
+# ########################
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (dagster_maintained, resource),
+        (resource, dagster_maintained),
+    ],
+    ids=[
+        "dagster_mainained-resource",
+        "resource-dagster_maintained",
+    ],
+)
+def test_dagster_maintained_resource(decorators):
+    class MyResource:
+        def foo(self) -> str:
+            return "bar"
+
+    @compose_decorators(*decorators)
+    def my_resource():
+        return MyResource()
+
+    @resource
+    def my_other_resource():
+        return MyResource()
+
+    assert is_dagster_maintained(my_resource)
+    assert not is_dagster_maintained(my_other_resource)
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (dagster_maintained, io_manager),
+        (io_manager, dagster_maintained),
+    ],
+    ids=[
+        "dagster_mainained-resource",
+        "resource-dagster_maintained",
+    ],
+)
+def test_dagster_maintained_io_manager(decorators):
+    class MyIOManager(IOManager):
+        ...
+
+    @compose_decorators(*decorators)
+    def my_io_manager():
+        return MyIOManager()
+
+    @io_manager
+    def my_other_io_manager():
+        return MyIOManager()
+
+    assert is_dagster_maintained(my_io_manager)
+    assert not is_dagster_maintained(my_other_io_manager)
 
 
 # ########################

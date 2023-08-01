@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional
 
 import requests
 from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
@@ -239,7 +239,7 @@ class CensusResource:
         )
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema={
         "api_key": Field(

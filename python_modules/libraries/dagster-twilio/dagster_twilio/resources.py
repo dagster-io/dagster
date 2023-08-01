@@ -1,5 +1,5 @@
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
 from twilio.rest import Client
@@ -30,7 +30,7 @@ class TwilioResource(ConfigurableResource):
         return Client(self.account_sid, self.auth_token)
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema=TwilioResource.to_config_schema(),
     description="This resource is for connecting to Twilio",

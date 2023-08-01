@@ -1,5 +1,5 @@
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from pydantic import Field
 
 from dagster_msteams.client import TeamsClient
@@ -75,7 +75,7 @@ class MSTeamsResource(ConfigurableResource):
         )
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema=MSTeamsResource.to_config_schema(),
     description="This resource is for connecting to MS Teams",

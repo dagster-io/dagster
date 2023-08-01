@@ -56,7 +56,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._core.storage.io_manager import (
     IOManagerDefinition,
-    dagster_maintained_io_manager,
+    dagster_maintained,
     io_manager,
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
@@ -1016,7 +1016,7 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDe
     return resources
 
 
-@dagster_maintained_io_manager
+@dagster_maintained
 @io_manager(
     description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
@@ -1057,7 +1057,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
     return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
 
 
-@dagster_maintained_io_manager
+@dagster_maintained
 @io_manager(
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
     config_schema={"base_dir": Field(StringSource, is_required=False)},

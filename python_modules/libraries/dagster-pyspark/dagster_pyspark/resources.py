@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import dagster._check as check
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from dagster._core.execution.context.init import InitResourceContext
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
@@ -64,7 +64,7 @@ class PySparkResource(ConfigurableResource):
         return self.spark_session.sparkContext
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource({"spark_conf": spark_config()})
 def pyspark_resource(init_context) -> PySparkResource:
     """This resource provides access to a PySpark SparkSession for executing PySpark code within Dagster.
@@ -140,7 +140,7 @@ class LazyPySparkResource(ConfigurableResource):
         return self._spark_session.sparkContext
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource({"spark_conf": spark_config()})
 def lazy_pyspark_resource(init_context: InitResourceContext) -> LazyPySparkResource:
     """This resource provides access to a lazily-created  PySpark SparkSession for executing PySpark

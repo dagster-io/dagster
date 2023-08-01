@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from google.cloud import bigquery
 from pydantic import Field
 
@@ -87,7 +87,7 @@ class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
             yield client
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema=BigQueryResource.to_config_schema(),
     description="Dagster resource for connecting to BigQuery",

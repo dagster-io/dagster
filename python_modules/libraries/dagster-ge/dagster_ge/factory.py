@@ -15,7 +15,7 @@ from dagster import (
     op,
     resource,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from dagster_pandas import DataFrame
 from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
@@ -44,7 +44,7 @@ class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         return self.get_data_context()
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(config_schema=GEContextResource.to_config_schema())
 def ge_data_context(context):
     return GEContextResource.from_resource_context(context).get_data_context()

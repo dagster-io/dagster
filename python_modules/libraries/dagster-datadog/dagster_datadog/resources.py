@@ -1,5 +1,5 @@
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import dagster_maintained
 from datadog import DogStatsd, initialize, statsd
 from pydantic import Field
 
@@ -94,7 +94,7 @@ class DatadogResource(ConfigurableResource):
         return DatadogClient(self.api_key, self.app_key)
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource(
     config_schema=DatadogResource.to_config_schema(),
     description="This resource is for publishing to DataDog",

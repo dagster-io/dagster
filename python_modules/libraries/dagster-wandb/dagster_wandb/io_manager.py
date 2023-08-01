@@ -19,7 +19,7 @@ from dagster import (
     String,
     io_manager,
 )
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from dagster._core.storage.io_manager import dagster_maintained
 from wandb.sdk.data_types.base_types.wb_value import WBValue
 from wandb.sdk.wandb_artifacts import Artifact
 
@@ -585,7 +585,7 @@ class ArtifactsIOManager(IOManager):
             raise WandbArtifactsIOManagerError() from exception
 
 
-@dagster_maintained_io_manager
+@dagster_maintained
 @io_manager(
     required_resource_keys={"wandb_resource", "wandb_config"},
     description="IO manager to read and write W&B Artifacts",

@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional
 from unittest import mock
 
 from dagster import resource
+from dagster._annotations import dagster_maintained
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 
 from dagster_azure.blob import FakeBlobServiceClient
@@ -13,7 +13,7 @@ from dagster_azure.blob import FakeBlobServiceClient
 from .utils import ResourceNotFoundError
 
 
-@dagster_maintained_resource
+@dagster_maintained
 @resource({"account_name": str})
 def fake_adls2_resource(context):
     return FakeADLS2Resource(account_name=context.resource_config["account_name"])

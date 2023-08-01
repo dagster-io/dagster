@@ -7,6 +7,7 @@ from dagster import (
     ResourceDefinition,
     file_relative_path,
 )
+from dagster._annotations import is_dagster_maintained
 from dagster._config.pythonic_config import (
     ConfigurableIOManager,
     ConfigurableIOManagerFactory,
@@ -82,7 +83,7 @@ def test_resource_telemetry():
                 # the klass is purposely set to dagster_maintained=False
                 continue
             try:
-                if not klass._is_dagster_maintained:  # noqa: SLF001
+                if not is_dagster_maintained(klass):
                     resources_without_telemetry.append(klass)
             except Exception:
                 resources_without_telemetry.append(klass)

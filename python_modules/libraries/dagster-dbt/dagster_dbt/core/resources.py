@@ -2,9 +2,8 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster import resource
-from dagster._annotations import deprecated, public
+from dagster._annotations import dagster_maintained, deprecated, public
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
@@ -504,7 +503,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
 
 
 @deprecated(breaking_version="0.21", additional_warn_text="Use DbtCli instead.")
-@dagster_maintained_resource
+@dagster_maintained
 @resource(config_schema=DbtCliClientResource.to_config_schema())
 def dbt_cli_resource(context) -> DbtCliClient:
     """This resource issues dbt CLI commands against a configured dbt project."""
