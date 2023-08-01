@@ -72,7 +72,7 @@ def my_daily_partitioned_asset(context) -> None:
 
 #### Partitioned assets with partitioned I/O managers
 
-In the above code snippet, the body of the decorated function writes out data to a file, but it's common to delegate this I/O to an [I/O manager](/concepts/io-management/io-managers). Dagster's [built-in I/O managers](/concepts/io-management/io-managers#built-in-io-managers) know how to handle partitioned assets. You can also handle them when writing your own I/O manager, following the instructions [here](/concepts/io-management/io-managers#handling-partitioned-assets).
+In the above code snippet, the body of the decorated function writes out data to a file, but you may also choose to delegate this writing operation to an [I/O manager](/concepts/io-management/io-managers). Dagster's [built-in I/O managers](/concepts/io-management/io-managers#built-in-io-managers) know how to handle partitioned assets. You can also handle them when writing your own I/O manager, following the instructions [here](/concepts/io-management/io-managers#handling-partitioned-assets).
 
 Here's a software-defined asset that relies on an I/O manager to store its output:
 
@@ -227,6 +227,13 @@ A few rules govern default partition-to-partition dependencies:
   For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
 
 #### PartitionMappings
+
+<Note>
+  Currently, partition mappings are only supported for{" "}
+  <a href="/concepts/assets/software-defined-assets#defining-basic-managed-loading-dependencies">
+    managed-loading dependencies
+  </a>{" "}
+</Note>
 
 You can override the default partition dependency rules by providing a <PyObject object="PartitionMapping" /> when specifying a dependency on an asset. For example, here's how to specify that each partition of a daily-partitioned asset depends on the prior day's partition in an upstream asset:
 
