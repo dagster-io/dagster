@@ -85,9 +85,12 @@ I/O managers are provided through the [resources](/concepts/resources) system wh
 
 ### When to use I/O managers
 
-I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. However, they are not required, nor are they the best option, in all scenarios.
+I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. They can be useful in situations where:
+- You store many of your assets in the same location and follow a consistent set of rules to determine the storage path.
+- You want to swap out I/O manager implementations to change how your assets are stored in local, staging, and production environments.
+- Your asset functions load the upstream dependencies into memory in order to do the function computation.
 
-Some assets do not need an I/O manager. For example, you may write an asset that executes a Snowflake query that creates a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
+However, I/O managers are not required, nor are they the best option, in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
 
 ```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
 @asset(deps=[orders])
@@ -107,7 +110,7 @@ Other reasons you may not want to use I/O managers:
 - You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
 - You simply prefer to have the reading and writing code explicitly defined in each asset.
 
-As a general rule, if you find yourself getting tripped up writing your pipeline to use I/O managers, or you find yourself making your pipeline more complicated in order to use I/O managers, you will likely have more success not using I/O managers. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, or you find yourself getting confused when implementing I/O managers, it's likely that you are in a situation where I/O managers are **not** a good fit. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
 
 ---
 
