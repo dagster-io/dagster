@@ -528,7 +528,7 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
         """
         if isinstance(path, Path) and not isinstance(path, UPath):
             try:
-                from morefs.asyn_local import AsyncLocalFileSystem  # type: ignore
+                from morefs.asyn_local import AsyncLocalFileSystem
 
                 return AsyncLocalFileSystem()
             except ImportError as e:
