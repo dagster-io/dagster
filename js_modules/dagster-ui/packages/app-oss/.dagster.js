@@ -9,8 +9,8 @@
 
 const path = require('path');
 
-const dagitCorePath = path.resolve('../core/src');
-const dagitUIPath = path.resolve('../ui/src');
+const dagitCorePath = path.resolve('../ui-core/src');
+const dagitUIPath = path.resolve('../ui-components/src');
 const graphQLArtifactDirectory = path.resolve(dagitCorePath, 'graphql');
 
 const noncePlaceholder = 'NONCE-PLACEHOLDER';
@@ -54,7 +54,7 @@ module.exports = {
    * development targets, but are outside of the CRA's own `src` directory. Ex:
    *
    * [
-   *   path.resolve(pathToLocalDagit, 'packages/core/src'),
+   *   path.resolve(pathToLocalDagit, 'packages/ui-core/src'),
    * ]
    */
   srcPaths: [dagitCorePath, dagitUIPath],

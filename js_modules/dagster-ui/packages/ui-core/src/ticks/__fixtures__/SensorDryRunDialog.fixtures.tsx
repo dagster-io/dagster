@@ -22,7 +22,7 @@ export const runRequests: RunRequest[] = [
   buildRunRequest({
     runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',
     runConfigYaml:
-      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
     tags: [
       buildPipelineTag({key: 'dagster2', value: 'test'}),
       buildPipelineTag({key: 'marco2', value: 'salazar2'}),
@@ -31,7 +31,7 @@ export const runRequests: RunRequest[] = [
   buildRunRequest({
     runKey: 'DryRunRequestTable.test.tsx:1675705668.993122345',
     runConfigYaml:
-      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
     tags: [
       buildPipelineTag({key: 'dagster3', value: 'test'}),
       buildPipelineTag({key: 'marco3', value: 'salazar3'}),
@@ -40,7 +40,7 @@ export const runRequests: RunRequest[] = [
   buildRunRequest({
     runKey: 'DryRunRequestTable.test.tsx:1675705668.993122367',
     runConfigYaml:
-      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
     tags: [
       buildPipelineTag({key: 'dagster6', value: 'test'}),
       buildPipelineTag({key: 'marco6', value: 'salazar6'}),

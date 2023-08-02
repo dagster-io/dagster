@@ -1,5 +1,4 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import {
   Body,
   Box,
@@ -13,6 +12,7 @@ import {
   Spinner,
   TextInput,
 } from '@dagster-io/ui-components';
+import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import React from 'react';
 import isEmail from 'validator/lib/isEmail';
 

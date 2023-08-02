@@ -3,7 +3,7 @@ import {History} from 'history';
 import qs from 'qs';
 import * as React from 'react';
 
-import {Mono} from '../../../ui/src';
+import {Mono} from '../../../ui-components/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

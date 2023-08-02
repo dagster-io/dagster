@@ -29,7 +29,7 @@ const config = {
   },
   // https://github.com/storybookjs/storybook/issues/16690#issuecomment-971579785
   webpackFinal: async (config) => {
-    // console.log(path.resolve('../ui/src'));
+    // console.log(path.resolve('../ui-components/src'));
     // process.exit(1);
     return {
       ...config,
@@ -37,7 +37,7 @@ const config = {
         ...config.resolve,
         alias: {
           ...config.resolve.alias,
-          '@dagster-io/ui-components': path.resolve('../ui/src'),
+          '@dagster-io/ui-components': path.resolve('../ui-components/src'),
         },
       },
       module: {

@@ -1,5 +1,14 @@
 import {gql} from '@apollo/client';
-import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} from '@dagster-io/ui-components';
+import {
+  Body,
+  Box,
+  Caption,
+  Colors,
+  ConfigTypeSchema,
+  Icon,
+  Mono,
+  Subheading,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
