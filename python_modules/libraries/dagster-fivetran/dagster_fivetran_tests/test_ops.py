@@ -1,6 +1,6 @@
 import pytest
 import responses
-from dagster import AssetKey, job, op
+from dagster import AssetKey, Failure, job, op
 from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_resync_op, fivetran_sync_op
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
@@ -80,6 +80,64 @@ def test_fivetran_sync_op():
                 AssetKey(["fivetran", "abc", "xyz"]),
             ]
         )
+
+@pytest.mark.parametrize(
+    "error_on_reschedule",
+    [
+        True,
+        False,
+    ],
+)
+def test_fivetran_sync_op_rescheduled(error_on_reschedule: bool):
+    ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar", "error_on_reschedule": error_on_reschedule})
+    final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
+    api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
+
+    @op
+    def foo_op():
+        pass
+
+    @job(
+        resource_defs={"fivetran": ft_resource},
+        config={
+            "ops": {
+                "fivetran_sync_op": {
+                    "config": {
+                        "connector_id": DEFAULT_CONNECTOR_ID,
+                        "poll_interval": 0.1,
+                        "poll_timeout": 10,
+                    }
+                }
+            }
+        },
+    )
+    def fivetran_sync_job():
+        fivetran_sync_op(start_after=foo_op())
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
+        rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
+        # connector schema
+        rsps.add(
+            rsps.GET, f"{api_prefix}/schemas", json=get_complex_sample_connector_schema_config()
+        )
+        # initial state
+        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+        # n polls before updating
+        for _ in range(2):
+            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+        # mark as rescheduled
+        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(sync_state="rescheduled"))
+
+        if not error_on_reschedule:
+            # final state will be updated
+            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
+
+        if error_on_reschedule:
+            with pytest.raises(Failure, match="Sync for connector .* was rescheduled"):
+                fivetran_sync_job.execute_in_process()
+        else:
+            assert fivetran_sync_job.execute_in_process().success
 
 
 @pytest.mark.parametrize(

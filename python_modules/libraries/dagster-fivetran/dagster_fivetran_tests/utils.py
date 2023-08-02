@@ -4,7 +4,7 @@ DEFAULT_CONNECTOR_ID = "some_connector"
 DEFAULT_CONNECTOR_ID_2 = "some_other_connector"
 
 
-def get_sample_connector_response(**kwargs):
+def get_sample_connector_response(sync_state: str = "scheduled", **kwargs):
     return deep_merge_dicts(
         {
             "code": "Success",
@@ -24,7 +24,7 @@ def get_sample_connector_response(**kwargs):
                 "schedule_type": "auto",
                 "status": {
                     "setup_state": "connected",
-                    "sync_state": "scheduled",
+                    "sync_state": sync_state,
                     "update_state": "on_schedule",
                     "is_historical_sync": False,
                     "tasks": [],
