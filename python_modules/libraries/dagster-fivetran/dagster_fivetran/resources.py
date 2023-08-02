@@ -64,7 +64,8 @@ class FivetranResource(ConfigurableResource):
             "limits. If set to False, the sync will continue to poll until it completes, which "
             "may take a long time. For more information, see "
             "https://fivetran.com/docs/getting-started/syncoverview"
-        ),)
+        ),
+    )
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -315,11 +316,12 @@ class FivetranResource(ConfigurableResource):
                 curr_sync_state,
             ) = self.get_connector_sync_status(connector_id)
 
-                
             self._log.info(f"Polled '{connector_id}'. Status: [{curr_sync_state}]")
             if self.error_on_reschedule and curr_sync_state == "rescheduled":
-                raise Failure("Sync for connector '{connector_id}' was rescheduled"
-                               " because it has exceeded API limits.")
+                raise Failure(
+                    "Sync for connector '{connector_id}' was rescheduled"
+                    " because it has exceeded API limits."
+                )
 
             if curr_last_sync_completion > initial_last_sync_completion:
                 break

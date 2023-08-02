@@ -81,6 +81,7 @@ def test_fivetran_sync_op():
             ]
         )
 
+
 @pytest.mark.parametrize(
     "error_on_reschedule",
     [
@@ -89,7 +90,9 @@ def test_fivetran_sync_op():
     ],
 )
 def test_fivetran_sync_op_rescheduled(error_on_reschedule: bool):
-    ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar", "error_on_reschedule": error_on_reschedule})
+    ft_resource = fivetran_resource.configured(
+        {"api_key": "foo", "api_secret": "bar", "error_on_reschedule": error_on_reschedule}
+    )
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
 
