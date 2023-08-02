@@ -2,7 +2,7 @@ import 'codemirror/lib/codemirror.css';
 
 import * as React from 'react';
 import {Controlled, UnControlled as Uncontrolled} from 'react-codemirror2';
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 import {Colors} from './Colors';
 import {Icons} from './Icon';

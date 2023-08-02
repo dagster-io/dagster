@@ -3,7 +3,7 @@ import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {formatElapsedTimeWithMsec} from '../app/Util';
 import {TimeContext} from '../app/time/TimeContext';

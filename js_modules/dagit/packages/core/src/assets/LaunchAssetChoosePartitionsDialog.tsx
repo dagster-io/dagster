@@ -19,7 +19,7 @@ import {
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';

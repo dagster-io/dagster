@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 interface Props {
   header: React.ReactNode;

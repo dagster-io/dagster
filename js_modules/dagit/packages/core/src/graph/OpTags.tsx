@@ -1,6 +1,6 @@
 import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import airbyte from './optag-images/airbyte.svg';
 import airflow from './optag-images/airflow.svg';

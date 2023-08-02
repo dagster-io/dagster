@@ -1,5 +1,5 @@
 import {Colors, IconWrapper} from '@dagster-io/ui';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 export const ClearButton = styled.button`
   background: transparent;

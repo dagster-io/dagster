@@ -2,7 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';

@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {BaseButton} from './BaseButton';
 import {Colors} from './Colors';

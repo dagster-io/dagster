@@ -1,6 +1,6 @@
 import {Body, Box, Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';

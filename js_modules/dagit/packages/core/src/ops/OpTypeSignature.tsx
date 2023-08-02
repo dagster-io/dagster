@@ -3,7 +3,7 @@ import {gql} from '@apollo/client';
 import {Code} from '@blueprintjs/core';
 import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';

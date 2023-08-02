@@ -1,6 +1,6 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {Group} from '../Group';
 import {Menu, MenuItem, MenuDivider} from '../Menu';

@@ -1,6 +1,6 @@
 import {Colors, Icon, Box, Tooltip, IconName} from '@dagster-io/ui';
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetNodeFragment} from '../asset-graph/types/AssetNode.types';

@@ -1,6 +1,6 @@
 import {Colors} from '@dagster-io/ui';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 export const Item = styled(Link)<{$active: boolean}>`
   background-color: ${({$active}) => ($active ? Colors.Blue50 : 'transparent')};

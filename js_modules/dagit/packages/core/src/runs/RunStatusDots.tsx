@@ -1,6 +1,6 @@
 import {Popover, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
-import styled, {css, keyframes} from 'styled-components/macro';
+import styled, {css, keyframes} from 'styled-components';
 
 import {RunStatus} from '../graphql/types';
 

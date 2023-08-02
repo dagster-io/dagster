@@ -1,7 +1,7 @@
 import {Box, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';

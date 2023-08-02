@@ -1,6 +1,6 @@
 import {Box, Caption, Colors, CursorPaginationControls} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {compactNumber} from '../../ui/formatters';

@@ -3,7 +3,7 @@ import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {MemoryRouter} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {IBounds} from './common';
 import {makeSVGPortable} from './makeSVGPortable';

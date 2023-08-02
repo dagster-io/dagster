@@ -14,7 +14,7 @@ import 'codemirror/keymap/sublime';
 import {Editor} from 'codemirror';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {StyledCodeMirror} from './CodeMirror';

@@ -3,7 +3,7 @@ import {Text} from '@blueprintjs/core';
 import {Colors, Group, Icon, IconWrapper, Code, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {titleOfIO} from '../app/titleOfIO';
 import {OpColumn, OpColumnContainer} from '../runs/LogsRowComponents';

@@ -3,7 +3,7 @@ import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@da
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

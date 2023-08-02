@@ -1,6 +1,6 @@
 import {Box, ButtonLink, Caption, Colors, Icon, Mono} from '@dagster-io/ui';
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {DagsterTag} from '../runs/RunTag';

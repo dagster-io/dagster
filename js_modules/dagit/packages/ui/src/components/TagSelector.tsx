@@ -1,6 +1,6 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Checkbox} from './Checkbox';
