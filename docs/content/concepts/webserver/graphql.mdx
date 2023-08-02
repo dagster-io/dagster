@@ -89,13 +89,8 @@ query RunsQuery {
         jobName
         status
         runConfigYaml
-        stats {
-          ... on RunStatsSnapshot {
-            startTime
-            endTime
-            stepsFailed
-          }
-        }
+        startTime
+        endTime
       }
     }
   }
@@ -122,13 +117,8 @@ query PaginatedRunsQuery {
         jobName
         status
         runConfigYaml
-        stats {
-          ... on RunStatsSnapshot {
-            startTime
-            endTime
-            stepsFailed
-          }
-        }
+        startTime
+        endTime
       }
     }
   }
@@ -159,13 +149,8 @@ query FilteredRunsQuery {
         jobName
         status
         runConfigYaml
-        stats {
-          ... on RunStatsSnapshot {
-            startTime
-            endTime
-            stepsFailed
-          }
-        }
+        startTime
+        endTime
       }
     }
   }
