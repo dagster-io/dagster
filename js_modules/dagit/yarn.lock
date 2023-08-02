@@ -3419,7 +3419,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
+"@dagster-io/eslint-config@1.0.12, @dagster-io/eslint-config@^1.0.1, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@dagster-io/eslint-config@workspace:packages/eslint-config"
   dependencies:
@@ -3444,27 +3444,6 @@ __metadata:
     prettier: 2.8.1
   languageName: unknown
   linkType: soft
-
-"@dagster-io/eslint-config@npm:1.0.11":
-  version: 1.0.11
-  resolution: "@dagster-io/eslint-config@npm:1.0.11"
-  dependencies:
-    "@typescript-eslint/eslint-plugin": 5.57.0
-    "@typescript-eslint/parser": 5.57.0
-    eslint-config-prettier: 8.5.0
-    eslint-plugin-dagster-rules: "link:./rules"
-    eslint-plugin-import: 2.26.0
-    eslint-plugin-jest: ^27.1.7
-    eslint-plugin-jsx-a11y: 6.6.1
-    eslint-plugin-prettier: ^4.2.1
-    eslint-plugin-react: 7.31.11
-    eslint-plugin-react-hooks: 4.6.0
-  peerDependencies:
-    eslint: ^8.30.0
-    prettier: 2.8.1
-  checksum: dc8fa4776e8624d4397d713d93c5c51898b6cad09ca943a44fb925744843aa3b59724aabfde6f7c29555fc558f9a56b2a1abda475fde8bdcaafccaf97f1d40e0
-  languageName: node
-  linkType: hard
 
 "@dagster-io/react-scripts@npm:^5.0.6":
   version: 5.0.6
@@ -3546,7 +3525,7 @@ __metadata:
     "@babel/preset-env": ^7.16.7
     "@babel/preset-react": ^7.16.7
     "@babel/preset-typescript": ^7.16.7
-    "@dagster-io/eslint-config": 1.0.11
+    "@dagster-io/eslint-config": 1.0.12
     "@mdx-js/react": ^1.6.22
     "@react-hook/resize-observer": ^1.2.6
     "@rollup/plugin-babel": ^5.3.1
@@ -13916,12 +13895,6 @@ __metadata:
   checksum: 74c6dfea7641ebcfe174be61168541a11a14aa8d72e515f5f09af55cd0d0862686104b0524aa4b8e0ce66418a44aa38a94d2588743db5fd07a6b49ffd16921d2
   languageName: node
   linkType: hard
-
-"eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40npm%3A1.0.11":
-  version: 0.0.0-use.local
-  resolution: "eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40npm%3A1.0.11"
-  languageName: node
-  linkType: soft
 
 "eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40workspace%3Apackages%2Feslint-config":
   version: 0.0.0-use.local
