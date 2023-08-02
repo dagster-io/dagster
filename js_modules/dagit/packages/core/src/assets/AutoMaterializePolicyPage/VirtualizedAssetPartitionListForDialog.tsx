@@ -1,7 +1,7 @@
 import {Box, Colors, Icon} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
