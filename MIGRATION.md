@@ -1,48 +1,44 @@
 # Introduction
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
+
 ## Migrating to 1.4.0
 
 ### Deprecations
 
 - The `dagit` python package and all references to it are now deprecated. We will continue to publish `dagit` and support APIs that used the term “dagit” until v2.0, but you should transition to newer `dagster-webserver` package. This is a drop-in replacement for `dagit`. Like `dagit`, it exposes an executable of the same name as the package itself, i.e. `dagster-webserver`.
-    - Any Dockerfiles or other Python environment specifications now list `dagster-webserver` instead, e.g.:
+- Any Dockerfiles or other Python environment specifications used for running the webserver now use `dagster-webserver` instead, e.g.:
 
-```python
-    ### Dockerfile
-    # ...
+```dockerfile
+# no (deprecated)
+RUN pip install dagster dagit ...
+...
+ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
 
-    # no (deprecated)
-    RUN pip install dagster dagit ...
-    ...
-    ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
+# yes
+RUN pip install dagster dagster-webserver
+...
+ENTRYPOINT ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
+```
 
-    # yes
-    RUN pip install dagster dagster-webserver
-    ...
-    ENTRYPOINT ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
-    ```
+- [Helm Chart] Three fields that were using the term “dagit” have been deprecated and replaced with “dagsterWebserver” instead:
 
-    - Three fields containing the term “dagit” in the Dagster helm chart schema have been updated to use “dagsterWebserver” instead. Old `values.yaml`:
+```yaml
+# no (deprecated)
+dagit:
+  ...
+  # ...
+ingress:
+  dagit: ...
+  readOnlyDagit: ...
 
-```python
-        ### values.yaml
-
-        # no (deprecated)
-        dagit:
-          ...
-          # ...
-        ingress:
-          dagit: ...
-          readOnlyDagit: ...
-
-        # yes
-        dagsterWebserver:
-          ...
-          # ...
-        ingress:
-          dagsterWebserver: ...
-          readOnlyDagsterWebserver: ...
+# yes
+dagsterWebserver:
+  ...
+  # ...
+ingress:
+  dagsterWebserver: ...
+  readOnlyDagsterWebserver: ...
 ```
 
 - We’ve deprecated the `non_argument_deps` parameter of `@asset` and `@multi_asset` in favor of a new `deps` parameter. To update your code to use `deps`, simply rename any instances of `non_argument_deps` to `deps` and change the type from a set to list. Additionally, you may also want to begin passing the python symbols for assets, rather than their `AssetKey`s to improve in-editor experience with type-aheads and linting.
@@ -136,24 +132,24 @@ defs = Definitions(
 
 - The following arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. Arguments will continue to work when passed into these functions, but a deprecation warning will be emitted.
 
-| Deprecated Arguments | Recommendation |
-| --- | --- |
-| `key_prefix` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key` |
-| `source_key_prefix` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key` |
-| `op_name` | Use the `@dbt_assets` decorator if you need to customize your op name. |
-| `manifest_json` | Use the `manifest` parameter instead. |
-| `display_raw_sql` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_description`. |
-| `selected_unique_ids` | Use the `select` parameter instead. |
-| `dbt_resource_key` | Use the `@dbt_assets` decorator if you need to customize your resource key. |
-| `use_build_command` | Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands. |
-| `partitions_def` | Use the `@dbt_assets` decorator to define partitioned dbt assets. |
-| `partition_key_to_vars_fn` | Use the `@dbt_assets` decorator to define partitioned dbt assets. |
-| `runtime_metadata_fn` | Use the `@dbt_assets` decorator if you need to customize runtime metadata. |
-| `node_info_to_asset_key_fn` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`. |
-| `node_info_to_group_fn` | Instead, configure dagster groups on a dbt resource's meta field, assign dbt groups, or provide a custom `DagsterDbtTranslator` that overrides `get_group_name`. |
-| `node_info_to_auto_materialize_policy_fn` | Instead, configure Dagster auto-materialize policies on a dbt resource's meta field. |
-| `node_info_to_freshness_policy_fn` | Instead, configure Dagster freshness policies on a dbt resource's meta field. |
-| `node_info_to_definition_metadata_fn` | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_metadata`. |
+| Deprecated Arguments                      | Recommendation                                                                                                                                                   |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key_prefix`                              | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`                                                                                  |
+| `source_key_prefix`                       | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`                                                                                  |
+| `op_name`                                 | Use the `@dbt_assets` decorator if you need to customize your op name.                                                                                           |
+| `manifest_json`                           | Use the `manifest` parameter instead.                                                                                                                            |
+| `display_raw_sql`                         | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_description`.                                                                               |
+| `selected_unique_ids`                     | Use the `select` parameter instead.                                                                                                                              |
+| `dbt_resource_key`                        | Use the `@dbt_assets` decorator if you need to customize your resource key.                                                                                      |
+| `use_build_command`                       | Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands.                                                                            |
+| `partitions_def`                          | Use the `@dbt_assets` decorator to define partitioned dbt assets.                                                                                                |
+| `partition_key_to_vars_fn`                | Use the `@dbt_assets` decorator to define partitioned dbt assets.                                                                                                |
+| `runtime_metadata_fn`                     | Use the `@dbt_assets` decorator if you need to customize runtime metadata.                                                                                       |
+| `node_info_to_asset_key_fn`               | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_asset_key`.                                                                                 |
+| `node_info_to_group_fn`                   | Instead, configure dagster groups on a dbt resource's meta field, assign dbt groups, or provide a custom `DagsterDbtTranslator` that overrides `get_group_name`. |
+| `node_info_to_auto_materialize_policy_fn` | Instead, configure Dagster auto-materialize policies on a dbt resource's meta field.                                                                             |
+| `node_info_to_freshness_policy_fn`        | Instead, configure Dagster freshness policies on a dbt resource's meta field.                                                                                    |
+| `node_info_to_definition_metadata_fn`     | Instead, provide a custom `DagsterDbtTranslator` that overrides `get_metadata`.                                                                                  |
 
 ### Breaking changes
 
@@ -161,6 +157,7 @@ defs = Definitions(
 - `build_asset_reconciliation_sensor` (Experimental) has been removed. It was deprecated in 1.3 in favor of `AutoMaterializePolicy`. Docs are [here](https://docs.dagster.io/concepts/assets/asset-auto-execution).
 - The `dagster-dbt` integration with `dbt-rpc` has been removed, as [the dbt plugin is being deprecated](https://github.com/dbt-labs/dbt-rpc).
 - Previously, `DbtCliResource` was a class alias for `DbtCliClientResource`. Now, `DbtCliResource` is a new resource with a different API. Furthermore, it requires at least `dbt-core>=1.4` to run.
+- [Helm Chart] If upgrading an existing installation to 1.4 and the `dagit.nameOverride` value is set, you will need to either change the value or delete the existing deployment to allow helm to update values that can not be patched for the rename from dagit to dagster-webserver.
 - [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now default to `use_build=True`. To switch back to the previous behavior, use `use_build=False`.
 
 ```python
@@ -200,7 +197,6 @@ load_assets_from_dbt_manifest(
 
 - [dagster-dbt] The arguments for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now must be specified using keyword arguments.
 - [dagster-dbt] When using the new `DbtCliResource` with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, stdout logs from the dbt process will now appear in the compute logs instead of the event logs.
-
 
 ## Migrating to 1.3.0
 
