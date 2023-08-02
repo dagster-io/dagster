@@ -86,7 +86,18 @@ def bar_with_tags_in_job_and_op():
     )
     json.dumps(user_defined_k8s_config_with_resources.to_dict())
 
-    @op(tags={"dagster-k8s/config": {"container_config": {"resources": OTHER_RESOURCE_TAGS}}})
+    @op(
+        tags={
+            "dagster-k8s/config": {
+                "container_config": {
+                    "resources": OTHER_RESOURCE_TAGS,
+                },
+                "pod_spec_config": {
+                    "init_containers": [{"name": "foo", "image": "bar"}],
+                },
+            },
+        },
+    )
     def foo():
         return 1
 
@@ -638,3 +649,4 @@ def test_step_raw_k8s_config_inheritance(
 
     assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
     assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS
+    assert raw_k8s_config.pod_spec_config["init_containers"]
