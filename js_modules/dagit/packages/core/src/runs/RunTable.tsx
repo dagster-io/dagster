@@ -193,6 +193,13 @@ export const RunTable = (props: RunTableProps) => {
   );
 };
 
+export const RUN_TAGS_FRAGMENT = gql`
+  fragment RunTagsFragment on PipelineTag {
+    key
+    value
+  }
+`;
+
 export const RUN_TABLE_RUN_FRAGMENT = gql`
   fragment RunTableRunFragment on Run {
     id
@@ -220,13 +227,13 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     }
     status
     tags {
-      key
-      value
+      ...RunTagsFragment
     }
     ...RunTimeFragment
   }
 
   ${RUN_TIME_FRAGMENT}
+  ${RUN_TAGS_FRAGMENT}
 `;
 
 const RunRow: React.FC<{
@@ -420,7 +427,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell run={run} onAddTag={onAddTag} />
+          <RunCreatedByCell tags={run.tags || []} />
         </td>
       )}
       <td>

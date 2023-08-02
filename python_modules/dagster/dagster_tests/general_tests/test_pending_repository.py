@@ -274,8 +274,7 @@ def test_group_cached_assets():
 
 
 def test_multiple_wrapped_cached_assets():
-    """Test that multiple wrappers (with_attributes, with_resources) work properly on cacheable assets.
-    """
+    """Test that multiple wrappers (with_attributes, with_resources) work properly on cacheable assets."""
 
     @resource
     def foo_resource():

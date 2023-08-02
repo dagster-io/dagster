@@ -41,8 +41,8 @@ def build_tox_step(
         None,
         [
             "tox",
-            "-vv",  # extra-verbose
             "-c %s " % tox_file if tox_file else None,
+            "-vv",  # extra-verbose
             "-e",
             tox_env,
         ],

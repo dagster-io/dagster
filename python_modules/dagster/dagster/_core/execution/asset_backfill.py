@@ -233,8 +233,7 @@ class AssetBackfillData(NamedTuple):
                     {
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
                         AssetBackfillStatus.FAILED: len(failed_partitions),
-                        AssetBackfillStatus.IN_PROGRESS: len(requested_partitions)
-                        - (
+                        AssetBackfillStatus.IN_PROGRESS: len(requested_partitions) - (
                             len(failed_partitions & requested_partitions) + len(materialized_subset)
                         ),
                     },

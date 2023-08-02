@@ -77,12 +77,7 @@ class LocalCsvIOManager(ConfigurableIOManager, MemoizableIOManager):
 
 
 def pandas_columns_to_markdown(dataframe: pd.DataFrame) -> str:
-    return (
-        textwrap.dedent(
-            """
+    return textwrap.dedent("""
         | Name | Type |
         | ---- | ---- |
-    """
-        )
-        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.items()])
-    )
+    """) + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.items()])

@@ -221,9 +221,11 @@ def _get_python_file_config_data(
             rebase_file(python_file_config["relative_path"], yaml_path),
             python_file_config.get("attribute"),
             python_file_config.get("location_name"),
-            rebase_file(python_file_config["working_directory"], yaml_path)
-            if python_file_config.get("working_directory")
-            else rebase_file(os.path.dirname(yaml_path), yaml_path),
+            (
+                rebase_file(python_file_config["working_directory"], yaml_path)
+                if python_file_config.get("working_directory")
+                else rebase_file(os.path.dirname(yaml_path), yaml_path)
+            ),
             _get_executable_path(python_file_config.get("executable_path")),
         )
     )

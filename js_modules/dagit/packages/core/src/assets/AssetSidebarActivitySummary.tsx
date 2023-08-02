@@ -1,5 +1,6 @@
-import {Body, Box, Colors, Spinner} from '@dagster-io/ui';
+import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
@@ -15,6 +16,7 @@ import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
@@ -88,7 +90,16 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
 
       {asset.autoMaterializePolicy && (
         <SidebarSection title="Auto-materialize policy">
-          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+          <Box
+            padding={{horizontal: 24, vertical: 12}}
+            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+          >
+            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'auto-materialize-history'})}>
+              View auto-materialize history
+            </Link>
+            <Icon name="open_in_new" color={Colors.Link} />
+          </Box>
+          <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
             </Body>

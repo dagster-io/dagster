@@ -178,20 +178,22 @@ class ActiveExecution:
         )
         return "{pending_str}{in_flight_str}{action_str}{retry_str}{claim_str}".format(
             in_flight_str=f"\nSteps still in flight: {self._in_flight}" if self._in_flight else "",
-            pending_str=f"\nSteps pending processing: {self._pending.keys()}"
-            if self._pending
-            else "",
+            pending_str=(
+                f"\nSteps pending processing: {self._pending.keys()}" if self._pending else ""
+            ),
             action_str=f"\nSteps pending action: {pending_action}" if pending_action else "",
-            retry_str=f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
-            if self._waiting_to_retry
-            else "",
+            retry_str=(
+                f"\nSteps waiting to retry: {self._waiting_to_retry.keys()}"
+                if self._waiting_to_retry
+                else ""
+            ),
             claim_str=(
                 "\nSteps waiting to claim:"
                 f" {self._instance_concurrency_context.pending_claim_steps()}"
-            )
-            if self._instance_concurrency_context
-            and self._instance_concurrency_context.has_pending_claims()
-            else "",
+                if self._instance_concurrency_context
+                and self._instance_concurrency_context.has_pending_claims()
+                else ""
+            ),
         )
 
     def _update(self) -> None:
@@ -435,9 +437,9 @@ class ActiveExecution:
                     "Dependencies for step {step}{fail_str}{abandon_str}. Not executing.".format(
                         step=step.key,
                         fail_str=f" failed: {failed_inputs}" if failed_inputs else "",
-                        abandon_str=f" were not executed: {abandoned_inputs}"
-                        if abandoned_inputs
-                        else "",
+                        abandon_str=(
+                            f" were not executed: {abandoned_inputs}" if abandoned_inputs else ""
+                        ),
                     )
                 )
                 self.mark_abandoned(step.key)
@@ -530,9 +532,11 @@ class ActiveExecution:
         elif dagster_event.is_step_up_for_retry:
             self.mark_up_for_retry(
                 step_key,
-                time.time() + dagster_event.step_retry_data.seconds_to_wait
-                if dagster_event.step_retry_data.seconds_to_wait
-                else None,
+                (
+                    time.time() + dagster_event.step_retry_data.seconds_to_wait
+                    if dagster_event.step_retry_data.seconds_to_wait
+                    else None
+                ),
             )
         elif dagster_event.is_successful_output:
             event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
@@ -545,8 +549,7 @@ class ActiveExecution:
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
     def verify_complete(self, job_context: IPlanContext, step_key: str) -> None:
-        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
-        """
+        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure."""
         if step_key in self._in_flight:
             job_context.log.error(
                 "Step {key} finished without success or failure event. Downstream steps will not"

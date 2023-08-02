@@ -581,10 +581,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         causes = self.stale_status_loader.get_stale_root_causes(self._external_asset_node.asset_key)
         return [
             GrapheneAssetStaleCause(
-                GrapheneAssetKey(path=cause.key.path),
+                GrapheneAssetKey(path=cause.asset_key.path),
                 cause.category,
                 cause.reason,
-                GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
+                (
+                    GrapheneAssetKey(path=cause.dependency.asset_key.path)
+                    if cause.dependency
+                    else None
+                ),
             )
             for cause in causes
         ]
@@ -808,9 +812,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            self._external_asset_node.partitions_def_data.get_partitions_definition()
-            if self._external_asset_node.partitions_def_data
-            else None,
+            (
+                self._external_asset_node.partitions_def_data.get_partitions_definition()
+                if self._external_asset_node.partitions_def_data
+                else None
+            ),
         )
 
         return build_partition_statuses(
@@ -838,9 +844,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                 graphene_info.context.instance,
                 asset_key,
                 self._dynamic_partitions_loader,
-                self._external_asset_node.partitions_def_data.get_partitions_definition()
-                if self._external_asset_node.partitions_def_data
-                else None,
+                (
+                    self._external_asset_node.partitions_def_data.get_partitions_definition()
+                    if self._external_asset_node.partitions_def_data
+                    else None
+                ),
             )
 
             if (

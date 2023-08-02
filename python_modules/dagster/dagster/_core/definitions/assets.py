@@ -18,7 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -34,7 +34,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidIn
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
     ExperimentalWarning,
-    experimental_arg_warning,
 )
 from dagster._utils.merger import merge_dicts
 
@@ -154,12 +153,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
         check.invariant(
             set(self._asset_deps.keys()) == all_asset_keys,
-            (
-                "The set of asset keys with dependencies specified in the asset_deps argument must "
-                "equal the set of asset keys produced by this AssetsDefinition. \n"
-                f"asset_deps keys: {set(self._asset_deps.keys())} \n"
-                f"expected keys: {all_asset_keys}"
-            ),
+            "The set of asset keys with dependencies specified in the asset_deps argument must "
+            "equal the set of asset keys produced by this AssetsDefinition. \n"
+            f"asset_deps keys: {set(self._asset_deps.keys())} \n"
+            f"expected keys: {all_asset_keys}",
         )
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs")
@@ -215,10 +212,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                     and not isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
                 ),
                 "freshness_policies_by_key",
-                (
-                    "FreshnessPolicies are currently unsupported for assets with partitions of type"
-                    f" {type(self._partitions_def)}."
-                ),
+                "FreshnessPolicies are currently unsupported for assets with partitions of type"
+                f" {type(self._partitions_def)}.",
             )
 
         self._freshness_policies_by_key = check.opt_mapping_param(
@@ -242,9 +237,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
             check.param_invariant(
-                backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
-                if backfill_policy
-                else True,
+                (
+                    backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
+                    if backfill_policy
+                    else True
+                ),
                 "backfill_policy",
                 "Non partitioned asset can only have single run backfill policy",
             )
@@ -323,6 +320,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return op_def(*args, **kwargs)
 
     @public
+    @experimental_param(param="resource_defs")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -397,8 +395,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
         """
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
         return AssetsDefinition._from_node(
             node_def=graph_def,
             keys_by_input_name=keys_by_input_name,
@@ -552,10 +548,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
                     output_name in keys_by_output_name,
-                    (
-                        f"output_name {output_name} specified in internal_asset_deps does not exist"
-                        " in the decorated function"
-                    ),
+                    f"output_name {output_name} specified in internal_asset_deps does not exist"
+                    " in the decorated function",
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
@@ -601,43 +595,53 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ),
             group_names_by_key=group_names_by_key,
             resource_defs=resource_defs,
-            partition_mappings={
-                keys_by_input_name[input_name]: partition_mapping
-                for input_name, partition_mapping in partition_mappings.items()
-            }
-            if partition_mappings
-            else None,
-            metadata_by_key={
-                keys_by_output_name_with_prefix[output_name]: metadata
-                for output_name, metadata in metadata_by_output_name.items()
-                if metadata is not None
-            }
-            if metadata_by_output_name
-            else None,
-            freshness_policies_by_key={
-                keys_by_output_name_with_prefix[output_name]: freshness_policy
-                for output_name, freshness_policy in freshness_policies_by_output_name.items()
-                if freshness_policy is not None
-            }
-            if freshness_policies_by_output_name
-            else None,
-            auto_materialize_policies_by_key={
-                keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
-                for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
-                if auto_materialize_policy is not None
-            }
-            if auto_materialize_policies_by_output_name
-            else None,
+            partition_mappings=(
+                {
+                    keys_by_input_name[input_name]: partition_mapping
+                    for input_name, partition_mapping in partition_mappings.items()
+                }
+                if partition_mappings
+                else None
+            ),
+            metadata_by_key=(
+                {
+                    keys_by_output_name_with_prefix[output_name]: metadata
+                    for output_name, metadata in metadata_by_output_name.items()
+                    if metadata is not None
+                }
+                if metadata_by_output_name
+                else None
+            ),
+            freshness_policies_by_key=(
+                {
+                    keys_by_output_name_with_prefix[output_name]: freshness_policy
+                    for output_name, freshness_policy in freshness_policies_by_output_name.items()
+                    if freshness_policy is not None
+                }
+                if freshness_policies_by_output_name
+                else None
+            ),
+            auto_materialize_policies_by_key=(
+                {
+                    keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
+                    for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
+                    if auto_materialize_policy is not None
+                }
+                if auto_materialize_policies_by_output_name
+                else None
+            ),
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
-            descriptions_by_key={
-                keys_by_output_name_with_prefix[output_name]: description
-                for output_name, description in descriptions_by_output_name.items()
-                if description is not None
-            }
-            if descriptions_by_output_name
-            else None,
+            descriptions_by_key=(
+                {
+                    keys_by_output_name_with_prefix[output_name]: description
+                    for output_name, description in descriptions_by_output_name.items()
+                    if description is not None
+                }
+                if descriptions_by_output_name
+                else None
+            ),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
         )
@@ -783,8 +787,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any).
-        """
+        """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any)."""
         return self._partitions_def
 
     @property
@@ -914,9 +917,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 replaced_freshness_policy = self.freshness_policies_by_key.get(key)
 
             if replaced_freshness_policy:
-                replaced_freshness_policies_by_key[
-                    output_asset_key_replacements.get(key, key)
-                ] = replaced_freshness_policy
+                replaced_freshness_policies_by_key[output_asset_key_replacements.get(key, key)] = (
+                    replaced_freshness_policy
+                )
 
         if auto_materialize_policy:
             auto_materialize_policy_conflicts = (
@@ -1170,8 +1173,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
-        """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition.
-        """
+        """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition."""
         return {requirement.key for requirement in self.get_resource_requirements()}
 
     def __str__(self):
@@ -1248,12 +1250,10 @@ def _infer_keys_by_input_names(
     if keys_by_input_name:
         check.invariant(
             set(keys_by_input_name.keys()) == set(all_input_names),
-            (
-                "The set of input names keys specified in the keys_by_input_name argument must "
-                f"equal the set of asset keys inputted by '{node_def.name}'. \n"
-                f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
-                f"expected keys: {all_input_names}"
-            ),
+            "The set of input names keys specified in the keys_by_input_name argument must "
+            f"equal the set of asset keys inputted by '{node_def.name}'. \n"
+            f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
+            f"expected keys: {all_input_names}",
         )
 
     # If asset key is not supplied in keys_by_input_name, create asset key
@@ -1273,12 +1273,10 @@ def _infer_keys_by_output_names(
     if keys_by_output_name:
         check.invariant(
             set(keys_by_output_name.keys()) == set(output_names),
-            (
-                "The set of output names keys specified in the keys_by_output_name argument must "
-                f"equal the set of asset keys outputted by {node_def.name}. \n"
-                f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
-                f"expected keys: {set(output_names)}"
-            ),
+            "The set of output names keys specified in the keys_by_output_name argument must "
+            f"equal the set of asset keys outputted by {node_def.name}. \n"
+            f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
+            f"expected keys: {set(output_names)}",
         )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
@@ -1364,13 +1362,11 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
     check.invariant(
         not unmapped_leaf_nodes,
-        (
-            f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped"
-            " to outputs of the graph, and produce assets. The following leaf node(s) are"
-            f" non-asset producing ops: {unmapped_leaf_nodes}. This behavior is not currently"
-            " supported because these ops are not required for the creation of the associated"
-            " asset(s)."
-        ),
+        f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped"
+        " to outputs of the graph, and produce assets. The following leaf node(s) are"
+        f" non-asset producing ops: {unmapped_leaf_nodes}. This behavior is not currently"
+        " supported because these ops are not required for the creation of the associated"
+        " asset(s).",
     )
 
 

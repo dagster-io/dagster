@@ -30,14 +30,13 @@ from dagster import (
     multi_asset,
     with_resources,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, experimental_param
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils.backcompat import experimental_arg_warning
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -251,8 +250,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_dbt_nodes_and_dependencies(
         self,
     ) -> Tuple[Mapping[str, Any], Mapping[str, FrozenSet[str]]]:
-        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
-        """
+        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes."""
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
@@ -527,9 +525,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                         + split_materialization_command[idx + 2 :]
                     )
 
-            job_commands[
-                job_materialization_command_step
-            ] = f"{materialization_command} {' '.join(dbt_options)}".strip()
+            job_commands[job_materialization_command_step] = (
+                f"{materialization_command} {' '.join(dbt_options)}".strip()
+            )
 
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(
@@ -573,6 +571,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 
 @experimental
+@experimental_param(param="partitions_def")
+@experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
     dbt_cloud: ResourceDefinition,
     job_id: int,
@@ -654,10 +654,7 @@ def load_assets_from_dbt_cloud_job(
             def dbt_cloud_sandbox():
                 return [dbt_cloud_assets]
     """
-    if partitions_def:
-        experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
-        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
         check.invariant(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",

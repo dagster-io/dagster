@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 export enum DagsterTag {
   Automaterialize = 'dagster/auto_materialize',
+  AutoObserve = 'dagster/auto_observe',
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
   CreatedBy = 'dagster/created_by',
@@ -24,6 +25,7 @@ export enum DagsterTag {
   AssetEventDataVersion = 'dagster/data_version',
   AssetEventDataVersionDeprecated = 'dagster/logical_version',
   AssetEventCodeVersion = 'dagster/code_version',
+  AssetEvaluationID = 'dagster/asset_evaluation_id',
   SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
   User = 'user',
 

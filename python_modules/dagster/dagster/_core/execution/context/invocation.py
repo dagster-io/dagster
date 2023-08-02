@@ -280,15 +280,21 @@ class UnboundOpExecutionContext(OpExecutionContext):
             instance=self.instance,
             log_manager=self.log,
             pdb=self.pdb,
-            tags=op_def_or_invocation.tags
-            if isinstance(op_def_or_invocation, PendingNodeInvocation)
-            else None,
-            hook_defs=op_def_or_invocation.hook_defs
-            if isinstance(op_def_or_invocation, PendingNodeInvocation)
-            else None,
-            alias=op_def_or_invocation.given_alias
-            if isinstance(op_def_or_invocation, PendingNodeInvocation)
-            else None,
+            tags=(
+                op_def_or_invocation.tags
+                if isinstance(op_def_or_invocation, PendingNodeInvocation)
+                else None
+            ),
+            hook_defs=(
+                op_def_or_invocation.hook_defs
+                if isinstance(op_def_or_invocation, PendingNodeInvocation)
+                else None
+            ),
+            alias=(
+                op_def_or_invocation.given_alias
+                if isinstance(op_def_or_invocation, PendingNodeInvocation)
+                else None
+            ),
             user_events=self._user_events,
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,

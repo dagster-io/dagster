@@ -237,9 +237,11 @@ class CachingDataTimeResolver:
                     (
                         parent_record.asset_materialization.tags
                         if parent_record.asset_materialization
-                        else parent_record.event_log_entry.asset_observation.tags
-                        if parent_record.event_log_entry.asset_observation
-                        else None
+                        else (
+                            parent_record.event_log_entry.asset_observation.tags
+                            if parent_record.event_log_entry.asset_observation
+                            else None
+                        )
                     )
                     or {}
                 ),

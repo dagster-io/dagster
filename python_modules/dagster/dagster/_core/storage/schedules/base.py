@@ -2,7 +2,7 @@ import abc
 from typing import Mapping, Optional, Sequence, Set
 
 from dagster import AssetKey
-from dagster._core.definitions.asset_reconciliation_sensor import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeAssetEvaluation
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
@@ -180,8 +180,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Call this method to run any optional data migrations for optimized reads."""
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived webserver process.
-        """
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None

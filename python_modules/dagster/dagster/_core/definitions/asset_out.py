@@ -88,9 +88,11 @@ class AssetOut(
             cls,
             key=AssetKey.from_coercible(key) if key is not None else None,
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=check.opt_str_param(

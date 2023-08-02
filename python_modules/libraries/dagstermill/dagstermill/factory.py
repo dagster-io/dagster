@@ -40,7 +40,7 @@ from .translator import DagsterTranslator
 
 
 def _clean_path_for_windows(notebook_path: str) -> str:
-    """In windows, the notebook cant render in dagit unless the C: prefix is removed.
+    """In windows, the notebook can't render in the Dagster UI unless the C: prefix is removed.
     os.path.splitdrive will split the path into (drive, tail), so just return the tail.
     """
     return os.path.splitdrive(notebook_path)[1]
@@ -418,17 +418,13 @@ def define_dagstermill_op(
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
-            (
-                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
-                " is reserved for use by Dagster"
-            ),
+            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+            " is reserved for use by Dagster",
         )
         check.invariant(
             "kind" not in tags,
-            (
-                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
-                " use by Dagster"
-            ),
+            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            " use by Dagster",
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 

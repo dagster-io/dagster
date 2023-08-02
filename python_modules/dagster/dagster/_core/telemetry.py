@@ -68,6 +68,7 @@ ENABLED_STR = "enabled"
 DAGSTER_HOME_FALLBACK = "~/.dagster"
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
+# 'dagit' name is deprecated but we keep the same telemetry action name to avoid data disruption
 START_DAGSTER_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
@@ -780,15 +781,11 @@ TELEMETRY_TEXT = """
 
     telemetry:
       enabled: false
-""" % {
-    "telemetry": click.style("Telemetry:", fg="blue", bold=True)
-}
+""" % {"telemetry": click.style("Telemetry:", fg="blue", bold=True)}
 
 SLACK_PROMPT = """
   %(welcome)s
 
   If you have any questions or would like to engage with the Dagster team, please join us on Slack
   (https://bit.ly/39dvSsF).
-""" % {
-    "welcome": click.style("Welcome to Dagster!", bold=True)
-}
+""" % {"welcome": click.style("Welcome to Dagster!", bold=True)}

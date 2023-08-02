@@ -18,8 +18,7 @@ clusters:
 
 @pytest.fixture
 def kubeconfig_file(tmp_path):
-    """Returns a str file path for a minimal kubeconfig file in the default location (~/.kube/config).
-    """
+    """Returns a str file path for a minimal kubeconfig file in the default location (~/.kube/config)."""
     dir_path = tmp_path / ".kube"
     dir_path.mkdir()
     config_path = dir_path / "config"
@@ -42,7 +41,7 @@ def k8s_run_launcher_instance(kubeconfig_file):
                     "class": "K8sRunLauncher",
                     "module": "dagster_k8s",
                     "config": {
-                        "service_account_name": "dagit-admin",
+                        "service_account_name": "webserver-admin",
                         "instance_config_map": "dagster-instance",
                         "postgres_password_secret": "dagster-postgresql-secret",
                         "dagster_home": "/opt/dagster/dagster_home",

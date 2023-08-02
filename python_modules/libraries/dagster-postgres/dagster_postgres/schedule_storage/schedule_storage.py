@@ -34,7 +34,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """Postgres-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To use Postgres for all of the components of your instance storage, you can add the following
@@ -96,7 +96,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.optimize()
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold an open connection and set statement_timeout
+        # When running in dagster-webserver, hold an open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:

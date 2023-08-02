@@ -26,6 +26,7 @@ from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, scoped_job_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.resources_init import (
     get_required_resource_keys_to_init,
@@ -177,6 +178,12 @@ class Manager:
             # Set this flag even though we're not in test for clearer error reporting
             raise_on_error=True,
         ) as job_context:
+            known_state = None
+            if dagster_run.parent_run_id:
+                known_state = KnownExecutionState.build_for_reexecution(
+                    instance=instance,
+                    parent_run=check.not_none(instance.get_run_by_id(dagster_run.parent_run_id)),
+                )
             self.context = DagstermillRuntimeExecutionContext(
                 job_context=job_context,
                 job_def=job_def,
@@ -190,7 +197,8 @@ class Manager:
                 step_context=cast(
                     StepExecutionContext,
                     job_context.for_step(
-                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key))
+                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key)),
+                        known_state=known_state,
                     ),
                 ),
             )

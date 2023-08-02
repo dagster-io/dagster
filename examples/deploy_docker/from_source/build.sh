@@ -22,9 +22,9 @@ pushd $BASE_DIR
 mkdir -p python_modules
 mkdir -p python_modules/libraries/
 
-if [[ -z ${DAGIT_DONT_BUILD_JS_BUNDLE+x} ]]; then
+if [[ -z ${DAGSTER_UI_DONT_BUILD_JS_BUNDLE+x} ]]; then
     echo -e "--- \033[32m:wrench: Building JS bundle\033[0m"
-    echo -e "(set DAGIT_DONT_BUILD_JS_BUNDLE to skip)"
+    echo -e "(set DAGSTER_UI_DONT_BUILD_JS_BUNDLE to skip)"
     pushd ${ROOT}
     make rebuild_ui
     popd

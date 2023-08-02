@@ -54,8 +54,7 @@ class AddDynamicPartitionsRequest(
         ],
     )
 ):
-    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule.
-    """
+    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
 
     def __new__(
         cls,
@@ -79,8 +78,7 @@ class DeleteDynamicPartitionsRequest(
         ],
     )
 ):
-    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule.
-    """
+    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
 
     def __new__(
         cls,
@@ -189,10 +187,8 @@ class RunRequest(
         partitions_def = target_definition.partitions_def
         if partitions_def is None:
             check.failed(
-                (
-                    "Cannot resolve partition for run request when target job"
-                    f" '{target_definition.name}' is unpartitioned."
-                ),
+                "Cannot resolve partition for run request when target job"
+                f" '{target_definition.name}' is unpartitioned.",
             )
         partitions_def = cast(PartitionsDefinition, partitions_def)
 
@@ -223,9 +219,11 @@ class RunRequest(
         }
 
         return self.with_replaced_attrs(
-            run_config=self.run_config
-            if self.run_config
-            else partitioned_config.get_run_config_for_partition_key(self.partition_key),
+            run_config=(
+                self.run_config
+                if self.run_config
+                else partitioned_config.get_run_config_for_partition_key(self.partition_key)
+            ),
             tags=tags,
         )
 

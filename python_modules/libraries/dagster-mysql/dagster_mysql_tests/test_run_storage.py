@@ -66,9 +66,7 @@ class TestMySQLRunStorage(TestRunStorage):
                   hostname: {hostname}
                   db_name: test
                   port: {port}
-            """.format(
-                hostname=hostname, port=port
-            )
+            """.format(hostname=hostname, port=port)
 
             with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
                 with instance_for_test(

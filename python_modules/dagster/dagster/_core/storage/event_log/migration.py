@@ -137,9 +137,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .values(
                         last_materialization=None,
                         last_materialization_timestamp=None,
-                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
-                        if wipe_timestamp
-                        else None,
+                        wipe_timestamp=(
+                            utc_datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
+                        ),
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
@@ -151,9 +151,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .values(
                         last_materialization=serialize_value(event),
                         last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
-                        if wipe_timestamp
-                        else None,
+                        wipe_timestamp=(
+                            utc_datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
+                        ),
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),

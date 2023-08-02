@@ -459,10 +459,8 @@ class AllowDelayedDependencies:
         }
         check.invariant(
             all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
-            (
-                "Any partially configured, nested resources must be provided to Definitions"
-                f" object: {nested_partial_resource_keys}"
-            ),
+            "Any partially configured, nested resources must be provided to Definitions"
+            f" object: {nested_partial_resource_keys}",
         )
 
         # Recursively get all nested resource keys
@@ -818,8 +816,7 @@ class ConfigurableResourceFactory(
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
-        """This should be overridden to return True by all dagster maintained resources and IO managers.
-        """
+        """This should be overridden to return True by all dagster maintained resources and IO managers."""
         return False
 
     @classmethod
@@ -904,11 +901,9 @@ class ConfigurableResourceFactory(
                 check.inst(
                     context,
                     InitResourceContextWithKeyMapping,
-                    (
-                        "This ConfiguredResource contains unresolved partially-specified nested"
-                        " resources, and so can only be initialized using a"
-                        " InitResourceContextWithKeyMapping"
-                    ),
+                    "This ConfiguredResource contains unresolved partially-specified nested"
+                    " resources, and so can only be initialized using a"
+                    " InitResourceContextWithKeyMapping",
                 ),
             )
             partial_resources_to_update = {
@@ -930,7 +925,9 @@ class ConfigurableResourceFactory(
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `with_replaced_resource_context` instead"
+    )
     def with_resource_context(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
@@ -1042,10 +1039,8 @@ class ConfigurableResourceFactory(
         """
         check.invariant(
             not cls._is_cm_resource_cls(),
-            (
-                "Use from_resource_context_cm for resources which have custom teardown behavior,"
-                " e.g. overriding yield_for_execution or teardown_after_execution"
-            ),
+            "Use from_resource_context_cm for resources which have custom teardown behavior,"
+            " e.g. overriding yield_for_execution or teardown_after_execution",
         )
         return cls(**context.resource_config or {})._initialize_and_run(context)  # noqa: SLF001
 
@@ -1125,9 +1120,11 @@ def _is_fully_configured(resource: CoercibleToResource) -> bool:
     res = (
         validate_config(
             actual_resource.config_schema.config_type,
-            actual_resource.config_schema.default_value
-            if actual_resource.config_schema.default_provided
-            else {},
+            (
+                actual_resource.config_schema.default_value
+                if actual_resource.config_schema.default_provided
+                else {}
+            ),
         ).success
         is True
     )
@@ -1517,9 +1514,9 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
             key_type=key_type,
         )
         return Field(
-            config=Noneable(wrapped_config_type)
-            if pydantic_field.allow_none
-            else wrapped_config_type,
+            config=(
+                Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
+            ),
             description=inferred_field.description,
             is_required=_is_pydantic_field_required(pydantic_field),
         )
@@ -1536,14 +1533,16 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         )
 
         return Field(
-            config=Noneable(wrapped_config_type)
-            if pydantic_field.allow_none
-            else wrapped_config_type,
+            config=(
+                Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
+            ),
             description=pydantic_field.field_info.description,
             is_required=_is_pydantic_field_required(pydantic_field),
-            default_value=pydantic_field.default
-            if pydantic_field.default is not None
-            else FIELD_NO_DEFAULT_PROVIDED,
+            default_value=(
+                pydantic_field.default
+                if pydantic_field.default is not None
+                else FIELD_NO_DEFAULT_PROVIDED
+            ),
         )
 
 
@@ -1692,9 +1691,11 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     dagster_config_field_mapping = {
         discriminator_value: infer_schema_from_config_class(
             field.type_,
-            fields_to_omit={pydantic_field.field_info.discriminator}
-            if pydantic_field.field_info.discriminator
-            else None,
+            fields_to_omit=(
+                {pydantic_field.field_info.discriminator}
+                if pydantic_field.field_info.discriminator
+                else None
+            ),
         )
         for discriminator_value, field in sub_fields_mapping.items()
     }
@@ -1705,8 +1706,7 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
-    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
-    """
+    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field."""
     if safe_is_subclass(model_cls, Config):
         check.invariant(
             config_arg_default is inspect.Parameter.empty,
@@ -1724,9 +1724,11 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         )
     return Field(
         config=inner_config_type,
-        default_value=FIELD_NO_DEFAULT_PROVIDED
-        if config_arg_default is inspect.Parameter.empty
-        else config_arg_default,
+        default_value=(
+            FIELD_NO_DEFAULT_PROVIDED
+            if config_arg_default is inspect.Parameter.empty
+            else config_arg_default
+        ),
     )
 
 
@@ -1887,8 +1889,10 @@ def validate_resource_annotated_function(fn) -> None:
                 param_name=malformed_param.name,
                 annotation_type=malformed_param.annotation,
                 value_message=f"a '{output_type}'" if output_type else "an unknown",
-                annotation_suggestion=f"'ResourceParam[{output_type_name}]'"
-                if output_type
-                else "'ResourceParam[Any]' or 'ResourceParam[<output type>]'",
+                annotation_suggestion=(
+                    f"'ResourceParam[{output_type_name}]'"
+                    if output_type
+                    else "'ResourceParam[Any]' or 'ResourceParam[<output type>]'"
+                ),
             )
         )

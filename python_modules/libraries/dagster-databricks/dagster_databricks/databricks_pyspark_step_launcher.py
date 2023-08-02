@@ -145,9 +145,9 @@ DAGSTER_SYSTEM_ENV_VARS = {
             default_value=True,
             description=(
                 "Determines whether to display debug logs emitted while job is being polled. It can"
-                " be helpful for Dagit performance to set to False when running long-running or"
-                " fan-out Databricks jobs, to avoid forcing the UI to fetch large amounts of debug"
-                " logs."
+                " be helpful for Dagster UI performance to set to False when running long-running"
+                " or fan-out Databricks jobs, to avoid forcing the UI to fetch large amounts of"
+                " debug logs."
             ),
         ),
         "add_dagster_env_variables": Field(
@@ -206,17 +206,13 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.storage = check.opt_dict_param(storage, "storage")
         check.invariant(
             local_dagster_job_package_path is not None or local_pipeline_package_path is not None,
-            (
-                "Missing config: need to provide either 'local_dagster_job_package_path' or"
-                " 'local_pipeline_package_path' config entry"
-            ),
+            "Missing config: need to provide either 'local_dagster_job_package_path' or"
+            " 'local_pipeline_package_path' config entry",
         )
         check.invariant(
             local_dagster_job_package_path is None or local_pipeline_package_path is None,
-            (
-                "Error in config: Provided both 'local_dagster_job_package_path' and"
-                " 'local_pipeline_package_path' entries. Need to specify one or the other."
-            ),
+            "Error in config: Provided both 'local_dagster_job_package_path' and"
+            " 'local_pipeline_package_path' entries. Need to specify one or the other.",
         )
         self.local_dagster_job_package_path = check.str_param(
             local_pipeline_package_path or local_dagster_job_package_path,
@@ -588,8 +584,7 @@ class DatabricksConfig:
             self.setup_adls2_storage(self.storage["adls2"], dbutils, sc)
 
     def setup_s3_storage(self, s3_storage, dbutils, sc):
-        """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
-        """
+        """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them."""
         scope = s3_storage["secret_scope"]
 
         access_key = dbutils.secrets.get(scope=scope, key=s3_storage["access_key_key"])
@@ -605,8 +600,7 @@ class DatabricksConfig:
         os.environ["AWS_SECRET_ACCESS_KEY"] = secret_key
 
     def setup_adls2_storage(self, adls2_storage, dbutils, sc):
-        """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it.
-        """
+        """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it."""
         storage_account_key = dbutils.secrets.get(
             scope=adls2_storage["secret_scope"], key=adls2_storage["storage_account_key_key"]
         )

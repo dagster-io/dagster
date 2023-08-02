@@ -197,9 +197,11 @@ class UPathIOManager(MemoizableIOManager):
             return "/".join(ordered_dimension_keys)
 
         formatted_partition_keys = {
-            partition_key: _formatted_multipartitioned_path(partition_key)
-            if isinstance(partition_key, MultiPartitionKey)
-            else partition_key
+            partition_key: (
+                _formatted_multipartitioned_path(partition_key)
+                if isinstance(partition_key, MultiPartitionKey)
+                else partition_key
+            )
             for partition_key in context.asset_partition_keys
         }
 
@@ -427,10 +429,8 @@ class UPathIOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(obj)}."
-                ),
+                "Output had Nothing type or 'None' annotation, but handle_output received"
+                f" value that was not None and was of type {type(obj)}.",
             )
             return None
 

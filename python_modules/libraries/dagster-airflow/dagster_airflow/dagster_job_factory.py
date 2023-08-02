@@ -51,7 +51,7 @@ def make_dagster_job_from_airflow_dag(
             my_dagster_job.execute_in_process()
 
     3. (Recommended) Add ``{'airflow_execution_date': utc_date_string}`` to the run tags,
-        such as in the Dagit UI. This will override behavior from (1) and (2)
+        such as in the Dagster UI. This will override behavior from (1) and (2)
 
 
     We apply normalized_name() to the dag id and task ids when generating job name and op

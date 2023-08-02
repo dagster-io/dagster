@@ -110,7 +110,7 @@ def test_get_validated_celery_k8s_executor_config():
                     "job_namespace": {"env": "TEST_PIPELINE_RUN_NAMESPACE"},
                     "broker": {"env": "TEST_CELERY_BROKER"},
                     "backend": {"env": "TEST_CELERY_BACKEND"},
-                    "include": ["dagster", "dagit"],
+                    "include": ["dagster", "dagster-webserver"],
                     "config_source": {
                         "task_annotations": """{'*': {'on_failure': my_on_failure}}"""
                     },
@@ -139,7 +139,7 @@ def test_get_validated_celery_k8s_executor_config():
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
             "job_namespace": "my-namespace",
-            "include": ["dagster", "dagit"],
+            "include": ["dagster", "dagster-webserver"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
@@ -219,7 +219,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
                         "job_namespace": {"env": "TEST_PIPELINE_RUN_NAMESPACE"},
                         "broker": {"env": "TEST_CELERY_BROKER"},
                         "backend": {"env": "TEST_CELERY_BACKEND"},
-                        "include": ["dagster", "dagit"],
+                        "include": ["dagster", "dagster-webserver"],
                         "config_source": {
                             "task_annotations": """{'*': {'on_failure': my_on_failure}}"""
                         },
@@ -249,7 +249,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "job_namespace": "my-namespace",
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
-            "include": ["dagster", "dagit"],
+            "include": ["dagster", "dagster-webserver"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",

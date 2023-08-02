@@ -141,10 +141,8 @@ class _ObservableSourceAsset:
         decorator_resource_keys = set(self.required_resource_keys or [])
         check.param_invariant(
             len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            (
-                "Cannot specify resource requirements in both @op decorator and as arguments to the"
-                " decorated function"
-            ),
+            "Cannot specify resource requirements in both @op decorator and as arguments to the"
+            " decorated function",
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 

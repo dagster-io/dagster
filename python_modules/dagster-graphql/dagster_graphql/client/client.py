@@ -4,10 +4,9 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import validate_tags
-from dagster._utils.backcompat import experimental_class_warning
 from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
@@ -31,6 +30,7 @@ from .utils import (
 )
 
 
+@experimental
 class DagsterGraphQLClient:
     """Official Dagster Python Client for GraphQL.
 
@@ -66,8 +66,6 @@ class DagsterGraphQLClient:
         transport: Optional[Transport] = None,
         use_https: bool = False,
     ):
-        experimental_class_warning(self.__class__.__name__)
-
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
         self._use_https = check.bool_param(use_https, "use_https")
@@ -135,10 +133,8 @@ class DagsterGraphQLClient:
         # The following invariant will never fail when a job is executed
         check.invariant(
             (mode is not None and run_config is not None) or preset is not None,
-            (
-                "Either a mode and run_config or a preset must be specified in order to "
-                f"submit the pipeline {pipeline_name} for execution"
-            ),
+            "Either a mode and run_config or a preset must be specified in order to "
+            f"submit the pipeline {pipeline_name} for execution",
         )
         tags = validate_tags(tags)
 
@@ -149,10 +145,8 @@ class DagsterGraphQLClient:
             if len(job_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
-                    (
-                        f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
-                        f" `{pipeline_name}` exist"
-                    ),
+                    f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
+                    f" `{pipeline_name}` exist",
                 )
             elif len(job_info_lst) == 1:
                 job_info = job_info_lst[0]
@@ -182,9 +176,9 @@ class DagsterGraphQLClient:
                 **variables["executionParams"],
                 "runConfigData": run_config,
                 "mode": mode,
-                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
-                if tags
-                else {},
+                "executionMetadata": (
+                    {"tags": [{"key": k, "value": v} for k, v in tags.items()]} if tags else {}
+                ),
             }
 
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)

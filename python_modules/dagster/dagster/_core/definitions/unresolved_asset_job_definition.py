@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
@@ -83,6 +83,10 @@ class UnresolvedAssetJobDefinition(
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
         )
 
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -114,12 +118,6 @@ class UnresolvedAssetJobDefinition(
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
             PartitionedConfig,
-        )
-
-        deprecation_warning(
-            "UnresolvedAssetJobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
         )
 
         if not self.partitions_def:

@@ -21,9 +21,7 @@ class TestPostgresRunStorage(TestRunStorage):
             class: PostgresRunStorage
             config:
               postgres_url: postgresql://test:test@{hostname}:5432/test
-        """.format(
-            hostname=hostname
-        )
+        """.format(hostname=hostname)
 
         explicit_cfg = """
           run_storage:
@@ -35,9 +33,7 @@ class TestPostgresRunStorage(TestRunStorage):
                 password: test
                 hostname: {hostname}
                 db_name: test
-        """.format(
-            hostname=hostname
-        )
+        """.format(hostname=hostname)
 
         with environ({"TEST_PG_PASSWORD": "test"}):
             env_cfg = """
@@ -51,9 +47,7 @@ class TestPostgresRunStorage(TestRunStorage):
                     env: TEST_PG_PASSWORD
                   hostname: {hostname}
                   db_name: test
-            """.format(
-                hostname=hostname
-            )
+            """.format(hostname=hostname)
 
             with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
                 with instance_for_test(

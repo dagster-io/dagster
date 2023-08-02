@@ -103,10 +103,8 @@ class GrpcServerRegistry(AbstractContextManager):
 
         check.invariant(
             heartbeat_ttl > reload_interval,
-            (
-                "Heartbeat TTL must be larger than reload interval, or processes could die due to"
-                " TTL failure before they are reloaded"
-            ),
+            "Heartbeat TTL must be larger than reload interval, or processes could die due to"
+            " TTL failure before they are reloaded",
         )
 
         self._reload_interval = check.int_param(reload_interval, "reload_interval")

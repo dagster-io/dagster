@@ -11,4 +11,4 @@ RUN pip install \
     -e dagster-postgres \
     -e dagster-k8s \
     -e dagster-aws \
-    -e dagit
+    -e dagster-webserver

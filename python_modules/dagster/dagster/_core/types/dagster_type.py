@@ -214,8 +214,7 @@ class DagsterType(RequiresResources):
     @public
     @property
     def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types.
-        """
+        """The unique name of this type. Can be None if the type is not unique, such as container types."""
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(
             self._name is not None,

@@ -117,9 +117,12 @@ def _recurse_in_to_selector(
 
     field_evr = _recursively_process_config(
         context.for_field(field_def, field_name),
-        {}
-        if incoming_field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
-        else incoming_field_value,
+        (
+            {}
+            if incoming_field_value is None
+            and ConfigTypeKind.has_fields(field_def.config_type.kind)
+            else incoming_field_value
+        ),
     )
     if field_evr.success:
         return EvaluateValueResult.for_value({field_name: field_evr.value})

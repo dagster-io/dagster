@@ -82,8 +82,7 @@ class DownstreamFreshnessAutoMaterializeCondition(NamedTuple):
 
 @whitelist_for_serdes
 class ParentMaterializedAutoMaterializeCondition(NamedTuple):
-    """Indicates that this asset should be materialized because one of its parents was materialized.
-    """
+    """Indicates that this asset should be materialized because one of its parents was materialized."""
 
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.MATERIALIZE
     updated_asset_keys: Optional[FrozenSet[AssetKey]] = None
@@ -99,8 +98,7 @@ class MissingAutoMaterializeCondition(NamedTuple):
 
 @whitelist_for_serdes
 class ParentOutdatedAutoMaterializeCondition(NamedTuple):
-    """Indicates that this asset should be skipped because one or more of its parents are outdated.
-    """
+    """Indicates that this asset should be skipped because one or more of its parents are outdated."""
 
     decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
     waiting_on_asset_keys: Optional[FrozenSet[AssetKey]] = None

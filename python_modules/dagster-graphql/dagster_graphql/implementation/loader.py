@@ -73,7 +73,9 @@ class RepositoryScopedBatchLoader:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
-                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                            REPOSITORY_LABEL_TAG: (
+                                self._repository.get_external_origin().get_label()
+                            ),
                         },
                     ),
                     bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
@@ -87,7 +89,9 @@ class RepositoryScopedBatchLoader:
                                 filters=RunsFilter(
                                     job_name=job_name,
                                     tags={
-                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                                        REPOSITORY_LABEL_TAG: (
+                                            self._repository.get_external_origin().get_label()
+                                        ),
                                     },
                                 ),
                                 limit=limit,
@@ -105,7 +109,9 @@ class RepositoryScopedBatchLoader:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
-                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                            REPOSITORY_LABEL_TAG: (
+                                self._repository.get_external_origin().get_label()
+                            ),
                         }
                     ),
                     bucket_by=TagBucket(
@@ -123,7 +129,9 @@ class RepositoryScopedBatchLoader:
                                 filters=RunsFilter(
                                     tags={
                                         SCHEDULE_NAME_TAG: schedule_name,
-                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                                        REPOSITORY_LABEL_TAG: (
+                                            self._repository.get_external_origin().get_label()
+                                        ),
                                     }
                                 ),
                                 limit=limit,
@@ -140,7 +148,9 @@ class RepositoryScopedBatchLoader:
                 records = self._instance.get_run_records(
                     filters=RunsFilter(
                         tags={
-                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                            REPOSITORY_LABEL_TAG: (
+                                self._repository.get_external_origin().get_label()
+                            ),
                         }
                     ),
                     bucket_by=TagBucket(
@@ -158,7 +168,9 @@ class RepositoryScopedBatchLoader:
                                 filters=RunsFilter(
                                     tags={
                                         SENSOR_NAME_TAG: sensor_name,
-                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                                        REPOSITORY_LABEL_TAG: (
+                                            self._repository.get_external_origin().get_label()
+                                        ),
                                     }
                                 ),
                                 limit=limit,
@@ -367,9 +379,9 @@ class CrossRepoAssetDependedByLoader:
         ] = defaultdict(lambda: defaultdict(list))
 
         # A mapping containing all derived (non-source) assets and their location
-        map_derived_asset_to_location: Dict[
-            AssetKey, Tuple[str, str]
-        ] = {}  # key is asset key, value is tuple (location_name, repo_name)
+        map_derived_asset_to_location: Dict[AssetKey, Tuple[str, str]] = (
+            {}
+        )  # key is asset key, value is tuple (location_name, repo_name)
 
         for location in self._context.code_locations:
             repositories = location.get_repositories()
@@ -417,7 +429,7 @@ class CrossRepoAssetDependedByLoader:
 
             for asset in all_depended_by_assets:
                 # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
-                # no output or partition definition data) and no job_names. Dagit displays
+                # no output or partition definition data) and no job_names. The Dagster UI displays
                 # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
                 # are defined as ExternalAssetNodes with no definition data.
                 sink_assets[asset.downstream_asset_key] = ExternalAssetNode(

@@ -195,11 +195,9 @@ class RedshiftClient(BaseRedshiftClient):
                 conn.commit()
 
 
-@deprecated
+@deprecated(breaking_version="2.0", additional_warn_text="Use RedshiftClientResource instead.")
 class RedshiftResource(RedshiftClient):
-    """Deprecated. This class was used by the function-style Redshift resource. New code should instead
-    use the Pythonic, class-style RedshiftClientResource.
-    """
+    """This class was used by the function-style Redshift resource."""
 
 
 class FakeRedshiftClient(BaseRedshiftClient):
@@ -276,11 +274,9 @@ class FakeRedshiftClient(BaseRedshiftClient):
             return [self.QUERY_RESULT] * 3
 
 
-@deprecated
+@deprecated(breaking_version="2.0", additional_warn_text="Use FakeRedshiftClientResource instead.")
 class FakeRedshiftResource(FakeRedshiftClient):
-    """Deprecated. This class was used by the function-style fake Redshift resource. New code should instead
-    use the Pythonic, class-style FakeRedshiftClientResource.
-    """
+    """This class was used by the function-style fake Redshift resource."""
 
 
 class RedshiftClientResource(ConfigurableResource):

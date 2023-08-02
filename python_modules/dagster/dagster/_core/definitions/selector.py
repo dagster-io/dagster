@@ -53,10 +53,8 @@ class JobSubsetSelector(
     def with_op_selection(self, op_selection: Optional[Sequence[str]]) -> Self:
         check.invariant(
             self.op_selection is None,
-            (
-                f"Can not invoke with_op_selection when op_selection={self.op_selection} is"
-                " already set"
-            ),
+            f"Can not invoke with_op_selection when op_selection={self.op_selection} is"
+            " already set",
         )
         return JobSubsetSelector(
             self.location_name, self.repository_name, self.job_name, op_selection
@@ -86,12 +84,10 @@ class JobSelector(
             job_name=check.str_param(
                 job_name,
                 "job_name",
-                (
-                    "Must provide job_name argument even though it is marked as optional in the "
-                    "function signature. repository_name, a truly optional parameter, is before "
-                    "that argument and actually optional. Use of keyword arguments is "
-                    "recommended to avoid confusion."
-                ),
+                "Must provide job_name argument even though it is marked as optional in the "
+                "function signature. repository_name, a truly optional parameter, is before "
+                "that argument and actually optional. Use of keyword arguments is "
+                "recommended to avoid confusion.",
             ),
         )
 

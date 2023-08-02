@@ -132,10 +132,8 @@ class TimeWindowPartitionsDefinition(
         if cron_schedule is not None:
             check.invariant(
                 schedule_type is None and not minute_offset and not hour_offset and not day_offset,
-                (
-                    "If cron_schedule argument is provided, then schedule_type, minute_offset, "
-                    "hour_offset, and day_offset can't also be provided"
-                ),
+                "If cron_schedule argument is provided, then schedule_type, minute_offset, "
+                "hour_offset, and day_offset can't also be provided",
             )
         else:
             if schedule_type is None:
@@ -264,8 +262,7 @@ class TimeWindowPartitionsDefinition(
     def _get_validated_time_window_for_partition_key(
         self, partition_key: str, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
-        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None.
-        """
+        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None."""
         try:
             time_window = self.time_window_for_partition_key(partition_key)
         except ValueError:
@@ -453,9 +450,11 @@ class TimeWindowPartitionsDefinition(
     ) -> Optional[TimeWindow]:
         current_time = cast(
             datetime,
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone),
+            (
+                pendulum.instance(current_time, tz=self.timezone)
+                if current_time
+                else pendulum.now(self.timezone)
+            ),
         )
         return self._get_first_partition_window(current_time=current_time)
 
@@ -489,9 +488,11 @@ class TimeWindowPartitionsDefinition(
     ) -> Optional[TimeWindow]:
         current_time = cast(
             datetime,
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone),
+            (
+                pendulum.instance(current_time, tz=self.timezone)
+                if current_time
+                else pendulum.now(self.timezone)
+            ),
         )
         return self._get_last_partition_window(current_time=current_time)
 

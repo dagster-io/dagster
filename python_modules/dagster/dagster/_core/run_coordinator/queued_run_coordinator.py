@@ -71,10 +71,8 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         )
         check.invariant(
             self._max_concurrent_runs >= -1,
-            (
-                "Negative values other than -1 (which disables the limit) for max_concurrent_runs"
-                " are disallowed."
-            ),
+            "Negative values other than -1 (which disables the limit) for max_concurrent_runs"
+            " are disallowed.",
         )
         self._tag_concurrency_limits: Sequence[Mapping[str, Any]] = check.opt_list_param(
             tag_concurrency_limits,

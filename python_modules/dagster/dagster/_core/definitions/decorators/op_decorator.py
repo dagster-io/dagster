@@ -16,6 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import deprecated_param
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -30,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.backcompat import canonicalize_backcompat_args
+from dagster._utils.backcompat import normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -116,10 +117,8 @@ class _Op:
         decorator_resource_keys = set(self.required_resource_keys or [])
         check.param_invariant(
             len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            (
-                "Cannot specify resource requirements in both @op decorator and as arguments to the"
-                " decorated function"
-            ),
+            "Cannot specify resource requirements in both @op decorator and as arguments to the"
+            " decorated function",
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
@@ -162,6 +161,9 @@ def op(
     ...
 
 
+@deprecated_param(
+    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
+)
 def op(
     compute_fn: Optional[Callable] = None,
     *,
@@ -242,8 +244,11 @@ def op(
             def multi_out() -> Tuple[str, int]:
                 return 'cool', 4
     """
-    code_version = canonicalize_backcompat_args(
-        code_version, "code_version", version, "version", "2.0"
+    code_version = normalize_renamed_param(
+        code_version,
+        "code_version",
+        version,
+        "version",
     )
 
     if compute_fn is not None:
