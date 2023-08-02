@@ -630,11 +630,18 @@ class AssetLayer:
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
 
+    def input_for_asset_key(self, node_handle: NodeHandle, key: AssetKey) -> Optional[str]:
+        return next(
+            (
+                input_handle.input_name
+                for input_handle, k in self._asset_keys_by_node_input_handle.items()
+                if k == key
+            ),
+            None,
+        )
+
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
         return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
-
-    def is_source_for_asset(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.source_assets_by_key
 
     def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
         return (

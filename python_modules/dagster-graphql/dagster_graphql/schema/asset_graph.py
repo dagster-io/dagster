@@ -581,10 +581,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         causes = self.stale_status_loader.get_stale_root_causes(self._external_asset_node.asset_key)
         return [
             GrapheneAssetStaleCause(
-                GrapheneAssetKey(path=cause.key.path),
+                GrapheneAssetKey(path=cause.asset_key.path),
                 cause.category,
                 cause.reason,
-                GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
+                GrapheneAssetKey(path=cause.dependency.asset_key.path)
+                if cause.dependency
+                else None,
             )
             for cause in causes
         ]
