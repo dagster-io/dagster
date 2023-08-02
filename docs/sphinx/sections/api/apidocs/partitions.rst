@@ -1,23 +1,5 @@
 .. currentmodule:: dagster
 
-Partitioned Config
-==================
-
-.. autoclass:: PartitionedConfig
-
-.. autofunction:: static_partitioned_config
-
-.. autofunction:: dynamic_partitioned_config
-
-.. autofunction:: hourly_partitioned_config
-
-.. autofunction:: daily_partitioned_config
-
-.. autofunction:: weekly_partitioned_config
-
-.. autofunction:: monthly_partitioned_config
-
-
 Partitions Definitions
 ======================
 
@@ -63,3 +45,27 @@ Partition Mapping
 .. autoclass:: LastPartitionMapping
 
 .. autoclass:: StaticPartitionMapping
+
+.. autoclass:: SpecificPartitionsPartitionMapping
+
+.. autoclass:: MultiToSingleDimensionPartitionMapping
+
+.. autoclass:: MultiPartitionMapping
+
+
+Partitioned Config
+==================
+
+.. autoclass:: PartitionedConfig
+
+.. autofunction:: static_partitioned_config
+
+.. autofunction:: dynamic_partitioned_config
+
+.. autofunction:: hourly_partitioned_config
+
+.. autofunction:: daily_partitioned_config
+
+.. autofunction:: weekly_partitioned_config
+
+.. autofunction:: monthly_partitioned_config

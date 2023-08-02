@@ -9,10 +9,12 @@ from typing import (
     Dict,
     Generator,
     Generic,
+    List,
     Mapping,
     NamedTuple,
     Optional,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -20,7 +22,7 @@ from typing import (
 )
 
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
-from typing_extensions import TypeAlias, TypeGuard, get_args
+from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 from dagster import (
     Enum as DagsterEnum,
@@ -446,6 +448,8 @@ class AllowDelayedDependencies:
     def _resolve_required_resource_keys(
         self, resource_mapping: Mapping[int, str]
     ) -> AbstractSet[str]:
+        from dagster._core.execution.build_resources import wrap_resource_for_execution
+
         # All dependent resources which are not fully configured
         # must be specified to the Definitions object so that the
         # resource can be configured at runtime by the user
@@ -455,10 +459,8 @@ class AllowDelayedDependencies:
         }
         check.invariant(
             all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
-            (
-                "Any partially configured, nested resources must be provided to Definitions"
-                f" object: {nested_partial_resource_keys}"
-            ),
+            "Any partially configured, nested resources must be provided to Definitions"
+            f" object: {nested_partial_resource_keys}",
         )
 
         # Recursively get all nested resource keys
@@ -468,11 +470,13 @@ class AllowDelayedDependencies:
                 _resolve_required_resource_keys_for_resource(v, resource_mapping)
             )
 
-        resources, _ = separate_resource_params(self.__dict__)
+        resources, _ = separate_resource_params(
+            cast(Type[BaseModel], self.__class__), self.__dict__
+        )
         for v in resources.values():
             nested_resource_required_keys.update(
                 _resolve_required_resource_keys_for_resource(
-                    coerce_to_resource(v), resource_mapping
+                    wrap_resource_for_execution(v), resource_mapping
                 )
             )
 
@@ -604,14 +608,6 @@ def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:
     return isinstance(val, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
 
 
-def coerce_to_resource(
-    coercible_to_resource: CoercibleToResource,
-) -> ResourceDefinition:
-    if isinstance(coercible_to_resource, (ConfigurableResourceFactory, PartialResource)):
-        return coercible_to_resource.get_resource_definition()
-    return coercible_to_resource
-
-
 class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
     def __init__(
         self,
@@ -620,7 +616,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
-        nested_resources: Mapping[str, CoercibleToResource],
+        nested_resources: Mapping[str, Any],
         dagster_maintained: bool = False,
     ):
         super().__init__(
@@ -640,7 +636,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, CoercibleToResource]:
+    ) -> Mapping[str, Any]:
         return self._nested_resources
 
     def _resolve_required_resource_keys(
@@ -660,7 +656,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
         config_schema: Any,
         description: Optional[str],
         resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
-        nested_resources: Mapping[str, CoercibleToResource],
+        nested_resources: Mapping[str, Any],
         input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
         output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
         dagster_maintained: bool = False,
@@ -694,7 +690,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, CoercibleToResource]:
+    ) -> Mapping[str, Any]:
         return self._nested_resources
 
     def _resolve_required_resource_keys(
@@ -704,11 +700,11 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
 
 
 class ConfigurableResourceFactoryState(NamedTuple):
-    nested_partial_resources: Mapping[str, CoercibleToResource]
+    nested_partial_resources: Mapping[str, Any]
     resolved_config_dict: Dict[str, Any]
     config_schema: DefinitionConfigSchema
     schema: DagsterField
-    nested_resources: Dict[str, CoercibleToResource]
+    nested_resources: Dict[str, Any]
     resource_context: Optional[InitResourceContext]
 
 
@@ -766,7 +762,7 @@ class ConfigurableResourceFactory(
     """
 
     def __init__(self, **data: Any):
-        resource_pointers, data_without_resources = separate_resource_params(data)
+        resource_pointers, data_without_resources = separate_resource_params(self.__class__, data)
 
         schema = infer_schema_from_config_class(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
@@ -820,8 +816,7 @@ class ConfigurableResourceFactory(
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
-        """This should be overridden to return True by all dagster maintained resources and IO managers.
-        """
+        """This should be overridden to return True by all dagster maintained resources and IO managers."""
         return False
 
     @classmethod
@@ -861,7 +856,7 @@ class ConfigurableResourceFactory(
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, CoercibleToResource]:
+    ) -> Mapping[str, Any]:
         return self._nested_resources
 
     @classmethod
@@ -897,6 +892,8 @@ class ConfigurableResourceFactory(
 
         Returns a new instance of the resource.
         """
+        from dagster._core.execution.build_resources import wrap_resource_for_execution
+
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
             context_with_mapping = cast(
@@ -904,11 +901,9 @@ class ConfigurableResourceFactory(
                 check.inst(
                     context,
                     InitResourceContextWithKeyMapping,
-                    (
-                        "This ConfiguredResource contains unresolved partially-specified nested"
-                        " resources, and so can only be initialized using a"
-                        " InitResourceContextWithKeyMapping"
-                    ),
+                    "This ConfiguredResource contains unresolved partially-specified nested"
+                    " resources, and so can only be initialized using a"
+                    " InitResourceContextWithKeyMapping",
                 ),
             )
             partial_resources_to_update = {
@@ -918,10 +913,10 @@ class ConfigurableResourceFactory(
 
         # Also evaluate any resources that are not partial
         with contextlib.ExitStack() as stack:
-            resources_to_update, _ = separate_resource_params(self.__dict__)
+            resources_to_update, _ = separate_resource_params(self.__class__, self.__dict__)
             resources_to_update = {
                 attr_name: _call_resource_fn_with_default(
-                    stack, coerce_to_resource(resource), context
+                    stack, wrap_resource_for_execution(resource), context
                 )
                 for attr_name, resource in resources_to_update.items()
                 if attr_name not in partial_resources_to_update
@@ -930,7 +925,9 @@ class ConfigurableResourceFactory(
             to_update = {**resources_to_update, **partial_resources_to_update}
             yield self._with_updated_values(to_update)
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `with_replaced_resource_context` instead"
+    )
     def with_resource_context(
         self, resource_context: InitResourceContext
     ) -> "ConfigurableResourceFactory[TResValue]":
@@ -1042,10 +1039,8 @@ class ConfigurableResourceFactory(
         """
         check.invariant(
             not cls._is_cm_resource_cls(),
-            (
-                "Use from_resource_context_cm for resources which have custom teardown behavior,"
-                " e.g. overriding yield_for_execution or teardown_after_execution"
-            ),
+            "Use from_resource_context_cm for resources which have custom teardown behavior,"
+            " e.g. overriding yield_for_execution or teardown_after_execution",
         )
         return cls(**context.resource_config or {})._initialize_and_run(context)  # noqa: SLF001
 
@@ -1119,13 +1114,17 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
 
 
 def _is_fully_configured(resource: CoercibleToResource) -> bool:
-    actual_resource = coerce_to_resource(resource)
+    from dagster._core.execution.build_resources import wrap_resource_for_execution
+
+    actual_resource = wrap_resource_for_execution(resource)
     res = (
         validate_config(
             actual_resource.config_schema.config_type,
-            actual_resource.config_schema.default_value
-            if actual_resource.config_schema.default_provided
-            else {},
+            (
+                actual_resource.config_schema.default_value
+                if actual_resource.config_schema.default_provided
+                else {}
+            ),
         ).success
         is True
     )
@@ -1134,11 +1133,11 @@ def _is_fully_configured(resource: CoercibleToResource) -> bool:
 
 
 class PartialResourceState(NamedTuple):
-    nested_partial_resources: Dict[str, CoercibleToResource]
+    nested_partial_resources: Dict[str, Any]
     config_schema: DagsterField
     resource_fn: Callable[[InitResourceContext], Any]
     description: Optional[str]
-    nested_resources: Dict[str, CoercibleToResource]
+    nested_resources: Dict[str, Any]
 
 
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
@@ -1150,7 +1149,7 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
         resource_cls: Type[ConfigurableResourceFactory[TResValue]],
         data: Dict[str, Any],
     ):
-        resource_pointers, _data_without_resources = separate_resource_params(data)
+        resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
@@ -1178,13 +1177,13 @@ class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCa
     @property
     def _nested_partial_resources(
         self,
-    ) -> Mapping[str, CoercibleToResource]:
+    ) -> Mapping[str, Any]:
         return self._state__internal__.nested_partial_resources
 
     @property
     def nested_resources(
         self,
-    ) -> Mapping[str, CoercibleToResource]:
+    ) -> Mapping[str, Any]:
         return self._state__internal__.nested_resources
 
     @cached_method
@@ -1515,9 +1514,9 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
             key_type=key_type,
         )
         return Field(
-            config=Noneable(wrapped_config_type)
-            if pydantic_field.allow_none
-            else wrapped_config_type,
+            config=(
+                Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
+            ),
             description=inferred_field.description,
             is_required=_is_pydantic_field_required(pydantic_field),
         )
@@ -1534,14 +1533,16 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         )
 
         return Field(
-            config=Noneable(wrapped_config_type)
-            if pydantic_field.allow_none
-            else wrapped_config_type,
+            config=(
+                Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
+            ),
             description=pydantic_field.field_info.description,
             is_required=_is_pydantic_field_required(pydantic_field),
-            default_value=pydantic_field.default
-            if pydantic_field.default is not None
-            else FIELD_NO_DEFAULT_PROVIDED,
+            default_value=(
+                pydantic_field.default
+                if pydantic_field.default is not None
+                else FIELD_NO_DEFAULT_PROVIDED
+            ),
         )
 
 
@@ -1690,9 +1691,11 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     dagster_config_field_mapping = {
         discriminator_value: infer_schema_from_config_class(
             field.type_,
-            fields_to_omit={pydantic_field.field_info.discriminator}
-            if pydantic_field.field_info.discriminator
-            else None,
+            fields_to_omit=(
+                {pydantic_field.field_info.discriminator}
+                if pydantic_field.field_info.discriminator
+                else None
+            ),
         )
         for discriminator_value, field in sub_fields_mapping.items()
     }
@@ -1703,8 +1706,7 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
-    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
-    """
+    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field."""
     if safe_is_subclass(model_cls, Config):
         check.invariant(
             config_arg_default is inspect.Parameter.empty,
@@ -1722,9 +1724,11 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         )
     return Field(
         config=inner_config_type,
-        default_value=FIELD_NO_DEFAULT_PROVIDED
-        if config_arg_default is inspect.Parameter.empty
-        else config_arg_default,
+        default_value=(
+            FIELD_NO_DEFAULT_PROVIDED
+            if config_arg_default is inspect.Parameter.empty
+            else config_arg_default
+        ),
     )
 
 
@@ -1772,18 +1776,36 @@ def infer_schema_from_config_class(
 
 
 class SeparatedResourceParams(NamedTuple):
-    resources: Dict[str, CoercibleToResource]
+    resources: Dict[str, Any]
     non_resources: Dict[str, Any]
 
 
-def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
-    """Separates out the key/value inputs of fields in a structured config Resource class which
-    are themselves Resources and those which are not.
-    """
-    return SeparatedResourceParams(
-        resources={k: v for k, v in data.items() if is_coercible_to_resource(v)},
-        non_resources={k: v for k, v in data.items() if not is_coercible_to_resource(v)},
+def _is_annotated_as_resource_type(annotation: Type) -> bool:
+    """Determines if a field in a structured config class is annotated as a resource type or not."""
+    is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
+        annotation, "__metadata__", None
+    ) == ("resource_dependency",)
+
+    return is_annotated_as_resource_dependency or safe_is_subclass(
+        annotation, (ResourceDefinition, ConfigurableResourceFactory)
     )
+
+
+def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> SeparatedResourceParams:
+    """Separates out the key/value inputs of fields in a structured config Resource class which
+    are marked as resources (ie, using ResourceDependency) from those which are not.
+    """
+    keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
+    data_with_annotation: List[Tuple[str, Any, Type]] = [
+        (k, v, keys_by_alias[k].annotation) for k, v in data.items() if k in keys_by_alias
+    ]
+    out = SeparatedResourceParams(
+        resources={k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)},
+        non_resources={
+            k: v for k, v, t in data_with_annotation if not _is_annotated_as_resource_type(t)
+        },
+    )
+    return out
 
 
 def _call_resource_fn_with_default(
@@ -1811,14 +1833,14 @@ def _call_resource_fn_with_default(
             )
         context = context.replace_config(cast(dict, evr.value)["config"])
 
-    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
-        obj.resource_fn, contextlib.ContextDecorator
-    )
-    if has_at_least_one_parameter(obj.resource_fn):  # type: ignore[unreachable]
+    if has_at_least_one_parameter(obj.resource_fn):
         result = cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
         result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
+    is_fn_generator = inspect.isgenerator(obj.resource_fn) or isinstance(
+        obj.resource_fn, contextlib.ContextDecorator
+    )
     if is_fn_generator:
         return stack.enter_context(cast(contextlib.AbstractContextManager, result))
     else:
@@ -1867,8 +1889,10 @@ def validate_resource_annotated_function(fn) -> None:
                 param_name=malformed_param.name,
                 annotation_type=malformed_param.annotation,
                 value_message=f"a '{output_type}'" if output_type else "an unknown",
-                annotation_suggestion=f"'ResourceParam[{output_type_name}]'"
-                if output_type
-                else "'ResourceParam[Any]' or 'ResourceParam[<output type>]'",
+                annotation_suggestion=(
+                    f"'ResourceParam[{output_type_name}]'"
+                    if output_type
+                    else "'ResourceParam[Any]' or 'ResourceParam[<output type>]'"
+                ),
             )
         )

@@ -217,9 +217,7 @@ compute_logs:
     bucket: "{bucket}"
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
-""".format(
-        bucket=gcs_bucket, prefix=gcs_prefix
-    )
+""".format(bucket=gcs_bucket, prefix=gcs_prefix)
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:

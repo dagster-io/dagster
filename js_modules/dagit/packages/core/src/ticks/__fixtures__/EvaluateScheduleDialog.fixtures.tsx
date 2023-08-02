@@ -25,7 +25,7 @@ export const GetScheduleQueryMock: MockedResponse<GetScheduleQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       scheduleOrError: buildSchedule({
         id: 'foo',
         name: 'configurable_job_schedule',
@@ -36,7 +36,7 @@ export const GetScheduleQueryMock: MockedResponse<GetScheduleQuery> = {
 };
 
 export const scheduleDryWithWithRunRequest = {
-  __typename: 'DagitMutation' as const,
+  __typename: 'Mutation' as const,
   scheduleDryRun: buildDryRunInstigationTick({
     timestamp: 1674950400,
     evaluationResult: buildTickEvaluation({
@@ -101,7 +101,7 @@ export const ScheduleDryRunMutationError: MockedResponse<ScheduleDryRunMutation>
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       scheduleDryRun: buildDryRunInstigationTick({
         timestamp: null,
         evaluationResult: buildTickEvaluation({
@@ -151,7 +151,7 @@ export const ScheduleDryRunMutationSkipped: MockedResponse<ScheduleDryRunMutatio
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       scheduleDryRun: buildDryRunInstigationTick({
         timestamp: null,
         evaluationResult: buildTickEvaluation({

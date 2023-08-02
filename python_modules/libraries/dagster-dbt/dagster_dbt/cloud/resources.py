@@ -470,10 +470,8 @@ class DbtCloudClient:
                 ):
                     self.cancel_run(run_id)
                     raise Failure(
-                        (
-                            f"Run {run_id} timed out after "
-                            f"{datetime.datetime.now() - poll_start}. Attempted to cancel."
-                        ),
+                        f"Run {run_id} timed out after "
+                        f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
                         metadata={"run_page_url": MetadataValue.url(href)},
                     )
 
@@ -590,10 +588,6 @@ class DbtCloudClient:
 
 class DbtCloudResource(DbtCloudClient):
     pass
-
-
-# This is a temporary shim to support the old resource name.
-DbtCloudResourceV2 = DbtCloudResource
 
 
 class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):

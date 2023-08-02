@@ -56,9 +56,9 @@ def slack_files_table():
     return store_files(fetch_files_from_slack())
 ```
 
-### Defining basic dependencies for graph-backed assets
+### Defining managed-loading dependencies for graph-backed assets
 
-Similar to with basic software-defined assets, Dagster infers the upstream assets from the names of the arguments to the decorated function.
+Similar to software-defined assets, Dagster infers the upstream assets from the names of the arguments to the decorated function. Dagster will then delegate loading the data to an [I/O manager](/concepts/io-management/io-managers).
 
 The example below includes an asset named `middle_asset`. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`:
 

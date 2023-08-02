@@ -15,7 +15,7 @@ export const buildWorkspaceContextMockedResponse = (
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       workspaceOrError,
     },
   },
@@ -32,7 +32,7 @@ export function buildRunTagValuesQueryMockedResponse(
     },
     result: {
       data: {
-        __typename: 'DagitQuery',
+        __typename: 'Query',
         runTagsOrError: buildRunTags({
           tags: [
             buildPipelineTagAndValues({

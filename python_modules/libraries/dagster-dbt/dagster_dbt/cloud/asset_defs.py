@@ -30,24 +30,24 @@ from dagster import (
     multi_asset,
     with_resources,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, experimental_param
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils.backcompat import experimental_arg_warning
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
+    default_description_fn,
     default_freshness_policy_fn,
-    default_group_fn,
-    default_metadata_fn,
+    default_group_from_dbt_resource_props,
     get_asset_deps,
     get_deps,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
@@ -250,8 +250,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_dbt_nodes_and_dependencies(
         self,
     ) -> Tuple[Mapping[str, Any], Mapping[str, FrozenSet[str]]]:
-        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
-        """
+        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes."""
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
@@ -336,6 +335,22 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         """Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
         representation that generate the asset definition for the job.
         """
+
+        class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+            @classmethod
+            def get_asset_key(cls, dbt_resource_props):
+                return self._node_info_to_asset_key(dbt_resource_props)
+
+            @classmethod
+            def get_description(cls, dbt_resource_props):
+                # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
+                # and attach metadata to link to the docs.
+                return default_description_fn(dbt_resource_props, display_raw_sql=False)
+
+            @classmethod
+            def get_group_name(cls, dbt_resource_props):
+                return self._node_info_to_group_fn(dbt_resource_props)
+
         (
             asset_deps,
             asset_ins,
@@ -348,17 +363,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
-            node_info_to_asset_key=self._node_info_to_asset_key,
-            node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
             node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
-            # TODO: In the future, allow this function to be specified
-            node_info_to_definition_metadata_fn=default_metadata_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
-            # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
-            # and attach metadata to link to the docs.
-            display_raw_sql=False,
+            dagster_dbt_translator=CustomDagsterDbtTranslator(),
+            manifest=None,
         )
 
         return AssetsDefinitionCacheableData(
@@ -435,9 +445,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         @multi_asset(
             name=f"dbt_cloud_job_{job_id}",
-            non_argument_deps=set(
-                (assets_definition_cacheable_data.keys_by_input_name or {}).values()
-            ),
+            deps=list((assets_definition_cacheable_data.keys_by_input_name or {}).values()),
             outs={
                 output_name: AssetOut(
                     key=asset_key,
@@ -517,9 +525,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                         + split_materialization_command[idx + 2 :]
                     )
 
-            job_commands[
-                job_materialization_command_step
-            ] = f"{materialization_command} {' '.join(dbt_options)}".strip()
+            job_commands[job_materialization_command_step] = (
+                f"{materialization_command} {' '.join(dbt_options)}".strip()
+            )
 
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(
@@ -563,11 +571,15 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 
 @experimental
+@experimental_param(param="partitions_def")
+@experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
     dbt_cloud: ResourceDefinition,
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
+    node_info_to_group_fn: Callable[
+        [Mapping[str, Any]], Optional[str]
+    ] = default_group_from_dbt_resource_props,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
@@ -642,10 +654,7 @@ def load_assets_from_dbt_cloud_job(
             def dbt_cloud_sandbox():
                 return [dbt_cloud_assets]
     """
-    if partitions_def:
-        experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
-        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
         check.invariant(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",

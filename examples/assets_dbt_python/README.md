@@ -14,6 +14,12 @@ Check out [Dagster Cloud](https://dagster.io/cloud) to get started.
 
 ### Option 2: Running it locally
 
+To download this example into your working directory, run:
+
+```bash
+dagster project from-example --example assets_dbt_python --name assets_dbt_python
+```
+
 To install this example and its Python dependencies, run:
 
 ```bash

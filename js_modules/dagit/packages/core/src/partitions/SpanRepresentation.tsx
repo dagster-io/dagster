@@ -41,11 +41,11 @@ export function allPartitionsRange({
   };
 }
 
-export function spanTextToSelections(
+export function spanTextToSelectionsOrError(
   allPartitionKeys: string[],
   text: string,
   skipPartitionKeyValidation?: boolean, // This is used by Dynamic Partitions as a workaround to be able to select a newly added partition before the partition health data is refetched
-): Omit<PartitionDimensionSelection, 'dimension'> {
+): Error | Omit<PartitionDimensionSelection, 'dimension'> {
   const terms = text.split(',').map((s) => s.trim());
   const result: Omit<PartitionDimensionSelection, 'dimension'> = {
     selectedKeys: [],
@@ -62,7 +62,7 @@ export function spanTextToSelections(
       const allStartIdx = allPartitionKeys.indexOf(start!);
       const allEndIdx = allPartitionKeys.indexOf(end!);
       if (allStartIdx === -1 || allEndIdx === -1) {
-        throw new Error(`Could not find partitions for provided range: ${start}...${end}`);
+        return new Error(`Could not find partitions for provided range: ${start}...${end}`);
       }
       result.selectedKeys.push(...allPartitionKeys.slice(allStartIdx, allEndIdx + 1));
       result.selectedRanges.push({
@@ -99,7 +99,7 @@ export function spanTextToSelections(
     } else {
       const idx = allPartitionKeys.indexOf(term);
       if (idx === -1 && !skipPartitionKeyValidation) {
-        throw new Error(`Could not find partition: ${term}`);
+        return new Error(`Could not find partition: ${term}`);
       }
       result.selectedKeys.push(term);
       result.selectedRanges.push({

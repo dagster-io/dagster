@@ -16,7 +16,6 @@ from dagster._annotations import experimental
 from dagster._config import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._utils import dict_without_keys
-from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from dagster_pandas.constraints import (
     CONSTRAINT_METADATA_KEY,
@@ -150,7 +149,6 @@ def create_dagster_pandas_dataframe_type(
     metadata_fn=None,
     dataframe_constraints=None,
     loader=None,
-    event_metadata_fn=None,
 ):
     """Constructs a custom pandas dataframe dagster type.
 
@@ -172,9 +170,6 @@ def create_dagster_pandas_dataframe_type(
     # dataframes via configuration their own way if the default configs don't suffice. This is
     # purely optional.
     check.str_param(name, "name")
-    metadata_fn = canonicalize_backcompat_args(
-        metadata_fn, "metadata_fn", event_metadata_fn, "event_metadata_fn", "1.4.0"
-    )
     metadata_fn = check.opt_callable_param(metadata_fn, "metadata_fn")
     description = create_dagster_pandas_dataframe_description(
         check.opt_str_param(description, "description", default=""),

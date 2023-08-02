@@ -144,8 +144,8 @@ deploy_docker_example_extra_cmds = [
     *network_buildkite_container("docker_example_network"),
     *connect_sibling_docker_container(
         "docker_example_network",
-        "docker_example_dagit",
-        "DEPLOY_DOCKER_DAGIT_HOST",
+        "docker_example_webserver",
+        "DEPLOY_DOCKER_WEBSERVER_HOST",
     ),
     "popd",
 ]
@@ -199,7 +199,7 @@ def docker_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-dagit_extra_cmds = ["make rebuild_dagit"]
+ui_extra_cmds = ["make rebuild_ui"]
 
 
 mysql_extra_cmds = [
@@ -348,7 +348,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
-    PackageSpec("python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds),
+    PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         env_vars=["AWS_ACCOUNT_ID"],
@@ -437,6 +437,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             else []
         ),
         pytest_tox_factors=[
+            "dbt_13X_legacy",
+            "dbt_14X_legacy",
+            "dbt_15X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",

@@ -10,7 +10,7 @@ export const ReleasesWorkspace: MockedResponse<AssetJobPartitionSetsQuery> = {
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       partitionSetsOrError: {
         __typename: 'PartitionSets',
         results: [

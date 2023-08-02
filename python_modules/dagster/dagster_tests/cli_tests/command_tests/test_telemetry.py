@@ -394,10 +394,9 @@ def test_get_stats_from_external_repo_resources():
         repository_handle=MagicMock(spec=RepositoryHandle),
     )
     stats = get_stats_from_external_repo(external_repo)
-    assert (
-        stats["dagster_resources"]
-        == "[{'module_name': 'dagster_tests', 'class_name': 'MyResource'}]"
-    )
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster_tests", "class_name": "MyResource"}
+    ]
     assert stats["has_custom_resources"] == "True"
 
 
@@ -441,10 +440,9 @@ def test_get_stats_from_external_repo_io_managers():
         repository_handle=MagicMock(spec=RepositoryHandle),
     )
     stats = get_stats_from_external_repo(external_repo)
-    assert (
-        stats["dagster_resources"]
-        == "[{'module_name': 'dagster_tests', 'class_name': 'MyIOManager'}]"
-    )
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster_tests", "class_name": "MyIOManager"}
+    ]
     assert stats["has_custom_resources"] == "True"
 
 
@@ -475,10 +473,9 @@ def test_get_stats_from_external_repo_functional_resources():
         repository_handle=MagicMock(spec=RepositoryHandle),
     )
     stats = get_stats_from_external_repo(external_repo)
-    assert (
-        stats["dagster_resources"]
-        == "[{'module_name': 'dagster_tests', 'class_name': 'my_resource'}]"
-    )
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster_tests", "class_name": "my_resource"}
+    ]
     assert stats["has_custom_resources"] == "True"
 
 
@@ -509,10 +506,9 @@ def test_get_stats_from_external_repo_functional_io_managers():
         repository_handle=MagicMock(spec=RepositoryHandle),
     )
     stats = get_stats_from_external_repo(external_repo)
-    assert (
-        stats["dagster_resources"]
-        == "[{'module_name': 'dagster_tests', 'class_name': 'my_io_manager'}]"
-    )
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster_tests", "class_name": "my_io_manager"}
+    ]
     assert stats["has_custom_resources"] == "True"
 
 
@@ -570,13 +566,12 @@ def test_get_stats_from_external_repo_delayed_resource_configuration():
         repository_handle=MagicMock(spec=RepositoryHandle),
     )
     stats = get_stats_from_external_repo(external_repo)
-    assert (
-        stats["dagster_resources"]
-        == "[{'module_name': 'dagster_tests', 'class_name': 'MyIOManager'}, {'module_name':"
-        " 'dagster_tests', 'class_name': 'my_io_manager'}, {'module_name': 'dagster_tests',"
-        " 'class_name': 'my_resource'}, {'module_name': 'dagster_tests', 'class_name':"
-        " 'MyResource'}]"
-    )
+    assert stats["dagster_resources"] == [
+        {"module_name": "dagster_tests", "class_name": "MyIOManager"},
+        {"module_name": "dagster_tests", "class_name": "my_io_manager"},
+        {"module_name": "dagster_tests", "class_name": "my_resource"},
+        {"module_name": "dagster_tests", "class_name": "MyResource"},
+    ]
     assert stats["has_custom_resources"] == "False"
 
 

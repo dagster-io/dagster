@@ -2,7 +2,7 @@ import {BaseTag, Box, Colors, Icon, IconWrapper, MiddleTruncate, StyledTag} from
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {useFeatureFlags} from '../app/Flags';

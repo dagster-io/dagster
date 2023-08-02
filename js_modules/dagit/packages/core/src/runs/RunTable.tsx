@@ -17,7 +17,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -121,8 +121,8 @@ export const RunTable = (props: RunTableProps) => {
         <Table>
           <thead>
             <tr>
-              <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-                {canTerminateOrDeleteAny ? (
+              {canTerminateOrDeleteAny ? (
+                <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
                   <Checkbox
                     indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
                     checked={checkedIds.size === runs.length}
@@ -132,8 +132,8 @@ export const RunTable = (props: RunTableProps) => {
                       }
                     }}
                   />
-                ) : null}
-              </th>
+                </th>
+              ) : null}
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>Target</th>
@@ -156,6 +156,7 @@ export const RunTable = (props: RunTableProps) => {
                 additionalActionsForRun={props.additionalActionsForRun}
                 onToggleChecked={onToggleFactory(run.id)}
                 isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
+                hideCreatedBy={hideCreatedBy}
               />
             ))}
           </tbody>
@@ -192,6 +193,13 @@ export const RunTable = (props: RunTableProps) => {
   );
 };
 
+export const RUN_TAGS_FRAGMENT = gql`
+  fragment RunTagsFragment on PipelineTag {
+    key
+    value
+  }
+`;
+
 export const RUN_TABLE_RUN_FRAGMENT = gql`
   fragment RunTableRunFragment on Run {
     id
@@ -219,13 +227,13 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     }
     status
     tags {
-      key
-      value
+      ...RunTagsFragment
     }
     ...RunTimeFragment
   }
 
   ${RUN_TIME_FRAGMENT}
+  ${RUN_TAGS_FRAGMENT}
 `;
 
 const RunRow: React.FC<{
@@ -329,11 +337,9 @@ const RunRow: React.FC<{
         setIsHovered(false);
       }}
     >
-      <td>
-        {canTerminateOrDelete && onToggleChecked ? (
-          <Checkbox checked={!!checked} onChange={onChange} />
-        ) : null}
-      </td>
+      {canTerminateOrDelete ? (
+        <td>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</td>
+      ) : null}
       <td>
         <Link to={`/runs/${run.id}`}>
           <Mono>{titleForRun(run)}</Mono>
@@ -421,7 +427,7 @@ const RunRow: React.FC<{
       </td>
       {hideCreatedBy ? null : (
         <td>
-          <RunCreatedByCell run={run} onAddTag={onAddTag} />
+          <RunCreatedByCell tags={run.tags || []} />
         </td>
       )}
       <td>

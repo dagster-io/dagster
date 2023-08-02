@@ -44,7 +44,7 @@ export type ScheduleTickConfigQueryVariables = Types.Exact<{
 }>;
 
 export type ScheduleTickConfigQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   scheduleOrError:
     | {__typename: 'PythonError'}
     | {

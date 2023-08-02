@@ -21,14 +21,14 @@ def test_single_valued_static_mapping():
 
     assert result == DefaultPartitionsSubset(downstream_parts, {"p", "r"})
 
-    result = mapping.get_upstream_partitions_for_partitions(
+    result = mapping.get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_subset=downstream_parts.empty_subset().with_partition_keys(
             ["p", "q"]
         ),
         upstream_partitions_def=upstream_parts,
     )
 
-    assert result == DefaultPartitionsSubset(upstream_parts, {"p1", "p2", "p3"})
+    assert result.partitions_subset == DefaultPartitionsSubset(upstream_parts, {"p1", "p2", "p3"})
 
 
 def test_multi_valued_static_mapping():
@@ -44,14 +44,14 @@ def test_multi_valued_static_mapping():
 
     assert result == DefaultPartitionsSubset(downstream_parts, {"p1", "p2", "p3"})
 
-    result = mapping.get_upstream_partitions_for_partitions(
+    result = mapping.get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_subset=downstream_parts.empty_subset().with_partition_keys(
             ["p2", "p3", "q"]
         ),
         upstream_partitions_def=upstream_parts,
     )
 
-    assert result == DefaultPartitionsSubset(upstream_parts, {"p", "q1", "q2"})
+    assert result.partitions_subset == DefaultPartitionsSubset(upstream_parts, {"p", "q1", "q2"})
 
 
 def test_error_on_extra_keys_in_mapping():
@@ -69,7 +69,7 @@ def test_error_on_extra_keys_in_mapping():
     with pytest.raises(ValueError, match="OTHER"):
         StaticPartitionMapping(
             {"p": "p", "q": "q", "OTHER": "q"}
-        ).get_upstream_partitions_for_partitions(
+        ).get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset=downstream_parts.empty_subset(),
             upstream_partitions_def=upstream_parts,
         )

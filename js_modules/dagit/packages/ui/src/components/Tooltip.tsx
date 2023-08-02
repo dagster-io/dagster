@@ -2,7 +2,7 @@
 import {Tooltip2, Tooltip2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';
 import React from 'react';
-import styled, {createGlobalStyle, css} from 'styled-components/macro';
+import styled, {createGlobalStyle, css} from 'styled-components';
 
 import {Colors} from './Colors';
 import {FontFamily} from './styles';

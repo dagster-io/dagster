@@ -27,9 +27,6 @@ def get_version() -> str:
 
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
 GRPC_VERSION_FLOOR = "1.44.0"
-# Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
-# (except on python 3.11, where newer versions are required just to install the grpcio package)
-GRPC_VERSION_CAP = "1.48.0"
 
 
 setup(
@@ -58,7 +55,6 @@ setup(
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -81,10 +77,8 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         "croniter>=0.3.34",
-        f"grpcio>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-        f"grpcio>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+        f"grpcio>={GRPC_VERSION_FLOOR}",
+        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
         "pendulum",
         "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
@@ -113,8 +107,7 @@ setup(
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
             "docker",
-            f"grpcio-tools>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CAP}; python_version<'3.11'",
-            f"grpcio-tools>={GRPC_VERSION_FLOOR}; python_version>='3.11'",
+            f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
             "objgraph",
             "pytest-cov==2.10.1",
@@ -124,19 +117,20 @@ setup(
             "pytest-runner==5.2",
             "pytest-xdist==2.1.0",
             "pytest==7.0.1",  # last version supporting python 3.6
-            "responses",
-            "snapshottest==0.6.0",
+            "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
+            "syrupy<4",  # 3.7 compatible,
             "tox==3.25.0",
             "yamllint",
+            "morefs[asynclocal]; python_version>='3.8'",
         ],
         "black": [
-            "black[jupyter]==22.12.0",
+            "black[jupyter]==23.7.0",
         ],
         "mypy": [
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.298",
+            "pyright==1.1.316",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -160,7 +154,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.255",
+            "ruff==0.0.277",
         ],
     },
     entry_points={

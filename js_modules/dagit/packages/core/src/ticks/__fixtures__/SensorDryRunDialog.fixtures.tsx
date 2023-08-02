@@ -62,7 +62,7 @@ export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutatio
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       sensorDryRun: buildDryRunInstigationTick({
         evaluationResult: buildTickEvaluation({
           cursor: 'a new cursor',
@@ -88,7 +88,7 @@ export const SensorDryRunMutationError: MockedResponse<SensorDryRunMutation> = {
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       sensorDryRun: buildDryRunInstigationTick({
         evaluationResult: buildTickEvaluation({
           error: buildPythonError({
@@ -135,7 +135,7 @@ export const SensorDryRunMutationSkipped: MockedResponse<SensorDryRunMutation> =
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       sensorDryRun: buildDryRunInstigationTick({
         evaluationResult: buildTickEvaluation({
           cursor: '',
@@ -163,7 +163,7 @@ export const PersistCursorValueMock: MockedResponse<SetSensorCursorMutation> = {
   },
   result: {
     data: {
-      __typename: 'DagitMutation',
+      __typename: 'Mutation',
       setSensorCursor: buildSensor({
         id: '8c8110e095e45239948246b18f9c66def47a2a11',
         sensorState: buildInstigationState({

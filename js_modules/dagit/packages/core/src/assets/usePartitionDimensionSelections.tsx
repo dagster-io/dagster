@@ -1,12 +1,13 @@
 import React from 'react';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {
   allPartitionsSpan,
   partitionsToText,
   allPartitionsRange,
-  spanTextToSelections,
+  spanTextToSelectionsOrError,
 } from '../partitions/SpanRepresentation';
 
 import {placeholderDimensionSelection} from './MultipartitioningSupport';
@@ -98,14 +99,16 @@ export const usePartitionDimensionSelections = (opts: {
         saved?.rangeText !== undefined &&
         (shouldReadPartitionQueryStringParam || !saved?.isFromPartitionQueryStringParam)
       ) {
-        return {
-          dimension,
-          ...spanTextToSelections(
-            dimension.partitionKeys,
-            saved.rangeText,
-            skipPartitionKeyValidation,
-          ),
-        };
+        const selections = spanTextToSelectionsOrError(
+          dimension.partitionKeys,
+          saved.rangeText,
+          skipPartitionKeyValidation,
+        );
+        if (selections instanceof Error) {
+          window.requestAnimationFrame(() => showCustomAlert({body: selections.message}));
+          return {dimension, selectedRanges: [], selectedKeys: []};
+        }
+        return {dimension, ...selections};
       } else {
         return {
           dimension,

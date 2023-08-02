@@ -201,21 +201,23 @@ def validate_selector_config(
 
     child_evaluate_value_result = _validate_config(
         context.for_field_snap(field_snap),
-        # This is a very particular special case where we want someone
-        # to be able to select a selector key *without* a value
-        #
-        # e.g.
-        # storage:
-        #   filesystem:
-        #
-        # And we want the default values of the child elements of filesystem:
-        # to "fill in"
-        {}
-        if field_value is None
-        and ConfigTypeKind.has_fields(
-            context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
-        )
-        else field_value,
+        (
+            # This is a very particular special case where we want someone
+            # to be able to select a selector key *without* a value
+            #
+            # e.g.
+            # storage:
+            #   filesystem:
+            #
+            # And we want the default values of the child elements of filesystem:
+            # to "fill in"
+            {}
+            if field_value is None
+            and ConfigTypeKind.has_fields(
+                context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
+            )
+            else field_value
+        ),
     )
 
     if child_evaluate_value_result.success:

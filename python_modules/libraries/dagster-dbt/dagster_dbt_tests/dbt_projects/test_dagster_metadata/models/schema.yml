@@ -2,13 +2,13 @@ version: 2
 
 sources:
   - name: jaffle_shop
-    database: jaffle_shop
     schema: main
     tables:
       - name: raw_customers
         meta:
           dagster:
             asset_key: ['customized', 'source', 'jaffle_shop', 'main', 'raw_customers']
+      - name: raw_events
 
 models:
   - name: customers

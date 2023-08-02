@@ -1,7 +1,7 @@
 import {TabStyleProps, getTabA11yProps, getTabContent, tabCSS} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 interface TabLinkProps extends TabStyleProps, Omit<LinkProps, 'title'> {
   title?: React.ReactNode;

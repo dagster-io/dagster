@@ -1,15 +1,16 @@
 import os
 
 import snowflake.connector
+from dagster import load_assets_from_modules, materialize
+from dagster_dbt import DbtCliClientResource
+from dagster_snowflake_pandas import SnowflakePandasIOManager
+
 from assets_smoke_test import python_and_dbt_assets
 from assets_smoke_test.python_and_dbt_assets import (
     DBT_PROFILES_DIR,
     DBT_PROJECT_DIR,
     raw_country_populations,
 )
-from dagster import load_assets_from_modules, materialize
-from dagster_dbt import DbtCliClientResource
-from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 
 def smoke_all_test():

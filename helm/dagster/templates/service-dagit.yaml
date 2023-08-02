@@ -1,8 +1,0 @@
-{{- $data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template -}}
-{{- include "service-dagit" $data -}}
-
-{{- if .Values.dagit.enableReadOnly -}}
----
-{{$data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template "dagitReadOnly" true}}
-{{- include "service-dagit" $data -}}
-{{- end -}}

@@ -239,7 +239,7 @@ def test_executor_init_override_in_cluster_config(
     mock_load_incluster_config,
     mock_load_kubeconfig_file,
 ):
-    k8s_run_launcher_instance.run_launcher
+    k8s_run_launcher_instance.run_launcher  # noqa: B018
     mock_load_kubeconfig_file.reset_mock()
     _get_executor(
         k8s_run_launcher_instance,
@@ -260,7 +260,7 @@ def test_executor_init_override_kubeconfig_file(
     mock_load_incluster_config,
     mock_load_kubeconfig_file,
 ):
-    k8s_run_launcher_instance.run_launcher
+    k8s_run_launcher_instance.run_launcher  # noqa: B018
     mock_load_kubeconfig_file.reset_mock()
     _get_executor(
         k8s_run_launcher_instance,
@@ -394,7 +394,7 @@ def test_executor_init_container_context(
 @pytest.fixture
 def k8s_instance(kubeconfig_file):
     default_config = {
-        "service_account_name": "dagit-admin",
+        "service_account_name": "webserver-admin",
         "instance_config_map": "dagster-instance",
         "postgres_password_secret": "dagster-postgresql-secret",
         "dagster_home": "/opt/dagster/dagster_home",

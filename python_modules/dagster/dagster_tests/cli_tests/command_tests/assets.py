@@ -11,7 +11,7 @@ def asset_with_prefix() -> None:
     ...
 
 
-@asset(non_argument_deps={"asset1"})
+@asset(deps=[asset1])
 def downstream_asset() -> None:
     ...
 

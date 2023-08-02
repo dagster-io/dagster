@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
@@ -200,6 +200,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
         ref={this.viewportEl}
         key={jobName}
         maxZoom={1.2}
+        defaultZoom="zoom-to-fit"
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}
         graphHeight={layout.height}

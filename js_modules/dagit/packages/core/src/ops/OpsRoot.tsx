@@ -20,7 +20,7 @@ import {
   CellMeasurerCache,
   List as _List,
 } from 'react-virtualized';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';

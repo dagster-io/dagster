@@ -44,21 +44,25 @@ class JobExecutionResult(ExecutionResult):
     @public
     @property
     def job_def(self) -> JobDefinition:
+        """JobDefinition: The job definition that was executed."""
         return self._job_def
 
     @public
     @property
     def dagster_run(self) -> DagsterRun:
+        """DagsterRun: The Dagster run that was executed."""
         return self._dagster_run
 
     @public
     @property
     def all_events(self) -> Sequence[DagsterEvent]:
+        """Sequence[DagsterEvent]: List of all events yielded by the job execution."""
         return self._event_list
 
     @public
     @property
     def run_id(self) -> str:
+        """str: The id of the Dagster run that was executed."""
         return self.dagster_run.run_id
 
     @public
@@ -122,9 +126,9 @@ class JobExecutionResult(ExecutionResult):
                     if result is None:
                         result = {mapping_key: value}
                     else:
-                        result[
-                            mapping_key
-                        ] = value  # pylint:disable=unsupported-assignment-operation
+                        result[mapping_key] = (
+                            value  # pylint:disable=unsupported-assignment-operation
+                        )
                 else:
                     result = value
 

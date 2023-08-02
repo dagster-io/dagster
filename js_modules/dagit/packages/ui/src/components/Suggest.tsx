@@ -5,7 +5,7 @@ import {isCreateNewItem, Suggest as BlueprintSuggest, SuggestProps} from '@bluep
 import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {List as _List} from 'react-virtualized';
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 import {Colors} from './Colors';
 import {IconWrapper} from './Icon';

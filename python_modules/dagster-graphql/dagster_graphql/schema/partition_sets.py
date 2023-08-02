@@ -441,11 +441,14 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     == cast(
                         MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
-                    dynamicPartitionsDefinitionName=dim.external_partitions_def_data.name
-                    if isinstance(
-                        dim.external_partitions_def_data, ExternalDynamicPartitionsDefinitionData
-                    )
-                    else None,
+                    dynamicPartitionsDefinitionName=(
+                        dim.external_partitions_def_data.name
+                        if isinstance(
+                            dim.external_partitions_def_data,
+                            ExternalDynamicPartitionsDefinitionData,
+                        )
+                        else None
+                    ),
                 )
                 for dim in partition_def_data.external_partition_dimension_definitions
             ]
@@ -458,9 +461,11 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                         partition_def_data
                     ),
                     isPrimaryDimension=True,
-                    dynamicPartitionsDefinitionName=partition_def_data.name
-                    if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
-                    else None,
+                    dynamicPartitionsDefinitionName=(
+                        partition_def_data.name
+                        if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                        else None
+                    ),
                 )
             ]
         )
@@ -470,9 +475,11 @@ class GraphenePartitionDefinition(graphene.ObjectType):
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
-            name=partition_def_data.name
-            if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
-            else None,
+            name=(
+                partition_def_data.name
+                if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                else None
+            ),
         )
 
 

@@ -82,9 +82,7 @@ config:
   use_ssl: {{ $s3ComputeLogManagerConfig.useSsl }}
   {{- end }}
 
-  {{- if $s3ComputeLogManagerConfig.verify }}
-  verify: {{ $s3ComputeLogManagerConfig.verify }}
-  {{- end }}
+  verify: {{ ne $s3ComputeLogManagerConfig.verify false }}
 
   {{- if $s3ComputeLogManagerConfig.verifyCertPath }}
   verify_cert_path: {{ include "stringSource" $s3ComputeLogManagerConfig.verifyCertPath }}

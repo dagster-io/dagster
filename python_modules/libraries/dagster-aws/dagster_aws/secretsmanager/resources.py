@@ -1,7 +1,6 @@
 from contextlib import contextmanager
-from typing import Dict, Generator, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, Generator, List, Optional, cast
 
-import botocore
 from dagster import (
     Field as LegacyDagsterField,
     resource,
@@ -15,6 +14,9 @@ from pydantic import Field
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
+
+if TYPE_CHECKING:
+    import botocore
 
 
 class SecretsManagerResource(ResourceWithBoto3Configuration):

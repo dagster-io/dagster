@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
@@ -20,7 +20,9 @@ import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
 import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
+import auto_observe from '../icon-svgs/auto-observe.svg';
 import backfill from '../icon-svgs/backfill.svg';
+import bar_chart from '../icon-svgs/bar-chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import expectation from '../icon-svgs/bp-automatic-updates.svg';
 import op from '../icon-svgs/bp-git-commit.svg';
@@ -40,6 +42,7 @@ import content_copy from '../icon-svgs/content_copy.svg';
 import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
+import dot from '../icon-svgs/dot.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
@@ -149,6 +152,7 @@ import {Colors} from './Colors';
 export const Icons = {
   // Core icons
   auto_materialize_policy,
+  auto_observe,
   asset,
   asset_plot,
   asset_non_sda,
@@ -224,6 +228,7 @@ export const Icons = {
   assignment,
   assignment_turned_in,
   attach_file,
+  bar_chart,
   bolt,
   cached,
   cancel,
@@ -235,6 +240,7 @@ export const Icons = {
   content_copy,
   delete: deleteSVG,
   done,
+  dot,
   download_for_offline,
   dynamic_feed,
   drag_handle,

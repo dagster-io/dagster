@@ -24,7 +24,6 @@ setup(
     description="A Dagster integration for dbt",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,14 +36,15 @@ setup(
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
         "dbt-core<1.6",
+        "Jinja2",
         "networkx",
+        "orjson",
         "requests",
-        "typer[all]",
+        "rich",
+        "typer>=0.9.0",
     ],
     extras_require={
         "test": [
-            "Jinja2",
-            "dbt-rpc<0.3.0",
             "dbt-duckdb",
             "dagster-duckdb",
             "dagster-duckdb-pandas",
@@ -53,6 +53,7 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
+            "dagster-dbt = dagster_dbt.cli.app:app",
         ]
     },
     zip_safe=False,

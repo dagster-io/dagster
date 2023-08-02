@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';

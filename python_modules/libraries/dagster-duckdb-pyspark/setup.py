@@ -24,7 +24,6 @@ setup(
     description="Package for storing PySpark DataFrames in DuckDB.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckb-pyspark",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -39,7 +38,8 @@ setup(
         # Pyspark 2.x is incompatible with Python 3.8+
         'pyspark>=3.0.0; python_version >= "3.8"',
         'pyspark>=2.0.2; python_version < "3.8"',
-        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
+        "pandas",
+        "pyarrow",
     ],
     zip_safe=False,
 )

@@ -125,9 +125,11 @@ def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
         "destination": conn.destination.name if conn.destination else "Unknown",
         "normalize data": conn.normalize_data,
         "streams": {k: v.to_json() for k, v in conn.stream_config.items()},
-        "destination namespace": conn.destination_namespace.name
-        if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
-        else conn.destination_namespace,
+        "destination namespace": (
+            conn.destination_namespace.name
+            if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
+            else conn.destination_namespace
+        ),
         "prefix": conn.prefix,
     }
 
@@ -732,7 +734,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
                 )
             )
         elif isinstance(diff, ManagedElementError):
-            raise ValueError(f"Error checking Airbyte connections: {str(diff)}")
+            raise ValueError(f"Error checking Airbyte connections: {diff}")
 
         return super()._get_connections()
 

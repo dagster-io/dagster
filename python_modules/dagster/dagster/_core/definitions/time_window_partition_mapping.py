@@ -2,9 +2,8 @@ from datetime import datetime
 from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -14,12 +13,10 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.backcompat import (
-    experimental_arg_warning,
-)
 
 
 @whitelist_for_serdes
+@experimental_param(param="allow_nonexistent_upstream_partitions")
 class TimeWindowPartitionMapping(
     PartitionMapping,
     NamedTuple(
@@ -97,11 +94,6 @@ class TimeWindowPartitionMapping(
         end_offset: int = 0,
         allow_nonexistent_upstream_partitions: bool = False,
     ):
-        if allow_nonexistent_upstream_partitions:
-            experimental_arg_warning(
-                "allow_nonexistent_upstream_partitions", "TimeWindowPartitionMapping.__init__"
-            )
-
         return super(TimeWindowPartitionMapping, cls).__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
@@ -111,14 +103,6 @@ class TimeWindowPartitionMapping(
                 "allow_nonexistent_upstream_partitions",
             ),
         )
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range: Optional[PartitionKeyRange],
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -134,42 +118,10 @@ class TimeWindowPartitionMapping(
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
             downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
+            start_offset=self.start_offset,
+            end_offset=self.end_offset,
             current_time=current_time,
         )
-
-    def get_upstream_partitions_for_partitions(
-        self,
-        downstream_partitions_subset: Optional[PartitionsSubset],
-        upstream_partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> PartitionsSubset:
-        """Returns the partitions in the upstream asset that map to the given downstream partitions.
-
-        Raises an error if upstream partitions do not exist at the given current_time, fetching the
-        current time if not provided.
-        """
-        if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
-
-        return self._map_partitions(
-            downstream_partitions_subset.partitions_def,
-            upstream_partitions_def,
-            downstream_partitions_subset,
-            self.start_offset,
-            self.end_offset,
-            current_time=current_time,
-        ).partitions_subset
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -187,8 +139,8 @@ class TimeWindowPartitionMapping(
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
             upstream_partitions_subset,
-            -self.start_offset,
-            -self.end_offset,
+            end_offset=-self.start_offset,
+            start_offset=-self.end_offset,
             current_time=current_time,
         ).partitions_subset
 

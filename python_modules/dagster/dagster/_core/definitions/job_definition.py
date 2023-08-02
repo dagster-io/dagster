@@ -22,7 +22,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -63,7 +63,6 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import deprecation_warning, experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
@@ -98,6 +97,7 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
+@experimental_param(param="version_strategy")
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -184,8 +184,6 @@ class JobDefinition(IHasInternalInit):
         self.version_strategy = check.opt_inst_param(
             version_strategy, "version_strategy", VersionStrategy
         )
-        if self.version_strategy is not None:
-            experimental_class_warning("VersionStrategy")
 
         _subset_selection_data = check.opt_inst_param(
             _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
@@ -328,31 +326,52 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def executor_def(self) -> ExecutorDefinition:
+        """Returns the default :py:class:`ExecutorDefinition` for the job.
+
+        If the user has not specified an executor definition, then this will default to the :py:func:`multi_or_in_process_executor`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        """
         return self._executor_def or DEFAULT_EXECUTOR_DEF
 
     @public
     @property
     def has_specified_executor(self) -> bool:
+        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._executor_def is not None
 
     @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        """Returns the set of ResourceDefinition objects specified on the job.
+
+        This may not be the complete set of resources required by the job, since those can also be provided on the :py:class:`Definitions` object the job may be provided to.
+        """
         return self._resource_defs
 
     @public
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
+        """The partitioned config for the job, if it has one.
+
+        A partitioned config defines a way to map partition keys to run config for the job.
+        """
         return self._partitioned_config
 
     @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
+        """The config mapping for the job, if it has one.
+
+        A config mapping defines a way to map a top-level config schema to run config for the job.
+        """
         return self._config_mapping
 
     @public
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
+        """Returns the set of LoggerDefinition objects specified on the job.
+
+        If the user has not specified a mapping of :py:class:`LoggerDefinition` objects, then this will default to the :py:func:`colored_console_logger` under the key `console`. If a default is specified on the :py:class:`Definitions` object the job was provided to, then that will be used instead.
+        """
         from dagster._loggers import default_loggers
 
         return self._loggers or default_loggers()
@@ -360,6 +379,7 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_loggers(self) -> bool:
+        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._loggers is not None
 
     @property
@@ -379,6 +399,10 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
+        """Returns the :py:class:`PartitionsDefinition` for the job, if it has one.
+
+        A partitions definition defines the set of partition keys the job operates on.
+        """
         return None if not self.partitioned_config else self.partitioned_config.partitions_def
 
     @property
@@ -617,10 +641,8 @@ class JobDefinition(IHasInternalInit):
 
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
 
         partition_key = check.opt_str_param(partition_key, "partition_key")
@@ -715,10 +737,8 @@ class JobDefinition(IHasInternalInit):
     ) -> Self:
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
@@ -778,7 +798,7 @@ class JobDefinition(IHasInternalInit):
             sub_graph = get_graph_subset(self.graph, op_selection)
 
             # if explicit config was passed the config_mapping that resolves the defaults implicitly is
-            # very unlikely to work. The job will still present the default config in dagit.
+            # very unlikely to work. The job will still present the default config in the Dagster UI.
             config = (
                 None
                 if self.run_config is not None
@@ -808,6 +828,10 @@ class JobDefinition(IHasInternalInit):
             ) from exc
 
     @public
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -836,12 +860,6 @@ class JobDefinition(IHasInternalInit):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        deprecation_warning(
-            "JobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
-        )
-
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -1010,10 +1028,8 @@ def default_job_io_manager(init_context: "InitResourceContext"):
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager
@@ -1052,10 +1068,8 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager

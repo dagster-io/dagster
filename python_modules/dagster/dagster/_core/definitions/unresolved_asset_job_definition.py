@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
@@ -14,14 +14,13 @@ from .metadata import RawMetadataValue
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
-        AssetsDefinition,
         AssetSelection,
         ExecutorDefinition,
         HookDefinition,
         JobDefinition,
         PartitionedConfig,
         PartitionsDefinition,
-        SourceAsset,
+        ResourceDefinition,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
@@ -84,6 +83,10 @@ class UnresolvedAssetJobDefinition(
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
         )
 
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -115,12 +118,6 @@ class UnresolvedAssetJobDefinition(
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
             PartitionedConfig,
-        )
-
-        deprecation_warning(
-            "UnresolvedAssetJobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
         )
 
         if not self.partitions_def:
@@ -165,38 +162,13 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        assets: Optional[Sequence["AssetsDefinition"]] = None,
-        source_assets: Optional[Sequence["SourceAsset"]] = None,
+        asset_graph: "InternalAssetGraph",
         default_executor_def: Optional["ExecutorDefinition"] = None,
-        asset_graph: Optional["InternalAssetGraph"] = None,
+        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> "JobDefinition":
-        """Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
-
-        The assets and source_assets arguments are deprecated. Although they were never technically
-        public, a lot of users use them, so going to wait until a minor release to get rid of them.
-        """
-        from dagster._core.definitions.asset_graph import AssetGraph
-
-        if asset_graph is not None:
-            if assets is not None or source_assets is not None:
-                check.failed(
-                    "If providing asset_graph, can't also provide assets and source_assets, and"
-                    " vice-versa."
-                )
-            assets = asset_graph.assets
-            source_assets = asset_graph.source_assets
-        else:
-            if assets is None or source_assets is None:
-                check.failed(
-                    "If asset_graph is not provided, must provide both assets and source_assets"
-                )
-            deprecation_warning(
-                "`assets` and `source_assets` arguments to `resolve`",
-                "1.3.0",
-                "Please use the `asset_graph` argument instead.",
-            )
-            asset_graph = AssetGraph.from_assets([*assets, *source_assets])
-
+        """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
+        assets = asset_graph.assets
+        source_assets = asset_graph.source_assets
         selected_asset_keys = self.selection.resolve(asset_graph)
 
         asset_keys_by_partitions_def = defaultdict(set)
@@ -244,6 +216,7 @@ class UnresolvedAssetJobDefinition(
             partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,
+            resource_defs=resource_defs,
         )
 
 
@@ -291,7 +264,7 @@ def define_asset_job(
 
             If a dictionary is provided, then it must conform to the standard config schema, and
             it will be used as the job's run config for the job whenever the job is executed.
-            The values provided will be viewable and editable in the Dagit playground, so be
+            The values provided will be viewable and editable in the Dagster UI, so be
             careful with secrets.
 
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is

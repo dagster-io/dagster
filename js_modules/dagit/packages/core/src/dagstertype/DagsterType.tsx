@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Box, Colors, FontFamily} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {gqlTypePredicate} from '../app/Util';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';

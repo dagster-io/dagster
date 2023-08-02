@@ -43,6 +43,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import (
     AssetMaterializationPlannedData,
+    AssetObservationData,
     DagsterEvent,
     DagsterEventType,
     EngineEventData,
@@ -472,6 +473,8 @@ class TestEventLogStorage:
             for run in runs:
                 instance.delete_run(run)
 
+    # .watch() is async, there's a small chance they don't run before the asserts
+    @pytest.mark.flaky(reruns=1)
     def test_event_log_storage_watch(self, test_run_id, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -842,6 +845,8 @@ class TestEventLogStorage:
 
             assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
+    # .watch() is async, there's a small chance they don't run before the asserts
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_single_run_event(self, storage, test_run_id):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -861,6 +866,8 @@ class TestEventLogStorage:
         assert len(event_list) == len(events)
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
+    # .watch() is async, there's a small chance they don't run before the asserts
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_filter_run_event(self, instance, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -888,6 +895,8 @@ class TestEventLogStorage:
             assert len(event_list) == len(events_two)
             assert all([isinstance(event, EventLogEntry) for event in event_list])
 
+    # .watch() is async, there's a small chance they don't run before the asserts
+    @pytest.mark.flaky(reruns=1)
     def test_event_watcher_filter_two_runs_event(self, storage, instance):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1465,6 +1474,8 @@ class TestEventLogStorage:
                     ),
                 )
 
+    # .watch() is async, there's a small chance they don't run before the asserts
+    @pytest.mark.flaky(reruns=1)
     def test_watch_exc_recovery(self, storage):
         if not self.can_watch():
             pytest.skip("storage cannot watch runs")
@@ -1523,7 +1534,7 @@ class TestEventLogStorage:
         event_list = []
 
         # Direct end_watch emulates behavior of clean up on exception downstream
-        # of the subscription in the dagit webserver.
+        # of the subscription in the webserver.
         storage.watch(err_run_id, None, _unsub)
 
         # Other active watches should proceed correctly.
@@ -2028,7 +2039,6 @@ class TestEventLogStorage:
                     assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
-        pytest.skip("Temporarily skipping until this is available on all instance types")
         a = AssetKey(["a"])
         b = AssetKey(["b"])
         run_id = make_new_run_id()
@@ -2041,7 +2051,7 @@ class TestEventLogStorage:
                 == expected
             )
 
-        def _materialize_partition(asset_key, partition) -> int:
+        def _store_partition_event(asset_key, partition) -> int:
             storage.store_event(
                 EventLogEntry(
                     error_info=None,
@@ -2071,24 +2081,24 @@ class TestEventLogStorage:
             _assert_storage_matches(latest_storage_ids)
 
             # p1 materialized
-            latest_storage_ids["p1"] = _materialize_partition(a, "p1")
+            latest_storage_ids["p1"] = _store_partition_event(a, "p1")
             _assert_storage_matches(latest_storage_ids)
 
             # p2 materialized
-            latest_storage_ids["p2"] = _materialize_partition(a, "p2")
+            latest_storage_ids["p2"] = _store_partition_event(a, "p2")
             _assert_storage_matches(latest_storage_ids)
 
             # unrelated asset materialized
-            _materialize_partition(b, "p1")
-            _materialize_partition(b, "p2")
+            _store_partition_event(b, "p1")
+            _store_partition_event(b, "p2")
             _assert_storage_matches(latest_storage_ids)
 
             # p1 re materialized
-            latest_storage_ids["p1"] = _materialize_partition(a, "p1")
+            latest_storage_ids["p1"] = _store_partition_event(a, "p1")
             _assert_storage_matches(latest_storage_ids)
 
             # p2 materialized
-            latest_storage_ids["p3"] = _materialize_partition(a, "p3")
+            latest_storage_ids["p3"] = _store_partition_event(a, "p3")
             _assert_storage_matches(latest_storage_ids)
 
             if self.can_wipe():
@@ -2096,8 +2106,163 @@ class TestEventLogStorage:
                 latest_storage_ids = {}
                 _assert_storage_matches(latest_storage_ids)
 
-                latest_storage_ids["p1"] = _materialize_partition(a, "p1")
+                latest_storage_ids["p1"] = _store_partition_event(a, "p1")
                 _assert_storage_matches(latest_storage_ids)
+
+    @pytest.mark.parametrize(
+        "dagster_event_type",
+        [DagsterEventType.ASSET_OBSERVATION, DagsterEventType.ASSET_MATERIALIZATION],
+    )
+    def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):
+        a = AssetKey(["a"])
+        b = AssetKey(["b"])
+        run_id = make_new_run_id()
+
+        def _store_partition_event(asset_key, partition, tags) -> int:
+            if dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION:
+                dagster_event = DagsterEvent(
+                    dagster_event_type.value,
+                    "nonce",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key=asset_key, partition=partition, tags=tags)
+                    ),
+                )
+            else:
+                dagster_event = DagsterEvent(
+                    dagster_event_type.value,
+                    "nonce",
+                    event_specific_data=AssetObservationData(
+                        AssetObservation(asset_key=asset_key, partition=partition, tags=tags)
+                    ),
+                )
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=dagster_event,
+                )
+            )
+            # get the storage id of the materialization we just stored
+            return storage.get_event_records(
+                EventRecordsFilter(dagster_event_type),
+                limit=1,
+                ascending=False,
+            )[0].storage_id
+
+        with create_and_delete_test_runs(instance, [run_id]):
+            # no events
+            assert (
+                storage.get_latest_tags_by_partition(
+                    a, dagster_event_type, tag_keys=["dagster/a", "dagster/b"]
+                )
+                == {}
+            )
+
+            # p1 materialized
+            _store_partition_event(a, "p1", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # p2 materialized
+            _store_partition_event(a, "p2", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # unrelated asset materialized
+            t1 = _store_partition_event(b, "p1", tags={"dagster/a": "...", "dagster/b": "..."})
+            _store_partition_event(b, "p2", tags={"dagster/a": "...", "dagster/b": "..."})
+
+            # p1 re materialized
+            _store_partition_event(a, "p1", tags={"dagster/a": "2", "dagster/b": "2"})
+
+            # p3 materialized
+            _store_partition_event(a, "p3", tags={"dagster/a": "1", "dagster/b": "1"})
+
+            # no valid tag keys
+            assert (
+                storage.get_latest_tags_by_partition(a, dagster_event_type, tag_keys=["foo"]) == {}
+            )
+
+            # subset of existing tag keys
+            assert storage.get_latest_tags_by_partition(
+                a, dagster_event_type, tag_keys=["dagster/a"]
+            ) == {
+                "p1": {"dagster/a": "2"},
+                "p2": {"dagster/a": "1"},
+                "p3": {"dagster/a": "1"},
+            }
+
+            # superset of existing tag keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b", "dagster/c"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # subset of existing partition keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+            }
+
+            # superset of existing partition keys
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                asset_partitions=["p1", "p2", "p3", "p4"],
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # before p1 rematerialized and p3 existed
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                before_cursor=t1,
+            ) == {
+                "p1": {"dagster/a": "1", "dagster/b": "1"},
+                "p2": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            # shouldn't include p2's materialization
+            assert storage.get_latest_tags_by_partition(
+                a,
+                dagster_event_type,
+                tag_keys=["dagster/a", "dagster/b"],
+                after_cursor=t1,
+            ) == {
+                "p1": {"dagster/a": "2", "dagster/b": "2"},
+                "p3": {"dagster/a": "1", "dagster/b": "1"},
+            }
+
+            if self.can_wipe():
+                storage.wipe_asset(a)
+                assert (
+                    storage.get_latest_tags_by_partition(
+                        a,
+                        dagster_event_type,
+                        tag_keys=["dagster/a", "dagster/b"],
+                    )
+                    == {}
+                )
+                _store_partition_event(a, "p1", tags={"dagster/a": "3", "dagster/b": "3"})
+                assert storage.get_latest_tags_by_partition(
+                    a, dagster_event_type, tag_keys=["dagster/a", "dagster/b"]
+                ) == {
+                    "p1": {"dagster/a": "3", "dagster/b": "3"},
+                }
 
     def test_get_latest_asset_partition_materialization_attempts_without_materializations(
         self, storage, instance

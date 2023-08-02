@@ -12,7 +12,7 @@ import {
 } from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
-import styled, {createGlobalStyle} from 'styled-components/macro';
+import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
@@ -321,7 +321,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
   return (
     <ShortcutHandler
       shortcutLabel="F"
-      shortcutFilter={(e) => e.code === 'KeyF'}
+      shortcutFilter={(e) =>
+        e.code === 'KeyF' && !(e.metaKey || e.ctrlKey || e.altKey || e.shiftKey)
+      }
       onShortcut={() => setIsOpen((isOpen) => !isOpen)}
     >
       <PopoverStyle />

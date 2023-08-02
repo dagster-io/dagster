@@ -68,7 +68,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         skip_empty_files: (Optional[bool]): Skip upload of empty log files.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
         upload_extra_args: (Optional[dict]): Extra args for S3 file upload
-        show_url_only: (Optional[bool]): Only show the URL of the log file in Dagit, instead of fetching and displaying the full content. Default False.
+        show_url_only: (Optional[bool]): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
         region: (Optional[str]): The region of the S3 bucket. If not specified, will use the default region of the AWS session.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.

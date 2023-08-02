@@ -38,9 +38,7 @@ load_from:
 - grpc_server:
     socket: {socket_two}
     location_name: 'local_port_default_host'
-                """.format(
-                socket_one=first_socket, socket_two=second_socket
-            )
+                """.format(socket_one=first_socket, socket_two=second_socket)
 
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
@@ -168,9 +166,7 @@ load_from:
 - grpc_server:
     port: {port_two}
     location_name: 'local_port_default_host'
-                """.format(
-                port_one=first_port, port_two=second_port
-            )
+                """.format(port_one=first_port, port_two=second_port)
 
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),

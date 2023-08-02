@@ -330,9 +330,11 @@ class InitializedAirbyteConnection:
                 destination=dest,
                 stream_config=streams,
                 normalize_data=len(api_dict["operationIds"]) > 0,
-                destination_namespace=api_dict["namespaceFormat"]
-                if api_dict["namespaceDefinition"] == "customformat"
-                else AirbyteDestinationNamespace(api_dict["namespaceDefinition"]),
+                destination_namespace=(
+                    api_dict["namespaceFormat"]
+                    if api_dict["namespaceDefinition"] == "customformat"
+                    else AirbyteDestinationNamespace(api_dict["namespaceDefinition"])
+                ),
                 prefix=api_dict["prefix"] if api_dict.get("prefix") else None,
             ),
             api_dict["connectionId"],

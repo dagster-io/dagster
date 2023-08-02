@@ -1,7 +1,7 @@
 import {Colors, Group, Icon, Spinner, FontFamily} from '@dagster-io/ui';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
-import styled, {createGlobalStyle} from 'styled-components/macro';
+import styled, {createGlobalStyle} from 'styled-components';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';

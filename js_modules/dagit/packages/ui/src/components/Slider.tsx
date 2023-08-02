@@ -6,7 +6,7 @@ import {
   MultiSliderProps,
 } from '@blueprintjs/core';
 import * as React from 'react';
-import styled, {css} from 'styled-components/macro';
+import styled, {css} from 'styled-components';
 
 import {Colors} from './Colors';
 

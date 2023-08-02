@@ -1,9 +1,3 @@
-schema {
-  query: DagitQuery
-  mutation: DagitMutation
-  subscription: DagitSubscription
-}
-
 type ComputeLogFile {
   path: String!
   data: String
@@ -709,6 +703,7 @@ type FreshnessPolicy {
   maximumLagMinutes: Float!
   cronSchedule: String
   cronScheduleTimezone: String
+  lastEvaluationTimestamp: String
 }
 
 type AutoMaterializePolicy {
@@ -1250,6 +1245,7 @@ type Run implements PipelineRun {
   hasReExecutePermission: Boolean!
   hasTerminatePermission: Boolean!
   hasDeletePermission: Boolean!
+  hasConcurrencyKeySlots: Boolean!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2134,6 +2130,7 @@ type Instance {
   hasInfo: Boolean!
   hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
+  supportsConcurrencyLimits: Boolean!
   concurrencyLimits: [ConcurrencyKeyInfo!]!
 }
 
@@ -2833,7 +2830,7 @@ type UsedSolid {
   invocations: [NodeInvocationSite!]!
 }
 
-type DagitQuery {
+type Query {
   version: String!
   repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
@@ -3108,6 +3105,8 @@ type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeCondi
 type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
   partitionKeysOrError: PartitionKeysOrError
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
 }
 
 type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
@@ -3118,6 +3117,7 @@ type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDeci
 type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
   decisionType: AutoMaterializeDecisionType!
   partitionKeysOrError: PartitionKeysOrError
+  waitingOnAssetKeys: [AssetKey!]
 }
 
 type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
@@ -3129,7 +3129,7 @@ type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
 
-type DagitMutation {
+type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
   launchPipelineReexecution(
@@ -3236,7 +3236,7 @@ type AddDynamicPartitionSuccess {
   partitionKey: String!
 }
 
-type DagitSubscription {
+type Subscription {
   pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   capturedLogs(logKey: [String!]!, cursor: String): CapturedLogs!

@@ -1,6 +1,6 @@
 # encoding: utf-8
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import public
@@ -206,7 +206,8 @@ class Map(ConfigType):
 
     @public
     @property
-    def key_label_name(self):
+    def key_label_name(self) -> Optional[str]:
+        """Name which describes the role of keys in the map, if provided."""
         return self.given_name
 
     def type_iterator(self) -> Iterator["ConfigType"]:
@@ -401,7 +402,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            f"Map dict must have a scalar type as its only key. Got key {repr(key)}",
+            f"Map dict must have a scalar type as its only key. Got key {key!r}",
         )
 
     inner_type = _convert_potential_type(original_root, the_dict[key], stack)

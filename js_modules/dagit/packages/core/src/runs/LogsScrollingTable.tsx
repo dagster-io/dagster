@@ -9,7 +9,7 @@ import {
   ListRowProps,
   ScrollParams,
 } from 'react-virtualized';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {
@@ -108,7 +108,7 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
   return (
     <ColumnWidthsProvider onWidthsChanged={() => table.current && table.current.didResize()}>
       <Headers />
-      <div style={{flex: 1, minHeight: 0, marginTop: -1}}>
+      <div style={{flex: 1, minHeight: 0, marginTop: -1, position: 'relative'}}>
         <AutoSizer>
           {({width, height}) => (
             <LogsScrollingTableSized
@@ -183,7 +183,8 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
 
     if (
       this.props.focusedTime &&
-      this.props.filteredNodes?.length !== prevProps.filteredNodes?.length
+      (this.props.filteredNodes?.length !== prevProps.filteredNodes?.length ||
+        this.props.focusedTime !== prevProps.focusedTime)
     ) {
       window.requestAnimationFrame(() => {
         this.scrollToTime(this.props.focusedTime);

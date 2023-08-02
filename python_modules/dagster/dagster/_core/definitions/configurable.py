@@ -79,7 +79,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -124,7 +124,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -166,25 +166,21 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
     check.param_invariant(
         not isinstance(configurable, PendingNodeInvocation),
         "configurable",
-        (
-            "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
-            " is produced by aliasing or tagging a node definition. To configure a node, you must"
-            " call `configured` on either an OpDefinition and GraphDefinition. To fix"
-            " this error, make sure to call `configured` on the definition object *before* using"
-            " the `tag` or `alias` methods. For usage examples, see"
-            " https://docs.dagster.io/concepts/configuration/configured"
-        ),
+        "You have invoked `configured` on a PendingNodeInvocation (an intermediate type), which"
+        " is produced by aliasing or tagging a node definition. To configure a node, you must"
+        " call `configured` on either an OpDefinition and GraphDefinition. To fix"
+        " this error, make sure to call `configured` on the definition object *before* using"
+        " the `tag` or `alias` methods. For usage examples, see"
+        " https://docs.dagster.io/concepts/configuration/configured",
     )
     check.inst_param(
         configurable,
         "configurable",
         ConfigurableDefinition,
-        (
-            "Only the following types can be used with the `configured` method: ResourceDefinition,"
-            " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
-            " For usage examples of `configured`, see"
-            " https://docs.dagster.io/concepts/configuration/configured"
-        ),
+        "Only the following types can be used with the `configured` method: ResourceDefinition,"
+        " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
+        " For usage examples of `configured`, see"
+        " https://docs.dagster.io/concepts/configuration/configured",
     )
 
 
@@ -264,7 +260,7 @@ def configured(
     * :py:class:`ResourceDefinition`
     * :py:class:`OpDefinition`
 
-    Using ``configured`` may result in config values being displayed in Dagit,
+    Using ``configured`` may result in config values being displayed in the Dagster UI,
     so it is not recommended to use this API with sensitive values, such as
     secrets.
 

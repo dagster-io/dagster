@@ -19,7 +19,7 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
-    build_op_context,
+    build_asset_context,
     daily_partitioned_config,
     define_asset_job,
     hourly_partitioned_config,
@@ -69,10 +69,10 @@ def get_upstream_partitions_for_partition_range(
         else None
     )
     upstream_partitions_subset = (
-        downstream_partition_mapping.get_upstream_partitions_for_partitions(
+        downstream_partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset,
             upstream_partitions_def,
-        )
+        ).partitions_subset
     )
     upstream_key_ranges = upstream_partitions_subset.get_partition_key_ranges()
     check.invariant(len(upstream_key_ranges) == 1)
@@ -207,7 +207,7 @@ def test_access_partition_keys_from_context_direct_invocation():
     def partitioned_asset(context):
         assert context.asset_partition_key_for_output() == "a"
 
-    context = build_op_context(partition_key="a")
+    context = build_asset_context(partition_key="a")
 
     # check unbound context
     assert context.asset_partition_key_for_output() == "a"
@@ -223,7 +223,7 @@ def test_access_partition_keys_from_context_direct_invocation():
         ):
             context.asset_partition_key_for_output()
 
-    context = build_op_context()
+    context = build_asset_context()
     non_partitioned_asset(context)
 
 
@@ -601,7 +601,7 @@ def test_partition_range_single_run():
             start="2020-01-01", end="2020-01-03"
         )
 
-    @asset(partitions_def=partitions_def, non_argument_deps={"upstream_asset"})
+    @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context) -> None:
         assert context.asset_partition_key_range_for_input("upstream_asset") == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"

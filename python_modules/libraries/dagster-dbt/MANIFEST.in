@@ -1,2 +1,3 @@
 include LICENSE
 include dagster_dbt/py.typed
+recursive-include dagster_dbt/include *

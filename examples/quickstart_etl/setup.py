@@ -13,5 +13,5 @@ setup(
         "tweepy",
         "wordcloud",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

@@ -1,6 +1,6 @@
 import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {titleOfIO} from '../app/titleOfIO';
 import {OpNameOrPath} from '../ops/OpNameOrPath';

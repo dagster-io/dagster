@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled, {css} from 'styled-components/macro';
+import styled, {css} from 'styled-components';
 
 import {Colors} from './Colors';
 import {IconName, Icon, IconWrapper} from './Icon';

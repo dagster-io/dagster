@@ -162,7 +162,7 @@ class InProcessCodeLocationOrigin(
     CodeLocationOrigin,
 ):
     """Identifies a repository location constructed in the same process. Primarily
-    used in tests, since Dagster system processes like Dagit and the daemon do not
+    used in tests, since Dagster system processes like the webserver and daemon do not
     load user code in the same process.
     """
 
@@ -230,9 +230,11 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
             ),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_loadable_target_origin_name(loadable_target_origin),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_loadable_target_origin_name(loadable_target_origin)
+            ),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -263,7 +265,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         self,
         instance: "DagsterInstance",
     ) -> Iterator["GrpcServerCodeLocation"]:
-        from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
+        from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
 
         from .code_location import GrpcServerCodeLocation
         from .grpc_server_registry import GrpcServerRegistry
@@ -271,7 +273,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
             reload_interval=0,
-            heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+            heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=(
                 instance.code_server_process_startup_timeout
                 if instance
@@ -327,9 +329,11 @@ class GrpcServerCodeLocationOrigin(
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
             check.opt_str_param(socket, "socket"),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_grpc_location_name(port, socket, host),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_grpc_location_name(port, socket, host)
+            ),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
 

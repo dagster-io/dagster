@@ -180,6 +180,7 @@ describe('AssetPartitions', () => {
     });
 
     await userEvent.click(screen.getByTestId('sort-0'));
+    await userEvent.click(screen.getByTestId('sort-creation'));
 
     await waitFor(() => {
       expect(
@@ -194,11 +195,29 @@ describe('AssetPartitions', () => {
     });
 
     await userEvent.click(screen.getByTestId('sort-1'));
+    await waitFor(async () => {
+      await userEvent.click(screen.getByTestId('sort-reverse-creation'));
+    });
     await waitFor(() => {
       expect(
         getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
       ).toBeVisible();
     });
+
+    await userEvent.click(screen.getByTestId('sort-1'));
+    await waitFor(async () => {
+      await userEvent.click(screen.getByTestId('sort-alphabetical'));
+    });
+    expect(
+      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-FL-index-0'),
+    ).toBeVisible();
+
+    await waitFor(async () => {
+      await userEvent.click(screen.getByTestId('sort-reverse-alphabetical'));
+    });
+    expect(
+      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
+    ).toBeVisible();
   });
 
   it('should set the focused partition when you click a list element', async () => {

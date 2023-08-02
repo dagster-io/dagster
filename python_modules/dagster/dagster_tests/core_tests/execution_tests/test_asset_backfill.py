@@ -33,17 +33,17 @@ from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from dagster_tests.definitions_tests.asset_reconciliation_tests.asset_reconciliation_scenario import (
+from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import (
     do_run,
 )
-from dagster_tests.definitions_tests.asset_reconciliation_tests.exotic_partition_mapping_scenarios import (
+from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.exotic_partition_mapping_scenarios import (
     multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
 )
-from dagster_tests.definitions_tests.asset_reconciliation_tests.partition_scenarios import (
+from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.partition_scenarios import (
     hourly_to_daily_partitions,
     non_partitioned_after_partitioned,
     one_asset_one_partition,
@@ -165,7 +165,7 @@ def test_from_asset_partitions_target_subset(
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=partition_keys,
         asset_graph=asset_graph,
-        asset_selection=list(asset_graph.all_asset_keys),
+        asset_selection=list(asset_graph.materializable_asset_keys),
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
         backfill_start_time=scenarios[scenario_name].evaluation_time,

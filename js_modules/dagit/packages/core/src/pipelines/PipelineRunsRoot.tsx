@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
 import {
   Box,
+  ButtonLink,
   CursorHistoryControls,
   Icon,
   NonIdealState,
@@ -24,10 +25,10 @@ import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
   RunFilterTokenType,
-  RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
   RunFilterToken,
+  useRunsFilterInput,
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -46,7 +47,12 @@ import {
 import {useJobTitle} from './useJobTitle';
 
 const PAGE_SIZE = 25;
-const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
+const ENABLED_FILTERS: RunFilterTokenType[] = [
+  'status',
+  'tag',
+  'created_date_before',
+  'created_date_after',
+];
 
 interface Props {
   repoAddress?: RepoAddress;
@@ -116,6 +122,12 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   );
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const {button, activeFiltersJsx} = useRunsFilterInput({
+    enabledFilters: ENABLED_FILTERS,
+    tokens: filterTokens,
+    onChange: setFilterTokens,
+    loading: queryResult.loading,
+  });
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
@@ -141,28 +153,43 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
 
             return (
               <>
-                <Box
-                  flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-                  padding={{top: 8, horizontal: 24}}
-                >
-                  <Box flex={{direction: 'row', gap: 8}}>
-                    {permanentTokens.map(({token, value}) => (
-                      <Tag key={token}>{`${token}:${value}`}</Tag>
-                    ))}
-                  </Box>
-                  <QueryRefreshCountdown refreshState={refreshState} />
-                </Box>
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={displayed}
                     onAddTag={onAddTag}
                     actionBarComponents={
-                      <RunsFilterInput
-                        enabledFilters={ENABLED_FILTERS}
-                        tokens={filterTokens}
-                        onChange={setFilterTokens}
-                        loading={queryResult.loading}
-                      />
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          justifyContent: 'space-between',
+                          grow: 1,
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                        margin={{right: 8}}
+                      >
+                        {button}
+                        <QueryRefreshCountdown refreshState={refreshState} />
+                      </Box>
+                    }
+                    belowActionBarComponents={
+                      <>
+                        {permanentTokens.map(({token, value}) => (
+                          <Tag key={token}>{`${token}:${value}`}</Tag>
+                        ))}
+                        {activeFiltersJsx.length ? (
+                          <>
+                            {activeFiltersJsx}
+                            <ButtonLink
+                              onClick={() => {
+                                setFilterTokens([]);
+                              }}
+                            >
+                              Clear all
+                            </ButtonLink>
+                          </>
+                        ) : null}
+                      </>
                     }
                     emptyState={() => (
                       <EmptyState

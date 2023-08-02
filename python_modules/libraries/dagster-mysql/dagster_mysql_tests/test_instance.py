@@ -48,9 +48,7 @@ def full_mysql_config(hostname, port):
               hostname: {hostname}
               port: {port}
               db_name: test
-    """.format(
-        hostname=hostname, port=port
-    )
+    """.format(hostname=hostname, port=port)
 
 
 def unified_mysql_config(hostname, port):
@@ -133,7 +131,7 @@ def test_statement_timeouts(conn_string):
     port = parse_result.port
 
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))) as instance:
-        instance.optimize_for_dagit(statement_timeout=500, pool_recycle=-1)  # 500ms
+        instance.optimize_for_webserver(statement_timeout=500, pool_recycle=-1)  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()

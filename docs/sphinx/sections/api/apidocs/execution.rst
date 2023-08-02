@@ -39,7 +39,7 @@ Execution results
 .. autoclass:: ExecuteInProcessResult
    :inherited-members:
 
-.. autoclass:: ExecuteJobResult
+.. autoclass:: JobExecutionResult
    :inherited-members:
 
 .. autoclass:: DagsterEvent
@@ -78,6 +78,8 @@ Contexts
   :inherited-members:
 
 .. autofunction:: build_op_context
+
+.. autofunction:: build_asset_context
 
 .. autoclass:: TypeCheckContext
   :members:

@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {TableSchemaFragment, ConstraintsForTableColumnFragment} from './types/TableSchema.types';
 

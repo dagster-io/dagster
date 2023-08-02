@@ -17,7 +17,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         #   (1) Updated the code that is referenced by a literal include in the documentation
         #   (2) Directly modified the inline snapshot of a literalinclude instead of updating
         #       the underlying code that the literalinclude is pointing to.
-        # To fix this, run 'make snapshot' in the /docs directory to update the snapshots.
+        # To fix this, run 'make mdx-format' in the /docs directory to update the snapshots.
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         CommandStepBuilder("docs code snippets")
         .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")

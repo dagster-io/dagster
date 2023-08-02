@@ -123,12 +123,10 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         check.param_invariant(
             False,
             "dagster_type",
-            (
-                f"Cannot pass config type class {obj} to resolve_to_config_type. This error usually"
-                " occurs when you pass a dagster config type class instead of a class instance into"
-                ' another dagster config type. E.g. "Noneable(Permissive)" should instead be'
-                ' "Noneable(Permissive())".'
-            ),
+            f"Cannot pass config type class {obj} to resolve_to_config_type. This error usually"
+            " occurs when you pass a dagster config type class instead of a class instance into"
+            ' another dagster config type. E.g. "Noneable(Permissive)" should instead be'
+            ' "Noneable(Permissive())".',
         )
 
     if isinstance(obj, type) and is_subclass(obj, DagsterType):
@@ -356,6 +354,10 @@ class Field:
     @public
     @property
     def is_required(self) -> bool:
+        """Whether a value for this field must be provided at runtime.
+
+        Cannot be True if a default value is provided.
+        """
         return self._is_required
 
     @public
@@ -371,12 +373,17 @@ class Field:
     @public
     @property
     def default_value(self) -> Any:
+        """The default value for the field.
+
+        Raises an exception if no default value was provided.
+        """
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """A human-readable description of this config field, if provided."""
         return self._description
 
     @property
@@ -387,9 +394,9 @@ class Field:
     def __repr__(self) -> str:
         return ("Field({config_type}, default={default}, is_required={is_required})").format(
             config_type=self.config_type,
-            default="@"
-            if self._default_value == FIELD_NO_DEFAULT_PROVIDED
-            else self._default_value,
+            default=(
+                "@" if self._default_value == FIELD_NO_DEFAULT_PROVIDED else self._default_value
+            ),
             is_required=self.is_required,
         )
 

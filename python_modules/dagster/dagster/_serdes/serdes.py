@@ -128,9 +128,11 @@ class WhitelistMap(NamedTuple):
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
-            field_serializers={k: klass.get_instance() for k, klass in field_serializers.items()}
-            if field_serializers
-            else None,
+            field_serializers=(
+                {k: klass.get_instance() for k, klass in field_serializers.items()}
+                if field_serializers
+                else None
+            ),
         )
         self.tuple_serializers[name] = serializer
         deserializer_name = storage_name or name
@@ -269,10 +271,8 @@ def whitelist_for_serdes(
     if storage_field_names or old_fields or skip_when_empty_fields:
         check.invariant(
             serializer is None or issubclass(serializer, NamedTupleSerializer),
-            (
-                "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
-                " NamedTupleSerializer"
-            ),
+            "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
+            " NamedTupleSerializer",
         )
     if __cls is not None:  # decorator invoked directly on class
         check.class_param(__cls, "__cls")
@@ -600,7 +600,7 @@ class SetToSequenceFieldSerializer(FieldSerializer):
 def serialize_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    **json_kwargs: object,
+    **json_kwargs: Any,
 ) -> str:
     """Serialize an object to a JSON string.
 
@@ -681,10 +681,8 @@ def _pack_value(
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_serializer(klass_name):
             raise SerializationError(
-                (
-                    "Can only serialize whitelisted namedtuples, received"
-                    f" {val}.\nDescent path: {descent_path}"
-                ),
+                "Can only serialize whitelisted namedtuples, received"
+                f" {val}.\nDescent path: {descent_path}",
             )
         serializer = whitelist_map.get_tuple_serializer(klass_name)
         return serializer.pack(cast(NamedTuple, val), whitelist_map, descent_path)
@@ -692,10 +690,8 @@ def _pack_value(
         klass_name = val.__class__.__name__
         if not whitelist_map.has_enum_entry(klass_name):
             raise SerializationError(
-                (
-                    "Can only serialize whitelisted Enums, received"
-                    f" {klass_name}.\nDescent path: {descent_path}"
-                ),
+                "Can only serialize whitelisted Enums, received"
+                f" {klass_name}.\nDescent path: {descent_path}",
             )
         enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}

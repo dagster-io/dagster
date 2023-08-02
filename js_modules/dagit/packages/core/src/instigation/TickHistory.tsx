@@ -21,7 +21,7 @@ import {
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';

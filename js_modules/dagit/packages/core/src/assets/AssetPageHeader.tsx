@@ -3,7 +3,7 @@ import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import {Box, Colors, PageHeader, Heading, Icon, Tooltip, IconWrapper} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';

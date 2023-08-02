@@ -34,8 +34,8 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.output import OutputDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.input_manager import IInputManagerDefinition
 from dagster._core.storage.output_manager import IOutputManagerDefinition
-from dagster._core.storage.root_input_manager import IInputManagerDefinition
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster._utils import check
 
@@ -235,8 +235,6 @@ def get_inputs_field(
             input_field = None
         elif name in input_source_assets and not has_upstream:
             input_field = None
-        elif inp.root_manager_key and not has_upstream:
-            input_field = get_input_manager_input_field(node, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(node, name, inp)
         else:
@@ -274,27 +272,7 @@ def get_input_manager_input_field(
     input_def: InputDefinition,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
-    if input_def.root_manager_key:
-        if input_def.root_manager_key not in resource_defs:
-            raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {node.describe_node()} requires root_manager_key"
-                f" '{input_def.root_manager_key}', but no resource has been provided. Please"
-                " include a resource definition for that key in the provided resource_defs."
-            )
-
-        root_manager = resource_defs[input_def.root_manager_key]
-        if not isinstance(root_manager, IInputManagerDefinition):
-            raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {node.describe_node()} requires root_manager_key "
-                f"'{input_def.root_manager_key}', but the resource definition provided is not an "
-                "IInputManagerDefinition"
-            )
-
-        input_config_schema = root_manager.input_config_schema
-        if input_config_schema:
-            return input_config_schema.as_field()
-        return None
-    elif input_def.input_manager_key:
+    if input_def.input_manager_key:
         if input_def.input_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
                 f"Input '{input_def.name}' for {node.describe_node()} requires input_manager_key"
@@ -322,9 +300,7 @@ def get_type_loader_input_field(node: Node, input_name: str, input_def: InputDef
     loader = check.not_none(input_def.dagster_type.loader)
     return Field(
         loader.schema_type,
-        is_required=(
-            not node.definition.input_has_default(input_name) and not input_def.root_manager_key
-        ),
+        is_required=(not node.definition.input_has_default(input_name)),
     )
 
 
@@ -615,9 +591,11 @@ def _convert_config_classes_inner(configs: Any) -> Any:
         return configs
 
     return {
-        k: {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
-        if isinstance(v, Config)
-        else _convert_config_classes_inner(v)
+        k: (
+            {"config": v._convert_to_config_dictionary()}  # noqa: SLF001
+            if isinstance(v, Config)
+            else _convert_config_classes_inner(v)
+        )
         for k, v in configs.items()
     }
 

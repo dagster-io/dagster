@@ -1,5 +1,5 @@
 import {Colors, CursorControlsContainer} from '@dagster-io/ui';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 export const OptionsContainer = styled.div`
   min-height: 56px;

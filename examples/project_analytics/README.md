@@ -34,10 +34,10 @@ To run locally, all you need is to install this package locally:
 pip install -e .
 ```
 
-Then start dagit
+Then start Dagster's webserver:
 
 ```bash
-dagit dev
+dagster dev
 ```
 
 ### Production

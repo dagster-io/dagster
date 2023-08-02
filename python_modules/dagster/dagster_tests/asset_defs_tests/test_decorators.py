@@ -22,7 +22,7 @@ from dagster import (
     String,
     TimeWindowPartitionMapping,
     _check as check,
-    build_op_context,
+    build_asset_context,
     graph_asset,
     graph_multi_asset,
     io_manager,
@@ -304,7 +304,7 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
-@ignore_warning("`version` property on OpDefinition is deprecated")
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
@@ -314,7 +314,7 @@ def test_asset_with_code_version():
     assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
-@ignore_warning("`version` property on OpDefinition is deprecated")
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version_direct_call():
     def func(arg1):
         return arg1
@@ -556,7 +556,7 @@ def test_invoking_asset_with_context():
         assert isinstance(context, OpExecutionContext)
         return arg1
 
-    ctx = build_op_context()
+    ctx = build_asset_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
 
@@ -607,8 +607,8 @@ def test_kwargs_with_context():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
-    assert my_asset(build_op_context(), upstream=5) == 7
-    assert my_asset.op(build_op_context(), upstream=5) == 7
+    assert my_asset(build_asset_context(), upstream=5) == 7
+    assert my_asset.op(build_asset_context(), upstream=5) == 7
 
     @asset
     def upstream():
@@ -648,8 +648,8 @@ def test_kwargs_multi_asset_with_context():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
-    assert my_asset(build_op_context(), upstream=5) == (7,)
-    assert my_asset.op(build_op_context(), upstream=5) == (7,)
+    assert my_asset(build_asset_context(), upstream=5) == (7,)
+    assert my_asset.op(build_asset_context(), upstream=5) == (7,)
 
     @asset
     def upstream():
@@ -658,7 +658,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -705,8 +705,8 @@ def test_multi_asset_code_versions():
     }
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():
@@ -813,7 +813,7 @@ def test_invalid_self_dep(partitions_def, partition_mapping):
             del b
 
 
-@ignore_warning('"MultiPartitionMapping" is an experimental class')
+@ignore_warning("Class `MultiPartitionMapping` is experimental")
 def test_invalid_self_dep_no_time_dimension():
     partitions_def = MultiPartitionsDefinition(
         {
@@ -884,9 +884,9 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
-@ignore_warning('"FreshnessPolicy" is an experimental class')
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_asset_with_args():
     @resource
     def foo_resource():
@@ -988,9 +988,9 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
-@ignore_warning('"FreshnessPolicy" is an experimental class')
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_multi_asset_decorator():
     @resource
     def foo_resource():
@@ -1091,7 +1091,7 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_with_bare_resource():
     class BareResourceObject:
         pass
@@ -1108,7 +1108,7 @@ def test_multi_asset_with_bare_resource():
     assert executed["yes"]
 
 
-@ignore_warning('"AutoMaterializePolicy" is an experimental class')
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
 def test_multi_asset_with_auto_materialize_policy():
     @multi_asset(
         outs={
@@ -1124,3 +1124,52 @@ def test_multi_asset_with_auto_materialize_policy():
         AssetKey("o2"): AutoMaterializePolicy.eager(),
         AssetKey("o3"): AutoMaterializePolicy.lazy(),
     }
+
+
+@pytest.mark.parametrize(
+    "key,expected_key",
+    [
+        (
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+        ),
+        ("the_asset", AssetKey(["the_asset"])),
+        (["prefix", "the_asset"], AssetKey(["prefix", "the_asset"])),
+        (("prefix", "the_asset"), AssetKey(["prefix", "the_asset"])),
+    ],
+)
+def test_asset_key_provided(key, expected_key):
+    @asset(key=key)
+    def foo():
+        return 1
+
+    assert foo.key == expected_key
+
+
+def test_error_on_asset_key_provided():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", key_prefix="foo")
+        def one():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo")
+        def two():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo", key_prefix="bar")
+        def three():
+            ...

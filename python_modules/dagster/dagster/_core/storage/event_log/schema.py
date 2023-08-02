@@ -31,7 +31,7 @@ SecondaryIndexMigrationTable = db.Table(
 # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
 # This column is used nowhere else, and as of AssetObservation creation, we want to extend
 # this functionality to ensure that assets with observation OR materialization timestamp
-# > wipe timestamp display in Dagit.
+# > wipe timestamp display in the Dagster UI.
 
 # As of the following PR, we update last_materialization_timestamp to store the timestamp
 # of the latest asset observation or materialization that has occurred.

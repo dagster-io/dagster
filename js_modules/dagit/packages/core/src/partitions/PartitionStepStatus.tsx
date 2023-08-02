@@ -12,7 +12,7 @@ import {
   useViewport,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
@@ -440,10 +440,13 @@ const PartitionSquare: React.FC<{
   } else if (runs.length === 0) {
     squareStatus = 'empty';
   } else {
-    const runStatus = runs[runs.length - 1]!.status;
-    squareStatus = runStatus === RunStatus.CANCELED ? 'failure' : runStatus.toLowerCase();
+    const runStatus = [...runs].reverse().find((r) => r.status !== RunStatus.CANCELED)?.status;
+    if (runStatus) {
+      squareStatus = runStatus.toLowerCase();
+    } else {
+      squareStatus = 'empty';
+    }
   }
-
   const content = (
     <div
       className={`square ${squareStatus}`}

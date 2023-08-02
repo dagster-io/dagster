@@ -38,7 +38,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["yoyoyoyoyo"]',
         partitionKeysByDimension: [
@@ -1582,7 +1582,7 @@ export const SingleDimensionStaticPartitionHealthQuery: MockedResponse<Partition
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["single_dimension_static"]',
         partitionKeysByDimension: [
@@ -1612,7 +1612,7 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["multi_dimension_static"]',
         partitionKeysByDimension: [
@@ -1686,7 +1686,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
 
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["multi_dimension_time_first"]',
         partitionKeysByDimension: [
@@ -1852,7 +1852,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
   },
   result: {
     data: {
-      __typename: 'DagitQuery',
+      __typename: 'Query',
       assetNodeOrError: {
         id: 'test.py.repo.["multi_dimension_time_second"]',
         partitionKeysByDimension: [

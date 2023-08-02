@@ -1,5 +1,6 @@
-import {Body, Box, Colors, Spinner} from '@dagster-io/ui';
+import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
@@ -11,10 +12,11 @@ import {
   AutomaterializePolicyTag,
   automaterializePolicyDescription,
 } from './AutomaterializePolicyTag';
-import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
+import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
@@ -22,6 +24,7 @@ interface Props {
   asset: SidebarAssetFragment;
   liveData?: LiveDataForNode;
   isSourceAsset: boolean;
+  stepKey: string;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
@@ -33,6 +36,7 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   assetLastMaterializedAt,
   isSourceAsset,
   liveData,
+  stepKey,
 }) => {
   const {
     materializations,
@@ -54,24 +58,19 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
     refetch();
   }, [assetLastMaterializedAt, refetch]);
 
-  if (loading) {
-    return (
-      <Box padding={{vertical: 20}}>
-        <Spinner purpose="section" />
-      </Box>
-    );
-  }
   return (
     <>
       {!asset.partitionDefinition && (
         <>
           <FailedRunSinceMaterializationBanner
-            run={liveData?.runWhichFailedToMaterialize || null}
+            stepKey={stepKey}
             border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            run={liveData?.runWhichFailedToMaterialize || null}
           />
           <CurrentRunsBanner
-            liveData={liveData}
+            stepKey={stepKey}
             border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+            liveData={liveData}
           />
         </>
       )}
@@ -80,14 +79,27 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
-            <CurrentMinutesLateTag liveData={liveData} policy={asset.freshnessPolicy} />
+            <OverdueTag
+              liveData={liveData}
+              policy={asset.freshnessPolicy}
+              assetKey={asset.assetKey}
+            />
           </Box>
         </SidebarSection>
       )}
 
       {asset.autoMaterializePolicy && (
         <SidebarSection title="Auto-materialize policy">
-          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+          <Box
+            padding={{horizontal: 24, vertical: 12}}
+            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+          >
+            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'auto-materialize-history'})}>
+              View auto-materialize history
+            </Link>
+            <Icon name="open_in_new" color={Colors.Link} />
+          </Box>
+          <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>
               {automaterializePolicyDescription(asset.autoMaterializePolicy)}
             </Body>
@@ -109,6 +121,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
                   liveData={liveData}
                 />
               </div>
+            ) : loading ? (
+              <Box padding={{vertical: 20}}>
+                <Spinner purpose="section" />
+              </Box>
             ) : (
               <Box
                 margin={{horizontal: 24, vertical: 12}}
@@ -126,6 +142,10 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
               </div>
+            ) : loading ? (
+              <Box padding={{vertical: 20}}>
+                <Spinner purpose="section" />
+              </Box>
             ) : (
               <Box
                 margin={{horizontal: 24, vertical: 12}}

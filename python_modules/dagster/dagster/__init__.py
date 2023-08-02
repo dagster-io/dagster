@@ -34,17 +34,15 @@ sys.meta_path.insert(
 # ##### NOTES ON IMPORT FORMAT
 # ########################
 #
-# ok
 # This file defines dagster's public API. Imports need to be structured/formatted so as to to ensure
-# that the broadest possible set of static analyzers understand Dagster's
-# public API as intended. The below guidelines ensure this is the case.
+# that the broadest possible set of static analyzers understand Dagster's public API as intended.
+# The below guidelines ensure this is the case.
 #
 # (1) All imports in this module intended to define exported symbols should be of the form `from
 # dagster.foo import X as X`. This is because imported symbols are not by default considered public
 # by static analyzers. The redundant alias form `import X as X` overwrites the private imported `X`
 # with a public `X` bound to the same value. It is also possible to expose `X` as public by listing
-# it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability
-# and shorter file length.
+# it inside `__all__`, but the redundant alias form is preferred here due to easier maintainability.
 
 # (2) All imports should target the module in which a symbol is actually defined, rather than a
 # container module where it is imported. This rule also derives from the default private status of
@@ -114,9 +112,6 @@ from dagster._config.source import (
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    build_asset_reconciliation_sensor as build_asset_reconciliation_sensor,
-)
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
@@ -429,7 +424,10 @@ from dagster._core.execution.context.input import (
     InputContext as InputContext,
     build_input_context as build_input_context,
 )
-from dagster._core.execution.context.invocation import build_op_context as build_op_context
+from dagster._core.execution.context.invocation import (
+    build_asset_context as build_asset_context,
+    build_op_context as build_op_context,
+)
 from dagster._core.execution.context.logger import InitLoggerContext as InitLoggerContext
 from dagster._core.execution.context.output import (
     OutputContext as OutputContext,
@@ -481,6 +479,7 @@ from dagster._core.storage.fs_io_manager import (
 )
 from dagster._core.storage.input_manager import (
     InputManager as InputManager,
+    InputManagerDefinition as InputManagerDefinition,
     input_manager as input_manager,
 )
 from dagster._core.storage.io_manager import (
@@ -493,10 +492,8 @@ from dagster._core.storage.mem_io_manager import (
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
-from dagster._core.storage.root_input_manager import (
-    RootInputManager as RootInputManager,
-    RootInputManagerDefinition as RootInputManagerDefinition,
-    root_input_manager as root_input_manager,
+from dagster._core.storage.partition_status_cache import (
+    AssetPartitionStatus as AssetPartitionStatus,
 )
 from dagster._core.storage.tags import (
     MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
@@ -539,7 +536,7 @@ from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
 from dagster.version import __version__ as __version__
 
-# isort: split
+# ruff: isort: split
 
 # ########################
 # ##### DYNAMIC IMPORTS
@@ -557,7 +554,7 @@ from typing import (
 
 from typing_extensions import Final
 
-from dagster._utils.backcompat import deprecation_warning, rename_warning
+from dagster._utils.backcompat import deprecation_warning
 
 # NOTE: Unfortunately we have to declare deprecated aliases twice-- the
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
@@ -568,12 +565,7 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-
-    # JobExecutionResult used to be called ExecuteJobResult because it was only returned from
-    # `execute_job`.
-    from dagster._core.execution.job_execution_result import (
-        JobExecutionResult as ExecuteJobResult,  # noqa: F401
-    )
+    pass  # noqa: TCH005
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
@@ -588,7 +580,6 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
 _DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
-    "ExecuteJobResult": (JobExecutionResult, "1.4.0"),
 }
 
 
@@ -602,7 +593,12 @@ def __getattr__(name: str) -> TypingAny:
     elif name in _DEPRECATED_RENAMED:
         value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
-        rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
+        deprecation_warning(
+            value.__name__,
+            breaking_version,
+            additional_warn_text=f"Use `{name}` instead.",
+            stacklevel=stacklevel,
+        )
         return value
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

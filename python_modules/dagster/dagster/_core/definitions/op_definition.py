@@ -18,7 +18,7 @@ from typing import (
 from typing_extensions import TypeAlias, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
@@ -34,7 +34,7 @@ from dagster._core.definitions.resource_requirement import (
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
+from dagster._utils.backcompat import normalize_renamed_param
 
 from .definition_config_schema import (
     IDefinitionConfigSchema,
@@ -54,6 +54,9 @@ if TYPE_CHECKING:
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
+@deprecated_param(
+    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead."
+)
 class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
 
@@ -145,8 +148,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             resolved_input_defs = input_defs
             self._compute_fn = check.callable_param(compute_fn, "compute_fn")
 
-        code_version = canonicalize_backcompat_args(
-            code_version, "code_version", version, "version", "2.0"
+        code_version = normalize_renamed_param(
+            code_version,
+            "code_version",
+            version,
+            "version",
         )
         self._version = code_version
 
@@ -215,16 +221,19 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @public
     @property
     def name(self) -> str:
+        """str: The name of this op."""
         return super(OpDefinition, self).name
 
     @public
     @property
     def ins(self) -> Mapping[str, In]:
+        """Mapping[str, In]: A mapping from input name to the In object that represents that input."""
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
     @public
     @property
     def outs(self) -> Mapping[str, Out]:
+        """Mapping[str, Out]: A mapping from output name to the Out object that represents that output."""
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @property
@@ -234,43 +243,54 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @public
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
+        """IDefinitionConfigSchema: The config schema for this op."""
         return self._config_schema
 
     @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
+        """AbstractSet[str]: A set of keys for resources that must be provided to this OpDefinition."""
         return frozenset(self._required_resource_keys)
 
     @public
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `code_version` instead.")
     @property
     def version(self) -> Optional[str]:
-        deprecation_warning("`version` property on OpDefinition", "2.0")
+        """str: Version of the code encapsulated by the op. If set, this is used as a
+        default code version for all outputs.
+        """
         return self._version
 
     @public
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
+        """Optional[RetryPolicy]: The RetryPolicy for this op."""
         return self._retry_policy
 
     @public
     @property
     def tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for this op."""
         return super(OpDefinition, self).tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given name."""
         return super(OpDefinition, self).alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given tags."""
         return super(OpDefinition, self).tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given hook definitions."""
         return super(OpDefinition, self).with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        """Creates a copy of this op with the given retry policy."""
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
@@ -314,7 +334,6 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             if (
                 not input_def.dagster_type.loader
                 and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                and not input_def.root_manager_key
                 and not input_def.has_default_value
                 and not input_def.input_manager_key
             ):
@@ -392,14 +411,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                 key=resource_key, node_description=node_description
             )
         for input_def in self.input_defs:
-            if input_def.root_manager_key:
-                yield InputManagerRequirement(
-                    key=input_def.root_manager_key,
-                    node_description=node_description,
-                    input_name=input_def.name,
-                    root_input=True,
-                )
-            elif input_def.input_manager_key:
+            if input_def.input_manager_key:
                 yield InputManagerRequirement(
                     key=input_def.input_manager_key,
                     node_description=node_description,

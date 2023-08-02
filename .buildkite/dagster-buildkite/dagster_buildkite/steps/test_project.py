@@ -42,11 +42,9 @@ def build_test_project_steps() -> List[GroupStep]:
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
                 'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
-                (
-                    "/scriptdir/aws.pex s3 cp"
-                    " s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json"
-                    " $${GOOGLE_APPLICATION_CREDENTIALS}"
-                ),
+                "/scriptdir/aws.pex s3 cp"
+                " s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json"
+                " $${GOOGLE_APPLICATION_CREDENTIALS}",
                 "export"
                 " BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-base:py"
                 + version

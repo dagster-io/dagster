@@ -1,0 +1,195 @@
+# name: test_fetch_top_level_resource[0]
+  dict({
+    'topLevelResourceDetailsOrError': dict({
+      '__typename': 'ResourceDetails',
+      'configFields': list([
+        dict({
+          'configType': dict({
+            'key': 'StringSourceType',
+          }),
+          'description': None,
+          'name': 'a_string',
+        }),
+        dict({
+          'configType': dict({
+            'key': 'StringSourceType',
+          }),
+          'description': None,
+          'name': 'an_unset_string',
+        }),
+      ]),
+      'configuredValues': list([
+        dict({
+          'key': 'a_string',
+          'type': 'VALUE',
+          'value': '"foo"',
+        }),
+        dict({
+          'key': 'an_unset_string',
+          'type': 'VALUE',
+          'value': '"defaulted"',
+        }),
+      ]),
+      'description': 'My description.',
+      'name': 'my_resource',
+    }),
+  })
+# ---
+# name: test_fetch_top_level_resource_env_var[0]
+  dict({
+    'topLevelResourceDetailsOrError': dict({
+      '__typename': 'ResourceDetails',
+      'configFields': list([
+        dict({
+          'configType': dict({
+            'key': 'StringSourceType',
+          }),
+          'description': None,
+          'name': 'a_string',
+        }),
+        dict({
+          'configType': dict({
+            'key': 'StringSourceType',
+          }),
+          'description': None,
+          'name': 'an_unset_string',
+        }),
+      ]),
+      'configuredValues': list([
+        dict({
+          'key': 'a_string',
+          'type': 'ENV_VAR',
+          'value': 'MY_STRING',
+        }),
+        dict({
+          'key': 'an_unset_string',
+          'type': 'VALUE',
+          'value': '"defaulted"',
+        }),
+      ]),
+      'description': 'My description.',
+      'name': 'my_resource_env_vars',
+    }),
+  })
+# ---
+# name: test_fetch_top_level_resources[0]
+  dict({
+    'allTopLevelResourceDetailsOrError': dict({
+      '__typename': 'ResourceDetailsList',
+      'results': list([
+        dict({
+          'configFields': list([
+          ]),
+          'configuredValues': list([
+          ]),
+          'description': None,
+          'name': 'foo',
+        }),
+        dict({
+          'configFields': list([
+          ]),
+          'configuredValues': list([
+          ]),
+          'description': None,
+          'name': 'my_outer_resource',
+        }),
+        dict({
+          'configFields': list([
+            dict({
+              'configType': dict({
+                'key': 'StringSourceType',
+              }),
+              'description': None,
+              'name': 'a_string',
+            }),
+            dict({
+              'configType': dict({
+                'key': 'StringSourceType',
+              }),
+              'description': None,
+              'name': 'an_unset_string',
+            }),
+          ]),
+          'configuredValues': list([
+            dict({
+              'key': 'a_string',
+              'type': 'VALUE',
+              'value': '"foo"',
+            }),
+            dict({
+              'key': 'an_unset_string',
+              'type': 'VALUE',
+              'value': '"defaulted"',
+            }),
+          ]),
+          'description': 'My description.',
+          'name': 'my_resource',
+        }),
+        dict({
+          'configFields': list([
+            dict({
+              'configType': dict({
+                'key': 'StringSourceType',
+              }),
+              'description': None,
+              'name': 'a_string',
+            }),
+            dict({
+              'configType': dict({
+                'key': 'StringSourceType',
+              }),
+              'description': None,
+              'name': 'an_unset_string',
+            }),
+          ]),
+          'configuredValues': list([
+            dict({
+              'key': 'a_string',
+              'type': 'ENV_VAR',
+              'value': 'MY_STRING',
+            }),
+            dict({
+              'key': 'an_unset_string',
+              'type': 'VALUE',
+              'value': '"defaulted"',
+            }),
+          ]),
+          'description': 'My description.',
+          'name': 'my_resource_env_vars',
+        }),
+        dict({
+          'configFields': list([
+            dict({
+              'configType': dict({
+                'key': 'StringSourceType',
+              }),
+              'description': None,
+              'name': 'a_string',
+            }),
+            dict({
+              'configType': dict({
+                'key': 'StringSourceType',
+              }),
+              'description': None,
+              'name': 'an_unset_string',
+            }),
+          ]),
+          'configuredValues': list([
+            dict({
+              'key': 'a_string',
+              'type': 'ENV_VAR',
+              'value': 'MY_STRING',
+            }),
+            dict({
+              'key': 'an_unset_string',
+              'type': 'ENV_VAR',
+              'value': 'MY_OTHER_STRING',
+            }),
+          ]),
+          'description': 'My description.',
+          'name': 'my_resource_two_env_vars',
+        }),
+      ]),
+    }),
+  })
+# ---

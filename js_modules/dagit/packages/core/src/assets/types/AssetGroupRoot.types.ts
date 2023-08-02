@@ -7,7 +7,7 @@ export type AssetGroupMetadataQueryVariables = Types.Exact<{
 }>;
 
 export type AssetGroupMetadataQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;

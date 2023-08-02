@@ -188,10 +188,8 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
             job_name = unpacked_dict.get("pipeline_name")
             check.invariant(
                 job_name is None or selector_name == job_name,
-                (
-                    f"Conflicting pipeline name {job_name} in arguments to PipelineRun: "
-                    f"selector was passed with pipeline {selector_name}"
-                ),
+                f"Conflicting pipeline name {job_name} in arguments to PipelineRun: "
+                f"selector was passed with pipeline {selector_name}",
             )
             if job_name is None:
                 unpacked_dict["pipeline_name"] = selector_name
@@ -200,10 +198,8 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
             check.invariant(
                 solids_to_execute is None
                 or (selector_subset and set(selector_subset) == solids_to_execute),
-                (
-                    f"Conflicting solids_to_execute {solids_to_execute} in arguments to"
-                    f" PipelineRun: selector was passed with subset {selector_subset}"
-                ),
+                f"Conflicting solids_to_execute {solids_to_execute} in arguments to"
+                f" PipelineRun: selector was passed with subset {selector_subset}",
             )
             # for old runs that only have selector but no solids_to_execute
             if solids_to_execute is None:
@@ -281,10 +277,8 @@ class DagsterRun(
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
-            (
-                "Must set both root_run_id and parent_run_id when creating a PipelineRun that "
-                "belongs to a run group"
-            ),
+            "Must set both root_run_id and parent_run_id when creating a PipelineRun that "
+            "belongs to a run group",
         )
         # a set which contains the names of the ops to execute
         resolved_op_selection = check.opt_nullable_set_param(
@@ -377,10 +371,10 @@ class DagsterRun(
         repository_tags = {}
         if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
-            # per-repository filtering of runs from dagit.
-            repository_tags[
-                REPOSITORY_LABEL_TAG
-            ] = self.external_job_origin.external_repository_origin.get_label()
+            # per-repository filtering of runs from the Dagster UI.
+            repository_tags[REPOSITORY_LABEL_TAG] = (
+                self.external_job_origin.external_repository_origin.get_label()
+            )
 
         if not self.tags:
             return repository_tags
@@ -390,26 +384,31 @@ class DagsterRun(
     @public
     @property
     def is_finished(self) -> bool:
+        """bool: If this run has completely finished execution."""
         return self.status in FINISHED_STATUSES
 
     @public
     @property
     def is_success(self) -> bool:
+        """bool: If this run has successfully finished executing."""
         return self.status == DagsterRunStatus.SUCCESS
 
     @public
     @property
     def is_failure(self) -> bool:
+        """bool: If this run has failed."""
         return self.status == DagsterRunStatus.FAILURE
 
     @public
     @property
-    def is_failure_or_canceled(self):
+    def is_failure_or_canceled(self) -> bool:
+        """bool: If this run has either failed or was canceled."""
         return self.status == DagsterRunStatus.FAILURE or self.status == DagsterRunStatus.CANCELED
 
     @public
     @property
     def is_resume_retry(self) -> bool:
+        """bool: If this run was created from retrying another run from the point of failure."""
         return self.tags.get(RESUME_RETRY_TAG) == "true"
 
     @property
@@ -632,7 +631,9 @@ class ExecutionSelector(
         return super(ExecutionSelector, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            solid_subset=None
-            if solid_subset is None
-            else check.sequence_param(solid_subset, "solid_subset", of_type=str),
+            solid_subset=(
+                None
+                if solid_subset is None
+                else check.sequence_param(solid_subset, "solid_subset", of_type=str)
+            ),
         )

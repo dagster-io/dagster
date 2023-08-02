@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, 
 
 import pydantic
 from pydantic import Field
-from typing_extensions import dataclass_transform, get_origin
+from typing_extensions import Annotated, dataclass_transform, get_origin
 
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
@@ -110,7 +110,7 @@ class BaseResourceMeta(BaseConfigMeta):
                     # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
-                    annotations[field] = Any
+                    annotations[field] = Annotated[Any, "resource_dependency"]
                 elif safe_is_subclass(
                     annotations[field], LateBoundTypesForResourceTypeChecking.get_resource_type()
                 ):
@@ -118,8 +118,12 @@ class BaseResourceMeta(BaseConfigMeta):
                     # and a Resource for Pydantic's sake, so that a user can pass in a partially
                     # configured resource.
                     base = annotations[field]
-                    annotations[field] = Union[
-                        LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base
+                    annotations[field] = Annotated[
+                        Union[
+                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
+                            base,
+                        ],
+                        "resource_dependency",
                     ]
 
         namespaces["__annotations__"] = annotations

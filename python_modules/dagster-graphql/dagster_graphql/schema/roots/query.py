@@ -151,11 +151,11 @@ from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
-class GrapheneDagitQuery(graphene.ObjectType):
+class GrapheneQuery(graphene.ObjectType):
     """The root for all queries to retrieve data from the Dagster instance."""
 
     class Meta:
-        name = "DagitQuery"
+        name = "Query"
 
     version = graphene.Field(
         graphene.NonNull(graphene.String),
@@ -410,7 +410,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             " Note: Assets should "
         )
         + "not be defined in more than one repository - this query is used to present warnings and"
-        " errors in Dagit.",
+        " errors in the Dagster UI.",
     )
 
     partitionBackfillOrError = graphene.Field(

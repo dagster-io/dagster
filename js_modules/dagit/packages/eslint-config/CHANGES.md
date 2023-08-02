@@ -1,3 +1,7 @@
+## 1.0.12 (August 2, 2023)
+
+- Removed styled-components from restricted imports due to babel-plugins-macro providing the required behavior.
+
 ## 1.0.11 (March 31, 2023)
 
 - Dependency upgrades: Jest 29, TypeScript 5+, `@typescript-eslint` packages.

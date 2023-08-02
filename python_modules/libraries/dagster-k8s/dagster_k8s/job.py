@@ -72,10 +72,8 @@ DEFAULT_JOB_SPEC_CONFIG = {
 class UserDefinedDagsterK8sConfig(
     namedtuple(
         "_UserDefinedDagsterK8sConfig",
-        (
-            "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata"
-            " job_spec_config"
-        ),
+        "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata"
+        " job_spec_config",
     )
 ):
     def __new__(
@@ -215,11 +213,9 @@ def get_job_name_from_run_id(run_id, resume_attempt_number=None):
 class DagsterK8sJobConfig(
     namedtuple(
         "_K8sJobTaskConfig",
-        (
-            "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
-            "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-            "volume_mounts volumes labels resources scheduler_name security_context"
-        ),
+        "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
+        "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
+        "volume_mounts volumes labels resources scheduler_name security_context",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -778,11 +774,11 @@ def construct_dagster_k8s_job(
             },
         ),
         "spec": merge_dicts(
+            {"restart_policy": "Never"},
             pod_spec_config,
             {
                 "image_pull_secrets": job_config.image_pull_secrets,
                 "service_account_name": service_account_name,
-                "restart_policy": "Never",
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
             },

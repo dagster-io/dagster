@@ -337,7 +337,18 @@ export function extractMetadataFromLogs(
         attempt.exitState = t.state;
       }
     }
+
+    // If a step is skipped, log an zero-second attempt so that the step is rendered
+    // as a tiny dot on the chart.
+    if (step.transitions.length === 1 && step.state === IStepState.SKIPPED) {
+      step.attempts.push({
+        start: step.transitions[0]!.time,
+        end: step.transitions[0]!.time,
+        exitState: IStepState.SKIPPED,
+      });
+    }
   }
+
   return metadata;
 }
 

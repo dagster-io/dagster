@@ -132,10 +132,8 @@ class TimeWindowPartitionsDefinition(
         if cron_schedule is not None:
             check.invariant(
                 schedule_type is None and not minute_offset and not hour_offset and not day_offset,
-                (
-                    "If cron_schedule argument is provided, then schedule_type, minute_offset, "
-                    "hour_offset, and day_offset can't also be provided"
-                ),
+                "If cron_schedule argument is provided, then schedule_type, minute_offset, "
+                "hour_offset, and day_offset can't also be provided",
             )
         else:
             if schedule_type is None:
@@ -264,8 +262,7 @@ class TimeWindowPartitionsDefinition(
     def _get_validated_time_window_for_partition_key(
         self, partition_key: str, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
-        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None.
-        """
+        """Returns a TimeWindow for the given partition key if it is valid, otherwise returns None."""
         try:
             time_window = self.time_window_for_partition_key(partition_key)
         except ValueError:
@@ -323,6 +320,7 @@ class TimeWindowPartitionsDefinition(
     def time_windows_for_partition_keys(
         self,
         partition_keys: Sequence[str],
+        validate: bool = True,
     ) -> Sequence[TimeWindow]:
         if len(partition_keys) == 0:
             return []
@@ -348,20 +346,21 @@ class TimeWindowPartitionsDefinition(
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
 
-        start_time_window = self.get_first_partition_window()
-        end_time_window = self.get_last_partition_window()
+        if validate:
+            start_time_window = self.get_first_partition_window()
+            end_time_window = self.get_last_partition_window()
 
-        if end_time_window is None or start_time_window is None:
-            check.failed("No partitions in the PartitionsDefinition")
+            if start_time_window is None or end_time_window is None:
+                check.failed("No partitions in the PartitionsDefinition")
 
-        start_timestamp = start_time_window.start.timestamp()
-        end_timestamp = end_time_window.end.timestamp()
+            start_timestamp = start_time_window.start.timestamp()
+            end_timestamp = end_time_window.end.timestamp()
 
-        partition_key_time_windows = [
-            tw
-            for tw in partition_key_time_windows
-            if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
-        ]
+            partition_key_time_windows = [
+                tw
+                for tw in partition_key_time_windows
+                if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
+            ]
         return partition_key_time_windows
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
@@ -451,9 +450,11 @@ class TimeWindowPartitionsDefinition(
     ) -> Optional[TimeWindow]:
         current_time = cast(
             datetime,
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone),
+            (
+                pendulum.instance(current_time, tz=self.timezone)
+                if current_time
+                else pendulum.now(self.timezone)
+            ),
         )
         return self._get_first_partition_window(current_time=current_time)
 
@@ -487,9 +488,11 @@ class TimeWindowPartitionsDefinition(
     ) -> Optional[TimeWindow]:
         current_time = cast(
             datetime,
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone),
+            (
+                pendulum.instance(current_time, tz=self.timezone)
+                if current_time
+                else pendulum.now(self.timezone)
+            ),
         )
         return self._get_last_partition_window(current_time=current_time)
 
@@ -548,6 +551,9 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def schedule_type(self) -> Optional[ScheduleType]:
+        """Optional[ScheduleType]: An enum representing the partition cadence (hourly, daily,
+        weekly, or monthly).
+        """
         if re.fullmatch(r"\d+ \* \* \* \*", self.cron_schedule):
             return ScheduleType.HOURLY
         elif re.fullmatch(r"\d+ \d+ \* \* \*", self.cron_schedule):
@@ -562,6 +568,10 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def minute_offset(self) -> int:
+        """int: Number of minutes past the hour to "split" partitions. Defaults to 0.
+
+        For example, returns 15 if each partition starts at 15 minutes past the hour.
+        """
         match = re.fullmatch(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no minute offset")
@@ -570,6 +580,10 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def hour_offset(self) -> int:
+        """int: Number of hours past 00:00 to "split" partitions. Defaults to 0.
+
+        For example, returns 1 if each partition starts at 01:00.
+        """
         match = re.fullmatch(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no hour offset")
@@ -578,6 +592,18 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def day_offset(self) -> int:
+        """int: For a weekly or monthly partitions definition, returns the day to "split" partitions
+        by. Each partition will start on this day, and end before this day in the following
+        week/month. Returns 0 if the day_offset parameter is unset in the
+        WeeklyPartitionsDefinition, MonthlyPartitionsDefinition, or the provided cron schedule.
+
+        For weekly partitions, returns a value between 0 (representing Sunday) and 6 (representing
+        Saturday). Providing a value of 1 means that a partition will exist weekly from Monday to
+        the following Sunday.
+
+        For monthly partitions, returns a value between 0 (the first day of the month) and 31 (the
+        last possible day of the month).
+        """
         schedule_type = self.schedule_type
         if schedule_type == ScheduleType.WEEKLY:
             match = re.fullmatch(r"(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+)", self.cron_schedule)
@@ -1372,6 +1398,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             result_time_windows, _ = self._add_partitions_to_time_windows(
                 initial_windows=[],
                 partition_keys=list(check.not_none(self._included_partition_keys)),
+                validate=False,
             )
             self._included_time_windows = result_time_windows
         return self._included_time_windows
@@ -1451,14 +1478,17 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         ]
 
     def _add_partitions_to_time_windows(
-        self, initial_windows: Sequence[TimeWindow], partition_keys: Sequence[str]
+        self,
+        initial_windows: Sequence[TimeWindow],
+        partition_keys: Sequence[str],
+        validate: bool = True,
     ) -> Tuple[Sequence[TimeWindow], int]:
         """Merges a set of partition keys into an existing set of time windows, returning the
         minimized set of time windows and the number of partitions added.
         """
         result_windows = [*initial_windows]
         time_windows = self._partitions_def.time_windows_for_partition_keys(
-            list(partition_keys),
+            list(partition_keys), validate=validate
         )
         num_added_partitions = 0
         for window in sorted(time_windows):
@@ -1616,13 +1646,12 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def __eq__(self, other):
         return (
             isinstance(other, TimeWindowPartitionsSubset)
-            and self._partitions_def == other._partitions_def  # noqa: SLF001
+            and self._partitions_def == other._partitions_def
             and (
                 # faster comparison, but will not catch all cases
                 (
-                    self._included_time_windows == other._included_time_windows  # noqa: SLF001
-                    and self._included_partition_keys
-                    == other._included_partition_keys  # noqa: SLF001
+                    self._included_time_windows == other._included_time_windows
+                    and self._included_partition_keys == other._included_partition_keys
                 )
                 # slower comparison, catches all cases
                 or self.included_time_windows == other.included_time_windows
@@ -1802,21 +1831,24 @@ def has_one_dimension_time_window_partitioning(
 
 def get_time_partitions_def(
     partitions_def: Optional[PartitionsDefinition],
-) -> TimeWindowPartitionsDefinition:
+) -> Optional[TimeWindowPartitionsDefinition]:
+    """For a given PartitionsDefinition, return the associated TimeWindowPartitionsDefinition if it
+    exists.
+    """
     from .multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None:
-        check.failed("Cannot get time partitions def from None object")
+        return None
     elif isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return partitions_def
-    elif isinstance(partitions_def, MultiPartitionsDefinition):
+    elif isinstance(
+        partitions_def, MultiPartitionsDefinition
+    ) and has_one_dimension_time_window_partitioning(partitions_def):
         return cast(
             TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
         )
     else:
-        check.failed(
-            f"Cannot return time partitions def from non-time partitions def {partitions_def}"
-        )
+        return None
 
 
 def get_time_partition_key(

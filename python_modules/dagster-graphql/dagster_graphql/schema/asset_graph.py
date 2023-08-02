@@ -581,10 +581,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         causes = self.stale_status_loader.get_stale_root_causes(self._external_asset_node.asset_key)
         return [
             GrapheneAssetStaleCause(
-                GrapheneAssetKey(path=cause.key.path),
+                GrapheneAssetKey(path=cause.asset_key.path),
                 cause.category,
                 cause.reason,
-                GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
+                (
+                    GrapheneAssetKey(path=cause.dependency.asset_key.path)
+                    if cause.dependency
+                    else None
+                ),
             )
             for cause in causes
         ]
@@ -808,9 +812,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            self._external_asset_node.partitions_def_data.get_partitions_definition()
-            if self._external_asset_node.partitions_def_data
-            else None,
+            (
+                self._external_asset_node.partitions_def_data.get_partitions_definition()
+                if self._external_asset_node.partitions_def_data
+                else None
+            ),
         )
 
         return build_partition_statuses(
@@ -838,9 +844,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                 graphene_info.context.instance,
                 asset_key,
                 self._dynamic_partitions_loader,
-                self._external_asset_node.partitions_def_data.get_partitions_definition()
-                if self._external_asset_node.partitions_def_data
-                else None,
+                (
+                    self._external_asset_node.partitions_def_data.get_partitions_definition()
+                    if self._external_asset_node.partitions_def_data
+                    else None
+                ),
             )
 
             if (
@@ -851,17 +859,12 @@ class GrapheneAssetNode(graphene.ObjectType):
                 check.failed("Expected partitions subset for a partitioned asset")
 
             failed_keys = failed_partition_subset.get_partition_keys()
+            in_progress_keys = in_progress_subset.get_partition_keys()
+            failed_and_in_progress_keys = {*failed_keys, *in_progress_keys}
 
-            num_materialized_and_not_failed = len(materialized_partition_subset) - len(
-                [k for k in failed_keys if k in materialized_partition_subset]
-            )
-            num_materialized_and_not_failed_or_in_progress = num_materialized_and_not_failed - len(
-                [
-                    k
-                    for k in in_progress_subset.get_partition_keys()
-                    if k in materialized_partition_subset
-                ]
-            )
+            num_materialized_and_not_failed_or_in_progress = len(
+                materialized_partition_subset
+            ) - len([k for k in failed_and_in_progress_keys if k in materialized_partition_subset])
 
             num_failed_and_not_in_progress = len(
                 [k for k in failed_keys if k not in in_progress_subset]

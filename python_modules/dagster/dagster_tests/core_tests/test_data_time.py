@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
@@ -78,7 +79,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         return 1
 
     @multi_asset(
-        non_argument_deps={AssetKey("a")},
+        deps=[AssetKey("a")],
         outs={
             "b": AssetOut(is_required=False),
             "c": AssetOut(is_required=False),
@@ -95,11 +96,11 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
         for output_name in sorted(context.selected_output_names):
             yield Output(output_name, output_name)
 
-    @asset(non_argument_deps={AssetKey("c")})
+    @asset(deps=[AssetKey("c")])
     def e():
         return 1
 
-    @asset(non_argument_deps={AssetKey("d")})
+    @asset(deps=[AssetKey("d")])
     def f():
         return 1
 
@@ -142,10 +143,8 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
-                    latest_asset_record = (
-                        data_time_queryer.instance_queryer.get_latest_materialization_record(
-                            AssetKey(ak)
-                        )
+                    latest_asset_record = data_time_queryer.instance_queryer.get_latest_materialization_or_observation_record(
+                        AssetKeyPartitionKey(AssetKey(ak))
                     )
                     if ignore_asset_tags:
                         # simulate an environment where materialization tags were not populated
@@ -171,7 +170,7 @@ def partitioned_asset():
     pass
 
 
-@asset(non_argument_deps={AssetKey("partitioned_asset")})
+@asset(deps=[AssetKey("partitioned_asset")])
 def unpartitioned_asset():
     pass
 
@@ -300,22 +299,22 @@ def sB():
     return DataVersion(str(random.random()))
 
 
-@asset(non_argument_deps={"sA"})
+@asset(deps=[sA])
 def A():
     pass
 
 
-@asset(non_argument_deps={"sB"})
+@asset(deps=[sB])
 def B():
     pass
 
 
-@asset(non_argument_deps={"B"})
+@asset(deps=[B])
 def B2():
     pass
 
 
-@asset(non_argument_deps={"sA", "sB"})
+@asset(deps=[sA, sB])
 def AB():
     pass
 

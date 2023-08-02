@@ -1,6 +1,6 @@
 import {Colors, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {TimeContext} from '../app/time/TimeContext';
 import {DEFAULT_TIME_FORMAT, TimeFormat} from '../app/time/TimestampFormat';

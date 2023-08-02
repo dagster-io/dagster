@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 from inspect import isfunction
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -18,14 +19,12 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
-    coerce_to_resource,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
     is_base_asset_job_name,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -42,6 +41,9 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.events import AssetKey
 
 
 def _find_env_vars(config_entry: Any) -> Set[str]:
@@ -67,11 +69,15 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
     resource's default config. This is used to extract environment variables from the top-level
     resources in a Definitions object.
     """
+    from dagster._core.execution.build_resources import wrap_resource_for_execution
+
     config_schema_default = cast(
         Mapping[str, Any],
-        json.loads(resource_def.config_schema.default_value_as_json_str)
-        if resource_def.config_schema.default_provided
-        else {},
+        (
+            json.loads(resource_def.config_schema.default_value_as_json_str)
+            if resource_def.config_schema.default_provided
+            else {}
+        ),
     )
 
     env_vars = _find_env_vars(config_schema_default)
@@ -86,7 +92,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
         nested_resources = resource_def.inner_resource.nested_resources
         for nested_resource in nested_resources.values():
             env_vars = env_vars.union(
-                _env_vars_from_resource_defaults(coerce_to_resource(nested_resource))
+                _env_vars_from_resource_defaults(wrap_resource_for_execution(nested_resource))
             )
 
     return env_vars
@@ -186,7 +192,7 @@ def build_caching_repository_data_from_list(
             assets=assets_defs,
             source_assets=source_assets,
             executor_def=default_executor_def,
-            resource_defs={},  # ????
+            resource_defs=top_level_resources,
         ):
             jobs[job_def.name] = job_def
 
@@ -230,7 +236,9 @@ def build_caching_repository_data_from_list(
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
             resolved_job = unresolved_job_def.resolve(
-                asset_graph=asset_graph, default_executor_def=default_executor_def
+                asset_graph=asset_graph,
+                default_executor_def=default_executor_def,
+                resource_defs=top_level_resources,
             )
             jobs[name] = resolved_job
 
@@ -317,8 +325,7 @@ def build_caching_repository_data_from_dict(
         elif isinstance(raw_job_def, UnresolvedAssetJobDefinition):
             repository_definitions["jobs"][key] = raw_job_def.resolve(
                 # TODO: https://github.com/dagster-io/dagster/issues/8263
-                assets=[],
-                source_assets=[],
+                asset_graph=AssetGraph.from_assets([]),
                 default_executor_def=None,
             )
         elif not isinstance(raw_job_def, JobDefinition) and not isfunction(raw_job_def):
@@ -394,9 +401,7 @@ def _process_and_validate_target(
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
-                else "unresolved asset job"
-                if target.name in unresolved_jobs
-                else "job"
+                else "unresolved asset job" if target.name in unresolved_jobs else "job"
             )
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)

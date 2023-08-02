@@ -21,6 +21,7 @@ export type RunFragment = {
   updateTime: number | null;
   startTime: number | null;
   endTime: number | null;
+  hasConcurrencyKeySlots: boolean;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;
@@ -2259,6 +2260,7 @@ export type RunPageFragment = {
   updateTime: number | null;
   startTime: number | null;
   endTime: number | null;
+  hasConcurrencyKeySlots: boolean;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;

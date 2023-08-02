@@ -148,6 +148,21 @@ class FreshnessPolicy(
     def maximum_lag_delta(self) -> datetime.timedelta:
         return datetime.timedelta(minutes=self.maximum_lag_minutes)
 
+    def get_evaluation_tick(
+        self,
+        evaluation_time: datetime.datetime,
+    ) -> Optional[datetime.datetime]:
+        if self.cron_schedule:
+            # most recent cron schedule tick
+            schedule_ticks = reverse_cron_string_iterator(
+                end_timestamp=evaluation_time.timestamp(),
+                cron_string=self.cron_schedule,
+                execution_timezone=self.cron_schedule_timezone,
+            )
+            return next(schedule_ticks)
+        else:
+            return evaluation_time
+
     def minutes_overdue(
         self,
         data_time: Optional[datetime.datetime],
@@ -165,16 +180,8 @@ class FreshnessPolicy(
         """
         if data_time is None:
             return None
-        if self.cron_schedule:
-            # most recent cron schedule tick
-            schedule_ticks = reverse_cron_string_iterator(
-                end_timestamp=evaluation_time.timestamp(),
-                cron_string=self.cron_schedule,
-                execution_timezone=self.cron_schedule_timezone,
-            )
-            evaluation_tick = next(schedule_ticks)
-        else:
-            evaluation_tick = evaluation_time
-
+        evaluation_tick = self.get_evaluation_tick(evaluation_time)
+        if evaluation_tick is None:
+            return None
         required_time = evaluation_tick - self.maximum_lag_delta
         return max(0.0, (required_time - data_time).total_seconds() / 60)

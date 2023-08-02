@@ -3,7 +3,7 @@ import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {MemoryRouter} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {IBounds} from './common';
 import {makeSVGPortable} from './makeSVGPortable';
@@ -19,6 +19,7 @@ interface SVGViewportProps {
   graphHeight: number;
   graphHasNoMinimumZoom?: boolean;
   interactor: SVGViewportInteractor;
+  defaultZoom: 'zoom-to-fit' | 'zoom-to-fit-width';
   maxZoom: number;
   maxAutocenterZoom: number;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
@@ -366,7 +367,12 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   autocenter(animate = false, scale?: number) {
     const el = this.element.current!;
     const ownerRect = {width: el.clientWidth, height: el.clientHeight};
-    const desiredScale = this.scaleForSVGBounds(this.props.graphWidth, this.props.graphHeight);
+
+    const desiredScale =
+      this.props.defaultZoom === 'zoom-to-fit-width'
+        ? ownerRect.width / this.props.graphWidth
+        : this.scaleForSVGBounds(this.props.graphWidth, this.props.graphHeight);
+
     const minScale = this.getMinZoom();
     const boundedScale =
       scale || Math.max(Math.min(desiredScale, this.props.maxAutocenterZoom), minScale);

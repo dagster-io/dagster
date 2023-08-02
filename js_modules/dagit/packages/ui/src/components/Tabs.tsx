@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled, {css} from 'styled-components/macro';
+import styled, {css} from 'styled-components';
 
 import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
@@ -69,7 +69,7 @@ export const tabCSS = css<TabStyleProps>`
   }
 
   & ${IconWrapper} {
-    color: ${({selected, disabled}) =>
+    background: ${({selected, disabled}) =>
       selected ? Colors.Blue500 : disabled ? Colors.Gray300 : ''};
   }
 

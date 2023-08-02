@@ -2,11 +2,13 @@ from datetime import datetime
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._core.definitions.asset_reconciliation_sensor import (
-    AssetReconciliationCursor,
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeAssetEvaluation,
+    MissingAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
 )
-from dagster._core.definitions.auto_materialize_condition import MissingAutoMaterializeCondition
 from dagster._core.definitions.partition import (
     SerializedPartitionsSubset,
 )
@@ -39,6 +41,19 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                             ... on Error {
                                 message
                             }
+                        }
+                    }
+                    ... on ParentOutdatedAutoMaterializeCondition {
+                        waitingOnAssetKeys {
+                            path
+                        }
+                    }
+                    ... on ParentMaterializedAutoMaterializeCondition {
+                        updatedAssetKeys {
+                            path
+                        }
+                        willUpdateAssetKeys {
+                            path
                         }
                     }
                 }
@@ -80,6 +95,35 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     num_skipped=0,
                     num_discarded=0,
                 ),
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_three"),
+                    partition_subsets_by_condition=[
+                        (
+                            ParentOutdatedAutoMaterializeCondition(
+                                waiting_on_asset_keys=frozenset([AssetKey("asset_two")])
+                            ),
+                            None,
+                        )
+                    ],
+                    num_requested=0,
+                    num_skipped=1,
+                    num_discarded=0,
+                ),
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_four"),
+                    partition_subsets_by_condition=[
+                        (
+                            ParentMaterializedAutoMaterializeCondition(
+                                updated_asset_keys=frozenset([AssetKey("asset_two")]),
+                                will_update_asset_keys=frozenset([AssetKey("asset_three")]),
+                            ),
+                            None,
+                        )
+                    ],
+                    num_requested=1,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
             ],
         )
 
@@ -114,6 +158,59 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                                 "__typename": "MissingAutoMaterializeCondition",
                                 "decisionType": "MATERIALIZE",
                                 "partitionKeysOrError": None,
+                            }
+                        ],
+                    }
+                ],
+                "currentEvaluationId": None,
+            }
+        }
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_three"]}, "limit": 10, "cursor": None},
+        )
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {
+                        "numRequested": 0,
+                        "numSkipped": 1,
+                        "numDiscarded": 0,
+                        "conditions": [
+                            {
+                                "__typename": "ParentOutdatedAutoMaterializeCondition",
+                                "decisionType": "SKIP",
+                                "partitionKeysOrError": None,
+                                "waitingOnAssetKeys": [{"path": ["asset_two"]}],
+                            }
+                        ],
+                    }
+                ],
+                "currentEvaluationId": None,
+            }
+        }
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["asset_four"]}, "limit": 10, "cursor": None},
+        )
+        assert results.data == {
+            "autoMaterializeAssetEvaluationsOrError": {
+                "records": [
+                    {
+                        "numRequested": 1,
+                        "numSkipped": 0,
+                        "numDiscarded": 0,
+                        "conditions": [
+                            {
+                                "__typename": "ParentMaterializedAutoMaterializeCondition",
+                                "decisionType": "MATERIALIZE",
+                                "partitionKeysOrError": None,
+                                "updatedAssetKeys": [{"path": ["asset_two"]}],
+                                "willUpdateAssetKeys": [{"path": ["asset_three"]}],
                             }
                         ],
                     }
@@ -265,7 +362,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
     def test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
-            {CURSOR_KEY: AssetReconciliationCursor.empty().serialize()}
+            {CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
         )
 
         results = execute_dagster_graphql(
@@ -282,9 +379,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {
-                CURSOR_KEY: AssetReconciliationCursor.empty()
-                .with_updates(0, [], set(), {}, 42, None)  # type: ignore
-                .serialize()
+                CURSOR_KEY: (
+                    AssetDaemonCursor.empty()
+                    .with_updates(0, {}, set(), {}, 42, None, [], 0)  # type: ignore
+                    .serialize()
+                )
             }
         )
 

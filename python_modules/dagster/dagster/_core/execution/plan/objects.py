@@ -111,10 +111,8 @@ class StepFailureData(
             user_code_error = self.error.cause
             check.invariant(
                 user_code_error,
-                (
-                    "User code error is missing cause. User code errors are expected to have a"
-                    " causes, which are the errors thrown from user code."
-                ),
+                "User code error is missing cause. User code errors are expected to have a"
+                " causes, which are the errors thrown from user code.",
             )
             return self.error.message.strip() + ":\n\n" + user_code_error.to_string()
         else:

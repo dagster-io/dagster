@@ -1,6 +1,6 @@
 import {Colors, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {formatElapsedTime} from '../app/Util';

@@ -3,7 +3,7 @@ import {Box, Caption, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 

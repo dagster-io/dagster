@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._utils.merger import merge_dicts
 
@@ -14,6 +13,7 @@ from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.events import AssetKey
 
     from ..execution.execute_in_process_result import ExecuteInProcessResult
 
@@ -36,7 +36,7 @@ def materialize(
         assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
             The assets to materialize.
 
-            Unless you're using `non_argument_deps`, you must also include all assets that are
+            Unless you're using `deps` or `non_argument_deps`, you must also include all assets that are
             upstream of the assets that you want to materialize. This is because those upstream
             asset definitions have information that is needed to load their contents while
             materializing the downstream assets.

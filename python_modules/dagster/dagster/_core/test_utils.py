@@ -7,6 +7,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from signal import Signals
+from threading import Event
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -504,8 +505,7 @@ def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
 ) -> Iterator[WorkspaceProcessContext]:
-    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
-    """
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     from dagster._daemon.controller import create_daemon_grpc_server_registry
 
     configure_loggers()
@@ -626,7 +626,7 @@ class SingleThreadPoolExecutor(ThreadPoolExecutor):
     """
 
     def __init__(self):
-        super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
+        super().__init__(max_workers=1, thread_name_prefix="single_threaded_worker")
 
 
 class SynchronousThreadPoolExecutor:
@@ -650,6 +650,28 @@ class SynchronousThreadPoolExecutor:
 
     def shutdown(self, wait=True):
         pass
+
+
+class BlockingThreadPoolExecutor(ThreadPoolExecutor):
+    """Utility class for testing thread timing by allowing for manual unblocking of the submitted threaded work."""
+
+    def __init__(self) -> None:
+        self._proceed = Event()
+        super().__init__()
+
+    def submit(self, fn, *args, **kwargs):
+        def _blocked_fn():
+            proceed = self._proceed.wait(60)
+            assert proceed
+            return fn(*args, **kwargs)
+
+        return super().submit(_blocked_fn)
+
+    def allow(self):
+        self._proceed.set()
+
+    def block(self):
+        self._proceed.clear()
 
 
 def ignore_warning(message_substr: str):

@@ -92,10 +92,14 @@ class EventLogEntry(
     @public
     @property
     def is_dagster_event(self) -> bool:
+        """bool: If this entry contains a DagsterEvent."""
         return bool(self.dagster_event)
 
     @public
     def get_dagster_event(self) -> DagsterEvent:
+        """DagsterEvent: Returns the DagsterEvent contained within this entry. If this entry does not
+        contain a DagsterEvent, an error will be raised.
+        """
         if not isinstance(self.dagster_event, DagsterEvent):
             check.failed(
                 "Not a dagster event, check is_dagster_event before calling get_dagster_event",
@@ -112,14 +116,14 @@ class EventLogEntry(
 
     @public
     @property
-    def dagster_event_type(self):
+    def dagster_event_type(self) -> Optional[DagsterEventType]:
+        """Optional[DagsterEventType]: The type of the DagsterEvent contained by this entry, if any."""
         return self.dagster_event.event_type if self.dagster_event else None
 
     @public
     @property
     def message(self) -> str:
-        """Return the message from the structured DagsterEvent if present, fallback to user_message.
-        """
+        """Return the message from the structured DagsterEvent if present, fallback to user_message."""
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
             if msg is not None:

@@ -5,7 +5,7 @@ import * as Types from '../../graphql/types';
 export type LocationStateChangeSubscriptionVariables = Types.Exact<{[key: string]: never}>;
 
 export type LocationStateChangeSubscription = {
-  __typename: 'DagitSubscription';
+  __typename: 'Subscription';
   locationStateChangeEvents: {
     __typename: 'LocationStateChangeSubscription';
     event: {

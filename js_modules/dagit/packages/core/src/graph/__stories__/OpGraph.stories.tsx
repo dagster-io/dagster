@@ -105,7 +105,7 @@ export const Basic = () => {
     <OpGraph
       jobName="Test Pipeline"
       ops={ops}
-      layout={getFullOpLayout(ops)}
+      layout={getFullOpLayout(ops, {})}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
@@ -133,7 +133,7 @@ export const FanOut = () => {
     <OpGraph
       jobName="Test Pipeline"
       ops={ops}
-      layout={getFullOpLayout(ops)}
+      layout={getFullOpLayout(ops, {})}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
@@ -158,7 +158,7 @@ export const Tagged = () => {
     <OpGraph
       jobName="Test Pipeline"
       ops={ops}
-      layout={getFullOpLayout(ops)}
+      layout={getFullOpLayout(ops, {})}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
@@ -216,7 +216,7 @@ export const Composite = () => {
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}
       parentHandleID={parentOpName}
-      layout={parentOp ? getFullOpLayout(childOps, parentOp) : getFullOpLayout(ops)}
+      layout={parentOp ? getFullOpLayout(childOps, {parentOp}) : getFullOpLayout(ops, {})}
       interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}

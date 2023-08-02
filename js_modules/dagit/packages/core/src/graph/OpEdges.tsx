@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {weakmapMemoize} from '../app/Util';
 import {buildSVGPath} from '../asset-graph/Utils';

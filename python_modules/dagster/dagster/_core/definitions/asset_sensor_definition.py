@@ -64,7 +64,7 @@ class AssetSensorDefinition(SensorDefinition):
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
     def __init__(
@@ -167,7 +167,8 @@ class AssetSensorDefinition(SensorDefinition):
 
     @public
     @property
-    def asset_key(self):
+    def asset_key(self) -> AssetKey:
+        """AssetKey: The key of the asset targeted by this sensor."""
         return self._asset_key
 
     @property

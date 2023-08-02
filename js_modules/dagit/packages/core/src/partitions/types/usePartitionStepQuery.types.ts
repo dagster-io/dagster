@@ -9,7 +9,7 @@ export type PartitionStepLoaderQueryVariables = Types.Exact<{
 }>;
 
 export type PartitionStepLoaderQuery = {
-  __typename: 'DagitQuery';
+  __typename: 'Query';
   pipelineRunsOrError:
     | {__typename: 'InvalidPipelineRunsFilterError'; message: string}
     | {

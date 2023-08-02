@@ -6,8 +6,10 @@ from dagster import (
     AssetKey,
     GraphDefinition,
     Int,
+    IntMetadataValue,
     IOManager,
     JobDefinition,
+    TextMetadataValue,
     asset,
     graph,
     io_manager,
@@ -85,6 +87,18 @@ def dagster_test_repository():
 
 def test_repository_construction():
     assert dagster_test_repository
+
+
+@repository(metadata={"string": "foo", "integer": 123})
+def metadata_repository():
+    return []
+
+
+def test_repository_metadata():
+    assert metadata_repository.metadata == {
+        "string": TextMetadataValue("foo"),
+        "integer": IntMetadataValue(123),
+    }
 
 
 @repository
@@ -180,4 +194,39 @@ def test_asset_value_loader_with_resources():
 
     resource_config = {"io_resource": {"config": {"key": 5}}}
     value = repo.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
+    assert value == 5
+
+
+def test_asset_value_loader_with_metadata():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert context.metadata is not None
+            return context.metadata.get("return") or 5
+
+    @io_manager()
+    def my_io_manager():
+        return MyIOManager()
+
+    @asset
+    def asset1():
+        ...
+
+    @asset(metadata={"return": 20})
+    def asset2():
+        ...
+
+    @repository
+    def repo():
+        return with_resources([asset1, asset2], resource_defs={"io_manager": my_io_manager})
+
+    value = repo.load_asset_value(AssetKey("asset1"))
+    assert value == 5
+
+    value = repo.load_asset_value(AssetKey("asset1"), metadata={"return": 10})
+    assert value == 10
+
+    value = repo.load_asset_value(AssetKey("asset2"))
     assert value == 5

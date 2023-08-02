@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 # start_failure_hook_op_exception
 from dagster import HookContext, failure_hook

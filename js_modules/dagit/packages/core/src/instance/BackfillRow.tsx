@@ -3,7 +3,7 @@ import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@da
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -444,7 +444,6 @@ export const BackfillStatusTag = ({
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
       return <Tag>In Progress</Tag>;
-    case BulkActionStatus.CANCELED:
     case BulkActionStatus.FAILED:
       return (
         <Box margin={{bottom: 12}}>
@@ -454,7 +453,7 @@ export const BackfillStatusTag = ({
               showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
             }
           >
-            <Tag intent="danger">{backfill.status === 'FAILED' ? 'Failed' : 'Canceled'}</Tag>
+            <Tag intent="danger">Failed</Tag>
           </TagButton>
         </Box>
       );
@@ -474,6 +473,8 @@ export const BackfillStatusTag = ({
       return <Tag intent="warning">Incomplete</Tag>;
     case BulkActionStatus.CANCELING:
       return <Tag>Canceling</Tag>;
+    case BulkActionStatus.CANCELED:
+      return <Tag>Canceled</Tag>;
   }
 };
 

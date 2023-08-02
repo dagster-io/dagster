@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence
@@ -24,7 +22,7 @@ class CapturedLogContext(
     )
 ):
     """Object representing the context in which logs are captured.  Can be used by external logging
-    sidecar implementations to point dagit to an external url to view compute logs instead of a
+    sidecar implementations to point the Dagster UI to an external url to view compute logs instead of a
     Dagster-managed location.
     """
 
@@ -107,7 +105,9 @@ class CapturedLogMetadata(
 
 
 class CapturedLogSubscription:
-    def __init__(self, manager: CapturedLogManager, log_key: Sequence[str], cursor: Optional[str]):
+    def __init__(
+        self, manager: "CapturedLogManager", log_key: Sequence[str], cursor: Optional[str]
+    ):
         self._manager = manager
         self._log_key = log_key
         self._cursor = cursor

@@ -7,6 +7,7 @@ from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tup
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -23,8 +24,7 @@ from .source_asset import SourceAsset
 def _find_assets_in_module(
     module: ModuleType,
 ) -> Generator[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], None, None]:
-    """Finds assets in the given module and adds them to the given sets of assets and source assets.
-    """
+    """Finds assets in the given module and adds them to the given sets of assets and source assets."""
     for attr in dir(module):
         value = getattr(module, attr)
         if isinstance(value, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)):
@@ -102,6 +102,7 @@ def load_assets_from_modules(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets from the given modules.
@@ -118,6 +119,7 @@ def load_assets_from_modules(
             assets.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
             to all the loaded assets.
+        backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
 
@@ -131,6 +133,7 @@ def load_assets_from_modules(
     auto_materialize_policy = check.opt_inst_param(
         auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
     )
+    backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
 
     (
         assets,
@@ -146,6 +149,7 @@ def load_assets_from_modules(
         group_name=group_name,
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
+        backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
     )
 
@@ -156,6 +160,7 @@ def load_assets_from_current_module(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
@@ -172,6 +177,7 @@ def load_assets_from_current_module(
             assets.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
             to all the loaded assets.
+        backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
 
@@ -190,6 +196,7 @@ def load_assets_from_current_module(
         key_prefix=key_prefix,
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
+        backfill_policy=backfill_policy,
     )
 
 
@@ -222,6 +229,7 @@ def load_assets_from_package_module(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets that includes all asset
@@ -241,6 +249,7 @@ def load_assets_from_package_module(
             assets.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
             to all the loaded assets.
+        backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
 
@@ -254,6 +263,7 @@ def load_assets_from_package_module(
     auto_materialize_policy = check.opt_inst_param(
         auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
     )
+    backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
 
     (
         assets,
@@ -268,6 +278,7 @@ def load_assets_from_package_module(
         group_name=group_name,
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
+        backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
     )
 
@@ -279,6 +290,7 @@ def load_assets_from_package_name(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
@@ -296,6 +308,7 @@ def load_assets_from_package_name(
             assets.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
             to all the loaded assets.
+        backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
 
@@ -310,6 +323,7 @@ def load_assets_from_package_name(
         key_prefix=key_prefix,
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
+        backfill_policy=backfill_policy,
     )
 
 
@@ -419,6 +433,7 @@ def assets_with_attributes(
     group_name: Optional[str],
     freshness_policy: Optional[FreshnessPolicy],
     auto_materialize_policy: Optional[AutoMaterializePolicy],
+    backfill_policy: Optional[BackfillPolicy],
     source_key_prefix: Optional[Sequence[str]],
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
@@ -433,14 +448,15 @@ def assets_with_attributes(
             cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
         ]
 
-    if group_name or freshness_policy or auto_materialize_policy:
+    if group_name or freshness_policy or auto_materialize_policy or backfill_policy:
         assets_defs = [
             asset.with_attributes(
-                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
-                if group_name
-                else None,
+                group_names_by_key=(
+                    {asset_key: group_name for asset_key in asset.keys} if group_name else None
+                ),
                 freshness_policy=freshness_policy,
                 auto_materialize_policy=auto_materialize_policy,
+                backfill_policy=backfill_policy,
             )
             for asset in assets_defs
         ]
@@ -454,6 +470,7 @@ def assets_with_attributes(
                 group_name,
                 freshness_policy=freshness_policy,
                 auto_materialize_policy=auto_materialize_policy,
+                backfill_policy=backfill_policy,
             )
             for cached_asset in cacheable_assets
         ]

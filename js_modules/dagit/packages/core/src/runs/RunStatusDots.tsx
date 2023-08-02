@@ -1,6 +1,6 @@
 import {Popover, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
-import styled, {css, keyframes} from 'styled-components/macro';
+import styled, {css, keyframes} from 'styled-components';
 
 import {RunStatus} from '../graphql/types';
 
@@ -27,7 +27,7 @@ interface RunStatusProps {
 }
 
 export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
-  if (status === 'STARTED') {
+  if (status === 'STARTED' || status === 'CANCELING') {
     return <Spinner purpose="caption-text" />;
   }
   if (status === 'SCHEDULED') {

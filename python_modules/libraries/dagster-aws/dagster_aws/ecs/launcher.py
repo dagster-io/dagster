@@ -93,10 +93,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         elif task_definition and "env" in task_definition:
             check.invariant(
                 len(task_definition) == 1,
-                (
-                    "If `task_definition` is set to a dictionary with `env`, `env` must be the only"
-                    " key."
-                ),
+                "If `task_definition` is set to a dictionary with `env`, `env` must be the only"
+                " key.",
             )
             env_var = task_definition["env"]
             self.task_definition = os.getenv(env_var)
@@ -116,11 +114,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         if self.secrets and all(isinstance(secret, str) for secret in self.secrets):
             warnings.warn(
-                (
-                    "Setting secrets as a list of ARNs is deprecated. "
-                    "Secrets should instead follow the same structure as the ECS API: "
-                    "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html"
-                ),
+                "Setting secrets as a list of ARNs is deprecated. "
+                "Secrets should instead follow the same structure as the ECS API: "
+                "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html",
                 DeprecationWarning,
             )
             self.secrets = [
@@ -141,10 +137,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             ]
             check.invariant(
                 container_name in container_names,
-                (
-                    f"Cannot override container '{container_name}' in task definition "
-                    f"'{self.task_definition}' because the container is not defined."
-                ),
+                f"Cannot override container '{container_name}' in task definition "
+                f"'{self.task_definition}' because the container is not defined.",
             )
             self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
 
@@ -212,6 +206,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if not self.task_definition_dict:
             return None
         return self.task_definition_dict.get("volumes")
+
+    @property
+    def repository_credentials(self) -> Optional[str]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("repository_credentials")
 
     @property
     def run_sidecar_containers(self) -> Optional[Sequence[Mapping[str, Any]]]:
@@ -601,6 +601,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     runtime_platform=runtime_platform,
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    repository_credentials=container_context.repository_credentials,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -622,6 +623,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     additional_sidecars=container_context.run_sidecar_containers,
+                    repository_credentials=container_context.repository_credentials,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

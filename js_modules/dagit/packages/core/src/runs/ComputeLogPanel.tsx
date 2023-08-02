@@ -14,13 +14,12 @@ interface ComputeLogPanelProps {
 
 interface ComputeLogPanelMaybeKeyProps extends ComputeLogPanelProps {
   computeLogFileKey?: string;
-  stepKeys: string[];
 }
 
 export const ComputeLogPanel: React.FC<ComputeLogPanelMaybeKeyProps> = (props) => {
-  const {runId, stepKeys, computeLogFileKey, ioType, setComputeLogUrl} = props;
+  const {runId, computeLogFileKey, ioType, setComputeLogUrl} = props;
 
-  if (!stepKeys.length || !computeLogFileKey) {
+  if (!computeLogFileKey) {
     return (
       <Box
         flex={{justifyContent: 'center', alignItems: 'center'}}

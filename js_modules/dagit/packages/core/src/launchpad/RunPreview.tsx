@@ -15,7 +15,7 @@ import {
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -230,7 +230,7 @@ const ExpandDefaultButton = ({
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Icon name="check_circle" color={Colors.Green500} />
-          No missing config
+          All defaults expanded
         </Box>
       ) : null}
     </Box>
@@ -247,6 +247,7 @@ interface RunPreviewProps {
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
   onExpandDefaults: () => void;
+  anyDefaultsToExpand: boolean;
   solidSelection: string[] | null;
 }
 
@@ -259,6 +260,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     onRemoveExtraPaths,
     onScaffoldMissingConfig,
     onExpandDefaults,
+    anyDefaultsToExpand,
     solidSelection,
     runConfigSchema,
   } = props;
@@ -434,7 +436,10 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
                 missingNodes={missingNodes}
                 disabled={!missingNodes.length}
               />
-              <ExpandDefaultButton onExpandDefaults={onExpandDefaults} disabled={false} />
+              <ExpandDefaultButton
+                onExpandDefaults={onExpandDefaults}
+                disabled={!anyDefaultsToExpand}
+              />
               <RemoveExtraConfigButton
                 onRemoveExtraPaths={onRemoveExtraPaths}
                 extraNodes={extraNodes}

@@ -1,7 +1,7 @@
 import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';

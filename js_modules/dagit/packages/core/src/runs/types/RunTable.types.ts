@@ -2,6 +2,8 @@
 
 import * as Types from '../../graphql/types';
 
+export type RunTagsFragment = {__typename: 'PipelineTag'; key: string; value: string};
+
 export type RunTableRunFragment = {
   __typename: 'Run';
   id: string;

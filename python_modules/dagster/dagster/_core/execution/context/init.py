@@ -62,22 +62,24 @@ class InitResourceContext:
     @public
     @property
     def resources(self) -> Resources:
+        """The resources that are available to the resource that we are initalizing."""
         return self._resources
 
     @public
     @property
     def instance(self) -> Optional[DagsterInstance]:
+        """The Dagster instance configured for the current execution context."""
         return self._instance
 
     @property
     def dagster_run(self) -> Optional[DagsterRun]:
-        """The dagster run to use. When initializing resources outside of execution context, this will be None.
-        """
+        """The dagster run to use. When initializing resources outside of execution context, this will be None."""
         return self._dagster_run
 
     @public
     @property
     def log(self) -> Optional[DagsterLogManager]:
+        """The Dagster log manager configured for the current execution context."""
         return self._log_manager
 
     # backcompat: keep around this property from when InitResourceContext used to be a NamedTuple

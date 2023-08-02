@@ -24,13 +24,12 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, ensure_gen
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -296,6 +295,7 @@ class ScheduleEvaluationContext:
     @public
     @property
     def instance(self) -> "DagsterInstance":
+        """DagsterInstance: The current DagsterInstance."""
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
         # constructed under test.
         if not self._instance_ref:
@@ -406,11 +406,11 @@ def build_schedule_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
     return ScheduleEvaluationContext(
-        instance_ref=instance_ref
-        if instance_ref
-        else instance.get_ref()
-        if instance and instance.is_persistent
-        else None,
+        instance_ref=(
+            instance_ref
+            if instance_ref
+            else instance.get_ref() if instance and instance.is_persistent else None
+        ),
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
@@ -465,6 +465,14 @@ def validate_and_get_schedule_resource_dict(
     return {k: getattr(resources, k) for k in required_resource_keys}
 
 
+@deprecated_param(
+    param="environment_vars",
+    breaking_version="2.0",
+    additional_warn_text=(
+        "It is no longer necessary. Schedules will have access to all environment variables set in"
+        " the containing environment, and can safely be deleted."
+    ),
+)
 class ScheduleDefinition(IHasInternalInit):
     """Define a schedule that targets a job.
 
@@ -506,7 +514,7 @@ class ScheduleDefinition(IHasInternalInit):
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from Dagit or via the GraphQL API.
+            status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
@@ -581,15 +589,6 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._description = check.opt_str_param(description, "description")
 
-        if environment_vars is not None:
-            deprecation_warning(
-                "`environment_vars` parameter to `ScheduleDefinition`",
-                "2.0.0",
-                (
-                    "It is no longer necessary. Schedules will have access to all environment"
-                    " variables set in the containing environment, and can safely be deleted."
-                ),
-            )
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
@@ -602,9 +601,9 @@ class ScheduleDefinition(IHasInternalInit):
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
-            self._execution_fn: Optional[
-                Union[Callable[..., Any], DecoratedScheduleFunction]
-            ] = None
+            self._execution_fn: Optional[Union[Callable[..., Any], DecoratedScheduleFunction]] = (
+                None
+            )
             if isinstance(execution_fn, DecoratedScheduleFunction):
                 self._execution_fn = execution_fn
             else:
@@ -648,7 +647,9 @@ class ScheduleDefinition(IHasInternalInit):
             def _execution_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of should_execute for schedule {name}",
+                    lambda: (
+                        f"Error occurred during the execution of should_execute for schedule {name}"
+                    ),
                 ):
                     if not self._should_execute(context):
                         yield SkipReason(
@@ -660,7 +661,9 @@ class ScheduleDefinition(IHasInternalInit):
 
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
+                    lambda: (
+                        f"Error occurred during the execution of run_config_fn for schedule {name}"
+                    ),
                 ):
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
@@ -704,10 +707,8 @@ class ScheduleDefinition(IHasInternalInit):
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
-            (
-                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
-                " the decorated function"
-            ),
+            "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+            " the decorated function",
         )
 
         self._required_resource_keys = (
@@ -780,42 +781,55 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def name(self) -> str:
+        """str: The name of the schedule."""
         return self._name
 
     @public
     @property
     def job_name(self) -> str:
+        """str: The name of the job targeted by this schedule."""
         return self._target.job_name
 
     @public
     @property
     def description(self) -> Optional[str]:
+        """Optional[str]: A description for this schedule."""
         return self._description
 
     @public
     @property
     def cron_schedule(self) -> Union[str, Sequence[str]]:
+        """Union[str, Sequence[str]]: The cron schedule representing when this schedule will be evaluated."""
         return self._cron_schedule  # type: ignore
 
     @public
-    @deprecated
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Setting this property no longer has any effect.",
+    )
     @property
     def environment_vars(self) -> Mapping[str, str]:
+        """Mapping[str, str]: Environment variables to export to the cron schedule."""
         return self._environment_vars
 
     @public
     @property
     def required_resource_keys(self) -> Set[str]:
+        """Set[str]: The set of keys for resources that must be provided to this schedule."""
         return self._required_resource_keys
 
     @public
     @property
     def execution_timezone(self) -> Optional[str]:
+        """Optional[str]: The timezone in which this schedule will be evaluated."""
         return self._execution_timezone
 
     @public
     @property
     def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
+        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+        targeted by this schedule.
+        """
         if isinstance(self._target, DirectTarget):
             return self._target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
@@ -864,10 +878,8 @@ class ScheduleDefinition(IHasInternalInit):
             result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))
             check.invariant(
                 not any(not request.run_key for request in result),
-                (
-                    "Schedules that return multiple RunRequests must specify a run_key in each"
-                    " RunRequest"
-                ),
+                "Schedules that return multiple RunRequests must specify a run_key in each"
+                " RunRequest",
             )
             run_requests = result
             skip_message = None
@@ -928,4 +940,7 @@ class ScheduleDefinition(IHasInternalInit):
     @public
     @property
     def default_status(self) -> DefaultScheduleStatus:
+        """DefaultScheduleStatus: The default status for this schedule when it is first loaded in
+        a code location.
+        """
         return self._default_status

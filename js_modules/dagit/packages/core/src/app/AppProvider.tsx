@@ -23,7 +23,7 @@ import {
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';

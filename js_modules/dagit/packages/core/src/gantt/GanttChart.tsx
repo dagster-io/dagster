@@ -14,7 +14,7 @@ import {
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
@@ -747,7 +747,7 @@ const GanttChartContainer = styled.div`
       border: 1px solid ${Colors.Gray800};
     }
     &.dynamic {
-      filter: brightness(125%);
+      filter: brightness(115%);
     }
 
     ${SpinnerWrapper} {

@@ -36,6 +36,7 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
@@ -67,7 +68,6 @@ from .base import (
     AssetRecord,
     EventLogConnection,
     EventLogCursor,
-    EventLogEntry,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
@@ -210,7 +210,7 @@ class SqlEventLogStorage(EventLogStorage):
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
         # event creation, we want to extend this functionality to ensure that assets with any event
         # (observation, materialization, or materialization planned) yielded with timestamp
-        # > wipe timestamp display in Dagit.
+        # > wipe timestamp display in the Dagster UI.
 
         # As of the following PRs, we update last_materialization_timestamp to store the timestamp
         # of the latest asset observation, materialization, or materialization_planned that has occurred.
@@ -337,16 +337,15 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
 
-        if (
-            event.dagster_event
-            and event.dagster_event.asset_key
-            and event.dagster_event.is_step_materialization
-            and isinstance(
-                event.dagster_event.step_materialization_data.materialization, AssetMaterialization
-            )
-            and event.dagster_event.step_materialization_data.materialization.tags
-        ):
-            if not self.has_table(AssetEventTagsTable.name):
+        if event.dagster_event and event.dagster_event.asset_key:
+            if event.dagster_event.is_step_materialization:
+                tags = event.dagster_event.step_materialization_data.materialization.tags
+            elif event.dagster_event.is_asset_observation:
+                tags = event.dagster_event.asset_observation_data.asset_observation.tags
+            else:
+                tags = None
+
+            if not tags or not self.has_table(AssetEventTagsTable.name):
                 # If tags table does not exist, silently exit. This is to support OSS
                 # users who have not yet run the migration to create the table.
                 # On read, we will throw an error if the table does not exist.
@@ -355,7 +354,6 @@ class SqlEventLogStorage(EventLogStorage):
             check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
             asset_key_str = event.dagster_event.asset_key.to_string()
 
-            tags = event.dagster_event.step_materialization_data.materialization.tags
             with self.index_connection() as conn:
                 conn.execute(
                     AssetEventTagsTable.insert(),
@@ -1065,9 +1063,11 @@ class SqlEventLogStorage(EventLogStorage):
                     last_materialization_record=last_materialization_record,
                     last_run_id=row["last_run_id"],
                     asset_details=AssetDetails.from_db_string(row["asset_details"]),
-                    cached_status=AssetStatusCacheValue.from_db_string(row["cached_status_data"])
-                    if can_cache_asset_status_data
-                    else None,
+                    cached_status=(
+                        AssetStatusCacheValue.from_db_string(row["cached_status_data"])
+                        if can_cache_asset_status_data
+                        else None
+                    ),
                 ),
             )
         else:
@@ -1204,9 +1204,9 @@ class SqlEventLogStorage(EventLogStorage):
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_latest_materialization_events(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
-        check.sequence_param(asset_keys, "asset_keys", AssetKey)
+        check.iterable_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         return {
             asset_key: event_log_record.event_log_entry if event_log_record is not None else None
@@ -1725,31 +1725,40 @@ class SqlEventLogStorage(EventLogStorage):
         return materialization_count_by_partition
 
     def _latest_event_ids_by_partition_subquery(
-        self, asset_key: AssetKey, dagster_event_types: Sequence[DagsterEventType]
+        self,
+        asset_key: AssetKey,
+        event_types: Sequence[DagsterEventType],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
     ):
         """Subquery for locating the latest event ids by partition for a given asset key and set
         of event types.
         """
-        latest_event_ids_subquery = (
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    SqlEventLogStorageTable.c.partition,
-                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
-                ]
+        query = db_select(
+            [
+                SqlEventLogStorageTable.c.dagster_event_type,
+                SqlEventLogStorageTable.c.partition,
+                db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+            ]
+        ).where(
+            db.and_(
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                SqlEventLogStorageTable.c.dagster_event_type.in_(
+                    [event_type.value for event_type in event_types]
+                ),
             )
-            .where(
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
-                    SqlEventLogStorageTable.c.dagster_event_type.in_(
-                        [dagster_event_type.value for dagster_event_type in dagster_event_types]
-                    ),
-                )
-            )
-            .group_by(
-                SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
-            )
+        )
+        if asset_partitions is not None:
+            query = query.where(SqlEventLogStorageTable.c.partition.in_(asset_partitions))
+        if before_cursor is not None:
+            query = query.where(SqlEventLogStorageTable.c.id < before_cursor)
+        if after_cursor is not None:
+            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
+
+        latest_event_ids_subquery = query.group_by(
+            SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
         )
 
         assets_details = self._get_assets_details([asset_key])
@@ -1761,7 +1770,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
     def get_latest_storage_id_by_partition(
-        self, asset_key: AssetKey, dagster_event_type: DagsterEventType
+        self, asset_key: AssetKey, event_type: DagsterEventType
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
@@ -1770,7 +1779,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [dagster_event_type]
+            asset_key, [event_type]
         )
         latest_event_ids_by_partition = db_select(
             [
@@ -1786,6 +1795,57 @@ class SqlEventLogStorage(EventLogStorage):
         for row in rows:
             latest_materialization_storage_id_by_partition[cast(str, row[0])] = cast(int, row[1])
         return latest_materialization_storage_id_by_partition
+
+    def get_latest_tags_by_partition(
+        self,
+        asset_key: AssetKey,
+        event_type: DagsterEventType,
+        tag_keys: Sequence[str],
+        asset_partitions: Optional[Sequence[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
+        check.inst_param(asset_key, "asset_key", AssetKey)
+        check.inst_param(event_type, "event_type", DagsterEventType)
+        check.sequence_param(tag_keys, "tag_keys", of_type=str)
+        check.opt_nullable_sequence_param(asset_partitions, "asset_partitions", of_type=str)
+        check.opt_int_param(before_cursor, "before_cursor")
+        check.opt_int_param(after_cursor, "after_cursor")
+
+        latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
+            asset_key=asset_key,
+            event_types=[event_type],
+            asset_partitions=asset_partitions,
+            before_cursor=before_cursor,
+            after_cursor=after_cursor,
+        )
+
+        latest_tags_by_partition_query = (
+            db_select(
+                [
+                    latest_event_ids_subquery.c.partition,
+                    AssetEventTagsTable.c.key,
+                    AssetEventTagsTable.c.value,
+                ]
+            )
+            .select_from(
+                latest_event_ids_subquery.join(
+                    AssetEventTagsTable,
+                    AssetEventTagsTable.c.event_id == latest_event_ids_subquery.c.id,
+                )
+            )
+            .where(AssetEventTagsTable.c.key.in_(tag_keys))
+        )
+
+        latest_tags_by_partition: Dict[str, Dict[str, str]] = defaultdict(dict)
+        with self.index_connection() as conn:
+            rows = conn.execute(latest_tags_by_partition_query).fetchall()
+
+        for row in rows:
+            latest_tags_by_partition[cast(str, row[0])][cast(str, row[1])] = cast(str, row[2])
+
+        # convert defaultdict to dict
+        return dict(latest_tags_by_partition)
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey
@@ -2108,9 +2168,11 @@ class SqlEventLogStorage(EventLogStorage):
 
             return ConcurrencyClaimStatus(
                 concurrency_key=concurrency_key,
-                slot_status=ConcurrencySlotStatus.CLAIMED
-                if slot_row and slot_row[0]
-                else ConcurrencySlotStatus.BLOCKED,
+                slot_status=(
+                    ConcurrencySlotStatus.CLAIMED
+                    if slot_row and slot_row[0]
+                    else ConcurrencySlotStatus.BLOCKED
+                ),
                 priority=priority,
                 assigned_timestamp=assigned_timestamp,
                 enqueued_timestamp=create_timestamp,

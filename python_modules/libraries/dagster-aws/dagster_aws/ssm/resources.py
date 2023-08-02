@@ -1,7 +1,6 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, cast
 
-import botocore
 from dagster import (
     Config,
     Field as LegacyDagsterField,
@@ -21,6 +20,9 @@ from .parameters import (
     get_parameters_by_paths,
     get_parameters_by_tags,
 )
+
+if TYPE_CHECKING:
+    import botocore
 
 
 class SSMResource(ResourceWithBoto3Configuration):

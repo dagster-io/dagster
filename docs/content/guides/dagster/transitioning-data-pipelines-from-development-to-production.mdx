@@ -47,7 +47,7 @@ In this section we will:
 
 - Write our assets
 - Add run configuration for the Snowflake I/O manager
-- Materialize assets in Dagit
+- Materialize assets in the Dagster UI
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
@@ -99,7 +99,7 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via Dagit as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
+Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
@@ -134,7 +134,7 @@ width={1538}
 height={730}
 />
 
-We can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
+We can materialize the assets in the UI and ensure that the data appears in Snowflake as we expect:
 
 <Image
 alt="alt"

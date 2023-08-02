@@ -5,26 +5,42 @@ import {Link} from 'react-router-dom';
 
 import {AssetLatestInfoRunFragment} from '../asset-graph/types/useLiveDataForAssetKeys.types';
 import {titleForRun} from '../runs/RunUtils';
+import {useStepLogs} from '../runs/StepLogsDialog';
 
 export const FailedRunSinceMaterializationBanner: React.FC<{
   run: AssetLatestInfoRunFragment | null;
   padding?: DirectionalSpacing;
   border?: BorderSetting;
-}> = ({run, border, padding = {vertical: 16, left: 24, right: 12}}) => {
-  if (run) {
-    return (
-      <Box padding={padding} border={border}>
-        <Alert
-          intent="error"
-          title={
-            <div style={{fontWeight: 400}}>
-              Run <Link to={`/runs/${run.id}`}>{titleForRun(run)}</Link> failed to materialize this
-              asset.
-            </div>
-          }
-        />
-      </Box>
-    );
-  }
-  return null;
+  stepKey?: string;
+}> = ({run, stepKey, border, padding = {vertical: 16, left: 24, right: 12}}) => {
+  const stepLogs = useStepLogs({runId: run?.id, stepKeys: stepKey ? [stepKey] : []});
+
+  return (
+    <>
+      {stepLogs.dialog}
+      {run && (
+        <Box
+          padding={padding}
+          border={border}
+          flex={{gap: 8, alignItems: 'center'}}
+          style={{width: '100%'}}
+        >
+          <div style={{flex: 1}}>
+            <Alert
+              intent="error"
+              title={
+                <Box flex={{justifyContent: 'space-between'}}>
+                  <div style={{fontWeight: 400}}>
+                    Run <Link to={`/runs/${run.id}`}>{titleForRun(run)}</Link> failed to materialize
+                    this asset.
+                  </div>
+                </Box>
+              }
+            />
+          </div>
+          {stepLogs.button}
+        </Box>
+      )}
+    </>
+  );
 };

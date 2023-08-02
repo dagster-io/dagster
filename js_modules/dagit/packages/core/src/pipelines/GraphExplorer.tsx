@@ -6,7 +6,7 @@ import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
 import {Route} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';

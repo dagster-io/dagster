@@ -2,7 +2,7 @@
 import {Collapse} from '@blueprintjs/core';
 import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 

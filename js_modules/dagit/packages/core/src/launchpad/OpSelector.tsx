@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Popover} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
@@ -32,7 +32,13 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
+import {
+  LiveDataForNode,
+  displayNameForAssetKey,
+  GraphNode,
+  nodeDependsOnSelf,
+  stepKeyForAsset,
+} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 
@@ -98,6 +104,7 @@ export const SidebarAssetInfo: React.FC<{
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
         isSourceAsset={definition.isSource}
+        stepKey={stepKeyForAsset(definition)}
         liveData={liveData}
       />
 
@@ -153,7 +160,7 @@ export const SidebarAssetInfo: React.FC<{
 
       {assetType && <TypeSidebarSection assetType={assetType} />}
 
-      {asset.partitionDefinition && (
+      {asset.partitionDefinition && !definition.isSource && (
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
             <p>{asset.partitionDefinition.description}</p>

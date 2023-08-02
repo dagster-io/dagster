@@ -229,8 +229,7 @@ class UnresolvedMappedExecutionStep(
     ),
     IExecutionStep,
 ):
-    """A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys.
-    """
+    """A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys."""
 
     def __new__(
         cls,
@@ -388,8 +387,7 @@ class UnresolvedCollectExecutionStep(
     ),
     IExecutionStep,
 ):
-    """A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves.
-    """
+    """A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves."""
 
     def __new__(
         cls,

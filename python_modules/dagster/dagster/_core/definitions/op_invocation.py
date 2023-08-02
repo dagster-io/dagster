@@ -174,9 +174,9 @@ def op_invocation_result(
         context=bound_context,
         kwargs=input_dict,
         context_arg_provided=compute_fn.has_context_arg(),
-        config_arg_cls=compute_fn.get_config_arg().annotation
-        if compute_fn.has_config_arg()
-        else None,
+        config_arg_cls=(
+            compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
+        ),
         resource_args=resource_arg_mapping,
     )
 
