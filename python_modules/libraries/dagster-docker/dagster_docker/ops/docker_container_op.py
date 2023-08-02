@@ -105,9 +105,11 @@ def execute_docker_container(
     """
     run_container_context = DockerContainerContext.create_for_run(
         context.dagster_run,
-        context.instance.run_launcher
-        if isinstance(context.instance.run_launcher, DockerRunLauncher)
-        else None,
+        (
+            context.instance.run_launcher
+            if isinstance(context.instance.run_launcher, DockerRunLauncher)
+            else None
+        ),
     )
 
     validate_docker_image(image)

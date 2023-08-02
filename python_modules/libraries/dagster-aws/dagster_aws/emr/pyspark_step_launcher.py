@@ -240,10 +240,8 @@ class EmrPySparkStepLauncher(StepLauncher):
 
         check.invariant(
             not deploy_local_job_package or not s3_job_package_path,
-            (
-                "If deploy_local_job_package is set to True, s3_job_package_path should not "
-                "also be set."
-            ),
+            "If deploy_local_job_package is set to True, s3_job_package_path should not "
+            "also be set.",
         )
 
         self.local_job_package_path = check.str_param(

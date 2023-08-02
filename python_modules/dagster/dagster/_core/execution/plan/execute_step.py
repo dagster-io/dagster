@@ -203,10 +203,8 @@ def _step_output_error_checked_user_event_sequence(
                 yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(
-                    (
-                        f"Core compute for {op_label} did not return an output for non-optional "
-                        f'output "{step_output_def.name}"'
-                    ),
+                    f"Core compute for {op_label} did not return an output for non-optional "
+                    f'output "{step_output_def.name}"',
                     step_key=step.key,
                     output_name=step_output_def.name,
                 )
@@ -269,7 +267,10 @@ def _type_checked_event_sequence_for_input(
 
     with user_code_error_boundary(
         DagsterTypeCheckError,
-        lambda: f'Error occurred while type-checking input "{input_name}" of {op_label}, with Python type {input_type} and Dagster type {dagster_type.display_name}',
+        lambda: (
+            f'Error occurred while type-checking input "{input_name}" of {op_label}, with Python'
+            f" type {input_type} and Dagster type {dagster_type.display_name}"
+        ),
         log_manager=type_check_context.log,
     ):
         type_check = do_type_check(type_check_context, dagster_type, input_value)
@@ -309,7 +310,10 @@ def _type_check_output(
 
     with user_code_error_boundary(
         DagsterTypeCheckError,
-        lambda: f'Error occurred while type-checking output "{output.output_name}" of {op_label}, with Python type {output_type} and Dagster type {dagster_type.display_name}',
+        lambda: (
+            f'Error occurred while type-checking output "{output.output_name}" of {op_label}, with'
+            f" Python type {output_type} and Dagster type {dagster_type.display_name}"
+        ),
         log_manager=type_check_context.log,
     ):
         type_check = do_type_check(type_check_context, dagster_type, output.value)

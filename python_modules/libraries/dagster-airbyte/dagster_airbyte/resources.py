@@ -438,9 +438,11 @@ class AirbyteResource(BaseAirbyteResource):
                             headers=headers,
                             json=data,
                             timeout=self.request_timeout,
-                            auth=(self.username, self.password)
-                            if self.username and self.password
-                            else None,
+                            auth=(
+                                (self.username, self.password)
+                                if self.username and self.password
+                                else None
+                            ),
                         ),
                         self.request_additional_params,
                     ),

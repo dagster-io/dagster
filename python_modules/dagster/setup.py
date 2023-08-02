@@ -124,7 +124,7 @@ setup(
             "morefs[asynclocal]; python_version>='3.8'",
         ],
         "black": [
-            "black[jupyter]==22.12.0",
+            "black[jupyter]==23.7.0",
         ],
         "mypy": [
             "mypy==0.991",

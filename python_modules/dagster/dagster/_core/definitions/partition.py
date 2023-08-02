@@ -608,10 +608,8 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
 
         check.invariant(
             xor(run_config_for_partition_fn, run_config_for_partition_key_fn),
-            (
-                "Must provide exactly one of run_config_for_partition_fn or"
-                " run_config_for_partition_key_fn"
-            ),
+            "Must provide exactly one of run_config_for_partition_fn or"
+            " run_config_for_partition_key_fn",
         )
         check.invariant(
             not (tags_for_partition_fn and tags_for_partition_key_fn),
@@ -636,8 +634,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
     def partitions_def(
         self,
     ) -> T_PartitionsDefinition:
-        """T_PartitionsDefinition: The partitions definition associated with this PartitionedConfig.
-        """
+        """T_PartitionsDefinition: The partitions definition associated with this PartitionedConfig."""
         return self._partitions
 
     @deprecated(
@@ -766,10 +763,8 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         if isinstance(config, PartitionedConfig):
             check.invariant(
                 config.partitions_def == partitions_def,
-                (
-                    "Can't supply a PartitionedConfig for 'config' with a different "
-                    "PartitionsDefinition than supplied for 'partitions_def'."
-                ),
+                "Can't supply a PartitionedConfig for 'config' with a different "
+                "PartitionsDefinition than supplied for 'partitions_def'.",
             )
             return config
         else:

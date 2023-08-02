@@ -49,8 +49,7 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):
-    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext.
-    """
+    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
     def has_tag(self, key: str) -> bool:
@@ -425,8 +424,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def retry_number(self) -> int:
-        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
-        """
+        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self):
@@ -434,8 +432,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def get_mapping_key(self) -> Optional[str]:
-        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
-        """
+        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None."""
         return self._step_execution_context.step.get_mapping_key()
 
     #############################################################################################
@@ -465,8 +462,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
-        """Get the output names that correspond to the current selection of assets this execution is expected to materialize.
-        """
+        """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
         # map selected asset keys to the output names they correspond to
         selected_asset_keys = self.selected_asset_keys
         selected_outputs: Set[str] = set()
@@ -535,8 +531,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
-        """
+        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one."""
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public

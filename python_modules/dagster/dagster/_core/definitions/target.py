@@ -16,8 +16,7 @@ ExecutableDefinition: TypeAlias = Union[
 
 
 class RepoRelativeTarget(NamedTuple):
-    """The thing to be executed by a schedule or sensor, selecting by name a job in the same repository.
-    """
+    """The thing to be executed by a schedule or sensor, selecting by name a job in the same repository."""
 
     job_name: str
     op_selection: Optional[Sequence[str]]

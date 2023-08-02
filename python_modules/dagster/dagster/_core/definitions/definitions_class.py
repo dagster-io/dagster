@@ -202,24 +202,32 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 
     # Update all schedules and sensors to use the resource bound version
     updated_schedules = [
-        schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
-        if (
-            isinstance(schedule, ScheduleDefinition)
-            and schedule.has_loadable_target()
-            and schedule.job in unsatisfied_jobs
+        (
+            schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
+            if (
+                isinstance(schedule, ScheduleDefinition)
+                and schedule.has_loadable_target()
+                and schedule.job in unsatisfied_jobs
+            )
+            else schedule
         )
-        else schedule
         for schedule in schedules
     ]
     updated_sensors = [
-        sensor.with_updated_jobs(
-            [
-                unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
-                for job in sensor.jobs
-            ]
+        (
+            sensor.with_updated_jobs(
+                [
+                    (
+                        unsatisfied_job_to_resource_bound_job[id(job)]
+                        if job in unsatisfied_jobs
+                        else job
+                    )
+                    for job in sensor.jobs
+                ]
+            )
+            if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
+            else sensor
         )
-        if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
-        else sensor
         for sensor in sensors
     ]
 

@@ -16,7 +16,7 @@ line-length = 100
 preview = true
 
 # Black will refuse to run if it's not this version.
-required-version = "22.12.0"
+required-version = "23.7.0"
 
 # Ensure black's output will be compatible with all listed versions.
 target-versions = ['py38', 'py39', 'py310', 'py311']

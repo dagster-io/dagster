@@ -82,9 +82,9 @@ class RandomAssets(NamedTuple):
         @multi_asset(
             outs={
                 f"asset_{i}": AssetOut(
-                    freshness_policy=FreshnessPolicy(maximum_lag_minutes=10)
-                    if i in freshness_ids
-                    else None,
+                    freshness_policy=(
+                        FreshnessPolicy(maximum_lag_minutes=10) if i in freshness_ids else None
+                    ),
                     dagster_type=Nothing,
                     is_required=False,
                 )

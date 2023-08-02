@@ -316,7 +316,10 @@ def _get_error_lambda(current_stack: DescentStack) -> Callable[[], str]:
 
 def _get_top_level_error_lambda(job_def: JobDefinition) -> Callable[[], str]:
     return (
-        lambda: f"The config mapping function on top-level graph {job_def.graph.name} in job {job_def.name} has thrown an unexpected error during its execution."
+        lambda: (
+            f"The config mapping function on top-level graph {job_def.graph.name} in job"
+            f" {job_def.name} has thrown an unexpected error during its execution."
+        )
     )
 
 

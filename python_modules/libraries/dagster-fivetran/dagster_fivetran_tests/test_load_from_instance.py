@@ -86,9 +86,11 @@ def test_load_from_instance(
             rsps.add(
                 method=rsps.GET,
                 url=ft_resource.api_base_url + "groups/some_group/connectors",
-                json=get_sample_connectors_response_multiple()
-                if multiple_connectors
-                else get_sample_connectors_response(),
+                json=(
+                    get_sample_connectors_response_multiple()
+                    if multiple_connectors
+                    else get_sample_connectors_response()
+                ),
                 status=200,
                 match=[matchers.header_matcher(expected_auth_header)],
             )

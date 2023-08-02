@@ -133,10 +133,8 @@ class DagsterGraphQLClient:
         # The following invariant will never fail when a job is executed
         check.invariant(
             (mode is not None and run_config is not None) or preset is not None,
-            (
-                "Either a mode and run_config or a preset must be specified in order to "
-                f"submit the pipeline {pipeline_name} for execution"
-            ),
+            "Either a mode and run_config or a preset must be specified in order to "
+            f"submit the pipeline {pipeline_name} for execution",
         )
         tags = validate_tags(tags)
 
@@ -147,10 +145,8 @@ class DagsterGraphQLClient:
             if len(job_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
-                    (
-                        f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
-                        f" `{pipeline_name}` exist"
-                    ),
+                    f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
+                    f" `{pipeline_name}` exist",
                 )
             elif len(job_info_lst) == 1:
                 job_info = job_info_lst[0]
@@ -180,9 +176,9 @@ class DagsterGraphQLClient:
                 **variables["executionParams"],
                 "runConfigData": run_config,
                 "mode": mode,
-                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
-                if tags
-                else {},
+                "executionMetadata": (
+                    {"tags": [{"key": k, "value": v} for k, v in tags.items()]} if tags else {}
+                ),
             }
 
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)

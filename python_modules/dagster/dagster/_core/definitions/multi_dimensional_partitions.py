@@ -378,10 +378,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         partition_key_strs = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)
         check.invariant(
             len(partition_key_strs) == len(self.partitions_defs),
-            (
-                f"Expected {len(self.partitions_defs)} partition keys in partition key string"
-                f" {partition_key_str}, but got {len(partition_key_strs)}"
-            ),
+            f"Expected {len(self.partitions_defs)} partition keys in partition key string"
+            f" {partition_key_str}, but got {len(partition_key_strs)}",
         )
 
         return MultiPartitionKey(
@@ -468,10 +466,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
         check.invariant(
             len(matching_dimensions) == 1,
-            (
-                f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
-                f" {[dim.name for dim in self.partitions_defs]}"
-            ),
+            f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
+            f" {[dim.name for dim in self.partitions_defs]}",
         )
 
         partition_sequences = [

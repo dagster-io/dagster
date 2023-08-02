@@ -335,8 +335,7 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_executor(self) -> bool:
-        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to.
-        """
+        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._executor_def is not None
 
     @public
@@ -380,8 +379,7 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_loggers(self) -> bool:
-        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to.
-        """
+        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._loggers is not None
 
     @property
@@ -643,10 +641,8 @@ class JobDefinition(IHasInternalInit):
 
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
 
         partition_key = check.opt_str_param(partition_key, "partition_key")
@@ -741,10 +737,8 @@ class JobDefinition(IHasInternalInit):
     ) -> Self:
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
@@ -1034,10 +1028,8 @@ def default_job_io_manager(init_context: "InitResourceContext"):
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager
@@ -1076,10 +1068,8 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager

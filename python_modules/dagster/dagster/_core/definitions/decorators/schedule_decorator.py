@@ -122,7 +122,10 @@ def schedule(
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of should_execute for schedule {schedule_name}",
+                    lambda: (
+                        "Error occurred during the execution of should_execute for schedule"
+                        f" {schedule_name}"
+                    ),
                 ):
                     if not should_execute(context):
                         yield SkipReason(

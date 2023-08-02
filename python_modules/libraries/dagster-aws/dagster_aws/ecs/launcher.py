@@ -93,10 +93,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         elif task_definition and "env" in task_definition:
             check.invariant(
                 len(task_definition) == 1,
-                (
-                    "If `task_definition` is set to a dictionary with `env`, `env` must be the only"
-                    " key."
-                ),
+                "If `task_definition` is set to a dictionary with `env`, `env` must be the only"
+                " key.",
             )
             env_var = task_definition["env"]
             self.task_definition = os.getenv(env_var)
@@ -116,11 +114,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         if self.secrets and all(isinstance(secret, str) for secret in self.secrets):
             warnings.warn(
-                (
-                    "Setting secrets as a list of ARNs is deprecated. "
-                    "Secrets should instead follow the same structure as the ECS API: "
-                    "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html"
-                ),
+                "Setting secrets as a list of ARNs is deprecated. "
+                "Secrets should instead follow the same structure as the ECS API: "
+                "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html",
                 DeprecationWarning,
             )
             self.secrets = [
@@ -141,10 +137,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             ]
             check.invariant(
                 container_name in container_names,
-                (
-                    f"Cannot override container '{container_name}' in task definition "
-                    f"'{self.task_definition}' because the container is not defined."
-                ),
+                f"Cannot override container '{container_name}' in task definition "
+                f"'{self.task_definition}' because the container is not defined.",
             )
             self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
 

@@ -151,16 +151,18 @@ class GrapheneResourceDetails(graphene.ObjectType):
             GrapheneNestedResourceEntry(
                 name=k,
                 type=v.type,
-                resource=get_resource_or_error(
-                    graphene_info,
-                    ResourceSelector(
-                        location_name=self._location_name,
-                        repository_name=self._repository_name,
-                        resource_name=v.name,
-                    ),
-                )
-                if v.type == NestedResourceType.TOP_LEVEL
-                else None,
+                resource=(
+                    get_resource_or_error(
+                        graphene_info,
+                        ResourceSelector(
+                            location_name=self._location_name,
+                            repository_name=self._repository_name,
+                            resource_name=v.name,
+                        ),
+                    )
+                    if v.type == NestedResourceType.TOP_LEVEL
+                    else None
+                ),
             )
             for k, v in self._nested_resources.items()
         ]

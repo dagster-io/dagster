@@ -65,7 +65,9 @@ def hello_logging_job():
         "critical": test_file_logger,
     },
     resource_defs={
-        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager.configure_at_launch(),
+        "output_notebook_io_manager": (
+            ConfigurableLocalOutputNotebookIOManager.configure_at_launch()
+        ),
     },
 )
 def hello_logging_job_pythonic():

@@ -77,10 +77,8 @@ class AutoMaterializePolicy(
         )
         check.invariant(
             max_materializations_per_minute is None or max_materializations_per_minute > 0,
-            (
-                "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
-                " to None. To disable auto materializing, remove the policy."
-            ),
+            "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
+            " to None. To disable auto materializing, remove the policy.",
         )
 
         return super(AutoMaterializePolicy, cls).__new__(

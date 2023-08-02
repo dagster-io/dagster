@@ -128,8 +128,7 @@ class AssetDaemonContext:
     def get_implicit_auto_materialize_policy(
         self, asset_key: AssetKey
     ) -> Optional[AutoMaterializePolicy]:
-        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day.
-        """
+        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
         auto_materialize_policy = self.asset_graph.get_auto_materialize_policy(asset_key)
         if auto_materialize_policy is None:
             time_partitions_def = get_time_partitions_def(

@@ -541,10 +541,8 @@ def test_invalid_configurable_module():
     with pytest.raises(
         check.CheckError,
         match=re.escape(
-            (
-                "Couldn't import module made_up_module when attempting to load "
-                "the configurable class made_up_module.MadeUpRunLauncher"
-            ),
+            "Couldn't import module made_up_module when attempting to load "
+            "the configurable class made_up_module.MadeUpRunLauncher",
         ),
     ):
         with instance_for_test(

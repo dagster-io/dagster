@@ -965,7 +965,7 @@ def get_retry_multi_execution_params(
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
+            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else [],
         },
     }
 

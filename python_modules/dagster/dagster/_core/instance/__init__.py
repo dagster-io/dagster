@@ -435,20 +435,16 @@ class DagsterInstance(DynamicPartitionsStore):
         if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:
             check.invariant(
                 self.run_launcher.supports_resume_run,
-                (
-                    "The configured run launcher does not support resuming runs. Set"
-                    " max_resume_run_attempts to 0 to use run monitoring. Any runs with a failed"
-                    " run worker will be marked as failed, but will not be resumed."
-                ),
+                "The configured run launcher does not support resuming runs. Set"
+                " max_resume_run_attempts to 0 to use run monitoring. Any runs with a failed"
+                " run worker will be marked as failed, but will not be resumed.",
             )
 
         if self.run_retries_enabled:
             check.invariant(
                 self.event_log_storage.supports_event_consumer_queries(),
-                (
-                    "Run retries are enabled, but the configured event log storage does not support"
-                    " them. Consider switching to Postgres or Mysql."
-                ),
+                "Run retries are enabled, but the configured event log storage does not support"
+                " them. Consider switching to Postgres or Mysql.",
             )
 
     # ctors
@@ -632,9 +628,9 @@ class DagsterInstance(DynamicPartitionsStore):
                     "\nDAGSTER_HOME environment variable is not set, set it to "
                     "a directory on the filesystem for dagster to use for storage and cross "
                     "process coordination."
-                )
-                if os.getenv("DAGSTER_HOME") is None
-                else "",
+                    if os.getenv("DAGSTER_HOME") is None
+                    else ""
+                ),
             )
         )
 
@@ -1156,11 +1152,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.invariant(
             not (not job_snapshot and execution_plan_snapshot),
-            (
-                "It is illegal to have an execution plan snapshot and not have a pipeline snapshot."
-                " It is possible to have no execution plan snapshot since we persist runs that do"
-                " not successfully compile execution plans in the scheduled case."
-            ),
+            "It is illegal to have an execution plan snapshot and not have a pipeline snapshot."
+            " It is possible to have no execution plan snapshot since we persist runs that do"
+            " not successfully compile execution plans in the scheduled case.",
         )
 
         job_snapshot_id = (
@@ -1375,10 +1369,8 @@ class DagsterInstance(DynamicPartitionsStore):
         if root_run_id or parent_run_id:
             check.invariant(
                 root_run_id and parent_run_id,
-                (
-                    "If root_run_id or parent_run_id is passed, this is a re-execution scenario and"
-                    " root_run_id and parent_run_id must both be passed."
-                ),
+                "If root_run_id or parent_run_id is passed, this is a re-execution scenario and"
+                " root_run_id and parent_run_id must both be passed.",
             )
 
         # The job_snapshot should always be set in production scenarios. In tests
@@ -1498,8 +1490,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
         tags = merge_dicts(
             external_job.tags,
-            # these can differ from external_job.tags if tags were added at launch time
-            parent_run.tags if use_parent_run_tags else {},
+            (
+                # these can differ from external_job.tags if tags were added at launch time
+                parent_run.tags
+                if use_parent_run_tags
+                else {}
+            ),
             extra_tags or {},
             {
                 PARENT_RUN_ID_TAG: parent_run_id,
@@ -2151,8 +2147,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
     ) -> None:
-        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun.
-        """
+        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
 
         event_record = EventLogEntry(
@@ -2693,8 +2688,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def should_start_background_run_thread(self) -> bool:
-        """Gate on an experimental feature to start a thread that monitors for if the run should be canceled.
-        """
+        """Gate on an experimental feature to start a thread that monitors for if the run should be canceled."""
         return False
 
     def get_tick_retention_settings(

@@ -227,15 +227,13 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @public
     @property
     def ins(self) -> Mapping[str, In]:
-        """Mapping[str, In]: A mapping from input name to the In object that represents that input.
-        """
+        """Mapping[str, In]: A mapping from input name to the In object that represents that input."""
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
     @public
     @property
     def outs(self) -> Mapping[str, Out]:
-        """Mapping[str, Out]: A mapping from output name to the Out object that represents that output.
-        """
+        """Mapping[str, Out]: A mapping from output name to the Out object that represents that output."""
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @property
@@ -251,8 +249,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
-        """AbstractSet[str]: A set of keys for resources that must be provided to this OpDefinition.
-        """
+        """AbstractSet[str]: A set of keys for resources that must be provided to this OpDefinition."""
         return frozenset(self._required_resource_keys)
 
     @public

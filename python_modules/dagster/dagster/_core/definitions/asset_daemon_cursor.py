@@ -127,12 +127,12 @@ class AssetDaemonCursor(NamedTuple):
                     PartitionsDefinition, asset_graph.get_partitions_def(asset_key)
                 ).empty_subset()
 
-            result_handled_root_partitions_by_asset_key[
-                asset_key
-            ] = prior_materialized_partitions.with_partition_keys(
-                itertools.chain(
-                    newly_materialized_root_partitions_by_asset_key[asset_key],
-                    handled_root_partitions_by_asset_key[asset_key],
+            result_handled_root_partitions_by_asset_key[asset_key] = (
+                prior_materialized_partitions.with_partition_keys(
+                    itertools.chain(
+                        newly_materialized_root_partitions_by_asset_key[asset_key],
+                        handled_root_partitions_by_asset_key[asset_key],
+                    )
                 )
             )
 
@@ -146,9 +146,9 @@ class AssetDaemonCursor(NamedTuple):
             **self.last_observe_request_timestamp_by_asset_key
         }
         for asset_key in newly_observe_requested_asset_keys:
-            result_last_observe_request_timestamp_by_asset_key[
-                asset_key
-            ] = observe_request_timestamp
+            result_last_observe_request_timestamp_by_asset_key[asset_key] = (
+                observe_request_timestamp
+            )
 
         if latest_storage_id and self.latest_storage_id:
             check.invariant(
@@ -253,7 +253,9 @@ class AssetDaemonCursor(NamedTuple):
                 "handled_root_asset_keys": [
                     key.to_user_string() for key in self.handled_root_asset_keys
                 ],
-                "handled_root_partitions_by_asset_key": serializable_handled_root_partitions_by_asset_key,
+                "handled_root_partitions_by_asset_key": (
+                    serializable_handled_root_partitions_by_asset_key
+                ),
                 "evaluation_id": self.evaluation_id,
                 "last_observe_request_timestamp_by_asset_key": {
                     key.to_user_string(): timestamp

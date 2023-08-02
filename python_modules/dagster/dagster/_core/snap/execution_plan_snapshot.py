@@ -281,15 +281,17 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
         ),
         node_handle_id=execution_step.node_handle.to_string(),
         kind=execution_step.kind,
-        metadata_items=sorted(
-            [
-                ExecutionPlanMetadataItemSnap(key=key, value=value)
-                for key, value in execution_step.tags.items()
-            ],
-            key=lambda md: md.key,
-        )
-        if execution_step.tags
-        else [],
+        metadata_items=(
+            sorted(
+                [
+                    ExecutionPlanMetadataItemSnap(key=key, value=value)
+                    for key, value in execution_step.tags.items()
+                ],
+                key=lambda md: md.key,
+            )
+            if execution_step.tags
+            else []
+        ),
         tags=execution_step.tags,
         step_handle=execution_step.handle,
     )

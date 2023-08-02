@@ -199,9 +199,9 @@ def _get_dependency_node_output_handles(
     if node_output_handle in dep_node_output_handles_by_node_output_handle:
         return dep_node_output_handles_by_node_output_handle[node_output_handle]
 
-    dependency_node_output_handles: List[
-        NodeOutputHandle
-    ] = []  # first node in list is node output handle that outputs the asset
+    dependency_node_output_handles: List[NodeOutputHandle] = (
+        []
+    )  # first node in list is node output handle that outputs the asset
 
     if curr_node_handle not in outputs_by_graph_handle:
         dependency_node_output_handles.append(node_output_handle)
@@ -228,9 +228,9 @@ def _get_dependency_node_output_handles(
         )
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_output_handles_by_node_output_handle[
-            node_output_handle
-        ] = dependency_node_output_handles
+        dep_node_output_handles_by_node_output_handle[node_output_handle] = (
+            dependency_node_output_handles
+        )
 
     return dependency_node_output_handles
 
@@ -291,15 +291,13 @@ def asset_key_to_dep_node_handles(
     dep_node_outputs_by_asset_key: Dict[AssetKey, List[NodeOutputHandle]] = {}
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        dep_node_output_handles_by_node: Dict[
-            NodeOutputHandle, Sequence[NodeOutputHandle]
-        ] = (
+        dep_node_output_handles_by_node: Dict[NodeOutputHandle, Sequence[NodeOutputHandle]] = (
             {}
         )  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
-            dep_nodes_by_asset_key[
-                asset_key
-            ] = []  # first element in list is node that outputs asset
+            dep_nodes_by_asset_key[asset_key] = (
+                []
+            )  # first element in list is node that outputs asset
 
             dep_node_outputs_by_asset_key[asset_key] = []
 
@@ -508,9 +506,9 @@ class AssetLayer:
 
                 partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
                 if partition_mapping is not None:
-                    partition_mappings_by_asset_dep[
-                        (node_handle, resolved_asset_key)
-                    ] = partition_mapping
+                    partition_mappings_by_asset_dep[(node_handle, resolved_asset_key)] = (
+                        partition_mapping
+                    )
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -779,11 +777,9 @@ def build_asset_selection_job(
         for asset in included_assets:
             check.invariant(
                 asset.partitions_def == partitions_def or asset.partitions_def is None,
-                (
-                    f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
-                    f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
-                    f"{partitions_def}."
-                ),
+                f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
+                f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
+                f"{partitions_def}.",
             )
 
     if len(included_assets) > 0:

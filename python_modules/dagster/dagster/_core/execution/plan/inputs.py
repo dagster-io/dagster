@@ -240,10 +240,8 @@ class FromSourceAsset(
         input_asset_key = job_def.asset_layer.asset_key_for_input(self.node_handle, self.input_name)
         if input_asset_key is None:
             check.failed(
-                (
-                    f"Must have an asset key associated with input {self.input_name} to load it"
-                    " using FromSourceAsset"
-                ),
+                f"Must have an asset key associated with input {self.input_name} to load it"
+                " using FromSourceAsset",
             )
 
         input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
@@ -284,11 +282,9 @@ class FromInputManager(
 
         check.invariant(
             step_context.node_handle == self.node_handle and input_def.name == self.input_name,
-            (
-                "InputManager source must be op input and not one along composition mapping. "
-                f"Loading for op {step_context.node_handle}.{input_def.name} "
-                f"but source is {self.node_handle}.{self.input_name}."
-            ),
+            "InputManager source must be op input and not one along composition mapping. "
+            f"Loading for op {step_context.node_handle}.{input_def.name} "
+            f"but source is {self.node_handle}.{self.input_name}.",
         )
 
         input_def = step_context.op_def.input_def_named(input_def.name)
@@ -466,12 +462,10 @@ class FromStepOutput(
             input_manager = getattr(step_context.resources, manager_key)
             check.invariant(
                 isinstance(input_manager, InputManager),
-                (
-                    f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                    f'the manager "{manager_key}" to load it, but it is not an InputManager. '
-                    "Please ensure that the resource returned for resource key "
-                    f'"{manager_key}" is an InputManager.'
-                ),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager "{manager_key}" to load it, but it is not an InputManager. '
+                "Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an InputManager.',
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
@@ -480,13 +474,11 @@ class FromStepOutput(
             input_manager = step_context.get_io_manager(source_handle)
             check.invariant(
                 isinstance(input_manager, IOManager),
-                (
-                    f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                    f'the manager of upstream output "{source_handle.output_name}" from step '
-                    f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
-                    "Please ensure that the resource returned for resource key "
-                    f'"{manager_key}" is an IOManager.'
-                ),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager of upstream output "{source_handle.output_name}" from step '
+                f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
+                "Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an IOManager.',
             )
         load_input_context = self.get_load_context(
             step_context, input_def, io_manager_key=manager_key
@@ -686,8 +678,7 @@ class FromMultipleSources(
     ),
     StepInputSource,
 ):
-    """This step input is fans-in multiple sources in to a single input. The input will receive a list.
-    """
+    """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
 
     def __new__(
         cls,
@@ -1007,8 +998,7 @@ class UnresolvedMappedStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
-        """
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys."""
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
@@ -1035,8 +1025,7 @@ class UnresolvedCollectStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
-        """
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys."""
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 

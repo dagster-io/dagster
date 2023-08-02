@@ -105,28 +105,32 @@ def _build_airbyte_asset_defn_metadata(
         internal_deps[table] = set(upstream_assets or [])
 
     return AssetsDefinitionCacheableData(
-        keys_by_input_name={asset_key.path[-1]: asset_key for asset_key in upstream_assets}
-        if upstream_assets
-        else {},
+        keys_by_input_name=(
+            {asset_key.path[-1]: asset_key for asset_key in upstream_assets}
+            if upstream_assets
+            else {}
+        ),
         keys_by_output_name=outputs,
         internal_asset_deps=internal_deps,
         group_name=group_name,
         key_prefix=asset_key_prefix,
         can_subset=False,
-        metadata_by_output_name={
-            table: {"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
-            for table in tables
-        }
-        if schema_by_table_name
-        else None,
-        freshness_policies_by_output_name={output: freshness_policy for output in outputs}
-        if freshness_policy
-        else None,
-        auto_materialize_policies_by_output_name={
-            output: auto_materialize_policy for output in outputs
-        }
-        if auto_materialize_policy
-        else None,
+        metadata_by_output_name=(
+            {
+                table: {"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
+                for table in tables
+            }
+            if schema_by_table_name
+            else None
+        ),
+        freshness_policies_by_output_name=(
+            {output: freshness_policy for output in outputs} if freshness_policy else None
+        ),
+        auto_materialize_policies_by_output_name=(
+            {output: auto_materialize_policy for output in outputs}
+            if auto_materialize_policy
+            else None
+        ),
         extra_metadata={
             "connection_id": connection_id,
             "group_name": group_name,
@@ -154,16 +158,20 @@ def _build_airbyte_assets_from_metadata(
         outs={
             k: AssetOut(
                 key=v,
-                metadata={
-                    k: cast(TableSchemaMetadataValue, v)
-                    for k, v in assets_defn_meta.metadata_by_output_name.get(k, {}).items()
-                }
-                if assets_defn_meta.metadata_by_output_name
-                else None,
+                metadata=(
+                    {
+                        k: cast(TableSchemaMetadataValue, v)
+                        for k, v in assets_defn_meta.metadata_by_output_name.get(k, {}).items()
+                    }
+                    if assets_defn_meta.metadata_by_output_name
+                    else None
+                ),
                 io_manager_key=io_manager_key,
-                freshness_policy=assets_defn_meta.freshness_policies_by_output_name.get(k)
-                if assets_defn_meta.freshness_policies_by_output_name
-                else None,
+                freshness_policy=(
+                    assets_defn_meta.freshness_policies_by_output_name.get(k)
+                    if assets_defn_meta.freshness_policies_by_output_name
+                    else None
+                ),
                 dagster_type=Nothing,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
@@ -246,9 +254,11 @@ def build_airbyte_assets(
     outputs = {
         table: AssetOut(
             key=AssetKey([*asset_key_prefix, table]),
-            metadata={"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
-            if schema_by_table_name
-            else None,
+            metadata=(
+                {"table_schema": MetadataValue.table_schema(schema_by_table_name[table])}
+                if schema_by_table_name
+                else None
+            ),
             freshness_policy=freshness_policy,
         )
         for table in tables
@@ -330,8 +340,7 @@ def _get_schema_types(schema: Mapping[str, Any]) -> Sequence[str]:
 
 
 def _get_sub_schemas(schema: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
-    """Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
-    """
+    """Returns a list of sub-schema definitions for a given schema. This is used to handle union types."""
     return schema.get("anyOf") or schema.get("oneOf") or [schema]
 
 
@@ -516,9 +525,9 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connection_to_group_fn = connection_to_group_fn
         self._connection_to_io_manager_key_fn = connection_to_io_manager_key_fn
         self._connection_filter = connection_filter
-        self._connection_to_asset_key_fn: Callable[
-            [AirbyteConnectionMetadata, str], AssetKey
-        ] = connection_to_asset_key_fn or (lambda _, table: AssetKey(path=[table]))
+        self._connection_to_asset_key_fn: Callable[[AirbyteConnectionMetadata, str], AssetKey] = (
+            connection_to_asset_key_fn or (lambda _, table: AssetKey(path=[table]))
+        )
         self._connection_to_freshness_policy_fn = connection_to_freshness_policy_fn or (
             lambda _: None
         )
@@ -555,12 +564,16 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                     for table, metadata in stream_table_metadata.items()
                 },
                 asset_key_prefix=self._key_prefix,
-                group_name=self._connection_to_group_fn(connection.name)
-                if self._connection_to_group_fn
-                else None,
-                io_manager_key=self._connection_to_io_manager_key_fn(connection.name)
-                if self._connection_to_io_manager_key_fn
-                else None,
+                group_name=(
+                    self._connection_to_group_fn(connection.name)
+                    if self._connection_to_group_fn
+                    else None
+                ),
+                io_manager_key=(
+                    self._connection_to_io_manager_key_fn(connection.name)
+                    if self._connection_to_io_manager_key_fn
+                    else None
+                ),
                 schema_by_table_name=schema_by_table_name,
                 table_to_asset_key_fn=table_to_asset_key,
                 freshness_policy=self._connection_to_freshness_policy_fn(connection),

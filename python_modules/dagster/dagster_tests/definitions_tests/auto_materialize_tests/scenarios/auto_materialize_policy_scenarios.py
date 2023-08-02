@@ -156,60 +156,66 @@ auto_materialize_policy_scenarios = {
             )
         ],
     ),
-    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
-        assets=with_auto_materialize_policy(
-            hourly_to_daily_partitions,
-            AutoMaterializePolicy(
-                on_missing=True,
-                for_freshness=True,
-                on_new_parent_data=True,
-                max_materializations_per_minute=48,
+    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized": (
+        AssetReconciliationScenario(
+            assets=with_auto_materialize_policy(
+                hourly_to_daily_partitions,
+                AutoMaterializePolicy(
+                    on_missing=True,
+                    for_freshness=True,
+                    on_new_parent_data=True,
+                    max_materializations_per_minute=48,
+                ),
             ),
-        ),
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
-        expected_run_requests=[
-            run_request(asset_keys=["hourly"], partition_key=partition_key)
-            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
-            )
-        ],
-        expected_conditions={
-            **{
-                ("hourly", p): {MissingAutoMaterializeCondition()}
-                for p in hourly_partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange(start="2013-01-05-4:00", end="2013-01-07-03:00")
+            unevaluated_runs=[],
+            current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+            expected_run_requests=[
+                run_request(asset_keys=["hourly"], partition_key=partition_key)
+                for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
                 )
+            ],
+            expected_conditions={
+                **{
+                    ("hourly", p): {MissingAutoMaterializeCondition()}
+                    for p in hourly_partitions_def.get_partition_keys_in_range(
+                        PartitionKeyRange(start="2013-01-05-4:00", end="2013-01-07-03:00")
+                    )
+                },
+                **{
+                    ("hourly", p): (
+                        {
+                            MaxMaterializationsExceededAutoMaterializeCondition(),
+                            MissingAutoMaterializeCondition(),
+                        }
+                    )
+                    for p in hourly_partitions_def.get_partition_keys_in_range(
+                        PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
+                    )
+                },
             },
-            **{
-                ("hourly", p): {
-                    MaxMaterializationsExceededAutoMaterializeCondition(),
-                    MissingAutoMaterializeCondition(),
-                }
-                for p in hourly_partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
-                )
-            },
-        },
+        )
     ),
-    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
-        assets=with_auto_materialize_policy(
-            hourly_to_daily_partitions,
-            AutoMaterializePolicy(
-                on_missing=True,
-                for_freshness=True,
-                on_new_parent_data=False,
-                max_materializations_per_minute=48,
+    "auto_materialize_policy_hourly_to_daily_partitions_never_materialized2": (
+        AssetReconciliationScenario(
+            assets=with_auto_materialize_policy(
+                hourly_to_daily_partitions,
+                AutoMaterializePolicy(
+                    on_missing=True,
+                    for_freshness=True,
+                    on_new_parent_data=False,
+                    max_materializations_per_minute=48,
+                ),
             ),
-        ),
-        unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
-        expected_run_requests=[
-            run_request(asset_keys=["hourly"], partition_key=partition_key)
-            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
-            )
-        ],
+            unevaluated_runs=[],
+            current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+            expected_run_requests=[
+                run_request(asset_keys=["hourly"], partition_key=partition_key)
+                for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                )
+            ],
+        )
     ),
     "auto_materialize_policy_lazy_parent_rematerialized_one_partition": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(

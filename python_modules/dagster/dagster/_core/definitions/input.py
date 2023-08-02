@@ -115,7 +115,7 @@ class InputDefinition:
         metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
-        input_manager_key: Optional[str] = None
+        input_manager_key: Optional[str] = None,
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
         self._name = check_valid_name(name, allow_list=["config"])
@@ -265,10 +265,8 @@ class InputDefinition:
         """
         check.invariant(
             self.name == inferred.name,
-            (
-                f"InferredInputProps name {inferred.name} did not align with InputDefinition name"
-                f" {self.name}"
-            ),
+            f"InferredInputProps name {inferred.name} did not align with InputDefinition name"
+            f" {self.name}",
         )
 
         dagster_type = self._dagster_type
@@ -483,9 +481,11 @@ class In(
     ):
         return super(In, cls).__new__(
             cls,
-            dagster_type=NoValueSentinel
-            if dagster_type is NoValueSentinel
-            else resolve_dagster_type(dagster_type),
+            dagster_type=(
+                NoValueSentinel
+                if dagster_type is NoValueSentinel
+                else resolve_dagster_type(dagster_type)
+            ),
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),

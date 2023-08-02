@@ -740,7 +740,9 @@ class GrapheneIPipelineSnapshotMixin:
             runs_filter = RunsFilter(
                 job_name=pipeline.name,
                 tags={
-                    REPOSITORY_LABEL_TAG: pipeline.get_external_origin().external_repository_origin.get_label()
+                    REPOSITORY_LABEL_TAG: (
+                        pipeline.get_external_origin().external_repository_origin.get_label()
+                    )
                 },
             )
         else:

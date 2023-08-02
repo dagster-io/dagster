@@ -250,8 +250,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_dbt_nodes_and_dependencies(
         self,
     ) -> Tuple[Mapping[str, Any], Mapping[str, FrozenSet[str]]]:
-        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
-        """
+        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes."""
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
@@ -526,9 +525,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                         + split_materialization_command[idx + 2 :]
                     )
 
-            job_commands[
-                job_materialization_command_step
-            ] = f"{materialization_command} {' '.join(dbt_options)}".strip()
+            job_commands[job_materialization_command_step] = (
+                f"{materialization_command} {' '.join(dbt_options)}".strip()
+            )
 
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(

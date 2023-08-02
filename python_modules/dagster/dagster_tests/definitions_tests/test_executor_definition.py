@@ -36,9 +36,9 @@ def get_job_for_executor(executor_def, execution_config=None):
 
     @job(
         name="testing_job",
-        executor_def=executor_def.configured(execution_config)
-        if execution_config
-        else executor_def,
+        executor_def=(
+            executor_def.configured(execution_config) if execution_config else executor_def
+        ),
     )
     def the_job():
         a_op()

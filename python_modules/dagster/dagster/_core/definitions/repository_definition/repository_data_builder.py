@@ -73,9 +73,11 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
 
     config_schema_default = cast(
         Mapping[str, Any],
-        json.loads(resource_def.config_schema.default_value_as_json_str)
-        if resource_def.config_schema.default_provided
-        else {},
+        (
+            json.loads(resource_def.config_schema.default_value_as_json_str)
+            if resource_def.config_schema.default_provided
+            else {}
+        ),
     )
 
     env_vars = _find_env_vars(config_schema_default)
@@ -399,9 +401,7 @@ def _process_and_validate_target(
             dupe_target_type = (
                 "graph"
                 if target.name in coerced_graphs
-                else "unresolved asset job"
-                if target.name in unresolved_jobs
-                else "job"
+                else "unresolved asset job" if target.name in unresolved_jobs else "job"
             )
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)

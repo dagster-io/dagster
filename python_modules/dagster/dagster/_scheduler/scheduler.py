@@ -295,11 +295,9 @@ def launch_scheduled_runs(
                 )
             else:
                 logger.warning(
-                    (
-                        f"Could not find schedule {schedule_name} in repository {repo_name}. If"
-                        " this schedule no longer exists, you can turn it off in the Dagster UI"
-                        " from the Status tab."
-                    ),
+                    f"Could not find schedule {schedule_name} in repository {repo_name}. If"
+                    " this schedule no longer exists, you can turn it off in the Dagster UI"
+                    " from the Status tab.",
                 )
 
     if not schedules:
@@ -887,9 +885,9 @@ def _create_scheduler_run(
         parent_job_snapshot=external_job.parent_job_snapshot,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
-        asset_selection=frozenset(run_request.asset_selection)
-        if run_request.asset_selection
-        else None,
+        asset_selection=(
+            frozenset(run_request.asset_selection) if run_request.asset_selection else None
+        ),
     )
 
 

@@ -440,10 +440,8 @@ def _execute_step_command_body(
         raise
     except Exception:
         yield instance.report_engine_event(
-            (
-                "An exception was thrown during step execution that is likely a framework error,"
-                " rather than an error in user code."
-            ),
+            "An exception was thrown during step execution that is likely a framework error,"
+            " rather than an error in user code.",
             dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             step_key=single_step_key,
@@ -617,10 +615,8 @@ def grpc_command(
 
     check.invariant(
         max_workers is None or max_workers > 1 if heartbeat else True,
-        (
-            "max_workers must be greater than 1 or set to None if heartbeat is True. "
-            "If set to None, the server will use the gRPC default."
-        ),
+        "max_workers must be greater than 1 or set to None if heartbeat is True. "
+        "If set to None, the server will use the gRPC default.",
     )
 
     if seven.IS_WINDOWS and port is None:

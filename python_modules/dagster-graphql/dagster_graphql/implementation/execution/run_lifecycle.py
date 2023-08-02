@@ -81,16 +81,22 @@ def create_valid_pipeline_run(
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=external_pipeline.parent_job_snapshot,
         job_name=execution_params.selector.job_name,
-        run_id=execution_params.execution_metadata.run_id
-        if execution_params.execution_metadata.run_id
-        else make_new_run_id(),
-        asset_selection=frozenset(execution_params.selector.asset_selection)
-        if execution_params.selector.asset_selection
-        else None,
+        run_id=(
+            execution_params.execution_metadata.run_id
+            if execution_params.execution_metadata.run_id
+            else make_new_run_id()
+        ),
+        asset_selection=(
+            frozenset(execution_params.selector.asset_selection)
+            if execution_params.selector.asset_selection
+            else None
+        ),
         op_selection=execution_params.selector.op_selection,
-        resolved_op_selection=frozenset(execution_params.selector.op_selection)
-        if execution_params.selector.op_selection
-        else None,
+        resolved_op_selection=(
+            frozenset(execution_params.selector.op_selection)
+            if execution_params.selector.op_selection
+            else None
+        ),
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,

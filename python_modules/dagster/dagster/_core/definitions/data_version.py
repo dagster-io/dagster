@@ -507,20 +507,24 @@ class CachingStaleStatusResolver:
                     yield StaleCause(
                         key,
                         StaleCauseCategory.DATA,
-                        "has a new dependency data version"
-                        if report_data_version
-                        else "has a new dependency materialization",
+                        (
+                            "has a new dependency data version"
+                            if report_data_version
+                            else "has a new dependency materialization"
+                        ),
                         dep_key,
                         [
                             StaleCause(
                                 dep_key,
                                 StaleCauseCategory.DATA,
-                                # Assets with no defined code version will get a new data version on
-                                # every materialization, so we just report new materialization for
-                                # this case since the user likely hasn't engaged with data versions.
-                                "has a new data version"
-                                if report_data_version
-                                else "has a new materialization",
+                                (
+                                    # Assets with no defined code version will get a new data version on
+                                    # every materialization, so we just report new materialization for
+                                    # this case since the user likely hasn't engaged with data versions.
+                                    "has a new data version"
+                                    if report_data_version
+                                    else "has a new materialization"
+                                ),
                             )
                         ],
                     )

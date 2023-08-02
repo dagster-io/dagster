@@ -180,8 +180,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Call this method to run any optional data migrations for optimized reads."""
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived webserver process.
-        """
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None

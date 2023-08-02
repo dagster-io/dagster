@@ -528,8 +528,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalResource:
-    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
-    """
+    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API."""
 
     def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
         self._external_resource_data = check.inst_param(

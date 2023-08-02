@@ -40,9 +40,9 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
                 env={
                     "DAGSTER_BRANCH": branch_name,
                     "DAGSTER_COMMIT_HASH": commit_hash,
-                    "DAGSTER_UI_ONLY_OSS_CHANGE": "1"
-                    if not skip_if_no_dagster_ui_changes()
-                    else "",
+                    "DAGSTER_UI_ONLY_OSS_CHANGE": (
+                        "1" if not skip_if_no_dagster_ui_changes() else ""
+                    ),
                     "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
                 },
             ),

@@ -142,8 +142,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
     @public
     @property
     def version(self) -> Optional[str]:
-        """A string which can be used to identify a particular code version of a resource definition.
-        """
+        """A string which can be used to identify a particular code version of a resource definition."""
         return self._version
 
     @public
