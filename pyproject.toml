@@ -54,6 +54,7 @@ exclude = [
   ".git",
   "**/.venv*",
   "**/build",
+  "examples/project_dagster_university_start/*"
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -124,6 +125,7 @@ extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
   "*/snapshots/*",
+  "examples/project_dagster_university_start/*"
 ]
 
 ignore = [
