@@ -716,8 +716,8 @@
     "statusCode": 302
   },
   {
-    "source": "/content/tutorial/managing-your-own-io",
-    "destination": "/content/tutorial/saving-your-data",
+    "source": "/tutorial/managing-your-own-io",
+    "destination": "/tutorial/saving-your-data",
     "statusCode": 302
   }
 ]
