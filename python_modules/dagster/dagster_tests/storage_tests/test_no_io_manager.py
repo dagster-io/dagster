@@ -1,4 +1,14 @@
-from dagster import AssetOut, IOManager, Output, asset, job, materialize, multi_asset, op
+from dagster import (
+    AssetOut,
+    IOManager,
+    Output,
+    asset,
+    build_asset_context,
+    job,
+    materialize,
+    multi_asset,
+    op,
+)
 
 
 class TestIOManager(IOManager):
@@ -99,6 +109,38 @@ def test_ops():
 
     result = return_none_job.execute_in_process()
     assert result.success
+
+
+# tests to ensure that adding instance access when loading dependencies doesn't make contexts built for
+# unit tests require instances
+
+
+def test_deps_unit_test_flow():
+    @asset
+    def returns_none():
+        return None
+
+    @asset(deps=[returns_none])
+    def downstream(context):
+        return 1
+
+    asset_context = build_asset_context()
+
+    assert downstream(asset_context) is None
+
+
+def test_io_unit_test_flow():
+    @asset
+    def returns_one():
+        return 1
+
+    @asset
+    def downstream(context, returns_one):
+        return returns_one + 1
+
+    asset_context = build_asset_context()
+
+    assert downstream(asset_context, 1) == 2
 
 
 # test partitions
