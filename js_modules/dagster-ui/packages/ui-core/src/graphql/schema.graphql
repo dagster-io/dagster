@@ -646,7 +646,8 @@ type AssetNode {
   ): [ObservationEvent!]!
   computeKind: String
   configField: ConfigTypeField
-  currentDataVersion: String
+  dataVersion(partition: String): String
+  dataVersionByPartition(partitions: [String!]): [String]!
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
@@ -677,8 +678,10 @@ type AssetNode {
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
-  staleStatus: StaleStatus
-  staleCauses: [StaleCause!]!
+  staleStatus(partition: String): StaleStatus
+  staleStatusByPartition(partitions: [String!]): [StaleStatus!]!
+  staleCauses(partition: String): [StaleCause!]!
+  staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
 }
@@ -804,9 +807,11 @@ enum StaleStatus {
 
 type StaleCause {
   key: AssetKey!
+  partitionKey: String
   category: StaleCauseCategory!
   reason: String!
   dependency: AssetKey
+  dependencyPartitionKey: String
 }
 
 enum StaleCauseCategory {

@@ -8,12 +8,14 @@ export const MockStaleReasonData: StaleCause = {
     path: ['asset0'],
     __typename: 'AssetKey',
   },
+  partitionKey: null,
   reason: 'updated data version',
   category: StaleCauseCategory.DATA,
   dependency: {
     path: ['asset0'],
     __typename: 'AssetKey',
   },
+  dependencyPartitionKey: null,
 };
 
 export const MockStaleReasonCode: StaleCause = {
@@ -22,12 +24,14 @@ export const MockStaleReasonCode: StaleCause = {
     path: ['asset1'],
     __typename: 'AssetKey',
   },
+  partitionKey: null,
   reason: 'code version changed',
   category: StaleCauseCategory.CODE,
   dependency: {
     path: ['asset1'],
     __typename: 'AssetKey',
   },
+  dependencyPartitionKey: null,
 };
 
 const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
