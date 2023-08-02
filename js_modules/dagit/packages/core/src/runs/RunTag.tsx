@@ -1,7 +1,7 @@
 import {Box, Caption, Colors, Popover, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 export enum DagsterTag {
   Automaterialize = 'dagster/auto_materialize',

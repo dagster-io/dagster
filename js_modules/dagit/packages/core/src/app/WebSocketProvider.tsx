@@ -1,7 +1,7 @@
 import {Colors} from '@dagster-io/ui';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {useFeatureFlags} from './Flags';

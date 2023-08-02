@@ -12,7 +12,7 @@ import {
   TagSelectorDropdownItemProps,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
 import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';

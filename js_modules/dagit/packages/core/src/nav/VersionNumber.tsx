@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {VersionNumberQuery, VersionNumberQueryVariables} from './types/VersionNumber.types';
 

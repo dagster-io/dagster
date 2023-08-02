@@ -9,7 +9,7 @@ import {
   ListRowProps,
   ScrollParams,
 } from 'react-virtualized';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {

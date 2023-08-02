@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, {defaultSchema} from 'rehype-sanitize';
 import gfm from 'remark-gfm';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import 'highlight.js/styles/github.css';
 

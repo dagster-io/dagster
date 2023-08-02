@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
-import styled, {createGlobalStyle} from 'styled-components/macro';
+import styled, {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Colors';

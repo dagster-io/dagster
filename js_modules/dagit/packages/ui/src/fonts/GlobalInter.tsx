@@ -1,4 +1,4 @@
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 /**
  * `Inter` and `Inconsolata` are encoded as base64 because we can't always guarantee

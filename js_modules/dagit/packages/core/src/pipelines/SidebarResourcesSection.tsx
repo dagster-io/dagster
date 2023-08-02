@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Colors, ConfigTypeSchema, Icon, IconWrapper, Box} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 

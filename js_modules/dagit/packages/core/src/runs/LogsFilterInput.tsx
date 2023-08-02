@@ -8,7 +8,7 @@ import {
 } from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {ClearButton} from '../ui/ClearButton';
 

@@ -16,7 +16,7 @@ import {
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';

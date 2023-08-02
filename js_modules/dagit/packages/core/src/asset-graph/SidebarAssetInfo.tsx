@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';

@@ -6,7 +6,7 @@ import {
   ErrorBoundary,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';

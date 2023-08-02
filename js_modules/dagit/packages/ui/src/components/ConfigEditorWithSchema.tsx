@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
 import {ConfigEditor, ConfigSchema} from './ConfigEditor';

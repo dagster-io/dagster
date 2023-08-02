@@ -3,7 +3,7 @@ import {Body, Box, Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled, {CSSObject} from 'styled-components/macro';
+import styled, {CSSObject} from 'styled-components';
 
 import {withMiddleTruncation} from '../app/Util';
 import {

@@ -1,6 +1,6 @@
 import useResizeObserver from '@react-hook/resize-observer';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {calculateMiddleTruncation} from './calculateMiddleTruncation';
 

@@ -43,7 +43,6 @@ module.exports = {
     'no-restricted-imports': [
       'error',
       {
-        patterns: ['!styled-components/macro'],
         paths: [
           {
             name: '@blueprintjs/core',
@@ -77,10 +76,6 @@ module.exports = {
           {
             name: 'moment-timezone',
             message: 'Please use native Intl APIs for date/time, or dayjs if necessary.',
-          },
-          {
-            name: 'styled-components',
-            message: 'Please import from `styled-components/macro`.',
           },
         ],
       },

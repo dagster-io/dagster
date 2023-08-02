@@ -13,7 +13,7 @@ import {
 } from '@dagster-io/ui';
 import * as codemirror from 'codemirror';
 import * as React from 'react';
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';

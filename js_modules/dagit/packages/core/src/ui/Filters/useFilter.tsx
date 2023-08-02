@@ -1,6 +1,6 @@
 import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui';
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 

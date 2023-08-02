@@ -1,5 +1,5 @@
 import {Tooltip} from '@dagster-io/ui';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 export const WarningTooltip = styled(Tooltip)`
   display: block;

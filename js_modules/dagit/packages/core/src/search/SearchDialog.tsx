@@ -5,7 +5,7 @@ import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useTrackEvent} from '../app/analytics';

@@ -4,7 +4,7 @@ import isEqual from 'lodash/isEqual';
 import moment from 'moment-timezone';
 import React from 'react';
 import {DateRangePicker} from 'react-dates';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';

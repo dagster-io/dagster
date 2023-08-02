@@ -16,7 +16,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';

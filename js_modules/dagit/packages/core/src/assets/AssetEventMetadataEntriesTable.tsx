@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';

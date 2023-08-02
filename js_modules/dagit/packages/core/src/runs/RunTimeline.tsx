@@ -14,7 +14,7 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {RunStatus} from '../graphql/types';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';

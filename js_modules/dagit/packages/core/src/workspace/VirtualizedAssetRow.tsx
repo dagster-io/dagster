@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNode';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';

@@ -1,6 +1,6 @@
 import {Button, Dialog, DialogBody, DialogFooter, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {testId} from '../testing/testId';
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {LeftNav, LEFT_NAV_WIDTH} from '../nav/LeftNav';
 

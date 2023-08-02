@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui';
 import React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
 import {layoutOp} from '../graph/asyncGraphLayout';

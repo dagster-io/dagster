@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {useCopyToClipboard} from '../app/browser';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';

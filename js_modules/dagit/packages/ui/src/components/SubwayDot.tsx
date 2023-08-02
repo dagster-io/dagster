@@ -2,7 +2,7 @@
 import {Colors} from '@blueprintjs/core';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {Icon, IconName} from './Icon';
 

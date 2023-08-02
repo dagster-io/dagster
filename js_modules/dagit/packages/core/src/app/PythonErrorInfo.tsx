@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Button, Icon, FontFamily, Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {ErrorSource} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';

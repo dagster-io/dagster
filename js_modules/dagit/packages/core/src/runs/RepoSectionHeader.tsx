@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
 

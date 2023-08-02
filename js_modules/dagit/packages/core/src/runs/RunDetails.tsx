@@ -17,7 +17,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
