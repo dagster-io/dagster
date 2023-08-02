@@ -709,5 +709,10 @@
     "source": "/integrations/dbt/using-dbt-with-dagster/part-four",
     "destination": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
     "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/non-argument-deps",
+    "destination": "/concepts/assets/software-defined-assets#defining-basic-dependencies",
+    "statusCode": 302
   }
 ]
