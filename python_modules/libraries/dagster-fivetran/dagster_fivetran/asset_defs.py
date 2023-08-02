@@ -412,7 +412,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> Sequence[AssetsDefinition]:
         return [
             _build_fivetran_assets_from_metadata(
-                meta, {"fivetran": self._fivetran_instance.get_resource_definition()}, poll_interval=self._poll_interval, poll_timeout=self._poll_timeout
+                meta,
+                {"fivetran": self._fivetran_instance.get_resource_definition()},
+                poll_interval=self._poll_interval,
+                poll_timeout=self._poll_timeout,
             )
             for meta in data
         ]
