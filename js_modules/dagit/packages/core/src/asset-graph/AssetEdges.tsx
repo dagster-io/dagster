@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {buildSVGPath} from './Utils';

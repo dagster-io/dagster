@@ -1,4 +1,4 @@
-import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui';
+import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';

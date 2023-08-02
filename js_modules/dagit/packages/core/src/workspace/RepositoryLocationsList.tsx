@@ -1,4 +1,4 @@
-import {Box, NonIdealState, Spinner, Table} from '@dagster-io/ui';
+import {Box, NonIdealState, Spinner, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {CodeLocationRowSet} from './CodeLocationRowSet';

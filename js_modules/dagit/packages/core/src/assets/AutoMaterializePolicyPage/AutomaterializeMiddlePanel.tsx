@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';

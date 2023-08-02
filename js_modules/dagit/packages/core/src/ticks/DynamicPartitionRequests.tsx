@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui';
+import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {DynamicPartitionsRequestType} from '../graphql/types';

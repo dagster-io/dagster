@@ -1,4 +1,4 @@
-import {Box, CustomTooltipProvider} from '@dagster-io/ui';
+import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import React from 'react';
 

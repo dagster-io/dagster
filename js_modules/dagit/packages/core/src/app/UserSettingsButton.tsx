@@ -1,4 +1,4 @@
-import {IconWrapper, Colors, Icon} from '@dagster-io/ui';
+import {IconWrapper, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

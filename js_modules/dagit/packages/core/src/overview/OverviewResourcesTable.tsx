@@ -1,4 +1,4 @@
-import {Tag, Tooltip} from '@dagster-io/ui';
+import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 

@@ -1,4 +1,4 @@
-import {Page, PageHeader, Heading} from '@dagster-io/ui';
+import {Page, PageHeader, Heading} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 

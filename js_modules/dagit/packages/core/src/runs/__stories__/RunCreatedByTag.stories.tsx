@@ -1,4 +1,4 @@
-import {MetadataTableWIP} from '@dagster-io/ui';
+import {MetadataTableWIP} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 

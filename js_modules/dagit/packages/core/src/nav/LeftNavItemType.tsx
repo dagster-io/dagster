@@ -1,4 +1,4 @@
-import {IconName} from '@dagster-io/ui';
+import {IconName} from '@dagster-io/ui-components';
 
 import {
   WorkspaceRepositorySchedule,

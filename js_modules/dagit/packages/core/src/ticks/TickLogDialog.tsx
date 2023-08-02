@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui';
+import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {InstigationSelector} from '../graphql/types';

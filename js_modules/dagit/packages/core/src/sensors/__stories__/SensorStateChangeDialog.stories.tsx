@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Button} from '@dagster-io/ui';
+import {Button} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 

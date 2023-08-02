@@ -1,4 +1,4 @@
-import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui';
+import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';

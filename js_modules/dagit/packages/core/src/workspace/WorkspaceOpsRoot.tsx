@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui';
+import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useTrackPageView} from '../app/analytics';

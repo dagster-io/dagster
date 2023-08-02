@@ -10,7 +10,7 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
   FontFamily,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';

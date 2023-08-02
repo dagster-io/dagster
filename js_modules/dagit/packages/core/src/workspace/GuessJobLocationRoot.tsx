@@ -1,4 +1,4 @@
-import {Alert, Box, NonIdealState, Page, PageHeader, Table, Heading} from '@dagster-io/ui';
+import {Alert, Box, NonIdealState, Page, PageHeader, Table, Heading} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
 

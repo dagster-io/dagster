@@ -1,4 +1,4 @@
-import {Colors, CursorControlsContainer} from '@dagster-io/ui';
+import {Colors, CursorControlsContainer} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const OptionsContainer = styled.div`

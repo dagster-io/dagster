@@ -1,4 +1,4 @@
-import {Button, DialogFooter, Dialog} from '@dagster-io/ui';
+import {Button, DialogFooter, Dialog} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PartitionPerOpStatus} from '../partitions/PartitionStepStatus';

@@ -1,4 +1,4 @@
-import {FontFamily} from '@dagster-io/ui';
+import {FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 const PX_TO_UNITS = 0.53;

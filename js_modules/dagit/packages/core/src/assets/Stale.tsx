@@ -8,7 +8,7 @@ import {
   Colors,
   Icon,
   Popover,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';

@@ -1,4 +1,4 @@
-import {Mono} from '@dagster-io/ui';
+import {Mono} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 

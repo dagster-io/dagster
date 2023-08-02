@@ -1,4 +1,4 @@
-import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui';
+import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {instigationStateSummary} from '../instigation/instigationStateSummary';

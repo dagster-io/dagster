@@ -1,4 +1,4 @@
-import {Colors, IconName, Icon} from '@dagster-io/ui';
+import {Colors, IconName, Icon} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

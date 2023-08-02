@@ -10,7 +10,7 @@ import {
   SpinnerWrapper,
   SplitPanelContainer,
   useViewport,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

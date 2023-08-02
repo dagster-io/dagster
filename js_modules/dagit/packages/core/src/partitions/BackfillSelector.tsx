@@ -11,7 +11,7 @@ import {
   Spinner,
   Subheading,
   Tooltip,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 

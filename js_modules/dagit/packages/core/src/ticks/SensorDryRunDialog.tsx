@@ -14,7 +14,7 @@ import {
   Subheading,
   Tag,
   TextInput,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 

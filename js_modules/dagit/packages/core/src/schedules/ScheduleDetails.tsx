@@ -11,7 +11,7 @@ import {
   Mono,
   Tooltip,
   Button,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';

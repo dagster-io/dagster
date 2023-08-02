@@ -1,4 +1,4 @@
-import {BaseTag, Box, Colors, Icon, IconWrapper, MiddleTruncate, StyledTag} from '@dagster-io/ui';
+import {BaseTag, Box, Colors, Icon, IconWrapper, MiddleTruncate, StyledTag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';

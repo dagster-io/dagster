@@ -10,7 +10,7 @@ import {
   Tooltip,
   Checkbox,
   NonIdealState,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 

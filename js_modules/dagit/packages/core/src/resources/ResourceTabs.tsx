@@ -1,4 +1,4 @@
-import {Box, Tabs, Tag} from '@dagster-io/ui';
+import {Box, Tabs, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 

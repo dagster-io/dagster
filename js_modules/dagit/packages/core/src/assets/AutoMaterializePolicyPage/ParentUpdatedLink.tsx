@@ -1,4 +1,4 @@
-import {ButtonLink, Box} from '@dagster-io/ui';
+import {ButtonLink, Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AssetLink} from '../AssetLink';

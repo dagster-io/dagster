@@ -1,4 +1,4 @@
-import {PageHeader, Heading, Box, JoinedButtons} from '@dagster-io/ui';
+import {PageHeader, Heading, Box, JoinedButtons} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 

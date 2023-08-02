@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';

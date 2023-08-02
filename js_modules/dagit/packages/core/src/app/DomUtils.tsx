@@ -1,4 +1,4 @@
-import {DToasterShowProps, Toaster} from '@dagster-io/ui';
+import {DToasterShowProps, Toaster} from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
 
 export const getSharedToaster = memoize(async () => {

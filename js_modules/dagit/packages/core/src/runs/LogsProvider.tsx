@@ -5,7 +5,7 @@ import {
   useQuery,
   useSubscription,
 } from '@apollo/client';
-import {TokenizingFieldValue} from '@dagster-io/ui';
+import {TokenizingFieldValue} from '@dagster-io/ui-components';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 

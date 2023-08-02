@@ -1,4 +1,4 @@
-import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui';
+import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 // eslint-disable-next-line no-restricted-imports
 import moment from 'moment-timezone';

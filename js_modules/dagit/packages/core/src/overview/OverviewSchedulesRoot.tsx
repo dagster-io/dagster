@@ -12,7 +12,7 @@ import {
   Spinner,
   TextInput,
   Tooltip,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

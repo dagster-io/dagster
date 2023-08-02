@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {CursorPaginationProps} from '@dagster-io/ui';
+import {CursorPaginationProps} from '@dagster-io/ui-components';
 import {DocumentNode} from 'graphql';
 import * as React from 'react';
 

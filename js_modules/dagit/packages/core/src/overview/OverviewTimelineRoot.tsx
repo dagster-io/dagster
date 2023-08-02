@@ -1,4 +1,4 @@
-import {Box, TextInput, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui';
+import {Box, TextInput, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';

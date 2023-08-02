@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "paths": {
-      "@dagster-io/ui-core/*": ["../core/src/*"],
-      "@dagster-io/ui-components": ["../ui/src"]
+      "@dagster-io/ui-core/*": ["../ui-core/src/*"],
+      "@dagster-io/ui-components": ["../ui-components/src"]
     },
     "module": "es2022",
     "target": "es2022",

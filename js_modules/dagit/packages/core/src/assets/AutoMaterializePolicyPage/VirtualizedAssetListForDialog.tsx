@@ -1,4 +1,4 @@
-import {Box, Colors} from '@dagster-io/ui';
+import {Box, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 

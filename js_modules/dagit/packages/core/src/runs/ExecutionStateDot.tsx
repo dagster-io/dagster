@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {IStepState} from './RunMetadataProvider';

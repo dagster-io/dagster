@@ -10,7 +10,7 @@ import {
   Page,
   PageHeader,
   tokenToString,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

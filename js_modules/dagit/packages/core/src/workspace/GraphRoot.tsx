@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 

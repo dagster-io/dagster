@@ -11,7 +11,7 @@ Semver usage is likely to be inconsistent, and new versions may be published wit
 ### 1. Install package.
 
 ```bash
-yarn add @dagster-io/ui
+yarn add @dagster-io/ui-components
 ```
 
 Note that the library currently includes a lot of peer dependencies. Be sure to install these.
@@ -23,7 +23,7 @@ If necessary, add font styles to your application root and use them in your glob
 If you are importing fonts via some other means (e.g. Google Fonts API) you may not need to do this.
 
 ```jsx
-import {FontFamily, GlobalInter} from '@dagster-io/ui`;
+import {FontFamily, GlobalInter} from '@dagster-io/ui-components`;
 import {createGlobalStyle} from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
@@ -46,7 +46,7 @@ const MyAppRoot = () => (
 ### 3. Import components
 
 ```jsx
-import {Box, Button, Colors, Icon} from '@dagster-io/ui';
+import {Box, Button, Colors, Icon} from '@dagster-io/ui-components';
 ```
 
 The rollup build specifies certain common components to be split into their own bundles to allow consumers to minimize their bundle size and avoid importing the entire library, since it currently contains a lot of complex, heavy components that you may not need.

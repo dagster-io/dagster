@@ -1,4 +1,4 @@
-import {Box, Spinner} from '@dagster-io/ui';
+import {Box, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';

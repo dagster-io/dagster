@@ -1,4 +1,4 @@
-import {Box, IconName} from '@dagster-io/ui';
+import {Box, IconName} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';

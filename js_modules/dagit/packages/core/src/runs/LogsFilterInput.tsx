@@ -5,7 +5,7 @@ import {
   SuggestionProvider,
   useSuggestionsForString,
   Icon,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components';

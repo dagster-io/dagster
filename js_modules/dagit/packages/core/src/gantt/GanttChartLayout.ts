@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 
 import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 

@@ -1,4 +1,4 @@
-import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
+import {Box, MainContent, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 

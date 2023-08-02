@@ -1,4 +1,4 @@
-import {FontFamily} from '@dagster-io/ui';
+import {FontFamily} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const Version = styled.div`

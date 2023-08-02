@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
+import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 

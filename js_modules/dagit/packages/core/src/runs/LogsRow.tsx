@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box} from '@dagster-io/ui';
+import {Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';

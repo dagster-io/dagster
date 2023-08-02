@@ -1,4 +1,4 @@
-import {Popover, Spinner} from '@dagster-io/ui';
+import {Popover, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components';
 

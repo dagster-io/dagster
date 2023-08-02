@@ -15,7 +15,7 @@ import {
   DialogBody,
   Box,
   Colors,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components';

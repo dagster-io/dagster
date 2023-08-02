@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui';
+import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {KNOWN_TAGS} from '../../graph/OpTags';

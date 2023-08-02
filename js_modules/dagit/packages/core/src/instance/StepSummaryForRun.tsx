@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Caption} from '@dagster-io/ui';
+import {Colors, Caption} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

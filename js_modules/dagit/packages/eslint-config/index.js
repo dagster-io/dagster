@@ -46,15 +46,15 @@ module.exports = {
         paths: [
           {
             name: '@blueprintjs/core',
-            message: 'Please use components from @dagster-io/ui instead.',
+            message: 'Please use components from @dagster-io/ui-components instead.',
           },
           {
             name: '@blueprintjs/popover2',
-            message: 'Please use components from @dagster-io/ui instead.',
+            message: 'Please use components from @dagster-io/ui-components instead.',
           },
           {
             name: '@blueprintjs/select',
-            message: 'Please use components from @dagster-io/ui instead.',
+            message: 'Please use components from @dagster-io/ui-components instead.',
           },
           {
             name: 'graphql-tag',

@@ -9,7 +9,7 @@ import {
   DialogFooter,
   MetadataTable,
   Subheading,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';

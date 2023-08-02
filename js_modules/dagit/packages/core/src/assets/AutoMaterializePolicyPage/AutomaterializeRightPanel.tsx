@@ -9,7 +9,7 @@ import {
   NonIdealState,
   Spinner,
   Mono,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, Redirect} from 'react-router-dom';
 

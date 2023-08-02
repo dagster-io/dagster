@@ -12,7 +12,7 @@ import {
   isHelpContextEqual,
   ConfigEditorHelp,
   TextInput,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';

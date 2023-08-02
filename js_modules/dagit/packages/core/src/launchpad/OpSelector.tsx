@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Popover} from '@dagster-io/ui';
+import {Box, Colors, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

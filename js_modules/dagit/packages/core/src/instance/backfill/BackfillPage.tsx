@@ -13,7 +13,7 @@ import {
   ButtonLink,
   DialogBody,
   NonIdealState,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';

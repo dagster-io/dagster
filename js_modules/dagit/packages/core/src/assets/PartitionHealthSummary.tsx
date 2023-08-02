@@ -1,4 +1,4 @@
-import {Spinner, Box, Colors, Caption} from '@dagster-io/ui';
+import {Spinner, Box, Colors, Caption} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';

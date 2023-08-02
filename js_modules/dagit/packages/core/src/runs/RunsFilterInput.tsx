@@ -5,7 +5,7 @@ import {
   tokenizedValuesFromStringArray,
   Box,
   Icon,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';

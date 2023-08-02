@@ -1,4 +1,4 @@
-import {Tag} from '@dagster-io/ui';
+import {Tag} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {AutoMaterializePolicyType} from '../graphql/types';

@@ -1,4 +1,4 @@
-import {Colors, Group, Icon} from '@dagster-io/ui';
+import {Colors, Group, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {formatElapsedTime} from '../app/Util';

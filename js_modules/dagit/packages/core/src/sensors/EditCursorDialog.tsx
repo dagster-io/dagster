@@ -8,7 +8,7 @@ import {
   Dialog,
   Group,
   TextArea,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';

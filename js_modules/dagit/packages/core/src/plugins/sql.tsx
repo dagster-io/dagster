@@ -1,4 +1,4 @@
-import {Button, DialogFooter, Dialog, Icon, StyledReadOnlyCodeMirror} from '@dagster-io/ui';
+import {Button, DialogFooter, Dialog, Icon, StyledReadOnlyCodeMirror} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';

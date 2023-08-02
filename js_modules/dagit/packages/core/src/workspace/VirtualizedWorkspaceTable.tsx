@@ -1,5 +1,5 @@
 import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
-import {Caption, Colors} from '@dagster-io/ui';
+import {Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

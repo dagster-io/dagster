@@ -15,7 +15,7 @@ import {
   Icon,
   Subheading,
   RadioContainer,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';

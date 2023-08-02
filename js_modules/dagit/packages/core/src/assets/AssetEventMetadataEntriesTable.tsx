@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Mono} from '@dagster-io/ui';
+import {Box, Caption, Colors, Mono} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
 import React from 'react';

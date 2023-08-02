@@ -1,4 +1,4 @@
-import {Box, Button, Group, Icon} from '@dagster-io/ui';
+import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {showSharedToaster} from '../app/DomUtils';

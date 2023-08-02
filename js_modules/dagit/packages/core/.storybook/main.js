@@ -37,7 +37,7 @@ const config = {
         ...config.resolve,
         alias: {
           ...config.resolve.alias,
-          '@dagster-io/ui': path.resolve('../ui/src'),
+          '@dagster-io/ui-components': path.resolve('../ui/src'),
         },
       },
       module: {

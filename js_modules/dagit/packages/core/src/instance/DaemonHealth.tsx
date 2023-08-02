@@ -8,7 +8,7 @@ import {
   Group,
   Tag,
   Trace,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {DaemonStatusForListFragment} from './types/DaemonList.types';

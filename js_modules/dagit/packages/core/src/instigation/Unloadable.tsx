@@ -1,5 +1,5 @@
 import {useMutation} from '@apollo/client';
-import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@dagster-io/ui';
+import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';

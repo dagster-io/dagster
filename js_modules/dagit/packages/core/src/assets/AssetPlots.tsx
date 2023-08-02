@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui';
+import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';

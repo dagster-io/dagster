@@ -8,13 +8,13 @@ generate-perms:
 	yarn workspace @dagster-io/ui-core generate-perms
 
 ts:
-	yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-core ts && yarn workspace @dagster-io/ui ts
+	yarn workspace @dagster-io/app-oss ts && yarn workspace @dagster-io/ui-core ts && yarn workspace @dagster-io/ui-components ts
 
 lint:
-	yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui lint
+	yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui-components lint
 
 test:
-	yarn workspace @dagster-io/ui-core jest && yarn workspace @dagster-io/ui jest
+	yarn workspace @dagster-io/ui-core jest && yarn workspace @dagster-io/ui-components jest
 
 jest:
-	yarn workspace @dagster-io/ui-core jest && yarn workspace @dagster-io/ui jest
+	yarn workspace @dagster-io/ui-core jest && yarn workspace @dagster-io/ui-components jest

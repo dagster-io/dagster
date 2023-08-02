@@ -10,7 +10,7 @@ import {
   useViewport,
   NonIdealState,
   Spinner,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';

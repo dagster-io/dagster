@@ -19,7 +19,7 @@ import {
   Button,
   NonIdealState,
   Page,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect} from 'react-router-dom';
 

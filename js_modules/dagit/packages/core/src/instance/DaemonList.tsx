@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui';
+import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';

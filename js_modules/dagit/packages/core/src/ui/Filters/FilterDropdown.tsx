@@ -9,7 +9,7 @@ import {
   Popover,
   Spinner,
   TextInput,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useState, useRef} from 'react';
 import styled, {createGlobalStyle} from 'styled-components';

@@ -1,4 +1,4 @@
-import {Alert, Box} from '@dagster-io/ui';
+import {Alert, Box} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {DaemonHealthFragment} from '../instance/types/DaemonList.types';

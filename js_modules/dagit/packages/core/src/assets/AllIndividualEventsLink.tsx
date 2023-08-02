@@ -10,7 +10,7 @@ import {
   IconWrapper,
   Table,
   Mono,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

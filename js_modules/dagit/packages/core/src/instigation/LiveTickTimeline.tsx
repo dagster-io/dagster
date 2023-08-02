@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 import {ActiveElement, TimeUnit, TooltipItem} from 'chart.js';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';

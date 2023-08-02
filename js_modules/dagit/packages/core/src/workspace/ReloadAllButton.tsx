@@ -1,4 +1,4 @@
-import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-io/ui';
+import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {useUnscopedPermissions} from '../app/Permissions';

@@ -11,7 +11,7 @@ import {
   Tag,
   TextInput,
   Caption,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

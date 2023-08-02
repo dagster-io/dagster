@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 
 import {RunStatus} from '../../graphql/types';
 import {TimelineRun} from '../RunTimeline';

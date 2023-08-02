@@ -19,7 +19,7 @@ import {
   CustomTooltipProvider,
   GlobalInter,
   GlobalInconsolata,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';

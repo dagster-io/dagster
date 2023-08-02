@@ -10,7 +10,7 @@ import {
   Spinner,
   Subheading,
   Tag,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 

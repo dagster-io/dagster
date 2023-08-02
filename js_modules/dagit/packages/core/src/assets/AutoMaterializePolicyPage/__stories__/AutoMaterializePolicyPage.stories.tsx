@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Box, ButtonGroup, Checkbox, JoinedButtons} from '@dagster-io/ui';
+import {Box, ButtonGroup, Checkbox, JoinedButtons} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {AutoMaterializePolicyType} from '../../../graphql/types';

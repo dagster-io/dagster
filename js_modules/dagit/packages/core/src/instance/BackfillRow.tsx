@@ -1,5 +1,5 @@
 import {gql, QueryResult, useLazyQuery} from '@apollo/client';
-import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
+import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';

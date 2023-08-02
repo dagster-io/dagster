@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Colors, Spinner, Subheading, ErrorBoundary} from '@dagster-io/ui';
+import {Box, ButtonGroup, Colors, Spinner, Subheading, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';

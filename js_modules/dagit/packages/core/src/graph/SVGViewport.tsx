@@ -1,4 +1,4 @@
-import {Box, Colors, FontFamily, Icon, IconWrapper, Slider} from '@dagster-io/ui';
+import {Box, Colors, FontFamily, Icon, IconWrapper, Slider} from '@dagster-io/ui-components';
 import animate from 'amator';
 import * as React from 'react';
 import ReactDOM from 'react-dom';

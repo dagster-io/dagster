@@ -5,7 +5,7 @@ import {
   NonIdealState,
   SplitPanelContainer,
   ErrorBoundary,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';

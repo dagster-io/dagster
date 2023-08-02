@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip, Tag, Popover, Box, Colors} from '@dagster-io/ui';
+import {Tooltip, Tag, Popover, Box, Colors} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';

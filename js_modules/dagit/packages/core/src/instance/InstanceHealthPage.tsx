@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui';
+import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';

@@ -1,5 +1,5 @@
 import {ApolloClient, useApolloClient} from '@apollo/client';
-import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
+import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';

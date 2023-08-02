@@ -17,7 +17,7 @@ import {
   Dialog,
   Button,
   DialogFooter,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';

@@ -1,5 +1,5 @@
 import {gql, useMutation} from '@apollo/client';
-import {Group, Table} from '@dagster-io/ui';
+import {Group, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';

@@ -46,7 +46,7 @@ module.exports = {
    */
   moduleAliases: {
     '@dagster-io/ui-core': dagitCorePath,
-    '@dagster-io/ui': dagitUIPath,
+    '@dagster-io/ui-components': dagitUIPath,
   },
 
   /**

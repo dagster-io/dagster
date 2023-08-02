@@ -5,7 +5,7 @@ import {
   Caption,
   Subheading,
   ExternalAnchorButton,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';

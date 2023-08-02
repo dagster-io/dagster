@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState} from '@dagster-io/ui';
+import {Box, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';

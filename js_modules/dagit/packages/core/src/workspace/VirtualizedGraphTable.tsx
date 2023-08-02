@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Colors} from '@dagster-io/ui';
+import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

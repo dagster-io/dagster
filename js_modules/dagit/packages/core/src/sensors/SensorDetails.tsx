@@ -9,7 +9,7 @@ import {
   ButtonLink,
   Icon,
   Colors,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';

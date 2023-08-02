@@ -1,5 +1,5 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {Box, Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React from 'react';

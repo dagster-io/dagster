@@ -1,4 +1,4 @@
-import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui';
+import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 

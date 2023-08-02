@@ -1,7 +1,7 @@
 import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
-import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
+import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {NavigationBlock} from './NavigationBlock';

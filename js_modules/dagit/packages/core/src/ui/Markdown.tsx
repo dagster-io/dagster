@@ -1,4 +1,4 @@
-import {Colors, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';

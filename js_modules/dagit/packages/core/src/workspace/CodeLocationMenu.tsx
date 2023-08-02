@@ -8,7 +8,7 @@ import {
   Popover,
   StyledReadOnlyCodeMirror,
   Table,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import * as yaml from 'yaml';
 

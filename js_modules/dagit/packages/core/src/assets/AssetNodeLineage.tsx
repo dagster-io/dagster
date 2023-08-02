@@ -1,4 +1,4 @@
-import {Box, Button, ButtonGroup, Colors, Icon, JoinedButtons, TextInput} from '@dagster-io/ui';
+import {Box, Button, ButtonGroup, Colors, Icon, JoinedButtons, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

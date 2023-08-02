@@ -1,4 +1,4 @@
-import {Box, Tag} from '@dagster-io/ui';
+import {Box, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';

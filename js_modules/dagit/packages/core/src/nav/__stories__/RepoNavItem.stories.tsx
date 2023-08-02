@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui';
+import {Box} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
 import * as React from 'react';

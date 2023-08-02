@@ -9,7 +9,7 @@ import {
   Tabs,
   Tag,
   ErrorBoundary,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 

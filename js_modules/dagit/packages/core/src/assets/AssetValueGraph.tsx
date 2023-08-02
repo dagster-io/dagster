@@ -1,4 +1,4 @@
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 import {ActiveElement, ChartEvent} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';

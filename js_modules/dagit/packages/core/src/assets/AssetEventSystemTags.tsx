@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Colors, Icon, Mono} from '@dagster-io/ui';
+import {Box, ButtonLink, Caption, Colors, Icon, Mono} from '@dagster-io/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 

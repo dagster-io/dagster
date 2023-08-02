@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Icon, Mono, Spinner} from '@dagster-io/ui';
+import {Box, Button, Colors, Dialog, DialogFooter, Icon, Mono, Spinner} from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';

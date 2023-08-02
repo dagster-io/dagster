@@ -1,4 +1,4 @@
-import {Button} from '@dagster-io/ui';
+import {Button} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {GenericError} from '../app/PythonErrorInfo';

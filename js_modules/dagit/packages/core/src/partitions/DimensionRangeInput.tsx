@@ -1,4 +1,4 @@
-import {Icon, TextInput} from '@dagster-io/ui';
+import {Icon, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';

@@ -1,4 +1,4 @@
-import {Colors, Box, Icon, Tag} from '@dagster-io/ui';
+import {Colors, Box, Icon, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AssetKey} from '../types';

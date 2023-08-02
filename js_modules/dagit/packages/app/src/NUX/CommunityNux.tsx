@@ -12,7 +12,7 @@ import {
   Icon,
   Spinner,
   TextInput,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import React from 'react';
 import isEmail from 'validator/lib/isEmail';
 

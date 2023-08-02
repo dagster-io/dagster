@@ -10,7 +10,7 @@ import {
   Heading,
   StyledReadOnlyCodeMirror,
   Subheading,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as codemirror from 'codemirror';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';

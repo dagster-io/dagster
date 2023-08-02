@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui';
+import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';

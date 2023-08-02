@@ -1,4 +1,4 @@
-import {Box, Checkbox} from '@dagster-io/ui';
+import {Box, Checkbox} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {assertUnreachable} from '../../app/Util';

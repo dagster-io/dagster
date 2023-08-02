@@ -6,7 +6,7 @@ import {
   intentToTextColor,
   StyledButton,
   StyledButtonText,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 

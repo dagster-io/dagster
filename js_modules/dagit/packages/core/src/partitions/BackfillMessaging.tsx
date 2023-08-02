@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui';
+import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
 import {History} from 'history';
 import * as React from 'react';
 

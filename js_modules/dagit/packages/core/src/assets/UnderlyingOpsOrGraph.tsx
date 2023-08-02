@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Icon, Mono} from '@dagster-io/ui';
+import {Box, Icon, Mono} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 

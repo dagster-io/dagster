@@ -1,4 +1,4 @@
-import {Box, Caption, Colors} from '@dagster-io/ui';
+import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {compactNumber} from '../../ui/formatters';

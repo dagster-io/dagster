@@ -1,6 +1,6 @@
 // Same as PartitionRangeStatus but we need a "MISSING" value
 
-import {Colors} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui-components';
 import {CSSProperties} from 'react';
 
 import {assertUnreachable} from '../app/Util';

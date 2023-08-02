@@ -1,4 +1,4 @@
-import {Button, DialogBody, DialogFooter, Dialog, Icon, ExternalAnchorButton} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Icon, ExternalAnchorButton} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';

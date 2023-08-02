@@ -1,4 +1,4 @@
-import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
+import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 

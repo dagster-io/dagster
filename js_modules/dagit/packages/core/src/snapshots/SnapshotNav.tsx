@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui';
+import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 

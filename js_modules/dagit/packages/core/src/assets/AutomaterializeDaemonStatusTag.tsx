@@ -1,5 +1,5 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {Tag, Tooltip} from '@dagster-io/ui';
+import {Tag, Tooltip} from '@dagster-io/ui-components';
 import React, {useCallback} from 'react';
 import {Link} from 'react-router-dom';
 

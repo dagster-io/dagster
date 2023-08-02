@@ -13,7 +13,7 @@ import {
   Select,
   Spinner,
   Suggest,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 

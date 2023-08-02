@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {Box, Button, Colors, CustomTooltipProvider} from '@dagster-io/ui';
+import {Box, Button, Colors, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import React, {useState} from 'react';
 

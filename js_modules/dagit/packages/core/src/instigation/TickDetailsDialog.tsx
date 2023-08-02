@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
-import {Button, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {copyValue} from '../app/DomUtils';

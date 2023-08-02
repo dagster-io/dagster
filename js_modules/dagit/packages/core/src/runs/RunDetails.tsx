@@ -14,7 +14,7 @@ import {
   Subheading,
   Box,
   StyledReadOnlyCodeMirror,
-} from '@dagster-io/ui';
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';

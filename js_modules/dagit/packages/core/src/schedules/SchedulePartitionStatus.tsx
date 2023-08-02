@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {ButtonLink, Colors, Group, Caption} from '@dagster-io/ui';
+import {ButtonLink, Colors, Group, Caption} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';

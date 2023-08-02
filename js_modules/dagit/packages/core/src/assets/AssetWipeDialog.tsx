@@ -1,5 +1,5 @@
 import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
-import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

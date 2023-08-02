@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, CursorPaginationControls, CursorPaginationProps, NonIdealState} from '@dagster-io/ui';
+import {Box, CursorPaginationControls, CursorPaginationProps, NonIdealState} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {RepositorySelector} from '../graphql/types';

@@ -1,5 +1,5 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
-import {ButtonLink, Colors, Group, Icon, Caption} from '@dagster-io/ui';
+import {ButtonLink, Colors, Group, Icon, Caption} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {LocationStateChangeEventType} from '../graphql/types';

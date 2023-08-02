@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
