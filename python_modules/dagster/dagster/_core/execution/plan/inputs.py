@@ -810,7 +810,7 @@ def _load_input_with_input_manager(
                     input_manager, context, step_context
                 )
     else:
-        # TODO handle op case
+        # TODO handle op case?
         yield from _load_input_with_input_manager_helper(input_manager, context, step_context)
 
 

@@ -630,10 +630,17 @@ def _store_output(
     # catch errors should they be raised before a return value. We can do this by wrapping
     # handle_output in a generator so that errors will be caught within iterate_with_context.
 
-    if output.value is not None:
-        # io_manager_key = step_context.get_io_manager_key(step_output_handle)
-        # manager_metadata["io_manager_key"] = MetadataValue.text(io_manager_key)
+    # TODO - should we handle the op case?
 
+    if output_context.has_asset_key and output.value is None:
+        # if the output is from an asset and None is returned, don't invoke an I/O manager
+        def _no_op():
+            yield {"used_io_manager": False}
+
+        handle_output_gen = _no_op()
+    else:
+        # if the output is from an op or if the output is from an asset and is not None we use the
+        # I/O manager
         if not inspect.isgeneratorfunction(output_manager.handle_output):
 
             def _gen_fn():
@@ -646,13 +653,6 @@ def _store_output(
             handle_output_gen = _gen_fn()
         else:
             handle_output_gen = output_manager.handle_output(output_context, output.value)
-
-    else:
-        # if None is returned, don't invoke an I/O manager
-        def _no_op():
-            yield {"used_io_manager": False}
-
-        handle_output_gen = _no_op()
 
     for elt in iterate_with_context(
         lambda: op_execution_error_boundary(

@@ -85,7 +85,6 @@ def test_multi_asset():
 
 
 def test_ops():
-    # TODO - fails because the op case for loading inputs is not handled
     @op
     def returns_none():
         return None
@@ -98,7 +97,8 @@ def test_ops():
     def return_none_job():
         asserts_none(returns_none())
 
-    return_none_job.execute_in_process(resources={"io_manager": TestIOManager()})
+    result = return_none_job.execute_in_process()
+    assert result.success
 
 
 # test partitions
