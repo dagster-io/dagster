@@ -1,5 +1,5 @@
 {
-  "name": "@dagster-io/ui",
+  "name": "@dagster-io/ui-components",
   "version": "1.0.9",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",

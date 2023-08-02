@@ -1,8 +1,8 @@
 {
-  "name": "@dagster-io/dagit-core",
+  "name": "@dagster-io/ui-core",
   "version": "1.0.0",
   "private": true,
-  "description": "Dagit Application Core",
+  "description": "Dagster UI Application Core",
   "license": "Apache-2.0",
   "scripts": {
     "find-dead-code": "yarn ts-prune --ignore 'types.ts|stories.ts|mocks.ts|__stories__|__fixtures__|__mocks__'",
@@ -22,7 +22,7 @@
     "@blueprintjs/core": "^4.17.8",
     "@blueprintjs/popover2": "1.13.12",
     "@blueprintjs/select": "^4.9.12",
-    "@dagster-io/ui": "workspace:*",
+    "@dagster-io/ui-components": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router": "^5.2.1",
@@ -87,7 +87,7 @@
     "@blueprintjs/popover2": "1.13.12",
     "@blueprintjs/select": "^4.9.12",
     "@dagster-io/eslint-config": "workspace:*",
-    "@dagster-io/ui": "workspace:*",
+    "@dagster-io/ui-components": "workspace:*",
     "@graphql-codegen/add": "^3.2.3",
     "@graphql-codegen/cli": "^2.16.3",
     "@graphql-codegen/near-operation-file-preset": "^2.5.0",

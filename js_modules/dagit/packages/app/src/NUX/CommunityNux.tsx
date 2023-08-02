@@ -1,5 +1,5 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {useStateWithStorage} from '@dagster-io/dagit-core/hooks/useStateWithStorage';
+import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import {
   Body,
   Box,
