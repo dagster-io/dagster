@@ -2034,6 +2034,7 @@ input MarshalledOutput {
 input LaunchBackfillParams {
   selector: PartitionSetSelector
   partitionNames: [String!]
+  partitionsByAssets: [PartitionsByAssetSelector]
   reexecutionSteps: [String!]
   assetSelection: [AssetKeyInput!]
   fromFailure: Boolean
@@ -2045,6 +2046,20 @@ input LaunchBackfillParams {
 input PartitionSetSelector {
   partitionSetName: String!
   repositorySelector: RepositorySelector!
+}
+
+input PartitionsByAssetSelector {
+  assetKey: AssetKeyInput!
+  partitions: PartitionsSelector
+}
+
+input PartitionsSelector {
+  range: PartitionRangeSelector!
+}
+
+input PartitionRangeSelector {
+  start: String!
+  end: String!
 }
 
 input RunsFilter {

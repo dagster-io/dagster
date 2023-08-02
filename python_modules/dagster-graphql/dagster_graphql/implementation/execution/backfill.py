@@ -89,7 +89,7 @@ def create_and_launch_partition_backfill(
             "partitions_by_assets cannot be used together with asset_selection, selector, or"
             " partitionNames"
         ),
-    ),
+    )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
     backfill_timestamp = pendulum.now("UTC").timestamp()
