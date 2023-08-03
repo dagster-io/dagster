@@ -15,8 +15,8 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
-import {RunStatus} from '../graphql/types';
+import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
+import {RunStatus, StaleStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -28,6 +28,7 @@ import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
+import {StaleReasonsTags} from './Stale';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
@@ -42,31 +43,27 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
 ) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
     ASSET_PARTITION_DETAIL_QUERY,
-    {
-      variables: {
-        assetKey: props.assetKey,
-        partitionKey: props.partitionKey,
-      },
-    },
+    {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
 
-  const {
-    stepKey,
-    latestRunForPartition,
-    materializations,
-    observations,
-    hasLineage,
-  } = React.useMemo(() => {
+  const {materializations, observations, ...rest} = React.useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
         materializations: [],
         observations: [],
         hasLineage: false,
+        staleCauses: [],
+        staleStatus: StaleStatus.FRESH,
         latestRunForPartition: null,
       };
     }
+
     return {
       stepKey: stepKeyForAsset(result.data.assetNodeOrError),
+
+      staleStatus: result.data.assetNodeOrError.staleStatus,
+
+      staleCauses: result.data.assetNodeOrError.staleCauses,
 
       latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
 
@@ -84,19 +81,17 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
 
   const latest = materializations[0];
 
-  if (result.loading || !result.data || !latest) {
+  if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
 
   return (
     <AssetPartitionDetail
+      {...rest}
       assetKey={props.assetKey}
-      stepKey={stepKey}
-      latestRunForPartition={latestRunForPartition}
-      hasLineage={hasLineage}
       group={{
-        latest,
-        timestamp: latest.timestamp,
+        latest: latest || null,
+        timestamp: latest?.timestamp,
         partition: props.partitionKey,
         all: [...materializations, ...observations].sort(
           (a, b) => Number(b.timestamp) - Number(a.timestamp),
@@ -112,6 +107,17 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
       ... on AssetNode {
         id
         opNames
+        staleStatus(partition: $partitionKey)
+        staleCauses(partition: $partitionKey) {
+          key {
+            path
+          }
+          reason
+          category
+          dependency {
+            path
+          }
+        }
         latestRunForPartition(partition: $partitionKey) {
           id
           ...AssetPartitionLatestRunFragment
@@ -148,7 +154,18 @@ export const AssetPartitionDetail: React.FC<{
   hasLineage: boolean;
   hasLoadingState?: boolean;
   stepKey?: string;
-}> = ({assetKey, stepKey, group, hasLineage, hasLoadingState, latestRunForPartition}) => {
+  staleCauses?: LiveDataForNode['staleCauses'];
+  staleStatus?: LiveDataForNode['staleStatus'];
+}> = ({
+  assetKey,
+  stepKey,
+  group,
+  hasLineage,
+  hasLoadingState,
+  latestRunForPartition,
+  staleCauses,
+  staleStatus,
+}) => {
   const {latest, partition, all} = group;
 
   // Somewhat confusing, but we have `latestEventRun`, the run that generated the
@@ -194,9 +211,16 @@ export const AssetPartitionDetail: React.FC<{
             <Heading>{partition}</Heading>
             {hasLoadingState ? (
               <Spinner purpose="body-text" />
-            ) : (
-              latest && <Tag intent="success">Materialized</Tag>
-            )}
+            ) : latest ? (
+              <Tag intent="success">Materialized</Tag>
+            ) : undefined}
+            {staleCauses && staleStatus ? (
+              <StaleReasonsTags
+                liveData={{staleCauses, staleStatus}}
+                assetKey={assetKey}
+                include="all"
+              />
+            ) : undefined}
           </Box>
         ) : (
           <Heading color={Colors.Gray400}>No partition selected</Heading>
