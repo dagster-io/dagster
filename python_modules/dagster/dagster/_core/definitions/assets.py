@@ -1130,7 +1130,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
             return SourceAsset(
                 key=key,
-                metadata=output_def.metadata,
+                metadata=self.metadata_by_key.get(key),
                 io_manager_key=output_def.io_manager_key,
                 description=output_def.description,
                 resource_defs=self.resource_defs,

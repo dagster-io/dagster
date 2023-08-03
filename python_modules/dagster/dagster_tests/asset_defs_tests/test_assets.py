@@ -497,6 +497,15 @@ def test_to_source_assets():
     assert my_multi_asset.to_source_asset("my_other_asset") == my_other_asset_source_asset
 
 
+def test_to_source_asset_with_attributes_metadata():
+    @asset
+    def asset1():
+        ...
+
+    asset1_with_metadata = asset1.with_attributes(metadata_by_key={asset1.key: {"a": "b"}})
+    assert asset1_with_metadata.to_source_asset().raw_metadata == {"a": "b"}
+
+
 def test_coerced_asset_keys():
     @asset(ins={"input1": AssetIn(key=["Asset", "1"])})
     def asset1(input1):
