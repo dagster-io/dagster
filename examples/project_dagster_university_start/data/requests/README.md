@@ -2,7 +2,7 @@
 
 This directory simulates a request system in the sensors portion of Dagster University. By creating a "request" file in this directory, your Dagster project will automatically pick up the request and run the pipeline with the parameters specified in the request.
 
-The pipeline stored the results in the `data/results` directory.
+The pipeline stores the results in the `data/results` directory.
 
 ## How it Works
 
