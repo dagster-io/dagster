@@ -14,12 +14,8 @@ type Asset = {
   } | null;
 };
 
-export const AssetGroupSuggest: React.FC<{
-  assets: Asset[];
-  value: AssetGroupSelector | null;
-  onChange: (g: AssetGroupSelector | null) => void;
-}> = ({assets, value, onChange}) => {
-  const assetGroups = React.useMemo(
+export function useAssetGroupSelectorsForAssets(assets: Asset[] | undefined) {
+  return React.useMemo(
     () =>
       uniqBy(
         (assets || []).map(buildAssetGroupSelector).filter((a) => !!a) as AssetGroupSelector[],
@@ -27,7 +23,13 @@ export const AssetGroupSuggest: React.FC<{
       ).sort((a, b) => a.groupName.localeCompare(b.groupName)),
     [assets],
   );
+}
 
+export const AssetGroupSuggest: React.FC<{
+  assetGroups: AssetGroupSelector[];
+  value: AssetGroupSelector | null;
+  onChange: (g: AssetGroupSelector | null) => void;
+}> = ({assetGroups, value, onChange}) => {
   const repoContextNeeded = React.useMemo(() => {
     // This is a bit tricky - the first time we find a groupName it sets the key to `false`.
     // The second time, it sets the value to `true` + tells use we need to show the repo name
@@ -43,7 +45,7 @@ export const AssetGroupSuggest: React.FC<{
       selectedItem={value}
       items={assetGroups}
       inputProps={{
-        style: {width: 220},
+        style: {width: 200},
         placeholder: 'Filter asset groups…',
         rightElement: value ? (
           <ClearButton onClick={() => onChange(null)} style={{marginTop: 5, marginRight: 4}}>

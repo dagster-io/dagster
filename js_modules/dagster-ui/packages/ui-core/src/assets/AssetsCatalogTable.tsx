@@ -11,7 +11,11 @@ import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LoadingSpinner} from '../ui/Loading';
 
-import {AssetGroupSuggest, buildAssetGroupSelector} from './AssetGroupSuggest';
+import {
+  AssetGroupSuggest,
+  buildAssetGroupSelector,
+  useAssetGroupSelectorsForAssets,
+} from './AssetGroupSuggest';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -95,6 +99,7 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
+  const assetGroupOptions = useAssetGroupSelectorsForAssets(assets);
   const pathMatches = useAssetSearch(searchPath, assets || []);
 
   const filtered = React.useMemo(
@@ -162,7 +167,11 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
           {!groupSelector ? (
-            <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
+            <AssetGroupSuggest
+              assetGroups={assetGroupOptions}
+              value={searchGroup}
+              onChange={setSearchGroup}
+            />
           ) : undefined}
         </>
       }

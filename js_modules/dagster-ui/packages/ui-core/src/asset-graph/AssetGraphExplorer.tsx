@@ -432,6 +432,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             {fetchOptionFilters}
 
             <GraphQueryInput
+              width={fetchOptionFilters ? '16vw' : undefined}
               items={graphQueryItems}
               value={explorerPath.opsQuery}
               placeholder="Type an asset subset…"
