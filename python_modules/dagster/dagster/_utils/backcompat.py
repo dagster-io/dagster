@@ -90,10 +90,10 @@ class ExperimentalWarning(Warning):
 def experimental_warning(
     subject: str, additional_warn_text: Optional[str] = None, stacklevel: int = 3
 ) -> None:
-    extra_text = ((f" {additional_warn_text} " if additional_warn_text else ""),)
+    extra_text = f" {additional_warn_text}" if additional_warn_text else ""
     warnings.warn(
         f"{subject} is experimental. It may break in future versions, even between dot"
-        f" releases.{extra_text}{EXPERIMENTAL_WARNING_HELP}",
+        f" releases.{extra_text} {EXPERIMENTAL_WARNING_HELP}",
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
