@@ -1,4 +1,4 @@
-import {Icon, MenuItem, Suggest} from '@dagster-io/ui-components';
+import {Box, Checkbox, Icon, MenuItem, Suggest} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
@@ -25,37 +25,44 @@ export function useAssetGroupSelectorsForAssets(assets: Asset[] | undefined) {
   );
 }
 
+// We're using a <Suggest /> component because it's convenient to have typeahead behavior,
+// but we want to support mulit-selection. To achieve this, we show checkboxes on the items
+// and override the label text ("2 groups"). Blueprint doesn't need to know what the real
+// selection is, just that one exists.
+const FAKE_SELECTED_ITEM: AssetGroupSelector = {
+  groupName: '-',
+  repositoryLocationName: '-',
+  repositoryName: '-',
+};
+
 export const AssetGroupSuggest: React.FC<{
   assetGroups: AssetGroupSelector[];
-  value: AssetGroupSelector | null;
-  onChange: (g: AssetGroupSelector | null) => void;
+  value: AssetGroupSelector[];
+  onChange: (g: AssetGroupSelector[]) => void;
 }> = ({assetGroups, value, onChange}) => {
-  const repoContextNeeded = React.useMemo(() => {
-    // This is a bit tricky - the first time we find a groupName it sets the key to `false`.
-    // The second time, it sets the value to `true` + tells use we need to show the repo name
-    const result: {[groupName: string]: boolean} = {};
-    assetGroups.forEach(
-      (group) => (result[group.groupName] = result.hasOwnProperty(group.groupName)),
-    );
-    return result;
-  }, [assetGroups]);
+  const repoKey = (g: AssetGroupSelector) => `${g.repositoryName}@${g.repositoryLocationName}`;
+  const repoKey1 = assetGroups[0] ? repoKey(assetGroups[0]) : '';
+  const repoContextNeeded = !assetGroups.every((g) => repoKey1 === repoKey(g));
 
   return (
     <Suggest<AssetGroupSelector>
-      selectedItem={value}
+      selectedItem={value.length ? FAKE_SELECTED_ITEM : null}
       items={assetGroups}
+      menuWidth={300}
       inputProps={{
         style: {width: 200},
         placeholder: 'Filter asset groups…',
-        rightElement: value ? (
-          <ClearButton onClick={() => onChange(null)} style={{marginTop: 5, marginRight: 4}}>
+        rightElement: value.length ? (
+          <ClearButton onClick={() => onChange([])} style={{marginTop: 5, marginRight: 4}}>
             <Icon name="cancel" />
           </ClearButton>
         ) : undefined,
       }}
-      inputValueRenderer={(partition) => partition.groupName}
+      inputValueRenderer={() =>
+        value.length === 1 ? value[0]!.groupName : value.length > 1 ? `${value.length} groups` : ``
+      }
       itemPredicate={(query, partition) =>
-        query.length === 0 || partition.groupName.includes(query)
+        query.length === 0 || partition.groupName.toLowerCase().includes(query.toLowerCase())
       }
       itemsEqual={isEqual}
       itemRenderer={(assetGroup, props) => (
@@ -64,22 +71,42 @@ export const AssetGroupSuggest: React.FC<{
           onClick={props.handleClick}
           key={JSON.stringify(assetGroup)}
           text={
-            <>
-              {assetGroup.groupName}
-              {repoContextNeeded[assetGroup.groupName] ? (
-                <span style={{opacity: 0.5, paddingLeft: 4}}>
-                  {buildRepoPathForHuman(
-                    assetGroup.repositoryName,
-                    assetGroup.repositoryLocationName,
-                  )}
-                </span>
-              ) : undefined}
-            </>
+            <Box
+              flex={{direction: 'row', gap: 6, alignItems: 'center'}}
+              margin={{left: 4}}
+              style={{maxWidth: '500px'}}
+            >
+              <Checkbox checked={value.some((g) => isEqual(g, assetGroup))} size="small" readOnly />
+              <Box
+                flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
+                style={{overflow: 'hidden'}}
+              >
+                <div style={{overflow: 'hidden'}}>
+                  {assetGroup.groupName}
+                  {repoContextNeeded ? (
+                    <span style={{opacity: 0.5, paddingLeft: 4}}>
+                      {buildRepoPathForHuman(
+                        assetGroup.repositoryName,
+                        assetGroup.repositoryLocationName,
+                      )}
+                    </span>
+                  ) : undefined}
+                </div>
+              </Box>
+            </Box>
           }
         />
       )}
       noResults={<MenuItem disabled={true} text="No asset groups" />}
-      onItemSelect={onChange}
+      closeOnSelect={false}
+      resetOnQuery={false}
+      onItemSelect={(item) => {
+        const nextValue = value.filter((g) => !isEqual(item, g));
+        if (nextValue.length === value.length) {
+          nextValue.push(item);
+        }
+        onChange(nextValue);
+      }}
     />
   );
 };

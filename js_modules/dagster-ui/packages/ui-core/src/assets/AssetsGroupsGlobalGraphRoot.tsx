@@ -107,10 +107,8 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
             {allRepos.length > 1 && <RepoFilterButton />}
             <AssetGroupSuggest
               assetGroups={assetGroups}
-              value={filters.groups?.[0] || null}
-              onChange={(g: AssetGroupSelector | null) => {
-                setFilters({...filters, groups: g ? [g] : []});
-              }}
+              value={filters.groups || []}
+              onChange={(groups) => setFilters({...filters, groups})}
             />
           </>
         }

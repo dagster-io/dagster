@@ -37,7 +37,7 @@ interface Props {
   displayPathForAsset: (asset: Asset) => string[];
   requery?: RefetchQueriesFunction;
   searchPath: string;
-  searchGroup: AssetGroupSelector | null;
+  searchGroups: AssetGroupSelector[];
 }
 
 export const AssetTable: React.FC<Props> = ({
@@ -48,7 +48,7 @@ export const AssetTable: React.FC<Props> = ({
   displayPathForAsset,
   requery,
   searchPath,
-  searchGroup,
+  searchGroups,
   view,
 }) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
@@ -76,10 +76,14 @@ export const AssetTable: React.FC<Props> = ({
               icon="search"
               title="No matching assets"
               description={
-                searchGroup ? (
+                searchGroups.length ? (
                   <div>
                     No assets matching <strong>{searchPath}</strong> were found in{' '}
-                    <strong>{searchGroup.groupName}</strong>
+                    {searchGroups.length === 1 ? (
+                      <strong>{searchGroups[0]?.groupName}</strong>
+                    ) : (
+                      'the selected asset groups'
+                    )}
                   </div>
                 ) : (
                   <div>
@@ -98,9 +102,14 @@ export const AssetTable: React.FC<Props> = ({
             icon="search"
             title="No assets"
             description={
-              searchGroup ? (
+              searchGroups.length ? (
                 <div>
-                  No assets were found in <strong>{searchGroup.groupName}</strong>
+                  No assets were found in{' '}
+                  {searchGroups.length === 1 ? (
+                    <strong>{searchGroups[0]?.groupName}</strong>
+                  ) : (
+                    'the selected asset groups'
+                  )}
                 </div>
               ) : (
                 'No assets were found'

@@ -87,10 +87,10 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
 }) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
-  const [searchGroup, setSearchGroup] = useQueryPersistedState<AssetGroupSelector | null>({
+  const [searchGroups, setSearchGroups] = useQueryPersistedState<AssetGroupSelector[]>({
     queryKey: 'g',
-    decode: (qs) => (qs.group ? JSON.parse(qs.group) : null),
-    encode: (group) => ({group: group ? JSON.stringify(group) : undefined}),
+    decode: (qs) => (qs.groups ? JSON.parse(qs.groups) : []),
+    encode: (groups) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
   });
 
   const searchPath = (search || '')
@@ -104,8 +104,11 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
 
   const filtered = React.useMemo(
     () =>
-      pathMatches.filter((a) => !searchGroup || isEqual(buildAssetGroupSelector(a), searchGroup)),
-    [pathMatches, searchGroup],
+      pathMatches.filter(
+        (a) =>
+          !searchGroups.length || searchGroups.some((g) => isEqual(buildAssetGroupSelector(a), g)),
+      ),
+    [pathMatches, searchGroups],
   );
 
   const {displayPathForAsset, displayed} =
@@ -169,8 +172,8 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
           {!groupSelector ? (
             <AssetGroupSuggest
               assetGroups={assetGroupOptions}
-              value={searchGroup}
-              onChange={setSearchGroup}
+              value={searchGroups}
+              onChange={setSearchGroups}
             />
           ) : undefined}
         </>
@@ -178,7 +181,7 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
       refreshState={refreshState}
       prefixPath={prefixPath || []}
       searchPath={searchPath}
-      searchGroup={searchGroup}
+      searchGroups={searchGroups}
       displayPathForAsset={displayPathForAsset}
       requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
     />
