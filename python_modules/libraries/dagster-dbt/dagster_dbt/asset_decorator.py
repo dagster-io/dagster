@@ -1,24 +1,18 @@
 from typing import (
     Any,
     Callable,
-    Dict,
     FrozenSet,
     Mapping,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
 )
 
 import dagster._check as check
 from dagster import (
-    AssetKey,
-    AssetOut,
     AssetsDefinition,
-    Nothing,
     PartitionsDefinition,
     multi_asset,
 )
+from dagster._core.definitions.asset_node import AssetNode
 
 from .asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
@@ -31,7 +25,6 @@ from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    output_name_fn,
     select_unique_ids_from_manifest,
 )
 
@@ -257,11 +250,8 @@ def dbt_assets(
         selected_unique_ids=unique_ids,
         asset_resource_types=ASSET_RESOURCE_TYPES,
     )
-    (
-        non_argument_deps,
-        outs,
-        internal_asset_deps,
-    ) = get_dbt_multi_asset_args(
+
+    assets = get_dbt_multi_asset_args(
         dbt_nodes=node_info_by_dbt_unique_id,
         deps=deps,
         io_manager_key=io_manager_key,
@@ -271,9 +261,7 @@ def dbt_assets(
 
     def inner(fn) -> AssetsDefinition:
         asset_definition = multi_asset(
-            outs=outs,
-            internal_asset_deps=internal_asset_deps,
-            deps=non_argument_deps,
+            assets=assets,
             compute_kind="dbt",
             partitions_def=partitions_def,
             can_subset=True,
@@ -291,26 +279,27 @@ def dbt_assets(
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     deps: Mapping[str, FrozenSet[str]],
-    io_manager_key: Optional[str],
+    io_manager_key: Optional[
+        str
+    ],  # needing to support an IO managed case means we probably would never land this and just use the Output variant
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
-) -> Tuple[Sequence[AssetKey], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
-    non_argument_deps: Set[AssetKey] = set()
-    outs: Dict[str, AssetOut] = {}
-    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
-
+):
+    nodes = []
     for unique_id, parent_unique_ids in deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(dbt_resource_props)
-        asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+        asset_deps = set()
+        for parent_unique_id in parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_asset_key = dagster_dbt_translator.get_asset_key(parent_node_info)
 
-        outs[output_name] = AssetOut(
-            key=asset_key,
-            dagster_type=Nothing,
-            io_manager_key=io_manager_key,
+            asset_deps.add(parent_asset_key)
+
+        node = AssetNode(
+            asset_key=dagster_dbt_translator.get_asset_key(dbt_resource_props),
+            deps=asset_deps,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
-            is_required=False,
             metadata={  # type: ignore
                 **dagster_dbt_translator.get_metadata(dbt_resource_props),
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
@@ -323,18 +312,6 @@ def get_dbt_multi_asset_args(
                 dbt_resource_props
             ),
         )
+        nodes.append(node)
 
-        # Translate parent unique ids to internal asset deps and non argument dep
-        output_internal_deps = internal_asset_deps.setdefault(output_name, set())
-        for parent_unique_id in parent_unique_ids:
-            parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = dagster_dbt_translator.get_asset_key(parent_node_info)
-
-            # Add this parent as an internal dependency
-            output_internal_deps.add(parent_asset_key)
-
-            # Mark this parent as an input if it has no dependencies
-            if parent_unique_id not in deps:
-                non_argument_deps.add(parent_asset_key)
-
-    return list(non_argument_deps), outs, internal_asset_deps
+    return nodes
