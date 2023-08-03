@@ -301,7 +301,7 @@ def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
 
 For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's table schema.
 
-To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata:
+To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject module="dagster" object="MetadataValue"/>:
 
 ```python startafter=start_custom_metadata_dagster_dbt_translator endbefore=end_custom_metadata_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
@@ -315,7 +315,9 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     def get_metadata(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Mapping[str, Any]:
-        return {"meta": MetadataValue.json(dbt_resource_props.get("meta", {}))}
+        return {
+            "dbt_metadata": MetadataValue.json(dbt_resource_props.get("meta", {}))
+        }
 
 @dbt_assets(
     manifest=manifest_path,
