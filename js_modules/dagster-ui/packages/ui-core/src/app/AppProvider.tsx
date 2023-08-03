@@ -39,6 +39,7 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
+import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
 
 import './blueprint.css';
@@ -120,6 +121,12 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     telemetryEnabled = false,
     statusPolling,
   } = config;
+
+  React.useEffect(() => {
+    migrateLocalStorageKeys({from: /DAGIT_FLAGS/g, to: 'DAGSTER_FLAGS'});
+    migrateLocalStorageKeys({from: /:dagit/gi, to: ':dagster'});
+    migrateLocalStorageKeys({from: /^dagit(\.v2)?/gi, to: 'dagster'});
+  }, []);
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
