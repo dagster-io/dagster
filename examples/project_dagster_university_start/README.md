@@ -4,13 +4,13 @@ This is a [Dagster](https://dagster.io/) project made to accompany Dagster Unive
 
 ## Getting started
 
-First, install your Dagster code location as a Python package. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
+First, install your Dagster code location as a Python package by running the command below in your terminal. By using the --editable (`-e`) flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Duplicate the `.env.example` file and rename it to `.env`. Then, fill in the values for the environment variables in the file.
+Duplicate the `.env.example` file and rename it to `.env`.
 
 Then, start the Dagster UI web server:
 
@@ -27,20 +27,6 @@ Open http://localhost:3000 with your browser to see the project.
 ### Adding new Python dependencies
 
 You can specify new Python dependencies in `setup.py`.
-
-### Unit testing
-
-Tests are in the `dagster_university_tests` directory and you can run tests using `pytest`:
-
-```bash
-pytest dagster_university_tests
-```
-
-### Schedules and sensors
-
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
-
-Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
 
 ## Deploy on Dagster Cloud
 
