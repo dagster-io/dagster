@@ -57,8 +57,8 @@ def dbt_assets(
             or the path to a manifest.json file. A manifest.json contains a representation of a
             dbt project (models, tests, macros, etc). We use this representation to create
             corresponding Dagster assets.
-        select (Optional[str]): A dbt selection string for the models in a project that you want
-            to include. Defaults to "*".
+        select (str): A dbt selection string for the models in a project that you want
+            to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
