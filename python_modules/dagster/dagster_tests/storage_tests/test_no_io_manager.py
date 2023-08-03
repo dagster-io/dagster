@@ -126,7 +126,7 @@ def test_deps_unit_test_flow():
 
     asset_context = build_asset_context()
 
-    assert downstream(asset_context) is None
+    assert downstream(asset_context) == 1
 
 
 def test_io_unit_test_flow():
