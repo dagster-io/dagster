@@ -132,10 +132,18 @@ const OverdueLineagePopoverContent: React.FC<{
   }
 
   const hasUpstreams = data.assetMaterializationUsedData.length > 0;
-  const {currentLagMinutes} = data.freshnessInfo;
-  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone} = data.freshnessPolicy;
-  const oldStr = humanizedMinutesLateString(currentLagMinutes || 0);
+  const {currentLagMinutes, currentMinutesLate} = data.freshnessInfo;
+  const {
+    lastEvaluationTimestamp,
+    cronSchedule,
+    cronScheduleTimezone,
+    maximumLagMinutes,
+  } = data.freshnessPolicy;
+  const maxLagMinutesStr = humanizedMinutesLateString(maximumLagMinutes);
+  const lagMinutesStr = humanizedMinutesLateString(currentLagMinutes || 0);
+  const derivedStr = hasUpstreams ? ` is derived from source data that` : '';
   const policyStr = freshnessPolicyDescription(data.freshnessPolicy, 'short');
+
   const lastEvaluationStr = timestampToString({
     locale,
     timezone: cronScheduleTimezone || 'UTC',
@@ -146,13 +154,17 @@ const OverdueLineagePopoverContent: React.FC<{
   return (
     <Box style={{width: 600}}>
       <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        {hasUpstreams
+        {currentMinutesLate === 0 // fresh
           ? cronSchedule
-            ? `The latest materialization is derived from source data that was ${oldStr} old on ${lastEvaluationStr}. The asset's freshness policy requires it to be derived from data ${policyStr}`
-            : `The latest materialization is derived from source data that is ${oldStr} old. The asset's freshness policy requires it to be derived from data ${policyStr}`
+            ? `The latest materialization contains all data up to ${maxLagMinutesStr} before ${lastEvaluationStr}. `
+            : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `
           : cronSchedule
-          ? `The latest materialization was ${oldStr} old on ${lastEvaluationStr}. The asset's freshness policy requires it ${policyStr}`
-          : `The latest materialization is ${oldStr} old. The asset's freshness policy requires it ${policyStr}`}
+          ? `The latest materialization${derivedStr} was ${lagMinutesStr} old on ${lastEvaluationStr}. `
+          : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `}
+
+        {hasUpstreams
+          ? `The asset's freshness policy requires it to be derived from data ${policyStr}`
+          : `The asset's freshness policy requires it is ${policyStr}`}
       </Box>
       <Box
         padding={12}
@@ -211,7 +223,9 @@ export const freshnessPolicyDescription = (
       )
     : '';
   const lagDesc =
-    maximumLagMinutes % 30 === 0
+    maximumLagMinutes % (24 * 60) === 0
+      ? `${maximumLagMinutes / (24 * 60)} day${maximumLagMinutes / (24 * 60) !== 1 ? 's' : ''}`
+      : maximumLagMinutes % 30 === 0
       ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
       : `${maximumLagMinutes} min`;
 
