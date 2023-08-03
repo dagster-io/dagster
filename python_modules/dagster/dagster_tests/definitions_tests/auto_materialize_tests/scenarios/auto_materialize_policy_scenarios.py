@@ -36,6 +36,18 @@ from .partition_scenarios import (
     two_partitions_partitions_def,
 )
 
+lazy_assets_nothing_dep = [
+    asset_def("asset1"),
+    asset_def(
+        "asset2", ["asset1", "missing_source"], auto_materialize_policy=AutoMaterializePolicy.lazy()
+    ),
+    asset_def(
+        "asset3",
+        ["asset2"],
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+    ),
+]
 single_lazy_asset = [asset_def("asset1", auto_materialize_policy=AutoMaterializePolicy.lazy())]
 single_lazy_asset_with_freshness_policy = [
     asset_def(
@@ -227,6 +239,17 @@ auto_materialize_policy_scenarios = {
             single_asset_run(asset_key="asset1", partition_key="a"),
         ],
         # no need to rematerialize as this is a lazy policy
+        expected_run_requests=[],
+    ),
+    "auto_materialize_policy_lazy_with_nothing_dep_and_failure": AssetReconciliationScenario(
+        assets=lazy_assets_nothing_dep,
+        cursor_from=AssetReconciliationScenario(
+            assets=lazy_assets_nothing_dep,
+            unevaluated_runs=[run(["asset1"])],
+            expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
+        ),
+        unevaluated_runs=[run(["asset2", "asset3"], failed_asset_keys=["asset2", "asset3"])],
+        # should not run again
         expected_run_requests=[],
     ),
     "auto_materialize_policy_max_materializations_exceeded": AssetReconciliationScenario(

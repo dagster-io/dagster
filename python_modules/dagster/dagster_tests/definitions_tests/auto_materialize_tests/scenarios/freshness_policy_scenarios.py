@@ -162,16 +162,6 @@ freshness_policy_scenarios = {
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"])],
     ),
-    "freshness_nothing_dep_with_failure": AssetReconciliationScenario(
-        assets=nothing_dep_freshness,
-        cursor_from=AssetReconciliationScenario(
-            assets=nothing_dep_freshness,
-            unevaluated_runs=[],
-        ),
-        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset1"])],
-        # should not try to execute again
-        expected_run_requests=[],
-    ),
     "freshness_many_to_one_some_updated": AssetReconciliationScenario(
         assets=many_to_one_freshness,
         unevaluated_runs=[
