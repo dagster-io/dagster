@@ -634,6 +634,7 @@ def _store_output(
 
     if output_context.has_asset_key and output.value is None:
         # if the output is from an asset and None is returned, don't invoke an I/O manager
+        # and record that no I/O manager was used
         def _no_op():
             yield {"used_io_manager": False}
 
