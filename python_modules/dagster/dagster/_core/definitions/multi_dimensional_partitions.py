@@ -273,7 +273,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 return False
         return True
 
-    @lru_cache(maxsize=5)
+    @lru_cache(maxsize=1)
     def _get_partition_keys(
         self, current_time: datetime, dynamic_partitions_store: Optional[DynamicPartitionsStore]
     ) -> Sequence[MultiPartitionKey]:
