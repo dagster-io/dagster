@@ -16,7 +16,7 @@ type Args<TValue> = {
   freeformSearchResult?: (
     query: string,
     suggestionPath: TValue[],
-  ) => SuggestionFilterSuggestion<TValue>;
+  ) => SuggestionFilterSuggestion<TValue> | null;
 
   state: TValue[]; // Active suggestions
   setState: (state: TValue[]) => void;
@@ -116,17 +116,19 @@ export function useSuggestionFilter<TValue>({
         }
         if (!hasExactMatch && freeformSearchResult && query.length) {
           const suggestion = freeformSearchResult(query, suggestionPath);
-          results.unshift({
-            label: (
-              <SuggestionFilterLabel
-                value={suggestion.value}
-                renderLabel={renderLabel}
-                filter={filterObjRef.current}
-              />
-            ),
-            key: getKey?.(suggestion.value) || 'freeform',
-            value: suggestion,
-          });
+          if (suggestion) {
+            results.unshift({
+              label: (
+                <SuggestionFilterLabel
+                  value={suggestion.value}
+                  renderLabel={renderLabel}
+                  filter={filterObjRef.current}
+                />
+              ),
+              key: getKey?.(suggestion.value) || 'freeform',
+              value: suggestion,
+            });
+          }
         }
         return results;
       },
