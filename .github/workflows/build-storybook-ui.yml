@@ -27,7 +27,7 @@ jobs:
           vercel-project-id: ${{ secrets.STORYBOOK_UI_VERCEL_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.dagit-storybook.dagster-docs.io
+          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.ui-storybook.dagster-docs.io
       - uses: amondnet/vercel-action@v25
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
