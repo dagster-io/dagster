@@ -440,9 +440,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "dbt_13X_legacy",
             "dbt_14X_legacy",
             "dbt_15X_legacy",
+            "dbt_16X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",
+            "dbt_16X",
         ],
     ),
     PackageSpec(
