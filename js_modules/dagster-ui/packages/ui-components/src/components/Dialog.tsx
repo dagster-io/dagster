@@ -24,9 +24,9 @@ export const Dialog = (props: Props) => {
   return (
     <BlueprintDialog
       {...rest}
-      portalClassName="dagit-portal"
-      backdropClassName="dagit-backdrop"
-      className="dagit-dialog"
+      portalClassName="dagster-portal"
+      backdropClassName="dagster-backdrop"
+      className="dagster-dialog"
     >
       {title ? <DialogHeader icon={icon} label={title} /> : null}
       <ErrorBoundary region="dialog">{children}</ErrorBoundary>
@@ -101,17 +101,17 @@ const DialogHeaderText = styled.div`
 `;
 
 export const GlobalDialogStyle = createGlobalStyle`
-  .dagit-portal .bp4-overlay-backdrop {
+  .dagster-portal .bp4-overlay-backdrop {
     background-color: ${Colors.WashGray};
   }
 
-  .dagit-portal .bp4-dialog-container {
+  .dagster-portal .bp4-dialog-container {
     display: grid;
     grid-template-rows: minmax(40px, 1fr) auto minmax(40px, 2fr);
     grid-template-columns: 40px 8fr 40px;
   }
 
-  .dagit-portal .bp4-dialog {
+  .dagster-portal .bp4-dialog {
     background-color: ${Colors.White};
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
@@ -122,24 +122,24 @@ export const GlobalDialogStyle = createGlobalStyle`
     padding: 0;
   }
 
-  .dagit-portal .bp4-dialog > :first-child {
+  .dagster-portal .bp4-dialog > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .dagit-portal .bp4-dialog > :last-child {
+  .dagster-portal .bp4-dialog > :last-child {
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
   }
 
-  .dagit-portal .bp4-dialog-container.bp4-overlay-enter > .bp4-dialog,
-  .dagit-portal .bp4-dialog-container.bp4-overlay-appear > .bp4-dialog {
+  .dagster-portal .bp4-dialog-container.bp4-overlay-enter > .bp4-dialog,
+  .dagster-portal .bp4-dialog-container.bp4-overlay-appear > .bp4-dialog {
     opacity: 0;
     transform:scale(0.95);
   }
 
-  .dagit-portal .bp4-dialog-container.bp4-overlay-enter-active > .bp4-dialog,
-  .dagit-portal .bp4-dialog-container.bp4-overlay-appear-active > .bp4-dialog {
+  .dagster-portal .bp4-dialog-container.bp4-overlay-enter-active > .bp4-dialog,
+  .dagster-portal .bp4-dialog-container.bp4-overlay-appear-active > .bp4-dialog {
     opacity: 1;
     transform: scale(1);
     transition-delay: 0;
@@ -148,12 +148,12 @@ export const GlobalDialogStyle = createGlobalStyle`
     transition-timing-function: ease-in-out;
   }
 
-  .dagit-portal .bp4-dialog-container.bp4-overlay-exit > .bp4-dialog {
+  .dagster-portal .bp4-dialog-container.bp4-overlay-exit > .bp4-dialog {
     opacity: 1;
     transform: scale(1);
   }
 
-  .dagit-portal .bp4-dialog-container.bp4-overlay-exit-active > .bp4-dialog {
+  .dagster-portal .bp4-dialog-container.bp4-overlay-exit-active > .bp4-dialog {
     opacity: 0;
     transform: scale(0.95);
     transition-delay:0;

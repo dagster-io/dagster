@@ -149,7 +149,7 @@ interface ConfigEditorPartitionPickerProps {
   assetSelection?: IExecutionSession['assetSelection'];
 }
 
-const SORT_ORDER_KEY_BASE = 'dagit.partition-sort-order';
+const SORT_ORDER_KEY_BASE = 'dagster.partition-sort-order';
 type SortOrder = 'asc' | 'desc';
 
 const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(

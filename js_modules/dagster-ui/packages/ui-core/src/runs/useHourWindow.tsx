@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-const HOUR_WINDOW_KEY = 'dagit.run-timeline-hour-window';
+const HOUR_WINDOW_KEY = 'dagster.run-timeline-hour-window';
 
 export type HourWindow = '1' | '6' | '12' | '24';
 

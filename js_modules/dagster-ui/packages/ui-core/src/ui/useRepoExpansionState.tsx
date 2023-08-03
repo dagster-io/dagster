@@ -6,7 +6,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-export const buildStorageKey = (basePath: string, key: string) => `${basePath}:dagit.${key}`;
+export const buildStorageKey = (basePath: string, key: string) => `${basePath}:dagster.${key}`;
 
 /**
  * Use localStorage to persist the expanded/collapsed visual state of repository containers,

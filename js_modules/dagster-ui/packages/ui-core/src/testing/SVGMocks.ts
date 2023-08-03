@@ -18,7 +18,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     pipelineSelector: {
       pipelineName: name,
       repositoryLocationName: '<<in_process>>',
-      repositoryName: 'internal_dagit_repository',
+      repositoryName: 'internal_dagster_ui_repository',
     },
     rootHandleID: '',
     requestScopeHandleID: '',
@@ -34,7 +34,7 @@ MOCKS.push({
     pipelineSelector: {
       pipelineName: 'airline_demo_ingest_pipeline',
       repositoryLocationName: '<<in_process>>',
-      repositoryName: 'internal_dagit_repository',
+      repositoryName: 'internal_dagster_ui_repository',
     },
     rootHandleID: 'master_cord_s3_to_df',
     requestScopeHandleID: 'master_cord_s3_to_df',

@@ -13,7 +13,7 @@ export const Select = <T,>(props: React.PropsWithChildren<SelectProps<T>>) => {
       {offset: {enabled: true, offset: '0, 8px'}},
       props.popoverProps?.modifiers || {},
     ),
-    popoverClassName: `dagit-popover ${props.popoverProps?.className || ''}`,
+    popoverClassName: `dagster-popover ${props.popoverProps?.className || ''}`,
   };
 
   return <BlueprintSelect {...props} popoverProps={popoverProps} />;

@@ -519,7 +519,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
 `;
 
 // Note: This fragment should only contain fields that are needed for
-// useAssetGraphData and the Asset DAG. Some pages of Dagit request this
+// useAssetGraphData and the Asset DAG. Some pages of Dagster UI request this
 // fragment for every AssetNode on the instance. Add fields with care!
 //
 export const ASSET_NODE_FRAGMENT = gql`

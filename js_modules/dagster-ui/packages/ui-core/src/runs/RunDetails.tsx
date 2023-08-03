@@ -199,7 +199,11 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           position="bottom-right"
           content={
             <Menu>
-              <Tooltip content="Loadable in dagit-debug" position="left" targetTagName="div">
+              <Tooltip
+                content="Loadable in dagster-webserver-debug"
+                position="left"
+                targetTagName="div"
+              >
                 <MenuItem
                   text="Download debug file"
                   icon={<Icon name="download_for_offline" />}

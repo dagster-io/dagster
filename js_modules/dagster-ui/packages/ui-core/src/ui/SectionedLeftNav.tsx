@@ -33,7 +33,7 @@ import {RepoAddress} from '../workspace/types';
 import {Inner, Row} from './VirtualizedTable';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-const EXPANDED_REPO_KEYS = 'dagit.expanded-repo-keys';
+const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
 
 type ItemType = 'asset-group' | 'job' | 'resource';
 

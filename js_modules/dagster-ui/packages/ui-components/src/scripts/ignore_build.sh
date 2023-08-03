@@ -6,9 +6,9 @@ if [[ "$VERCEL_ENV" != "production" ]]; then
 fi
 
 git diff --quiet HEAD^ HEAD ./
-any_dagit_changes=$?
+any_dagster_ui_changes=$?
 
-if [[ $any_dagit_changes -eq 1 ]]; then
+if [[ $any_dagster_ui_changes -eq 1 ]]; then
   echo "✅ - Changes found in @dagster-io/ui-components, proceed with build."
   exit 1;
 else
