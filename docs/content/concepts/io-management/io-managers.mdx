@@ -53,7 +53,7 @@ I/O managers are a powerful tool that can simplify your code and allow you to ea
 - You want to swap out I/O manager implementations to change how your assets are stored in local, staging, and production environments.
 - Your asset functions load the upstream dependencies into memory in order to do the function computation.
 
-If you find yourself writing the same code at the start and end of each asset or op to load and store data, you may want to consider factoring that code into an I/O manager. 
+If you find yourself writing the same code at the start and end of each asset or op to load and store data, you may want to consider factoring that code into an I/O manager.
 
 However, I/O managers are not required, nor are they the best option, in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
 
@@ -77,7 +77,6 @@ Other reasons you may not want to use I/O managers:
 
 As a general rule, if your pipeline becomes more complicated in order to use I/O managers, or you find yourself getting confused when implementing I/O managers, it's likely that you are in a situation where I/O managers are **not** a good fit. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
 
----
 
 ### Outputs and downstream inputs
 
@@ -116,7 +115,7 @@ Dagster provides out-of-the-box I/O managers for popular storage systems: AWS S3
 
 I/O managers are provided through the [resources](/concepts/resources) system which means you can supply different I/O managers for the same assets or ops in different situations. For example, you might use an in-memory I/O manager for unit-testing and an Amazon S3 I/O manager in production.
 
-
+---
 
 ## Using I/O managers with Software-defined Assets
 
