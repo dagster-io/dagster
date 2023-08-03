@@ -35,16 +35,20 @@ setup(
     author="Elementl",
     author_email="hello@elementl.com",
     license="Apache-2.0",
-    description="The data orchestration platform built for productivity.",
+    description=(
+        "Dagster is an orchestration platform for the development, production, and observation of"
+        " data assets."
+    ),
     long_description=get_description(),
     long_description_content_type="text/markdown",
     project_urls={
         "Homepage": "https://dagster.io",
         "GitHub": "https://github.com/dagster-io/dagster",
+        "Documentation": "https://docs.dagster.io",
         "Changelog": "https://github.com/dagster-io/dagster/releases",
         "Issue Tracker": "https://github.com/dagster-io/dagster/issues",
         "Twitter": "https://twitter.com/dagster",
-        "YouTube": "https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q",
+        "YouTube": "https://www.youtube.com/@dagsterio",
         "Slack": "https://dagster.io/slack",
         "Blog": "https://dagster.io/blog",
         "Newsletter": "https://dagster.io/newsletter-signup",

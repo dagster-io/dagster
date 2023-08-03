@@ -129,15 +129,15 @@ our [Dagster Community](https://dagster.io/community) page.
 
 Join our community here:
 
-- 🌟 [Star us on Github](https://github.com/dagster-io/dagster)
+- 🌟 [Star us on GitHub](https://github.com/dagster-io/dagster)
 - 📥 [Subscribe to our Newsletter](https://dagster.io/newsletter-signup)
 - 🐦 [Follow us on Twitter](https://twitter.com/dagster)
 - 🕴️ [Follow us on LinkedIn](https://linkedin.com/showcase/dagster)
-- 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
+- 📺 [Subscribe to our YouTube channel](https://www.youtube.com/@dagsterio)
 - 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)
 - 🗃 [Browse Slack archives](https://discuss.dagster.io)
-- ✏️ [Start a Github Discussion](https://github.com/dagster-io/dagster/discussions)
+- ✏️ [Start a GitHub Discussion](https://github.com/dagster-io/dagster/discussions)
 
 ## Contributing
 
