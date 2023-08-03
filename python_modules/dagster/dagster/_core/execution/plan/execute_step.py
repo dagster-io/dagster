@@ -676,8 +676,9 @@ def _store_output(
         elif isinstance(elt, dict):  # should remove this?
             experimental_warning("Yielding metadata from an IOManager's handle_output() function")
             manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
-        elif elt is None:
-            continue
+        # TODO if go back to a version where the no_op handle_output_gen returns None, then add this back in
+        # elif elt is None:
+        #     continue
         else:
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
