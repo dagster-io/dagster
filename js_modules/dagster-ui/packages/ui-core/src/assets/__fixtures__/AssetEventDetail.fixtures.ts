@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {RunStatus} from '../../graphql/types';
+import {RunStatus, StaleStatus} from '../../graphql/types';
 import {ASSET_MATERIALIZATION_UPSTREAM_QUERY} from '../AssetMaterializationUpstreamData';
 import {ASSET_PARTITION_DETAIL_QUERY} from '../AssetPartitionDetail';
 import {AssetMaterializationUpstreamQuery} from '../types/AssetMaterializationUpstreamData.types';
@@ -275,6 +275,10 @@ export const MaterializationUpstreamDataEmptyMock: MockedResponse<AssetMateriali
 
 export const buildAssetPartitionDetailMock = (
   currentRunStatus?: RunStatus,
+  staleCauses: Extract<
+    AssetPartitionDetailQuery['assetNodeOrError'],
+    {__typename: 'AssetNode'}
+  >['staleCauses'] = [],
 ): MockedResponse<AssetPartitionDetailQuery> => ({
   request: {
     operationName: 'AssetPartitionDetailQuery',
@@ -297,6 +301,8 @@ export const buildAssetPartitionDetailMock = (
             timestamp: `${Number(BasicObservationEvent.timestamp) + 2 * 60 * 1000}`,
           },
         ],
+        staleCauses,
+        staleStatus: staleCauses.length ? StaleStatus.STALE : StaleStatus.FRESH,
         latestRunForPartition: currentRunStatus
           ? {
               __typename: 'Run',
