@@ -65,7 +65,7 @@ install_dev_python_modules_verbose_m1:
 	python scripts/install_dev_python_modules.py -qqq --include-prebuilt-grpcio-wheel
 
 graphql:
-	cd js_modules/dagit/; make generate-graphql; make generate-perms
+	cd js_modules/dagster-ui/; make generate-graphql; make generate-perms
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
@@ -73,10 +73,10 @@ sanity_check:
 	@! (pip list --exclude-editable | grep -e dagster -e dagster-webserver)
 
 rebuild_ui: sanity_check
-	cd js_modules/dagit/; yarn install && yarn build
+	cd js_modules/dagster-ui/; yarn install && yarn build
 
 rebuild_ui_with_profiling: sanity_check
-	cd js_modules/dagit/; yarn install && yarn build-with-profiling
+	cd js_modules/dagster-ui/; yarn install && yarn build-with-profiling
 
 dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_ui
 

@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/js_modules/dagit"
+    directory: "/js_modules/dagster-ui"
     schedule:
       interval: "daily"
     reviewers:
@@ -23,7 +23,7 @@ updates:
       - "dagster-io/oss"
     open-pull-requests-limit: 0
   - package-ecosystem: "pip"
-    directory: "/python_modules/dagit"
+    directory: "/python_modules/dagster-webserver"
     schedule:
       interval: "daily"
     reviewers:

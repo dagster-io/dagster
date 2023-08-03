@@ -4420,7 +4420,7 @@ __metadata:
     axios: ^0.26.0
     classnames: ^2.2.6
     eslint: ^8.45.0
-    eslint-plugin-dagster-rules: "link:../../js_modules/dagit/packages/eslint-config/rules"
+    eslint-plugin-dagster-rules: "link:../../js_modules/dagster-ui/packages/eslint-config/rules"
     fast-glob: ^3.2.5
     gray-matter: ^4.0.2
     html-react-parser: ^2.0.0
@@ -4995,9 +4995,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-dagster-rules@link:../../js_modules/dagit/packages/eslint-config/rules::locator=dagster-docs%40workspace%3A.":
+"eslint-plugin-dagster-rules@link:../../js_modules/dagster-ui/packages/eslint-config/rules::locator=dagster-docs%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "eslint-plugin-dagster-rules@link:../../js_modules/dagit/packages/eslint-config/rules::locator=dagster-docs%40workspace%3A."
+  resolution: "eslint-plugin-dagster-rules@link:../../js_modules/dagster-ui/packages/eslint-config/rules::locator=dagster-docs%40workspace%3A."
   languageName: node
   linkType: soft
 

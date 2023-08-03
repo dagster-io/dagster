@@ -26,7 +26,7 @@ _CORE_PACKAGES = [
     "python_modules/dagster",
     "python_modules/dagit",
     "python_modules/dagster-graphql",
-    "js_modules/dagit",
+    "js_modules/dagster-ui",
 ]
 
 _INFRASTRUCTURE_PACKAGES = [

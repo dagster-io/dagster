@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@dagster-io/ui-components": ["../ui-components/src"]
+    },
+    "module": "es2022",
+    "target": "es2022",
+    "strict": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "allowUnreachableCode": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["jest", "node"],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "exclude": [
+    "acceptance-tests",
+    "build",
+    "coverage",
+    "jest",
+    "lib",
+    "node_modules",
+    "public",
+    "scripts",
+    "webpack"
+  ],
+  "include": ["src", "types", "typings.d.ts"]
+}
