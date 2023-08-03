@@ -529,13 +529,14 @@ def multi_asset(
                     "asset1": AssetOut(),
                     "asset2": AssetOut(),
                 },
-                deps={"asset0"},
+                deps=["asset0"],
             )
             def my_function():
                 asset0_value = load(path="asset0")
                 asset1_result, asset2_result = do_some_transformation(asset0_value)
                 write(asset1_result, path="asset1")
                 write(asset2_result, path="asset2")
+                return None, None
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
