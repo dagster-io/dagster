@@ -146,6 +146,7 @@ def deprecated(
     if __obj is None:
         return lambda obj: deprecated(
             obj,
+            subject=subject,
             emit_runtime_warning=emit_runtime_warning,
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
@@ -361,8 +362,9 @@ def experimental(
     if __obj is None:
         return lambda obj: experimental(
             obj,
-            emit_runtime_warning=emit_runtime_warning,
             additional_warn_text=additional_warn_text,
+            subject=subject,
+            emit_runtime_warning=emit_runtime_warning,
         )
     else:
         target = _get_annotation_target(__obj)
@@ -371,6 +373,7 @@ def experimental(
         if emit_runtime_warning:
             warning_fn = lambda: experimental_warning(
                 subject or _get_subject(__obj),
+                additional_warn_text=additional_warn_text,
                 stacklevel=_get_warning_stacklevel(__obj),
             )
             return apply_pre_call_decorator(__obj, warning_fn)  # type: ignore  # (pyright bug)
