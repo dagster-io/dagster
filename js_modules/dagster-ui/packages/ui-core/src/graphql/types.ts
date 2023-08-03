@@ -199,7 +199,8 @@ export type AssetNode = {
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
-  currentDataVersion: Maybe<Scalars['String']>;
+  dataVersion: Maybe<Scalars['String']>;
+  dataVersionByPartition: Array<Maybe<Scalars['String']>>;
   dependedBy: Array<AssetDependency>;
   dependedByKeys: Array<AssetKey>;
   dependencies: Array<AssetDependency>;
@@ -230,7 +231,9 @@ export type AssetNode = {
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleCauses: Array<StaleCause>;
+  staleCausesByPartition: Maybe<Array<Array<StaleCause>>>;
   staleStatus: Maybe<StaleStatus>;
+  staleStatusByPartition: Array<StaleStatus>;
   type: Maybe<DagsterType>;
 };
 
@@ -250,6 +253,14 @@ export type AssetNodeAssetObservationsArgs = {
   partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
+export type AssetNodeDataVersionArgs = {
+  partition?: InputMaybe<Scalars['String']>;
+};
+
+export type AssetNodeDataVersionByPartitionArgs = {
+  partitions?: InputMaybe<Array<Scalars['String']>>;
+};
+
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars['String']>>;
 };
@@ -261,6 +272,22 @@ export type AssetNodeLatestRunForPartitionArgs = {
 export type AssetNodePartitionKeysByDimensionArgs = {
   endIdx?: InputMaybe<Scalars['Int']>;
   startIdx?: InputMaybe<Scalars['Int']>;
+};
+
+export type AssetNodeStaleCausesArgs = {
+  partition?: InputMaybe<Scalars['String']>;
+};
+
+export type AssetNodeStaleCausesByPartitionArgs = {
+  partitions?: InputMaybe<Array<Scalars['String']>>;
+};
+
+export type AssetNodeStaleStatusArgs = {
+  partition?: InputMaybe<Scalars['String']>;
+};
+
+export type AssetNodeStaleStatusByPartitionArgs = {
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeDefinitionCollision = {
@@ -3751,7 +3778,9 @@ export type StaleCause = {
   __typename: 'StaleCause';
   category: StaleCauseCategory;
   dependency: Maybe<AssetKey>;
+  dependencyPartitionKey: Maybe<Scalars['String']>;
   key: AssetKey;
+  partitionKey: Maybe<Scalars['String']>;
   reason: Scalars['String'];
 };
 
@@ -4534,10 +4563,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('ConfigTypeField')
         ? ({} as ConfigTypeField)
         : buildConfigTypeField({}, relationshipsToOmit),
-    currentDataVersion:
-      overrides && overrides.hasOwnProperty('currentDataVersion')
-        ? overrides.currentDataVersion!
-        : 'aperiam',
+    dataVersion:
+      overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
+    dataVersionByPartition:
+      overrides && overrides.hasOwnProperty('dataVersionByPartition')
+        ? overrides.dataVersionByPartition!
+        : [],
     dependedBy: overrides && overrides.hasOwnProperty('dependedBy') ? overrides.dependedBy! : [],
     dependedByKeys:
       overrides && overrides.hasOwnProperty('dependedByKeys') ? overrides.dependedByKeys! : [],
@@ -4628,10 +4659,18 @@ export const buildAssetNode = (
         ? overrides.requiredResources!
         : [],
     staleCauses: overrides && overrides.hasOwnProperty('staleCauses') ? overrides.staleCauses! : [],
+    staleCausesByPartition:
+      overrides && overrides.hasOwnProperty('staleCausesByPartition')
+        ? overrides.staleCausesByPartition!
+        : [],
     staleStatus:
       overrides && overrides.hasOwnProperty('staleStatus')
         ? overrides.staleStatus!
         : StaleStatus.FRESH,
+    staleStatusByPartition:
+      overrides && overrides.hasOwnProperty('staleStatusByPartition')
+        ? overrides.staleStatusByPartition!
+        : [],
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -11314,12 +11353,18 @@ export const buildStaleCause = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    dependencyPartitionKey:
+      overrides && overrides.hasOwnProperty('dependencyPartitionKey')
+        ? overrides.dependencyPartitionKey!
+        : 'nisi',
     key:
       overrides && overrides.hasOwnProperty('key')
         ? overrides.key!
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    partitionKey:
+      overrides && overrides.hasOwnProperty('partitionKey') ? overrides.partitionKey! : 'autem',
     reason: overrides && overrides.hasOwnProperty('reason') ? overrides.reason! : 'et',
   };
 };
