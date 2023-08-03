@@ -152,6 +152,152 @@ Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/sch
 
 ---
 
+## Defining dependencies
+
+- [Upstream dependencies](#upstream-dependencies)
+- [Downstream dependencies](#downstream-dependencies)
+
+### Upstream dependencies
+
+#### Defining an asset as an upstream dependency of a dbt model
+
+Dagster allows you to define existing assets as upstream dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
+
+```python startafter=start_upstream_dagster_asset endbefore=end_upstream_dagster_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster import asset
+
+@asset
+def upstream():
+    ...
+```
+
+In order to define this asset as an upstream dependency for a dbt model, you'll need to first declare it as a [data source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) in the `sources.yml` file. Here, you can explicitly provide your asset key to a source table:
+
+```yaml
+sources:
+  - name: dagster
+    tables:
+      - name: upstream
+        meta:
+          dagster:
+            asset_key: ["upstream"]
+```
+
+Then, in the downstream model, you can select from this source data. This defines a dependency relationship between your upstream asset and dbt model:
+
+```sql
+select *
+  from {{ source("dagster", "upstream") }}
+ where foo=1
+```
+
+#### Defining a dbt source as a Dagster asset
+
+Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
+
+For example, if you defined a source in your `sources.yml` file like this:
+
+```yaml
+sources:
+  - name: jaffle_shop
+    tables:
+      - name: orders
+```
+
+and use it in a model:
+
+```sql
+select *
+  from {{ source("jaffle_shop", "orders") }}
+ where foo=1
+```
+
+Then this model has an upstream source with the `jaffle_shop/orders` asset key.
+
+In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject module="dagster_dbt" object="get_asset_key_for_source"/>:
+
+```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster import asset, OpExecutionContext
+from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
+
+@dbt_assets(manifest=MANIFEST_PATH)
+def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    ...
+
+@asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
+def orders():
+    return ...
+```
+
+This allows you to change asset keys within your dbt project without having to update the corresponding Dagster definitions.
+
+The <PyObject module="dagster_dbt" object="get_asset_key_for_source" /> method is used when a source has only one table. However, if a source contains multiple tables, like this example:
+
+```yaml
+sources:
+  - name: clients_data
+    tables:
+      - name: names
+      - name: history
+```
+
+You can use define a <PyObject object="multi_asset" decorator/> with keys from <PyObject module="dagster_dbt" object="get_asset_keys_by_output_name_for_source"/> instead:
+
+```python startafter=start_upstream_multi_asset endbefore=end_upstream_multi_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster import multi_asset, AssetOut, Output
+from dagster_dbt import get_asset_keys_by_output_name_for_source
+
+@multi_asset(
+    outs={
+        name: AssetOut(key=asset_key)
+        for name, asset_key in get_asset_keys_by_output_name_for_source(
+            [my_dbt_assets], "jaffle_shop"
+        ).items()
+    }
+)
+def jaffle_shop(context):
+    output_names = list(context.selected_output_names)
+    yield Output(value=..., output_name=output_names[0])
+    yield Output(value=..., output_name=output_names[1])
+```
+
+### Downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific dbt models via <PyObject module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
+
+```python startafter=start_downstream_asset endbefore=end_downstream_asset file=/integrations/dbt/dbt.py dedent=4
+from dagster_dbt import get_asset_key_for_model
+from dagster import asset
+
+@asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
+def my_downstream_asset():
+    ...
+```
+
+In the downstream asset, you may want direct access to the contents of the dbt model. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
+
+Dagster alternatively allows you to delegate loading data to an I/O manager. For example, if you wanted to consume a dbt model with the asset key `my_dbt_model` as a Pandas dataframe, that would look something like the following:
+
+```python startafter=start_downstream_asset_pandas_df_manager endbefore=end_downstream_asset_pandas_df_manager file=/integrations/dbt/dbt.py dedent=4
+from dagster_dbt import get_asset_key_for_model
+from dagster import AssetIn, asset
+
+@asset(
+    ins={
+        "my_dbt_model": AssetIn(
+            input_manager_key="pandas_df_manager",
+            key=get_asset_key_for_model([my_dbt_assets], "my_dbt_model"),
+        )
+    },
+)
+def my_downstream_asset(my_dbt_model):
+    # my_dbt_model is a Pandas dataframe
+    return my_dbt_model.where(foo="bar")
+```
+
+
+---
+
 ## Understanding asset definition attributes
 
 In Dagster, each asset definition has attributes. Dagster automatically generates these attributes for each software-defined asset loaded from the dbt project. These attributes can optionally be overridden by the user.
@@ -364,151 +510,6 @@ models:
 ## dbt models, code versions, and staleness
 
 Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each software-defined asset, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to indicate which dbt models have new SQL since they were last materialized.
-
----
-
-## Defining dependencies
-
-- [Upstream dependencies](#upstream-dependencies)
-- [Downstream dependencies](#downstream-dependencies)
-
-### Upstream dependencies
-
-#### Defining an asset as an upstream dependency of a dbt model
-
-Dagster allows you to define existing assets as upstream dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
-
-```python startafter=start_upstream_dagster_asset endbefore=end_upstream_dagster_asset file=/integrations/dbt/dbt.py dedent=4
-from dagster import asset
-
-@asset
-def upstream():
-    ...
-```
-
-In order to define this asset as an upstream dependency for a dbt model, you'll need to first declare it as a [data source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources#declaring-a-source) in the `sources.yml` file. Here, you can explicitly provide your asset key to a source table:
-
-```yaml
-sources:
-  - name: dagster
-    tables:
-      - name: upstream
-        meta:
-          dagster:
-            asset_key: ["upstream"]
-```
-
-Then, in the downstream model, you can select from this source data. This defines a dependency relationship between your upstream asset and dbt model:
-
-```sql
-select *
-  from {{ source("dagster", "upstream") }}
- where foo=1
-```
-
-#### Defining a dbt source as a Dagster asset
-
-Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
-
-For example, if you defined a source in your `sources.yml` file like this:
-
-```yaml
-sources:
-  - name: jaffle_shop
-    tables:
-      - name: orders
-```
-
-and use it in a model:
-
-```sql
-select *
-  from {{ source("jaffle_shop", "orders") }}
- where foo=1
-```
-
-Then this model has an upstream source with the `jaffle_shop/orders` asset key.
-
-In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject module="dagster_dbt" object="get_asset_key_for_source"/>:
-
-```python startafter=start_upstream_asset endbefore=end_upstream_asset file=/integrations/dbt/dbt.py dedent=4
-from dagster import asset, OpExecutionContext
-from dagster_dbt import DbtCliResource, get_asset_key_for_source, dbt_assets
-
-@dbt_assets(manifest=MANIFEST_PATH)
-def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-    ...
-
-@asset(key=get_asset_key_for_source([my_dbt_assets], "jaffle_shop"))
-def orders():
-    return ...
-```
-
-This allows you to change asset keys within your dbt project without having to update the corresponding Dagster definitions.
-
-The <PyObject module="dagster_dbt" object="get_asset_key_for_source" /> method is used when a source has only one table. However, if a source contains multiple tables, like this example:
-
-```yaml
-sources:
-  - name: clients_data
-    tables:
-      - name: names
-      - name: history
-```
-
-You can use define a <PyObject object="multi_asset" decorator/> with keys from <PyObject module="dagster_dbt" object="get_asset_keys_by_output_name_for_source"/> instead:
-
-```python startafter=start_upstream_multi_asset endbefore=end_upstream_multi_asset file=/integrations/dbt/dbt.py dedent=4
-from dagster import multi_asset, AssetOut, Output
-from dagster_dbt import get_asset_keys_by_output_name_for_source
-
-@multi_asset(
-    outs={
-        name: AssetOut(key=asset_key)
-        for name, asset_key in get_asset_keys_by_output_name_for_source(
-            [my_dbt_assets], "jaffle_shop"
-        ).items()
-    }
-)
-def jaffle_shop(context):
-    output_names = list(context.selected_output_names)
-    yield Output(value=..., output_name=output_names[0])
-    yield Output(value=..., output_name=output_names[1])
-```
-
-### Downstream dependencies
-
-Dagster allows you to define assets that are downstream of specific dbt models via <PyObject module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
-
-```python startafter=start_downstream_asset endbefore=end_downstream_asset file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import get_asset_key_for_model
-from dagster import asset
-
-@asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
-def my_downstream_asset():
-    ...
-```
-
-In the downstream asset, you may want direct access to the contents of the dbt model. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
-
-Dagster alternatively allows you to delegate loading data to an I/O manager. For example, if you wanted to consume a dbt model with the asset key `my_dbt_model` as a Pandas dataframe, that would look something like the following:
-
-```python startafter=start_downstream_asset_pandas_df_manager endbefore=end_downstream_asset_pandas_df_manager file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import get_asset_key_for_model
-from dagster import AssetIn, asset
-
-@asset(
-    ins={
-        "my_dbt_model": AssetIn(
-            input_manager_key="pandas_df_manager",
-            key=get_asset_key_for_model([my_dbt_assets], "my_dbt_model"),
-        )
-    },
-)
-def my_downstream_asset(my_dbt_model):
-    # my_dbt_model is a Pandas dataframe
-    return my_dbt_model.where(foo="bar")
-```
 
 ---
 
