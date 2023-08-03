@@ -85,10 +85,8 @@ def create_and_launch_partition_backfill(
             if partitions_by_assets
             else True
         ),
-        (
-            "partitions_by_assets cannot be used together with asset_selection, selector, or"
-            " partitionNames"
-        ),
+        "partitions_by_assets cannot be used together with asset_selection, selector, or"
+        " partitionNames",
     )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
