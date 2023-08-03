@@ -4,10 +4,10 @@ on:
     branches:
       - master
     paths:
-      - js_modules/dagster-ui/packages/ui/**
+      - js_modules/dagster-ui/packages/ui-components/**
   pull_request:
     paths:
-      - js_modules/dagster-ui/packages/ui/**
+      - js_modules/dagster-ui/packages/ui-components/**
 jobs:
   deploy:
     runs-on: ubuntu-latest
