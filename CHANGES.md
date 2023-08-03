@@ -1,5 +1,33 @@
 # Changelog
 
+# 1.4.4 /0.20.4 (libraries)
+
+### New
+
+- [ui] When viewing a run for auto-materialized assets, show a tag with information about the assets that were materialized.
+- [ui] In the Auto-materialize History view, when one or more of an asset’s parents have been updated, the set of updated parents will be viewable.
+- [ui] Link to the auto-materialized history for an asset from the asset DAG view.
+- [ui] For runs that were the result of auto-observation, show a tag for this in the Runs list view.
+- Added warnings for storage incompatibility with the experimental global op concurrency.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed an issue where `dagster-dbt project scaffold` didn’t create a project directory with all the scaffolded files.
+- Fixed an issue which could cause errors when using the `SpecificPartitionsPartitionMapping` with auto-materialization.
+
+### Breaking Change
+
+- Previously, it was possible to set `max_materializations_per_minute` on an `AutoMaterializePolicy` to a non-positive number. This will now result in an error.
+
+### Community Contributions
+
+- Fix for loading multipartitions paths in `upath_io_manager` from @harrylojames; thank you!
+- Docs typo fix from @C0DK; thank you!
+
+### Documentation
+
+- Revamped the dagster-dbt tutorial to take advantage of `dagster project scaffold` and the new dagster-dbt APIs.
+
 # 1.4.3 / 0.20.3 (libraries)
 
 ### New
