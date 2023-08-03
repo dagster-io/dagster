@@ -728,8 +728,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ) -> AbstractSet[AssetKeyPartitionKey]:
         # we already know asset partitions are updated after the cursor if they've been updated
         # after a cursor that's greater than or equal to this one
-        print(".")
-        print(asset_key, asset_partitions)
         updated_asset_partitions = {
             ap
             for ap in asset_partitions
@@ -738,7 +736,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         }
         to_query_asset_partitions = asset_partitions - updated_asset_partitions
         if not to_query_asset_partitions:
-            print("no query")
             return updated_asset_partitions
 
         latest_versions = self._asset_partitions_data_versions(
@@ -750,7 +747,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         queryed_updated_asset_partitions = {
             ap for ap, version in latest_versions.items() if previous_versions.get(ap) != version
         }
-        print("query")
         # keep track of the maximum storage id at which an asset partition was updated after
         for asset_partition in queryed_updated_asset_partitions:
             self._max_version_updated_by_asset_partition[asset_partition] = after_cursor
