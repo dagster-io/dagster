@@ -664,10 +664,8 @@ def build_run_requests(
             _build_run_requests_with_backfill_policies(asset_partitions, asset_graph, run_tags)
         )
     else:
-        """
-        When any of the assets do not have backfill policies, we fall back to the default behavior of
-        backfilling them partition by partition.
-        """
+        # When any of the assets do not have backfill policies, we fall back to the default behavior of
+        # backfilling them partition by partition.
         assets_to_reconcile_by_partitions_def_partition_key: Mapping[
             Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
         ] = defaultdict(set)
@@ -740,10 +738,8 @@ def _build_run_requests_with_backfill_policies(
             partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
             partition_key_ranges = partition_subset.get_partition_key_ranges()
             for partition_key_range in partition_key_ranges:
-                """
-                We might resolve more than one partition key range for the given partition keys.
-                We can only apply chunking on individual partition key ranges.
-                """
+                # We might resolve more than one partition key range for the given partition keys.
+                # We can only apply chunking on individual partition key ranges.
                 if backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN:
                     run_requests.append(
                         _build_single_run_request(
@@ -803,10 +799,12 @@ def _build_single_run_request(
     partition_range_end: str,
     run_tags: Dict[str, Any],
 ) -> RunRequest:
-    tags = {**(run_tags or {})}
     """Builds a single run request for the given asset key and partition key range."""
-    tags[ASSET_PARTITION_RANGE_START_TAG] = partition_range_start
-    tags[ASSET_PARTITION_RANGE_END_TAG] = partition_range_end
+    tags = {
+        **(run_tags or {}),
+        ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
+        ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
+    }
     return RunRequest(asset_selection=[asset_key], tags=tags)
 
 
