@@ -1008,8 +1008,7 @@ def _get_failed_asset_partitions(
             and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
             and run.tags.get(PARTITION_NAME_TAG) is None
         ):
-            """it was a chunked backfill run previously, so we need to reconstruct the partition keys
-            """
+            # it was a chunked backfill run previously, so we need to reconstruct the partition keys
             planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
                 run_id=run.run_id
             )
@@ -1028,12 +1027,12 @@ def _get_failed_asset_partitions(
                     end=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_END_TAG)),
                 )
                 result.extend(
-                    _get_asset_key_partition_key_in_range(
+                    _get_asset_partitions_in_range(
                         asset_key, partition_range, asset_graph, instance_queryer
                     )
                 )
         else:
-            """a regular backfill run that run on a single partition"""
+            # a regular backfill run that run on a single partition
             partition_key = run.tags.get(PARTITION_NAME_TAG)
             planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
                 run_id=run.run_id
@@ -1049,7 +1048,7 @@ def _get_failed_asset_partitions(
     return result
 
 
-def _get_asset_key_partition_key_in_range(
+def _get_asset_partitions_in_range(
     asset_key: AssetKey,
     partition_key_range: PartitionKeyRange,
     asset_graph: AssetGraph,

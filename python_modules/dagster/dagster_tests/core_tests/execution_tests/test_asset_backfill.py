@@ -38,7 +38,7 @@ from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
     AssetBackfillStatus,
-    _get_asset_key_partition_key_in_range,
+    _get_asset_partitions_in_range,
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
@@ -501,7 +501,7 @@ def run_backfill_to_completion(
                     start=partition_range_start,
                     end=partition_range_end,
                 )
-                asset_partitions = _get_asset_key_partition_key_in_range(
+                asset_partitions = _get_asset_partitions_in_range(
                     asset_key=asset_key,
                     partition_key_range=partition_range,
                     asset_graph=asset_graph,
