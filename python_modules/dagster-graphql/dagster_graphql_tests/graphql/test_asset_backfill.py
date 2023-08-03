@@ -97,7 +97,12 @@ def get_repo() -> RepositoryDefinition:
     def asset2():
         ...
 
-    return Definitions(assets=[asset1, asset2]).get_repository_def()
+    @asset()
+    def asset3():
+        """Non-partitioned asset."""
+        ...
+
+    return Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
 
 
 def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
@@ -242,6 +247,55 @@ def test_launch_asset_backfill_all_partitions_asset_selection():
                 == all_partition_keys
             )
             assert not target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys()
+
+
+def test_launch_asset_backfill_partitions_by_asset():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": AssetKey("asset1").to_graphql_input(),
+                                "partitions": {
+                                    "range": {
+                                        "start": "b",
+                                        "end": "c",
+                                    }
+                                },
+                            },
+                            {
+                                "assetKey": AssetKey("asset2").to_graphql_input(),
+                            },
+                            {
+                                "assetKey": AssetKey("asset3").to_graphql_input(),
+                            },
+                        ],
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            target_subset = asset_backfill_data.target_subset
+            assert target_subset.asset_keys == all_asset_keys
+            all_partition_keys = {"a", "b", "c"}
+            assert target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys() == {
+                "b",
+                "c",
+            }
+            assert (
+                target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
+                == all_partition_keys
+            )
+            assert target_subset.non_partitioned_asset_keys == {AssetKey("asset3")}
 
 
 def test_launch_asset_backfill_all_partitions_root_assets_different_partitions():

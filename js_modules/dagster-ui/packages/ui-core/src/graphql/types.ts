@@ -1539,6 +1539,7 @@ export type LaunchBackfillParams = {
   forceSynchronousSubmission?: InputMaybe<Scalars['Boolean']>;
   fromFailure?: InputMaybe<Scalars['Boolean']>;
   partitionNames?: InputMaybe<Array<Scalars['String']>>;
+  partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars['String']>>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
@@ -2264,6 +2265,11 @@ export type PartitionKeys = {
 
 export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
 
+export type PartitionRangeSelector = {
+  end: Scalars['String'];
+  start: Scalars['String'];
+};
+
 export enum PartitionRangeStatus {
   FAILED = 'FAILED',
   MATERIALIZED = 'MATERIALIZED',
@@ -2383,7 +2389,16 @@ export type Partitions = {
   results: Array<Partition>;
 };
 
+export type PartitionsByAssetSelector = {
+  assetKey: AssetKeyInput;
+  partitions?: InputMaybe<PartitionsSelector>;
+};
+
 export type PartitionsOrError = Partitions | PythonError;
+
+export type PartitionsSelector = {
+  range: PartitionRangeSelector;
+};
 
 export type PathMetadataEntry = MetadataEntry & {
   __typename: 'PathMetadataEntry';
@@ -7057,6 +7072,10 @@ export const buildLaunchBackfillParams = (
       overrides && overrides.hasOwnProperty('fromFailure') ? overrides.fromFailure! : true,
     partitionNames:
       overrides && overrides.hasOwnProperty('partitionNames') ? overrides.partitionNames! : [],
+    partitionsByAssets:
+      overrides && overrides.hasOwnProperty('partitionsByAssets')
+        ? overrides.partitionsByAssets!
+        : [],
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
     selector:
@@ -8496,6 +8515,18 @@ export const buildPartitionKeys = (
   };
 };
 
+export const buildPartitionRangeSelector = (
+  overrides?: Partial<PartitionRangeSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PartitionRangeSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionRangeSelector');
+  return {
+    end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : 'numquam',
+    start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : 'eum',
+  };
+};
+
 export const buildPartitionRun = (
   overrides?: Partial<PartitionRun>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8728,6 +8759,44 @@ export const buildPartitions = (
   return {
     __typename: 'Partitions',
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildPartitionsByAssetSelector = (
+  overrides?: Partial<PartitionsByAssetSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PartitionsByAssetSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionsByAssetSelector');
+  return {
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKeyInput')
+        ? ({} as AssetKeyInput)
+        : buildAssetKeyInput({}, relationshipsToOmit),
+    partitions:
+      overrides && overrides.hasOwnProperty('partitions')
+        ? overrides.partitions!
+        : relationshipsToOmit.has('PartitionsSelector')
+        ? ({} as PartitionsSelector)
+        : buildPartitionsSelector({}, relationshipsToOmit),
+  };
+};
+
+export const buildPartitionsSelector = (
+  overrides?: Partial<PartitionsSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PartitionsSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionsSelector');
+  return {
+    range:
+      overrides && overrides.hasOwnProperty('range')
+        ? overrides.range!
+        : relationshipsToOmit.has('PartitionRangeSelector')
+        ? ({} as PartitionRangeSelector)
+        : buildPartitionRangeSelector({}, relationshipsToOmit),
   };
 };
 
