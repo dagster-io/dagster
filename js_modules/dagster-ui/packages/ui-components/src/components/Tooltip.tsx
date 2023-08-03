@@ -8,7 +8,7 @@ import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
-  .dagit-tooltip .bp4-popover2-content {
+  .dagster-tooltip .bp4-popover2-content {
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
@@ -21,7 +21,7 @@ export const GlobalTooltipStyle = createGlobalStyle`
     display: block;
   }
 
-  .dagit-tooltip-bare .bp4-popover2-content {
+  .dagster-tooltip-bare .bp4-popover2-content {
     padding: 0;
   }
 `;
@@ -68,7 +68,7 @@ export const Tooltip = (props: Props) => {
       {...rest}
       minimal
       $display={display}
-      popoverClassName={`dagit-tooltip ${props.popoverClassName}`}
+      popoverClassName={`dagster-tooltip ${props.popoverClassName}`}
       modifiers={deepmerge(
         {offset: {enabled: true, options: {offset: [0, 8]}}},
         props.modifiers || {},

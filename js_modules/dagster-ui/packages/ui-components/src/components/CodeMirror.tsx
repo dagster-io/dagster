@@ -12,7 +12,7 @@ import {FontFamily} from './styles';
 // Explicitly register YAML to ensure that the YAML import is bundled correctly.
 registerYaml();
 
-export const DagitCodeMirrorStyle = createGlobalStyle`
+export const DagsterCodeMirrorStyle = createGlobalStyle`
   .react-codemirror2 .CodeMirror {
     font-family: ${FontFamily.monospace};
     font-size: 16px;
@@ -42,7 +42,7 @@ export const DagitCodeMirrorStyle = createGlobalStyle`
     font-size: 16px;
   }
 
-  .react-codemirror2 .CodeMirror.cm-s-dagit {
+  .react-codemirror2 .CodeMirror.cm-s-dagster {
     .cm-atom {
       color: ${Colors.Blue700};
     }
@@ -138,7 +138,7 @@ interface ThemeProp {
   theme?: string[];
 }
 
-const makeThemeString = (theme: string[] = []) => [...theme, 'dagit'].join(' ');
+const makeThemeString = (theme: string[] = []) => [...theme, 'dagster'].join(' ');
 
 export const StyledReadOnlyCodeMirror = (
   props: React.ComponentProps<typeof Uncontrolled> & ThemeProp,
@@ -146,7 +146,7 @@ export const StyledReadOnlyCodeMirror = (
   const {options, theme, ...rest} = props;
   return (
     <>
-      <DagitCodeMirrorStyle />
+      <DagsterCodeMirrorStyle />
       <Uncontrolled
         {...rest}
         options={{...options, readOnly: true, theme: makeThemeString(theme)}}
@@ -159,7 +159,7 @@ export const StyledCodeMirror = (props: React.ComponentProps<typeof Controlled> 
   const {options, theme, ...rest} = props;
   return (
     <>
-      <DagitCodeMirrorStyle />
+      <DagsterCodeMirrorStyle />
       <Controlled {...rest} options={{...options, theme: makeThemeString(theme)}} />
     </>
   );

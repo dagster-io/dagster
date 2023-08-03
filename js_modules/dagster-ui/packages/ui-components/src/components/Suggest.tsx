@@ -15,7 +15,7 @@ import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 const List: any = _List;
 
 export const GlobalSuggestStyle = createGlobalStyle`
-  .dagit-suggest-input.bp4-input-group {
+  .dagster-suggest-input.bp4-input-group {
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
@@ -39,7 +39,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
     }
   }
 
-  .bp4-select-popover.dagit-popover {
+  .bp4-select-popover.dagster-popover {
     .bp4-popover-content li {
       list-style: none;
       margin: 0;
@@ -65,12 +65,12 @@ export const Suggest = <T,>(props: Props<T>) => {
     ...popoverProps,
     minimal: true,
     modifiers: deepmerge({offset: {enabled: true, offset: '0, 8px'}}, popoverProps.modifiers || {}),
-    popoverClassName: `dagit-popover ${props.popoverProps?.className || ''}`,
+    popoverClassName: `dagster-popover ${props.popoverProps?.className || ''}`,
   };
 
   const inputProps: Partial<InputGroupProps2> = {
     ...props.inputProps,
-    className: 'dagit-suggest-input',
+    className: 'dagster-suggest-input',
   };
 
   return (

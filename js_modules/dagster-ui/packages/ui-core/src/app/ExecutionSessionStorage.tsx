@@ -138,7 +138,7 @@ const buildValidator = (initial: Partial<IExecutionSession> = {}) => (json: any)
 };
 
 const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
-  `dagit.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
+  `dagster.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
 
 export function useExecutionSessionStorage(
   repoAddress: RepoAddress,

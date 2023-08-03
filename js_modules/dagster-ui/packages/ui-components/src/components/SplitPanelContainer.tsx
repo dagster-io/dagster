@@ -30,7 +30,7 @@ export class SplitPanelContainer extends React.Component<
   constructor(props: SplitPanelContainerProps) {
     super(props);
 
-    const key = `dagit.panel-width.${this.props.identifier}`;
+    const key = `dagster.panel-width.${this.props.identifier}`;
     const value = window.localStorage.getItem(key);
     let size = Number(value);
     if (value === null || isNaN(size)) {

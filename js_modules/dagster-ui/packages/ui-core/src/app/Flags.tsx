@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
-export const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
+export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 
 // Use const because we need to extend this in cloud. https://blog.logrocket.com/extend-enums-typescript/
 export const FeatureFlag = {
@@ -18,7 +18,7 @@ export const FeatureFlag = {
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
 export const getFeatureFlags: () => FeatureFlagType[] = memoize(
-  () => getJSONForKey(DAGIT_FLAGS_KEY) || [],
+  () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
 );
 
 export const featureEnabled = memoize((flag: FeatureFlagType) => getFeatureFlags().includes(flag));
@@ -42,5 +42,5 @@ export const setFeatureFlags = (flags: FeatureFlagType[]) => {
   if (!(flags instanceof Array)) {
     throw new Error('flags must be an array');
   }
-  localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
+  localStorage.setItem(DAGSTER_FLAGS_KEY, JSON.stringify(flags));
 };

@@ -9,9 +9,9 @@
 
 const path = require('path');
 
-const dagitCorePath = path.resolve('../ui-core/src');
-const dagitUIPath = path.resolve('../ui-components/src');
-const graphQLArtifactDirectory = path.resolve(dagitCorePath, 'graphql');
+const dagsterUICorePath = path.resolve('../ui-core/src');
+const dagsterUIComponentsPath = path.resolve('../ui-components/src');
+const graphQLArtifactDirectory = path.resolve(dagsterUICorePath, 'graphql');
 
 const noncePlaceholder = 'NONCE-PLACEHOLDER';
 
@@ -41,12 +41,12 @@ module.exports = {
    * Modules that must be deduped for the Webpack build, e.g. `react`. Ex:
    *
    * {
-   *   react: path.resolve(pathToLocalDagit, 'node_modules/react'),
+   *   react: path.resolve(pathToLocalDagsterUI, 'node_modules/react'),
    * }
    */
   moduleAliases: {
-    '@dagster-io/ui-core': dagitCorePath,
-    '@dagster-io/ui-components': dagitUIPath,
+    '@dagster-io/ui-core': dagsterUICorePath,
+    '@dagster-io/ui-components': dagsterUIComponentsPath,
   },
 
   /**
@@ -54,10 +54,10 @@ module.exports = {
    * development targets, but are outside of the CRA's own `src` directory. Ex:
    *
    * [
-   *   path.resolve(pathToLocalDagit, 'packages/ui-core/src'),
+   *   path.resolve(pathToLocalDagsterUI, 'packages/ui-core/src'),
    * ]
    */
-  srcPaths: [dagitCorePath, dagitUIPath],
+  srcPaths: [dagsterUICorePath, dagsterUIComponentsPath],
 
   /**
    * CSP Configuration. Receives the webpack environment to return the appropriate CSP

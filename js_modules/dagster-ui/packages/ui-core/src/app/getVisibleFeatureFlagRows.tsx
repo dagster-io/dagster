@@ -1,7 +1,7 @@
 import {FeatureFlag} from './Flags';
 
 /**
- * Open-source feature flags to be displayed in Dagit "User settings"
+ * Open-source feature flags to be displayed in Dagster UI "User settings"
  */
 export const getVisibleFeatureFlagRows = () => [
   {
