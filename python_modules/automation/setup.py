@@ -17,10 +17,13 @@ setup(
     ],
     packages=find_packages(exclude=["automation_tests*"]),
     install_requires=[
+        "dagster",
+        "dagster-docker",
         "autoflake",
         "boto3",
         "pytablereader",
         "requests",
+        "click",
     ],
     extras_require={
         "buildkite": [
