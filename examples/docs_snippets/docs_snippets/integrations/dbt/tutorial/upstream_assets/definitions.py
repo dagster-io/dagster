@@ -8,7 +8,7 @@ from dagster_dbt import DbtCliResource, build_schedule_from_dbt_selection, dbt_a
 
 from dagster import Definitions, OpExecutionContext, asset
 
-dbt_project_dir = Path(__file__).parent.joinpath("..", "..")
+dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 

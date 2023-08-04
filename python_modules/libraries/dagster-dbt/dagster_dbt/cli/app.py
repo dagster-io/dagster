@@ -97,7 +97,7 @@ def copy_scaffold(
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
             dbt_project_dir,
-            start=dagster_project_dir.joinpath(project_name),
+            start=dagster_project_dir.joinpath(project_name, "definitions.py"),
         )
     )
     dbt_project_dir_relative_path_parts = [

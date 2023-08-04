@@ -21,7 +21,7 @@ from docs_snippets.integrations.dbt.dbt_cloud import (
 
 
 def test_scope_schedule_assets_can_load():
-    MANIFEST_PATH = Path(__file__).parent / "manifest.json"
+    MANIFEST_PATH = Path(__file__).joinpath("..", "manifest.json").resolve()
     manifest = json.loads(MANIFEST_PATH.read_bytes())
 
     scope_schedule_assets_dbt_only(manifest)
