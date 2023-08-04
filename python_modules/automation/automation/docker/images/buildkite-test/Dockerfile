@@ -108,13 +108,12 @@ RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}
 # Install Google Cloud SDK
 # https://cloud.google.com/sdk/docs/install#deb
 # Add Google Cloud GPG key and apt source
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg > /usr/share/keyrings/cloud.google.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null \
-    # Install google cloud
     && apt-get -yqq update \
     && apt-get -yqq install \
-    google-cloud-sdk
+    google-cloud-cli
 
 # Install Docker -- note that we have some older code using `docker-compose` instead of `docker
 # compose`, so we have to install both the `docker-compose` executable and the docker compose CLI
