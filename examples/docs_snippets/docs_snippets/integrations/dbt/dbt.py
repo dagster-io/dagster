@@ -310,7 +310,9 @@ def scope_custom_metadata_dagster_dbt_translator():
         def get_metadata(
             self, dbt_resource_props: Mapping[str, Any]
         ) -> Mapping[str, Any]:
-            return {"meta": MetadataValue.json(dbt_resource_props.get("meta", {}))}
+            return {
+                "dbt_metadata": MetadataValue.json(dbt_resource_props.get("meta", {}))
+            }
 
     @dbt_assets(
         manifest=manifest_path,
