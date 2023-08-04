@@ -1,7 +1,6 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
-import {Box, TextInput, Suggest, MenuItem, Icon, ButtonGroup} from '@dagster-io/ui-components';
+import {Box, TextInput, ButtonGroup} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
-import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -10,10 +9,13 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {ClearButton} from '../ui/ClearButton';
 import {LoadingSpinner} from '../ui/Loading';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
+import {
+  AssetGroupSuggest,
+  buildAssetGroupSelector,
+  useAssetGroupSelectorsForAssets,
+} from './AssetGroupSuggest';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -85,10 +87,10 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
 }) => {
   const [view, setView] = useAssetView();
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
-  const [searchGroup, setSearchGroup] = useQueryPersistedState<AssetGroupSelector | null>({
+  const [searchGroups, setSearchGroups] = useQueryPersistedState<AssetGroupSelector[]>({
     queryKey: 'g',
-    decode: (qs) => (qs.group ? JSON.parse(qs.group) : null),
-    encode: (group) => ({group: group ? JSON.stringify(group) : undefined}),
+    decode: (qs) => (qs.groups ? JSON.parse(qs.groups) : []),
+    encode: (groups) => ({groups: groups.length ? JSON.stringify(groups) : undefined}),
   });
 
   const searchPath = (search || '')
@@ -97,12 +99,16 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
     .trim();
 
   const {assets, query, error} = useAllAssets(groupSelector);
+  const assetGroupOptions = useAssetGroupSelectorsForAssets(assets);
   const pathMatches = useAssetSearch(searchPath, assets || []);
 
   const filtered = React.useMemo(
     () =>
-      pathMatches.filter((a) => !searchGroup || isEqual(buildAssetGroupSelector(a), searchGroup)),
-    [pathMatches, searchGroup],
+      pathMatches.filter(
+        (a) =>
+          !searchGroups.length || searchGroups.some((g) => isEqual(buildAssetGroupSelector(a), g)),
+      ),
+    [pathMatches, searchGroups],
   );
 
   const {displayPathForAsset, displayed} =
@@ -164,84 +170,20 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
           {!groupSelector ? (
-            <AssetGroupSuggest assets={assets} value={searchGroup} onChange={setSearchGroup} />
+            <AssetGroupSuggest
+              assetGroups={assetGroupOptions}
+              value={searchGroups}
+              onChange={setSearchGroups}
+            />
           ) : undefined}
         </>
       }
       refreshState={refreshState}
       prefixPath={prefixPath || []}
       searchPath={searchPath}
-      searchGroup={searchGroup}
+      searchGroups={searchGroups}
       displayPathForAsset={displayPathForAsset}
       requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY}]}
-    />
-  );
-};
-
-export const AssetGroupSuggest: React.FC<{
-  assets: Asset[];
-  value: AssetGroupSelector | null;
-  onChange: (g: AssetGroupSelector | null) => void;
-}> = ({assets, value, onChange}) => {
-  const assetGroups = React.useMemo(
-    () =>
-      uniqBy(
-        (assets || []).map(buildAssetGroupSelector).filter((a) => !!a) as AssetGroupSelector[],
-        (a) => JSON.stringify(a),
-      ).sort((a, b) => a.groupName.localeCompare(b.groupName)),
-    [assets],
-  );
-
-  const repoContextNeeded = React.useMemo(() => {
-    // This is a bit tricky - the first time we find a groupName it sets the key to `false`.
-    // The second time, it sets the value to `true` + tells use we need to show the repo name
-    const result: {[groupName: string]: boolean} = {};
-    assetGroups.forEach(
-      (group) => (result[group.groupName] = result.hasOwnProperty(group.groupName)),
-    );
-    return result;
-  }, [assetGroups]);
-
-  return (
-    <Suggest<AssetGroupSelector>
-      selectedItem={value}
-      items={assetGroups}
-      inputProps={{
-        style: {width: 220},
-        placeholder: 'Filter asset groups…',
-        rightElement: value ? (
-          <ClearButton onClick={() => onChange(null)} style={{marginTop: 5, marginRight: 4}}>
-            <Icon name="cancel" />
-          </ClearButton>
-        ) : undefined,
-      }}
-      inputValueRenderer={(partition) => partition.groupName}
-      itemPredicate={(query, partition) =>
-        query.length === 0 || partition.groupName.includes(query)
-      }
-      itemsEqual={isEqual}
-      itemRenderer={(assetGroup, props) => (
-        <MenuItem
-          active={props.modifiers.active}
-          onClick={props.handleClick}
-          key={JSON.stringify(assetGroup)}
-          text={
-            <>
-              {assetGroup.groupName}
-              {repoContextNeeded[assetGroup.groupName] ? (
-                <span style={{opacity: 0.5, paddingLeft: 4}}>
-                  {buildRepoPathForHuman(
-                    assetGroup.repositoryName,
-                    assetGroup.repositoryLocationName,
-                  )}
-                </span>
-              ) : undefined}
-            </>
-          }
-        />
-      )}
-      noResults={<MenuItem disabled={true} text="No asset groups" />}
-      onItemSelect={onChange}
     />
   );
 };
@@ -287,16 +229,6 @@ export const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
 // AssetCatalogTableQuery results.
 function definitionToAssetTableFragment(definition: AssetCatalogGroupTableNodeFragment): Asset {
   return {__typename: 'Asset', id: definition.id, key: definition.assetKey, definition};
-}
-
-function buildAssetGroupSelector(a: Asset) {
-  return a.definition && a.definition.groupName
-    ? {
-        groupName: a.definition.groupName,
-        repositoryName: a.definition.repository.name,
-        repositoryLocationName: a.definition.repository.location.name,
-      }
-    : null;
 }
 
 function buildFlatProps(assets: Asset[], _: string[]) {
