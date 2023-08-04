@@ -214,7 +214,7 @@ def test_with_description_replacements() -> None:
 
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def get_description(cls, node_info: Mapping[str, Any]) -> str:
+        def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
             return expected_description
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
@@ -230,7 +230,7 @@ def test_with_metadata_replacements() -> None:
 
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def get_metadata(cls, node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+        def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
             return expected_metadata
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
@@ -246,7 +246,7 @@ def test_with_group_replacements() -> None:
 
     class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         @classmethod
-        def get_group_name(cls, node_info: Mapping[str, Any]) -> Optional[str]:
+        def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
             return expected_group
 
     @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
