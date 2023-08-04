@@ -9,11 +9,11 @@ describe('migrateLocalStorageKeys', () => {
     window.localStorage.clear();
   });
 
-  it('moves an existing value', () => {
+  it('copies an existing value', () => {
     window.localStorage.setItem('foo', 'hello');
     expect(window.localStorage.getItem('foo')).toBe('hello');
     migrateLocalStorageKeys({from: /foo/gi, to: 'bar'});
-    expect(window.localStorage.getItem('foo')).toBeNull();
+    expect(window.localStorage.getItem('foo')).toBe('hello');
     expect(window.localStorage.getItem('bar')).toBe('hello');
   });
 
@@ -24,12 +24,10 @@ describe('migrateLocalStorageKeys', () => {
     expect(window.localStorage.getItem('foo')).toBe('hello');
   });
 
-  it('moves keys of various capitalization', () => {
+  it('copies values of various key capitalization', () => {
     window.localStorage.setItem('FOO-COOL', 'lorem');
     window.localStorage.setItem('fOo-cOoL', 'ipsum');
     migrateLocalStorageKeys({from: /foo/gi, to: 'bar'});
-    expect(window.localStorage.getItem('FOO-COOL')).toBeNull();
-    expect(window.localStorage.getItem('fOo-cOoL')).toBeNull();
     expect(window.localStorage.getItem('bar-COOL')).toBe('lorem');
     expect(window.localStorage.getItem('bar-cOoL')).toBe('ipsum');
   });
