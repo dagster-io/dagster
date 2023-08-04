@@ -17,23 +17,14 @@ At this point, you should have a [fully-configured dbt project](/integrations/db
 
 In this section, you'll finally begin integrating dbt with Dagster! To do this, you'll:
 
-- [Install the dagster and the dagster-dbt libraries](#step-1-install-the-dagster-and-the-dagster-dbt-libraries)
-- [Create a Dagster project that wraps your dbt project](#step-2-create-a-dagster-project-that-wraps-your-dbt-project)
-- [Inspect your Dagster project in Dagster's UI](#step-3-inspect-your-dagster-project-in-dagsters-ui)
-- [Build your dbt models in Dagster](#step-4-build-your-dbt-models-in-dagster)
-- [Understand the Python code in your Dagster project](#step-5-understand-the-python-code-in-your-dagster-project)
+- [Create a Dagster project that wraps your dbt project](#step-1-create-a-dagster-project-that-wraps-your-dbt-project)
+- [Inspect your Dagster project in Dagster's UI](#step-2-inspect-your-dagster-project-in-dagsters-ui)
+- [Build your dbt models in Dagster](#step-3-build-your-dbt-models-in-dagster)
+- [Understand the Python code in your Dagster project](#step-4-understand-the-python-code-in-your-dagster-project)
 
 ---
 
-## Step 1: Install the dagster and the dagster-dbt libraries
-
-```shell
-pip install dagster dagster-webserver dagster-dbt
-```
-
----
-
-## Step 2: Create a Dagster project that wraps your dbt project
+## Step 1: Create a Dagster project that wraps your dbt project
 
 You can create a Dagster project that wraps your dbt project by using the `dagster-dbt` command line interface. Make sure you're in the directory where your `dbt_project.yaml` is. If you're continuing from the previous section, then you'll already be in this directory. Then, run:
 
@@ -49,7 +40,7 @@ In general, it's up to you where to put your Dagster project. It's most common t
 
 ---
 
-## Step 3: Inspect your Dagster project in Dagster's UI
+## Step 2: Inspect your Dagster project in Dagster's UI
 
 Now that you have a Dagster project, you can run Dagster's UI to take a look at it.
 
@@ -82,7 +73,7 @@ Now that you have a Dagster project, you can run Dagster's UI to take a look at 
 
 ---
 
-## Step 4: Build your dbt models in Dagster
+## Step 3: Build your dbt models in Dagster
 
 You can do more than view your dbt models in Dagster – you can also run them. In Dagster, running a dbt model corresponds to _materializing_ an asset. Materializing an asset means running some computation to update its contents in persistent storage. In this tutorial, that persistent storage is our local DuckDB database.
 
@@ -102,7 +93,7 @@ After the run completes, you can:
 
 ---
 
-## Step 5: Understand the Python code in your Dagster project
+## Step 4: Understand the Python code in your Dagster project
 
 You saw how you can create a Dagster project that loads a dbt project. How does this work? Understanding how Dagster loads a dbt project will give you a foundation for customizing how Dagster runs your dbt project, as well as for connecting it to other data assets outside of dbt.
 
