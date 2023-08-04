@@ -20,7 +20,6 @@ setup(
         "autoflake",
         "boto3",
         "packaging>=20.9",
-        "pandas",
         "pytablereader",
         "requests",
         "twine==1.15.0",
