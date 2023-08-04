@@ -23,6 +23,7 @@ RUN apt-get update -yqq \
     apt-transport-https \
     curl \
     ca-certificates \
+    ca-certificates-java \
     gnupg2 \
     locales \
     lsb-release \
