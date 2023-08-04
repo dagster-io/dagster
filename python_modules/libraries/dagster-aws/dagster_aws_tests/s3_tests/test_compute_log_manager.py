@@ -110,9 +110,7 @@ compute_logs:
     bucket: "{s3_bucket}"
     local_dir: "/tmp/cool"
     prefix: "{s3_prefix}"
-""".format(
-        s3_bucket=mock_s3_bucket.name, s3_prefix=s3_prefix
-    )
+""".format(s3_bucket=mock_s3_bucket.name, s3_prefix=s3_prefix)
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:

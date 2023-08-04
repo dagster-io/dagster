@@ -121,10 +121,8 @@ def build_schedule_from_partitioned_job(
     """
     check.invariant(
         not (day_of_week and day_of_month),
-        (
-            "Cannot provide both day_of_month and day_of_week parameter to"
-            " build_schedule_from_partitioned_job."
-        ),
+        "Cannot provide both day_of_month and day_of_week parameter to"
+        " build_schedule_from_partitioned_job.",
     )
 
     if isinstance(job, UnresolvedAssetJobDefinition) and job.partitions_def is None:

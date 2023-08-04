@@ -354,10 +354,8 @@ class _PlanBuilder:
             else:
                 check.invariant(
                     False,
-                    (
-                        f"Unexpected node type {type(node.definition)} encountered during execution"
-                        " planning"
-                    ),
+                    f"Unexpected node type {type(node.definition)} encountered during execution"
+                    " planning",
                 )
 
             ### 3. OUTPUTS
@@ -372,9 +370,9 @@ class _PlanBuilder:
                 )
                 step = self.get_step_by_node_handle(check.not_none(resolved_handle))
                 if isinstance(step, (ExecutionStep, UnresolvedCollectExecutionStep)):
-                    step_output_handle: Union[
-                        StepOutputHandle, UnresolvedStepOutputHandle
-                    ] = StepOutputHandle(step.key, resolved_output_def.name)
+                    step_output_handle: Union[StepOutputHandle, UnresolvedStepOutputHandle] = (
+                        StepOutputHandle(step.key, resolved_output_def.name)
+                    )
                 elif isinstance(step, UnresolvedMappedExecutionStep):
                     step_output_handle = UnresolvedStepOutputHandle(
                         step.handle,
@@ -608,17 +606,19 @@ class ExecutionPlan(
             ),
             known_state=check.inst_param(known_state, "known_state", KnownExecutionState),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
-            step_dict_by_key={step.key: step for step in step_dict.values()}
-            if step_dict_by_key is None
-            else check.dict_param(
-                step_dict_by_key,
-                "step_dict_by_key",
-                key_type=str,
-                value_type=(
-                    ExecutionStep,
-                    UnresolvedMappedExecutionStep,
-                    UnresolvedCollectExecutionStep,
-                ),
+            step_dict_by_key=(
+                {step.key: step for step in step_dict.values()}
+                if step_dict_by_key is None
+                else check.dict_param(
+                    step_dict_by_key,
+                    "step_dict_by_key",
+                    key_type=str,
+                    value_type=(
+                        ExecutionStep,
+                        UnresolvedMappedExecutionStep,
+                        UnresolvedCollectExecutionStep,
+                    ),
+                )
             ),
             executor_name=check.opt_str_param(executor_name, "executor_name"),
             repository_load_data=check.opt_inst_param(
@@ -770,10 +770,8 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                (
-                    f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
-                    f" {', '.join(bad_keys)}"
-                ),
+                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                f" {', '.join(bad_keys)}",
                 step_keys=bad_keys,
             )
 
@@ -1379,9 +1377,9 @@ def _compute_step_maps(
     past_mappings = known_state.dynamic_mappings if known_state else {}
 
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]] = {}
-    resolvable_map: Dict[
-        FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]
-    ] = defaultdict(list)
+    resolvable_map: Dict[FrozenSet[str], List[Union[StepHandle, UnresolvedStepHandle]]] = (
+        defaultdict(list)
+    )
     for handle in step_handles_to_execute:
         step = step_dict[handle]
         if isinstance(step, ExecutionStep):

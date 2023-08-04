@@ -392,11 +392,9 @@ def execute_sensor_iteration(
                 )
             else:
                 logger.warning(
-                    (
-                        f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
-                        "sensor no longer exists, you can turn it off in the Dagster UI from the "
-                        "Status tab."
-                    ),
+                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
+                    "sensor no longer exists, you can turn it off in the Dagster UI from the "
+                    "Status tab.",
                 )
 
     if not sensors:
@@ -567,9 +565,9 @@ def _mark_sensor_state_for_tick(
     instance.update_instigator_state(
         sensor_state.with_data(
             SensorInstigatorData(
-                last_tick_timestamp=instigator_data.last_tick_timestamp
-                if instigator_data
-                else None,
+                last_tick_timestamp=(
+                    instigator_data.last_tick_timestamp if instigator_data else None
+                ),
                 last_run_key=instigator_data.last_run_key if instigator_data else None,
                 min_interval=external_sensor.min_interval_seconds,
                 cursor=instigator_data.cursor if instigator_data else None,
@@ -899,8 +897,15 @@ def _fetch_existing_runs(
         return {}
 
     # fetch runs from the DB with only the run key tag
-    # note: while possible to filter more at DB level with tags - it is avoided here due to observed perf problems
-    runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
+    # note: while possible to filter more at DB level with tags - it is avoided here due to observed
+    # perf problems
+    runs_with_run_keys = []
+    for run_key in run_keys:
+        # do serial fetching, which has better perf than a single query with an IN clause, due to
+        # how the query planner does the runs/run_tags join
+        runs_with_run_keys.extend(
+            instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_key}))
+        )
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
     valid_runs: List[DagsterRun] = []
@@ -1019,7 +1024,7 @@ def _create_sensor_run(
         parent_job_snapshot=external_job.parent_job_snapshot,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
-        asset_selection=frozenset(run_request.asset_selection)
-        if run_request.asset_selection
-        else None,
+        asset_selection=(
+            frozenset(run_request.asset_selection) if run_request.asset_selection else None
+        ),
     )

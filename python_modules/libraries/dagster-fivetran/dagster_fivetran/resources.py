@@ -259,9 +259,11 @@ class FivetranResource(ConfigurableResource):
         self._assert_syncable_connector(connector_id)
         self.make_connector_request(
             method="POST",
-            endpoint=f"{connector_id}/schemas/tables/resync"
-            if resync_parameters is not None
-            else f"{connector_id}/resync",
+            endpoint=(
+                f"{connector_id}/schemas/tables/resync"
+                if resync_parameters is not None
+                else f"{connector_id}/resync"
+            ),
             data=json.dumps(resync_parameters) if resync_parameters is not None else None,
         )
         connector_details = self.get_connector_details(connector_id)

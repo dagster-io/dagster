@@ -26,10 +26,12 @@ from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -555,12 +557,10 @@ def test_job_run_dagster_run():
     class PipelineRun(
         namedtuple(
             "_PipelineRun",
-            (
-                "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-                "step_keys_to_execute status tags root_run_id parent_run_id "
-                "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-                "pipeline_code_origin"
-            ),
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin",
         )
     ):
         pass
@@ -1250,3 +1250,13 @@ def test_metadata_serialization():
         },
     ]
     assert deserialize_value(serialized_mat, AssetMaterialization) == mat
+
+
+# When receiving pre-1.4 static partitions definitions from user code, it is possible they contain
+# duplicates. We need to de-dup them at the serdes/"External" layer before reconstructing the
+# partitions definition in the host process to avoid an error.
+def test_static_partitions_definition_dup_keys_backcompat():
+    received_from_user = ExternalStaticPartitionsDefinitionData(partition_keys=["a", "b", "a"])
+    assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
+        partition_keys=["a", "b"]
+    )

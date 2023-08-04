@@ -65,6 +65,10 @@ def test_extract_data_version_and_provenance_from_materialization_entry():
     assert extract_data_version_from_entry(entry) == DataVersion("1")
     assert extract_data_provenance_from_entry(entry) == DataProvenance(
         code_version="3",
+        input_storage_ids={
+            AssetKey(["assetgroup", "bar"]): 10,
+            AssetKey(["baz"]): 11,
+        },
         input_data_versions={
             AssetKey(["assetgroup", "bar"]): DataVersion("2"),
             AssetKey(["baz"]): DataVersion("3"),

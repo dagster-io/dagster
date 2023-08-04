@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import logging
 import math
@@ -13,11 +11,21 @@ import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
-from multiprocessing.synchronize import Event as MPEvent
-from subprocess import Popen
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -89,6 +97,10 @@ from .types import (
     StartRunResult,
 )
 from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
+
+if TYPE_CHECKING:
+    from multiprocessing.synchronize import Event as MPEvent
+    from subprocess import Popen
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
@@ -424,9 +436,11 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_response = serialize_value(
                 ListRepositoriesResponse(
                     loaded_repositories.loadable_repository_symbols,
-                    executable_path=self._loadable_target_origin.executable_path
-                    if self._loadable_target_origin
-                    else None,
+                    executable_path=(
+                        self._loadable_target_origin.executable_path
+                        if self._loadable_target_origin
+                        else None
+                    ),
                     repository_code_pointer_dict=loaded_repositories.code_pointers_by_repo_name,
                     entry_point=self._entry_point,
                     container_image=self._container_image,
@@ -1070,7 +1084,7 @@ def open_server_process(
     env: Optional[Dict[str, str]] = None,
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
-    container_context: Optional[dict[str, Any]] = None,
+    container_context: Optional[Dict[str, Any]] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1124,7 +1138,7 @@ def open_server_process(
 def _open_server_process_on_dynamic_port(
     max_retries: int = 10,
     **kwargs,
-) -> Tuple[Optional[Popen[str]], Optional[int]]:
+) -> Tuple[Optional["Popen[str]"], Optional[int]]:
     server_process = None
     retries = 0
     port = None
@@ -1180,10 +1194,8 @@ class GrpcServerProcess:
         check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            (
-                "max_workers must be greater than 1 or set to None if heartbeat is True. "
-                "If set to None, the server will use the gRPC default."
-            ),
+            "max_workers must be greater than 1 or set to None if heartbeat is True. "
+            "If set to None, the server will use the gRPC default.",
         )
 
         if seven.IS_WINDOWS or force_port:

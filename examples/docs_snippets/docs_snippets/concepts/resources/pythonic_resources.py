@@ -303,7 +303,7 @@ class GitHubOrganization:
         self.name = name
 
     def repositories(self):
-        return ["dagster", "dagit", "dagster-graphql"]
+        return ["dagster", "dagster-webserver", "dagster-graphql"]
 
 
 class GitHub:

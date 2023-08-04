@@ -101,11 +101,9 @@ class AthenaClient:
         return results
 
 
-@deprecated
+@deprecated(breaking_version="2.0", additional_warn_text="Use AthenaClientResource instead.")
 class AthenaResource(AthenaClient):
-    """Deprecated. This class was used by the function-style Athena resource. New code should instead
-    use the Pythonic, class-style AthenaClientResource.
-    """
+    """This class was used by the function-style Athena resource."""
 
 
 class FakeAthenaClient(AthenaClient):
@@ -207,11 +205,9 @@ class FakeAthenaClient(AthenaClient):
         )
 
 
-@deprecated
+@deprecated(breaking_version="2.0", additional_warn_text="Use FakeAthenaClientResource instead.")
 class FakeAthenaResource(FakeAthenaClient):
-    """Deprecated. This class was used by the function-style fake Athena resource. New code should instead
-    use the Pythonic, class-style FakeAthenaClientResource.
-    """
+    """This class was used by the function-style fake Athena resource."""
 
 
 class ResourceWithAthenaConfig(ConfigurableResource):

@@ -60,9 +60,9 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
         self._definition_cache: Dict[str, T_RepositoryLevelDefinition] = {}
         self._definition_names: Optional[Sequence[str]] = None
 
-        self._lazy_definitions_fn: Callable[
-            [], Sequence[T_RepositoryLevelDefinition]
-        ] = lazy_definitions_fn or (lambda: [])
+        self._lazy_definitions_fn: Callable[[], Sequence[T_RepositoryLevelDefinition]] = (
+            lazy_definitions_fn or (lambda: [])
+        )
         self._lazy_definitions: Optional[Sequence[T_RepositoryLevelDefinition]] = None
 
         self._all_definitions: Optional[Sequence[T_RepositoryLevelDefinition]] = None

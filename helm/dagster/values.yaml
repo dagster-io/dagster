@@ -1107,6 +1107,9 @@ dagsterDaemon:
     # `k8s_job_executor` to run each op in its own Kubernetes job. To enable, set this value
     # to a value greater than 0.
     maxResumeRunAttempts: 0
+    # [Experimental] Number of seconds to wait after a run has ended with a success/failed/canceled
+    # status before freeing any concurrency slots that may have been retained.
+    freeSlotsAfterRunEndSeconds: 0
 
   runRetries:
     enabled: true

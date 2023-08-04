@@ -3,7 +3,6 @@ import time
 from dagster import (
     AssetKey,
     AssetOut,
-    AssetSelection,
     RunRequest,
     SkipReason,
     StaticPartitionsDefinition,
@@ -13,7 +12,6 @@ from dagster import (
     multi_asset_sensor,
     op,
 )
-from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
 
 
 @asset
@@ -223,9 +221,6 @@ def get_asset_sensors_repo():
         downstream,
         runs_long,
         waits,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(downstream, waits), name="generated_sensor"
-        ),
         *partitioned_assets,
         partitioned_multi_asset_sensor,
     ]

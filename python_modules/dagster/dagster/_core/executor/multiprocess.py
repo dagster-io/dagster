@@ -109,7 +109,7 @@ class MultiprocessExecutor(Executor):
     def __init__(
         self,
         retries: RetryMode,
-        max_concurrent: int,
+        max_concurrent: Optional[int],
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
@@ -133,10 +133,8 @@ class MultiprocessExecutor(Executor):
 
         if start_method not in valid_starts:
             raise DagsterUnmetExecutorRequirementsError(
-                (
-                    f"The selected start_method '{start_method}' is not available. "
-                    f"Only {valid_starts} are valid options on {sys.platform} python {sys.version}."
-                ),
+                f"The selected start_method '{start_method}' is not available. "
+                f"Only {valid_starts} are valid options on {sys.platform} python {sys.version}.",
             )
         self._start_method = start_method
         self._explicit_forkserver_preload = explicit_forkserver_preload
@@ -212,10 +210,8 @@ class MultiprocessExecutor(Executor):
                 if active_execution.check_for_interrupts():
                     yield DagsterEvent.engine_event(
                         plan_context,
-                        (
-                            "Multiprocess executor: received termination signal - "
-                            "forwarding to active child processes"
-                        ),
+                        "Multiprocess executor: received termination signal - "
+                        "forwarding to active child processes",
                         EngineEventData.interrupted(list(term_events.keys())),
                     )
                     stopping = True

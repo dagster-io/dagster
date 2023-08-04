@@ -26,9 +26,9 @@ cd my-dagster-project
 pip install -e ".[dev]"
 ```
 
-At this point, you can view the **completed** project in Dagit by running:
+At this point, you can view the **completed** project in the Dagster UI by running:
 
 ```shell
 cd tutorial_finished
-dagit
+dagster-webserver
 ```

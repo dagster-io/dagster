@@ -367,10 +367,8 @@ class InputContext:
         )
         if len(partition_key_ranges) != 1:
             check.failed(
-                (
-                    "Tried to access asset_partition_key_range, but there are "
-                    f"({len(partition_key_ranges)}) key ranges associated with this input."
-                ),
+                "Tried to access asset_partition_key_range, but there are "
+                f"({len(partition_key_ranges)}) key ranges associated with this input.",
             )
 
         return partition_key_ranges[0]
@@ -407,19 +405,15 @@ class InputContext:
 
         if not isinstance(subset, TimeWindowPartitionsSubset):
             check.failed(
-                (
-                    "Tried to access asset_partitions_time_window, but the asset is not partitioned"
-                    " with time windows."
-                ),
+                "Tried to access asset_partitions_time_window, but the asset is not partitioned"
+                " with time windows.",
             )
 
         time_windows = subset.included_time_windows
         if len(time_windows) != 1:
             check.failed(
-                (
-                    "Tried to access asset_partitions_time_window, but there are "
-                    f"({len(time_windows)}) time windows associated with this input."
-                ),
+                "Tried to access asset_partitions_time_window, but there are "
+                f"({len(time_windows)}) time windows associated with this input.",
             )
 
         return time_windows[0]

@@ -52,9 +52,9 @@ def generate_materializations(
     # all the streams that are set to be sync'd by this connection
     all_stream_props = {
         prefix
-        + stream["stream"]["name"]: stream.get("stream", {})
-        .get("jsonSchema", {})
-        .get("properties", {})
+        + stream["stream"]["name"]: (
+            stream.get("stream", {}).get("jsonSchema", {}).get("properties", {})
+        )
         for stream in output.connection_details.get("syncCatalog", {}).get("streams", [])
         if stream.get("config", {}).get("selected")
     }

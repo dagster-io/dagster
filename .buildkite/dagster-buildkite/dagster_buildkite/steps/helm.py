@@ -74,10 +74,8 @@ def _build_lint_steps(package_spec) -> List[CommandStep]:
         CommandStepBuilder("dagster dependency build")
         # https://github.com/dagster-io/dagster/issues/8167
         .run(
-            (
-                "helm repo add bitnami-pre-2022"
-                " https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami"
-            ),
+            "helm repo add bitnami-pre-2022"
+            " https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
         .with_skip(skip_if_no_helm_changes() and package_spec.skip_reason)

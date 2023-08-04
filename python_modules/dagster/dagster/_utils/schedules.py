@@ -269,16 +269,18 @@ def schedule_execution_time_iterator(
     )
 
     if isinstance(cron_schedule, str):
-        yield from cron_string_iterator(
-            start_timestamp, cron_schedule, execution_timezone
-        ) if ascending else reverse_cron_string_iterator(
-            start_timestamp, cron_schedule, execution_timezone
+        yield from (
+            cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
+            if ascending
+            else reverse_cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
         )
     else:
         iterators = [
-            cron_string_iterator(start_timestamp, cron_string, execution_timezone)
-            if ascending
-            else reverse_cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            (
+                cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+                if ascending
+                else reverse_cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            )
             for cron_string in cron_schedule
         ]
         next_dates = [next(it) for it in iterators]

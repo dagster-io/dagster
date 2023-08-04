@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
 
 import dagster._check as check
+from dagster._annotations import deprecated_param
 from dagster._core.decorator_utils import format_docstring_for_description
 
 from ..config import ConfigMapping
@@ -137,6 +138,11 @@ def job(
     ...
 
 
+@deprecated_param(
+    param="version_strategy",
+    breaking_version="2.0",
+    additional_warn_text="Use asset versioning instead.",
+)
 def job(
     compose_fn: Optional[Callable[..., Any]] = None,
     *,
@@ -207,10 +213,9 @@ def job(
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
             Only used if retry policy is not defined on the op definition or op invocation.
-        version_strategy (Optional[VersionStrategy]): (Deprecated)
+        version_strategy (Optional[VersionStrategy]):
             Defines how each op (and optionally, resource) in the job can be versioned. If
-            provided, memoization will be enabled for this job. This is deprecated in favor of asset
-            versioning.
+            provided, memoization will be enabled for this job.
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.

@@ -42,9 +42,7 @@ def full_pg_config(hostname):
               password: test
               hostname: {hostname}
               db_name: test
-    """.format(
-        hostname=hostname
-    )
+    """.format(hostname=hostname)
 
 
 def unified_pg_config(hostname):
@@ -94,9 +92,7 @@ def skip_autocreate_pg_config(hostname):
               password: test
               hostname: {hostname}
               db_name: test
-    """.format(
-        hostname=hostname
-    )
+    """.format(hostname=hostname)
 
 
 def params_specified_pg_config(hostname):
@@ -145,9 +141,7 @@ def params_specified_pg_config(hostname):
                 connect_timeout: 10
                 application_name: myapp
                 options: -c synchronous_commit=off
-    """.format(
-        hostname=hostname
-    )
+    """.format(hostname=hostname)
 
 
 def schema_specified_pg_config(hostname):

@@ -230,9 +230,11 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
             ),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_loadable_target_origin_name(loadable_target_origin),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_loadable_target_origin_name(loadable_target_origin)
+            ),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -327,9 +329,11 @@ class GrpcServerCodeLocationOrigin(
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
             check.opt_str_param(socket, "socket"),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_grpc_location_name(port, socket, host),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_grpc_location_name(port, socket, host)
+            ),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
 

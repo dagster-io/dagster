@@ -216,6 +216,10 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
+    authenticator: Optional[str] = Field(
+        default=None,
+        description="Optional parameter to specify the authentication mechanism to use.",
+    )
 
     @staticmethod
     @abstractmethod
@@ -333,9 +337,11 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
     return " AND\n".join(
-        _time_window_where_clause(partition_dimension)
-        if isinstance(partition_dimension.partitions, TimeWindow)
-        else _static_where_clause(partition_dimension)
+        (
+            _time_window_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partitions, TimeWindow)
+            else _static_where_clause(partition_dimension)
+        )
         for partition_dimension in partition_dimensions
     )
 

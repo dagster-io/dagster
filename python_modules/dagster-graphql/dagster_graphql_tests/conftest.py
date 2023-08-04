@@ -1,8 +1,11 @@
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 from syrupy.extensions.amber import AmberSnapshotExtension
-from syrupy.types import SnapshotIndex
+
+if TYPE_CHECKING:
+    from syrupy.types import SnapshotIndex
 
 
 @pytest.fixture(scope="session", autouse=True)

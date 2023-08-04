@@ -43,7 +43,7 @@ def make_dagster_definitions_from_airflow_dag_bag(
                 return make_dagster_definition_from_airflow_dag_bag(my_dag_bag)
 
         Use Definitions as usual, for example:
-            `dagit -f path/to/make_dagster_definition.py`
+            `dagster-webserver -f path/to/make_dagster_definition.py`
 
     Args:
         dag_bag (DagBag): Airflow DagBag Model
@@ -93,7 +93,7 @@ def make_dagster_definitions_from_airflow_dags_path(
                 )
 
         Use RepositoryDefinition as usual, for example:
-        ``dagit -f path/to/make_dagster_repo.py -n make_repo_from_dir``
+        ``dagster-webserver -f path/to/make_dagster_repo.py -n make_repo_from_dir``
 
     Args:
         dag_path (str): Path to directory or file that contains Airflow Dags
@@ -123,9 +123,11 @@ def make_dagster_definitions_from_airflow_dags_path(
         == "AirflowPersistentDatabase"
     ):
         AirflowPersistentDatabase._initialize_database(  # noqa: SLF001
-            uri=os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "")
-            if is_airflow_2_loaded_in_environment()
-            else os.getenv("AIRFLOW__CORE__SQL_ALCHEMY_CONN", ""),
+            uri=(
+                os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "")
+                if is_airflow_2_loaded_in_environment()
+                else os.getenv("AIRFLOW__CORE__SQL_ALCHEMY_CONN", "")
+            ),
             connections=connections,
         )
 
@@ -156,7 +158,7 @@ def make_dagster_definitions_from_airflow_example_dags(
                 return make_dagster_definitions_from_airflow_example_dags()
 
         Use Definitions as usual, for example:
-            `dagit -f path/to/make_dagster_definitions.py`
+            `dagster-webserver -f path/to/make_dagster_definitions.py`
 
     Args:
         resource_defs: Optional[Mapping[str, ResourceDefinition]]

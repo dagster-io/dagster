@@ -6,6 +6,7 @@ from typing import Generic, List, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._annotations import deprecated
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -88,14 +89,12 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 csp_template = f.read()
                 return csp_template.replace("NONCE-PLACEHOLDER", nonce)
         except FileNotFoundError:
-            raise Exception(
-                """
+            raise Exception("""
                 CSP configuration file could not be found.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """
-            )
+                """)
 
     async def webserver_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -228,14 +227,12 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     headers=headers,
                 )
         except FileNotFoundError:
-            raise Exception(
-                """
+            raise Exception("""
                 Can't find webapp files.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
                 "make rebuild_ui" in the project root.
-                """
-            )
+                """)
 
     def root_static_file_routes(self) -> List[Route]:
         def _static_file(file_path):
@@ -271,11 +268,15 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             *self.root_static_file_routes(),
         ]
 
+    @deprecated(
+        breaking_version="2.0",
+        subject="/dagit_info and /dagit/notebook endpoint",
+        emit_runtime_warning=False,
+    )
     def build_routes(self):
         routes = (
             [
                 Route("/server_info", self.webserver_info_endpoint),
-                # Remove /dagit_info with 2.0
                 Route("/dagit_info", self.webserver_info_endpoint),
                 Route(
                     "/graphql",
@@ -304,7 +305,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     "/notebook",
                     self.download_notebook,
                 ),
-                # Remove /dagit/notebook with 2.0
                 Route(
                     "/dagit/notebook",
                     self.download_notebook,

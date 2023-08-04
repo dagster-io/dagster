@@ -11,12 +11,12 @@ WORKDIR /tmp/
 # RUN pip install -r requirements.txt
 
 # ADD dagster dagster
-# ADD dagit dagit
+# ADD dagster-webserver dagster-webserver
 
 ADD . .
 
-RUN pip install --upgrade pip && pip install -e dagster && pip install dagit && pip install dagster-pandas && pip install dagstermill && pip install pytest
+RUN pip install --upgrade pip && pip install -e dagster && pip install dagster-webserver && pip install dagster-pandas && pip install dagstermill && pip install pytest
 
-# ENTRYPOINT [ "dagit" ]
+# ENTRYPOINT [ "dagster-webserver" ]
 # 
 # EXPOSE 3000

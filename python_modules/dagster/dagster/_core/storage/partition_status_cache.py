@@ -309,18 +309,22 @@ def build_failed_and_in_progress_partition_subset(
                 cursor = event_id
 
     return (
-        partitions_def.empty_subset().with_partition_keys(
-            get_validated_partition_keys(
-                dynamic_partitions_store, partitions_def, new_failed_partitions
+        (
+            partitions_def.empty_subset().with_partition_keys(
+                get_validated_partition_keys(
+                    dynamic_partitions_store, partitions_def, new_failed_partitions
+                )
             )
-        )
-        if new_failed_partitions
-        else partitions_def.empty_subset(),
-        partitions_def.empty_subset().with_partition_keys(
-            get_validated_partition_keys(instance, partitions_def, in_progress_partitions)
-        )
-        if in_progress_partitions
-        else partitions_def.empty_subset(),
+            if new_failed_partitions
+            else partitions_def.empty_subset()
+        ),
+        (
+            partitions_def.empty_subset().with_partition_keys(
+                get_validated_partition_keys(instance, partitions_def, in_progress_partitions)
+            )
+            if in_progress_partitions
+            else partitions_def.empty_subset()
+        ),
         cursor,
     )
 
@@ -566,9 +570,9 @@ def get_and_update_asset_status_cache_value(
         instance=instance,
         asset_key=asset_key,
         partitions_def=partitions_def,
-        dynamic_partitions_store=dynamic_partitions_loader
-        if dynamic_partitions_loader
-        else instance,
+        dynamic_partitions_store=(
+            dynamic_partitions_loader if dynamic_partitions_loader else instance
+        ),
         stored_cache_value=stored_cache_value,
         latest_materialization_storage_id=latest_materialization_storage_id,
     )

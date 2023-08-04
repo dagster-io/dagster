@@ -228,7 +228,7 @@ def noop_op(_):
     pass
 
 
-# Won't pass cloud-dagit test suite without `in_process_executor`.
+# Won't pass cloud-webserver test suite without `in_process_executor`.
 @job(executor_def=in_process_executor)
 def noop_job():
     noop_op()
@@ -965,7 +965,7 @@ def get_retry_multi_execution_params(
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
+            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else [],
         },
     }
 

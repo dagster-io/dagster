@@ -103,11 +103,7 @@ def result_to_events(
         status = (
             "fail"
             if result.get("fail")
-            else "skip"
-            if result.get("skip")
-            else "error"
-            if result.get("error")
-            else "success"
+            else "skip" if result.get("skip") else "error" if result.get("error") else "success"
         )
     else:
         status = result["status"]
@@ -250,9 +246,9 @@ def select_unique_ids_from_manifest(
     if state_path is not None:
         previous_state = PreviousState(
             path=Path(state_path),  # type: ignore  # (unused path, slated for deletion)
-            current_path=Path("/tmp/null")  # type: ignore  # (unused path, slated for deletion)
-            if manifest_json_path is None
-            else Path(manifest_json_path),
+            current_path=(  # type: ignore  # (unused path, slated for deletion)
+                Path("/tmp/null") if manifest_json_path is None else Path(manifest_json_path)
+            ),
         )
     else:
         previous_state = None
@@ -317,8 +313,7 @@ def select_unique_ids_from_manifest(
 def get_node_info_by_dbt_unique_id_from_manifest(
     manifest: Mapping[str, Any]
 ) -> Mapping[str, Mapping[str, Any]]:
-    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest.
-    """
+    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
     return {
         **manifest["nodes"],
         **manifest["sources"],
