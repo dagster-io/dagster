@@ -26,7 +26,6 @@ import requests
 
 from dagster import asset
 
-
 # ... Keep the `topstory_ids` asset from the previous section
 
 
