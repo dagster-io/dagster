@@ -23,7 +23,6 @@ RUN apt-get update -yqq \
     apt-transport-https \
     curl \
     ca-certificates \
-    ca-certificates-java \
     gnupg2 \
     locales \
     lsb-release \
@@ -56,9 +55,12 @@ RUN apt-get update -yqq \
     libxmlsec1-dev \
     pkg-config
 
+# Install Java (required by pyspark)
+COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
+ENV JAVA_HOME /usr/local/openjdk-8
+
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
-# - openjdk-17-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
 # - nodejs/yarn (dagster UI)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
@@ -82,8 +84,6 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     make \
     mariadb-client \
     nodejs \
-    openjdk-17-jdk-headless \
-    openjdk-17-jre-headless \
     pandoc \
     postgresql \
     rabbitmq-server \
@@ -93,9 +93,7 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     unzip \
     wget \
     xz-utils \
-    yarn \
-    # Confirm Java works
-    && java -version
+    yarn
 
 # Install FOSSA cli for analyzing our open-source dependencies
 # https://github.com/fossas/fossa-cli
