@@ -16,7 +16,7 @@ description: I/O Managers determine how to store asset/op outputs and load asset
   </a> guide.
 </Note>
 
-I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
+I/O Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops. They can be a powerful tool that helps you reduce boilerplate code and easily change where your data is stored.
 
 <center>
   <Image
@@ -44,6 +44,38 @@ Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="m
 The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined assets and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
+
+### When to use I/O managers
+
+I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. They can be useful in situations where:
+
+- You store many of your assets in the same location and follow a consistent set of rules to determine the storage path.
+- You want to swap out I/O manager implementations to change how your assets are stored in local, staging, and production environments.
+- Your asset functions load the upstream dependencies into memory in order to do the function computation.
+
+If you find yourself writing the same code at the start and end of each asset or op to load and store data, you may want to consider factoring that code into an I/O manager.
+
+However, I/O managers are not required, nor are they the best option, in all scenarios. For example, an asset that executes a Snowflake query to create a new table based on the data of another table. This asset would depend on the existing table, but does not need to load that table in memory in order to execute the query:
+
+```python file=/tutorial/saving/no_io_assets_examples.py startafter=start_snowflake_example endbefore=end_snowflake_example
+@asset(deps=[orders])
+def returns():
+    conn = get_snowflake_connection()
+    conn.execute(
+        "CREATE TABLE returns AS SELECT * from orders WHERE status = 'RETURNED'"
+    )
+```
+
+Other reasons you may not want to use I/O managers:
+
+- You want to run a SQL query that creates or updates a table in a database (the above example).
+- Your pipeline manages I/O on its own by using other libraries/tools that write to storage.
+- You have unique and custom storage requirements for each asset.
+- Your assets won't fit in memory (for example, a database table with billions of rows).
+- You have an existing pipeline that manages its own I/O and want to run it with Dagster with minimal code changes.
+- You simply prefer to have the reading and writing code explicitly defined in each asset.
+
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, or you find yourself getting confused when implementing I/O managers, it's likely that you are in a situation where I/O managers are **not** a good fit. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
 
 ### Outputs and downstream inputs
 
