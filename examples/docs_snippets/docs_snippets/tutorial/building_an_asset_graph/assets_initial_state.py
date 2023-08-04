@@ -27,6 +27,9 @@ import requests
 from dagster import asset
 
 
+# ... Keep the `topstory_ids` asset from the previous section
+
+
 @asset(deps=[topstory_ids])  # this asset is dependent on topstory_ids
 def topstories() -> None:
     with open("data/topstory_ids.json", "r") as f:
