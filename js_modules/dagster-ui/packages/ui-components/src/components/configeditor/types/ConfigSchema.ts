@@ -1,5 +1,5 @@
 /**
- * This is a manual copy of the config schema type generated for Dagit.
+ * This is a manual copy of the config schema type generated for the Dagster UI.
  */
 
 interface ConfigSchema_rootConfigType {

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 import dagster._check as check
 import pendulum
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.selector import RepositorySelector
+from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
 from dagster._core.errors import DagsterError, DagsterUserCodeProcessError
 from dagster._core.events import AssetKey
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -73,6 +73,20 @@ def create_and_launch_partition_backfill(
         ]
         if backfill_params.get("assetSelection")
         else None
+    )
+
+    partitions_by_assets = backfill_params.get("partitionsByAssets")
+
+    check.invariant(
+        (
+            asset_selection is None
+            and backfill_params.get("selector") is None
+            and backfill_params.get("partitionNames") is None
+            if partitions_by_assets
+            else True
+        ),
+        "partitions_by_assets cannot be used together with asset_selection, selector, or"
+        " partitionNames",
     )
 
     tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
@@ -181,6 +195,34 @@ def create_and_launch_partition_backfill(
                 utc_datetime_from_timestamp(backfill_timestamp),
             ),
             all_partitions=backfill_params.get("allPartitions", False),
+        )
+    elif partitions_by_assets is not None:
+        if backfill_params.get("forceSynchronousSubmission"):
+            raise DagsterError(
+                "forceSynchronousSubmission is not supported for pure asset backfills"
+            )
+
+        if backfill_params.get("fromFailure"):
+            raise DagsterError("fromFailure is not supported for pure asset backfills")
+
+        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        _assert_permission_for_asset_graph(
+            graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
+        )
+        backfill = PartitionBackfill.from_partitions_by_assets(
+            backfill_id=backfill_id,
+            asset_graph=asset_graph,
+            backfill_timestamp=backfill_timestamp,
+            tags=tags,
+            dynamic_partitions_store=CachingInstanceQueryer(
+                graphene_info.context.instance,
+                asset_graph,
+                utc_datetime_from_timestamp(backfill_timestamp),
+            ),
+            partitions_by_assets=[
+                PartitionsByAssetSelector.from_graphql_input(partitions_by_asset_selector)
+                for partitions_by_asset_selector in partitions_by_assets
+            ],
         )
     else:
         raise DagsterError(

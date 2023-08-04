@@ -20,10 +20,9 @@ from typing_extensions import TypeAlias, get_args, get_origin
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.op_invocation import op_invocation_result
+from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
     InputManagerRequirement,
@@ -442,56 +441,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return [input_handle]
 
     def __call__(self, *args, **kwargs) -> Any:
-        from ..execution.context.invocation import UnboundOpExecutionContext
         from .composition import is_in_composition
-        from .decorators.op_decorator import DecoratedOpFunction
 
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
-        else:
-            if not isinstance(self.compute_fn, DecoratedOpFunction):
-                raise DagsterInvalidInvocationError(
-                    "Attemped to invoke op that was not constructed using the"
-                    " `@op` decorator. Only ops constructed using the"
-                    " `@op` decorator can be directly invoked."
-                )
-            if self.compute_fn.has_context_arg():
-                if len(args) + len(kwargs) == 0:
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of op '{self.name}' has context argument, but"
-                        " no context was provided when invoking."
-                    )
-                if len(args) > 0:
-                    if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
-                        raise DagsterInvalidInvocationError(
-                            f"Compute function of op '{self.name}' has context argument, "
-                            "but no context was provided when invoking."
-                        )
-                    context = args[0]
-                    return op_invocation_result(self, context, *args[1:], **kwargs)
-                # Context argument is provided under kwargs
-                else:
-                    context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
-                    if context_param_name not in kwargs:
-                        raise DagsterInvalidInvocationError(
-                            f"Compute function of op '{self.name}' has context argument "
-                            f"'{context_param_name}', but no value for '{context_param_name}' was "
-                            f"found when invoking. Provided kwargs: {kwargs}"
-                        )
-                    context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
-                    kwargs_sans_context = {
-                        kwarg: val
-                        for kwarg, val in kwargs.items()
-                        if not kwarg == context_param_name
-                    }
-                    return op_invocation_result(self, context, *args, **kwargs_sans_context)
 
-            else:
-                context = None
-                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-                    context = cast(UnboundOpExecutionContext, args[0])
-                    args = args[1:]
-                return op_invocation_result(self, context, *args, **kwargs)
+        return direct_invocation_result(self, *args, **kwargs)
 
 
 def _resolve_output_defs_from_outs(

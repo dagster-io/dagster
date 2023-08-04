@@ -86,7 +86,12 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
     assert len(runs) == expected_runs
 
     for run in runs:
-        assert run.status == DagsterRunStatus.SUCCESS
+        if any(
+            op_config["config"].get("fail") for op_config in run.run_config.get("ops", {}).values()
+        ):
+            assert run.status == DagsterRunStatus.FAILURE
+        else:
+            assert run.status == DagsterRunStatus.SUCCESS
 
     def sort_run_request_key_fn(run_request):
         return (min(run_request.asset_selection), run_request.partition_key)

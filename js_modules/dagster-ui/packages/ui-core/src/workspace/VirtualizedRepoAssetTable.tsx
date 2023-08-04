@@ -198,7 +198,7 @@ const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parse
 const useAssetGroupExpansionState = (storageKey: string) => {
   const {basePath} = React.useContext(AppContext);
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
-    `${basePath}:dagit.${storageKey}`,
+    `${basePath}:dagster.${storageKey}`,
     validateExpandedKeys,
   );
 

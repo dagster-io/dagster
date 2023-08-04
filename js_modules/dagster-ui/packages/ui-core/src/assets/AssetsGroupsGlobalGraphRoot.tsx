@@ -1,11 +1,14 @@
 import {Page, PageHeader, Heading} from '@dagster-io/ui-components';
+import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
+import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {
   ExplorerPath,
@@ -15,6 +18,7 @@ import {
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
+import {AssetGroupSuggest, buildAssetGroupSelector} from './AssetGroupSuggest';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 interface AssetGroupRootParams {
@@ -28,16 +32,17 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const history = useHistory();
 
+  const [filters, setFilters] = useQueryPersistedState<{groups: AssetGroupSelector[]}>({
+    encode: ({groups}) => ({groups: JSON.stringify(groups)}),
+    decode: (qs) => ({groups: qs.groups ? JSON.parse(qs.groups) : []}),
+  });
+
   useDocumentTitle(`Global Asset Lineage`);
 
   const onChangeExplorerPath = React.useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
-      history[mode](
-        `/asset-groups${explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(
-          __GLOBAL__,
-          '',
-        )}`,
-      );
+      const str = explorerPathToString({...path, pipelineName: __GLOBAL__}).replace(__GLOBAL__, '');
+      history[mode]({pathname: `/asset-groups${str}`, search: history.location.search});
     },
     [history],
   );
@@ -53,14 +58,36 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
     const options: AssetGraphFetchScope = {
       hideEdgesToNodesOutsideQuery: false,
       hideNodesMatching: (node) => {
-        return !visibleRepos.some(
-          (repo) =>
-            repo.repositoryLocation.name === node.repository.location.name &&
-            repo.repository.name === node.repository.name,
-        );
+        if (
+          !visibleRepos.some(
+            (repo) =>
+              repo.repositoryLocation.name === node.repository.location.name &&
+              repo.repository.name === node.repository.name,
+          )
+        ) {
+          return true;
+        }
+        if (filters.groups?.length) {
+          const nodeGroup = buildAssetGroupSelector({definition: node});
+          if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
+            return true;
+          }
+        }
+
+        return false;
       },
     };
     return options;
+  }, [filters.groups, visibleRepos]);
+
+  const assetGroups: AssetGroupSelector[] = React.useMemo(() => {
+    return visibleRepos.flatMap((repo) =>
+      repo.repository.assetGroups.map((g) => ({
+        groupName: g.groupName,
+        repositoryLocationName: repo.repositoryLocation.name,
+        repositoryName: repo.repository.name,
+      })),
+    );
   }, [visibleRepos]);
 
   return (
@@ -75,7 +102,16 @@ export const AssetsGroupsGlobalGraphRoot: React.FC = () => {
       />
       <AssetGraphExplorer
         fetchOptions={fetchOptions}
-        fetchOptionFilters={<>{allRepos.length > 1 && <RepoFilterButton />}</>}
+        fetchOptionFilters={
+          <>
+            {allRepos.length > 1 && <RepoFilterButton />}
+            <AssetGroupSuggest
+              assetGroups={assetGroups}
+              value={filters.groups || []}
+              onChange={(groups) => setFilters({...filters, groups})}
+            />
+          </>
+        }
         options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={explorerPathFromString(__GLOBAL__ + path || '/')}
         onChangeExplorerPath={onChangeExplorerPath}

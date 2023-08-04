@@ -20,7 +20,7 @@ interface Props {
 // Force code editor hints to appear above the dialog modal
 export const CodeMirrorInDialogStyle = createGlobalStyle`
   .CodeMirror-hints,
-  .CodeMirror-hints.dagit {
+  .CodeMirror-hints.dagster {
     z-index: 100;
   }
 `;

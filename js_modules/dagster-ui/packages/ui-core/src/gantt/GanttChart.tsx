@@ -382,7 +382,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               >
                 <Icon name="warning" color={Colors.Yellow700} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
-                  <strong>Lost connection to Dagit server.</strong>
+                  <strong>Lost connection to Dagster webserver.</strong>
                   <span>
                     {` Verify that your instance is responding to requests at ${rootServerURI} and reload the page.`}
                   </span>

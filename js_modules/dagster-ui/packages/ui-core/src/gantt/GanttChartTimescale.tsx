@@ -10,7 +10,7 @@ const ONE_MIN = 60 * 1000;
 const ONE_HOUR = 60 * 60 * 1000;
 
 // If we're zoomed in to second or minute resolution but showing large values,
-// switch to the "1:00:05" format used elsewhere in Dagit.
+// switch to the "1:00:05" format used elsewhere in the Dagster UI.
 const subsecondResolutionLabel = (ms: number) =>
   ms > 5 * ONE_MIN ? formatElapsedTime(ms) : `${(ms / 1000).toFixed(1)}s`;
 const secondResolutionLabel = (ms: number) =>

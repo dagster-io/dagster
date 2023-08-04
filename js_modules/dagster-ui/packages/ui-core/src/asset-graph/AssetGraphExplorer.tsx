@@ -255,7 +255,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     );
 
   const onArrowKeyDown = (e: React.KeyboardEvent<any>, dir: string) => {
-    if (!layout) {
+    if (!layout || !lastSelectedNode) {
       return;
     }
     const hasDefinition = (node: {id: string}) => !!assetGraphData.nodes[node.id]?.definition;
@@ -432,6 +432,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
             {fetchOptionFilters}
 
             <GraphQueryInput
+              width={fetchOptionFilters ? '16vw' : undefined}
               items={graphQueryItems}
               value={explorerPath.opsQuery}
               placeholder="Type an asset subset…"

@@ -1,10 +1,10 @@
 /**
  * Ops with dynamic outputs yield execution plans like step_a => step_b[?] => step_c[?],
  * where the index syntax indicates that step_b and step_c may be invoked an arbitrary number
- * of times. At runtime, Dagit replaces and duplicates these "planned dynamic steps" as it
+ * of times. At runtime, the Dagster UI replaces and duplicates these "planned dynamic steps" as it
  * observes invocations in the logs.
  *
- * Dagit currently parses step keys to implement this behavior and assumes that:
+ * Dagster UI currently parses step keys to implement this behavior and assumes that:
  *  - [?] Indicates a planned dynamic step
  *  - [ and ] are only used in dynamic steps
  *  - Index values are arbitrary (eg: step[1] or step[A] or step[US-East-1])

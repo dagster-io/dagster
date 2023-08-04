@@ -87,7 +87,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   // The backend re-orders the dimensions only for the materializedPartitions ranges so that
   // the time partition is the "primary" one, even if it's dimension[1] elsewhere.
   // This matches the way we display them in the UI and makes some common data retrieval faster,
-  // but Dagit's internals always use the REAL ordering of the partition keys, we need to flip
+  // but Dagster's internals always use the REAL ordering of the partition keys, we need to flip
   // everything in this function to match the range data.
   const isRangeDataInverted =
     __dims.length === 2 &&

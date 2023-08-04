@@ -406,6 +406,8 @@ class CachingStaleStatusResolver:
         current_version = self._get_current_data_version(key=key)
         if current_version == NULL_DATA_VERSION:
             return StaleStatus.MISSING
+        elif self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+            return StaleStatus.FRESH
         elif self.asset_graph.is_source(key.asset_key):
             return StaleStatus.FRESH
         else:
@@ -416,6 +418,11 @@ class CachingStaleStatusResolver:
     def _get_stale_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
         current_version = self._get_current_data_version(key=key)
         if current_version == NULL_DATA_VERSION or self.asset_graph.is_source(key.asset_key):
+            return []
+        # Querying for the stale status of a partitioned asset without specifying a partition key
+        # is strictly speaking undefined, but we return an empty list here (from which FRESH status
+        # is inferred) for backcompat.
+        elif self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
             return []
         else:
             return sorted(

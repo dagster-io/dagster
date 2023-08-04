@@ -9,7 +9,7 @@ export const showLaunchError = (error: Error) => {
   const body =
     error.message === 'Failed to fetch' ? (
       <div style={{fontFamily: FontFamily.default}}>
-        Make sure the Dagit server is running and try again.
+        Make sure the Dagster webserver is running and try again.
       </div>
     ) : (
       <div>{error.message}</div>

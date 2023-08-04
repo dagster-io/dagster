@@ -36,7 +36,7 @@ export function observeAssetEventsInRuns(runIds: string[], callback: ObservedRun
   return () => {
     // Note: When a component unsubscribes from runs, we immediately remove the callback but we
     // register a temporary one in it's place for one second. This prevents thrashing the subscriptions
-    // if you're clicking around Dagit between assets that are all materializing in the same run.
+    // if you're clicking around the Dagster UI between assets that are all materializing in the same run.
     const temporary: ObservedRunCallback = () => {};
     runIds.forEach((runId) => (ObservedRuns[runId] = [...(ObservedRuns[runId] || []), temporary]));
     runIds.forEach((runId) => removeCallback(runId, callback));

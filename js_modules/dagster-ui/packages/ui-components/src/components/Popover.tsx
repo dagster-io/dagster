@@ -11,13 +11,13 @@ import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalPopoverStyle = createGlobalStyle`
-  .dagit-popover.bp4-popover2,
-  .dagit-popover.bp4-popover {
+  .dagster-popover.bp4-popover2,
+  .dagster-popover.bp4-popover {
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
   }
 
-  .dagit-popover .bp4-popover2-content,
-  .dagit-popover .bp4-popover-content {
+  .dagster-popover .bp4-popover2-content,
+  .dagster-popover .bp4-popover-content {
     border-radius: 4px;
 
     .bp4-input-group {
@@ -47,21 +47,21 @@ export const GlobalPopoverStyle = createGlobalStyle`
     }
   }
 
-  .dagit-popover .bp4-popover2-content > :first-child {
+  .dagster-popover .bp4-popover2-content > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .dagit-popover .bp4-popover2-content > :last-child {
+  .dagster-popover .bp4-popover2-content > :last-child {
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
   }
 
-  .dagit-popover .bp4-popover2-arrow-fill {
+  .dagster-popover .bp4-popover2-arrow-fill {
     fill: ${Colors.Gray900};
   }
-  .dagit-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
-  .bp4-dark .dagit-popover .bp4-popover2 .bp4-popover2-content {
+  .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
+  .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
     background-color: ${Colors.Gray900};
   }
 `;
@@ -79,7 +79,7 @@ export const Popover = (props: Props) => {
       minimal
       autoFocus={false}
       {...props}
-      popoverClassName={`dagit-popover ${props.popoverClassName}`}
+      popoverClassName={`dagster-popover ${props.popoverClassName}`}
       modifiers={deepmerge(
         {offset: {enabled: true, options: {offset: [0, 8]}}},
         props.modifiers || {},

@@ -64,7 +64,7 @@ export const NotebookButton: React.FC<{
         <DialogBody>
           <iframe
             title={path}
-            src={`${rootServerURI}/dagit/notebook?path=${encodeURIComponent(
+            src={`${rootServerURI}/notebook?path=${encodeURIComponent(
               path,
             )}&repoLocName=${repoLocation}`}
             sandbox=""

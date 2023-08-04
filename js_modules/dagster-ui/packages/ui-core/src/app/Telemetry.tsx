@@ -72,7 +72,7 @@ export const useTelemetryAction = () => {
   );
 };
 
-const TELEMETRY_CLIENT_ID_KEY = 'dagit.telemetry_client_id';
+const TELEMETRY_CLIENT_ID_KEY = 'dagster.telemetry_client_id';
 const clientID = memoize(() => {
   let retrievedClientID = window.localStorage.getItem(TELEMETRY_CLIENT_ID_KEY);
   if (retrievedClientID === null) {

@@ -53,7 +53,7 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
   new Error('WorkspaceContext should never be uninitialized') as any,
 );
 
-export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
+export const HIDDEN_REPO_KEYS = 'dagster.hidden-repo-keys';
 
 export const ROOT_WORKSPACE_QUERY = gql`
   query RootWorkspaceQuery {
@@ -172,7 +172,7 @@ export const ROOT_WORKSPACE_QUERY = gql`
 `;
 
 /**
- * A hook that supplies the current workspace state of Dagit, including the current
+ * A hook that supplies the current workspace state of Dagster UI, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
  * in the workspace, and loading/error state for the relevant query.
  */

@@ -27,7 +27,7 @@ export function assetKeysForRun(run: {
   assetSelection: {path: string[]}[] | null;
   stepKeysToExecute: string[] | null;
 }): AssetKey[] {
-  // Note: The fallback logic here is only necessary for Dagit <0.15.0 and should be removed
+  // Note: The fallback logic here is only necessary for Dagster <0.15.0 and should be removed
   // soon, because stepKeysToExecute and asset keys do not map 1:1 for multi-component asset
   // paths.
   return run.assetSelection || run.stepKeysToExecute?.map((s) => ({path: [s]})) || [];
@@ -69,7 +69,7 @@ export async function handleLaunchResult(
   options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
   if (!result) {
-    showCustomAlert({body: `No data was returned. Did Dagit crash?`});
+    showCustomAlert({body: `No data was returned. Did dagster-webserver crash?`});
     return;
   }
 

@@ -278,6 +278,10 @@ class DecoratedOpFunction(NamedTuple):
 
     decorated_fn: Callable[..., Any]
 
+    @property
+    def name(self):
+        return self.decorated_fn.__name__
+
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
         return is_context_provided(get_function_params(self.decorated_fn))

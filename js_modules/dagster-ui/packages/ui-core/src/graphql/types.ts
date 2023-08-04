@@ -199,7 +199,8 @@ export type AssetNode = {
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
-  currentDataVersion: Maybe<Scalars['String']>;
+  dataVersion: Maybe<Scalars['String']>;
+  dataVersionByPartition: Array<Maybe<Scalars['String']>>;
   dependedBy: Array<AssetDependency>;
   dependedByKeys: Array<AssetKey>;
   dependencies: Array<AssetDependency>;
@@ -230,7 +231,9 @@ export type AssetNode = {
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleCauses: Array<StaleCause>;
+  staleCausesByPartition: Maybe<Array<Array<StaleCause>>>;
   staleStatus: Maybe<StaleStatus>;
+  staleStatusByPartition: Array<StaleStatus>;
   type: Maybe<DagsterType>;
 };
 
@@ -250,6 +253,14 @@ export type AssetNodeAssetObservationsArgs = {
   partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
+export type AssetNodeDataVersionArgs = {
+  partition?: InputMaybe<Scalars['String']>;
+};
+
+export type AssetNodeDataVersionByPartitionArgs = {
+  partitions?: InputMaybe<Array<Scalars['String']>>;
+};
+
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars['String']>>;
 };
@@ -261,6 +272,22 @@ export type AssetNodeLatestRunForPartitionArgs = {
 export type AssetNodePartitionKeysByDimensionArgs = {
   endIdx?: InputMaybe<Scalars['Int']>;
   startIdx?: InputMaybe<Scalars['Int']>;
+};
+
+export type AssetNodeStaleCausesArgs = {
+  partition?: InputMaybe<Scalars['String']>;
+};
+
+export type AssetNodeStaleCausesByPartitionArgs = {
+  partitions?: InputMaybe<Array<Scalars['String']>>;
+};
+
+export type AssetNodeStaleStatusArgs = {
+  partition?: InputMaybe<Scalars['String']>;
+};
+
+export type AssetNodeStaleStatusByPartitionArgs = {
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeDefinitionCollision = {
@@ -1512,6 +1539,7 @@ export type LaunchBackfillParams = {
   forceSynchronousSubmission?: InputMaybe<Scalars['Boolean']>;
   fromFailure?: InputMaybe<Scalars['Boolean']>;
   partitionNames?: InputMaybe<Array<Scalars['String']>>;
+  partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars['String']>>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
@@ -2237,6 +2265,11 @@ export type PartitionKeys = {
 
 export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
 
+export type PartitionRangeSelector = {
+  end: Scalars['String'];
+  start: Scalars['String'];
+};
+
 export enum PartitionRangeStatus {
   FAILED = 'FAILED',
   MATERIALIZED = 'MATERIALIZED',
@@ -2356,7 +2389,16 @@ export type Partitions = {
   results: Array<Partition>;
 };
 
+export type PartitionsByAssetSelector = {
+  assetKey: AssetKeyInput;
+  partitions?: InputMaybe<PartitionsSelector>;
+};
+
 export type PartitionsOrError = Partitions | PythonError;
+
+export type PartitionsSelector = {
+  range: PartitionRangeSelector;
+};
 
 export type PathMetadataEntry = MetadataEntry & {
   __typename: 'PathMetadataEntry';
@@ -3751,7 +3793,9 @@ export type StaleCause = {
   __typename: 'StaleCause';
   category: StaleCauseCategory;
   dependency: Maybe<AssetKey>;
+  dependencyPartitionKey: Maybe<Scalars['String']>;
   key: AssetKey;
+  partitionKey: Maybe<Scalars['String']>;
   reason: Scalars['String'];
 };
 
@@ -4534,10 +4578,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('ConfigTypeField')
         ? ({} as ConfigTypeField)
         : buildConfigTypeField({}, relationshipsToOmit),
-    currentDataVersion:
-      overrides && overrides.hasOwnProperty('currentDataVersion')
-        ? overrides.currentDataVersion!
-        : 'aperiam',
+    dataVersion:
+      overrides && overrides.hasOwnProperty('dataVersion') ? overrides.dataVersion! : 'a',
+    dataVersionByPartition:
+      overrides && overrides.hasOwnProperty('dataVersionByPartition')
+        ? overrides.dataVersionByPartition!
+        : [],
     dependedBy: overrides && overrides.hasOwnProperty('dependedBy') ? overrides.dependedBy! : [],
     dependedByKeys:
       overrides && overrides.hasOwnProperty('dependedByKeys') ? overrides.dependedByKeys! : [],
@@ -4628,10 +4674,18 @@ export const buildAssetNode = (
         ? overrides.requiredResources!
         : [],
     staleCauses: overrides && overrides.hasOwnProperty('staleCauses') ? overrides.staleCauses! : [],
+    staleCausesByPartition:
+      overrides && overrides.hasOwnProperty('staleCausesByPartition')
+        ? overrides.staleCausesByPartition!
+        : [],
     staleStatus:
       overrides && overrides.hasOwnProperty('staleStatus')
         ? overrides.staleStatus!
         : StaleStatus.FRESH,
+    staleStatusByPartition:
+      overrides && overrides.hasOwnProperty('staleStatusByPartition')
+        ? overrides.staleStatusByPartition!
+        : [],
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -7018,6 +7072,10 @@ export const buildLaunchBackfillParams = (
       overrides && overrides.hasOwnProperty('fromFailure') ? overrides.fromFailure! : true,
     partitionNames:
       overrides && overrides.hasOwnProperty('partitionNames') ? overrides.partitionNames! : [],
+    partitionsByAssets:
+      overrides && overrides.hasOwnProperty('partitionsByAssets')
+        ? overrides.partitionsByAssets!
+        : [],
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
     selector:
@@ -8457,6 +8515,18 @@ export const buildPartitionKeys = (
   };
 };
 
+export const buildPartitionRangeSelector = (
+  overrides?: Partial<PartitionRangeSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PartitionRangeSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionRangeSelector');
+  return {
+    end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : 'numquam',
+    start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : 'eum',
+  };
+};
+
 export const buildPartitionRun = (
   overrides?: Partial<PartitionRun>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8689,6 +8759,44 @@ export const buildPartitions = (
   return {
     __typename: 'Partitions',
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildPartitionsByAssetSelector = (
+  overrides?: Partial<PartitionsByAssetSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PartitionsByAssetSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionsByAssetSelector');
+  return {
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKeyInput')
+        ? ({} as AssetKeyInput)
+        : buildAssetKeyInput({}, relationshipsToOmit),
+    partitions:
+      overrides && overrides.hasOwnProperty('partitions')
+        ? overrides.partitions!
+        : relationshipsToOmit.has('PartitionsSelector')
+        ? ({} as PartitionsSelector)
+        : buildPartitionsSelector({}, relationshipsToOmit),
+  };
+};
+
+export const buildPartitionsSelector = (
+  overrides?: Partial<PartitionsSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PartitionsSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionsSelector');
+  return {
+    range:
+      overrides && overrides.hasOwnProperty('range')
+        ? overrides.range!
+        : relationshipsToOmit.has('PartitionRangeSelector')
+        ? ({} as PartitionRangeSelector)
+        : buildPartitionRangeSelector({}, relationshipsToOmit),
   };
 };
 
@@ -11314,12 +11422,18 @@ export const buildStaleCause = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    dependencyPartitionKey:
+      overrides && overrides.hasOwnProperty('dependencyPartitionKey')
+        ? overrides.dependencyPartitionKey!
+        : 'nisi',
     key:
       overrides && overrides.hasOwnProperty('key')
         ? overrides.key!
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+    partitionKey:
+      overrides && overrides.hasOwnProperty('partitionKey') ? overrides.partitionKey! : 'autem',
     reason: overrides && overrides.hasOwnProperty('reason') ? overrides.reason! : 'et',
   };
 };

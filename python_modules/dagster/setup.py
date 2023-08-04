@@ -74,7 +74,6 @@ setup(
         # cli
         "click>=5.0",
         "coloredlogs>=6.1, <=14.0",
-        "contextvars; python_version < '3.7'",
         "Jinja2",
         "PyYAML>=5.1",
         # core (not explicitly expressed atm)

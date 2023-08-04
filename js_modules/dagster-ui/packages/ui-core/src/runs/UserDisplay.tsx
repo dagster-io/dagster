@@ -6,7 +6,7 @@ type Props = {
   isFilter?: boolean;
 };
 /**
- * This exists mainly for cloud to be able to override this component and show user profiles in dagit.
+ * This exists mainly for cloud to be able to override this component and show user profiles in the Dagster UI..
  * Can be overridden using `LaunchpadHooksContext`
  * This is primarily used to display users in filter dropdown + users in table cells
  */
