@@ -24,7 +24,7 @@ setup(
         "requests",
         "twine==1.15.0",
         "virtualenv==20.13.2",
-        "urllib3",
+        "urllib3<2.0.0",
     ],
     extras_require={
         "buildkite": [
