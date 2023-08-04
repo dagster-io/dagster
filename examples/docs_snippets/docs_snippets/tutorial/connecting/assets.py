@@ -3,7 +3,7 @@ import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, asset
 
 # start_add_signsup_asset
-from ..resources import DataGeneratorResource
+from .resources import DataGeneratorResource
 
 # ...
 
