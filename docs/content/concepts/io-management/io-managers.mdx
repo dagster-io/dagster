@@ -45,10 +45,10 @@ The I/O manager APIs make it easy to separate code that's responsible for logica
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
 
-
 ### When to use I/O managers
 
 I/O managers are a powerful tool that can simplify your code and allow you to easily modify where your assets are stored. They can be useful in situations where:
+
 - You store many of your assets in the same location and follow a consistent set of rules to determine the storage path.
 - You want to swap out I/O manager implementations to change how your assets are stored in local, staging, and production environments.
 - Your asset functions load the upstream dependencies into memory in order to do the function computation.
@@ -76,7 +76,6 @@ Other reasons you may not want to use I/O managers:
 - You simply prefer to have the reading and writing code explicitly defined in each asset.
 
 As a general rule, if your pipeline becomes more complicated in order to use I/O managers, or you find yourself getting confused when implementing I/O managers, it's likely that you are in a situation where I/O managers are **not** a good fit. In these cases you should use [`deps`](/concepts/assets/software-defined-assets#defining-basic-dependencies) to define dependencies.
-
 
 ### Outputs and downstream inputs
 
