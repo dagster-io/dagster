@@ -629,8 +629,8 @@ def get_freshness_info(
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
     result = data_time_resolver.get_minutes_overdue(asset_key, evaluation_time=current_time)
     return GrapheneAssetFreshnessInfo(
-        currentLagMinutes=result.lag_minutes,
-        currentMinutesLate=result.overdue_minutes,
+        currentLagMinutes=result.lag_minutes if result else None,
+        currentMinutesLate=result.overdue_minutes if result else None,
         latestMaterializationMinutesLate=None,
     )
 
