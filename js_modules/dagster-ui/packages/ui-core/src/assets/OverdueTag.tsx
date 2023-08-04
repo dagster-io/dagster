@@ -166,39 +166,46 @@ const OverdueLineagePopoverContent: React.FC<{
           ? `The asset's freshness policy requires it to be derived from data ${policyStr}`
           : `The asset's freshness policy requires it is ${policyStr}`}
       </Box>
-      <Box
-        padding={12}
-        style={{fontWeight: 600}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        Latest materialization:
-      </Box>
-      <Box
-        padding={12}
-        flex={{justifyContent: 'space-between'}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <Timestamp timestamp={{ms: Number(timestamp)}} />
-        <TimeSinceWithOverdueColor
-          timestamp={Number(timestamp)}
-          relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
-          maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
-        />
-      </Box>
-      <Box padding={12} style={{fontWeight: 600}}>
-        Latest materialization sources data from:
-      </Box>
-      <Box
-        style={{maxHeight: '240px', overflowY: 'auto', marginLeft: -1, marginRight: -1}}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <AssetMaterializationUpstreamTable
-          data={data}
-          maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
-          relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
-          assetKey={assetKey}
-        />
-      </Box>
+      {hasUpstreams ? (
+        <>
+          <Box padding={12} style={{fontWeight: 600}}>
+            Latest materialization sources data from:
+          </Box>
+          <Box
+            style={{maxHeight: '240px', overflowY: 'auto', marginLeft: -1, marginRight: -1}}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AssetMaterializationUpstreamTable
+              data={data}
+              maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
+              relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
+              assetKey={assetKey}
+            />
+          </Box>
+        </>
+      ) : (
+        <>
+          <Box
+            padding={12}
+            style={{fontWeight: 600}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          >
+            Latest materialization:
+          </Box>
+          <Box
+            padding={12}
+            flex={{justifyContent: 'space-between'}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          >
+            <Timestamp timestamp={{ms: Number(timestamp)}} />
+            <TimeSinceWithOverdueColor
+              timestamp={Number(timestamp)}
+              relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
+              maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
+            />
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
