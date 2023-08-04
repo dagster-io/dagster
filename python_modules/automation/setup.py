@@ -19,12 +19,8 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
-        "packaging>=20.9",
         "pytablereader",
         "requests",
-        "twine==1.15.0",
-        "virtualenv==20.13.2",
-        "urllib3<2.0.0",
     ],
     extras_require={
         "buildkite": [
