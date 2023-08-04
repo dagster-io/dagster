@@ -5,6 +5,16 @@ description: Defining a software-defined asset with multiple discrete computatio
 
 # Graph-Backed Assets
 
+<Note>
+  This page assumes you have some familiarity with <code>ops</code> and{" "}
+  <code>graphs</code>. To learn more about <code>ops</code> and{" "}
+  <code>graphs</code>, see the documentation for <code>ops</code>
+  <a href="https://docs.dagster.io/concepts/ops-jobs-graphs/ops">here</a> and <code>
+    graphs
+  </code>
+  <a href="https://docs.dagster.io/concepts/ops-jobs-graphs/graphs">here</a> .
+</Note>
+
 [Basic software-defined assets](/concepts/assets/software-defined-assets#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries, but doesn't require you to link each intermediate value to an asset in persistent storage.
 
 ---
@@ -28,11 +38,12 @@ In this case, when you tell Dagster to materialize the `slack_files_table` asset
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
 import pandas as pd
 from dagster import OpExecutionContext, graph_asset, op
+from dagster_slack import SlackResource
 
 
-@op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context: OpExecutionContext) -> pd.DataFrame:
-    files = context.resources.slack.files_list(channel="#random")
+@op
+def fetch_files_from_slack(slack: SlackResource) -> pd.DataFrame:
+    files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
         [
             {
@@ -93,12 +104,22 @@ def downstream_asset(middle_asset):
 
 ### Graph-backed multi-assets
 
-If you want to write a graph-backed asset that results in the materialization of multiple assets, you can use the <PyObject object="graph_multi_asset" decorator />.
+If you want to write a graph-backed asset that results in the materialization of multiple assets, you can use the <PyObject object="graph_multi_asset" decorator /> decorator.
 
-In the below example, `two_assets` depends on `upstream_asset` (from the above example). `two_assets` is a graph-backed multi-asset that is composed of two ops, `multiply_by_two` (defined in the above example) and `divide_by_three`:
+In the below example, `two_assets` depends on the asset `ten`. `two_assets` is a graph-backed multi-asset that is composed of two ops, `multiply_by_two` and `divide_by_three`:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies_2 endbefore=end_basic_dependencies_2
 from dagster import AssetOut, graph_multi_asset
+
+
+@asset
+def ten():
+    return 10
+
+
+@op
+def multiply_by_two(input_num):
+    return input_num * 2
 
 
 @op
@@ -110,8 +131,8 @@ def divide_by_three(number: int) -> Tuple[int, int]:
 
 
 @graph_multi_asset(outs={"quotient": AssetOut(), "remainder": AssetOut()})
-def two_assets(upstream_asset):
-    q, r = divide_by_three(multiply_by_two(upstream_asset))
+def two_assets(ten):
+    q, r = divide_by_three(multiply_by_two(ten))
     return {"quotient": q, "remainder": r}
 ```
 

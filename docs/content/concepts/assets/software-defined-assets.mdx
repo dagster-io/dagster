@@ -35,9 +35,9 @@ A software-defined asset includes the following:
 
 ## Relevant APIs
 
-| Name                                  | Description                                                                                                                                                                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                                   |
+| Name                                  | Description                                                                                                                                                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                           |
 | <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, in settings where they can't be materialized themselves. |
 
 ---
@@ -46,7 +46,7 @@ A software-defined asset includes the following:
 
 - [Basic software-defined assets](#a-basic-software-defined-asset)
 - [Assets with dependencies](#assets-with-dependencies)
-- [Graph-backed assets and multi-assets](#graph-backed-assets-and-multi-assets)
+- [Graph-backed assets and multi-assets](#graph-backed-assets-and-multi-assets) # TODO replace with eventual title rename
 - [Accessing asset context](#asset-context)
 - [Configuring assets](#asset-configuration)
 
@@ -229,7 +229,7 @@ Using source assets has a few advantages over having the code inside of an asset
 If you'd like to define more complex assets, Dagster offers augmented software-defined asset abstractions:
 
 - [Multi-assets](/concepts/assets/multi-assets) allow you to update multiple data assets using one function
-- [Graph-backed assets](/concepts/assets/graph-backed-assets) allow you to split the computation for an asset into multiple discrete functions in order to enable parallelization and launch re-executions of the functions.
+- [Graph-backed assets](/concepts/assets/graph-backed-assets) allow you to split the computation for an asset into multiple functions. This allows you to enable parallelization and launch re-executions of individual functions.
 
 ### Asset configuration
 

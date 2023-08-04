@@ -9,6 +9,7 @@ from dagster import (
     define_asset_job,
     Definitions,
 )
+from dagster_slack.resources import SlackResource
 from mock import MagicMock
 
 
@@ -19,11 +20,12 @@ def create_db_connection():
 # start example
 import pandas as pd
 from dagster import OpExecutionContext, graph_asset, op
+from dagster_slack import SlackResource
 
 
-@op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context: OpExecutionContext) -> pd.DataFrame:
-    files = context.resources.slack.files_list(channel="#random")
+@op
+def fetch_files_from_slack(slack: SlackResource) -> pd.DataFrame:
+    files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
         [
             {
@@ -103,6 +105,16 @@ def two_outputs(upstream):
 from dagster import AssetOut, graph_multi_asset
 
 
+@asset
+def ten():
+    return 10
+
+
+@op
+def multiply_by_two(input_num):
+    return input_num * 2
+
+
 @op
 def divide_by_three(number: int) -> Tuple[int, int]:
     quotient = number // 3
@@ -112,8 +124,8 @@ def divide_by_three(number: int) -> Tuple[int, int]:
 
 
 @graph_multi_asset(outs={"quotient": AssetOut(), "remainder": AssetOut()})
-def two_assets(upstream_asset):
-    q, r = divide_by_three(multiply_by_two(upstream_asset))
+def two_assets(ten):
+    q, r = divide_by_three(multiply_by_two(ten))
     return {"quotient": q, "remainder": r}
 
 

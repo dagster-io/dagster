@@ -111,6 +111,8 @@ def split_actions(context):
 
 Because our outputs are now optional, we can no longer rely on returning a tuple of values, as we don't know in advance which values will be computed. Instead, we explicitly `yield` each output that we're expected to create.
 
+---
+
 ## Dependencies inside multi-assets
 
 When a multi-asset is created, it is assumed that each output asset depends on all of the input assets. This may not always be the case, however.
@@ -153,4 +155,6 @@ def multi_asset_with_versions():
     yield Output(200, "b")
 ```
 
-Just as with regular assets, these versions are attached to the `AssetMaterialization` objects for each of the constituent assets and represented in the UI. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
+Just as with regular assets, these versions are attached to the materializations for each of the constituent assets and represented in the UI. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
+
+To learn more about code versions, see the [Asset versioning and caching](/guides/dagster/asset-versioning-and-caching) guide.
