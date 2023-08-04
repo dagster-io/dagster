@@ -190,6 +190,7 @@ def _get_schedule_evaluation_fn(
                     run_key=key,
                     tags=tags,
                     current_time=context.scheduled_execution_time,
+                    dynamic_partitions_store=context.instance if context.instance_ref else None,
                 )
                 for key in partitions_def.get_multipartition_keys_with_dimension_value(
                     time_window_dimension.name,
