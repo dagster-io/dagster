@@ -57,7 +57,7 @@ RUN apt-get update -yqq \
 
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
-# - openjdk-11-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
+# - openjdk-17-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
 # - nodejs/yarn (dagster UI)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
@@ -81,8 +81,8 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     make \
     mariadb-client \
     nodejs \
-    openjdk-11-jdk-headless \
-    openjdk-11-jre-headless \
+    openjdk-17-jdk-headless \
+    openjdk-17-jre-headless \
     pandoc \
     postgresql \
     rabbitmq-server \
