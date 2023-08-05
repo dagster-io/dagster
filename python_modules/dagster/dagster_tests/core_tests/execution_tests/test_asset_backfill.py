@@ -33,7 +33,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
@@ -754,17 +754,17 @@ def test_asset_backfill_status_counts():
     assert counts[2].num_targeted_partitions == 1
 
 
-def test_asset_backfill_return_single_run_request_for_non_partitioned():
-    @asset(backfill_policy=BackfillPolicy.single_run())
+def test_asset_backfill_not_all_asset_has_backfill_policy():
+    @asset(backfill_policy=None)
     def unpartitioned_upstream_of_partitioned():
         return 1
 
-    time_now = pendulum.now("UTC")
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
-    def upstream_daily_partitioned_asset(unpartitioned_upstream_of_partitioned):
-        return unpartitioned_upstream_of_partitioned
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+        backfill_policy=BackfillPolicy.single_run(),
+    )
+    def upstream_daily_partitioned_asset():
+        return 1
 
     assets_by_repo_name = {
         "repo": [
@@ -781,10 +781,51 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
         asset_graph=asset_graph,
         asset_selection=[
             unpartitioned_upstream_of_partitioned.key,
+            upstream_daily_partitioned_asset.key,
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_time=pendulum.now("UTC"),
+    )
+
+    with pytest.raises(
+        DagsterBackfillFailedError,
+        match=(
+            "All assets must all have backfill policies or none of them has to be backfilled"
+            " together"
+        ),
+    ):
+        execute_asset_backfill_iteration_consume_generator(
+            backfill_id="unpartitioned_asset_single_run",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
+
+
+def test_asset_backfill_return_single_run_request_for_non_partitioned():
+    @asset(backfill_policy=BackfillPolicy.single_run())
+    def unpartitioned_upstream_of_partitioned():
+        return 1
+
+    assets_by_repo_name = {
+        "repo": [
+            unpartitioned_upstream_of_partitioned,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    """Construct a backfill data with all_partitions=True on assets with single run backfill policies."""
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=None,
+        asset_graph=asset_graph,
+        asset_selection=[
+            unpartitioned_upstream_of_partitioned.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=pendulum.now("UTC"),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -841,6 +882,74 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
         result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG)
         == daily_partitions_def.get_partition_keys(time_now)[-1]
     )
+
+
+def test_asset_backfill_create_run_request_for_parent_and_children_asset():
+    time_now = pendulum.now("UTC")
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+
+    @asset(backfill_policy=BackfillPolicy.single_run())
+    def upstream_non_partitioned_asset():
+        return 1
+
+    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def upstream_daily_partitioned_asset():
+        return 1
+
+    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def downstream_daily_partitioned_asset(upstream_daily_partitioned_asset):
+        return upstream_daily_partitioned_asset + 1
+
+    assets_by_repo_name = {
+        "repo": [
+            upstream_non_partitioned_asset,
+            upstream_daily_partitioned_asset,
+            downstream_daily_partitioned_asset,
+        ]
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    instance = DagsterInstance.ephemeral()
+
+    """Construct a backfill data with all_partitions=True on assets with single run backfill policies."""
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=None,
+        asset_graph=asset_graph,
+        asset_selection=[
+            upstream_daily_partitioned_asset.key,
+            downstream_daily_partitioned_asset.key,
+            upstream_non_partitioned_asset.key,
+        ],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=True,
+        backfill_start_time=time_now,
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="daily_partitioned_asset_single_run",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+    assert result.backfill_data != backfill_data
+    assert len(result.run_requests) == 2
+
+    for run_request in result.run_requests:
+        if run_request.tags.__contains__(ASSET_PARTITION_RANGE_START_TAG):
+            # single run request for partitioned asset, both parent and the children somce they share same
+            # partitions def and backfill policy
+            assert run_request.partition_key is None
+            assert upstream_daily_partitioned_asset.key in run_request.asset_selection
+            assert downstream_daily_partitioned_asset.key in run_request.asset_selection
+            assert run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-01-01"
+            assert (
+                run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+                == daily_partitions_def.get_partition_keys(time_now)[-1]
+            )
+        else:
+            assert run_request.partition_key is None
+            assert run_request.asset_selection == [upstream_non_partitioned_asset.key]
+            assert run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) is None
+            assert run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) is None
 
 
 def test_asset_backfill_return_multiple_run_request_for_partitioned():
