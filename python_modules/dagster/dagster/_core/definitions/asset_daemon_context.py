@@ -658,8 +658,7 @@ def build_run_requests(
 
     for asset_partition in asset_partitions:
         assets_to_reconcile_by_partitions_def_partition_key[
-            asset_graph.get_partitions_def(asset_partition.asset_key),
-            asset_partition.partition_key,
+            asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
         ].add(asset_partition.asset_key)
 
     run_requests = []
