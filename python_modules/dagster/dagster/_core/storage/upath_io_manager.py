@@ -189,16 +189,16 @@ class UPathIOManager(MemoizableIOManager):
                 "but the asset is not partitioned"
             )
 
-        def _formatted_multipartitioned_path(partition_key: MultiPartitionKey) -> str:
+        def _formatted_multipartitioned_key(partition_key: MultiPartitionKey) -> str:
             ordered_dimension_keys = [
                 key[1]
                 for key in sorted(partition_key.keys_by_dimension.items(), key=lambda x: x[0])
             ]
-            return "/".join(ordered_dimension_keys)
+            return "|".join(ordered_dimension_keys)
 
         formatted_partition_keys = {
             partition_key: (
-                _formatted_multipartitioned_path(partition_key)
+                _formatted_multipartitioned_key(partition_key)
                 if isinstance(partition_key, MultiPartitionKey)
                 else partition_key
             )
