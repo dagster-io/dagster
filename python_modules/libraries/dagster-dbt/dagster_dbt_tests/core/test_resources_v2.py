@@ -29,8 +29,7 @@ pytest.importorskip("dbt.version", minversion="1.4")
 
 
 manifest_path = Path(TEST_PROJECT_DIR).joinpath("manifest.json")
-with open(manifest_path, "r") as f:
-    manifest = json.load(f)
+manifest = json.loads(manifest_path.read_bytes())
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
@@ -95,6 +94,22 @@ def test_dbt_profile_configuration() -> None:
         "dev",
     ]
     assert dbt_cli_invocation.is_successful()
+
+
+def test_dbt_profile_dir_configuration() -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir=TEST_PROJECT_DIR)
+
+    dbt_cli_invocation = dbt.cli(["parse"], manifest=manifest).wait()
+
+    assert dbt_cli_invocation.process.args == ["dbt", "parse"]
+    assert dbt_cli_invocation.is_successful()
+
+    dbt = DbtCliResource(
+        project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/nonexistent"
+    )
+
+    with pytest.raises(DagsterDbtCliRuntimeError):
+        dbt.cli(["parse"], manifest=manifest).wait()
 
 
 def test_dbt_without_partial_parse() -> None:

@@ -357,6 +357,9 @@ class DbtCliResource(ConfigurableResource):
         global_config_flags (List[str]): A list of global flags configuration to pass to the dbt CLI
             invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
             configuration.
+        profiles_dir (Optional[str]): The path to the directory containing your dbt `profiles.yml`.
+            See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
+            information.
         profile (Optional[str]): The profile from your dbt `profiles.yml` to use for execution. See
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
@@ -390,6 +393,14 @@ class DbtCliResource(ConfigurableResource):
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
             " https://docs.getdbt.com/reference/global-configs for a full list of configuration."
+        ),
+    )
+    profiles_dir: Optional[str] = Field(
+        default=None,
+        description=(
+            "The path to the directory containing your dbt `profiles.yml`. See"
+            " https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more"
+            " information."
         ),
     )
     profile: Optional[str] = Field(
@@ -476,6 +487,11 @@ class DbtCliResource(ConfigurableResource):
             # See https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
             # for more information.
             "DBT_TARGET_PATH": target_path,
+            # The DBT_PROFILES_DIR environment variable is set to the path containing the dbt
+            # profiles.yml file.
+            # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
+            # for more information.
+            **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
         }
 
         assets_def: Optional[AssetsDefinition] = None
