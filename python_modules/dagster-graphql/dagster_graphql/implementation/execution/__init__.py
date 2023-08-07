@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple,
 
 # re-exports
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
@@ -124,10 +125,8 @@ def terminate_pipeline_execution(
                 instance.run_coordinator.cancel_run(run_id)
         except:
             instance.report_engine_event(
-                (
-                    "Exception while attempting to force-terminate run. Run will still be marked as"
-                    " canceled."
-                ),
+                "Exception while attempting to force-terminate run. Run will still be marked as"
+                " canceled.",
                 job_name=run.job_name,
                 run_id=run.run_id,
                 engine_event_data=EngineEventData(
@@ -169,8 +168,17 @@ def delete_pipeline_run(
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
+@deprecated(
+    breaking_version="2.0",
+    emit_runtime_warning=False,
+    additional_warn_text="DAGIT_EVENT_LOAD_CHUNK_SIZE is the only deprecated part.",
+)
 def get_chunk_size() -> int:
-    return int(os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000"))
+    return int(
+        os.getenv(
+            "DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000")
+        )
+    )
 
 
 async def gen_events_for_run(

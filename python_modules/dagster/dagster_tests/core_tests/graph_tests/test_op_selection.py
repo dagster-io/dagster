@@ -186,7 +186,7 @@ def test_unsatisfied_input_use_input_manager():
         return context.config
 
     @op(ins={"x": In(input_manager_key="my_loader")})
-    def start(_, x):
+    def start(x):
         return x
 
     @op

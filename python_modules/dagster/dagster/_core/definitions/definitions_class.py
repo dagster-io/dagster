@@ -1,6 +1,7 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -201,24 +202,32 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 
     # Update all schedules and sensors to use the resource bound version
     updated_schedules = [
-        schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
-        if (
-            isinstance(schedule, ScheduleDefinition)
-            and schedule.has_loadable_target()
-            and schedule.job in unsatisfied_jobs
+        (
+            schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
+            if (
+                isinstance(schedule, ScheduleDefinition)
+                and schedule.has_loadable_target()
+                and schedule.job in unsatisfied_jobs
+            )
+            else schedule
         )
-        else schedule
         for schedule in schedules
     ]
     updated_sensors = [
-        sensor.with_updated_jobs(
-            [
-                unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
-                for job in sensor.jobs
-            ]
+        (
+            sensor.with_updated_jobs(
+                [
+                    (
+                        unsatisfied_job_to_resource_bound_job[id(job)]
+                        if job in unsatisfied_jobs
+                        else job
+                    )
+                    for job in sensor.jobs
+                ]
+            )
+            if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
+            else sensor
         )
-        if sensor.has_loadable_targets() and any(job in unsatisfied_jobs for job in sensor.jobs)
-        else sensor
         for sensor in sensors
     ]
 
@@ -298,7 +307,13 @@ def _create_repository_using_definitions_args(
     return created_repo
 
 
-@deprecated
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text=(
+        "Instantiations can be removed. Since it's behavior is now the default, this class is now a"
+        " no-op."
+    ),
+)
 class BindResourcesToJobs(list):
     """Used to instruct Dagster to bind top-level resources to jobs and any jobs attached to schedules
     and sensors. Now deprecated since this behavior is the default.
@@ -444,6 +459,7 @@ class Definitions:
         python_type: Optional[Type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -458,6 +474,8 @@ class Definitions:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            metadata (Optional[Dict[str, Any]]): Input metadata to pass to the :py:class:`IOManager`
+                (is equivalent to setting the metadata argument in `In` or `AssetIn`).
 
         Returns:
             The contents of an asset as a Python object.
@@ -467,6 +485,7 @@ class Definitions:
             python_type=python_type,
             instance=instance,
             partition_key=partition_key,
+            metadata=metadata,
         )
 
     @public

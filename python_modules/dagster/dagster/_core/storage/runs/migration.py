@@ -115,8 +115,7 @@ def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = Non
 
 
 def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
-    """Utility method that updates the start and end times of historical runs using the completed event log.
-    """
+    """Utility method that updates the start and end times of historical runs using the completed event log."""
     if print_fn:
         print_fn("Querying run and event log storage.")
 

@@ -15,7 +15,6 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
-from dagster._utils.backcompat import deprecation_warning
 
 from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
@@ -215,7 +214,7 @@ class AssetSelection(ABC):
         return RootAssetSelection(self)
 
     @public
-    @deprecated
+    @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
     def sources(self) -> "RootAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection.
@@ -227,11 +226,6 @@ class AssetSelection(ABC):
         keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
         use the `upstream_source_assets` method.
         """
-        deprecation_warning(
-            "AssetSelection.sources",
-            "2.0",
-            "Use AssetSelection.roots instead.",
-        )
         return self.roots()
 
     @public
@@ -267,10 +261,8 @@ class AssetSelection(ABC):
         resolved_regular_assets = resolved - asset_graph.source_asset_keys
         check.invariant(
             not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
-            (
-                "Asset selection specified both regular assets and source assets. This is not"
-                " currently supported. Selections must be all regular assets or all source assets."
-            ),
+            "Asset selection specified both regular assets and source assets. This is not"
+            " currently supported. Selections must be all regular assets or all source assets.",
         )
         return resolved
 

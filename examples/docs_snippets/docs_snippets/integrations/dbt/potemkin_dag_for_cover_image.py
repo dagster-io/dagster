@@ -4,6 +4,8 @@ We pull off some dark magic so that generating the screenshot doesn't involve a 
 Fivetran and a database.
 """
 
+from pathlib import Path
+
 from dagster import asset
 
 
@@ -48,10 +50,10 @@ fivetran_assets = dagster_fivetran.build_fivetran_assets(
     table_names=["users", "orders"],
 )
 
-dbt_assets = dagster_dbt.load_assets_from_dbt_manifest("manifest.json")
+dbt_assets = dagster_dbt.load_assets_from_dbt_manifest(Path("manifest.json"))
 
 
-@asset(compute_kind="tensorflow", non_argument_deps={"daily_order_summary"})
+@asset(compute_kind="tensorflow", deps=["daily_order_summary"])
 def predicted_orders():
     ...
 

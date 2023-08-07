@@ -1,4 +1,4 @@
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import dagster._check as check
 import graphene
@@ -10,7 +10,6 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
     ResourceJobUsageEntry,
 )
-from dagster._core.workspace.workspace import IWorkspace
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
@@ -23,6 +22,9 @@ from dagster_graphql.schema.solids import GrapheneSolidHandle, build_solid_handl
 from dagster_graphql.schema.util import non_null_list
 
 from .config_types import GrapheneConfigTypeField
+
+if TYPE_CHECKING:
+    from dagster._core.workspace.workspace import IWorkspace
 
 
 class GrapheneConfiguredValueType(graphene.Enum):
@@ -149,16 +151,18 @@ class GrapheneResourceDetails(graphene.ObjectType):
             GrapheneNestedResourceEntry(
                 name=k,
                 type=v.type,
-                resource=get_resource_or_error(
-                    graphene_info,
-                    ResourceSelector(
-                        location_name=self._location_name,
-                        repository_name=self._repository_name,
-                        resource_name=v.name,
-                    ),
-                )
-                if v.type == NestedResourceType.TOP_LEVEL
-                else None,
+                resource=(
+                    get_resource_or_error(
+                        graphene_info,
+                        ResourceSelector(
+                            location_name=self._location_name,
+                            repository_name=self._repository_name,
+                            resource_name=v.name,
+                        ),
+                    )
+                    if v.type == NestedResourceType.TOP_LEVEL
+                    else None
+                ),
             )
             for k, v in self._nested_resources.items()
         ]

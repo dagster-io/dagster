@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, cast
 
 import pendulum
 
@@ -13,13 +13,15 @@ from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..base import Executor
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.step import ExecutionStep
 
 DEFAULT_SLEEP_SECONDS = float(
     os.environ.get("DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS", "1.0")
@@ -157,10 +159,8 @@ class StepDelegatingExecutor(Executor):
                             # This should probably be a separate should_resume_step method on the step handler.
                             DagsterEvent.engine_event(
                                 step_handler_context.get_step_context(step.key),
-                                (
-                                    f"Including {step.key} in the new run since it raised an error"
-                                    " when checking whether it was running"
-                                ),
+                                f"Including {step.key} in the new run since it raised an error"
+                                " when checking whether it was running",
                                 EngineEventData(
                                     error=serializable_error_info_from_exc_info(sys.exc_info())
                                 ),
@@ -170,10 +170,8 @@ class StepDelegatingExecutor(Executor):
                             if not health_check.is_healthy:
                                 DagsterEvent.engine_event(
                                     step_handler_context.get_step_context(step.key),
-                                    (
-                                        f"Including step {step.key} in the new run since it is not"
-                                        f" currently running: {health_check.unhealthy_reason}"
-                                    ),
+                                    f"Including step {step.key} in the new run since it is not"
+                                    f" currently running: {health_check.unhealthy_reason}",
                                 )
                                 should_retry_step = True
 
@@ -214,10 +212,8 @@ class StepDelegatingExecutor(Executor):
                         else:
                             DagsterEvent.engine_event(
                                 plan_context,
-                                (
-                                    "Executor received termination signal, not forwarding to steps"
-                                    " because run will be resumed"
-                                ),
+                                "Executor received termination signal, not forwarding to steps"
+                                " because run will be resumed",
                                 EngineEventData(
                                     metadata={
                                         "steps_in_flight": MetadataValue.text(

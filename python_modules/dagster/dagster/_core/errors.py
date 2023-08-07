@@ -15,8 +15,6 @@ The wrapped exceptions include additional context for the original exceptions, i
 Dagster runtime.
 """
 
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
@@ -96,13 +94,11 @@ def _generate_pythonic_config_error_message(
         PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
     ).format(invalid_type_str=invalid_type_name)
 
-    return (
-        """
+    return ("""
 Error defining Dagster config class{config_class}{field_name}.
 Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
-{PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
-    ).format(
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}""").format(
         config_class=f" {config_class!r}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
@@ -111,8 +107,7 @@ Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 
 class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
-    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value.
-    """
+    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value."""
 
     def __init__(
         self,
@@ -257,9 +252,9 @@ def raise_execution_interrupts() -> Iterator[None]:
 
 @contextmanager
 def user_code_error_boundary(
-    error_cls: Type[DagsterUserCodeExecutionError],
+    error_cls: Type["DagsterUserCodeExecutionError"],
     msg_fn: Callable[[], str],
-    log_manager: Optional[DagsterLogManager] = None,
+    log_manager: Optional["DagsterLogManager"] = None,
     **kwargs: object,
 ) -> Iterator[None]:
     """Wraps the execution of user-space code in an error boundary. This places a uniform
@@ -486,8 +481,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
 
 class DagsterMaxRetriesExceededError(DagsterError):
-    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised.
-    """
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
 
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
@@ -661,8 +655,7 @@ class DagsterUnknownPartitionError(DagsterError):
 
 
 class DagsterUndefinedDataVersionError(DagsterError):
-    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
-    """
+    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined."""
 
 
 class DagsterAssetBackfillDataLoadError(DagsterError):

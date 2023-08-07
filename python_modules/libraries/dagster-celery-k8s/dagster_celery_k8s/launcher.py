@@ -169,12 +169,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             if job_image_from_executor_config:
                 job_image = job_image_from_executor_config
                 self._instance.report_engine_event(
-                    (
-                        f"You have specified a job_image {job_image_from_executor_config} in your"
-                        f" executor configuration, but also {job_image} in your user-code"
-                        f" deployment. Using the job image {job_image_from_executor_config} from"
-                        " executor configuration as it takes precedence."
-                    ),
+                    f"You have specified a job_image {job_image_from_executor_config} in your"
+                    f" executor configuration, but also {job_image} in your user-code"
+                    f" deployment. Using the job image {job_image_from_executor_config} from"
+                    " executor configuration as it takes precedence.",
                     run,
                     cls=self.__class__,
                 )

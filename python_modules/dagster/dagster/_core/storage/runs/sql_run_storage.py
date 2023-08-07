@@ -273,22 +273,6 @@ class SqlRunStorage(RunStorage):
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
-        if filters.tags and self.supports_intersect:
-            intersections = [
-                db_select([RunTagsTable.c.run_id]).where(
-                    db.and_(
-                        RunTagsTable.c.key == key,
-                        (
-                            RunTagsTable.c.value == value
-                            if isinstance(value, str)
-                            else RunTagsTable.c.value.in_(value)
-                        ),
-                    )
-                )
-                for key, value in filters.tags.items()
-            ]
-
-            query = query.where(RunsTable.c.run_id.in_(db.intersect(*intersections)))
         return query
 
     def _runs_query(
@@ -316,7 +300,7 @@ class SqlRunStorage(RunStorage):
                 check.failed("cannot specify bucket_by and limit/cursor at the same time")
             return self._bucketed_runs_query(bucket_by, filters, columns, order_by, ascending)
 
-        if filters.tags and not self.supports_intersect:
+        if filters.tags:
             table = self._apply_tags_table_joins(RunsTable, filters.tags)
         else:
             table = RunsTable
@@ -357,7 +341,7 @@ class SqlRunStorage(RunStorage):
         query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
 
         if isinstance(bucket_by, JobBucket):
-            if filters.tags and not self.supports_intersect:
+            if filters.tags:
                 table = self._apply_tags_table_joins(RunsTable, filters.tags)
             else:
                 table = RunsTable
@@ -387,13 +371,9 @@ class SqlRunStorage(RunStorage):
         else:
             # there are tag filters as well as tag buckets, so we have to apply the tag filters in
             # a separate join
-            if self.supports_intersect:
-                filtered_query = db_select([RunsTable.c.run_id])
-            else:
-                filtered_query = db_select([RunsTable.c.run_id]).select_from(
-                    self._apply_tags_table_joins(RunsTable, filters.tags)
-                )
-
+            filtered_query = db_select([RunsTable.c.run_id]).select_from(
+                self._apply_tags_table_joins(RunsTable, filters.tags)
+            )
             filtered_query = db_subquery(
                 self._add_filters_to_query(filtered_query, filters), "filtered_query"
             )
@@ -515,9 +495,9 @@ class SqlRunStorage(RunStorage):
                 dagster_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_time=check.opt_inst(row["start_time"], float)
-                if "start_time" in row
-                else None,
+                start_time=(
+                    check.opt_inst(row["start_time"], float) if "start_time" in row else None
+                ),
                 end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
             )
             for row in rows
@@ -610,10 +590,8 @@ class SqlRunStorage(RunStorage):
         root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
-                (
-                    f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
-                    " instance."
-                ),
+                f"Run id {root_run_id} set as root run id for run {run_id} was not found in"
+                " instance.",
                 invalid_run_id=root_run_id,
             )
 

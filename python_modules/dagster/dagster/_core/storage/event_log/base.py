@@ -18,7 +18,6 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import (
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
@@ -32,6 +31,7 @@ from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -264,8 +264,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Explicit lifecycle management."""
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        """Allows for optimizing database connection / use in the context of a long lived webserver process.
-        """
+        """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
     @abstractmethod
     def get_event_records(
@@ -289,8 +288,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage.
-        """
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
     @abstractmethod

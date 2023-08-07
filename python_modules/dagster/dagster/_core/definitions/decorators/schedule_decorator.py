@@ -1,7 +1,6 @@
 import copy
 from functools import update_wrapper
 from typing import (
-    TYPE_CHECKING,
     Callable,
     List,
     Mapping,
@@ -37,9 +36,6 @@ from ..schedule_definition import (
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
-
-if TYPE_CHECKING:
-    pass
 
 
 def schedule(
@@ -126,7 +122,10 @@ def schedule(
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of should_execute for schedule {schedule_name}",
+                    lambda: (
+                        "Error occurred during the execution of should_execute for schedule"
+                        f" {schedule_name}"
+                    ),
                 ):
                     if not should_execute(context):
                         yield SkipReason(

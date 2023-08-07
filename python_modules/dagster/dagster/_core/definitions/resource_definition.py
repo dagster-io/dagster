@@ -16,13 +16,12 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental_param, public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
     get_function_params,
@@ -59,6 +58,7 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
+@experimental_param(param="version")  # type: ignore  # (pyright bug)
 class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHasInternalInit):
     """Core class for defining resources.
 
@@ -104,8 +104,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             required_resource_keys, "required_resource_keys"
         )
         self._version = check.opt_str_param(version, "version")
-        if version:
-            experimental_arg_warning("version", "ResourceDefinition.__init__")
 
         # this attribute will be updated by the @dagster_maintained_resource and @dagster_maintained_io_manager decorators
         self._dagster_maintained = False
@@ -144,8 +142,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
     @public
     @property
     def version(self) -> Optional[str]:
-        """A string which can be used to identify a particular code version of a resource definition.
-        """
+        """A string which can be used to identify a particular code version of a resource definition."""
         return self._version
 
     @public

@@ -13,7 +13,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
@@ -48,13 +48,15 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
+from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
 
 
+@experimental_param(param="resource_defs")
+@experimental_param(param="io_manager_def")
 class SourceAsset(ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
@@ -109,12 +111,6 @@ class SourceAsset(ResourceAddable):
         from dagster._core.execution.build_resources import (
             wrap_resources_for_execution,
         )
-
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "SourceAsset.__new__")
-
-        if io_manager_def is not None:
-            experimental_arg_warning("io_manager_def", "SourceAsset.__new__")
 
         self.key = AssetKey.from_coercible(key)
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)

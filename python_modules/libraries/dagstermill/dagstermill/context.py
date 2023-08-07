@@ -12,7 +12,6 @@ from dagster._core.execution.context.compute import AbstractComputeExecutionCont
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._utils.backcompat import deprecation_warning
 
 
 class DagstermillExecutionContext(AbstractComputeExecutionContext):
@@ -141,11 +140,6 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether an
         op definition was passed to ``dagstermill.get_context``.
         """
-        deprecation_warning(
-            "DagstermillExecutionContext.solid_def",
-            "0.17.0",
-            "use the 'op_def' property instead.",
-        )
         return self.job_def.get_node(self.node_handle)
 
     @public

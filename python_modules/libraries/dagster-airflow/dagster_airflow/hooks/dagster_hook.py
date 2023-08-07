@@ -176,7 +176,7 @@ fragment PythonErrorFragment on PythonError {
         else:
             raise AirflowException(
                 "Error launching run:"
-                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
+                f" {response_json['data']['launchPipelineExecution']['message']}"
             )
 
     def wait_for_run(
@@ -297,5 +297,5 @@ fragment PythonErrorFragment on PythonError {
         ):
             raise AirflowException(
                 "Error terminating run:"
-                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                f" {response_json['data']['terminatePipelineExecution']['message']}"
             )

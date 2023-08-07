@@ -237,9 +237,11 @@ class CachingDataTimeResolver:
                     (
                         parent_record.asset_materialization.tags
                         if parent_record.asset_materialization
-                        else parent_record.event_log_entry.asset_observation.tags
-                        if parent_record.event_log_entry.asset_observation
-                        else None
+                        else (
+                            parent_record.event_log_entry.asset_observation.tags
+                            if parent_record.event_log_entry.asset_observation
+                            else None
+                        )
                     )
                     or {}
                 ),
@@ -374,6 +376,8 @@ class CachingDataTimeResolver:
 
         data_time = current_time
         for parent_key in self.asset_graph.get_parents(asset_key):
+            if parent_key not in self.asset_graph.materializable_asset_keys:
+                continue
             parent_data_time = self._get_in_progress_data_time_in_run(
                 run_id=run_id, asset_key=parent_key, current_time=current_time
             )

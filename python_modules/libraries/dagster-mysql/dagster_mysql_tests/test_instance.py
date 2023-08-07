@@ -48,9 +48,7 @@ def full_mysql_config(hostname, port):
               hostname: {hostname}
               port: {port}
               db_name: test
-    """.format(
-        hostname=hostname, port=port
-    )
+    """.format(hostname=hostname, port=port)
 
 
 def unified_mysql_config(hostname, port):

@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 import sys
-import time
+import uuid
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +27,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
@@ -69,6 +70,7 @@ class DbtCliEventMessage:
     def __str__(self) -> str:
         return self.raw_event["info"]["msg"]
 
+    @public
     def to_default_asset_events(
         self,
         manifest: Mapping[str, Any],
@@ -172,7 +174,7 @@ class DbtCliInvocation:
                 " to take advantage of partial parsing."
             )
 
-            partial_parse_destination_target_path.parent.mkdir(parents=True)
+            partial_parse_destination_target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(partial_parse_file_path, partial_parse_destination_target_path)
 
         # Create a subprocess that runs the dbt CLI command.
@@ -194,6 +196,7 @@ class DbtCliInvocation:
             raise_on_error=raise_on_error,
         )
 
+    @public
     def wait(self) -> "DbtCliInvocation":
         """Wait for the dbt CLI process to complete.
 
@@ -204,19 +207,20 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
+                from pathlib import Path
+
                 from dagster_dbt import DbtCliResource
 
-                with open("path/to/manifest.json", "r") as f:
-                    manifest = json.load(f)
-
+                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
         """
-        self._raise_on_error()
+        list(self.stream_raw_events())
 
         return self
 
+    @public
     def is_successful(self) -> bool:
         """Return whether the dbt CLI process completed successfully.
 
@@ -227,20 +231,21 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
+                from pathlib import Path
+
                 from dagster_dbt import DbtCliResource
 
-                with open("path/to/manifest.json", "r") as f:
-                    manifest = json.load(f)
-
+                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest, raise_on_error=False)
 
-                if dbt_cli_task.is_successful():
+                if dbt_cli_invocation.is_successful():
                     ...
         """
         return self.process.wait() == 0
 
+    @public
     def stream(self) -> Iterator[Union[Output, AssetObservation]]:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
@@ -264,6 +269,7 @@ class DbtCliInvocation:
                 manifest=self.manifest, dagster_dbt_translator=self.dagster_dbt_translator
             )
 
+    @public
     def stream_raw_events(self) -> Iterator[DbtCliEventMessage]:
         """Stream the events from the dbt CLI process.
 
@@ -288,6 +294,7 @@ class DbtCliInvocation:
         # Ensure that the dbt CLI process has completed.
         self._raise_on_error()
 
+    @public
     def get_artifact(
         self,
         artifact: Union[
@@ -311,22 +318,21 @@ class DbtCliInvocation:
             .. code-block:: python
 
                 import json
+                from pathlib import Path
+
                 from dagster_dbt import DbtCliResource
 
-                with open("path/to/manifest.json", "r") as f:
-                    manifest = json.load(f)
-
+                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_task = dbt.cli(["run"], manifest=manifest)
+                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
 
                 # Retrieve the run_results.json artifact.
-                if dbt_cli_task.is_successful():
-                    run_results = dbt_cli_task.get_artifact("run_results.json")
+                run_results = dbt_cli_invocation.get_artifact("run_results.json")
         """
         artifact_path = self.target_path.joinpath(artifact)
-        with artifact_path.open() as handle:
-            return orjson.loads(handle.read())
+
+        return orjson.loads(artifact_path.read_bytes())
 
     def _raise_on_error(self) -> None:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
@@ -412,13 +418,14 @@ class DbtCliResource(ConfigurableResource):
         Returns:
             str: A unique target path for the dbt CLI invocation.
         """
-        current_unix_timestamp = str(int(time.time()))
-        path = current_unix_timestamp
+        unique_id = str(uuid.uuid4())[:7]
+        path = unique_id
         if context:
-            path = f"{context.op.name}-{context.run_id[:7]}-{current_unix_timestamp}"
+            path = f"{context.op.name}-{context.run_id[:7]}-{unique_id}"
 
         return f"target/{path}"
 
+    @public
     def cli(
         self,
         args: List[str],
@@ -443,7 +450,8 @@ class DbtCliResource(ConfigurableResource):
             context (Optional[OpExecutionContext]): The execution context from within `@dbt_assets`.
 
         Returns:
-            DbtCliInvocation: A task that can be used to retrieve the output of the dbt CLI command.
+            DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
+                dbt CLI command.
 
         Examples:
             .. code-block:: python
@@ -549,7 +557,9 @@ def get_subset_selection_for_context(
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
-    is_subsetted_execution = len(context.selected_output_names) != len(context.assets_def.keys)
+    is_subsetted_execution = len(context.selected_output_names) != len(
+        context.assets_def.node_keys_by_output_name
+    )
     if not is_subsetted_execution:
         logger.info(
             "A dbt subsetted execution is not being performed. Using the default dbt selection"

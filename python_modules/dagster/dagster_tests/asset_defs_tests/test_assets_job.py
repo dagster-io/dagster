@@ -1679,7 +1679,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1767,8 +1767,8 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_requires_resource_defs():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1806,7 +1806,7 @@ def test_source_asset_requires_resource_defs():
     assert result.output_for_node("my_derived_asset") == 9
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_other_asset_provides_req():
     # Demonstrate that assets cannot resolve each other's dependencies with
     # resources on each definition.
@@ -1825,7 +1825,7 @@ def test_other_asset_provides_req():
         build_assets_job(name="test", assets=[asset_reqs_foo, asset_provides_foo])
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_transitive_deps_not_provided():
     @resource(required_resource_keys={"foo"})
     def unused_resource():
@@ -1842,7 +1842,7 @@ def test_transitive_deps_not_provided():
         build_assets_job(name="test", assets=[the_asset])
 
 
-@ignore_warning('"resource_defs" is an experimental argument')
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_transitive_resource_deps_provided():
     @resource(required_resource_keys={"foo"})
     def used_resource(context):
@@ -1858,7 +1858,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
-@ignore_warning('"io_manager_def" is an experimental argument')
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -2199,7 +2199,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -2233,7 +2234,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        # Alphabetical order matches topological order here
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 

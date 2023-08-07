@@ -36,11 +36,9 @@ def test_scheduler():
     def echo_time_schedule(context):
         return {
             "echo_time": (
-                (
-                    context.scheduled_execution_time.isoformat()
-                    if context.scheduled_execution_time
-                    else ""
-                )
+                context.scheduled_execution_time.isoformat()
+                if context.scheduled_execution_time
+                else ""
             )
         }
 

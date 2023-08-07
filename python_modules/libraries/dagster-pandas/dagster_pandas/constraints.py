@@ -9,7 +9,7 @@ from dagster import (
     TypeCheck,
     _check as check,
 )
-from dagster._utils.backcompat import experimental_class_warning
+from dagster._annotations import experimental
 from pandas import DataFrame
 from typing_extensions import Final
 
@@ -138,7 +138,7 @@ class Constraint:
 
     Args:
         error_description (Optional[str]): The plain string description that is output in the terminal if the constraint fails.
-        markdown_description (Optional[str]): A markdown supported description that is emitted by dagit if the constraint fails.
+        markdown_description (Optional[str]): A markdown supported description that is shown in the Dagster UI if the constraint fails.
     """
 
     def __init__(self, error_description=None, markdown_description=None):
@@ -147,6 +147,7 @@ class Constraint:
         self.error_description = check.str_param(error_description, "error_description")
 
 
+@experimental
 class ConstraintWithMetadata:
     """This class defines a base constraint over pandas DFs with organized metadata.
 
@@ -168,7 +169,6 @@ class ConstraintWithMetadata:
     def __init__(
         self, description, validation_fn, resulting_exception, raise_or_typecheck=True, name=None
     ):
-        experimental_class_warning(self.__class__.__name__)
         if name is None:
             self.name = self.__class__.__name__
         else:
@@ -297,7 +297,7 @@ class DataFrameConstraint(Constraint):
 
     Args:
         error_description (Optional[str]): The plain string description that is output in the terminal if the constraint fails.
-        markdown_description (Optional[str]): A markdown supported description that is emitted by dagit if the constraint fails.
+        markdown_description (Optional[str]): A markdown supported description that is shown in the Dagster UI if the constraint fails.
     """
 
     def __init__(self, error_description=None, markdown_description=None):
@@ -892,7 +892,7 @@ class ColumnConstraint(Constraint):
 
     Args:
         error_description (Optional[str]): The plain string description that is output in the terminal if the constraint fails.
-        markdown_description (Optional[str]): A markdown supported description that is emitted by dagit if the constraint fails.
+        markdown_description (Optional[str]): A markdown supported description that is shown in the Dagster UI if the constraint fails.
     """
 
     def __init__(self, error_description=None, markdown_description=None):

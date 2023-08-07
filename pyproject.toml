@@ -16,10 +16,10 @@ line-length = 100
 preview = true
 
 # Black will refuse to run if it's not this version.
-required-version = "22.12.0"
+required-version = "23.7.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target-version = ['py38', 'py39', 'py310', 'py311']
+target-versions = ['py38', 'py39', 'py310', 'py311']
 
 # ########################
 # ##### PYRIGHT
@@ -117,6 +117,8 @@ filterwarnings = [
 # README.
 
 [tool.ruff]
+
+target-version = "py38"
 
 extend-exclude = [
   "*/__generated__/*",
@@ -230,6 +232,13 @@ select = [
   # (private member access) Flag access to `_`-prefixed symbols. By default the various special
   # methods on `NamedTuple` are ignored (e.g. `_replace`).
   "SLF001",
+  
+  # (flake8-type-checking) Auto-sort imports into TYPE_CHECKING blocks depending on whether
+  # they are runtime or type-only imports.
+  "TCH",
+
+  # (banned-api) Flag use of banned APIs. See tool.ruff.flake8-tidy-imports.banned-api for details.
+  "TID251",
 
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
@@ -248,6 +257,10 @@ required-version = "0.0.277"
 
 # We use `id` in many places and almost never want to use the python builtin.
 builtins-ignorelist = ["id"]
+
+[tool.ruff.flake8-tidy-imports.banned-api]
+
+"__future__.annotations".msg = "Directly quote annotations instead."
 
 [tool.ruff.isort]
 

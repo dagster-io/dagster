@@ -20,6 +20,7 @@ from dagster._core.selector.subset_selector import DependencyGraph
 from dagster._core.workspace.workspace import IWorkspace
 
 from .asset_graph import AssetGraph
+from .backfill_policy import BackfillPolicy
 from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
@@ -39,6 +40,7 @@ class ExternalAssetGraph(AssetGraph):
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
+        backfill_policies_by_key: Mapping[AssetKey, Optional[BackfillPolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
@@ -54,6 +56,7 @@ class ExternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            backfill_policies_by_key=backfill_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
@@ -114,6 +117,7 @@ class ExternalAssetGraph(AssetGraph):
         group_names_by_key = {}
         freshness_policies_by_key = {}
         auto_materialize_policies_by_key = {}
+        backfill_policies_by_key = {}
         asset_keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKey]] = defaultdict(set)
         repo_handles_by_key = {
             node.asset_key: repo_handle
@@ -143,9 +147,9 @@ class ExternalAssetGraph(AssetGraph):
                 # We need to set this even if the node is a regular asset in another code location.
                 # `is_observable` will only ever be consulted in the source asset context.
                 is_observable_by_key[node.asset_key] = node.is_observable
-                auto_observe_interval_minutes_by_key[
-                    node.asset_key
-                ] = node.auto_observe_interval_minutes
+                auto_observe_interval_minutes_by_key[node.asset_key] = (
+                    node.auto_observe_interval_minutes
+                )
 
                 if node.asset_key in all_non_source_keys:
                     # one location's source is another location's non-source
@@ -167,6 +171,7 @@ class ExternalAssetGraph(AssetGraph):
             group_names_by_key[node.asset_key] = node.group_name
             freshness_policies_by_key[node.asset_key] = node.freshness_policy
             auto_materialize_policies_by_key[node.asset_key] = node.auto_materialize_policy
+            backfill_policies_by_key[node.asset_key] = node.backfill_policy
 
             if node.atomic_execution_unit_id is not None:
                 asset_keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(
@@ -192,6 +197,7 @@ class ExternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            backfill_policies_by_key=backfill_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,

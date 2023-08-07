@@ -345,9 +345,9 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         data = dagster_event.engine_event_data
         return GrapheneEngineEvent(
             metadataEntries=_to_metadata_entries(data.metadata),
-            error=GraphenePythonError(data.error)
-            if dagster_event.engine_event_data.error
-            else None,
+            error=(
+                GraphenePythonError(data.error) if dagster_event.engine_event_data.error else None
+            ),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             **basic_params,
@@ -441,11 +441,13 @@ def construct_basic_params(event_record: EventLogEntry) -> Any:
         "message": event_record.message,
         "timestamp": int(event_record.timestamp * 1000),
         "level": GrapheneLogLevel.from_level(event_record.level),
-        "eventType": dagster_event.event_type
-        if (dagster_event and dagster_event.event_type)
-        else None,
+        "eventType": (
+            dagster_event.event_type if (dagster_event and dagster_event.event_type) else None
+        ),
         "stepKey": event_record.step_key,
-        "solidHandleID": event_record.dagster_event.node_handle.to_string()  # type: ignore
-        if dagster_event and dagster_event.node_handle
-        else None,
+        "solidHandleID": (
+            event_record.dagster_event.node_handle.to_string()  # type: ignore
+            if dagster_event and dagster_event.node_handle
+            else None
+        ),
     }

@@ -3,9 +3,9 @@ import smtplib
 import ssl
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
+from dagster._annotations import deprecated_param
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
@@ -76,6 +76,11 @@ def send_email_via_starttls(
         server.sendmail(email_from, email_to, message)
 
 
+@deprecated_param(
+    param="job_selection",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitored_jobs` instead.",
+)
 def make_email_on_run_failure_sensor(
     email_from: str,
     email_password: str,
@@ -180,8 +185,6 @@ def make_email_on_run_failure_sensor(
         run_failure_sensor,
     )
 
-    if job_selection:
-        deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
     jobs = monitored_jobs if monitored_jobs else job_selection
 
     @run_failure_sensor(

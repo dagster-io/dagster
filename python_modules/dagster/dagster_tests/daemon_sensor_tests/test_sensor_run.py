@@ -37,7 +37,6 @@ from dagster import (
     run_failure_sensor,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_reconciliation_sensor import build_asset_reconciliation_sensor
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
@@ -862,71 +861,6 @@ def asset_sensor_repo():
         depends_on_source,
         the_job,
         monitor_source_asset_sensor,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_AND",
-            run_tags={"hello": "world"},
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(waits_on_sleep),
-            name="in_progress_condition_sensor",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(depends_on_source),
-            name="source_asset_sensor",
-        ),
     ]
 
 
@@ -2622,11 +2556,9 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                "RunRequest for a sensor lacking a specified target (job_name, job, or "
-                "jobs)."
-            ),
+            "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
+            "RunRequest for a sensor lacking a specified target (job_name, job, or "
+            "jobs).",
         )
 
 
@@ -2649,10 +2581,8 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
-                "job_name config_job. Expected one of: ['the_job']"
-            ),
+            "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
+            "job_name config_job. Expected one of: ['the_job']",
         )
 
 
@@ -2675,11 +2605,9 @@ def test_bad_run_request_unspecified(executor, instance, workspace_context, exte
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
-                "did not specify job_name for the requested run. Expected one of: "
-                "['the_job', 'config_job']"
-            ),
+            "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
+            "did not specify job_name for the requested run. Expected one of: "
+            "['the_job', 'config_job']",
         )
 
 

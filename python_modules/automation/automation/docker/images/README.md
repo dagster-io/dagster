@@ -1,10 +1,10 @@
 # Dagster Images
 
-- `dagster-celery-k8s` (Helm default): Host process image for Dagit, Daemon, and Celery workers. We use this
+- `dagster-celery-k8s` (Helm default): Host process image for Dagster Webserver, Daemon, and Celery workers. We use this
   as the default so that users can switch to Celery without hitting a dependency issue.
 - `user-code-example` (Helm default): Example job code.
 - `dagster-k8s`: `dagster-celery-k8s` without the Celery dependency.
-- `k8s-dagit-example` (deprecated): Dagit image that includes user code, from before gRPC servers were standard. Used to be the Helm default.
+- `k8s-dagit-example` (deprecated): Webserver image that includes user code, from before gRPC servers were standard. Used to be the Helm default.
 
 ## Creating an image
 

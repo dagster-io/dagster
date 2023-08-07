@@ -1,6 +1,7 @@
 import sys
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -25,7 +26,6 @@ from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvari
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
-from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
@@ -46,6 +46,9 @@ from .context_creation_job import (
     scoped_job_context,
 )
 from .job_execution_result import JobExecutionResult
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -100,10 +103,8 @@ def execute_run_iterator(
                 # the run monitoring daemon will also spin up a new pod
                 def gen_ignore_duplicate_run_worker():
                     yield instance.report_engine_event(
-                        (
-                            "Ignoring a duplicate run that was started from somewhere other than"
-                            " the run monitor daemon"
-                        ),
+                        "Ignoring a duplicate run that was started from somewhere other than"
+                        " the run monitor daemon",
                         dagster_run,
                     )
 
@@ -112,12 +113,10 @@ def execute_run_iterator(
 
                 def gen_fail_restarted_run_worker():
                     yield instance.report_engine_event(
-                        (
-                            f"{dagster_run.job_name} ({dagster_run.run_id}) started a new"
-                            f" run worker while the run was already in state {dagster_run.status}."
-                            " This most frequently happens when the run worker unexpectedly stops"
-                            " and is restarted by the cluster. Marking the run as failed."
-                        ),
+                        f"{dagster_run.job_name} ({dagster_run.run_id}) started a new"
+                        f" run worker while the run was already in state {dagster_run.status}."
+                        " This most frequently happens when the run worker unexpectedly stops"
+                        " and is restarted by the cluster. Marking the run as failed.",
                         dagster_run,
                     )
                     yield instance.report_run_failed(dagster_run)
@@ -141,9 +140,11 @@ def execute_run_iterator(
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
         job = job.get_subset(
-            op_selection=list(dagster_run.resolved_op_selection)
-            if dagster_run.resolved_op_selection
-            else None,
+            op_selection=(
+                list(dagster_run.resolved_op_selection)
+                if dagster_run.resolved_op_selection
+                else None
+            ),
             asset_selection=dagster_run.asset_selection,
         )
 
@@ -223,9 +224,11 @@ def execute_run(
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
         job = job.get_subset(
-            op_selection=list(dagster_run.resolved_op_selection)
-            if dagster_run.resolved_op_selection
-            else None,
+            op_selection=(
+                list(dagster_run.resolved_op_selection)
+                if dagster_run.resolved_op_selection
+                else None
+            ),
             asset_selection=dagster_run.asset_selection,
         )
 
@@ -679,12 +682,12 @@ def _get_execution_plan_from_run(
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
-        repository_load_data=execution_plan_snapshot.repository_load_data
-        if execution_plan_snapshot
-        else None,
-        known_state=execution_plan_snapshot.initial_known_state
-        if execution_plan_snapshot
-        else None,
+        repository_load_data=(
+            execution_plan_snapshot.repository_load_data if execution_plan_snapshot else None
+        ),
+        known_state=(
+            execution_plan_snapshot.initial_known_state if execution_plan_snapshot else None
+        ),
     )
 
 
@@ -786,19 +789,15 @@ def job_execution_iterator(
                 # a cancellation request
                 event = DagsterEvent.engine_event(
                     job_context,
-                    (
-                        "Computational resources were cleaned up after the run was forcibly marked"
-                        " as canceled."
-                    ),
+                    "Computational resources were cleaned up after the run was forcibly marked"
+                    " as canceled.",
                     EngineEventData(),
                 )
             elif job_context.instance.run_will_resume(job_context.run_id):
                 event = DagsterEvent.engine_event(
                     job_context,
-                    (
-                        "Execution was interrupted unexpectedly. No user initiated termination"
-                        " request was found, not treating as failure because run will be resumed."
-                    ),
+                    "Execution was interrupted unexpectedly. No user initiated termination"
+                    " request was found, not treating as failure because run will be resumed.",
                     EngineEventData(),
                 )
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.FAILURE:
@@ -810,10 +809,8 @@ def job_execution_iterator(
             else:
                 event = DagsterEvent.job_failure(
                     job_context,
-                    (
-                        "Execution was interrupted unexpectedly. "
-                        "No user initiated termination request was found, treating as failure."
-                    ),
+                    "Execution was interrupted unexpectedly. "
+                    "No user initiated termination request was found, treating as failure.",
                     job_canceled_info,
                 )
         elif job_exception_info:

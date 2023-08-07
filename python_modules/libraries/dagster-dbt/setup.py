@@ -32,16 +32,17 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
+    include_package_data=True,
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
-        "dbt-core<1.6",
+        "dbt-core<1.7",
         "Jinja2",
         "networkx",
         "orjson",
         "requests",
         "rich",
-        "typer",
+        "typer>=0.9.0",
     ],
     extras_require={
         "test": [

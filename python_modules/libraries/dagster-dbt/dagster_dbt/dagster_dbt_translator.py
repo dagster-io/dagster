@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
 from dagster import AssetKey
+from dagster._annotations import public
 from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
@@ -23,6 +25,7 @@ class DagsterDbtTranslator:
     """
 
     @classmethod
+    @public
     def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster asset key that represents that resource.
@@ -57,6 +60,7 @@ class DagsterDbtTranslator:
         return default_asset_key_fn(dbt_resource_props)
 
     @classmethod
+    @public
     def get_description(cls, dbt_resource_props: Mapping[str, Any]) -> str:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster description for that resource.
@@ -90,6 +94,7 @@ class DagsterDbtTranslator:
         return default_description_fn(dbt_resource_props)
 
     @classmethod
+    @public
     def get_metadata(cls, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster metadata for that resource.
@@ -123,6 +128,7 @@ class DagsterDbtTranslator:
         return default_metadata_from_dbt_resource_props(dbt_resource_props)
 
     @classmethod
+    @public
     def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster group name for that resource.
@@ -150,7 +156,7 @@ class DagsterDbtTranslator:
 
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
-                    def get_group(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+                    def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
                         return "custom_group_prefix" + node_info.get("config", {}).get("group")
         """
         return default_group_from_dbt_resource_props(dbt_resource_props)
@@ -182,9 +188,15 @@ class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
             or []
         )
 
+    @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         base_key = default_asset_key_fn(dbt_resource_props)
         if dbt_resource_props["resource_type"] == "source":
             return base_key.with_prefix(self._source_asset_key_prefix)
         else:
             return base_key.with_prefix(self._asset_key_prefix)
+
+
+@dataclass
+class DbtManifestWrapper:
+    manifest: Mapping[str, Any]

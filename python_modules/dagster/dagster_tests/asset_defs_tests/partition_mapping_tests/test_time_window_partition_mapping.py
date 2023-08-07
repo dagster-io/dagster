@@ -329,20 +329,6 @@ def test_daily_to_daily_many_to_one():
         (
             DailyPartitionsDefinition(start_date="2022-01-01"),
             DailyPartitionsDefinition(start_date="2021-01-01"),
-            ["2021-12-31"],
-            [],
-            datetime(2022, 1, 1, 1),
-        ),
-        (
-            DailyPartitionsDefinition(start_date="2022-01-01"),
-            DailyPartitionsDefinition(start_date="2021-01-01"),
-            ["2021-12-30"],
-            [],
-            datetime(2022, 12, 31, 1),
-        ),
-        (
-            DailyPartitionsDefinition(start_date="2022-01-01"),
-            DailyPartitionsDefinition(start_date="2021-01-01"),
             ["2022-12-30"],
             ["2022-12-30"],
             datetime(2022, 12, 31, 1),

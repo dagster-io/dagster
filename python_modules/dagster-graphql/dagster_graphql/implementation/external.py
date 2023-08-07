@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
@@ -107,7 +105,7 @@ def get_external_execution_plan_or_raise(
     )
 
 
-def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnection:
+def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConnection":
     from ..schema.external import GrapheneRepository, GrapheneRepositoryConnection
 
     return GrapheneRepositoryConnection(
@@ -125,7 +123,7 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnec
 
 def fetch_repository(
     graphene_info: "ResolveInfo", repository_selector: RepositorySelector
-) -> Union[GrapheneRepository, GrapheneRepositoryNotFoundError]:
+) -> Union["GrapheneRepository", "GrapheneRepositoryNotFoundError"]:
     from ..schema.errors import GrapheneRepositoryNotFoundError
     from ..schema.external import GrapheneRepository
 
@@ -145,7 +143,7 @@ def fetch_repository(
     )
 
 
-def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> GrapheneWorkspace:
+def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> "GrapheneWorkspace":
     from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
@@ -162,7 +160,7 @@ def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> Graph
 
 def fetch_location_statuses(
     workspace_request_context: WorkspaceRequestContext,
-) -> GrapheneWorkspaceLocationStatusEntries:
+) -> "GrapheneWorkspaceLocationStatusEntries":
     from ..schema.external import (
         GrapheneRepositoryLocationLoadStatus,
         GrapheneWorkspaceLocationStatusEntries,

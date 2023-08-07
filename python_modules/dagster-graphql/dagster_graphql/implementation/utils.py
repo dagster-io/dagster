@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -152,9 +150,11 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
         repository_name=data["repositoryName"],
         job_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
         op_selection=data.get("solidSelection"),
-        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
-        if asset_selection
-        else None,
+        asset_selection=(
+            [AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
+            if asset_selection
+            else None
+        ),
     )
 
 

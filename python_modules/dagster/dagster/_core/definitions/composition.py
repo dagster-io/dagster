@@ -430,45 +430,16 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs) -> Any:
-        from ..execution.context.invocation import UnboundOpExecutionContext
-        from .decorators.op_decorator import DecoratedOpFunction
-        from .op_invocation import op_invocation_result
+        from .op_invocation import direct_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
         # If PendingNodeInvocation is not within composition context, and underlying NodeDefinition
         # is an OpDefinition, then permit it to be invoked and executed like an OpDefinition.
         if not is_in_composition() and isinstance(self.node_def, OpDefinition):
-            node_label = self.node_def.node_type_str
-            # Pyright does not currently infer the typevar-bound type of self based on the above
-            # `isinstance` check. We need the correct type for passing to `op_invocation_result`.
-            _self = cast(PendingNodeInvocation[OpDefinition], self)
-            if not isinstance(self.node_def.compute_fn, DecoratedOpFunction):
-                raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the"
-                    f" `@{node_label}` decorator. Only {node_label}s constructed using the"
-                    f" `@{node_label}` decorator can be directly invoked."
-                )
-            if self.node_def.compute_fn.has_context_arg():
-                if len(args) == 0:
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has context"
-                        " argument, but no context was provided when invoking."
-                    )
-                elif args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has context"
-                        " argument, but no context was provided when invoking."
-                    )
-                context = args[0]
-                return op_invocation_result(_self, context, *args[1:], **kwargs)
-            else:
-                if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.given_alias}' has no context"
-                        " argument, but context was provided when invoking."
-                    )
-                return op_invocation_result(_self, None, *args, **kwargs)
+            return direct_invocation_result(
+                cast(PendingNodeInvocation[OpDefinition], self), *args, **kwargs
+            )
 
         assert_in_composition(node_name, self.node_def)
         input_bindings: Dict[str, InputSource] = {}

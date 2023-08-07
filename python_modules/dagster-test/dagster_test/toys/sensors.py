@@ -122,7 +122,7 @@ def get_toys_sensors():
         channel="#toy-test",
         slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
         monitored_jobs=[error_monster_failing_job],
-        dagit_base_url="http://localhost:3000",
+        webserver_base_url="http://localhost:3000",
     )
 
     @asset_sensor(asset_key=AssetKey("model"), job=log_asset_job)

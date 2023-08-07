@@ -2,12 +2,13 @@ from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
-from dagster._core.host_representation.code_location import CodeLocation
 from graphene import ResolveInfo
 
 from .utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
+    from dagster._core.host_representation.code_location import CodeLocation
+
     from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 
 

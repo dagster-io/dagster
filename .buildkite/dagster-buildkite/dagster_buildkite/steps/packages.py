@@ -144,8 +144,8 @@ deploy_docker_example_extra_cmds = [
     *network_buildkite_container("docker_example_network"),
     *connect_sibling_docker_container(
         "docker_example_network",
-        "docker_example_dagit",
-        "DEPLOY_DOCKER_DAGIT_HOST",
+        "docker_example_webserver",
+        "DEPLOY_DOCKER_WEBSERVER_HOST",
     ),
     "popd",
 ]
@@ -440,9 +440,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "dbt_13X_legacy",
             "dbt_14X_legacy",
             "dbt_15X_legacy",
+            "dbt_16X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",
+            "dbt_16X",
         ],
     ),
     PackageSpec(
