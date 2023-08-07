@@ -5,11 +5,18 @@ import {
   Spinner,
   Subheading,
   ErrorBoundary,
+  Checkbox,
+  Popover,
+  Menu,
+  MenuItem,
+  Button,
+  Icon,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {RepositorySelector} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
@@ -62,7 +69,18 @@ export const AssetEvents: React.FC<Props> = ({
     refetch();
   }, [params.asOf, dataRefreshHint, refetch]);
 
-  const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
+  const [filters, setFilters] = useStateWithStorage<{types: EventType[]}>(
+    'asset-event-filters',
+    (json) => ({types: json?.types || ALL_EVENT_TYPES}),
+  );
+
+  const hideFilters = assetNode?.isSource;
+  const grouped = useGroupedEvents(
+    xAxis,
+    hideFilters || filters.types.includes('materialization') ? materializations : [],
+    hideFilters || filters.types.includes('observation') ? observations : [],
+    loadedPartitionKeys,
+  );
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
     const updates: Partial<AssetViewParams> =
@@ -156,6 +174,18 @@ export const AssetEvents: React.FC<Props> = ({
           flex={{direction: 'column'}}
           background={Colors.Gray50}
         >
+          {hideFilters ? undefined : (
+            <Box
+              flex={{alignItems: 'center', gap: 16}}
+              padding={{vertical: 12, horizontal: 24}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            >
+              <EventTypeSelect
+                value={filters.types}
+                onChange={(types) => setFilters({...filters, types})}
+              />
+            </Box>
+          )}
           {loading ? (
             <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
               <Spinner purpose="section" />
@@ -197,5 +227,73 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
       </Box>
     </>
+  );
+};
+
+type EventType = 'observation' | 'materialization';
+
+const ALL_EVENT_TYPES: EventType[] = ['observation', 'materialization'];
+
+export const EventTypeSelect: React.FC<{
+  value: EventType[];
+  onChange: (value: EventType[]) => void;
+}> = ({value, onChange}) => {
+  const [showMenu, setShowMenu] = React.useState(false);
+
+  const onToggle = (type: EventType) => {
+    if (value.includes(type)) {
+      onChange(value.filter((v) => v !== type));
+    } else {
+      onChange([...value, type]);
+    }
+  };
+
+  return (
+    <Popover
+      isOpen={showMenu}
+      placement="bottom-start"
+      canEscapeKeyClose
+      onInteraction={(nextOpenState: boolean) => setShowMenu(nextOpenState)}
+      content={
+        <Menu style={{width: 140}} aria-label="filter-options">
+          <MenuItem
+            shouldDismissPopover={false}
+            onClick={() => onToggle('materialization')}
+            text={
+              <Box padding={{horizontal: 2}} flex={{direction: 'row', alignItems: 'center'}}>
+                <Checkbox
+                  size="small"
+                  checked={value.includes('materialization')}
+                  onChange={() => {}}
+                  label="Materialization"
+                />
+              </Box>
+            }
+          />
+          <MenuItem
+            shouldDismissPopover={false}
+            onClick={() => onToggle('observation')}
+            text={
+              <Box padding={{horizontal: 2}} flex={{direction: 'row', alignItems: 'center'}}>
+                <Checkbox
+                  size="small"
+                  checked={value.includes('observation')}
+                  onChange={() => {}}
+                  label="Observation"
+                />
+              </Box>
+            }
+          />
+        </Menu>
+      }
+    >
+      <Button
+        onClick={() => setShowMenu((current) => !current)}
+        icon={<Icon name="filter_alt" />}
+        rightIcon={<Icon name="expand_more" />}
+      >
+        Type ({value.length})
+      </Button>
+    </Popover>
   );
 };

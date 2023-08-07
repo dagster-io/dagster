@@ -56,10 +56,11 @@ export const LogFilterSelect: React.FC<Props> = ({options, onSetFilter}) => {
                 tagName="div"
                 shouldDismissPopover={false}
                 text={
-                  <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  <Box flex={{direction: 'row', alignItems: 'center'}} padding={{horizontal: 2}}>
                     <MenuCheckbox
                       id={`menu-check-${level}`}
                       checked={enabled}
+                      size="small"
                       onChange={onChange(level)}
                       label={
                         <Box
@@ -102,4 +103,5 @@ const FilterButton = styled(Button)`
 const MenuCheckbox = styled(Checkbox)`
   display: flex;
   flex: 1;
+  align-items: center;
 `;
