@@ -69,7 +69,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._asset_partition_count_cache: Dict[
             Optional[int], Dict[AssetKey, Mapping[str, int]]
         ] = defaultdict(dict)
-        self._max_version_updated_by_asset_partition: Dict[AssetKeyPartitionKey, int] = {}
+        self._asset_partition_versions_updated_after_cursor_cache: Dict[
+            AssetKeyPartitionKey, int
+        ] = {}
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
 
@@ -731,8 +733,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         updated_asset_partitions = {
             ap
             for ap in asset_partitions
-            if ap in self._max_version_updated_by_asset_partition
-            and self._max_version_updated_by_asset_partition[ap] <= after_cursor
+            if ap in self._asset_partition_versions_updated_after_cursor_cache
+            and self._asset_partition_versions_updated_after_cursor_cache[ap] <= after_cursor
         }
         to_query_asset_partitions = asset_partitions - updated_asset_partitions
         if not to_query_asset_partitions:
@@ -749,7 +751,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         }
         # keep track of the maximum storage id at which an asset partition was updated after
         for asset_partition in queryed_updated_asset_partitions:
-            self._max_version_updated_by_asset_partition[asset_partition] = after_cursor
+            self._asset_partition_versions_updated_after_cursor_cache[asset_partition] = (
+                after_cursor
+            )
         return {*updated_asset_partitions, *queryed_updated_asset_partitions}
 
     def get_asset_partitions_updated_after_cursor(
