@@ -1,12 +1,17 @@
-from dagster_dbt import build_schedule_from_dbt_selection
-
-from .assets import {{ dbt_assets_name }}
-
-schedules = [
-    build_schedule_from_dbt_selection(
-        [{{ dbt_assets_name }}],
-        job_name="materialize_dbt_models",
-        cron_schedule="0 0 * * *",
-        dbt_select="fqn:*",
-    )
-]
+"""
+To add a schedule that materializes your dbt assets on a daily cadence,
+uncomment the following lines and delete the empty schedules list.
+"""
+# from dagster_dbt import build_schedule_from_dbt_selection
+#
+# from .assets import {{ dbt_assets_name }}
+#
+# schedules = [
+#     build_schedule_from_dbt_selection(
+#         [{{ dbt_assets_name }}],
+#         job_name="materialize_dbt_models",
+#         cron_schedule="0 0 * * *",
+#         dbt_select="fqn:*",
+#     )
+# ]
+schedules = []
