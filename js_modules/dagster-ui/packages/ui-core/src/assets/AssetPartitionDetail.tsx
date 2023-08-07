@@ -60,13 +60,9 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
 
     return {
       stepKey: stepKeyForAsset(result.data.assetNodeOrError),
-
       staleStatus: result.data.assetNodeOrError.staleStatus,
-
       staleCauses: result.data.assetNodeOrError.staleCauses,
-
       latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
-
       materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
         (a, b) => Number(b.timestamp) - Number(a.timestamp),
       ),

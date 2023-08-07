@@ -9,7 +9,7 @@ import {
 import * as React from 'react';
 
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
-import {RepositorySelector, StaleStatus} from '../graphql/types';
+import {RepositorySelector} from '../graphql/types';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
