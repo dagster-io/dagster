@@ -19,6 +19,7 @@ setup(
     install_requires=[
         "dagster",
         "pyspark",
+        "rich",
     ],
     zip_safe=False,
 )
