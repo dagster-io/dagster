@@ -300,7 +300,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         _validate_self_deps(
             input_keys=[
-                key
+                key for key in self._keys_by_input_name.values()
                 for input_name, key in self._keys_by_input_name.items()
                 if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
             ],
@@ -831,7 +831,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
+        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key] if dep_key not in self.keys}
         return {
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
