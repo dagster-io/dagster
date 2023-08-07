@@ -102,7 +102,7 @@ The most important file is the Python file that contains the set of definitions 
 To return a Dagster asset for each dbt model, the code in this file needs to know what dbt models you have. It finds out what models you have by reading a file called a `manifest.json`, which is a file that dbt can generate for any dbt project and contains information about every model, seed, snapshot, test, etc. in the project. The following code, already in your project's `definitions.py`, does this:
 
 ```python file=integrations/dbt/tutorial/load_dbt_models/definitions.py startafter=start_load_manifest endbefore=end_load_manifest
-dbt_project_dir = Path(__file__).parent.joinpath("..", "..")
+dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 
 # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.

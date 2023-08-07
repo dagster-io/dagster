@@ -6,7 +6,7 @@ from dagster_dbt import DbtCliResource, build_schedule_from_dbt_selection, dbt_a
 from dagster import Definitions, OpExecutionContext
 
 # start_load_manifest
-dbt_project_dir = Path(__file__).parent.joinpath("..", "..")
+dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 
 # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.

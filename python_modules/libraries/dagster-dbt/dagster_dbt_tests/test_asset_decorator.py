@@ -18,15 +18,15 @@ from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
-manifest_path = Path(__file__).parent.joinpath("sample_manifest.json")
-with open(manifest_path, "r") as f:
-    manifest = json.load(f)
+manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
+manifest = json.loads(manifest_path.read_bytes())
 
-test_dagster_metadata_manifest_path = Path(__file__).parent.joinpath(
-    "dbt_projects", "test_dagster_metadata", "manifest.json"
+test_dagster_metadata_manifest_path = (
+    Path(__file__)
+    .joinpath("..", "dbt_projects", "test_dagster_metadata", "manifest.json")
+    .resolve()
 )
-with open(test_dagster_metadata_manifest_path, "r") as f:
-    test_dagster_metadata_manifest = json.load(f)
+test_dagster_metadata_manifest = json.loads(test_dagster_metadata_manifest_path.read_bytes())
 
 
 def test_materialize(test_project_dir):
@@ -39,7 +39,7 @@ def test_materialize(test_project_dir):
     ).success
 
 
-@pytest.mark.parametrize("manifest", [json.load(manifest_path.open()), manifest_path])
+@pytest.mark.parametrize("manifest", [manifest, manifest_path])
 def test_manifest_argument(manifest):
     @dbt_assets(manifest=manifest)
     def my_dbt_assets():
