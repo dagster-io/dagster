@@ -12,8 +12,7 @@ def assert_assets_match_project(
     assert len(dbt_assets) == 1
     assets_op = dbt_assets[0].op
     assert assets_op.tags == {"kind": "dbt"}
-    # one optional input, one input for each output that is upstream of another output
-    assert len(assets_op.input_defs) == int(has_non_argument_deps), assets_op.input_defs
+    assert len(dbt_assets[0].keys_by_input_name) == int(has_non_argument_deps)
     def_outputs = sorted(set(assets_op.output_dict.keys()))
     expected_outputs = sorted(
         [
