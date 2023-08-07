@@ -37,7 +37,7 @@ from typing_extensions import Literal
 from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
 from ..dagster_dbt_translator import DagsterDbtTranslator
 from ..errors import DagsterDbtCliRuntimeError
-from ..utils import ASSET_RESOURCE_TYPES, get_node_info_by_dbt_unique_id_from_manifest
+from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
 logger = get_dagster_logger()
 
@@ -553,7 +553,7 @@ def get_subset_selection_for_context(
     if exclude:
         default_dbt_selection += ["--exclude", exclude]
 
-    node_info_by_output_name = get_node_info_by_output_name(manifest)
+    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
@@ -569,11 +569,11 @@ def get_subset_selection_for_context(
 
     selected_dbt_resources = []
     for output_name in context.selected_output_names:
-        node_info = node_info_by_output_name[output_name]
+        dbt_resource_props = dbt_resource_props_by_output_name[output_name]
 
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = f"fqn:{'.'.join(node_info['fqn'])}"
+        fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
 
         selected_dbt_resources.append(fqn_selector)
 
@@ -589,8 +589,10 @@ def get_subset_selection_for_context(
     return union_selected_dbt_resources
 
 
-def get_node_info_by_output_name(manifest: Mapping[str, Any]) -> Mapping[str, Mapping[str, Any]]:
-    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
+def get_dbt_resource_props_by_output_name(
+    manifest: Mapping[str, Any]
+) -> Mapping[str, Mapping[str, Any]]:
+    node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
 
     return {
         output_name_fn(node): node

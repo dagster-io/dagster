@@ -38,13 +38,13 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def input_name_fn(node_info: Mapping[str, Any]) -> str:
+def input_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     # * can be present when sources are sharded tables
-    return node_info["unique_id"].replace(".", "_").replace("*", "_star")
+    return dbt_resource_props["unique_id"].replace(".", "_").replace("*", "_star")
 
 
-def output_name_fn(node_info: Mapping[str, Any]) -> str:
-    return node_info["unique_id"].split(".")[-1]
+def output_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
+    return dbt_resource_props["unique_id"].split(".")[-1]
 
 
 def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -126,7 +126,9 @@ def result_to_events(
         metadata.update(extra_metadata)
 
     # if you have a manifest available, get the full node info, otherwise just populate unique_id
-    node_info = manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+    dbt_resource_props = (
+        manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+    )
 
     node_resource_type = _resource_type(unique_id)
 
@@ -134,12 +136,12 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=output_name_fn(node_info),
+                output_name=output_name_fn(dbt_resource_props),
                 metadata=metadata,
             )
         else:
             yield AssetMaterialization(
-                asset_key=node_info_to_asset_key(node_info),
+                asset_key=node_info_to_asset_key(dbt_resource_props),
                 description=f"dbt node: {unique_id}",
                 metadata=metadata,
             )
@@ -149,12 +151,12 @@ def result_to_events(
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
             # the upstream id can reference a node or a source
-            node_info = manifest_json["nodes"].get(upstream_id) or manifest_json["sources"].get(
-                upstream_id
-            )
-            if node_info is None:
+            dbt_resource_props = manifest_json["nodes"].get(upstream_id) or manifest_json[
+                "sources"
+            ].get(upstream_id)
+            if dbt_resource_props is None:
                 continue
-            upstream_asset_key = node_info_to_asset_key(node_info)
+            upstream_asset_key = node_info_to_asset_key(dbt_resource_props)
             yield AssetObservation(
                 asset_key=upstream_asset_key,
                 metadata={
@@ -310,7 +312,7 @@ def select_unique_ids_from_manifest(
     return selected
 
 
-def get_node_info_by_dbt_unique_id_from_manifest(
+def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
     manifest: Mapping[str, Any]
 ) -> Mapping[str, Mapping[str, Any]]:
     """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
