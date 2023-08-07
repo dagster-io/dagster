@@ -3,7 +3,7 @@ import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
-import {RunStatus} from '../../graphql/types';
+import {RunStatus, buildStaleCause} from '../../graphql/types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {
   AssetPartitionDetail,
@@ -47,7 +47,7 @@ export const MaterializationWithRecentFailure = () => {
   return (
     <MockedProvider
       mocks={[
-        buildAssetPartitionDetailMock(RunStatus.FAILURE),
+        buildAssetPartitionDetailMock(RunStatus.FAILURE, [buildStaleCause()]),
         MaterializationUpstreamDataFullMock,
       ]}
       cache={createAppCache()}
