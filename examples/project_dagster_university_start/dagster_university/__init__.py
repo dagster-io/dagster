@@ -7,5 +7,5 @@ trip_assets = load_assets_from_modules([trips])
 metric_assets = load_assets_from_modules([metrics])
 
 defs = Definitions(
-    assets=trip_assets + metric_assets
+    assets=[*trip_assets, *metric_assets]
 )
