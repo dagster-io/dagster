@@ -3,3 +3,5 @@ version: "3"
 services:
   builder:
     build: .
+    security_opt:
+      - seccomp:unconfined
