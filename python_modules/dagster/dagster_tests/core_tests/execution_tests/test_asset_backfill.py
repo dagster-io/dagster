@@ -153,7 +153,12 @@ scenarios = {
         (
             "partitioned_after_non_partitioned",
             ["2022-01-01", "2022-01-02"],
-            [("asset1", None), ("asset2", "2022-01-01"), ("asset2", "2022-01-02")],
+            [
+                ("asset1", None),
+                ("asset2", None),
+                ("asset3", "2022-01-01"),
+                ("asset3", "2022-01-02"),
+            ],
         ),
     ],
 )
