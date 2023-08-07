@@ -262,10 +262,11 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_overdue value for this asset
-                minutes_late_by_key[asset_key] = data_time_resolver.get_current_minutes_late(
+                result = data_time_resolver.get_minutes_overdue(
                     evaluation_time=evaluation_time,
                     asset_key=asset_key,
                 )
+                minutes_late_by_key[asset_key] = result.overdue_minutes if result else None
 
                 resource_args_populated = validate_and_get_resource_dict(
                     context.resources, name, resource_arg_names

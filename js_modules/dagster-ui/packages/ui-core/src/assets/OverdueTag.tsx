@@ -43,20 +43,19 @@ export const OverdueTag: React.FC<{
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
 }> = ({liveData, policy, assetKey}) => {
-  console.log(liveData);
-
   if (!liveData?.freshnessInfo) {
     return null;
   }
 
   const {freshnessInfo} = liveData;
-  const policyDescription = freshnessPolicyDescription(policy);
 
   if (freshnessInfo.currentMinutesLate === null) {
     return (
       <Tooltip
         content={
-          <div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${policyDescription}`}</div>
+          <div style={{maxWidth: 400}}>{`${STALE_UNMATERIALIZED_MSG} ${freshnessPolicyDescription(
+            policy,
+          )}`}</div>
         }
       >
         <Tag intent="danger" icon="warning">
@@ -67,12 +66,10 @@ export const OverdueTag: React.FC<{
   }
 
   if (freshnessInfo.currentMinutesLate === 0) {
-    return policyDescription ? (
-      <Tooltip content={<div style={{maxWidth: 400}}>{policyDescription}</div>}>
+    return (
+      <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
         <Tag intent="success" icon="check_circle" />
-      </Tooltip>
-    ) : (
-      <Tag intent="success" icon="check_circle" />
+      </OverdueLineagePopover>
     );
   }
 
@@ -92,24 +89,28 @@ type OverdueLineagePopoverProps = {
 
 export const OverdueLineagePopover: React.FC<
   OverdueLineagePopoverProps & {children: React.ReactNode}
-> = ({children, ...props}) => {
+> = ({children, assetKey, liveData}) => {
   return (
     <Popover
       position="top"
       interactionKind="hover"
       className="chunk-popover-target"
-      content={<OverdueLineagePopoverContent {...props} />}
+      content={
+        <OverdueLineagePopoverContent
+          assetKey={assetKey}
+          timestamp={liveData.lastMaterialization?.timestamp || ''}
+        />
+      }
     >
       {children}
     </Popover>
   );
 };
 
-const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
-  assetKey,
-  liveData,
-}) => {
-  const timestamp = liveData.lastMaterialization?.timestamp || '';
+const OverdueLineagePopoverContent: React.FC<{
+  assetKey: AssetKeyInput;
+  timestamp: string;
+}> = ({assetKey, timestamp}) => {
   const result = useQuery<OverduePopoverQuery, OverduePopoverQueryVariables>(
     OVERDUE_POPOVER_QUERY,
     {variables: {assetKey: {path: assetKey.path}, timestamp}},
@@ -126,14 +127,23 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
     );
   }
 
-  if (!data.freshnessPolicy?.lastEvaluationTimestamp) {
+  if (!data.freshnessInfo || !data.freshnessPolicy?.lastEvaluationTimestamp) {
     return <Box style={{width: 600}}>No freshness policy or evaluation timestamp.</Box>;
   }
 
   const hasUpstreams = data.assetMaterializationUsedData.length > 0;
-  const {lastEvaluationTimestamp, cronSchedule, cronScheduleTimezone} = data.freshnessPolicy;
-  const lateStr = humanizedMinutesLateString(liveData.freshnessInfo?.currentMinutesLate || 0);
+  const {currentLagMinutes, currentMinutesLate} = data.freshnessInfo;
+  const {
+    lastEvaluationTimestamp,
+    cronSchedule,
+    cronScheduleTimezone,
+    maximumLagMinutes,
+  } = data.freshnessPolicy;
+  const maxLagMinutesStr = humanizedMinutesLateString(maximumLagMinutes);
+  const lagMinutesStr = humanizedMinutesLateString(currentLagMinutes || 0);
+  const derivedStr = hasUpstreams ? ` is derived from source data that` : '';
   const policyStr = freshnessPolicyDescription(data.freshnessPolicy, 'short');
+
   const lastEvaluationStr = timestampToString({
     locale,
     timezone: cronScheduleTimezone || 'UTC',
@@ -144,47 +154,58 @@ const OverdueLineagePopoverContent: React.FC<OverdueLineagePopoverProps> = ({
   return (
     <Box style={{width: 600}}>
       <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
-        {hasUpstreams
+        {currentMinutesLate === 0 // fresh
           ? cronSchedule
-            ? `The latest materialization is derived from source data that was ${lateStr} old on ${lastEvaluationStr}. The asset's freshness policy requires it to be derived from data ${policyStr}`
-            : `The latest materialization is derived from source data that is ${lateStr} old. The asset's freshness policy requires it to be derived from data ${policyStr}`
+            ? `The latest materialization contains all data up to ${maxLagMinutesStr} before ${lastEvaluationStr}. `
+            : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `
           : cronSchedule
-          ? `The latest materialization was ${lateStr} old on ${lastEvaluationStr}. The asset's freshness policy requires it ${policyStr}`
-          : `The latest materialization is ${lateStr} old. The asset's freshness policy requires it ${policyStr}`}
+          ? `The latest materialization${derivedStr} was ${lagMinutesStr} old on ${lastEvaluationStr}. `
+          : `The latest materialization${derivedStr} is ${lagMinutesStr} old. `}
+
+        {hasUpstreams
+          ? `The asset's freshness policy requires it to be derived from data ${policyStr}`
+          : `The asset's freshness policy requires it is ${policyStr}`}
       </Box>
-      <Box
-        padding={12}
-        style={{fontWeight: 600}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        Latest materialization:
-      </Box>
-      <Box
-        padding={12}
-        flex={{justifyContent: 'space-between'}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
-        <Timestamp timestamp={{ms: Number(timestamp)}} />
-        <TimeSinceWithOverdueColor
-          timestamp={Number(timestamp)}
-          relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
-          maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
-        />
-      </Box>
-      <Box padding={12} style={{fontWeight: 600}}>
-        Latest materialization sources data from:
-      </Box>
-      <Box
-        style={{maxHeight: '240px', overflowY: 'auto', marginLeft: -1, marginRight: -1}}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <AssetMaterializationUpstreamTable
-          data={data}
-          maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
-          relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
-          assetKey={assetKey}
-        />
-      </Box>
+      {hasUpstreams ? (
+        <>
+          <Box padding={12} style={{fontWeight: 600}}>
+            Latest materialization sources data from:
+          </Box>
+          <Box
+            style={{maxHeight: '240px', overflowY: 'auto', marginLeft: -1, marginRight: -1}}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AssetMaterializationUpstreamTable
+              data={data}
+              maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
+              relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
+              assetKey={assetKey}
+            />
+          </Box>
+        </>
+      ) : (
+        <>
+          <Box
+            padding={12}
+            style={{fontWeight: 600}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          >
+            Latest materialization:
+          </Box>
+          <Box
+            padding={12}
+            flex={{justifyContent: 'space-between'}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          >
+            <Timestamp timestamp={{ms: Number(timestamp)}} />
+            <TimeSinceWithOverdueColor
+              timestamp={Number(timestamp)}
+              relativeTo={cronSchedule ? Number(lastEvaluationTimestamp) : 'now'}
+              maximumLagMinutes={data.freshnessPolicy.maximumLagMinutes}
+            />
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
@@ -209,7 +230,9 @@ export const freshnessPolicyDescription = (
       )
     : '';
   const lagDesc =
-    maximumLagMinutes % 30 === 0
+    maximumLagMinutes % (24 * 60) === 0
+      ? `${maximumLagMinutes / (24 * 60)} day${maximumLagMinutes / (24 * 60) !== 1 ? 's' : ''}`
+      : maximumLagMinutes % 30 === 0
       ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
       : `${maximumLagMinutes} min`;
 
@@ -233,6 +256,10 @@ export const OVERDUE_POPOVER_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
+        freshnessInfo {
+          currentLagMinutes
+          currentMinutesLate
+        }
         freshnessPolicy {
           __typename
           cronSchedule
