@@ -11,6 +11,7 @@ from .freshness_policy_scenarios import freshness_policy_scenarios
 from .multi_code_location_scenarios import multi_code_location_scenarios
 from .observable_source_asset_scenarios import observable_source_asset_scenarios
 from .partition_scenarios import partition_scenarios
+from .version_scenarios import version_scenarios
 
 ASSET_RECONCILIATION_SCENARIOS = {
     **exotic_partition_mapping_scenarios,
@@ -21,6 +22,7 @@ ASSET_RECONCILIATION_SCENARIOS = {
     **observable_source_asset_scenarios,
     **definition_change_scenarios,
     **active_run_scenarios,
+    **version_scenarios,
 }
 
 DAEMON_ONLY_SCENARIOS = {
