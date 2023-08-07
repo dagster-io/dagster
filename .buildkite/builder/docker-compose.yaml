@@ -1,0 +1,4 @@
+---
+services:
+  builder:
+    build: .
