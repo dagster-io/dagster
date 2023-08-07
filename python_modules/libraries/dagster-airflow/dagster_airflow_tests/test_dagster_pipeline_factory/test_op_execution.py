@@ -142,7 +142,7 @@ def normalize_file_content(s):
 
 
 @requires_no_db
-def test_template_task_dag():
+def test_template_task_dag(tmpdir):
     if airflow_version >= "2.0.0":
         dag = DAG(
             dag_id="dag",
@@ -156,23 +156,25 @@ def test_template_task_dag():
             schedule_interval=None,
         )
 
+    print_hello_out = tmpdir / "print_hello.out"
     t1 = BashOperator(
         task_id="print_hello",
-        bash_command="echo hello dagsir",
+        bash_command=f"echo hello dagsir > {print_hello_out}",
         dag=dag,
     )
 
+    sleep_out = tmpdir / "sleep"
     t2 = BashOperator(
         task_id="sleep",
-        bash_command="sleep 2",
+        bash_command=f"sleep 2; touch {sleep_out}",
         dag=dag,
     )
 
+    templated_out = tmpdir / "templated.out"
     templated_command = """
     {% for i in range(5) %}
-        echo '{{ ds }}'
-        echo '{{ macros.ds_add(ds, 7)}}'
-        echo '{{ params.my_param }}'
+        echo '{{ ds }}' >> {{ params.out_file }}
+        echo '{{ macros.ds_add(ds, 7)}}' >> {{ params.out_file }}
     {% endfor %}
     """
 
@@ -180,7 +182,7 @@ def test_template_task_dag():
         task_id="templated",
         depends_on_past=False,
         bash_command=templated_command,
-        params={"my_param": "Parameter I passed in"},
+        params={"out_file": templated_out},
         dag=dag,
     )
 
@@ -196,6 +198,11 @@ def test_template_task_dag():
         job_def = make_dagster_job_from_airflow_dag(
             dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: execution_date_iso}
         )
+
+        assert not os.path.exists(print_hello_out)
+        assert not os.path.exists(sleep_out)
+        assert not os.path.exists(templated_out)
+
         result = job_def.execute_in_process(instance=instance)
 
         assert result.success
@@ -214,50 +221,15 @@ def test_template_task_dag():
             "dag__sleep",
             "dag__templated",
         ]
-        file_key = event.logs_captured_data.file_key
 
-        compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
-        assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r", encoding="utf8")
-        file_contents = normalize_file_content(stdout_file.read())
-        stdout_file.close()
+        assert os.path.exists(print_hello_out)
+        assert "hello dagsir" in print_hello_out.read()
 
-        if airflow_version >= "2.0.0":
-            assert (
-                file_contents.count("Running command: ['/bin/bash', '-c', 'echo hello dagsir']")
-                == 1
-            )
-            assert file_contents.count("Running command: ['/bin/bash', '-c', 'sleep 2']") == 1
-        else:
-            assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
-            assert file_contents.count("INFO - Running command: sleep 2\n") == 1
-            assert (
-                file_contents.count(
-                    "INFO - Running command: \n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n    \n".format(
-                        execution_date_iso=execution_date.strftime("%Y-%m-%d"),
-                        execution_date_add_one_week_iso=execution_date_add_one_week.strftime(
-                            "%Y-%m-%d"
-                        ),
-                    )
-                )
-                == 1
-            )
-        assert file_contents.count("Command exited with return code 0") == 3
+        assert os.path.exists(sleep_out)
+
+        assert os.path.exists(templated_out)
+        assert templated_out.read().count(execution_date.strftime("%Y-%m-%d")) == 5
+        assert templated_out.read().count(execution_date_add_one_week.strftime("%Y-%m-%d")) == 5
 
 
 def intercept_spark_submit(*_args, **_kwargs):
