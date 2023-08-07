@@ -99,9 +99,16 @@ You saw how you can create a Dagster project that loads a dbt project. How does 
 
 The most important file is the Python file that contains the set of definitions for Dagster to load: `jaffle_shop/definitions.py`. Dagster executes the code in this file to find out what assets it should be aware of, as well as details about those assets. For example, when you ran `dagster dev` in the previous step, Dagster executed the code in this file to determine what assets to display in the UI.
 
-To return a Dagster asset for each dbt model, the code in this file needs to know what dbt models you have. It finds out what models you have by reading a file called a `manifest.json`, which is a file that dbt can generate for any dbt project and contains information about every model, seed, snapshot, test, etc. in the project. The following code, already in your project's `definitions.py`, does this:
+In our `definitions.py` Python file, we import from `assets.py`, which contains the code to model our dbt models as Dagster assets. To return a Dagster asset for each dbt model, the code in this `assets.py` file needs to know what dbt models you have. It finds out what models you have by reading a file called a `manifest.json`, which is a file that dbt can generate for any dbt project and contains information about every model, seed, snapshot, test, etc. in the project.
 
-```python file=integrations/dbt/tutorial/load_dbt_models/definitions.py startafter=start_load_manifest endbefore=end_load_manifest
+To retrieve the `manifest.json`, `assets.py` imports from `constants.py`, which defines the path to the `manifest.json` file:
+
+```python file=integrations/dbt/tutorial/load_dbt_models/constants.py startafter=start_load_manifest endbefore=end_load_manifest
+import os
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource
+
 dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
 
@@ -121,9 +128,15 @@ As the comment explains, the code gives you a choice about how to create this `m
 
 In this tutorial, we're going with the first option: When we ran `dagster dev`, we set the `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` environment variable.
 
-Once you've got a path to a `manifest.json`, it's time to define your Dagster assets using it. The following code, also already in your project's `definitions.py`, does this:
+Once you've got a path to a `manifest.json`, it's time to define your Dagster assets using it. The following code, in your project's `assets.py`, does this:
 
-```python file=integrations/dbt/tutorial/load_dbt_models/definitions.py startafter=start_dbt_assets endbefore=end_dbt_assets
+```python file=integrations/dbt/tutorial/load_dbt_models/assets.py startafter=start_dbt_assets endbefore=end_dbt_assets
+from dagster import OpExecutionContext
+from dagster_dbt import DbtCliResource, dbt_assets
+
+from .constants import dbt_manifest_path
+
+
 @dbt_assets(manifest=dbt_manifest_path)
 def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
@@ -135,7 +148,7 @@ This code might look a bit fancy, because it uses a decorator. Here's a breakdow
 - These Dagster assets reflect the dbt models described in the manifest file. The manifest file is passed in using the `manifest` argument.
 - The decorated function defines what should happen when you materialize one of these Dagster assets, e.g. by clicking the **Materialize** button in the UI or materializing it automatically by putting it on a schedule. In this case, it will invoke the `dbt build` command on the selected assets. The `context` parameter that's provided along with `dbt build` carries the selection.
 
-If you later want to customize how your dbt models are translated into Dagster assets, you'll do so by editing this file.
+If you later want to customize how your dbt models are translated into Dagster assets, you'll do so by editing its definition in `assets.py`.
 
 ---
 

@@ -42,19 +42,18 @@ pip install pandas duckdb
 
 ## Step 2: Define an upstream Dagster asset
 
-To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that loads our dbt models, which we reviewed at the end of the [last section](/integrations/dbt/using-dbt-with-dagster/load-dbt-models#step-4-understand-the-python-code-in-your-dagster-project). Copy and paste this code into that file, replacing everything up to `dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))`:
+To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that defines our dbt models, which we reviewed at the end of the [last section](/integrations/dbt/using-dbt-with-dagster/load-dbt-models#step-4-understand-the-python-code-in-your-dagster-project). Copy and paste this code to overwrite the existing contents of that file:
 
-```python file=integrations/dbt/tutorial/upstream_assets/definitions.py startafter=start_python_assets endbefore=end_python_assets
+```python file=integrations/dbt/tutorial/upstream_assets/assets.py startafter=start_python_assets endbefore=end_python_assets
 import os
-from pathlib import Path
 
 import duckdb
 import pandas as pd
-from dagster_dbt import DbtCliResource, build_schedule_from_dbt_selection, dbt_assets
+from dagster_dbt import DbtCliResource, dbt_assets
+from dagster import OpExecutionContext, asset
 
-from dagster import Definitions, OpExecutionContext, asset
+from .constants import dbt_manifest_path, dbt_project_dir
 
-dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
@@ -71,7 +70,9 @@ def raw_customers(context) -> None:
     context.add_output_metadata({"num_rows": data.shape[0]})
 
 
-dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+@dbt_assets(manifest=dbt_manifest_path)
+def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 ```
 
 Let's review the changes we made:
@@ -82,14 +83,23 @@ Let's review the changes we made:
 
 3. We added a definition for the `raw_customers` table by writing a function named `raw_customers` and decorating it with the <PyObject object="asset" decorator /> decorator. The implementation inside the function fetches data from the internet and writes it to a table in our DuckDB database. Similar to how running a dbt model executes a select statement, materializing this asset will execute this Python code.
 
-Finally, let's update the `assets` argument of our `Definitions` object, at the bottom of the file, to include the new asset we just defined:
+Finally, let's update the `assets` argument of our `Definitions` object, in `definitions.py`, to include the new asset we just defined:
 
 ```python file=integrations/dbt/tutorial/upstream_assets/definitions.py startafter=start_defs endbefore=end_defs
+import os
+
+from dagster import Definitions
+from dagster_dbt import DbtCliResource
+
+from .assets import jaffle_shop_dbt_assets, raw_customers
+from .constants import dbt_project_dir
+from .schedules import schedules
+
 defs = Definitions(
     assets=[raw_customers, jaffle_shop_dbt_assets],
     schedules=schedules,
     resources={
-        "dbt": dbt,
+        "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
     },
 )
 ```
