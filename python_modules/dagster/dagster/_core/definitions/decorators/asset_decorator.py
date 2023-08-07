@@ -41,7 +41,7 @@ from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..asset_spec import AssetSpec
-from ..assets import AssetsDefinition
+from ..assets import ASSET_SUBSET_INPUT_PREFIX, AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
@@ -953,6 +953,23 @@ def build_asset_ins(
         )
 
     return ins_by_asset_key
+
+
+def build_subsettable_asset_ins(
+    asset_ins: Mapping[AssetKey, Tuple[str, In]],
+    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    upstream_deps: Iterable[AbstractSet[AssetKey]],
+) -> Mapping[AssetKey, Tuple[str, In]]:
+    """Creates a mapping from AssetKey to (name of input, In object) for any asset key that is not
+    currently an input, but may become one if this asset is subset.
+    """
+    # set of asset keys which are upstream of another asset, and are not currently inputs
+    potential_deps = set().union(*upstream_deps) - set(asset_ins.keys())
+    return {
+        key: (f"{ASSET_SUBSET_INPUT_PREFIX}{name}", In(Nothing))
+        for key, (name, _) in asset_outs.items()
+        if key in potential_deps
+    }
 
 
 @overload
