@@ -67,11 +67,12 @@ def _assert_scaffold_invocation(
     assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
 
 
-def _assert_scaffold_defs(project_name: str) -> None:
-    defs: Definitions = getattr(
-        importlib.import_module(f"{project_name}.{project_name}.definitions"),
-        "defs",
-    )
+def _assert_scaffold_defs(project_name: str, dagster_project_dir: Path) -> None:
+    schedules_py_path = dagster_project_dir.joinpath(project_name, "schedules.py")
+    schedules_py_path.write_text(schedules_py_path.read_text().replace("# ", ""))
+
+    scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}.definitions")
+    defs: Definitions = getattr(scaffold_defs_module, "defs")
 
     materialize_dbt_models_job = defs.get_job_def("materialize_dbt_models")
     materialize_dbt_models_schedule = defs.get_schedule_def("materialize_dbt_models_schedule")
@@ -129,7 +130,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
-    _assert_scaffold_defs(project_name=project_name)
+    _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
 
 
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
@@ -161,7 +162,7 @@ def test_project_scaffold_command_with_runtime_manifest(
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
-    _assert_scaffold_defs(project_name=project_name)
+    _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
 
 
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])

@@ -4,15 +4,15 @@ import os
 
 import duckdb
 import pandas as pd
-from dagster_dbt import DbtCliResource, dbt_assets
 from dagster import OpExecutionContext, asset
+from dagster_dbt import DbtCliResource, dbt_assets
 
 from .constants import dbt_manifest_path, dbt_project_dir
 
 duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
-@asset
+@asset(compute_kind="python")
 def raw_customers(context) -> None:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     connection = duckdb.connect(os.fspath(duckdb_database_path))

@@ -64,12 +64,16 @@ Now that you have a Dagster project, you can run Dagster's UI to take a look at 
 
 3. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the assets:
 
-   <Image
-   alt="Asset graph in Dagster's UI, containing dbt models loaded as Dagster assets"
-   src="/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/dbt-asset-graph.png"
-   width={2300}
-   height={1706}
-   />
+  <!--
+  ![Asset graph in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/asset-graph.png)
+  -->
+
+<Image
+alt="Asset graph in Dagster's UI, containing dbt models loaded as Dagster assets"
+src="/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/asset-graph.png"
+width={2688}
+height={1680}
+/>
 
 ---
 
@@ -79,11 +83,15 @@ You can do more than view your dbt models in Dagster – you can also run them. 
 
 To build your dbt project, i.e. materialize your assets, click the **Materialize all** button near the top right corner of the page. This will launch a run to materialize the assets. When finished, the **Materialized** and **Latest Run** attributes in the asset will be populated:
 
+<!--
+![Asset graph in Dagster's UI, showing materialized assets](/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/asset-graph-materialized.png)
+-->
+
 <Image
 alt="Asset graph in Dagster's UI, showing materialized assets"
-src="/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/dbt-asset-graph-materialized.png"
-width={2330}
-height={1708}
+src="/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/asset-graph-materialized.png"
+width={2688}
+height={1680}
 />
 
 After the run completes, you can:
