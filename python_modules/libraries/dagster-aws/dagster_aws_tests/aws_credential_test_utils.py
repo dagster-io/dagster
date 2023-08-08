@@ -26,6 +26,10 @@ def get_aws_creds():
         return creds
 
     except Exception as e:
+        if os.getenv("BUILDKITE"):
+            import pytest
+            pytest.skip("Integration test")
+
         raise Exception(
             "Must have AWS credentials set to be able to run tests locally. Run "
             f"'aws sso login' to authenticate. Original error: {e}"
