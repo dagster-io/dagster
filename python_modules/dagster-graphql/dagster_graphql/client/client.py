@@ -398,14 +398,17 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def store_metrics(self, metrics: Mapping[str, Any]):
+    @public
+    def store_metrics(self, metrics: List[Mapping[str, Any]]):
         """Store metrics in the dagster metrics store. This method is useful when you would like to
         store asset or asset group materialization metric data to view in the reporting UI.
 
         Args:
             metrics (Mapping[str, Any]): metrics to store in the dagster metrics store
         """
-        metrics = check.mapping_param(convert_config_input(metrics), "metrics")
+        check.list_param(metrics, "metrics")
+        for i, metric in enumerate(metrics):
+            check.mapping_param(metric, f'metrics[{i}]')
 
         res_data: Dict[str, Dict[str, Any]] = self._execute(
             STORE_METRICS_MUTATION, {"runId": metrics}

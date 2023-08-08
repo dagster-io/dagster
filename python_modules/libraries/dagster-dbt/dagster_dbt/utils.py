@@ -330,68 +330,20 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
     }
 
 def store_dbt_materialization_metrics(
-    event: AssetMaterialization,
+    assetMaterialization: AssetMaterialization,
 ):
     DAGSTER_CLOUD_FEATURE_FLAG = True
     if not DAGSTER_CLOUD_FEATURE_FLAG:
         return
-    query = """
-mutation LaunchJobExecution($executionParams: ExecutionParams!) {
-  launchPipelineExecution(executionParams: $executionParams) {
-    __typename
-    ... on LaunchRunSuccess {
-      run {
-        id
-        __typename
-      }
-      __typename
-    }
-    ... on PipelineNotFoundError {
-      message
-      __typename
-    }
-    ... on InvalidSubsetError {
-      message
-      __typename
-    }
-    ... on RunConfigValidationInvalid {
-      errors {
-        message
-        __typename
-      }
-      __typename
-    }
-    ...PythonErrorFragment
-  }
-}
 
-fragment PythonErrorFragment on PythonError {
-  __typename
-  message
-  stack
-  causes {
-    message
-    stack
-    __typename
-  }
-}
-        """
-    variables = {
-        "metricData": [
-        ]
-    }
+    metricData = []
+    if assetMaterialization.metadata['snowflake_query_id']:
+        metricData.append({})
+
+    if len(metricData) == 0:
+        return
+
     url = "https://yourorg.dagster.cloud/prod"
     token = "your_token_here" # a User Token generated from the Cloud Settings page in Dagster Cloud. Note: User Token, not Agent Token
     client = DagsterGraphQLClient(url, transport=RequestsHTTPTransport(url=url+"/graphql", headers={"Dagster-Cloud-Api-Token": token}))
-
-        headers = {"Dagster-Cloud-Api-Token": self.user_token if self.user_token else ""}
-        response = requests.post(
-            url=self.url, json={"query": query, "variables": variables}, headers=headers
-        )
-        response.raise_for_status()
-        response_json = response.json()
-        if response_json["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess":
-            run = response_json["data"]["launchPipelineExecution"]["run"]
-            logging.info(f"Run {run['id']} launched successfully")
-            return run["id"]
-        else:
+    client.store_metrics(metricData)
