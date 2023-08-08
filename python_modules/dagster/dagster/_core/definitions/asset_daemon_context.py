@@ -777,7 +777,7 @@ def _build_run_requests_with_backfill_policy(
         # We can only apply chunking on individual partition key ranges.
         if backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN:
             run_requests.append(
-                _build_single_run_request(
+                _build_run_request_for_partition_key_range(
                     asset_keys=list(asset_keys),
                     partition_range_start=partition_key_range.start,
                     partition_range_end=partition_key_range.end,
@@ -786,7 +786,7 @@ def _build_run_requests_with_backfill_policy(
             )
         else:
             run_requests.extend(
-                _build_multiple_run_request(
+                _build_run_requests_for_partition_key_range(
                     asset_keys=list(asset_keys),
                     partitions_def=partitions_def,
                     partition_key_range=partition_key_range,
@@ -799,7 +799,7 @@ def _build_run_requests_with_backfill_policy(
     return run_requests
 
 
-def _build_multiple_run_request(
+def _build_run_requests_for_partition_key_range(
     asset_keys: Sequence[AssetKey],
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
@@ -822,7 +822,7 @@ def _build_multiple_run_request(
         partition_chunk_start_key = partition_keys[partition_chunk_start_index]
         partition_chunk_end_key = partition_keys[partition_chunk_end_index]
         run_requests.append(
-            _build_single_run_request(
+            _build_run_request_for_partition_key_range(
                 asset_keys, partition_chunk_start_key, partition_chunk_end_key, run_tags
             )
         )
@@ -830,7 +830,7 @@ def _build_multiple_run_request(
     return run_requests
 
 
-def _build_single_run_request(
+def _build_run_request_for_partition_key_range(
     asset_keys: Sequence[AssetKey],
     partition_range_start: str,
     partition_range_end: str,

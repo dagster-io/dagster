@@ -930,9 +930,9 @@ def execute_asset_backfill_iteration_inner(
         if not all(backfill_policy is None for backfill_policy in asset_backfill_policies):
             # if some assets have backfill policies, but not all of them, raise error
             raise DagsterBackfillFailedError(
-                "All assets must all have backfill policies or none of them has to be backfilled"
-                " together. Please add backfill policies to all assets or remove backfill policies"
-                " from all assets."
+                "Either all assets must have backfill policies or none of them must have backfill"
+                " policies. To backfill these assets together, either add backfill policies to all"
+                " assets, or remove backfill policies from all assets."
             )
         # When any of the assets do not have backfill policies, we fall back to the default behavior of
         # backfilling them partition by partition.
@@ -1058,8 +1058,8 @@ def _get_failed_asset_partitions(
                     end=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_END_TAG)),
                 )
                 result.extend(
-                    _get_asset_partitions_in_range(
-                        asset_key, partition_range, asset_graph, instance_queryer
+                    asset_graph.get_asset_partitions_in_range(
+                        asset_key, partition_range, instance_queryer
                     )
                 )
         else:
@@ -1077,18 +1077,3 @@ def _get_failed_asset_partitions(
             )
 
     return result
-
-
-def _get_asset_partitions_in_range(
-    asset_key: AssetKey,
-    partition_key_range: PartitionKeyRange,
-    asset_graph: AssetGraph,
-    dynamic_partitions_store: DynamicPartitionsStore,
-) -> Sequence[AssetKeyPartitionKey]:
-    partition_def = asset_graph.get_partitions_def(asset_key)
-    partition_keys_in_range = check.not_none(partition_def).get_partition_keys_in_range(
-        partition_key_range, dynamic_partitions_store
-    )
-    return [
-        AssetKeyPartitionKey(asset_key, partition_key) for partition_key in partition_keys_in_range
-    ]

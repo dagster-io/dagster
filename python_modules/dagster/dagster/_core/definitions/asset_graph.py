@@ -34,6 +34,7 @@ from .backfill_policy import BackfillPolicy
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
+from .partition_key_range import PartitionKeyRange
 from .partition_mapping import PartitionMapping, UpstreamPartitionsResult, infer_partition_mapping
 from .source_asset import SourceAsset
 from .time_window_partitions import (
@@ -197,6 +198,21 @@ class AssetGraph:
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
+
+    def get_asset_partitions_in_range(
+        self,
+        asset_key: AssetKey,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ) -> Sequence[AssetKeyPartitionKey]:
+        partition_def = self.get_partitions_def(asset_key)
+        partition_keys_in_range = check.not_none(partition_def).get_partition_keys_in_range(
+            partition_key_range, dynamic_partitions_store
+        )
+        return [
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for partition_key in partition_keys_in_range
+        ]
 
     def get_partition_mapping(
         self, asset_key: AssetKey, in_asset_key: AssetKey
