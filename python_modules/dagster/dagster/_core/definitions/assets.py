@@ -129,10 +129,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetKey,
         )
 
+        # if not specified assume all output assets depend on all input assets
+        all_asset_keys = set(keys_by_output_name.values())
+        input_asset_keys = set(keys_by_input_name.values())
+
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
         builtin_partition_mappings = get_builtin_partition_mapping_types()
-        for partition_mapping in self._partition_mappings.values():
+        for asset_key, partition_mapping in self._partition_mappings.items():
             if not isinstance(partition_mapping, builtin_partition_mappings):
                 warnings.warn(
                     f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
@@ -146,8 +150,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     category=DeprecationWarning,
                 )
 
-        # if not specified assume all output assets depend on all input assets
-        all_asset_keys = set(keys_by_output_name.values())
+            if asset_key not in input_asset_keys:
+                check.failed(
+                    f"While constructing AssetsDefinition outputting {all_asset_keys}, received a"
+                    f" partition mapping for {asset_key} that is not defined in the set of upstream"
+                    f" assets: {input_asset_keys}"
+                )
+
         self._asset_deps = asset_deps or {
             out_asset_key: set(keys_by_input_name.values()) for out_asset_key in all_asset_keys
         }
