@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import AbstractSet, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._serdes.serdes import whitelist_for_serdes
+from .auto_materialize_condition import AutoMaterializeRule
 
 
 class AutoMaterializePolicyType(Enum):
@@ -88,6 +89,10 @@ class AutoMaterializePolicy(
             for_freshness=for_freshness,
             max_materializations_per_minute=max_materializations_per_minute,
         )
+
+    @staticmethod
+    def from_rules(rules: AbstractSet["AutoMaterializeRule"]):
+        pass
 
     @public
     @staticmethod
