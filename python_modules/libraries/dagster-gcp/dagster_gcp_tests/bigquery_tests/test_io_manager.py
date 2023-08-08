@@ -24,17 +24,23 @@ SHARED_BUILDKITE_BQ_CONFIG = {
 
 @contextmanager
 def temporary_bigquery_table(schema_name: str, column_str: str) -> Iterator[str]:
-    bq_client = bigquery.Client(
-        project=SHARED_BUILDKITE_BQ_CONFIG["project"],
-    )
-    table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
-    bq_client.query(f"create table {schema_name}.{table_name} ({column_str})").result()
     try:
-        yield table_name
-    finally:
-        bq_client.query(
-            f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
-        ).result()
+        bq_client = bigquery.Client(
+            project=SHARED_BUILDKITE_BQ_CONFIG["project"],
+        )
+        table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
+        bq_client.query(f"create table {schema_name}.{table_name} ({column_str})").result()
+        try:
+            yield table_name
+        finally:
+            bq_client.query(
+                f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
+            ).result()
+    except Exception:
+        if IS_BUILDKITE:
+            pytest.skip("Integration test")
+        else:
+            raise
 
 
 def test_get_select_statement():

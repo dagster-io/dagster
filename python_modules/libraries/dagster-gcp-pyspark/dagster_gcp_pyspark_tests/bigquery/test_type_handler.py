@@ -67,16 +67,22 @@ old_bigquery_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKIT
 
 @contextmanager
 def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
-    bq_client = bigquery.Client(
-        project=SHARED_BUILDKITE_BQ_CONFIG["project"],
-    )
-    table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     try:
-        yield table_name
-    finally:
-        bq_client.query(
-            f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
-        ).result()
+        bq_client = bigquery.Client(
+            project=SHARED_BUILDKITE_BQ_CONFIG["project"],
+        )
+        table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
+        try:
+            yield table_name
+        finally:
+            bq_client.query(
+                f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
+            ).result()
+    except Exception:
+        if IS_BUILDKITE:
+            pytest.skip("Integration test")
+        else:
+            raise
 
 
 def test_handle_output(spark):

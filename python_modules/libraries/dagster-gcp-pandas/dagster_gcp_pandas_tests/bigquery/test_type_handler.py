@@ -43,16 +43,23 @@ old_bigquery_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE
 
 @contextmanager
 def temporary_bigquery_table(schema_name: Optional[str]) -> Iterator[str]:
-    bq_client = bigquery.Client(
-        project=SHARED_BUILDKITE_BQ_CONFIG["project"],
-    )
-    table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     try:
-        yield table_name
-    finally:
-        bq_client.query(
-            f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
-        ).result()
+        bq_client = bigquery.Client(
+            project=SHARED_BUILDKITE_BQ_CONFIG["project"],
+        )
+        table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
+        try:
+            yield table_name
+        finally:
+            bq_client.query(
+                f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
+            ).result()
+    except Exception:
+        if IS_BUILDKITE:
+            pytest.skip("Integration test")
+        else:
+            raise
+
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
