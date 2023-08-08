@@ -47,7 +47,7 @@ export const RunStats = ({runId}: {runId: string}) => {
       >{`${result.stats.materializations} materializations`}</Link>
       <Link
         to={`${runPath}?logs=type:STEP_EXPECTATION_RESULT`}
-      >{`${result.stats.expectations} expectations passed`}</Link>
+      >{`${result.stats.expectations} expectations evaluated`}</Link>
     </RunStatsDetailsContainer>
   );
 };
