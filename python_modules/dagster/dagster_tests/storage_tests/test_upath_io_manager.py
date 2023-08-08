@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
+import fsspec
 import pytest
 from dagster import (
     AllPartitionMapping,
@@ -526,20 +527,17 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
         The returned `fsspec` FileSystem will have async IO methods.
         https://filesystem-spec.readthedocs.io/en/latest/async.html.
         """
-        if isinstance(path, Path) and not isinstance(path, UPath):
-            try:
-                from morefs.asyn_local import AsyncLocalFileSystem
+        import morefs.asyn_local
 
-                return AsyncLocalFileSystem()
-            except ImportError as e:
-                raise RuntimeError(
-                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
-                    " filesystem"
-                ) from e
-        elif isinstance(path, UPath):
-            kwargs = path._kwargs.copy()  # noqa
-            kwargs["asynchronous"] = True
-            return path._default_accessor(path._url, **kwargs)._fs  # noqa
+        if isinstance(path, UPath):
+            so = path.fs.storage_options.copy()
+            cls = type(path.fs)
+            if cls is fsspec.implementations.local.LocalFileSystem:
+                cls = morefs.asyn_local.AsyncLocalFileSystem
+            so["asynchronous"] = True
+            return cls(**so)
+        elif isinstance(path, Path):
+            return morefs.asyn_local.AsyncLocalFileSystem()
         else:
             raise DagsterInvariantViolationError(
                 f"Path type {type(path)} is not supported by the UPathIOManager"
