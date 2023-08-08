@@ -60,6 +60,8 @@ dbt_cloud_instance = DbtCloudClientResource(
 )
 ```
 
+---
+
 ## Step 2: Loading dbt Cloud models as assets
 
 In this step, you'll load the dbt Cloud models managed by a dbt Cloud job into Dagster as assets. For context, a dbt Cloud job defines set of commands to run for a dbt Cloud project. The dbt Cloud models managed by a dbt Cloud job are the models that are run by the job after filtering options are respected.
@@ -90,6 +92,8 @@ When invoked, the function:
 1. Invokes your dbt Cloud job with command overrides to compile your dbt project,
 2. Parses the metadata provided by dbt Cloud, and
 3. Generates a set of software-defined assets reflecting the models in the project managed by the dbt Cloud job. Materializing these assets will run the dbt Cloud job that is represented by the loaded assets.
+
+---
 
 ## Step 3: Schedule dbt Cloud job runs
 
@@ -129,6 +133,8 @@ defs = Definitions(
 )
 ```
 
+---
+
 ## Step 4: Cache the dbt Cloud job compilation
 
 <Note>This step is optional.</Note>
@@ -144,15 +150,15 @@ You'll need the following secrets in your GitHub repository and local environmen
 - `DBT_CLOUD_ACCOUNT_ID` - The id of your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
 - `DBT_CLOUD_PROJECT_ID` - The id of your dbt Cloud project, that corresponds to the dbt project managed in git.
 
-### Step 4.1 Add `DBT_DAGSTER_COMPILE_RUN_ID` environment variable to dbt Cloud
+### Step 4.1 Add DBT_DAGSTER_COMPILE_RUN_ID environment variable to dbt Cloud
 
 In order to cache the compilation of your dbt project, you'll need to add an environment variable to your dbt Cloud project. Navigate to dbt Cloud's Environment Variables, and set the `DBT_DAGSTER_COMPILE_RUN_ID` variable with default values of `-1` at the project and environment level.
 
-### Step 4.2 Override `DBT_DAGSTER_COMPILE_RUN_ID` on dbt Cloud jobs managed by Dagster
+### Step 4.2 Override DBT_DAGSTER_COMPILE_RUN_ID on dbt Cloud jobs managed by Dagster
 
 Next, in the dbt Cloud jobs that you are managing with Dagster, you'll need to override the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable. The presence of this override at the _job level_ will cause the dbt Cloud job to use the cached compilation of your dbt project. Set the job level override to also be `-1`.
 
-### Step 4.3 Test out the cache locally
+### Step 4.3 Test the cache locally
 
 Run `dagster-dbt-cloud cache-compile-references` to populate the cache for your dbt Cloud jobs. This command will compile your dbt project and cache the compilation. The compilation will be cached for each dbt Cloud job that you are managing with Dagster. After running this command, the `DBT_DAGSTER_COMPILE_RUN_ID` environment variable for your job will now be updated to the run id of the cached compilation.
 
@@ -187,6 +193,8 @@ jobs:
           DBT_CLOUD_ACCOUNT_ID: ${{ secrets.DBT_CLOUD_ACCOUNT_ID }}
           DBT_CLOUD_PROJECT_ID: ${{ secrets.DBT_CLOUD_PROJECT_ID }}
 ```
+
+---
 
 ## What's next?
 
