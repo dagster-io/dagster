@@ -61,7 +61,6 @@ def temporary_bigquery_table(schema_name: Optional[str]) -> Iterator[str]:
             raise
 
 
-
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 @pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
 def test_io_manager_with_bigquery_pandas(io_manager):
