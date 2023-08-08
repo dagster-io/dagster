@@ -175,6 +175,21 @@ def graph(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+
+       config (Optional[Union[ConfigMapping], Mapping[str, Any]):
+            Describes how the graph is configured at runtime.
+
+            If a :py:class:`ConfigMapping` object is provided, then the graph takes on the config
+            schema of this object. The mapping will be applied at runtime to generate the config for
+            the graph's constituent nodes.
+
+            If a dictionary is provided, then it will be used as the default run config for the
+            graph. This means it must conform to the config schema of the underlying nodes. Note
+            that the values provided will be viewable and editable in the Dagster UI, so be careful
+            with secrets. its constituent nodes.
+
+            If no value is provided, then the config schema for the graph is the default (derived
+            from the underlying nodes).
     """
     if compose_fn is not None:
         check.invariant(description is None)
