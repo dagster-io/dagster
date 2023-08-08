@@ -231,7 +231,6 @@ def generate_materializations(
     ):
         asset_materialization = cast(AssetMaterialization, event)
         if check.inst(asset_materialization, AssetMaterialization):
-            store_dbt_materialization_metrics(asset_materialization)
             yield asset_materialization
 
 
@@ -328,22 +327,3 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["exposures"],
         **manifest["metrics"],
     }
-
-def store_dbt_materialization_metrics(
-    assetMaterialization: AssetMaterialization,
-):
-    DAGSTER_CLOUD_FEATURE_FLAG = True
-    if not DAGSTER_CLOUD_FEATURE_FLAG:
-        return
-
-    metricData = []
-    if assetMaterialization.metadata['snowflake_query_id']:
-        metricData.append({})
-
-    if len(metricData) == 0:
-        return
-
-    url = "https://yourorg.dagster.cloud/prod"
-    token = "your_token_here" # a User Token generated from the Cloud Settings page in Dagster Cloud. Note: User Token, not Agent Token
-    client = DagsterGraphQLClient(url, transport=RequestsHTTPTransport(url=url+"/graphql", headers={"Dagster-Cloud-Api-Token": token}))
-    client.store_metrics(metricData)
