@@ -13,7 +13,6 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 import collections.abc
-import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import partial
@@ -43,6 +42,7 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
+from dagster._utils.backcompat import disable_dagster_warnings
 from dagster._utils.cached_method import cached_method
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
@@ -784,8 +784,7 @@ def deserialize_value(
     check.str_param(val, "val")
 
     # Never issue warnings when deserializing deprecated objects.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
+    with disable_dagster_warnings():
         context = UnpackContext()
         unpacked_value = seven.json.loads(
             val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)

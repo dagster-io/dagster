@@ -100,31 +100,39 @@ def experimental_warning(
 
 
 # ########################
-# ##### QUIET EXPERIMENTAL WARNINGS
+# ##### DISABLE DAGSTER WARNINGS
 # ########################
+
+
+@contextmanager
+def disable_dagster_warnings() -> Iterator[None]:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+        yield
 
 
 T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 
 
-def quiet_experimental_warnings(__obj: T_Decoratable) -> T_Decoratable:
-    """Mark a method/function as ignoring experimental warnings. This quiets any "experimental" warnings
-    emitted inside the passed callable. Useful when we want to use experimental features internally
-    in a way that we don't want to warn users about.
+def suppress_dagster_warnings(__obj: T_Decoratable) -> T_Decoratable:
+    """Mark a method/function as ignoring Dagster-generated warnings. This quiets any
+    `ExperimentalWarnings` or `DeprecationWarnings` issued by the Dagster framework. Other libraries
+    issuing warnings are not affected.
+
+    Note that this works by toggling the global `DAGSTER_WARNINGS_DISABLED` flag, rather than
+    invoking `warnings.catch_warnings`. This is because we want to keep our warnings from being
+    issued at all, rather than merely caught and suppressed by Python. This allows us to track
+    whether a warning has been emitted in a user-visible way-- if we emitted the warnings but
+    filtered them elsewhere in our code with `warnings.catch_warnings`, it would be difficult to
+    track whether a warning had ever actually been shown to the user.
 
     Usage:
 
         .. code-block:: python
 
-            @quiet_experimental_warnings
+            @suppress_dagster_warnings
             def invokes_some_experimental_stuff(my_arg):
                 my_experimental_function(my_arg)
     """
-
-    @contextmanager
-    def suppress_experimental_warnings() -> Iterator[None]:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=ExperimentalWarning)
-            yield
-
-    return apply_context_manager_decorator(__obj, suppress_experimental_warnings)
+    return apply_context_manager_decorator(__obj, disable_dagster_warnings)

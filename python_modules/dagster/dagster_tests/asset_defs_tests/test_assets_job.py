@@ -51,7 +51,9 @@ from dagster._core.snap.dep_snapshot import (
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import (
+    disable_dagster_warnings,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -1378,9 +1380,7 @@ def reconstruct_asset_job():
 
 
 def test_asset_selection_reconstructable():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        warnings.simplefilter("ignore", category=DeprecationWarning)
+    with disable_dagster_warnings():
         with instance_for_test() as instance:
             run = instance.create_run_for_job(
                 job_def=my_job, asset_selection=frozenset([AssetKey("f")])
@@ -1893,9 +1893,7 @@ def test_resolve_dependency_in_group():
         del asset1
         assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+    with disable_dagster_warnings():
         assert materialize_to_memory([asset1, asset2]).success
 
 
@@ -1915,9 +1913,7 @@ def test_resolve_dependency_fail_across_groups():
             " sources"
         ),
     ):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             materialize_to_memory([asset1, asset2])
 
 
@@ -1944,9 +1940,7 @@ def test_resolve_dependency_multi_asset_different_groups():
             " sources"
         ),
     ):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             materialize_to_memory([upstream, assets])
 
 

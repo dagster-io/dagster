@@ -6,7 +6,7 @@ from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._utils.backcompat import (
     normalize_renamed_param,
-    quiet_experimental_warnings,
+    suppress_dagster_warnings,
 )
 
 
@@ -22,19 +22,19 @@ def is_new(old_flag=None, new_flag=None):
     return actual_new_flag
 
 
-def test_backcompat_default():
+def test_renamed_param_default():
     assert is_new() is None
 
 
-def test_backcompat_new_flag():
+def test_renamed_param_new_name():
     assert is_new(new_flag=False) is False
 
 
-def test_backcompat_old_flag():
+def test_renamed_param_old_name():
     assert is_new(old_flag=False) is True
 
 
-def test_backcompat_both_set():
+def test_renamed_param_both_names():
     with pytest.raises(
         CheckError,
         match=re.escape('Do not use deprecated "old_flag" now that you are using "new_flag".'),
@@ -42,7 +42,7 @@ def test_backcompat_both_set():
         is_new(old_flag=False, new_flag=True)
 
 
-def test_quiet_experimental_warnings() -> None:
+def test_suppress_dagster_warnings() -> None:
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
@@ -61,7 +61,7 @@ def test_quiet_experimental_warnings() -> None:
         def my_experimental_function(my_arg) -> None:
             pass
 
-        @quiet_experimental_warnings
+        @suppress_dagster_warnings
         def my_quiet_wrapper(my_arg) -> None:
             my_experimental_function(my_arg)
 
@@ -70,7 +70,7 @@ def test_quiet_experimental_warnings() -> None:
         assert len(w) == 0
 
 
-def test_quiet_experimental_warnings_on_class() -> None:
+def test_suppress_dagster_warnings_on_class() -> None:
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
@@ -92,7 +92,7 @@ def test_quiet_experimental_warnings_on_class() -> None:
                 pass
 
         class MyExperimentalWrapped(MyExperimentalTwo):
-            @quiet_experimental_warnings
+            @suppress_dagster_warnings
             def __init__(self, string_in: str) -> None:
                 super().__init__(string_in)
 

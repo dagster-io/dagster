@@ -598,6 +598,7 @@ def __getattr__(name: str) -> TypingAny:
             breaking_version,
             additional_warn_text=f"Use `{name}` instead.",
             stacklevel=stacklevel,
+            key=value.__name__,
         )
         return value
     else:

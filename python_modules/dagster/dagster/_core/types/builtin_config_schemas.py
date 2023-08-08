@@ -1,5 +1,4 @@
 import pickle
-import warnings
 
 import dagster._check as check
 import dagster._seven as seven
@@ -15,7 +14,7 @@ from dagster._config import (
     ScalarUnion,
     Selector,
 )
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import disable_dagster_warnings
 
 from .config_schema import dagster_type_loader
 
@@ -66,8 +65,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     check.inst_param(config_scalar_type, "config_scalar_type", ConfigType)
     check.param_invariant(config_scalar_type.kind == ConfigTypeKind.SCALAR, "config_scalar_type")
     # TODO: https://github.com/dagster-io/dagster/issues/3084
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
+    with disable_dagster_warnings():
 
         @dagster_type_loader(
             ScalarUnion(

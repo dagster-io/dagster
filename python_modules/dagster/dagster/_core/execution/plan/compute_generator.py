@@ -1,5 +1,4 @@
 import inspect
-import warnings
 from functools import wraps
 from typing import (
     Any,
@@ -30,6 +29,7 @@ from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunctio
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
+from dagster._utils.backcompat import disable_dagster_warnings
 
 from ..context.compute import OpExecutionContext
 
@@ -236,9 +236,7 @@ def validate_and_coerce_op_result_to_iterator(
                     dynamic_output = cast(DynamicOutput, item)
                     _check_output_object_name(dynamic_output, output_def, position)
 
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", category=DeprecationWarning)
-
+                    with disable_dagster_warnings():
                         yield DynamicOutput(
                             output_name=output_def.name,
                             value=dynamic_output.value,
@@ -256,9 +254,7 @@ def validate_and_coerce_op_result_to_iterator(
                     )
                 _check_output_object_name(element, output_def, position)
 
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=DeprecationWarning)
-
+                with disable_dagster_warnings():
                     yield Output(
                         output_name=output_def.name,
                         value=element.value,

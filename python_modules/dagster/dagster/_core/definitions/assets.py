@@ -33,7 +33,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._utils import IHasInternalInit
 from dagster._utils.backcompat import (
-    ExperimentalWarning,
+    disable_dagster_warnings,
 )
 from dagster._utils.merger import merge_dicts
 
@@ -794,9 +794,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     def infer_partition_mapping(
         self, upstream_asset_key: AssetKey, upstream_partitions_def: Optional[PartitionsDefinition]
     ) -> PartitionMapping:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             partition_mapping = self._partition_mappings.get(upstream_asset_key)
             return infer_partition_mapping(
                 partition_mapping, self._partitions_def, upstream_partitions_def
@@ -1120,9 +1118,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return self._output_to_source_asset(output_names[0])
 
     def _output_to_source_asset(self, output_name: str) -> SourceAsset:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             output_def = self.node_def.resolve_output_to_origin(
                 output_name, NodeHandle(self.node_def.name, parent=None)
             )[0]

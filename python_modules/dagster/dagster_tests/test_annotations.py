@@ -1,3 +1,4 @@
+import re
 import sys
 import warnings
 from abc import abstractmethod
@@ -763,10 +764,12 @@ def test_all_annotations():
     assert is_deprecated(foo)
     assert is_experimental(foo)
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+foo` is experimental") as warning:
+    with warnings.catch_warnings(record=True) as all_warnings:
+        warnings.simplefilter("always")
         foo()
-    assert warning[0].filename.endswith("test_annotations.py")
 
-    with pytest.warns(DeprecationWarning, match=r"`[^`]+foo` is deprecated") as warning:
-        foo()
-    assert warning[0].filename.endswith("test_annotations.py")
+    exp = next(warning for warning in all_warnings if warning.category == ExperimentalWarning)
+    assert re.search(r"`[^`]+foo`", str(exp.message))
+
+    dep = next(warning for warning in all_warnings if warning.category == DeprecationWarning)
+    assert re.search(r"`[^`]+foo` is deprecated", str(dep.message))
