@@ -12,6 +12,7 @@ from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
+    STORE_METRICS_MUTATION,
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
     CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
     GET_PIPELINE_RUN_STATUS_QUERY,
@@ -396,3 +397,26 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError("RunNotFoundError", f"Run Id {run_id} not found")
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
+
+    def store_metrics(self, metrics: Mapping[str, Any]):
+        """Store metrics in the dagster metrics store. This method is useful when you would like to
+        store asset or asset group materialization metric data to view in the reporting UI.
+
+        Args:
+            metrics (Mapping[str, Any]): metrics to store in the dagster metrics store
+        """
+        metrics = check.mapping_param(convert_config_input(metrics), "metrics")
+
+        res_data: Dict[str, Dict[str, Any]] = self._execute(
+            STORE_METRICS_MUTATION, {"runId": metrics}
+        )
+
+        store_metric_result: Dict[str, Any] = res_data["storeMetrics"]
+        store_metric_result_type: str = store_metric_result["__typename"]
+        if store_metric_result_type == "StoreMetricsSuccess":
+            return
+
+        elif store_metric_result_type == "StoreMetricsFailure":
+            raise DagsterGraphQLClientError("StoreMetricsFailure", f"Failed to store metrics")
+        else:
+            raise DagsterGraphQLClientError(store_metric_result_type, store_metric_result["message"])

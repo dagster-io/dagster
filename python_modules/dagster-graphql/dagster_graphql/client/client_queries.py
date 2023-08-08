@@ -146,3 +146,20 @@ mutation TerminateRun($runId: String!) {
   }
 }
 """
+
+STORE_METRICS_MUTATION = """
+mutation StoreMetrics($metrics: [Metric]) {
+  storeMetrics(metrics: $metrics){
+    __typename
+    ... on StoreMetricsSuccess{
+    }
+    ... on StoreMetricsFailure {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""

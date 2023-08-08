@@ -25,6 +25,8 @@ from dagster._core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
 
+from dagster_graphql import DagsterGraphQLClient
+from gql.transport.requests import RequestsHTTPTransport
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
@@ -227,7 +229,10 @@ def generate_materializations(
             asset_key_prefix + info["unique_id"].split(".")
         ),
     ):
-        yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+        asset_materialization = cast(AssetMaterialization, event)
+        if check.inst(asset_materialization, AssetMaterialization):
+            store_dbt_materialization_metrics(asset_materialization)
+            yield asset_materialization
 
 
 def select_unique_ids_from_manifest(
@@ -323,3 +328,70 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["exposures"],
         **manifest["metrics"],
     }
+
+def store_dbt_materialization_metrics(
+    event: AssetMaterialization,
+):
+    DAGSTER_CLOUD_FEATURE_FLAG = True
+    if not DAGSTER_CLOUD_FEATURE_FLAG:
+        return
+    query = """
+mutation LaunchJobExecution($executionParams: ExecutionParams!) {
+  launchPipelineExecution(executionParams: $executionParams) {
+    __typename
+    ... on LaunchRunSuccess {
+      run {
+        id
+        __typename
+      }
+      __typename
+    }
+    ... on PipelineNotFoundError {
+      message
+      __typename
+    }
+    ... on InvalidSubsetError {
+      message
+      __typename
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        __typename
+      }
+      __typename
+    }
+    ...PythonErrorFragment
+  }
+}
+
+fragment PythonErrorFragment on PythonError {
+  __typename
+  message
+  stack
+  causes {
+    message
+    stack
+    __typename
+  }
+}
+        """
+    variables = {
+        "metricData": [
+        ]
+    }
+    url = "https://yourorg.dagster.cloud/prod"
+    token = "your_token_here" # a User Token generated from the Cloud Settings page in Dagster Cloud. Note: User Token, not Agent Token
+    client = DagsterGraphQLClient(url, transport=RequestsHTTPTransport(url=url+"/graphql", headers={"Dagster-Cloud-Api-Token": token}))
+
+        headers = {"Dagster-Cloud-Api-Token": self.user_token if self.user_token else ""}
+        response = requests.post(
+            url=self.url, json={"query": query, "variables": variables}, headers=headers
+        )
+        response.raise_for_status()
+        response_json = response.json()
+        if response_json["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess":
+            run = response_json["data"]["launchPipelineExecution"]["run"]
+            logging.info(f"Run {run['id']} launched successfully")
+            return run["id"]
+        else:
