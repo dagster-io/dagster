@@ -81,10 +81,10 @@ dbt_cloud_assets = load_assets_from_dbt_cloud_job(
 ```
 
 <Note>
-  We support dbt Cloud jobs with multiple commands, but we require one of the
-  commands be a materialization command. A materialization command is one of
-  either `dbt run` or `dbt build`, along with any optional command line
-  arguments.
+  <strong>Note:</strong> Dagster supports dbt Cloud jobs with multiple commands,
+  but one of the commands must be a materialization command. A materialization
+  command is one of either <code>dbt run</code> or <code>dbt build</code>, along
+  with any optional command line arguments.
 </Note>
 
 The <PyObject module="dagster_dbt" object="load_assets_from_dbt_cloud_job" /> function loads the dbt Cloud models into Dagster as assets, creating one Dagster asset for each model.
