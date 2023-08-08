@@ -47,8 +47,8 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._utils.backcompat import disable_dagster_warnings
 from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import disable_dagster_warnings
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]

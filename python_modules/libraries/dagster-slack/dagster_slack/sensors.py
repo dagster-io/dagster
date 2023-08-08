@@ -24,7 +24,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._utils.backcompat import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:

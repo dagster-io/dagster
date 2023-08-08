@@ -13,7 +13,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._utils.backcompat import disable_dagster_warnings
+from dagster._utils.warnings import disable_dagster_warnings
 
 from . import repo
 

@@ -51,7 +51,7 @@ from dagster._core.snap.dep_snapshot import (
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
-from dagster._utils.backcompat import (
+from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 

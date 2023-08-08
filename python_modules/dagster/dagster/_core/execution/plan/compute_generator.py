@@ -29,7 +29,7 @@ from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunctio
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
-from dagster._utils.backcompat import disable_dagster_warnings
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..context.compute import OpExecutionContext
 

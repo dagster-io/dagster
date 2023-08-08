@@ -29,7 +29,7 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     pack_value,
 )
-from dagster._utils.backcompat import (
+from dagster._utils.warnings import (
     deprecation_warning,
     normalize_renamed_param,
 )

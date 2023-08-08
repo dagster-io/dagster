@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 import dagster._check as check
 from dagster._core.definitions.assets_job import build_source_asset_observation_job
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._utils.backcompat import disable_dagster_warnings
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..instance import DagsterInstance
 from .source_asset import SourceAsset

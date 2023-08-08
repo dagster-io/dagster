@@ -32,10 +32,10 @@ from dagster._core.definitions.time_window_partition_mapping import TimeWindowPa
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import (
+from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
-from dagster._utils.merger import merge_dicts
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix

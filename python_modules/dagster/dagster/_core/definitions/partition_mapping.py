@@ -32,8 +32,8 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.backcompat import disable_dagster_warnings
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class UpstreamPartitionsResult(NamedTuple):

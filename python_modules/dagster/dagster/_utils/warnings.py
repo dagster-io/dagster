@@ -116,16 +116,8 @@ T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 
 
 def suppress_dagster_warnings(__obj: T_Decoratable) -> T_Decoratable:
-    """Mark a method/function as ignoring Dagster-generated warnings. This quiets any
-    `ExperimentalWarnings` or `DeprecationWarnings` issued by the Dagster framework. Other libraries
-    issuing warnings are not affected.
-
-    Note that this works by toggling the global `DAGSTER_WARNINGS_DISABLED` flag, rather than
-    invoking `warnings.catch_warnings`. This is because we want to keep our warnings from being
-    issued at all, rather than merely caught and suppressed by Python. This allows us to track
-    whether a warning has been emitted in a user-visible way-- if we emitted the warnings but
-    filtered them elsewhere in our code with `warnings.catch_warnings`, it would be difficult to
-    track whether a warning had ever actually been shown to the user.
+    """Mark a method/function as ignoring Dagster-generated warnings. This suppresses any
+    `ExperimentalWarnings` or `DeprecationWarnings` when the function is called.
 
     Usage:
 

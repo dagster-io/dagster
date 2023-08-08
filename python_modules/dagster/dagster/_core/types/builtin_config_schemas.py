@@ -14,7 +14,7 @@ from dagster._config import (
     ScalarUnion,
     Selector,
 )
-from dagster._utils.backcompat import disable_dagster_warnings
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .config_schema import dagster_type_loader
 

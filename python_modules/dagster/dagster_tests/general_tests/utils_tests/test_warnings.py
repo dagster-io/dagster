@@ -4,7 +4,7 @@ import warnings
 import pytest
 from dagster._annotations import experimental
 from dagster._check import CheckError
-from dagster._utils.backcompat import (
+from dagster._utils.warnings import (
     normalize_renamed_param,
     suppress_dagster_warnings,
 )

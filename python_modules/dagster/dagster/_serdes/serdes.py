@@ -42,8 +42,8 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
-from dagster._utils.backcompat import disable_dagster_warnings
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 

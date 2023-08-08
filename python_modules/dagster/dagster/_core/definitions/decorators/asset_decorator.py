@@ -29,7 +29,7 @@ from dagster._core.definitions.resource_annotation import (
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.backcompat import (
+from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 

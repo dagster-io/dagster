@@ -63,11 +63,11 @@ from dagster._core.execution.resolve_versions import resolve_step_output_version
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
-from dagster._utils.backcompat import (
+from dagster._utils.timing import time_execution_scope
+from dagster._utils.warnings import (
     disable_dagster_warnings,
     experimental_warning,
 )
-from dagster._utils.timing import time_execution_scope
 
 from .compute import OpOutputUnion
 from .compute_generator import create_op_compute_wrapper

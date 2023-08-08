@@ -23,7 +23,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._check import CheckError
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.warnings import ExperimentalWarning
 from typing_extensions import Annotated
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
