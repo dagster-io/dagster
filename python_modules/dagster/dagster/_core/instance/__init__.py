@@ -1693,10 +1693,6 @@ class DagsterInstance(DynamicPartitionsStore):
             filters, limit, order_by, ascending, cursor, bucket_by
         )
 
-    @property
-    def supports_bucket_queries(self) -> bool:
-        return self._run_storage.supports_bucket_queries
-
     @traced
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
