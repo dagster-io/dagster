@@ -19,6 +19,9 @@ def test_twilio_resource(twilio_resource_option) -> None:
     account_sid = os.environ.get("TWILIO_TEST_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_TEST_AUTH_TOKEN")
 
+    if os.getenv("BUILDKITE") and not (account_sid or auth_token):
+        pytest.skip("Integration test")
+
     assert account_sid, "TWILIO_TEST_ACCOUNT_SID not set"
     assert auth_token, "TWILIO_TEST_AUTH_TOKEN not set"
 
