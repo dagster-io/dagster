@@ -38,7 +38,6 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
     }
     asset_graph = get_asset_graph(assets_by_repo_name)
 
-    # Construct a backfill data with all_partitions=True on assets with single run backfill policies.
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=None,
         asset_graph=asset_graph,
@@ -87,7 +86,6 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     backfill_id = "test_backfill_id"
-    # Construct a backfill data with all_partitions=True on assets with single run backfill policies.
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=None,
         asset_graph=asset_graph,
@@ -138,7 +136,6 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy():
     }
     asset_graph = get_asset_graph(assets_by_repo_name)
 
-    # Construct a backfill data with all_partitions=True on assets with single run backfill policies.
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=None,
         asset_graph=asset_graph,
@@ -192,7 +189,6 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
     }
     asset_graph = get_asset_graph(assets_by_repo_name)
 
-    # Construct a backfill data with all_partitions=True on assets with single run backfill policies.
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=None,
         asset_graph=asset_graph,
@@ -231,7 +227,6 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
     }
     asset_graph = get_asset_graph(assets_by_repo_name)
 
-    # Construct a backfill data with all_partitions=True on assets with single run backfill policies.
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=None,
         asset_graph=asset_graph,
@@ -275,7 +270,6 @@ def test_asset_backfill_return_multiple_run_request_for_partitioned():
     }
     asset_graph = get_asset_graph(assets_by_repo_name)
 
-    # Construct a backfill data with all_partitions=True on assets with single run backfill policies.
     backfill_data = AssetBackfillData.from_asset_partitions(
         partition_names=None,
         asset_graph=asset_graph,
