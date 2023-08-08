@@ -810,10 +810,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         for parent in parent_asset_partitions:
             parent_asset_partitions_by_key[parent.asset_key].add(parent)
 
-        time_or_dynamic_partitioned = isinstance(
-            self.asset_graph.get_partitions_def(asset_partition.asset_key),
-            (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
-        )
+        partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
         updated_parents = set()
         missing_parents = set()
         for parent_key, asset_partitions in parent_asset_partitions_by_key.items():
@@ -829,8 +826,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     missing_parents.add(parent)
 
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
-            # for existence of upstream materialization, do not worry about updates
-            if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
+            # for updates to the latest upstream partition
+            if (
+                isinstance(
+                    partitions_def, (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition)
+                )
+                and not self.asset_graph.is_partitioned(parent_key)
+                and asset_partition.partition_key
+                != partitions_def.get_last_partition_key(
+                    current_time=self.evaluation_time, dynamic_partitions_store=self
+                )
+            ):
                 continue
 
             updated_parents.update(
