@@ -1,4 +1,3 @@
-import warnings
 from inspect import Parameter
 from typing import (
     AbstractSet,
@@ -30,8 +29,8 @@ from dagster._core.definitions.resource_annotation import (
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.backcompat import (
-    ExperimentalWarning,
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
 )
 
 from ..asset_in import AssetIn
@@ -324,9 +323,7 @@ class _Asset:
             if not self.key
             else self.key
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
 
             bare_required_resource_keys = set(self.required_resource_keys)
@@ -595,9 +592,7 @@ def multi_asset(
                 " the asset or produced by this asset. Valid keys:"
                 f" {list(valid_asset_deps)[:20]}",
             )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             op_required_resource_keys = required_resource_keys - arg_resource_keys
 
             op = _Op(

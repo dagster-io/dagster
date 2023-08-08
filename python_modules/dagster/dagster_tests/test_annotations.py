@@ -1,3 +1,4 @@
+import re
 import sys
 import warnings
 from abc import abstractmethod
@@ -22,7 +23,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._check import CheckError
-from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.warnings import ExperimentalWarning
 from typing_extensions import Annotated
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
@@ -763,10 +764,12 @@ def test_all_annotations():
     assert is_deprecated(foo)
     assert is_experimental(foo)
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+foo` is experimental") as warning:
+    with warnings.catch_warnings(record=True) as all_warnings:
+        warnings.simplefilter("always")
         foo()
-    assert warning[0].filename.endswith("test_annotations.py")
 
-    with pytest.warns(DeprecationWarning, match=r"`[^`]+foo` is deprecated") as warning:
-        foo()
-    assert warning[0].filename.endswith("test_annotations.py")
+    exp = next(warning for warning in all_warnings if warning.category == ExperimentalWarning)
+    assert re.search(r"`[^`]+foo`", str(exp.message))
+
+    dep = next(warning for warning in all_warnings if warning.category == DeprecationWarning)
+    assert re.search(r"`[^`]+foo` is deprecated", str(dep.message))

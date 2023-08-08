@@ -1,5 +1,4 @@
 import inspect
-import warnings
 from typing import (
     AbstractSet,
     Any,
@@ -64,11 +63,11 @@ from dagster._core.execution.resolve_versions import resolve_step_output_version
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
-from dagster._utils.backcompat import (
-    ExperimentalWarning,
+from dagster._utils.timing import time_execution_scope
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
     experimental_warning,
 )
-from dagster._utils.timing import time_execution_scope
 
 from .compute import OpOutputUnion
 from .compute_generator import create_op_compute_wrapper
@@ -157,9 +156,7 @@ def _step_output_error_checked_user_event_sequence(
             step_context.observe_output(output.output_name)
 
             metadata = step_context.get_output_metadata(output.output_name)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-
+            with disable_dagster_warnings():
                 output = Output(
                     value=output.value,
                     output_name=output.output_name,
@@ -532,9 +529,7 @@ def _get_output_asset_materializations(
 
     if asset_partitions:
         for partition in asset_partitions:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=DeprecationWarning)
-
+            with disable_dagster_warnings():
                 tags.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
@@ -548,9 +543,7 @@ def _get_output_asset_materializations(
                     tags=tags,
                 )
     else:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-
+        with disable_dagster_warnings():
             yield AssetMaterialization(asset_key=asset_key, metadata=all_metadata, tags=tags)
 
 
@@ -687,9 +680,7 @@ def _store_output(
             )
 
         if manager_metadata:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+            with disable_dagster_warnings():
                 materialization = AssetMaterialization(
                     asset_key=mgr_materialization.asset_key,
                     description=mgr_materialization.description,

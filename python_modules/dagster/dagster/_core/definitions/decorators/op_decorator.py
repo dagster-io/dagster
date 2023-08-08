@@ -31,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.backcompat import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out

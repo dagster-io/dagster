@@ -1,4 +1,3 @@
-import warnings
 from typing import (
     AbstractSet,
     Any,
@@ -48,8 +47,8 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import disable_dagster_warnings
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
@@ -300,9 +299,7 @@ class SourceAsset(ResourceAddable):
             if self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY
             else None
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             return SourceAsset(
                 key=self.key,
                 io_manager_key=io_manager_key,
@@ -325,9 +322,7 @@ class SourceAsset(ResourceAddable):
                 f" {self.key.to_user_string()}"
             )
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             return SourceAsset(
                 key=key or self.key,
                 metadata=self.raw_metadata,

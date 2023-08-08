@@ -42,11 +42,11 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._utils.backcompat import (
+from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.warnings import (
     deprecation_warning,
     normalize_renamed_param,
 )
-from dagster._utils.merger import deep_merge_dicts
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
