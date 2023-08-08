@@ -1,10 +1,10 @@
 group_name: my_group
 assets:
   - asset_key: "foo/bar"
-    # replace string_to_return with whatever is needed for execution
-    string_to_return: "This is a string to log in bar"
+    # replace "sql" with whatever information is needed for your assets
+    sql: "SELECT * from bar"
   - asset_key: "foo/baz"
     description: "This is a description of the baz asset"
     deps:
       - "foo/bar"
-    string_to_return: "This is a string to log in baz"
+    sql: "SELECT * from foo"

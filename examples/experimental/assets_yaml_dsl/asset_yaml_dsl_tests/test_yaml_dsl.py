@@ -4,6 +4,7 @@ import yaml
 from asset_yaml_dsl import from_asset_entries
 from dagster import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from examples.experimental.assets_yaml_dsl.asset_yaml_dsl import SomeSqlClient
 
 
 def assets_defs_from_yaml(yaml_string) -> List[AssetsDefinition]:
@@ -14,6 +15,7 @@ def test_basic() -> None:
     assets_defs = assets_defs_from_yaml("""
 assets:
     - asset_key: asset_one
+      sql: "SELECT * from asset_one"
 """)
     assert assets_defs
     assert len(assets_defs) == 1
@@ -26,9 +28,11 @@ def test_single_dep() -> None:
     assets_defs = assets_defs_from_yaml("""
 assets:
     - asset_key: key_ns/asset_one
+      sql: "SELECT * from asset_one"
     - asset_key: key_ns/asset_two
       deps:
         - key_ns/asset_one
+      sql: "SELECT * from asset_two"
 """)
     assert assets_defs
     assert len(assets_defs) == 2
@@ -46,6 +50,7 @@ def test_description() -> None:
 assets:
     - asset_key: asset_one
       description: "asset one description"
+      sql: "SELECT * from asset_one"
 """)
     assert assets_defs
     assert len(assets_defs) == 1
@@ -58,12 +63,14 @@ def test_execution() -> None:
     assets_defs = assets_defs_from_yaml("""
 assets:
     - asset_key: asset_one
-      string_to_return: "hello world"
+      sql: "SELECT * from asset_one"
 """)
     assert assets_defs
     assert len(assets_defs) == 1
     assets_def = assets_defs[0]
-    assert assets_def() == "hello world"
+    sql_client = SomeSqlClient()
+    assets_def(sql_client=sql_client)
+    assert sql_client.queries == ["SELECT * from asset_one"]
 
 
 def test_basic_group() -> None:
@@ -71,6 +78,7 @@ def test_basic_group() -> None:
 group_name: my_group
 assets:
     - asset_key: asset_one
+      sql: "SELECT * from asset_one"
 """)
     assert assets_defs
     assert len(assets_defs) == 1
