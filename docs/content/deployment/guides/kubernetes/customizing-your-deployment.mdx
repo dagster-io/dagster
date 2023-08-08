@@ -17,13 +17,15 @@ If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLaunc
 
 `k8sRunLauncher.runK8sConfig` is a dictionary with the following keys:
 
-- `containerConfig`: The Pod's [Container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
-- `podSpecConfig`: The Pod's [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
-- `podTemplateSpecMetadata`: The Pod's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
-- `jobSpecConfig`: The Job's [JobSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
-- `jobMetadata`: The Job's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+- `containerConfig`: The Pod's container
+- `podSpecConfig`: The Pod's PodSpec
+- `podTemplateSpecMetadata`: The Pod's Metadata
+- `jobSpecConfig`: The Job's JobSpec
+- `jobMetadata`: The Job's Metadata
 
-The values for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+
+The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
 ```yaml file=/deploying/kubernetes/run_k8s_config.yaml
 runLauncher:
