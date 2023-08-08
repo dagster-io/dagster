@@ -464,18 +464,6 @@ class AssetDaemonContext:
 
         # FreshnessAutoMaterializeCondition, DownstreamFreshnessAutoMaterializeCondition
         if auto_materialize_policy.for_freshness:
-            (
-                freshness_conditions,
-                _,
-                expected_data_time,
-            ) = freshness_conditions_for_asset_key(
-                asset_key=asset_key,
-                data_time_resolver=self.data_time_resolver,
-                asset_graph=self.asset_graph,
-                current_time=self.instance_queryer.evaluation_time,
-                will_materialize_mapping=will_materialize_mapping,
-                expected_data_time_mapping=expected_data_time_mapping,
-            )
             for condition, asset_partitions in freshness_conditions.items():
                 conditions[condition].update(asset_partitions)
                 candidates.update(asset_partitions)

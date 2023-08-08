@@ -100,6 +100,20 @@ def get_execution_period_and_conditions_for_policies(
 
     return merged_period, conditions
 
+def expected_data_time_for_asset_key(
+    asset_graph: AssetGraph,
+    asset_key: AssetKey,
+    will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+) -> Optional[datetime.datetime]:
+    for parent_key in asset_graph.get_parents(asset_key):
+    # find the minimum non-None data time of your parents
+    parent_expected_data_time = expected_data_time_mapping.get(
+        parent_key
+    ) or data_time_resolver.get_current_data_time(parent_key, current_time)
+    expected_data_time = min(
+        filter(None, [expected_data_time, parent_expected_data_time]),
+        default=None,
+    )
 
 def freshness_conditions_for_asset_key(
     asset_key: AssetKey,

@@ -1,4 +1,6 @@
+from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
+import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -16,8 +18,11 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.freshness_based_auto_materialize import freshness_conditions_for_asset_key
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_graph import AssetGraph
 from .partition import (
@@ -206,3 +211,91 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_skipped=num_skipped,
                 num_discarded=num_discarded,
             )
+
+
+class AutoMaterializeRule(ABC):
+    decision_type: AutoMaterializeDecisionType
+
+    @staticmethod
+    def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
+        return SkipOnParentOutdatedRule()
+
+    @abstractmethod
+    def evaluate(
+        self,
+        context: AssetDaemonContext,
+        asset_key: AssetKey,
+        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+        ...
+
+
+class AutoMaterializeMaterializeRule(AutoMaterializeRule):
+    decision_type = AutoMaterializeDecisionType.MATERIALIZE
+
+
+class AutoMaterializeSkipRule(AutoMaterializeRule):
+    decision_type = AutoMaterializeDecisionType.SKIP
+
+
+class AutoMaterializeDiscardRule(AutoMaterializeRule):
+    decision_type = AutoMaterializeDecisionType.DISCARD
+
+class MaterializeOnRequiredForFreshnessRule(AutoMaterializeMaterializeRule):
+    def evaluate(
+        self,
+        context: AssetDaemonContext,
+        asset_key: AssetKey,
+        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        candidates: Optional[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]],
+    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+        (
+            freshness_conditions,
+            _,
+            _,
+        ) = freshness_conditions_for_asset_key(
+            asset_key=asset_key,
+            data_time_resolver=context.data_time_resolver,
+            asset_graph=context.asset_graph,
+            current_time=context.instance_queryer.evaluation_time,
+            will_materialize_mapping=will_materialize_mapping,
+            expected_data_time_mapping=expected_data_time_mapping,
+        )
+        return freshness_conditions
+
+class MaterializeOnParentUpdatedRule(AutoMaterializeMaterializeRule):
+    def evaluate(
+        self,
+        context: AssetDaemonContext,
+        asset_key: AssetKey,
+        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        candidates: Optional[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]],
+    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+        return context.get_parent_materialized_conditions_for_key(
+            asset_key, will_materialize_mapping
+        )
+
+class MaterializeOnMissingRule(AutoMaterializeMaterializeRule):
+    def evaluate(
+        self,
+        context: AssetDaemonContext,
+        asset_key: AssetKey,
+        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        candidates: Optional[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]],
+    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+        return context.get_missing_conditions_for_key(asset_key, candidates)
+
+class SkipOnParentOutdatedRule(AutoMaterializeSkipRule):
+    def evaluate(
+        self,
+        context: AssetDaemonContext,
+        asset_key: AssetKey,
+        will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        candidates: Optional[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]],
+    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+        ...
