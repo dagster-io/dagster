@@ -28,6 +28,7 @@ def get_aws_creds():
     except Exception as e:
         if os.getenv("BUILDKITE"):
             import pytest
+
             pytest.skip("Integration test")
 
         raise Exception(
