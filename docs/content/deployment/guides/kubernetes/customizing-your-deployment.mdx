@@ -57,11 +57,13 @@ The `dagster-k8s/config` tag allows you to pass custom configuration to the Kube
 
 `dagster-k8s/config` is a dictionary with the following keys:
 
-- `container_config`: The Pod's [Container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
-- `pod_spec_config`: The Pod's [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#podspec-v1-core).
-- `pod_template_spec_metadata`: The Pod's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
-- `job_spec_config`: The Job's [JobSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
-- `job_metadata`: The Job's [Metadata](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta).
+- `container_config`: The Pod's Container
+- `pod_spec_config`: The Pod's PodSpec
+- `pod_template_spec_metadata`: The Pod's Metadata
+- `job_spec_config`: The Job's JobSpec
+- `job_metadata`: The Job's Metadata
+
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
 
 The values for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`).
 
