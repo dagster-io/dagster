@@ -29,13 +29,11 @@ You'll also want to have a dbt Cloud instance with an existing project that is d
 
 To manage the dbt Cloud job from Dagster, you'll need three values:
 
-1. An `auth_token` for connecting with the dbt Cloud API, stored in an environment variable `DBT_CLOUD_API_TOKEN`,
+1. An `auth_token` for connecting with the dbt Cloud API, stored in an environment variable `DBT_CLOUD_API_TOKEN`. The `auth_token` can also be found by generating a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) in the dbt Cloud console.
 2. The `account_id` of your dbt Cloud account, stored in an environment variable `DBT_CLOUD_ACCOUNT_ID`, and
 3. The `job_id` of the dbt Cloud job you want to manage in Dagster
 
-The `auth_token` can also be found by generating a [Service account token](https://docs.getdbt.com/docs/dbt-cloud/dbt-cloud-api/service-tokens) in the dbt Cloud console.
-
-The `account_id` and `job_id` can be obtained by inspecting the URL of the dbt Cloud job in the dbt Cloud console. For example, in this screenshot, the `account_id` is `111111` and the `job_id` is `33333`.
+The `account_id` and `job_id` can be obtained by inspecting the URL of the dbt Cloud job in the dbt Cloud console. For example, in this screenshot, the `account_id` is `111111` and the `job_id` is `33333`:
 
 <Image
 alt="Screenshot of the dbt Cloud console on the job page."
