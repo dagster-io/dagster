@@ -22,7 +22,6 @@ from airflow.operators.dummy_operator import DummyOperator  # type: ignore (airf
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
-from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import instance_for_test
 from dagster._seven import get_current_datetime_in_utc
 from dagster_airflow import make_dagster_job_from_airflow_dag
@@ -189,8 +188,6 @@ def test_template_task_dag(tmpdir):
     t1 >> [t2, t3]
 
     with instance_for_test() as instance:
-        manager = instance.compute_log_manager
-
         execution_date = get_current_datetime_in_utc()
         execution_date_add_one_week = execution_date + datetime.timedelta(days=7)
         execution_date_iso = execution_date.isoformat()
