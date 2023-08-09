@@ -58,11 +58,11 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
         const destination = layout.nodes[mappedInput.solid.name];
-        if (!destination) {
+        const sourcePort = parentLayout.inputs[definition.name]?.port;
+        const trgtPort = destination?.inputs[mappedInput.definition.name]?.port;
+        if (!destination || !sourcePort || !trgtPort) {
           return <g key={mappedInput.solid.name} />;
         }
-        const sourcePort = parentLayout.inputs[definition.name]!.port;
-        const trgtPort = destination.inputs[mappedInput.definition.name]!.port;
 
         return (
           <MappingLine
