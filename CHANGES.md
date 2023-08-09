@@ -1,5 +1,31 @@
 # Changelog
 
+# 1.4.5 /0.20.5 (libraries)
+
+### New
+
+- The eager `AutoMaterializePolicy` now respects data versions, meaning that if a parent is materialized with the same data version as its previous materialization, a second run will no longer be kicked off.
+- `@graph_asset` now takes a `config` parameter equivalent to the parameter on `@graph`.
+- [dagster-dbt] Support for `dbt-core==1.6` has been added.
+- [dagster-dbt] `DbtCliResource` now supports configuring `profiles_dir`.
+- Added the starter project’s template for Dagster University
+
+### Bugfixes
+
+- In some situations, multiple materializations of the same asset could be kicked off when using a lazy `AutoMaterializePolicy` with assets that had at least one source asset parent and at least one non-source asset parent. This has been fixed.
+- After applying an eager `AutoMaterializePolicy` to a time-partitioned asset downstream of an unpartitioned asset, the latest partition would only ever be materialized a single time, rather than updating in response to any parent updates. This has been fixed.
+- Fixed an issue that would cause the creation of a `StaticPartitionsDefinition` containing many thousands of partitions could take a significant amount of time.
+- The run coordinator daemon now uses a fresh request context on each iteration, fixing an issue where stale grpc server references could be used in certain high volume conditions.
+- [dagster-dbt] Previously, attempting to load assets from a dbt project in which some of the models had hyphens in their name would result in an error. This has been fixed.
+- [dagster-airbyte] Previously, attempting to load assets from an airbyte instance in which some of the tables had hyphens in their name would result in an error. This has been fixed.
+- Automatically generated data versions for partitioned assets now correctly reflect the data versions of upstream partitions. Previously, they were computed using the data versions from the most recent materializations of upstream assets regardless of partition.
+
+### Dagster Cloud
+
+- When importing a dbt project on the Dagster Cloud setup page, an `Unexpected exception` error would be raised when scaffolding a pull request on a repository with no `profiles.yml`. This behavior has been updated to raise a more descriptive error message on the repo selection page.
+- The running multiple agents guide has been revamped to discuss running agent replicas and zero-downtime deployment of the agent.
+- the `agentReplicas` config setting on the helm chart has been renamed to `isolatedAgents`. In order to use this config setting, your user code dagster version needs to be `1.4.3` or greater.
+
 # 1.4.4 /0.20.4 (libraries)
 
 ### New
