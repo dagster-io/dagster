@@ -7,7 +7,12 @@ description: Store your Dagster assets in DuckDB
 
 This reference page provides information for working with [`dagster-duckdb`](/\_apidocs/libraries/dagster-duckdb) features that are not covered as part of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster).
 
-DuckDB I/O manager customization:
+DuckDB resource:
+
+- [Using the DuckDB resource in assets](#using-the-duckdb-resource-in-assets)
+- [Using the DuckDB resource in ops](#using-the-duckdb-resource-in-ops)
+
+DuckDB I/O manager:
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
@@ -16,15 +21,63 @@ DuckDB I/O manager customization:
 - [Storing and loading PySpark or Polars DataFrames in DuckDB](#storing-and-loading-pyspark-or-polars-dataframes-in-duckdb)
 - [Storing multiple DataFrame types in DuckDB](#storing-multiple-dataframe-types-in-duckdb)
 
-DuckDB resource information:
 
-- [Executing custom SQL commands with the DuckDB resource](#executing-custom-sql-commands-with-the-duckdb-resource)
 
 ---
 
-## Customizing the DuckDB I/O manager's behavior
+## DuckDB resource
 
-The DuckDB I/O manager provides several ways to customize how your data is stored and loaded in DuckDB. However, if you find that these do not provide enough customization for your use case, we recommend using the DuckDB resource to save and load your data. By using the resource, you will have more fine grained control over how your data in handled. For more information on the DuckDB resource, see the \[DuckDB resource]\(# TODO LINK) section.
+The DuckDB resource provides access to a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection) object. This allows you full control over how your data is stored and retrieved in your database.
+
+For further information on the DuckDB resource, see the [DuckDB resource API docs](/\_apidocs/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).
+
+### Using the DuckDB resource in assets
+
+```python file=/integrations/duckdb/reference/resource.py startafter=start endbefore=end
+from dagster_duckdb import DuckDBResource
+
+from dagster import asset
+
+# this example executes a query against the iris_dataset table created in Step 2 of the
+# Using Dagster with DuckDB tutorial
+
+
+@asset(deps=[iris_dataset])
+def small_petals(duckdb: DuckDBResource) -> None:
+    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
+        conn.cursor().execute(
+            "CREATE TABLE iris.small_petals AS SELECT * FROM iris.iris_dataset WHERE"
+            " 'petal_length_cm' < 1 AND 'petal_width_cm' < 1"
+        )
+```
+
+In this example, we attach the DuckDB resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can use this connection to execute a custom SQL query against the `iris_dataset` table created in [Step 2: Create tables in DuckDB](/integrations/duckdb/using-duckdb-with-dagster#store-a-dagster-asset-as-a-table-in-duckdb) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster). When the `duckdb.get_connection` context is exited, the created DuckDB connections will be closed.
+
+### Using the DuckDB resource in ops
+
+You can also use the `DuckDBResource` in ops:
+
+```python file=/integrations/duckdb/reference/resource_ops.py startafter=start endbefore=end
+from dagster_duckdb import DuckDBResource
+
+from dagster import op
+
+
+@op
+def export_iris_data(duckdb: DuckDBResource) -> None:
+    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
+        conn.cursor().execute(
+            "EXPORT DATABASE 'iris_copy' (FORMAT CSV, DELIMITER '|');"
+        )
+```
+
+In this example, we attach the DuckDB resource to the `export_iris_data` op. In the body of the op function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can then use this connection to execute a custom SQL query. In this case, we export the entire database to a new directory, `iris_copy` in CSV format.
+
+---
+
+## DuckDB I/O manager
+
+The DuckDB I/O manager provides several ways to customize how your data is stored and loaded in DuckDB. However, if you find that these do not provide enough customization for your use case, we recommend using the DuckDB resource to save and load your data. By using the resource, you will have more fine grained control over how your data in handled, since you have full control over the SQL queries that are executed.
 
 ### Selecting specific columns in a downstream asset
 
@@ -561,53 +614,3 @@ defs = Definitions(
     },
 )
 ```
-
----
-
-## DuckDB resource information
-
-The DuckDB resource provides access to a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection) object. This allows you full control over how your data is stored and retrieved in your database.
-
-For further information on the DuckDB resource, see the [DuckDB resource API docs](/\_apidocs/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).
-
-### Using the DuckDBResource in assets
-
-```python file=/integrations/duckdb/reference/resource.py startafter=start endbefore=end
-from dagster_duckdb import DuckDBResource
-
-from dagster import asset
-
-# this example executes a query against the iris_dataset table created in Step 2 of the
-# Using Dagster with DuckDB tutorial
-
-
-@asset(deps=[iris_dataset])
-def small_petals(duckdb: DuckDBResource) -> None:
-    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
-        conn.cursor().execute(
-            "CREATE TABLE iris.small_petals AS SELECT * FROM iris.iris_dataset WHERE"
-            " 'petal_length_cm' < 1 AND 'petal_width_cm' < 1"
-        )
-```
-
-In this example, we attach the DuckDB resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can use this connection to execute a custom SQL query against the `iris_dataset` table created in [Step 2: Create tables in DuckDB](/integrations/duckdb/using-duckdb-with-dagster#store-a-dagster-asset-as-a-table-in-duckdb) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster). When the `duckdb.get_connection` context is exited, the created DuckDB connections will be closed.
-
-### Using the DuckDB resource in ops
-
-You can also use the `DuckDBResource` in ops:
-
-```python file=/integrations/duckdb/reference/resource_ops.py startafter=start endbefore=end
-from dagster_duckdb import DuckDBResource
-
-from dagster import op
-
-
-@op
-def export_iris_data(duckdb: DuckDBResource) -> None:
-    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
-        conn.cursor().execute(
-            "EXPORT DATABASE 'iris_copy' (FORMAT CSV, DELIMITER '|');"
-        )
-```
-
-In this example, we attach the DuckDB resource to the `export_iris_data` op. In the body of the op function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can then use this connection to execute a custom SQL query. In this case, we export the entire database to a new directory, `iris_copy` in CSV format.
