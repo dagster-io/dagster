@@ -8,7 +8,12 @@ SqlEventLogStorageMetadata = db.MetaData()
 SqlEventLogStorageTable = db.Table(
     "event_logs",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("run_id", db.String(255)),
     db.Column("event", db.Text, nullable=False),
     db.Column("dagster_event_type", db.Text),
@@ -21,7 +26,12 @@ SqlEventLogStorageTable = db.Table(
 SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
@@ -39,7 +49,12 @@ SecondaryIndexMigrationTable = db.Table(
 AssetKeyTable = db.Table(
     "asset_keys",
     SqlEventLogStorageMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("last_materialization", db.Text),
     db.Column("last_run_id", db.String(255)),
@@ -63,7 +78,11 @@ AssetEventTagsTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("event_id", db.Integer, db.ForeignKey("event_logs.id", ondelete="CASCADE")),
+    db.Column(
+        "event_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        db.ForeignKey("event_logs.id", ondelete="CASCADE"),
+    ),
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("key", db.Text, nullable=False),
     db.Column("value", db.Text),
