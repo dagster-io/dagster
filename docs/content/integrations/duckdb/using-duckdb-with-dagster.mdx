@@ -45,8 +45,6 @@ To complete this tutorial, you'll need:
 
 ## Part 1: Using the DuckDB resource
 
----
-
 ### Step 1: Configure the DuckDB resource
 
 To use the DuckDB resource, you'll need to add it to your `Definitions` object. The DuckDB resource requires some configuration. You must set a path to a DuckDB database as the `database` configuration value. If the database does not already exist, it will be created for you:
@@ -297,8 +295,6 @@ def iris_setosa(iris_dataset: pd.DataFrame) -> pd.DataFrame:
 ```
 
 In this asset, you're providing the `iris_dataset` asset as a dependency to `iris_setosa`. By supplying `iris_dataset` as a parameter to `iris_setosa`, Dagster knows to use the `DuckDBPandasIOManager` to load this asset into memory as a Pandas DataFrame and pass it as an argument to `iris_setosa`. Next, a DataFrame that only contains the data for the _Iris Setosa_ species is created and returned. Then the `DuckDBPandasIOManager` will store the DataFrame as the `IRIS.IRIS_SETOSA` table in DuckDB.
-
----
 
 ### Completed code example
 
