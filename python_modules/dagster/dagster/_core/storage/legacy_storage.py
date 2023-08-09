@@ -287,10 +287,6 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def delete_run(self, run_id: str) -> None:
         return self._storage.run_storage.delete_run(run_id)
 
-    @property
-    def supports_bucket_queries(self) -> bool:
-        return self._storage.run_storage.supports_bucket_queries
-
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
 

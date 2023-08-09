@@ -1828,7 +1828,9 @@ class TestEventLogStorage:
 
                     storage.delete_events(two_second_run_id)
                     asset_keys = storage.all_asset_keys()
-                    assert len(asset_keys) == 1
+                    # we now no longer keep the asset catalog keys in sync with the presence of
+                    # asset events in the event log
+                    # assert len(asset_keys) == 1
 
     def test_asset_partition_query(self, storage, instance):
         @op(config_schema={"partition": Field(str, is_required=False)})

@@ -17,7 +17,7 @@ from dagster import Definitions, MetadataValue, OpExecutionContext, asset
 # end_imports
 
 
-dbt_project_dir = Path(__file__).parent.joinpath("..", "..")
+dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 

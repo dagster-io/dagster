@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 pytest.importorskip("dbt.version", minversion="1.4")
 
-test_dagster_metadata_dbt_project_path = Path(__file__).parent.joinpath(
-    "..", "dbt_projects", "test_dagster_metadata"
+test_dagster_metadata_dbt_project_path = (
+    Path(__file__).joinpath("..", "..", "dbt_projects", "test_dagster_metadata").resolve()
 )
 
 runner = CliRunner()

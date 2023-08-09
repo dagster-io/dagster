@@ -32,8 +32,8 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import deprecation_warning
 
 from .utils import input_name_fn, output_name_fn
 
@@ -320,7 +320,7 @@ def get_manifest_and_translator_from_dbt_assets(
 ###################
 
 
-def default_asset_key_fn(node_info: Mapping[str, Any]) -> AssetKey:
+def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
     """Get the asset key for a dbt node.
 
     By default, if the dbt node has a Dagster asset key configured in its metadata, then that is
@@ -331,26 +331,28 @@ def default_asset_key_fn(node_info: Mapping[str, Any]) -> AssetKey:
         dbt models: a dbt model's key is the union of its model name and any schema configured on
             the model itself.
     """
-    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     asset_key_config = dagster_metadata.get("asset_key", [])
     if asset_key_config:
         return AssetKey(asset_key_config)
 
-    if node_info["resource_type"] == "source":
-        components = [node_info["source_name"], node_info["name"]]
+    if dbt_resource_props["resource_type"] == "source":
+        components = [dbt_resource_props["source_name"], dbt_resource_props["name"]]
     else:
-        configured_schema = node_info["config"].get("schema")
+        configured_schema = dbt_resource_props["config"].get("schema")
         if configured_schema is not None:
-            components = [configured_schema, node_info["name"]]
+            components = [configured_schema, dbt_resource_props["name"]]
         else:
-            components = [node_info["name"]]
+            components = [dbt_resource_props["name"]]
 
     return AssetKey(components)
 
 
-def default_metadata_from_dbt_resource_props(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
+def default_metadata_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any]
+) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
-    columns = node_info.get("columns", {})
+    columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
         metadata["table_schema"] = MetadataValue.table_schema(
             TableSchema(
@@ -367,20 +369,20 @@ def default_metadata_from_dbt_resource_props(node_info: Mapping[str, Any]) -> Ma
     return metadata
 
 
-def default_group_from_dbt_resource_props(node_info: Mapping[str, Any]) -> Optional[str]:
+def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
     """Get the group name for a dbt node.
 
     If a Dagster group is configured in the metadata for the node, use that.
 
     Otherwise, if a dbt group is configured for the node, use that.
     """
-    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
 
     dagster_group = dagster_metadata.get("group")
     if dagster_group:
         return dagster_group
 
-    dbt_group = node_info.get("config", {}).get("group")
+    dbt_group = dbt_resource_props.get("config", {}).get("group")
     if dbt_group:
         return dbt_group
 
@@ -420,15 +422,17 @@ def group_from_dbt_resource_props_fallback_to_directory(
     return fqn[1]
 
 
-def default_freshness_policy_fn(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
     freshness_policy = _legacy_freshness_policy_fn(freshness_policy_config)
     if freshness_policy:
         return freshness_policy
 
-    legacy_freshness_policy_config = node_info["config"].get("dagster_freshness_policy", {})
+    legacy_freshness_policy_config = dbt_resource_props["config"].get(
+        "dagster_freshness_policy", {}
+    )
     legacy_freshness_policy = _legacy_freshness_policy_fn(legacy_freshness_policy_config)
 
     if legacy_freshness_policy:
@@ -455,16 +459,16 @@ def _legacy_freshness_policy_fn(
 
 
 def default_auto_materialize_policy_fn(
-    node_info: Mapping[str, Any]
+    dbt_resource_props: Mapping[str, Any]
 ) -> Optional[AutoMaterializePolicy]:
-    dagster_metadata = node_info.get("meta", {}).get("dagster", {})
+    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
 
     auto_materialize_policy = _auto_materialize_policy_fn(auto_materialize_policy_config)
     if auto_materialize_policy:
         return auto_materialize_policy
 
-    legacy_auto_materialize_policy_config = node_info["config"].get(
+    legacy_auto_materialize_policy_config = dbt_resource_props["config"].get(
         "dagster_auto_materialize_policy", {}
     )
     legacy_auto_materialize_policy = _auto_materialize_policy_fn(
@@ -492,19 +496,24 @@ def _auto_materialize_policy_fn(
     return None
 
 
-def default_description_fn(node_info: Mapping[str, Any], display_raw_sql: bool = True):
-    code_block = textwrap.indent(node_info.get("raw_sql") or node_info.get("raw_code", ""), "    ")
+def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sql: bool = True):
+    code_block = textwrap.indent(
+        dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", ""), "    "
+    )
     description_sections = [
-        node_info["description"] or f"dbt {node_info['resource_type']} {node_info['name']}",
+        dbt_resource_props["description"]
+        or f"dbt {dbt_resource_props['resource_type']} {dbt_resource_props['name']}",
     ]
     if display_raw_sql:
         description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
     return "\n\n".join(filter(None, description_sections))
 
 
-def default_code_version_fn(node_info: Mapping[str, Any]) -> str:
+def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     return hashlib.sha1(
-        (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
+        (dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", "")).encode(
+            "utf-8"
+        )
     ).hexdigest()
 
 
@@ -513,12 +522,15 @@ def default_code_version_fn(node_info: Mapping[str, Any]) -> str:
 ###################
 
 
-def is_non_asset_node(node_info: Mapping[str, Any]):
+def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
     # some nodes exist inside the dbt graph but are not assets
-    resource_type = node_info["resource_type"]
+    resource_type = dbt_resource_props["resource_type"]
     if resource_type == "metric":
         return True
-    if resource_type == "model" and node_info.get("config", {}).get("materialized") == "ephemeral":
+    if (
+        resource_type == "model"
+        and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral"
+    ):
         return True
     return False
 
@@ -528,21 +540,21 @@ def get_deps(
     selected_unique_ids: AbstractSet[str],
     asset_resource_types: List[str],
 ) -> Mapping[str, FrozenSet[str]]:
-    def _valid_parent_node(node_info):
+    def _valid_parent_node(dbt_resource_props):
         # sources are valid parents, but not assets
-        return node_info["resource_type"] in asset_resource_types + ["source"]
+        return dbt_resource_props["resource_type"] in asset_resource_types + ["source"]
 
     asset_deps: Dict[str, Set[str]] = {}
     for unique_id in selected_unique_ids:
-        node_info = dbt_nodes[unique_id]
-        node_resource_type = node_info["resource_type"]
+        dbt_resource_props = dbt_nodes[unique_id]
+        node_resource_type = dbt_resource_props["resource_type"]
 
         # skip non-assets, such as metrics, tests, and ephemeral models
-        if is_non_asset_node(node_info) or node_resource_type not in asset_resource_types:
+        if is_non_asset_node(dbt_resource_props) or node_resource_type not in asset_resource_types:
             continue
 
         asset_deps[unique_id] = set()
-        for parent_unique_id in node_info.get("depends_on", {}).get("nodes", []):
+        for parent_unique_id in dbt_resource_props.get("depends_on", {}).get("nodes", []):
             parent_node_info = dbt_nodes[parent_unique_id]
             # for metrics or ephemeral dbt models, BFS to find valid parents
             if is_non_asset_node(parent_node_info):
@@ -607,21 +619,21 @@ def get_asset_deps(
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
-        node_info = dbt_nodes[unique_id]
+        dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(node_info)
-        fqns_by_output_name[output_name] = node_info["fqn"]
+        output_name = output_name_fn(dbt_resource_props)
+        fqns_by_output_name[output_name] = dbt_resource_props["fqn"]
 
         metadata_by_output_name[output_name] = {
-            key: node_info[key] for key in ["unique_id", "resource_type"]
+            key: dbt_resource_props[key] for key in ["unique_id", "resource_type"]
         }
 
-        asset_key = dagster_dbt_translator.get_asset_key(node_info)
+        asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
         asset_deps[asset_key] = set()
 
         metadata = merge_dicts(
-            dagster_dbt_translator.get_metadata(node_info),
+            dagster_dbt_translator.get_metadata(dbt_resource_props),
             {
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest) if manifest else None,
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
@@ -631,23 +643,23 @@ def get_asset_deps(
             output_name,
             Out(
                 io_manager_key=io_manager_key,
-                description=dagster_dbt_translator.get_description(node_info),
+                description=dagster_dbt_translator.get_description(dbt_resource_props),
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
-                code_version=default_code_version_fn(node_info),
+                code_version=default_code_version_fn(dbt_resource_props),
             ),
         )
 
-        group_name = dagster_dbt_translator.get_group_name(node_info)
+        group_name = dagster_dbt_translator.get_group_name(dbt_resource_props)
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
 
-        freshness_policy = node_info_to_freshness_policy_fn(node_info)
+        freshness_policy = node_info_to_freshness_policy_fn(dbt_resource_props)
         if freshness_policy is not None:
             freshness_policies_by_key[asset_key] = freshness_policy
 
-        auto_materialize_policy = node_info_to_auto_materialize_policy_fn(node_info)
+        auto_materialize_policy = node_info_to_auto_materialize_policy_fn(dbt_resource_props)
         if auto_materialize_policy is not None:
             auto_materialize_policies_by_key[asset_key] = auto_materialize_policy
 

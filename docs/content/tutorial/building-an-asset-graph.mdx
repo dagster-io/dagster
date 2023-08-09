@@ -17,9 +17,9 @@ Continuing from there, you will:
 
 ## Step 1: Adding the DataFrame asset
 
-By the end of the previous section, you ingested the top Hacker News story IDs into Dagster. Using this data, you'll now look up each story by its ID, ingest that data, and make a DataFrame out of it. You'll connect your current asset with this new asset to establish dependencies and make an _asset graph_.
+Using the top Hacker News story IDs, you'll now look up each story by its ID, ingest that data, and make a DataFrame out of it. You'll connect your current asset with this new asset to establish dependencies and make an _asset graph_.
 
-Copy and paste the completed asset code below into `assets.py`:
+Modify your `assets.py` to add the `pandas` import and a new asset called `topstories`:
 
 <Note>
   Add new imports, such as <code>import pandas as pd</code>, to the top of{" "}
@@ -34,6 +34,8 @@ import pandas as pd  # Add new imports to the top of `assets.py`
 import requests
 
 from dagster import asset
+
+# ... Keep the `topstory_ids` asset from the previous section
 
 
 @asset(deps=[topstory_ids])  # this asset is dependent on topstory_ids

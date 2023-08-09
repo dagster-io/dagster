@@ -8,7 +8,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 
-manifest_path = Path(__file__).parent.joinpath("..", "sample_manifest.json")
+manifest_path = Path(__file__).joinpath("..", "..", "sample_manifest.json").resolve()
 
 with open(manifest_path, "r") as f:
     manifest = json.load(f)

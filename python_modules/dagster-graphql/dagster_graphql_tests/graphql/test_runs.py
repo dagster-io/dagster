@@ -14,7 +14,6 @@ from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_pipeline_selector,
-    infer_repository_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -963,51 +962,6 @@ def test_run_groups():
             for run_group in result.data["runGroupsOrError"]["results"]:
                 assert run_group["rootRunId"] in root_run_ids
                 assert len(run_group["runs"]) == 6
-
-
-def test_repository_batching():
-    with instance_for_test() as instance:
-        from .utils import sync_execute_get_run_log_data
-
-        def _execute_run(graphql_context, pipeline_name):
-            payload = sync_execute_get_run_log_data(
-                context=graphql_context,
-                variables={
-                    "executionParams": {
-                        "selector": infer_pipeline_selector(graphql_context, pipeline_name)
-                    }
-                },
-            )
-            return payload["run"]["runId"]
-
-        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
-            foo_run_ids = [_execute_run(context, "foo_job") for _ in range(3)]
-            evolving_run_ids = [_execute_run(context, "evolving_job") for _ in range(2)]
-            traced_counter.set(Counter())
-            result = execute_dagster_graphql(
-                context,
-                REPOSITORY_RUNS_QUERY,
-                variables={"repositorySelector": infer_repository_selector(context)},
-            )
-            assert result.data
-            assert "repositoryOrError" in result.data
-            assert "pipelines" in result.data["repositoryOrError"]
-            pipelines = result.data["repositoryOrError"]["pipelines"]
-            assert len(pipelines) == 2
-            pipeline_runs = {pipeline["name"]: pipeline["runs"] for pipeline in pipelines}
-            assert len(pipeline_runs["foo_job"]) == 3
-            assert len(pipeline_runs["evolving_job"]) == 2
-            assert set(foo_run_ids) == set(run["runId"] for run in pipeline_runs["foo_job"])
-            assert set(evolving_run_ids) == set(
-                run["runId"] for run in pipeline_runs["evolving_job"]
-            )
-            counter = traced_counter.get()
-            counts = counter.counts()
-            assert counts
-            assert len(counts) == 1
-            # We should have a single batch call to fetch run records, instead of 3 separate calls
-            # to fetch run records (which is fetched to instantiate GrapheneRun)
-            assert counts.get("DagsterInstance.get_run_records") == 1
 
 
 def test_asset_batching():

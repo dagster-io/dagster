@@ -53,7 +53,7 @@ exclude = [
   "**/.tox",
   ".git",
   "**/.venv*",
-  "**/build",
+  "**/build"
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -123,7 +123,7 @@ target-version = "py38"
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
-  "*/snapshots/*",
+  "*/snapshots/*"
 ]
 
 ignore = [

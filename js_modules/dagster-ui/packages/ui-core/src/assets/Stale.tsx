@@ -20,10 +20,12 @@ import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
-export const isAssetMissing = (liveData?: LiveDataForNode) =>
+type StaleDataForNode = Pick<LiveDataForNode, 'staleCauses' | 'staleStatus'>;
+
+export const isAssetMissing = (liveData?: StaleDataForNode) =>
   liveData && liveData.staleStatus === StaleStatus.MISSING;
 
-export const isAssetStale = (liveData?: LiveDataForNode) =>
+export const isAssetStale = (liveData?: StaleDataForNode) =>
   liveData && liveData.staleStatus === StaleStatus.STALE;
 
 const LABELS = {
@@ -42,7 +44,7 @@ const LABELS = {
 export const StaleReasonsLabel: React.FC<{
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
-  liveData?: LiveDataForNode;
+  liveData?: StaleDataForNode;
 }> = ({liveData, include, assetKey}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
     return null;
@@ -65,7 +67,7 @@ export const StaleReasonsLabel: React.FC<{
 export const StaleReasonsTags: React.FC<{
   assetKey: AssetKeyInput;
   include: 'all' | 'upstream' | 'self';
-  liveData?: LiveDataForNode;
+  liveData?: StaleDataForNode;
   onClick?: () => void;
 }> = ({liveData, include, assetKey, onClick}) => {
   if (!isAssetStale(liveData) || !liveData?.staleCauses.length) {
@@ -106,7 +108,7 @@ export const StaleReasonsTags: React.FC<{
 function groupedCauses(
   assetKey: AssetKeyInput,
   include: 'all' | 'upstream' | 'self',
-  liveData?: LiveDataForNode,
+  liveData?: StaleDataForNode,
 ) {
   const all = (liveData?.staleCauses || [])
     .map((cause) => {

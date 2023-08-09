@@ -31,6 +31,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -39,6 +40,7 @@ from dagster._core.definitions import (
     multi_asset,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
@@ -988,9 +990,47 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
+def test_graph_asset_w_config_dict():
+    class FooConfig(Config):
+        val: int
+
+    @op
+    def foo_op(config: FooConfig):
+        return config.val
+
+    @graph_asset(config={"foo_op": {"config": {"val": 1}}})
+    def foo():
+        return foo_op()
+
+    result = materialize_to_memory([foo])
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+
+def test_graph_asset_w_config_mapping():
+    class FooConfig(Config):
+        val: int
+
+    @op
+    def foo_op(config: FooConfig):
+        return config.val
+
+    @config_mapping(config_schema=int)
+    def foo_config_mapping(val: Any) -> Any:
+        return {"foo_op": {"config": {"val": val}}}
+
+    @graph_asset(config=foo_config_mapping)
+    def foo():
+        return foo_op()
+
+    result = materialize_to_memory([foo], run_config={"ops": {"foo": {"config": 1}}})
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+
 @ignore_warning("Class `FreshnessPolicy` is experimental")
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs`")
 def test_graph_multi_asset_decorator():
     @resource
     def foo_resource():

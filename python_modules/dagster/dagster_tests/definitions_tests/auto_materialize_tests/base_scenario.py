@@ -421,6 +421,7 @@ def asset_def(
     partitions_def: Optional[PartitionsDefinition] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    code_version: Optional[str] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = None
@@ -443,6 +444,7 @@ def asset_def(
         config_schema={"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
+        code_version=code_version,
     )
     def _asset(context, **kwargs):
         del kwargs

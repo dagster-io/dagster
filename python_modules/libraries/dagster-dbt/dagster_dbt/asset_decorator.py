@@ -35,7 +35,7 @@ from .asset_utils import (
 from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 from .utils import (
     ASSET_RESOURCE_TYPES,
-    get_node_info_by_dbt_unique_id_from_manifest,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
     output_name_fn,
     select_unique_ids_from_manifest,
 )
@@ -117,7 +117,7 @@ def dbt_assets(
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest
     )
-    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
+    node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
     deps = get_deps(
         dbt_nodes=node_info_by_dbt_unique_id,
         selected_unique_ids=unique_ids,
@@ -166,26 +166,26 @@ def get_dbt_multi_asset_args(
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
 
     for unique_id, parent_unique_ids in deps.items():
-        node_info = dbt_nodes[unique_id]
+        dbt_resource_props = dbt_nodes[unique_id]
 
-        output_name = output_name_fn(node_info)
-        asset_key = dagster_dbt_translator.get_asset_key(node_info)
+        output_name = output_name_fn(dbt_resource_props)
+        asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
 
         outs[output_name] = AssetOut(
             key=asset_key,
             dagster_type=Nothing,
             io_manager_key=io_manager_key,
-            description=dagster_dbt_translator.get_description(node_info),
+            description=dagster_dbt_translator.get_description(dbt_resource_props),
             is_required=False,
             metadata={  # type: ignore
-                **dagster_dbt_translator.get_metadata(node_info),
+                **dagster_dbt_translator.get_metadata(dbt_resource_props),
                 MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
             },
-            group_name=dagster_dbt_translator.get_group_name(node_info),
-            code_version=default_code_version_fn(node_info),
-            freshness_policy=default_freshness_policy_fn(node_info),
-            auto_materialize_policy=default_auto_materialize_policy_fn(node_info),
+            group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
+            code_version=default_code_version_fn(dbt_resource_props),
+            freshness_policy=default_freshness_policy_fn(dbt_resource_props),
+            auto_materialize_policy=default_auto_materialize_policy_fn(dbt_resource_props),
         )
 
         # Translate parent unique ids to internal asset deps and non argument dep

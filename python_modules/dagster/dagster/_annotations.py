@@ -11,7 +11,7 @@ from dagster._core.decorator_utils import (
     get_decorator_target,
     is_resource_def,
 )
-from dagster._utils.backcompat import (
+from dagster._utils.warnings import (
     deprecation_warning,
     experimental_warning,
 )

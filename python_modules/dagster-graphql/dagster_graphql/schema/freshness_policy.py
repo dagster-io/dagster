@@ -5,6 +5,9 @@ from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_d
 
 
 class GrapheneAssetFreshnessInfo(graphene.ObjectType):
+    # How old is the current data
+    currentLagMinutes = graphene.Field(graphene.Float)
+    # How overdue is the current data (currentLagMinutes - maximumLagMinutes)
     currentMinutesLate = graphene.Field(graphene.Float)
     latestMaterializationMinutesLate = graphene.Field(graphene.Float)
 

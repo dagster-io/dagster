@@ -1,6 +1,5 @@
 import collections.abc
 import itertools
-import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
@@ -33,8 +32,8 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class UpstreamPartitionsResult(NamedTuple):
@@ -1042,8 +1041,7 @@ def infer_partition_mapping(
         if _can_infer_single_to_multi_partition_mapping(
             upstream_partitions_def, downstream_partitions_def
         ):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=ExperimentalWarning)
+            with disable_dagster_warnings():
                 return MultiToSingleDimensionPartitionMapping()
         elif isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition) and isinstance(
             downstream_partitions_def, TimeWindowPartitionsDefinition

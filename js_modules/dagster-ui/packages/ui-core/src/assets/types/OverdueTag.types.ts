@@ -13,6 +13,11 @@ export type OverduePopoverQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
+        freshnessInfo: {
+          __typename: 'AssetFreshnessInfo';
+          currentLagMinutes: number | null;
+          currentMinutesLate: number | null;
+        } | null;
         freshnessPolicy: {
           __typename: 'FreshnessPolicy';
           cronSchedule: string | null;

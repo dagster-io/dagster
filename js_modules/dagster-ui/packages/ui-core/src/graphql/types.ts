@@ -127,6 +127,7 @@ export type AssetDependency = {
 
 export type AssetFreshnessInfo = {
   __typename: 'AssetFreshnessInfo';
+  currentLagMinutes: Maybe<Scalars['Float']>;
   currentMinutesLate: Maybe<Scalars['Float']>;
   latestMaterializationMinutesLate: Maybe<Scalars['Float']>;
 };
@@ -4360,6 +4361,10 @@ export const buildAssetFreshnessInfo = (
   relationshipsToOmit.add('AssetFreshnessInfo');
   return {
     __typename: 'AssetFreshnessInfo',
+    currentLagMinutes:
+      overrides && overrides.hasOwnProperty('currentLagMinutes')
+        ? overrides.currentLagMinutes!
+        : 5.23,
     currentMinutesLate:
       overrides && overrides.hasOwnProperty('currentMinutesLate')
         ? overrides.currentMinutesLate!

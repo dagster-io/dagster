@@ -26,9 +26,7 @@ from dagster._core.snap import create_job_snapshot_id
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     DagsterRunStatus,
-    JobBucket,
     RunsFilter,
-    TagBucket,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
@@ -1428,105 +1426,6 @@ class TestRunStorage:
         assert run_record.start_time is not None
         assert run_record.end_time is not None
         assert run_record.end_time >= run_record.start_time
-
-    def test_by_job(self, storage):
-        if not storage.supports_bucket_queries:
-            pytest.skip("storage cannot bucket")
-
-        def _add_run(job_name, tags=None):
-            return storage.add_run(
-                TestRunStorage.build_run(job_name=job_name, run_id=make_new_run_id(), tags=tags)
-            )
-
-        _a_one = _add_run("a_pipeline", tags={"a": "A"})
-        a_two = _add_run("a_pipeline", tags={"a": "A"})
-        _b_one = _add_run("b_pipeline", tags={"a": "A"})
-        b_two = _add_run("b_pipeline", tags={"a": "A"})
-        c_one = _add_run("c_pipeline", tags={"a": "A"})
-        c_two = _add_run("c_pipeline", tags={"a": "B"})
-
-        runs_by_job = {
-            run.job_name: run
-            for run in storage.get_runs(
-                bucket_by=JobBucket(
-                    job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
-                )
-            )
-        }
-        assert set(runs_by_job.keys()) == {"a_pipeline", "b_pipeline", "c_pipeline"}
-        assert runs_by_job.get("a_pipeline").run_id == a_two.run_id
-        assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
-        assert runs_by_job.get("c_pipeline").run_id == c_two.run_id
-
-        # fetch with a runs filter applied
-        runs_by_job = {
-            run.job_name: run
-            for run in storage.get_runs(
-                filters=RunsFilter(tags={"a": "A"}),
-                bucket_by=JobBucket(
-                    job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
-                ),
-            )
-        }
-        assert set(runs_by_job.keys()) == {"a_pipeline", "b_pipeline", "c_pipeline"}
-        assert runs_by_job.get("a_pipeline").run_id == a_two.run_id
-        assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
-        assert runs_by_job.get("c_pipeline").run_id == c_one.run_id
-
-    def test_by_tag(self, storage):
-        if not storage.supports_bucket_queries:
-            pytest.skip("storage cannot bucket")
-
-        def _add_run(job_name, tags=None):
-            return storage.add_run(
-                TestRunStorage.build_run(job_name=job_name, run_id=make_new_run_id(), tags=tags)
-            )
-
-        _one = _add_run("a", tags={"a": "1", "b": "1"})
-        _two = _add_run("a", tags={"a": "2", "b": "1"})
-        three = _add_run("a", tags={"a": "3", "b": "1"})
-        _none = _add_run("a", tags={"b": "1"})
-        b = _add_run("b", tags={"a": "4", "b": "2"})
-        one = _add_run("a", tags={"a": "1", "b": "1"})
-        two = _add_run("a", tags={"a": "2", "b": "1"})
-
-        runs_by_tag = {
-            run.tags.get("a"): run
-            for run in storage.get_runs(
-                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1)
-            )
-        }
-        assert set(runs_by_tag.keys()) == {"1", "2", "3", "4"}
-        assert runs_by_tag.get("1").run_id == one.run_id
-        assert runs_by_tag.get("2").run_id == two.run_id
-        assert runs_by_tag.get("3").run_id == three.run_id
-        assert runs_by_tag.get("4").run_id == b.run_id
-
-        # fetch with a pipeline_name filter applied
-        runs_by_tag = {
-            run.tags.get("a"): run
-            for run in storage.get_runs(
-                filters=RunsFilter(job_name="a"),
-                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
-            )
-        }
-        assert set(runs_by_tag.keys()) == {"1", "2", "3"}
-        assert runs_by_tag.get("1").run_id == one.run_id
-        assert runs_by_tag.get("2").run_id == two.run_id
-        assert runs_by_tag.get("3").run_id == three.run_id
-
-        # fetch with a tags filter applied
-        runs_by_tag = {
-            run.tags.get("a"): run
-            for run in storage.get_runs(
-                filters=RunsFilter(tags={"b": "1"}),
-                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
-            )
-        }
-        assert set(runs_by_tag.keys()) == {"1", "2", "3"}
-        assert runs_by_tag.get("1").run_id == one.run_id
-        assert runs_by_tag.get("2").run_id == two.run_id
-        assert runs_by_tag.get("3").run_id == three.run_id
 
     def test_run_record_timestamps(self, storage):
         assert storage

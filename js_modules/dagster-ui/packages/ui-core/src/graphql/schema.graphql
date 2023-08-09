@@ -698,6 +698,7 @@ type AssetDependency {
 }
 
 type AssetFreshnessInfo {
+  currentLagMinutes: Float
   currentMinutesLate: Float
   latestMaterializationMinutesLate: Float
 }

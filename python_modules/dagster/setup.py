@@ -101,7 +101,7 @@ setup(
         # https://github.com/mhammond/pywin32/issues/1439
         'pywin32 != 226; platform_system=="Windows"',
         "docstring-parser",
-        "universal_pathlib < 0.1.0",
+        "universal_pathlib",
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic != 1.10.7,<2.0.0",
     ],

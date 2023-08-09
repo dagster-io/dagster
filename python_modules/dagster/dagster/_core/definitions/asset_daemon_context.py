@@ -337,6 +337,9 @@ class AssetDaemonContext:
             ) = self.instance_queryer.get_updated_and_missing_parent_asset_partitions(
                 asset_partition,
                 parent_asset_partitions,
+                # do a precise check for updated parents, factoring in data versions, as long as
+                # we're within reasonable limits on the number of partitions to check
+                use_asset_versions=len(parent_asset_partitions | has_or_will_update) < 100,
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]

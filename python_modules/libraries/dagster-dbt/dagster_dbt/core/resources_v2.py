@@ -37,7 +37,7 @@ from typing_extensions import Literal
 from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
 from ..dagster_dbt_translator import DagsterDbtTranslator
 from ..errors import DagsterDbtCliRuntimeError
-from ..utils import ASSET_RESOURCE_TYPES, get_node_info_by_dbt_unique_id_from_manifest
+from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
 logger = get_dagster_logger()
 
@@ -357,6 +357,9 @@ class DbtCliResource(ConfigurableResource):
         global_config_flags (List[str]): A list of global flags configuration to pass to the dbt CLI
             invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
             configuration.
+        profiles_dir (Optional[str]): The path to the directory containing your dbt `profiles.yml`.
+            See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
+            information.
         profile (Optional[str]): The profile from your dbt `profiles.yml` to use for execution. See
             https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
@@ -390,6 +393,14 @@ class DbtCliResource(ConfigurableResource):
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
             " https://docs.getdbt.com/reference/global-configs for a full list of configuration."
+        ),
+    )
+    profiles_dir: Optional[str] = Field(
+        default=None,
+        description=(
+            "The path to the directory containing your dbt `profiles.yml`. See"
+            " https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more"
+            " information."
         ),
     )
     profile: Optional[str] = Field(
@@ -476,6 +487,11 @@ class DbtCliResource(ConfigurableResource):
             # See https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
             # for more information.
             "DBT_TARGET_PATH": target_path,
+            # The DBT_PROFILES_DIR environment variable is set to the path containing the dbt
+            # profiles.yml file.
+            # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
+            # for more information.
+            **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
         }
 
         assets_def: Optional[AssetsDefinition] = None
@@ -553,7 +569,7 @@ def get_subset_selection_for_context(
     if exclude:
         default_dbt_selection += ["--exclude", exclude]
 
-    node_info_by_output_name = get_node_info_by_output_name(manifest)
+    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
 
     # TODO: this should be a property on the context if this is a permanent indicator for
     # determining whether the current execution context is performing a subsetted execution.
@@ -569,11 +585,11 @@ def get_subset_selection_for_context(
 
     selected_dbt_resources = []
     for output_name in context.selected_output_names:
-        node_info = node_info_by_output_name[output_name]
+        dbt_resource_props = dbt_resource_props_by_output_name[output_name]
 
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = f"fqn:{'.'.join(node_info['fqn'])}"
+        fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
 
         selected_dbt_resources.append(fqn_selector)
 
@@ -589,8 +605,10 @@ def get_subset_selection_for_context(
     return union_selected_dbt_resources
 
 
-def get_node_info_by_output_name(manifest: Mapping[str, Any]) -> Mapping[str, Mapping[str, Any]]:
-    node_info_by_dbt_unique_id = get_node_info_by_dbt_unique_id_from_manifest(manifest)
+def get_dbt_resource_props_by_output_name(
+    manifest: Mapping[str, Any]
+) -> Mapping[str, Mapping[str, Any]]:
+    node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
 
     return {
         output_name_fn(node): node

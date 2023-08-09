@@ -531,9 +531,9 @@ from dagster._utils import (
 from dagster._utils.alert import (
     make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
 )
-from dagster._utils.backcompat import ExperimentalWarning as ExperimentalWarning
 from dagster._utils.dagster_type import check_dagster_type as check_dagster_type
 from dagster._utils.log import get_dagster_logger as get_dagster_logger
+from dagster._utils.warnings import ExperimentalWarning as ExperimentalWarning
 from dagster.version import __version__ as __version__
 
 # ruff: isort: split
@@ -554,7 +554,7 @@ from typing import (
 
 from typing_extensions import Final
 
-from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.warnings import deprecation_warning
 
 # NOTE: Unfortunately we have to declare deprecated aliases twice-- the
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry

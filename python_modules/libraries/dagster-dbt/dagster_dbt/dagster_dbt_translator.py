@@ -107,7 +107,7 @@ class DagsterDbtTranslator:
         This method can be overridden to provide a custom metadata for a dbt resource.
 
         Args:
-            node_info (Mapping[str, Any]): A dictionary representing the dbt resource.
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
             Mapping[str, Any]: A dictionary representing the Dagster metadata for the dbt resource.
@@ -141,7 +141,7 @@ class DagsterDbtTranslator:
         This method can be overridden to provide a custom metadata for a dbt resource.
 
         Args:
-            node_info (Mapping[str, Any]): A dictionary representing the dbt resource.
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
 
         Returns:
             Optional[str]: A Dagster group name.
@@ -157,7 +157,7 @@ class DagsterDbtTranslator:
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
                     def get_group_name(cls, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-                        return "custom_group_prefix" + node_info.get("config", {}).get("group")
+                        return "custom_group_prefix" + dbt_resource_props.get("config", {}).get("group")
         """
         return default_group_from_dbt_resource_props(dbt_resource_props)
 

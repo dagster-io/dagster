@@ -1,9 +1,8 @@
 import random
 import string
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
 from typing import Any
 from unittest import mock
 
@@ -1408,120 +1407,6 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
             freeze_datetime,
             TickStatus.SKIPPED,
         )
-
-
-@contextmanager
-def instance_with_sensors_no_run_bucketing():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
-            overrides={
-                "run_storage": {
-                    "module": "dagster_tests.storage_tests.test_run_storage",
-                    "class": "NonBucketQuerySqliteRunStorage",
-                    "config": {"base_dir": temp_dir},
-                },
-                "run_launcher": {
-                    "module": "dagster._core.test_utils",
-                    "class": "MockedRunLauncher",
-                },
-            }
-        ) as instance:
-            yield instance
-
-
-def test_launch_once_unbatched(caplog, executor, workspace_context, external_repo):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
-    with instance_with_sensors_no_run_bucketing() as instance:
-        no_bucket_workspace_context = workspace_context.copy_for_test_instance(instance)
-
-        with pendulum.test(freeze_datetime):
-            external_sensor = external_repo.get_external_sensor("run_key_sensor")
-            instance.add_instigator_state(
-                InstigatorState(
-                    external_sensor.get_external_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.RUNNING,
-                )
-            )
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 0
-
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            wait_for_all_runs_to_start(instance)
-
-            assert instance.get_runs_count() == 1
-            run = instance.get_runs()[0]
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 1
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-                expected_run_ids=[run.run_id],
-            )
-
-        # run again (after 30 seconds), to ensure that the run key maintains idempotence
-        freeze_datetime = freeze_datetime.add(seconds=30)
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            assert instance.get_runs_count() == 1
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 2
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
-            assert (
-                "Skipping 1 run for sensor run_key_sensor already completed with run keys:"
-                ' ["only_once"]'
-                in caplog.text
-            )
-
-            launched_run = instance.get_runs()[0]
-
-            # Manually create a new run with the same tags
-            the_job.execute_in_process(
-                run_config=launched_run.run_config,
-                tags=launched_run.tags,
-                instance=instance,
-            )
-
-            # Sensor loop still executes
-        freeze_datetime = freeze_datetime.add(seconds=30)
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-
-            assert len(ticks) == 3
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
 
 
 def test_custom_interval_sensor(executor, instance, workspace_context, external_repo):

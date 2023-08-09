@@ -38,10 +38,10 @@ from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
-from dagster._utils.backcompat import (
+from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import (
     normalize_renamed_param,
 )
-from dagster._utils.cached_method import cached_method
 
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -312,12 +312,12 @@ def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> No
     counts: Dict[str, int] = defaultdict(lambda: 0)
     for partition_key in partition_keys:
         counts[partition_key] += 1
-        found_duplicates = [key for key in counts.keys() if counts[key] > 1]
-        if found_duplicates:
-            raise DagsterInvalidDefinitionError(
-                "Partition keys must be unique. Duplicate instances of partition keys:"
-                f" {found_duplicates}."
-            )
+    found_duplicates = [key for key in counts.keys() if counts[key] > 1]
+    if found_duplicates:
+        raise DagsterInvalidDefinitionError(
+            "Partition keys must be unique. Duplicate instances of partition keys:"
+            f" {found_duplicates}."
+        )
 
 
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
