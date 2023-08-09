@@ -7,4 +7,4 @@ assets:
     description: "This is a description of the baz asset"
     deps:
       - "foo/bar"
-    sql: "SELECT * from foo"
+    sql: "INSERT into baz SELECT * from bar"
