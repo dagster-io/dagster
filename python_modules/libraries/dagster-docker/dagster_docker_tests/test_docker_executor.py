@@ -1,3 +1,4 @@
+import pytest
 import os
 
 from dagster._core.execution.api import execute_job
@@ -15,6 +16,7 @@ from dagster_test.test_project import (
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
+@pytest.mark.integration
 def test_docker_executor(aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {
@@ -46,6 +48,7 @@ def test_docker_executor(aws_env):
                 assert result.success
 
 
+@pytest.mark.integration
 def test_docker_executor_check_step_health(aws_env):
     executor_config = {
         "execution": {
@@ -79,6 +82,7 @@ def test_docker_executor_check_step_health(aws_env):
                 assert not result.success
 
 
+@pytest.mark.integration
 def test_docker_executor_config_on_container_context(aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {"execution": {"config": {}}}
@@ -115,6 +119,7 @@ def test_docker_executor_config_on_container_context(aws_env):
                 assert result.success
 
 
+@pytest.mark.integration
 def test_docker_executor_retries(aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {
