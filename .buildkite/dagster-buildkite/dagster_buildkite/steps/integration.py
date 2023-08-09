@@ -237,27 +237,34 @@ def build_integration_suite_steps(
 
 
 def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
+    cmds = [
+        'export AIRFLOW_HOME="/airflow"',
+        "mkdir -p $${AIRFLOW_HOME}",
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
+        "aws ecr get-login --no-include-email --region us-west-2 | sh",
+    ]
+
+    # If integration tests are disabled, we won't have any gcp credentials to download.
     if not os.getenv("DISABLE_INTEGRATION_TESTS"):
-        return [
-            'export AIRFLOW_HOME="/airflow"',
-            "mkdir -p $${AIRFLOW_HOME}",
-            "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-            'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-            "aws ecr get-login --no-include-email --region us-west-2 | sh",
+        cmds += [
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
             + GCP_CREDS_LOCAL_FILE,
             "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-            "pushd python_modules/libraries/dagster-celery",
-            # Run the rabbitmq db. We are in docker running docker
-            # so this will be a sibling container.
-            "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-            # Can't use host networking on buildkite and communicate via localhost
-            # between these sibling containers, so pass along the ip.
-            *network_buildkite_container("rabbitmq"),
-            *connect_sibling_docker_container(
-                "rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"
-            ),
-            "popd",
         ]
-    else:
-        return []
+
+    cmds += [
+        "pushd python_modules/libraries/dagster-celery",
+        # Run the rabbitmq db. We are in docker running docker
+        # so this will be a sibling container.
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        *network_buildkite_container("rabbitmq"),
+        *connect_sibling_docker_container(
+            "rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"
+        ),
+        "popd",
+    ]
+
+    return cmds
