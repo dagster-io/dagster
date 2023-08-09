@@ -70,10 +70,10 @@ class StartRunInSubprocessSuccessful:
 
 
 def _report_run_failed_if_not_finished(
-    instance: DagsterInstance, pipeline_run_id: str
+    instance: DagsterInstance, run_id: str
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(instance, "instance", DagsterInstance)
-    dagster_run = instance.get_run_by_id(pipeline_run_id)
+    dagster_run = instance.get_run_by_id(run_id)
     if dagster_run and (not dagster_run.is_finished):
         yield instance.report_run_failed(dagster_run)
 
@@ -86,7 +86,7 @@ def core_execute_run(
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_job, "recon_job", ReconstructableJob)
-    check.inst_param(dagster_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if inject_env_vars:
@@ -120,7 +120,7 @@ def core_execute_run(
         recon_job.get_definition()
     except Exception:
         yield instance.report_engine_event(
-            "Could not load pipeline definition.",
+            "Could not load job definition.",
             dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
@@ -130,7 +130,7 @@ def core_execute_run(
     # Reload the run to verify that its status didn't change while the pipeline was loaded
     dagster_run = check.not_none(
         instance.get_run_by_id(dagster_run.run_id),
-        f"Pipeline run with id '{dagster_run.run_id}' was deleted after the run worker started.",
+        f"Job run with id '{dagster_run.run_id}' was deleted after the run worker started.",
     )
 
     try:
