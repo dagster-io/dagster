@@ -4,7 +4,9 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Any,
     Dict,
+    FrozenSet,
     Iterable,
     Mapping,
     Optional,
@@ -31,6 +33,8 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._utils.cached_method import cached_method
 
+from ... import PartitionKeyRange
+from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
 from .asset_daemon_cursor import AssetDaemonCursor
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
 from .auto_materialize_condition import (
@@ -41,6 +45,7 @@ from .auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
+from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .partition import (
     PartitionsDefinition,
     ScheduleType,
@@ -685,6 +690,162 @@ def build_run_requests(
             )
 
     return run_requests
+
+
+def build_run_requests_with_backfill_policies(
+    asset_partitions: Iterable[AssetKeyPartitionKey],
+    asset_graph: AssetGraph,
+    run_tags: Optional[Mapping[str, str]],
+) -> Sequence[RunRequest]:
+    """If all assets have backfill policies, we should respect them and materialize them according
+    to their backfill policies.
+    """
+    run_requests = []
+
+    asset_partition_keys: Mapping[AssetKey, Set[str]] = {
+        asset_key_partition.asset_key: set() for asset_key_partition in asset_partitions
+    }
+    for asset_partition in asset_partitions:
+        if asset_partition.partition_key:
+            asset_partition_keys[asset_partition.asset_key].add(asset_partition.partition_key)
+
+    assets_to_reconcile_by_partitions_def_partition_keys: Mapping[
+        Tuple[Optional[PartitionsDefinition], Optional[FrozenSet[str]]], Set[AssetKey]
+    ] = defaultdict(set)
+
+    # here we are grouping assets by their partitions def and partition keys selected.
+    for asset_key, partition_keys in asset_partition_keys.items():
+        assets_to_reconcile_by_partitions_def_partition_keys[
+            asset_graph.get_partitions_def(asset_key),
+            frozenset(partition_keys) if partition_keys else None,
+        ].add(asset_key)
+
+    for (
+        partitions_def,
+        partition_keys,
+    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys.items():
+        tags = {**(run_tags or {})}
+        if partitions_def is None and partition_keys is not None:
+            check.failed("Partition key provided for unpartitioned asset")
+        if partitions_def is not None and partition_keys is None:
+            check.failed("Partition key missing for partitioned asset")
+        if partitions_def is None and partition_keys is None:
+            # non partitioned assets will be backfilled in a single run
+            run_requests.append(RunRequest(asset_selection=list(asset_keys), tags=tags))
+        else:
+            backfill_policies = {
+                check.not_none(asset_graph.get_backfill_policy(asset_key))
+                for asset_key in asset_keys
+            }
+            if len(backfill_policies) == 1:
+                # if all backfill policies are the same, we can backfill them together
+                backfill_policy = backfill_policies.pop()
+                run_requests.extend(
+                    _build_run_requests_with_backfill_policy(
+                        list(asset_keys),
+                        check.not_none(backfill_policy),
+                        check.not_none(partition_keys),
+                        check.not_none(partitions_def),
+                        tags,
+                    )
+                )
+            else:
+                # if backfill policies are different, we need to backfill them separately
+                for asset_key in asset_keys:
+                    backfill_policy = asset_graph.get_backfill_policy(asset_key)
+                    run_requests.extend(
+                        _build_run_requests_with_backfill_policy(
+                            [asset_key],
+                            check.not_none(backfill_policy),
+                            check.not_none(partition_keys),
+                            check.not_none(partitions_def),
+                            tags,
+                        )
+                    )
+    return run_requests
+
+
+def _build_run_requests_with_backfill_policy(
+    asset_keys: Sequence[AssetKey],
+    backfill_policy: BackfillPolicy,
+    partition_keys: FrozenSet[str],
+    partitions_def: PartitionsDefinition,
+    tags: Dict[str, Any],
+) -> Sequence[RunRequest]:
+    run_requests = []
+    partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
+    partition_key_ranges = partition_subset.get_partition_key_ranges()
+    for partition_key_range in partition_key_ranges:
+        # We might resolve more than one partition key range for the given partition keys.
+        # We can only apply chunking on individual partition key ranges.
+        if backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN:
+            run_requests.append(
+                _build_run_request_for_partition_key_range(
+                    asset_keys=list(asset_keys),
+                    partition_range_start=partition_key_range.start,
+                    partition_range_end=partition_key_range.end,
+                    run_tags=tags,
+                )
+            )
+        else:
+            run_requests.extend(
+                _build_run_requests_for_partition_key_range(
+                    asset_keys=list(asset_keys),
+                    partitions_def=partitions_def,
+                    partition_key_range=partition_key_range,
+                    max_partitions_per_run=check.int_param(
+                        backfill_policy.max_partitions_per_run, "max_partitions_per_run"
+                    ),
+                    run_tags=tags,
+                )
+            )
+    return run_requests
+
+
+def _build_run_requests_for_partition_key_range(
+    asset_keys: Sequence[AssetKey],
+    partitions_def: PartitionsDefinition,
+    partition_key_range: PartitionKeyRange,
+    max_partitions_per_run: int,
+    run_tags: Dict[str, str],
+) -> Sequence[RunRequest]:
+    """Builds multiple run requests for the given partition key range. Each run request will have at most
+    max_partitions_per_run partitions.
+    """
+    partition_keys = partitions_def.get_partition_keys_in_range(partition_key_range)
+    partition_range_start_index = partition_keys.index(partition_key_range.start)
+    partition_range_end_index = partition_keys.index(partition_key_range.end)
+
+    partition_chunk_start_index = partition_range_start_index
+    run_requests = []
+    while partition_chunk_start_index < partition_range_end_index:
+        partition_chunk_end_index = partition_chunk_start_index + max_partitions_per_run - 1
+        if partition_chunk_end_index > partition_range_end_index:
+            partition_chunk_end_index = partition_range_end_index
+        partition_chunk_start_key = partition_keys[partition_chunk_start_index]
+        partition_chunk_end_key = partition_keys[partition_chunk_end_index]
+        run_requests.append(
+            _build_run_request_for_partition_key_range(
+                asset_keys, partition_chunk_start_key, partition_chunk_end_key, run_tags
+            )
+        )
+        partition_chunk_start_index = partition_chunk_end_index + 1
+    return run_requests
+
+
+def _build_run_request_for_partition_key_range(
+    asset_keys: Sequence[AssetKey],
+    partition_range_start: str,
+    partition_range_end: str,
+    run_tags: Dict[str, str],
+) -> RunRequest:
+    """Builds a single run request for the given asset key and partition key range."""
+    tags = {
+        **(run_tags or {}),
+        ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
+        ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
+    }
+    return RunRequest(asset_selection=asset_keys, tags=tags)
 
 
 def build_auto_materialize_asset_evaluations(
