@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {AssetViewParams} from './AssetView';
+import {AssetViewParams} from './types';
 
 export function usePartitionKeyInParams({
   params,
