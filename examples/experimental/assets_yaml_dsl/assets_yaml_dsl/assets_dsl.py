@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List
 
 import yaml
-from dagster import AssetsDefinition, Definitions, ResourceParam
+from dagster import AssetsDefinition, ResourceParam
 
 try:
     from yaml import CLoader as Loader
@@ -53,6 +53,4 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
     return assets_defs
 
 
-defs = Definitions(
-    assets=from_asset_entries(asset_entries), resources={"sql_client": SomeSqlClient()}
-)
+assets_dsl_assets_defs = from_asset_entries(asset_entries)

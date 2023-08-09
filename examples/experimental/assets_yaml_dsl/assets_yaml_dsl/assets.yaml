@@ -1,4 +1,4 @@
-group_name: my_group
+group_name: assets_dsl_example
 assets:
   - asset_key: "foo/bar"
     # replace "sql" with whatever information is needed for your assets
