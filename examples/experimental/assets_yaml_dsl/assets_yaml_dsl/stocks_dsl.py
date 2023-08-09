@@ -19,14 +19,17 @@ def load_yaml(relative_path: str) -> Dict[str, Any]:
 
 
 def get_ticker_data(ticker: str) -> str:
+    # imagine instead of returning a string, this function fetches data from an external service
     return f"{ticker}-data"
 
 
 def enrich_and_insert_data(ticker_data) -> None:
+    # imagine this modifies the data and inserts it into ouj database
     pass
 
 
 def fetch_data_for_ticker(ticker: str) -> str:
+    # imagine this fetches data from our database
     return f"{ticker}-data-enriched"
 
 
@@ -49,11 +52,11 @@ class StockAssets(NamedTuple):
 
 
 def build_stock_assets_object(stocks_dsl_document: Dict[str, Dict]) -> StockAssets:
-    stock_infos = []
-    for stock_block in stocks_dsl_document["stocks_to_index"]:
-        stock_infos.append(StockInfo(ticker=stock_block["ticker"]))
     return StockAssets(
-        stock_infos=stock_infos,
+        stock_infos=[
+            StockInfo(ticker=stock_block["ticker"])
+            for stock_block in stocks_dsl_document["stocks_to_index"]
+        ],
         index_strategy=IndexStrategy(type=stocks_dsl_document["index_strategy"]["type"]),
         forecast=Forecast(int(stocks_dsl_document["forecast"]["days"])),
     )
@@ -87,6 +90,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
         for ticker in tickers:
             enrich_and_insert_data(get_ticker_data(ticker))
 
+        # TODO: remove once alex's PR lands
         return tuple([Output(None, ticker) for ticker in tickers])
 
     @asset(deps=ticker_asset_keys, group_name=group_name)
