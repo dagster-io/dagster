@@ -45,7 +45,7 @@ This example assumes that `asset1` will be materialized in some other way - e.g.
 
 ### Adding an auto-materialize policy to multiple assets at once
 
-If you want to apply the same <PyObject object="AutoMaterializePolicy" /> to a set of assets, you can use the `auto_materialize_policy` when loading them with functions like <PyObject object="load_assets_from_current_module" /> and <PyObject object="load_assets_from_package_module" />.
+If you want to apply the same <PyObject object="AutoMaterializePolicy" /> to a set of assets, you can use the `auto_materialize_policy` argument when loading them with functions like <PyObject object="load_assets_from_current_module" /> and <PyObject object="load_assets_from_package_module" />.
 
 ```python file=/concepts/assets/auto_materialize_multiple.py
 from dagster import (
