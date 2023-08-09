@@ -1,5 +1,9 @@
 from dagster import Definitions
 
-from .assets_dsl import SomeSqlClient, assets_dsl_assets_defs
+from .assets_dsl import SomeSqlClient, get_asset_dsl_example_defs
+from .stocks_dsl import get_stocks_dsl_example_defs
 
-defs = Definitions(assets=assets_dsl_assets_defs, resources={"sql_client": SomeSqlClient()})
+defs = Definitions(
+    assets=get_asset_dsl_example_defs() + get_stocks_dsl_example_defs(),
+    resources={"sql_client": SomeSqlClient()},
+)

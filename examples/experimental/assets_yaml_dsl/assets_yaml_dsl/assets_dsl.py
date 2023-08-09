@@ -12,13 +12,10 @@ except ImportError:
 from dagster import AssetKey, asset
 
 
-def load_yaml() -> Dict[str, Any]:
-    path = os.path.join(os.path.dirname(__file__), "assets.yaml")
+def load_yaml(relative_path) -> Dict[str, Any]:
+    path = os.path.join(os.path.dirname(__file__), relative_path)
     with open(path, "r", encoding="utf8") as ff:
         return yaml.load(ff, Loader=Loader)
-
-
-asset_entries = load_yaml()
 
 
 class SomeSqlClient:
@@ -53,4 +50,6 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
     return assets_defs
 
 
-assets_dsl_assets_defs = from_asset_entries(asset_entries)
+def get_asset_dsl_example_defs() -> List[AssetsDefinition]:
+    asset_entries = load_yaml("assets.yaml")
+    return from_asset_entries(asset_entries)
