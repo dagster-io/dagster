@@ -19,7 +19,7 @@ def pytest_configure(config):
 def pytest_runtest_setup(item):
     try:
         next(item.iter_markers("integration"))
-        if os.getenv("DISABLE_INTEGRATION_TESTS"):
+        if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
             pytest.skip("Integration tests are disabled")
 
     except StopIteration:
