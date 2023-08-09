@@ -9,7 +9,7 @@ from pkg_resources import Requirement, parse_requirements
 
 from dagster_buildkite.git import ChangedFiles, GitInfo
 
-changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini"]
+changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini", ".jinja"]
 
 
 class PythonPackage:
