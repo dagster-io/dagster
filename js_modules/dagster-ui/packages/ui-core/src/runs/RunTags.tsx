@@ -58,7 +58,6 @@ export const RunTags: React.FC<{
       list.push(addToFilterAction);
     }
     if (onToggleTagPin) {
-      console.log(tag, tag.pinned ? 'Unpin tag' : 'Pin tag');
       list.push({
         label: tag.pinned ? 'Unpin tag' : 'Pin tag',
         onClick: () => {
