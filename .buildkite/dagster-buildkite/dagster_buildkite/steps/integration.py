@@ -20,8 +20,6 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
 
-print(os.getenv("CI_DISABLE_INTEGRATION_TESTS"))
-
 
 def build_integration_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
