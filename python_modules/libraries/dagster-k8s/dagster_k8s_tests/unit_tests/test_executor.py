@@ -2,7 +2,7 @@ import json
 from unittest import mock
 
 import pytest
-from dagster import job, op
+from dagster import job, op, repository
 from dagster._config import process_config, resolve_to_config_type
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import create_execution_plan
@@ -11,9 +11,17 @@ from dagster._core.execution.context_creation_job import create_context_free_log
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
+from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.test_utils import (
+    create_run_for_test,
+    environ,
+    in_process_test_workspace,
+    instance_for_test,
+)
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteStepArgs
+from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
@@ -111,6 +119,11 @@ def bar_with_images():
         return 1
 
     foo()
+
+
+@repository
+def bar_repo():
+    return [bar]
 
 
 @pytest.fixture
@@ -426,24 +439,40 @@ def test_step_handler(kubeconfig_file, k8s_instance):
         k8s_client_batch_api=mock_k8s_client_batch_api,
     )
 
-    run = create_run_for_test(
-        k8s_instance,
-        job_name="bar",
-        job_code_origin=reconstructable(bar).get_python_origin(),
-    )
-    list(
-        handler.launch_step(
-            _step_handler_context(
-                job_def=reconstructable(bar),
-                dagster_run=run,
-                instance=k8s_instance,
-                executor=_get_executor(
-                    k8s_instance,
-                    reconstructable(bar),
-                ),
+    recon_job = reconstructable(bar)
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__, attribute="bar_repo")
+
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_code_location(workspace.code_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name="bar_repo",
+                code_location=location,
             )
-        )
-    )
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
+                repository_handle=repo_handle,
+            )
+            run = create_run_for_test(
+                k8s_instance,
+                job_name="bar",
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=recon_job.get_python_origin(),
+            )
+            list(
+                handler.launch_step(
+                    _step_handler_context(
+                        job_def=reconstructable(bar),
+                        dagster_run=run,
+                        instance=k8s_instance,
+                        executor=_get_executor(
+                            k8s_instance,
+                            reconstructable(bar),
+                        ),
+                    )
+                )
+            )
 
     # Check that user defined k8s config was passed down to the k8s job.
     mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -451,6 +480,12 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     method_name, _args, kwargs = mock_method_calls[0]
     assert method_name == "create_namespaced_job"
     assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
+
+    # appropriate labels applied
+    labels = kwargs["body"].spec.template.metadata.labels
+    assert labels["dagster/code-location"] == "in_process"
+    assert labels["dagster/job"] == "bar"
+    assert labels["dagster/run-id"] == run.run_id
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):

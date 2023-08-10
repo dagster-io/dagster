@@ -261,6 +261,16 @@ def execute_k8s_job(
     if retry_number > 0:
         job_name = f"{job_name}-{retry_number}"
 
+    labels = {
+        "dagster/job": context.dagster_run.job_name,
+        "dagster/op": context.op.name,
+        "dagster/run-id": context.dagster_run.run_id,
+    }
+    if context.dagster_run.external_job_origin:
+        labels["dagster/code-location"] = (
+            context.dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+        )
+
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,
         args=args,
@@ -268,11 +278,7 @@ def execute_k8s_job(
         pod_name=job_name,
         component="k8s_job_op",
         user_defined_k8s_config=user_defined_k8s_config,
-        labels={
-            "dagster/job": context.dagster_run.job_name,
-            "dagster/op": context.op.name,
-            "dagster/run-id": context.dagster_run.run_id,
-        },
+        labels=labels,
     )
 
     if load_incluster_config:

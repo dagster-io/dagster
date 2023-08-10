@@ -377,6 +377,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
             labels = kwargs["body"].spec.template.metadata.labels
             assert labels["foo_label_key"] == "bar_label_value"
+            assert labels["dagster/code-location"] == "in_process"
+            assert labels["dagster/job"] == "fake_job"
+            assert labels["dagster/run-id"] == run.run_id
 
             args = container.args
             assert (

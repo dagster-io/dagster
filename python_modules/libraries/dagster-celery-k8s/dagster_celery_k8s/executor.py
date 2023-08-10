@@ -360,6 +360,15 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         args = execute_step_args.get_command_args()
 
+        labels = {
+            "dagster/job": dagster_run.job_name,
+            "dagster/op": step_key,
+            "dagster/run-id": execute_step_args.run_id,
+        }
+        if dagster_run.external_job_origin:
+            labels["dagster/code-location"] = (
+                dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config,
             args,
@@ -367,11 +376,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             user_defined_k8s_config,
             pod_name,
             component="step_worker",
-            labels={
-                "dagster/job": dagster_run.job_name,
-                "dagster/op": step_key,
-                "dagster/run-id": execute_step_args.run_id,
-            },
+            labels=labels,
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
