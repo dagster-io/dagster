@@ -209,7 +209,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         modified_data = {}
         for key, value in config_dict.items():
-            self.model_fields.get(key)
+            field = self.model_fields.get(key)
+            if field and not field.is_required() and value is None:
+                continue
             # if field and field.field_info.discriminator:
             #     nested_dict = value
 
@@ -317,16 +319,16 @@ def _config_value_to_dict_representation(field: Optional[FieldInfo], value: Any)
     elif isinstance(value, IntEnvVar):
         return {"env": value.name}
     if isinstance(value, Config):
-        if field and field.discriminator_key:
-            return {
-                k: v
-                for k, v in _discriminated_union_config_dict_to_selector_config_dict(
-                    field.discriminator_key,
-                    value._convert_to_config_dictionary(),  # noqa: SLF001
-                ).items()
-            }
-        else:
-            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+        # if field and field.discriminator_key:
+        #     return {
+        #         k: v
+        #         for k, v in _discriminated_union_config_dict_to_selector_config_dict(
+        #             field.discriminator_key,
+        #             value._convert_to_config_dictionary(),
+        #         ).items()
+        #     }
+        # else:
+        return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
     elif isinstance(value, Enum):
         return value.name
 
@@ -1515,6 +1517,8 @@ def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type]
         # if inner_field:
         #     config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
         # else:
+        if not pydantic_field.is_required() and not _is_optional(field_type):
+            field_type = Optional[field_type]
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
         return Field(
@@ -1522,7 +1526,8 @@ def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type]
                 config_type  # Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
             ),
             description=pydantic_field.description,
-            is_required=True,  # _is_pydantic_field_required(pydantic_field),
+            is_required=pydantic_field.is_required()
+            and not _is_optional(field_type),  # _is_pydantic_field_required(pydantic_field),
             default_value=(
                 pydantic_field.default
                 if pydantic_field.default is not None
@@ -1530,6 +1535,14 @@ def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type]
                 else FIELD_NO_DEFAULT_PROVIDED
             ),
         )
+
+
+def _is_optional(annotation: Type) -> bool:
+    return (
+        get_origin(annotation) == Union
+        and len(get_args(annotation)) == 2
+        and type(None) in get_args(annotation)
+    )
 
 
 def _config_type_for_type_on_pydantic_field(
@@ -1558,11 +1571,7 @@ def _config_type_for_type_on_pydantic_field(
     if safe_is_subclass(get_origin(potential_dagster_type), List):
         list_inner_type = get_args(potential_dagster_type)[0]
         return Array(_config_type_for_type_on_pydantic_field(list_inner_type))
-    elif (
-        get_origin(potential_dagster_type) == Union
-        and len(get_args(potential_dagster_type)) == 2
-        and type(None) in get_args(potential_dagster_type)
-    ):
+    elif _is_optional(potential_dagster_type):
         optional_inner_type = next(
             arg for arg in get_args(potential_dagster_type) if arg is not type(None)
         )
