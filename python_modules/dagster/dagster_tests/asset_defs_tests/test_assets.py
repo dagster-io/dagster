@@ -42,9 +42,11 @@ from dagster._core.errors import (
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.dagster_type import Nothing
 
 
 def test_with_replaced_asset_keys():
@@ -1539,3 +1541,86 @@ def test_asset_key_with_prefix():
 
     with pytest.raises(CheckError):
         AssetKey("foo").with_prefix(1)
+
+
+def _exec_asset(asset_def):
+    asset_job = define_asset_job("testing", [asset_def]).resolve(
+        asset_graph=AssetGraph.from_assets([asset_def])
+    )
+
+    result = asset_job.execute_in_process()
+    assert result.success
+
+    return result.asset_materializations_for_node(asset_def.node_def.name)
+
+
+def test_multi_asset_return_none():
+    #
+    # non-optional Nothing
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(dagster_type=Nothing),
+            "asset2": AssetOut(dagster_type=Nothing),
+        },
+    )
+    def my_function():
+        # ...materialize assets without IO manager
+        pass
+
+    # via job
+    _exec_asset(my_function)
+
+    # direct invoke
+    my_function()
+
+    #
+    # optional (fails)
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(dagster_type=Nothing, is_required=False),
+            "asset2": AssetOut(dagster_type=Nothing, is_required=False),
+        },
+        can_subset=True,
+    )
+    def subset(context: AssetExecutionContext):
+        # ...use context.selected_asset_keys materialize subset of assets without IO manager
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        _exec_asset(subset)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        subset(build_asset_context())
+
+    #
+    # untyped (fails)
+    #
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(),
+            "asset2": AssetOut(),
+        },
+    )
+    def untyped():
+        # ...materialize assets without IO manager
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        _exec_asset(untyped)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        untyped()

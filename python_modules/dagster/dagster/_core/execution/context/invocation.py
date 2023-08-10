@@ -524,6 +524,10 @@ class BoundOpExecutionContext(OpExecutionContext):
         return self._op_def
 
     @property
+    def has_assets_def(self) -> bool:
+        return self._assets_def is not None
+
+    @property
     def assets_def(self) -> AssetsDefinition:
         if self._assets_def is None:
             raise DagsterInvalidPropertyError(
