@@ -28,6 +28,7 @@ from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 from dagster import (
     Enum as DagsterEnum,
     Field as DagsterField,
+    Permissive,
 )
 from dagster._annotations import deprecated
 from dagster._config.config_type import (
@@ -36,7 +37,7 @@ from dagster._config.config_type import (
     ConfigType,
     Noneable,
 )
-from dagster._config.field_utils import EnvVar, IntEnvVar, config_dictionary_from_values
+from dagster._config.field_utils import EnvVar, IntEnvVar, Map, config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
@@ -79,7 +80,6 @@ import dagster._check as check
 from dagster import Field, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
-    Map,
     convert_potential_field,
 )
 from dagster._core.definitions.resource_definition import (
@@ -132,7 +132,7 @@ class MakeConfigCacheable(BaseModel):
             return super().__setattr__(name, value)
         except (TypeError, ValueError) as e:
             clsname = self.__class__.__name__
-            if "is immutable and does not support item assignment" in str(e):
+            if "Instance is frozen" in str(e):
                 if isinstance(self, ConfigurableResourceFactory):
                     raise DagsterInvalidInvocationError(
                         f"'{clsname}' is a Pythonic resource and does not support item assignment,"
@@ -235,6 +235,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             #     }
             # else:
             modified_data[key] = value
+        for key, field in self.model_fields.items():
+            if field.is_required() and key not in modified_data:
+                modified_data[key]=None
         print({k: type(v) for k, v in modified_data.items()})
         super().__init__(**modified_data)
 
@@ -1444,30 +1447,6 @@ MAPPING_KEY_TYPE_TO_SCALAR = {
 }
 
 
-def _wrap_config_type(
-    shape_type: Type,
-    key_type: Optional[ConfigType],
-    config_type: ConfigType,
-) -> ConfigType:
-    """Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
-    For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
-    """
-    if safe_is_subclass(get_origin(shape_type), list):
-        return Array(config_type)
-    if safe_is_subclass(get_origin(shape_type), dict) or safe_is_subclass(
-        get_origin(shape_type), Mapping
-    ):
-        if key_type not in MAPPING_KEY_TYPE_TO_SCALAR:
-            raise NotImplementedError(
-                f"Pydantic shape type is a mapping, but key type {key_type} is not a valid "
-                "Map key type. Valid Map key types are: "
-                f"{', '.join([str(t) for t in MAPPING_KEY_TYPE_TO_SCALAR.keys()])}."
-            )
-        return Map(MAPPING_KEY_TYPE_TO_SCALAR[key_type], config_type)
-
-    return config_type
-
-
 def _get_inner_field_if_exists(shape_type: Type, field: FieldInfo) -> Optional[FieldInfo]:
     """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
 
@@ -1584,6 +1563,21 @@ def _config_type_for_type_on_pydantic_field(
             arg for arg in get_args(potential_dagster_type) if arg is not type(None)
         )
         return Noneable(_config_type_for_type_on_pydantic_field(optional_inner_type))
+    elif safe_is_subclass(get_origin(potential_dagster_type), Dict) or safe_is_subclass(
+        get_origin(potential_dagster_type), Mapping
+    ):
+        key_type, value_type = get_args(potential_dagster_type)
+        print(_config_type_for_type_on_pydantic_field(key_type))
+        return Map(
+            key_type,
+            _config_type_for_type_on_pydantic_field(value_type),
+        )
+
+    if safe_is_subclass(potential_dagster_type, Config):
+        inferred_field = infer_schema_from_config_class(
+            potential_dagster_type,
+        )
+        return inferred_field.config_type
 
     if safe_is_subclass(potential_dagster_type, Enum):
         return DagsterEnum.from_python_enum_direct_values(potential_dagster_type)
@@ -1762,6 +1756,12 @@ def infer_schema_from_config_class(
         alias = pydantic_field_info.alias if pydantic_field_info.alias else key
         print("GOT FIELD ", alias)
         if key not in fields_to_omit:
+            if isinstance(pydantic_field_info.default, Field):
+                raise DagsterInvalidDefinitionError(
+                    "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+                    " definition. 'dagster.Field' should only be used in legacy Dagster config"
+                    " schemas. Did you mean to use 'pydantic.Field' instead?"
+                )
             try:
                 fields[alias] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
@@ -1773,29 +1773,7 @@ def infer_schema_from_config_class(
                     and safe_is_subclass(model_cls, ConfigurableResourceFactory),
                 )
 
-    # for pydantic_field in model_cls.model_fields.values():
-    #     if pydantic_field.name not in fields_to_omit:
-    #         if isinstance(pydantic_field.default, Field):
-    #             raise DagsterInvalidDefinitionError(
-    #                 "Using 'dagster.Field' is not supported within a Pythonic config or resource"
-    #                 " definition. 'dagster.Field' should only be used in legacy Dagster config"
-    #                 " schemas. Did you mean to use 'pydantic.Field' instead?"
-    #             )
-
-    #         try:
-    #             fields[pydantic_field.alias] = _convert_pydantic_field(
-    #                 pydantic_field,
-    #             )
-    #         except DagsterInvalidConfigDefinitionError as e:
-    #             raise DagsterInvalidPythonicConfigDefinitionError(
-    #                 config_class=model_cls,
-    #                 field_name=pydantic_field.name,
-    #                 invalid_type=e.current_value,
-    #                 is_resource=model_cls is not None
-    #                 and safe_is_subclass(model_cls, ConfigurableResourceFactory),
-    #             )
-
-    shape_cls = Shape  # Permissive if model_cls.__config__.extra == Extra.allow else Shape
+    shape_cls = Permissive if model_cls.model_config.get('extra') == 'allow' else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
 
