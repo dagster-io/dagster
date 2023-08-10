@@ -359,7 +359,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             "api_tests",
             "cli_tests",
-            "core_tests",
+            "core_tests_pydantic1",
+            "core_tests_pydantic2",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
             "daemon_sensor_tests",
