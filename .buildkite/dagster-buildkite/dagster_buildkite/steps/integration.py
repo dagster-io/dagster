@@ -246,7 +246,7 @@ def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
     ]
 
     # If integration tests are disabled, we won't have any gcp credentials to download.
-    if not os.getenv("DISABLE_INTEGRATION_TESTS"):
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         cmds += [
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
             + GCP_CREDS_LOCAL_FILE,
