@@ -1,6 +1,6 @@
-import {useNavigation} from 'util/useNavigation';
+import navigation from 'util/navigation';
 import {usePath} from 'util/usePath';
-import {useVersion} from 'util/useVersion';
+import {SHOW_VERSION_NOTICE} from 'util/version';
 
 import cx from 'classnames';
 import Icons from 'components/Icons';
@@ -30,8 +30,7 @@ export type MDXData = {
 };
 
 export const VersionNotice = () => {
-  const {showVersionNotice} = useVersion();
-  if (!showVersionNotice) {
+  if (!SHOW_VERSION_NOTICE) {
     return null;
   }
 
@@ -57,8 +56,6 @@ export const VersionNotice = () => {
 const BreadcrumbNav = ({asPath}) => {
   const {asPathWithoutAnchor} = usePath();
   const pagePath = asPath ? asPath : asPathWithoutAnchor;
-
-  const navigation = useNavigation();
 
   function traverse(currNode, path, stack) {
     if (currNode.path === path) {

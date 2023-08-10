@@ -5,7 +5,7 @@ import NextLink from 'next/link';
 import React, {useState} from 'react';
 
 import Icons from '../components/Icons';
-import {useNavigation, flatten, getNavKey, getNavLvl} from '../util/useNavigation';
+import navigation, {flatten, getNavKey, getNavLvl} from '../util/navigation';
 import {usePath} from '../util/usePath';
 
 const useCurrentSection = (navigation) => {
@@ -177,7 +177,6 @@ const RecursiveNavigation = ({
   setNavKeysToExpanded,
 }) => {
   const {asPathWithoutAnchor} = usePath();
-  const navigation = useNavigation();
   const currentSection = useCurrentSection(navigation);
   const navKey = getNavKey(parentKey, idx);
   const lvl = getNavLvl(navKey);
@@ -247,8 +246,6 @@ const RecursiveNavigation = ({
 };
 
 const TopLevelNavigation = () => {
-  const navigation = useNavigation();
-
   const map = {};
   const [navKeysToExpanded, setNavKeysToExpanded] = useState<{
     [key: string]: boolean;

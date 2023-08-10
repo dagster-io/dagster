@@ -3,11 +3,11 @@ import newGithubIssueUrl from 'new-github-issue-url';
 import React, {useEffect, useState} from 'react';
 
 import {usePath} from '../util/usePath';
-import {useVersion} from '../util/useVersion';
+import {LATEST_VERSION} from '../util/version';
 
 const FeedbackModal = ({isOpen, closeFeedback}: {isOpen: boolean; closeFeedback: () => void}) => {
   const {asPath} = usePath();
-  const {version} = useVersion();
+  const version = LATEST_VERSION;
   const [currentPage, setCurrentPage] = useState<string>(asPath);
   const [currentVersion, setCurrentVersion] = useState<string>(version);
   const [description, setDescription] = useState<string>('');

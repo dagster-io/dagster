@@ -13,7 +13,6 @@ import NextLink from 'next/link';
 import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
-import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
@@ -282,8 +281,7 @@ const Warning = ({children}) => {
 };
 
 const CodeReferenceLink = ({filePath, isInline, children}) => {
-  const {version} = useVersion();
-  const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
+  const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
   if (isInline) {
     return <a href={url}>{children}</a>;

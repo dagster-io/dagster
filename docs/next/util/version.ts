@@ -1,7 +1,7 @@
 import ALL_VERSIONS from '../.versioned_content/_versions.json';
 import MAP_VERSION_TO_LINK from '../.versioned_content/_versions_with_static_links.json';
 
-export const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
+export const LATEST_VERSION = ALL_VERSIONS[ALL_VERSIONS.length - 1];
 
 export function getOlderVersions() {
   // exclude latest version which will be the current site. sort by version desc
@@ -24,7 +24,7 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
 }
 
 // only hide version notice in production
-let showVersionNotice = true;
+export let SHOW_VERSION_NOTICE = true;
 if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
   // We use NEXT_PUBLIC_VERCEL_ENV to tell whether it's in production or not, because:
   // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
@@ -32,9 +32,5 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
   //     As going forward, we are relying on Vercel's previews to version the older docs, we need to
   //     make sure that when a user lands on the older docs (aka previews), we have the version
   //     notice as reminder that they are looking at older docs.
-  showVersionNotice = false;
+  SHOW_VERSION_NOTICE = false;
 }
-
-export const useVersion = () => {
-  return {version: latestVersion, showVersionNotice};
-};
