@@ -21,7 +21,8 @@ from typing import (
     cast,
 )
 
-from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
+from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 from dagster import (
@@ -72,21 +73,13 @@ except ImportError:
 
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel, Extra
-from pydantic.fields import (
-    SHAPE_DICT,
-    SHAPE_LIST,
-    SHAPE_MAPPING,
-    SHAPE_SINGLETON,
-    ModelField,
-)
+from pydantic import BaseModel
 
 import dagster._check as check
-from dagster import Field, Selector, Shape
+from dagster import Field, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
     Map,
-    Permissive,
     convert_potential_field,
 )
 from dagster._core.definitions.resource_definition import (
@@ -216,30 +209,30 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         modified_data = {}
         for key, value in config_dict.items():
-            field = self.__fields__.get(key)
-            if field and field.field_info.discriminator:
-                nested_dict = value
+            self.__fields__.get(key)
+            # if field and field.field_info.discriminator:
+            #     nested_dict = value
 
-                discriminator_key = check.not_none(field.discriminator_key)
-                if isinstance(value, Config):
-                    nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
-                        discriminator_key,
-                        value._get_non_none_public_field_values(),  # noqa: SLF001
-                    )
+            #     discriminator_key = check.not_none(field.discriminator_key)
+            #     if isinstance(value, Config):
+            #         nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
+            #             discriminator_key,
+            #             value._get_non_none_public_field_values(),
+            #         )
 
-                nested_items = list(check.is_dict(nested_dict).items())
-                check.invariant(
-                    len(nested_items) == 1,
-                    "Discriminated union must have exactly one key",
-                )
-                discriminated_value, nested_values = nested_items[0]
+            #     nested_items = list(check.is_dict(nested_dict).items())
+            #     check.invariant(
+            #         len(nested_items) == 1,
+            #         "Discriminated union must have exactly one key",
+            #     )
+            #     discriminated_value, nested_values = nested_items[0]
 
-                modified_data[key] = {
-                    **nested_values,
-                    discriminator_key: discriminated_value,
-                }
-            else:
-                modified_data[key] = value
+            #     modified_data[key] = {
+            #         **nested_values,
+            #         discriminator_key: discriminated_value,
+            #     }
+            # else:
+            modified_data[key] = value
         super().__init__(**modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
@@ -250,6 +243,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         or EnvVars will be converted to the appropriate dictionary representation.
         """
         public_fields = self._get_non_none_public_field_values()
+        print("PUB", public_fields)
         return {
             k: _config_value_to_dict_representation(self.__fields__.get(k), v)
             for k, v in public_fields.items()
@@ -264,6 +258,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         output = {}
         for key, value in self.__dict__.items():
+            print("INSPECTING ", key)
             if self._is_field_internal(key):
                 continue
             field = self.__fields__.get(key)
@@ -271,7 +266,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 continue
 
             if field:
-                output[field.alias] = value
+                alias = field.alias or key
+                output[alias] = value
             else:
                 output[key] = value
         return output
@@ -306,7 +302,7 @@ def _discriminated_union_config_dict_to_selector_config_dict(
     return wrapped_dict
 
 
-def _config_value_to_dict_representation(field: Optional[ModelField], value: Any):
+def _config_value_to_dict_representation(field: Optional[FieldInfo], value: Any):
     """Converts a config value to a dictionary representation. If a field is provided, it will be used
     to determine the appropriate dictionary representation in the case of discriminated unions.
     """
@@ -1142,7 +1138,7 @@ class PartialResourceState(NamedTuple):
 
 class PartialResource(Generic[TResValue], AllowDelayedDependencies, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
+    resource_cls: Type[Any]
 
     def __init__(
         self,
@@ -1272,7 +1268,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue]):
+class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -1321,11 +1317,11 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         ConfigurableResourceFactory.__init__(self, **data)
 
     @abstractmethod
-    def create_io_manager(self, context) -> TIOManagerValue:
+    def create_io_manager(self, context) -> TResValue:
         """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
-    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
+    def create_resource(self, context: InitResourceContext) -> TResValue:
         return self.create_io_manager(context)
 
     @classmethod
@@ -1430,9 +1426,6 @@ class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
         return self
 
 
-PydanticShapeType: TypeAlias = int
-
-MAPPING_TYPES = {SHAPE_MAPPING, SHAPE_DICT}
 MAPPING_KEY_TYPE_TO_SCALAR = {
     StringSource: str,
     IntSource: int,
@@ -1442,18 +1435,18 @@ MAPPING_KEY_TYPE_TO_SCALAR = {
 
 
 def _wrap_config_type(
-    shape_type: PydanticShapeType,
+    shape_type: Type,
     key_type: Optional[ConfigType],
     config_type: ConfigType,
 ) -> ConfigType:
     """Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
     For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
     """
-    if shape_type == SHAPE_SINGLETON:
-        return config_type
-    elif shape_type == SHAPE_LIST:
+    if safe_is_subclass(get_origin(shape_type), list):
         return Array(config_type)
-    elif shape_type in MAPPING_TYPES:
+    if safe_is_subclass(get_origin(shape_type), dict) or safe_is_subclass(
+        get_origin(shape_type), Mapping
+    ):
         if key_type not in MAPPING_KEY_TYPE_TO_SCALAR:
             raise NotImplementedError(
                 f"Pydantic shape type is a mapping, but key type {key_type} is not a valid "
@@ -1461,32 +1454,28 @@ def _wrap_config_type(
                 f"{', '.join([str(t) for t in MAPPING_KEY_TYPE_TO_SCALAR.keys()])}."
             )
         return Map(MAPPING_KEY_TYPE_TO_SCALAR[key_type], config_type)
-    else:
-        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+    return config_type
 
 
-def _get_inner_field_if_exists(
-    shape_type: PydanticShapeType, field: ModelField
-) -> Optional[ModelField]:
+def _get_inner_field_if_exists(shape_type: Type, field: FieldInfo) -> Optional[FieldInfo]:
     """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
 
     Returns None for types which have no inner field.
     """
     # See https://github.com/pydantic/pydantic/blob/v1.10.3/pydantic/fields.py#L758 for
     # where sub_fields is set.
-    if shape_type == SHAPE_SINGLETON:
-        return None
-    elif shape_type == SHAPE_LIST:
-        # List has a single subfield, which is the type of the list elements.
-        return check.not_none(field.sub_fields)[0]
-    elif shape_type in MAPPING_TYPES:
-        # Mapping has a single subfield, which is the type of the mapping values.
-        return check.not_none(field.sub_fields)[0]
-    else:
-        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+    if safe_is_subclass(get_origin(shape_type), list):
+        return check.not_none(get_args(shape_type))[0]
+    if safe_is_subclass(get_origin(shape_type), dict) or safe_is_subclass(
+        get_origin(shape_type), Mapping
+    ):
+        return check.not_none(get_args(shape_type))[1]
+
+    return None
 
 
-def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type] = None) -> Field:
+def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type] = None) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
 
@@ -1495,66 +1484,52 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
             used for error messages.
     """
-    key_type = (
-        _config_type_for_pydantic_field(pydantic_field.key_field)
-        if pydantic_field.key_field
-        else None
-    )
-    if pydantic_field.field_info.discriminator:
-        return _convert_pydantic_descriminated_union_field(pydantic_field)
+    # key_type = (
+    #     _config_type_for_pydantic_field(pydantic_field.key_field)
+    #     if pydantic_field.key_field
+    #     else None
+    # )
+    if pydantic_field.discriminator:
+        raise Exception("not yet supported")
+        # return _convert_pydantic_descriminated_union_field(pydantic_field)
 
-    if safe_is_subclass(pydantic_field.type_, Config):
+    field_type = pydantic_field.annotation
+
+    print(field_type)
+    if safe_is_subclass(field_type, Config):
         inferred_field = infer_schema_from_config_class(
-            pydantic_field.type_,
-            description=pydantic_field.field_info.description,
+            field_type,
+            description=pydantic_field.description,
         )
-        wrapped_config_type = _wrap_config_type(
-            shape_type=pydantic_field.shape,
-            config_type=inferred_field.config_type,
-            key_type=key_type,
-        )
-        return Field(
-            config=(
-                Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
-            ),
-            description=inferred_field.description,
-            is_required=_is_pydantic_field_required(pydantic_field),
-        )
+        return inferred_field
+
+        # return Field(
+        #     config=(
+        #         inferred_field.config_type,  # Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
+        #     ),
+        #     description=inferred_field.description,
+        #     is_required=_is_pydantic_field_required(pydantic_field),
+        # )
     else:
         # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
-        inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
-        if inner_field:
-            config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
-        else:
-            config_type = _config_type_for_pydantic_field(pydantic_field)
-
-        wrapped_config_type = _wrap_config_type(
-            shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
-        )
+        # if inner_field:
+        #     config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
+        # else:
+        config_type = _config_type_for_type_on_pydantic_field(field_type)
 
         return Field(
             config=(
-                Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
+                config_type  # Noneable(wrapped_config_type) if pydantic_field.allow_none else wrapped_config_type
             ),
-            description=pydantic_field.field_info.description,
-            is_required=_is_pydantic_field_required(pydantic_field),
+            description=pydantic_field.description,
+            is_required=True,  # _is_pydantic_field_required(pydantic_field),
             default_value=(
                 pydantic_field.default
                 if pydantic_field.default is not None
+                and pydantic_field.default is not PydanticUndefined
                 else FIELD_NO_DEFAULT_PROVIDED
             ),
         )
-
-
-def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
-    """Generates a Dagster ConfigType from a Pydantic field.
-
-    Args:
-        pydantic_field (ModelField): The Pydantic field to convert.
-    """
-    return _config_type_for_type_on_pydantic_field(
-        pydantic_field.type_,
-    )
 
 
 def _config_type_for_type_on_pydantic_field(
@@ -1565,14 +1540,33 @@ def _config_type_for_type_on_pydantic_field(
     Args:
         potential_dagster_type (Any): The Python type of the Pydantic field.
     """
-    # special case pydantic constrained types to their source equivalents
-    if safe_is_subclass(potential_dagster_type, ConstrainedStr):
-        return StringSource
-    # no FloatSource, so we just return float
-    elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
-        potential_dagster_type = float
-    elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
-        return IntSource
+    print("EVALUATING TYPE", potential_dagster_type)
+    try:
+        from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
+
+        # special case pydantic constrained types to their source equivalents
+        if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+            return StringSource
+        # no FloatSource, so we just return float
+        elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
+            potential_dagster_type = float
+        elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
+            return IntSource
+    except ImportError:
+        pass
+
+    if safe_is_subclass(get_origin(potential_dagster_type), List):
+        list_inner_type = get_args(potential_dagster_type)[0]
+        return Array(_config_type_for_type_on_pydantic_field(list_inner_type))
+    elif (
+        get_origin(potential_dagster_type) == Union
+        and len(get_args(potential_dagster_type)) == 2
+        and type(None) in get_args(potential_dagster_type)
+    ):
+        optional_inner_type = next(
+            arg for arg in get_args(potential_dagster_type) if arg is not type(None)
+        )
+        return Noneable(_config_type_for_type_on_pydantic_field(optional_inner_type))
 
     if safe_is_subclass(potential_dagster_type, Enum):
         return DagsterEnum.from_python_enum_direct_values(potential_dagster_type)
@@ -1588,11 +1582,12 @@ def _config_type_for_type_on_pydantic_field(
         return convert_potential_field(potential_dagster_type).config_type
 
 
-def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
+def _is_pydantic_field_required(pydantic_field: FieldInfo) -> bool:
     # required is of type BoolUndefined = Union[bool, UndefinedType] in Pydantic
 
-    if isinstance(pydantic_field.required, bool):
-        return pydantic_field.required
+    return True
+    # if isinstance(pydantic_field.required, bool):
+    #    return pydantic_field.required
 
     raise Exception(
         "pydantic.field.required is their UndefinedType sentinel value which we "
@@ -1652,57 +1647,57 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
         )
 
 
-def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> Field:
-    """Builds a Selector config field from a Pydantic field which is a descriminated union.
+# def _convert_pydantic_descriminated_union_field(pydantic_field: FieldInfo) -> Field:
+#     """Builds a Selector config field from a Pydantic field which is a descriminated union.
 
-    For example:
+#     For example:
 
-    class Cat(Config):
-        pet_type: Literal["cat"]
-        meows: int
+#     class Cat(Config):
+#         pet_type: Literal["cat"]
+#         meows: int
 
-    class Dog(Config):
-        pet_type: Literal["dog"]
-        barks: float
+#     class Dog(Config):
+#         pet_type: Literal["dog"]
+#         barks: float
 
-    class OpConfigWithUnion(Config):
-        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+#     class OpConfigWithUnion(Config):
+#         pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
 
-    Becomes:
+#     Becomes:
 
-    Shape({
-      "pet": Selector({
-          "cat": Shape({"meows": Int}),
-          "dog": Shape({"barks": Float}),
-      })
-    })
-    """
-    sub_fields_mapping = pydantic_field.sub_fields_mapping
-    if not sub_fields_mapping or not all(
-        issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
-    ):
-        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
+#     Shape({
+#       "pet": Selector({
+#           "cat": Shape({"meows": Int}),
+#           "dog": Shape({"barks": Float}),
+#       })
+#     })
+#     """
+#     sub_fields_mapping = pydantic_field.sub_fields_mapping
+#     if not sub_fields_mapping or not all(
+#         issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
+#     ):
+#         raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
 
-    # First, we generate a mapping between the various discriminator values and the
-    # Dagster config fields that correspond to them. We strip the discriminator key
-    # from the fields, since the user should not have to specify it.
+#     # First, we generate a mapping between the various discriminator values and the
+#     # Dagster config fields that correspond to them. We strip the discriminator key
+#     # from the fields, since the user should not have to specify it.
 
-    assert pydantic_field.sub_fields_mapping
-    dagster_config_field_mapping = {
-        discriminator_value: infer_schema_from_config_class(
-            field.type_,
-            fields_to_omit=(
-                {pydantic_field.field_info.discriminator}
-                if pydantic_field.field_info.discriminator
-                else None
-            ),
-        )
-        for discriminator_value, field in sub_fields_mapping.items()
-    }
+#     assert pydantic_field.sub_fields_mapping
+#     dagster_config_field_mapping = {
+#         discriminator_value: infer_schema_from_config_class(
+#             field.type_,
+#             fields_to_omit=(
+#                 {pydantic_field.field_info.discriminator}
+#                 if pydantic_field.field_info.discriminator
+#                 else None
+#             ),
+#         )
+#         for discriminator_value, field in sub_fields_mapping.items()
+#     }
 
-    # We then nest the union fields under a Selector. The keys for the selector
-    # are the various discriminator values
-    return Field(config=Selector(fields=dagster_config_field_mapping))
+#     # We then nest the union fields under a Selector. The keys for the selector
+#     # are the various discriminator values
+#     return Field(config=Selector(fields=dagster_config_field_mapping))
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
@@ -1746,29 +1741,44 @@ def infer_schema_from_config_class(
     )
 
     fields: Dict[str, Field] = {}
-    for pydantic_field in model_cls.__fields__.values():
-        if pydantic_field.name not in fields_to_omit:
-            if isinstance(pydantic_field.default, Field):
-                raise DagsterInvalidDefinitionError(
-                    "Using 'dagster.Field' is not supported within a Pythonic config or resource"
-                    " definition. 'dagster.Field' should only be used in legacy Dagster config"
-                    " schemas. Did you mean to use 'pydantic.Field' instead?"
-                )
-
+    for key, pydantic_field_info in model_cls.__fields__.items():
+        alias = pydantic_field_info.alias if pydantic_field_info.alias else key
+        print("GOT FIELD ", alias)
+        if key not in fields_to_omit:
             try:
-                fields[pydantic_field.alias] = _convert_pydantic_field(
-                    pydantic_field,
-                )
+                fields[alias] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
-                    field_name=pydantic_field.name,
+                    field_name=key,
                     invalid_type=e.current_value,
                     is_resource=model_cls is not None
                     and safe_is_subclass(model_cls, ConfigurableResourceFactory),
                 )
 
-    shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
+    # for pydantic_field in model_cls.__fields__.values():
+    #     if pydantic_field.name not in fields_to_omit:
+    #         if isinstance(pydantic_field.default, Field):
+    #             raise DagsterInvalidDefinitionError(
+    #                 "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+    #                 " definition. 'dagster.Field' should only be used in legacy Dagster config"
+    #                 " schemas. Did you mean to use 'pydantic.Field' instead?"
+    #             )
+
+    #         try:
+    #             fields[pydantic_field.alias] = _convert_pydantic_field(
+    #                 pydantic_field,
+    #             )
+    #         except DagsterInvalidConfigDefinitionError as e:
+    #             raise DagsterInvalidPythonicConfigDefinitionError(
+    #                 config_class=model_cls,
+    #                 field_name=pydantic_field.name,
+    #                 invalid_type=e.current_value,
+    #                 is_resource=model_cls is not None
+    #                 and safe_is_subclass(model_cls, ConfigurableResourceFactory),
+    #             )
+
+    shape_cls = Shape  # Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
 

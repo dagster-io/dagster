@@ -114,6 +114,7 @@ def resolve_bound_config(config: Any, configurable_def: ConfigurableDefinition) 
     from dagster._config import process_config
 
     outer_config_shape = Shape({"config": configurable_def.get_config_field()})
+    print("CONFIG", config)
     config_evr = process_config(outer_config_shape, {"config": config} if config else {})
     if not config_evr.success:
         raise DagsterInvalidConfigError(
