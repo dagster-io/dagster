@@ -209,7 +209,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         modified_data = {}
         for key, value in config_dict.items():
-            self.__fields__.get(key)
+            self.model_fields.get(key)
             # if field and field.field_info.discriminator:
             #     nested_dict = value
 
@@ -245,7 +245,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         public_fields = self._get_non_none_public_field_values()
         print("PUB", public_fields)
         return {
-            k: _config_value_to_dict_representation(self.__fields__.get(k), v)
+            k: _config_value_to_dict_representation(self.model_fields.get(k), v)
             for k, v in public_fields.items()
         }
 
@@ -261,7 +261,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             print("INSPECTING ", key)
             if self._is_field_internal(key):
                 continue
-            field = self.__fields__.get(key)
+            field = self.model_fields.get(key)
             if field and value is None and not _is_pydantic_field_required(field):
                 continue
 
@@ -1741,7 +1741,7 @@ def infer_schema_from_config_class(
     )
 
     fields: Dict[str, Field] = {}
-    for key, pydantic_field_info in model_cls.__fields__.items():
+    for key, pydantic_field_info in model_cls.model_fields.items():
         alias = pydantic_field_info.alias if pydantic_field_info.alias else key
         print("GOT FIELD ", alias)
         if key not in fields_to_omit:
@@ -1756,7 +1756,7 @@ def infer_schema_from_config_class(
                     and safe_is_subclass(model_cls, ConfigurableResourceFactory),
                 )
 
-    # for pydantic_field in model_cls.__fields__.values():
+    # for pydantic_field in model_cls.model_fields.values():
     #     if pydantic_field.name not in fields_to_omit:
     #         if isinstance(pydantic_field.default, Field):
     #             raise DagsterInvalidDefinitionError(
@@ -1805,7 +1805,7 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias: field for field in cls.__fields__.values()}
+    keys_by_alias = {field.alias: field for field in cls.model_fields.values()}
     data_with_annotation: List[Tuple[str, Any, Type]] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
         (k, v, keys_by_alias[k].outer_type_)
