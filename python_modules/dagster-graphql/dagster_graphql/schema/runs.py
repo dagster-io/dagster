@@ -130,14 +130,6 @@ class GrapheneRunGroupOrError(graphene.Union):
         name = "RunGroupOrError"
 
 
-class GrapheneRunGroupsOrError(graphene.ObjectType):
-    results = non_null_list(GrapheneRunGroup)
-
-    class Meta:
-        types = (GrapheneRunGroups, GraphenePythonError)
-        name = "RunGroupsOrError"
-
-
 class GrapheneRunTagKeys(graphene.ObjectType):
     keys = non_null_list(graphene.String)
 
@@ -200,5 +192,4 @@ types = [
     GrapheneRunGroup,
     GrapheneRunGroupOrError,
     GrapheneRunGroups,
-    GrapheneRunGroupsOrError,
 ]

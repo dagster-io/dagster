@@ -2631,10 +2631,6 @@ type RunGroups {
   results: [RunGroup!]!
 }
 
-type RunGroupsOrError {
-  results: [RunGroup!]!
-}
-
 type Sensor {
   id: ID!
   jobOriginId: String!
@@ -2894,7 +2890,6 @@ type Query {
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runGroupOrError(runId: ID!): RunGroupOrError!
-  runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   isPipelineConfigValid(
     pipeline: PipelineSelector!
     mode: String!
