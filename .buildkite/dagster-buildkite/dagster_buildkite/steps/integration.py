@@ -20,6 +20,8 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
 
+print(os.getenv("CI_DISABLE_INTEGRATION_TESTS"))
+
 
 def build_integration_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
@@ -246,7 +248,6 @@ def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
     ]
 
     # If integration tests are disabled, we won't have any gcp credentials to download.
-    print(os.getenv("CI_DISABLE_INTEGRATION_TESTS"))
     if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         cmds += [
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
