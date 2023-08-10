@@ -46,7 +46,8 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
     steps += build_graphql_python_client_backcompat_steps()
-    steps += build_integration_steps()
+    if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        steps += build_integration_steps()
 
     # Build images containing the dagster-test sample project. This is a dependency of certain
     # dagster core and extension lib tests. Run this after we build our library package steps
