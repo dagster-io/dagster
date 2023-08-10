@@ -27,6 +27,18 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
 >>>>>>> 6dc1a92f2b ([docs-no-version] 1/ version dropdown points to static link)
 }
 
+// only hide version notice in production
+export let showVersionNotice = true;
+if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
+  // We use NEXT_PUBLIC_VERCEL_ENV to tell whether it's in production or not
+  // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
+  // * Vercel previews have NODE_ENV === "production"
+  showVersionNotice = false;
+} else if (process.env.NODE_ENV === 'production') {
+  // for testing
+  showVersionNotice = false;
+}
+
 export function normalizeVersionPath(
   asPath: string,
   versions?: string[],
