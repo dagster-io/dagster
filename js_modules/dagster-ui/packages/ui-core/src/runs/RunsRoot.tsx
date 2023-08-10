@@ -260,7 +260,7 @@ export const RunsRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunsRoot;
 
-const RUNS_ROOT_QUERY = gql`
+export const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on Runs {
