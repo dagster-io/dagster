@@ -272,6 +272,12 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         # config from run tags applied
         assert container.working_dir == "my_working_dir"
 
+        # appropriate labels applied
+        labels = kwargs["body"].spec.template.metadata.labels
+        assert labels["dagster/code-location"] == "in_process"
+        assert labels["dagster/job"] == "fake_job"
+        assert labels["dagster/run-id"] == run.run_id
+
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
