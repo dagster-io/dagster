@@ -20,6 +20,7 @@ from typing import (
 
 import mock
 import pendulum
+import pytest
 from dagster import (
     AssetIn,
     AssetKey,
@@ -94,6 +95,7 @@ class AssetReconciliationScenario(NamedTuple):
             AbstractSet[AutoMaterializeCondition],
         ]
     ] = None
+    requires_respect_materialization_data_versions: bool = False
 
     def _get_code_location_origin(
         self, scenario_name, location_name=None
@@ -113,7 +115,18 @@ class AssetReconciliationScenario(NamedTuple):
             location_name=location_name or "test_location",
         )
 
-    def do_sensor_scenario(self, instance, scenario_name=None, with_external_asset_graph=False):
+    def do_sensor_scenario(
+        self,
+        instance,
+        scenario_name=None,
+        with_external_asset_graph=False,
+        respect_materialization_data_versions=False,
+    ):
+        if (
+            self.requires_respect_materialization_data_versions
+            and not respect_materialization_data_versions
+        ):
+            pytest.skip("requires respect_materialization_data_versions to be True")
         assert not self.code_locations, "setting code_locations not supported for sensor tests"
 
         test_time = self.current_time or pendulum.now()
@@ -265,6 +278,7 @@ class AssetReconciliationScenario(NamedTuple):
                 observe_run_tags={},
                 cursor=cursor,
                 auto_observe=True,
+                respect_materialization_data_versions=respect_materialization_data_versions,
             ).evaluate()
 
         for run_request in run_requests:

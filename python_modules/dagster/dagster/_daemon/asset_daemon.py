@@ -113,6 +113,7 @@ class AssetDaemon(IntervalDaemon):
             },
             observe_run_tags={AUTO_OBSERVE_TAG: "true"},
             auto_observe=True,
+            respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
         ).evaluate()
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
