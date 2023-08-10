@@ -60,7 +60,6 @@ from ...implementation.fetch_runs import (
     get_logs_for_run,
     get_run_by_id,
     get_run_group,
-    get_run_groups,
     get_run_tag_keys,
     get_run_tags,
     validate_pipeline_config,
@@ -135,7 +134,6 @@ from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
-    GrapheneRunGroupsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
     GrapheneRunTagKeysOrError,
@@ -331,14 +329,6 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunGroupOrError),
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a group of runs with the matching root run id.",
-    )
-
-    runGroupsOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunGroupsOrError),
-        filter=graphene.Argument(GrapheneRunsFilter),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-        description="Retrieve groups of runs after applying a filter, cursor, and limit.",
     )
 
     isPipelineConfigValid = graphene.Field(
@@ -676,19 +666,6 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_by_id(graphene_info, runId)
-
-    def resolve_runGroupsOrError(
-        self,
-        graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ):
-        selector = filter.to_selector() if filter is not None else None
-
-        return GrapheneRunGroupsOrError(
-            results=get_run_groups(graphene_info, selector, cursor, limit)
-        )
 
     @capture_error
     def resolve_partitionSetsOrError(
