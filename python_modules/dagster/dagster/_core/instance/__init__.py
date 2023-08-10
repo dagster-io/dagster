@@ -141,7 +141,6 @@ if TYPE_CHECKING:
     )
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
-    from dagster._core.storage.runs.base import RunGroupInfo
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.workspace import IWorkspace
@@ -1656,15 +1655,6 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         return self._run_storage.get_runs_count(filters)
-
-    @traced
-    def get_run_groups(
-        self,
-        filters: Optional[RunsFilter] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Mapping[str, "RunGroupInfo"]:
-        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @public
     @traced

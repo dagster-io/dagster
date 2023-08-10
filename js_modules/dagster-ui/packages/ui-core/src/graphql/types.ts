@@ -2736,7 +2736,6 @@ export type Query = {
   repositoryOrError: RepositoryOrError;
   runConfigSchemaOrError: RunConfigSchemaOrError;
   runGroupOrError: RunGroupOrError;
-  runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTagsOrError: Maybe<RunTagsOrError>;
@@ -2884,12 +2883,6 @@ export type QueryRunConfigSchemaOrErrorArgs = {
 
 export type QueryRunGroupOrErrorArgs = {
   runId: Scalars['ID'];
-};
-
-export type QueryRunGroupsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']>;
 };
 
 export type QueryRunOrErrorArgs = {
@@ -3361,11 +3354,6 @@ export type RunGroupOrError = PythonError | RunGroup | RunGroupNotFoundError;
 
 export type RunGroups = {
   __typename: 'RunGroups';
-  results: Array<RunGroup>;
-};
-
-export type RunGroupsOrError = {
-  __typename: 'RunGroupsOrError';
   results: Array<RunGroup>;
 };
 
@@ -9568,12 +9556,6 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
-    runGroupsOrError:
-      overrides && overrides.hasOwnProperty('runGroupsOrError')
-        ? overrides.runGroupsOrError!
-        : relationshipsToOmit.has('RunGroupsOrError')
-        ? ({} as RunGroupsOrError)
-        : buildRunGroupsOrError({}, relationshipsToOmit),
     runOrError:
       overrides && overrides.hasOwnProperty('runOrError')
         ? overrides.runOrError!
@@ -10534,18 +10516,6 @@ export const buildRunGroups = (
   relationshipsToOmit.add('RunGroups');
   return {
     __typename: 'RunGroups',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
-  };
-};
-
-export const buildRunGroupsOrError = (
-  overrides?: Partial<RunGroupsOrError>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'RunGroupsOrError'} & RunGroupsOrError => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('RunGroupsOrError');
-  return {
-    __typename: 'RunGroupsOrError',
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };

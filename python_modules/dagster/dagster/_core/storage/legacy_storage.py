@@ -27,7 +27,7 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
 )
-from .runs.base import RunGroupInfo, RunStorage
+from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
@@ -206,14 +206,6 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable["DagsterRun"]]]:
         return self._storage.run_storage.get_run_group(run_id)
-
-    def get_run_groups(
-        self,
-        filters: Optional["RunsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Mapping[str, RunGroupInfo]:
-        return self._storage.run_storage.get_run_groups(filters, cursor, limit)
 
     def get_run_records(
         self,
