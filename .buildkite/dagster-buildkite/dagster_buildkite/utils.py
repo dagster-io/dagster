@@ -131,7 +131,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
-        "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
+        "export CONTAINER_ID=`cat /etc/hostname`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
         # network to make the target containers visible...

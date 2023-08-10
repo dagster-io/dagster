@@ -677,40 +677,9 @@ class SqlEventLogStorage(EventLogStorage):
 
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
-
-        delete_statement = SqlEventLogStorageTable.delete().where(
-            SqlEventLogStorageTable.c.run_id == run_id
+        conn.execute(
+            SqlEventLogStorageTable.delete().where(SqlEventLogStorageTable.c.run_id == run_id)
         )
-        removed_asset_key_query = (
-            db_select([SqlEventLogStorageTable.c.asset_key])
-            .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
-            .group_by(SqlEventLogStorageTable.c.asset_key)
-        )
-
-        removed_asset_keys = [
-            AssetKey.from_db_string(cast(Optional[str], row[0]))
-            for row in conn.execute(removed_asset_key_query).fetchall()
-        ]
-        conn.execute(delete_statement)
-        if len(removed_asset_keys) > 0:
-            keys_to_check = []
-            keys_to_check.extend([key.to_string() for key in removed_asset_keys])  # type: ignore  # (bad sig?)
-            remaining_asset_keys = [
-                AssetKey.from_db_string(row[0])
-                for row in conn.execute(
-                    db_select([SqlEventLogStorageTable.c.asset_key])
-                    .where(SqlEventLogStorageTable.c.asset_key.in_(keys_to_check))
-                    .group_by(SqlEventLogStorageTable.c.asset_key)
-                )
-            ]
-            to_remove = set(removed_asset_keys) - set(remaining_asset_keys)
-            if to_remove:
-                keys_to_remove = []
-                keys_to_remove.extend([key.to_string() for key in to_remove])  # type: ignore  # (bad sig?)
-                conn.execute(
-                    AssetKeyTable.delete().where(AssetKeyTable.c.asset_key.in_(keys_to_remove))
-                )
 
     @property
     def is_persistent(self) -> bool:

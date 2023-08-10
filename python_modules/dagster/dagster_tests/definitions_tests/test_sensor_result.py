@@ -64,6 +64,26 @@ def test_sensor_result_skip_reason():
         assert not sensor_data.cursor
 
 
+def test_sensor_result_string_skip_reason():
+    skip_reason = "I'm skipping"
+
+    @sensor(job=do_something_job)
+    def test_sensor(_):
+        return [
+            SensorResult(skip_reason=skip_reason),
+        ]
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            instance=instance,
+        )
+        sensor_data = test_sensor.evaluate_tick(ctx)
+        assert not sensor_data.run_requests
+        assert sensor_data.skip_message == skip_reason
+        assert not sensor_data.dagster_run_reactions
+        assert not sensor_data.cursor
+
+
 def test_invalid_skip_reason_invocations():
     @sensor(job=do_something_job)
     def multiple_sensor_results(_):
@@ -112,7 +132,7 @@ def test_invalid_skip_reason_invocations():
 
         with pytest.raises(
             CheckError,
-            match="Expected a single SkipReason or one or more RunRequests",
+            match="Expected a single skip reason or one or more run requests",
         ):
             invalid_sensor_result.evaluate_tick(ctx)
 

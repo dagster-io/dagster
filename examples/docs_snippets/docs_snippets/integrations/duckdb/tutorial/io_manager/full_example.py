@@ -21,12 +21,12 @@ def iris_dataset() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
-    return iris_dataset.dropna().drop_duplicates()
+def iris_setosa(iris_dataset: pd.DataFrame) -> pd.DataFrame:
+    return iris_dataset[iris_dataset["species"] == "Iris-setosa"]
 
 
 defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_cleaned],
+    assets=[iris_dataset, iris_harvest_data, iris_setosa],
     resources={
         "io_manager": DuckDBPandasIOManager(
             database="path/to/my_duckdb_database.duckdb",

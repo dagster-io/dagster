@@ -33,7 +33,7 @@ from dagster._core.definitions.resource_requirement import (
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 
 from .definition_config_schema import (
     IDefinitionConfigSchema,

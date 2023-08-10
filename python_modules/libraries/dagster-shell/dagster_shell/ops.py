@@ -1,6 +1,6 @@
 import os
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import AbstractSet, Any, Dict, Mapping, Optional
 
 from dagster import (
     Config,
@@ -12,6 +12,7 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._core.definitions.op_definition import OpDefinition
 from pydantic import Field
 
 from .utils import execute, execute_script_file
@@ -59,7 +60,7 @@ class ShellOpConfig(Config):
     ins={"shell_command": In(str)},
     out=Out(str),
 )
-def shell_op(context: OpExecutionContext, shell_command, config: ShellOpConfig):
+def shell_op(context: OpExecutionContext, shell_command: str, config: ShellOpConfig) -> str:
     """This op executes a shell command it receives as input.
     This op is suitable for uses where the command to execute is generated dynamically by
     upstream ops. If you know the command to execute at job construction time,
@@ -91,12 +92,12 @@ def shell_op(context: OpExecutionContext, shell_command, config: ShellOpConfig):
 
 
 def create_shell_command_op(
-    shell_command,
-    name,
-    description=None,
-    required_resource_keys=None,
-    tags=None,
-):
+    shell_command: str,
+    name: str,
+    description: Optional[str] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> OpDefinition:
     """This function is a factory that constructs ops to execute a shell command.
 
     Note that you can only use ``shell_command_op`` if you know the command you'd like to execute
@@ -167,7 +168,12 @@ def create_shell_command_op(
     return _shell_fn
 
 
-def create_shell_script_op(shell_script_path, name="create_shell_script_op", ins=None, **kwargs):
+def create_shell_script_op(
+    shell_script_path,
+    name="create_shell_script_op",
+    ins: Optional[Mapping[str, In]] = None,
+    **kwargs: Any,
+) -> OpDefinition:
     """This function is a factory which constructs an op that will execute a shell command read
     from a script file.
 

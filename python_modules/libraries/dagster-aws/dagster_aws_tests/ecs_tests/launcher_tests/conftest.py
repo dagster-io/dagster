@@ -1,5 +1,4 @@
 import json
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 from typing import Any, Callable, ContextManager, Iterator, Mapping, Sequence
@@ -7,7 +6,6 @@ from typing import Any, Callable, ContextManager, Iterator, Mapping, Sequence
 import boto3
 import moto
 import pytest
-from dagster import ExperimentalWarning
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
@@ -15,6 +13,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._utils.warnings import disable_dagster_warnings
 
 from . import repo
 
@@ -22,9 +21,8 @@ Secret = namedtuple("Secret", ["name", "arn"])
 
 
 @pytest.fixture(autouse=True)
-def ignore_experimental_warning() -> Iterator[None]:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
+def ignore_dagster_warnings() -> Iterator[None]:
+    with disable_dagster_warnings():
         yield
 
 

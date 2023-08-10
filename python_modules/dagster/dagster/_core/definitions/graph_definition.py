@@ -120,9 +120,9 @@ def create_adjacency_lists(
 
 
 class GraphDefinition(NodeDefinition):
-    """Defines a Dagster graph.
+    """Defines a Dagster op graph.
 
-    A graph is made up of
+    An op graph is made up of
 
     - Nodes, which can either be an op (the functional unit of computation), or another graph.
     - Dependencies, which determine how the values produced by nodes as outputs flow from

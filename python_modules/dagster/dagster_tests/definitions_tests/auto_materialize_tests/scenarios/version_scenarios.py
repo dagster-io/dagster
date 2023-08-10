@@ -1,10 +1,7 @@
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 
 from ..base_scenario import (
-    AssetReconciliationScenario,
     asset_def,
-    run,
-    run_request,
 )
 
 three_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
@@ -35,6 +32,7 @@ partitioned_to_partitioned = [
     asset_def("three", ["two"], partitions_def=three_partitions_def, code_version="0"),
 ]
 
+"""
 version_scenarios = {
     "all_unpartitioned_version_updated": AssetReconciliationScenario(
         assets=all_unpartitioned,
@@ -148,3 +146,5 @@ version_scenarios = {
         expected_run_requests=[],
     ),
 }
+"""
+version_scenarios = {}

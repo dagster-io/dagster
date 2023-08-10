@@ -89,9 +89,10 @@ static_multipartitioned_asset = [asset_def("asset1", partitions_def=static_multi
 
 partitioned_after_non_partitioned = [
     asset_def("asset1"),
+    asset_def("asset2"),
     asset_def(
-        "asset2",
-        ["asset1"],
+        "asset3",
+        ["asset1", "asset2"],
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
     ),
 ]
@@ -356,5 +357,21 @@ partition_scenarios = {
             run_request(asset_keys=["asset1"], partition_key=partition_key)
             for partition_key in static_multipartitions_def.get_partition_keys()
         ],
+    ),
+    "partitioned_after_non_partitioned_multiple_updates": AssetReconciliationScenario(
+        assets=partitioned_after_non_partitioned,
+        cursor_from=AssetReconciliationScenario(
+            assets=partitioned_after_non_partitioned,
+            unevaluated_runs=[
+                run(["asset1", "asset2"]),
+                run(["asset3"], partition_key="2020-01-02"),
+                run(["asset1"]),
+            ],
+            current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+            expected_run_requests=[run(["asset3"], partition_key="2020-01-02")],
+        ),
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+        unevaluated_runs=[run(["asset2"])],
+        expected_run_requests=[run_request(["asset3"], partition_key="2020-01-02")],
     ),
 }

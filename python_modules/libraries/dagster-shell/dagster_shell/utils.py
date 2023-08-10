@@ -20,15 +20,24 @@
 # under the License.
 import os
 import signal
+from logging import Logger
 from subprocess import PIPE, STDOUT, Popen
+from typing import Mapping, Optional, Tuple
 
 import dagster._check as check
 from dagster._utils import safe_tempfile_path
+from typing_extensions import Final
 
-OUTPUT_LOGGING_OPTIONS = ["STREAM", "BUFFER", "NONE"]
+OUTPUT_LOGGING_OPTIONS: Final = ["STREAM", "BUFFER", "NONE"]
 
 
-def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=None):
+def execute_script_file(
+    shell_script_path: str,
+    output_logging: str,
+    log: Logger,
+    cwd: Optional[str] = None,
+    env: Optional[Mapping[str, str]] = None,
+) -> Tuple[str, int]:
     """Execute a shell script file specified by the argument ``shell_script_path``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
@@ -98,6 +107,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
 
         output = ""
         if output_logging == "STREAM":
+            assert sub_process.stdout is not None, "Setting stdout=PIPE should always set stdout."
             # Stream back logs as they are emitted
             lines = []
             for line in sub_process.stdout:
@@ -119,7 +129,13 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
             sub_process.terminate()
 
 
-def execute(shell_command, output_logging, log, cwd=None, env=None):
+def execute(
+    shell_command: str,
+    output_logging: str,
+    log: Logger,
+    cwd: Optional[str] = None,
+    env: Optional[Mapping[str, str]] = None,
+) -> Tuple[str, int]:
     """This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
     It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
 

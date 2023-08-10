@@ -54,6 +54,10 @@ from dagster_airbyte.utils import (
 )
 
 
+def _table_to_output_name_fn(table: str) -> str:
+    return table.replace("-", "_")
+
+
 def _build_airbyte_asset_defn_metadata(
     connection_id: str,
     destination_tables: Sequence[str],
@@ -82,7 +86,10 @@ def _build_airbyte_asset_defn_metadata(
     )
 
     outputs = {
-        table: AssetKey([*asset_key_prefix, *table_to_asset_key_fn(table).path]) for table in tables
+        _table_to_output_name_fn(table): AssetKey(
+            [*asset_key_prefix, *table_to_asset_key_fn(table).path]
+        )
+        for table in tables
     }
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
@@ -192,7 +199,7 @@ def _build_airbyte_assets_from_metadata(
             if table_name in destination_tables:
                 yield Output(
                     value=None,
-                    output_name=table_name,
+                    output_name=_table_to_output_name_fn(table_name),
                     metadata=materialization.metadata,
                 )
                 # Also materialize any normalization tables affiliated with this destination
@@ -201,7 +208,7 @@ def _build_airbyte_assets_from_metadata(
                     for dependent_table in normalization_tables.get(table_name, set()):
                         yield Output(
                             value=None,
-                            output_name=dependent_table,
+                            output_name=_table_to_output_name_fn(dependent_table),
                         )
             else:
                 yield materialization
@@ -298,13 +305,13 @@ def build_airbyte_assets(
             for table_name in destination_tables:
                 yield Output(
                     value=None,
-                    output_name=table_name,
+                    output_name=_table_to_output_name_fn(table_name),
                 )
                 if normalization_tables:
                     for dependent_table in normalization_tables.get(table_name, set()):
                         yield Output(
                             value=None,
-                            output_name=dependent_table,
+                            output_name=_table_to_output_name_fn(dependent_table),
                         )
         else:
             for materialization in generate_materializations(ab_output, asset_key_prefix):
@@ -312,7 +319,7 @@ def build_airbyte_assets(
                 if table_name in destination_tables:
                     yield Output(
                         value=None,
-                        output_name=table_name,
+                        output_name=_table_to_output_name_fn(table_name),
                         metadata=materialization.metadata,
                     )
                     # Also materialize any normalization tables affiliated with this destination
@@ -321,7 +328,7 @@ def build_airbyte_assets(
                         for dependent_table in normalization_tables.get(table_name, set()):
                             yield Output(
                                 value=None,
-                                output_name=dependent_table,
+                                output_name=_table_to_output_name_fn(dependent_table),
                             )
                 else:
                     yield materialization

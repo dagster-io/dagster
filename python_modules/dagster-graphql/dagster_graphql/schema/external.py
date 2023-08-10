@@ -288,7 +288,7 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_pipelines(self, _graphene_info: ResolveInfo):
         return [
-            GraphenePipeline(pipeline, self._batch_loader)
+            GraphenePipeline(pipeline)
             for pipeline in sorted(
                 self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )
@@ -296,7 +296,7 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_jobs(self, _graphene_info: ResolveInfo):
         return [
-            GrapheneJob(pipeline, self._batch_loader)
+            GrapheneJob(pipeline)
             for pipeline in sorted(
                 self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )

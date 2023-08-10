@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Popover, Tag} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, IconName, Popover, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -37,6 +37,7 @@ export type TagType = {
   key: string;
   value: string;
   link?: string;
+  pinned?: boolean;
 };
 
 export type TagAction = {
@@ -70,7 +71,7 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
     return key;
   }, [isDagsterTag, key]);
 
-  const icon = React.useMemo(() => {
+  const icon = React.useMemo((): IconName | null => {
     switch (key) {
       case DagsterTag.ScheduleName:
         return 'schedule';
@@ -78,6 +79,8 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
         return 'sensors';
       case DagsterTag.Backfill:
         return 'settings_backup_restore';
+      case DagsterTag.Partition:
+        return 'partition';
       default:
         return null;
     }

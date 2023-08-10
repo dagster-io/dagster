@@ -587,16 +587,6 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_runs(self, graphene_info: ResolveInfo, limit: Optional[int] = None):
         from .pipelines.pipeline import GrapheneRun
 
-        if limit and self._batch_loader:
-            records = (
-                self._batch_loader.get_run_records_for_sensor(self._instigator_state.name, limit)
-                if self._instigator_state.instigator_type == InstigatorType.SENSOR
-                else self._batch_loader.get_run_records_for_schedule(
-                    self._instigator_state.name, limit
-                )
-            )
-            return [GrapheneRun(record) for record in records]
-
         repository_label = self._instigator_state.origin.external_repository_origin.get_label()
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
             filters = RunsFilter(

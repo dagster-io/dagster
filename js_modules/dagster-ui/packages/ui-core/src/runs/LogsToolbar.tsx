@@ -136,17 +136,17 @@ const resolveState = (metadata: IRunMetadataDict, logCapture: ILogCaptureInfo) =
   // execution dot representing the status of this log capture group (potentially at the process
   // level)
   if (
-    logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey]!.state === IStepState.RUNNING)
+    logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey]?.state === IStepState.RUNNING)
   ) {
     return IStepState.RUNNING;
   }
   if (
-    logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey]!.state === IStepState.SKIPPED)
+    logCapture.stepKeys.some((stepKey) => metadata.steps[stepKey]?.state === IStepState.SKIPPED)
   ) {
     return IStepState.SKIPPED;
   }
   if (
-    logCapture.stepKeys.every((stepKey) => metadata.steps[stepKey]!.state === IStepState.SUCCEEDED)
+    logCapture.stepKeys.every((stepKey) => metadata.steps[stepKey]?.state === IStepState.SUCCEEDED)
   ) {
     return IStepState.SUCCEEDED;
   }

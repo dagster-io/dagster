@@ -58,7 +58,7 @@ import importlib
 from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple
 
 from dagster._core.libraries import DagsterLibraryRegistry
-from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.warnings import deprecation_warning
 from typing_extensions import Final
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)

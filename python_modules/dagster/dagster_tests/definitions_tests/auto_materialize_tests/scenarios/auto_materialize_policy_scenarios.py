@@ -393,9 +393,10 @@ auto_materialize_policy_scenarios = {
             run(["unpartitioned_root_a"]),
         ],
         current_time=create_pendulum_time(year=2013, month=1, day=5, hour=1, minute=5),
-        # do not execute, as we don't consider the already-materialized partitions to be invalidated
-        # by the new materialization of the upstream
-        expected_run_requests=[],
+        # the latest time partition should be rematerialized
+        expected_run_requests=[
+            run_request(asset_keys=["time_partitioned"], partition_key="2013-01-05-00:00")
+        ],
     ),
     "time_partitioned_after_partitioned_upstream_rematerialized2": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
@@ -411,9 +412,12 @@ auto_materialize_policy_scenarios = {
             # new root data
             run(["unpartitioned_root_a"]),
             run(["unpartitioned_root_b"]),
+            # latest time partition gets newest unpartitioned root data
+            run(["time_partitioned"], partition_key="2013-01-05-02:00"),
         ],
         current_time=create_pendulum_time(year=2013, month=1, day=5, hour=3, minute=5),
-        # able to update the downstream, as time_partitioned is still considered up-to-date
+        # now the unpartitioned downstream should be rematerialized with the data from
+        # the latest time partition
         expected_run_requests=[run_request(["unpartitioned_downstream"])],
     ),
     "static_partitioned_after_partitioned_upstream_rematerialized": AssetReconciliationScenario(

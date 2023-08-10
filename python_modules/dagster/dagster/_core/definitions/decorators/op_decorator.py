@@ -2,6 +2,7 @@ from functools import lru_cache, update_wrapper
 from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     List,
@@ -9,7 +10,6 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Union,
     cast,
     overload,
@@ -31,7 +31,7 @@ from dagster._core.definitions.resource_annotation import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.backcompat import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -47,7 +47,7 @@ class _Op:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         code_version: Optional[str] = None,
@@ -152,7 +152,7 @@ def op(
     ins: Optional[Mapping[str, In]] = ...,
     out: Optional[Union[Out, Mapping[str, Out]]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    required_resource_keys: Optional[Set[str]] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
@@ -172,7 +172,7 @@ def op(
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,

@@ -32,8 +32,8 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import deprecation_warning
 
 from .utils import input_name_fn, output_name_fn
 

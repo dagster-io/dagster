@@ -9,25 +9,23 @@ import {DagsterTag, RunTag, TagAction, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 
 // Sort these tags to the start of the list.
-const priorityTagSet = new Set([
-  DagsterTag.ScheduleName as string,
-  DagsterTag.SensorName as string,
-  DagsterTag.Backfill as string,
-]);
+const priorityTags = ['mode', DagsterTag.Backfill as string, DagsterTag.Partition as string];
+const priorityTagsSet = new Set(priorityTags);
 
 const renamedTags = {
   [DagsterTag.SolidSelection]: DagsterTag.OpSelection,
 };
 
 const canAddTagToFilter = (key: string) => {
-  return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection;
+  return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection && key !== 'mode';
 };
 
 export const RunTags: React.FC<{
   tags: TagType[];
-  mode: string | null;
+  mode?: string | null;
   onAddTag?: (token: RunFilterToken) => void;
-}> = React.memo(({tags, onAddTag, mode}) => {
+  onToggleTagPin?: (key: string) => void;
+}> = React.memo(({tags, onAddTag, onToggleTagPin, mode}) => {
   const copy = useCopyToClipboard();
 
   const copyAction = React.useMemo(
@@ -59,13 +57,21 @@ export const RunTags: React.FC<{
     if (addToFilterAction && canAddTagToFilter(tag.key)) {
       list.push(addToFilterAction);
     }
+    if (onToggleTagPin) {
+      list.push({
+        label: tag.pinned ? 'Unpin tag' : 'Pin tag',
+        onClick: () => {
+          onToggleTagPin(tag.key);
+        },
+      });
+    }
     return list.filter((item) => !!item);
   };
 
   const displayedTags = React.useMemo(() => {
     const priority = [];
     const others = [];
-    const copiedTags = tags.map(({key, value, link}) => ({key, value, link}));
+    const copiedTags = tags.map(({key, value, pinned, link}) => ({key, value, pinned, link}));
     for (const tag of copiedTags) {
       const {key} = tag;
       if (renamedTags.hasOwnProperty(key)) {
@@ -77,24 +83,34 @@ export const RunTags: React.FC<{
         (key === DagsterTag.PartitionSet || key === DagsterTag.StepSelection)
       ) {
         continue;
-      } else if (priorityTagSet.has(key)) {
+      } else if (priorityTagsSet.has(key)) {
         priority.push(tag);
       } else {
         others.push(tag);
       }
     }
-    return [...priority, ...others];
+    return [
+      ...priority.sort((a, b) => {
+        const aIndex = priorityTags.indexOf(a.key);
+        const bIndex = priorityTags.indexOf(b.key);
+        return aIndex - bIndex;
+      }),
+      ...others,
+    ];
   }, [tags]);
 
   if (!tags.length) {
     return null;
   }
 
+  const modeTag = mode ? (
+    <RunTag tag={{key: 'mode', value: mode}} actions={actionsForTag({key: 'mode', value: mode})} />
+  ) : null;
   return (
     <Box flex={{direction: 'row', wrap: 'wrap', gap: 4}}>
-      {mode ? <RunTag tag={{key: 'mode', value: mode}} /> : null}
-      {displayedTags.map((tag, idx) => (
-        <RunTag tag={tag} key={idx} actions={actionsForTag(tag)} />
+      {modeTag}
+      {displayedTags.map((tag) => (
+        <RunTag tag={tag} key={tag.key} actions={actionsForTag(tag)} />
       ))}
     </Box>
   );

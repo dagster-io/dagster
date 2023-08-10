@@ -207,6 +207,15 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
+        labels = {
+            "dagster/job": job_origin.job_name,
+            "dagster/run-id": run.run_id,
+        }
+        if run.external_job_origin:
+            labels["dagster/code-location"] = (
+                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
+
         job = construct_dagster_k8s_job(
             job_config,
             args=run_args,
@@ -214,10 +223,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
-            labels={
-                "dagster/job": job_origin.job_name,
-                "dagster/run-id": run.run_id,
-            },
+            labels=labels,
             env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": job_origin.job_name}],
         )
 

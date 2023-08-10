@@ -773,6 +773,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             use_asset_versions (bool): If True, will use data versions to filter out asset
                 partitions which were materialized, but not have not had their data versions
                 cahnged since the given cursor.
+                NOTE: This boolean has been temporarily disabled
         """
         if not self.asset_partition_has_materialization_or_observation(
             AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
@@ -790,9 +791,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         if not updated_after_cursor:
             return set()
-        if after_cursor is None or (
-            not self.asset_graph.is_source(asset_key) and not use_asset_versions
-        ):
+        if after_cursor is None or (not self.asset_graph.is_source(asset_key)):
             return updated_after_cursor
 
         # more expensive check to explicitly handle data versions
@@ -810,10 +809,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         for parent in parent_asset_partitions:
             parent_asset_partitions_by_key[parent.asset_key].add(parent)
 
-        time_or_dynamic_partitioned = isinstance(
-            self.asset_graph.get_partitions_def(asset_partition.asset_key),
-            (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
-        )
+        partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
         updated_parents = set()
         missing_parents = set()
         for parent_key, asset_partitions in parent_asset_partitions_by_key.items():
@@ -829,8 +825,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     missing_parents.add(parent)
 
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
-            # for existence of upstream materialization, do not worry about updates
-            if time_or_dynamic_partitioned and not self.asset_graph.is_partitioned(parent_key):
+            # for updates to the latest upstream partition
+            if (
+                isinstance(
+                    partitions_def, (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition)
+                )
+                and not self.asset_graph.is_partitioned(parent_key)
+                and asset_partition.partition_key
+                != partitions_def.get_last_partition_key(
+                    current_time=self.evaluation_time, dynamic_partitions_store=self
+                )
+            ):
                 continue
 
             updated_parents.update(

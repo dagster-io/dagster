@@ -975,7 +975,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
 
 def test_repository_batching(graphql_context: WorkspaceRequestContext):
     instance = graphql_context.instance
-    if not instance.supports_batch_tick_queries or not instance.supports_bucket_queries:
+    if not instance.supports_batch_tick_queries:
         pytest.skip("storage cannot batch fetch")
 
     traced_counter.set(Counter())
@@ -993,14 +993,12 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     assert counts
     assert len(counts) == 3
 
-    # We should have a single batch call to fetch run records (to fetch sensor runs) and a single
-    # batch call to fetch instigator state, instead of separate calls for each sensor (~5 distinct
-    # sensors in the repo)
-    # 1) `get_run_records` is fetched to instantiate GrapheneRun
+    # We should have a single batch call to fetch instigator state, instead of separate calls for
+    # each sensor (~5 distinct sensors in the repo)
+    # 1) `get_batch_ticks` is called to fetch all the ticks for the sensors
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
-    assert counts.get("DagsterInstance.get_run_records") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
     assert counts.get("DagsterInstance.get_batch_ticks") == 1
+    assert counts.get("DagsterInstance.all_instigator_state") == 1
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
