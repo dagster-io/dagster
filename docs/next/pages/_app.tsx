@@ -1,7 +1,7 @@
 import '/styles/fonts.css';
 import '/styles/globals.css';
 import '/styles/prism.css';
-import {useVersion} from 'util/useVersion';
+import {usePath} from 'util/usePath';
 
 import {PersistentTabProvider} from 'components/PersistentTabContext';
 import {DefaultSeo} from 'next-seo';
@@ -41,7 +41,7 @@ const MyApp = ({Component, pageProps}: AppProps) => {
   const router = useRouter();
   const asPathFromPageProps = pageProps?.data?.asPath;
 
-  const {asPath} = useVersion();
+  const {asPath} = usePath();
 
   const canonicalUrl = `${BASE_URL}${asPathFromPageProps ?? asPath}`;
 

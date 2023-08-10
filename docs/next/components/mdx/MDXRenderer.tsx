@@ -1,5 +1,6 @@
 import {useNavigation} from 'util/useNavigation';
-import {useVersion, showVersionNotice} from 'util/useVersion';
+import {usePath} from 'util/usePath';
+import {useVersion} from 'util/useVersion';
 
 import cx from 'classnames';
 import Icons from 'components/Icons';
@@ -29,6 +30,7 @@ export type MDXData = {
 };
 
 export const VersionNotice = () => {
+  const {showVersionNotice} = useVersion();
   if (!showVersionNotice) {
     return null;
   }
@@ -53,7 +55,7 @@ export const VersionNotice = () => {
 };
 
 const BreadcrumbNav = ({asPath}) => {
-  const {asPathWithoutAnchor} = useVersion();
+  const {asPathWithoutAnchor} = usePath();
   const pagePath = asPath ? asPath : asPathWithoutAnchor;
 
   const navigation = useNavigation();

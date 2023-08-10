@@ -6,12 +6,10 @@ import React, {useState} from 'react';
 
 import Icons from '../components/Icons';
 import {useNavigation, flatten, getNavKey, getNavLvl} from '../util/useNavigation';
-import {useVersion} from '../util/useVersion';
-
-import Link from './Link';
+import {usePath} from '../util/usePath';
 
 const useCurrentSection = (navigation) => {
-  const {asPath} = useVersion();
+  const {asPath} = usePath();
   const match = navigation.find((item) => item.path !== '/' && asPath.startsWith(item.path));
   return match || navigation.find((item) => item.path === '/');
 };
@@ -108,19 +106,10 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
       return linkElement;
     }
 
-    if (item.isUnversioned) {
-      return (
-        <NextLink href={item.path} passHref>
-          {linkElement}
-        </NextLink>
-      );
-    }
-
-    // Versioned link
     return (
-      <Link href={item.path} passHref>
+      <NextLink href={item.path} passHref>
         {linkElement}
-      </Link>
+      </NextLink>
     );
   },
 );
@@ -187,7 +176,7 @@ const RecursiveNavigation = ({
   navKeysToExpanded,
   setNavKeysToExpanded,
 }) => {
-  const {asPathWithoutAnchor} = useVersion();
+  const {asPathWithoutAnchor} = usePath();
   const navigation = useNavigation();
   const currentSection = useCurrentSection(navigation);
   const navKey = getNavKey(parentKey, idx);

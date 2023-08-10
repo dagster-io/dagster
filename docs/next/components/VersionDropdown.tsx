@@ -19,7 +19,7 @@ function getLibraryVersionText(coreVersion) {
 }
 
 export default function VersionDropdown() {
-  const {latestVersion, version: currentVersion} = useVersion();
+  const {version: currentVersion, showVersionNotice} = useVersion();
   const libraryVersionText = getLibraryVersionText(currentVersion);
   const olderVersions = getOlderVersions();
   return (
@@ -36,7 +36,8 @@ export default function VersionDropdown() {
                         <span>
                           {currentVersion} {libraryVersionText}
                         </span>
-                        {currentVersion === latestVersion ? (
+                        {/* When show version notice, do not show the "latest" tag to avoid confusion */}
+                        {!showVersionNotice ? (
                           <span className="bg-lavender rounded-full px-2 py-1">latest</span>
                         ) : null}
                       </span>
