@@ -208,6 +208,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         in Dagster config as dicts with a single key, which is the discriminator value.
         """
         modified_data = {}
+        print("given config dict", config_dict)
         for key, value in config_dict.items():
             field = self.model_fields.get(key)
             if field and not field.is_required() and value is None:
@@ -238,7 +239,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         for key, field in self.model_fields.items():
             if field.is_required() and key not in modified_data:
                 modified_data[key] = None
-        print({k: type(v) for k, v in modified_data.items()})
+        print("initing with", {k: type(v) for k, v in modified_data.items()})
         super().__init__(**modified_data)
 
         for key, value in modified_data.items():
@@ -777,6 +778,7 @@ class ConfigurableResourceFactory(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
+        print("resource data", data, data_without_resources, resource_pointers)
         # Populate config values
         Config.__init__(self, **{**data_without_resources, **resource_pointers})
 
@@ -1800,10 +1802,10 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias: field for field in cls.model_fields.values()}
+    keys_by_alias = {field.alias if field.alias else key : field for key, field in cls.model_fields.items()}
     data_with_annotation: List[Tuple[str, Any, Type]] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
-        (k, v, keys_by_alias[k].outer_type_)
+        (k, v, keys_by_alias[k].annotation)
         for k, v in data.items()
         if k in keys_by_alias
     ]
