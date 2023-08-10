@@ -4,7 +4,6 @@ import * as React from 'react';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {testId} from '../testing/testId';
 
 import {DagsterTag, RunTag, TagAction, TagType} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
@@ -111,7 +110,7 @@ export const RunTags: React.FC<{
   return (
     <Box flex={{direction: 'row', wrap: 'wrap', gap: 4}}>
       {modeTag}
-      {displayedTags.map((tag, idx) => (
+      {displayedTags.map((tag) => (
         <RunTag tag={tag} key={tag.key} actions={actionsForTag(tag)} />
       ))}
     </Box>
