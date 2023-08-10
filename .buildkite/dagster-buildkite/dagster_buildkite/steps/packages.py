@@ -228,11 +228,15 @@ def k8s_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-gcp_extra_cmds = [
-    r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-    + GCP_CREDS_LOCAL_FILE,
-    "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-]
+gcp_extra_cmds = (
+    [
+        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+        + GCP_CREDS_LOCAL_FILE,
+        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+    ]
+    if os.getenv("CI_DISABLE_INTEGRATION_TESTS")
+    else []
+)
 
 
 postgres_extra_cmds = [
