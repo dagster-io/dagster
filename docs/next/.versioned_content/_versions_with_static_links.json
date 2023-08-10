@@ -1,11 +1,298 @@
 [
-  {"version": "1.3.11", "url": "https://docs.dagster.io"},
-  {"version": "1.3.12", "url": "https://docs.dagster.io"},
-  {"version": "1.3.13", "url": "https://docs.dagster.io"},
-  {"version": "1.3.14", "url": "https://docs.dagster.io"},
-  {"version": "1.4.0", "url": "https://docs.dagster.io"},
-  {"version": "1.4.1", "url": "https://docs.dagster.io"},
-  {"version": "1.4.2", "url": "https://docs.dagster.io"},
-  {"version": "1.4.3", "url": "https://docs.dagster.io"},
-  {"version": "1.4.4", "url": "https://release-1-4-5.dagster.dagster-docs.io/"}
+  {
+    "url": "https://dagster-git-release-01420-elementl.vercel.app",
+    "version": "0.14.20"
+  },
+  {
+    "url": "https://dagster-git-release-0150-elementl.vercel.app",
+    "version": "0.15.0"
+  },
+  {
+    "url": "https://dagster-git-release-0151-elementl.vercel.app",
+    "version": "0.15.1"
+  },
+  {
+    "url": "https://dagster-git-release-0152-elementl.vercel.app",
+    "version": "0.15.2"
+  },
+  {
+    "url": "https://dagster-git-release-0153-elementl.vercel.app",
+    "version": "0.15.3"
+  },
+  {
+    "url": "https://dagster-git-release-0154-elementl.vercel.app",
+    "version": "0.15.4"
+  },
+  {
+    "url": "https://dagster-git-release-0155-elementl.vercel.app",
+    "version": "0.15.5"
+  },
+  {
+    "url": "https://dagster-git-release-0156-elementl.vercel.app",
+    "version": "0.15.6"
+  },
+  {
+    "url": "https://dagster-git-release-0157-elementl.vercel.app",
+    "version": "0.15.7"
+  },
+  {
+    "url": "https://dagster-git-release-0158-elementl.vercel.app",
+    "version": "0.15.8"
+  },
+  {
+    "url": "https://dagster-git-release-0159-elementl.vercel.app",
+    "version": "0.15.9"
+  },
+  {
+    "url": "https://dagster-git-release-100-elementl.vercel.app",
+    "version": "1.0.0"
+  },
+  {
+    "url": "https://dagster-git-release-101-elementl.vercel.app",
+    "version": "1.0.1"
+  },
+  {
+    "url": "https://dagster-git-release-102-elementl.vercel.app",
+    "version": "1.0.2"
+  },
+  {
+    "url": "https://dagster-git-release-103-elementl.vercel.app",
+    "version": "1.0.3"
+  },
+  {
+    "url": "https://dagster-git-release-104-elementl.vercel.app",
+    "version": "1.0.4"
+  },
+  {
+    "url": "https://dagster-git-release-106-elementl.vercel.app",
+    "version": "1.0.6"
+  },
+  {
+    "url": "https://dagster-git-release-107-elementl.vercel.app",
+    "version": "1.0.7"
+  },
+  {
+    "url": "https://dagster-git-release-108-elementl.vercel.app",
+    "version": "1.0.8"
+  },
+  {
+    "url": "https://dagster-git-release-109-elementl.vercel.app",
+    "version": "1.0.9"
+  },
+  {
+    "url": "https://dagster-git-release-1010-elementl.vercel.app",
+    "version": "1.0.10"
+  },
+  {
+    "url": "https://dagster-git-release-1011-elementl.vercel.app",
+    "version": "1.0.11"
+  },
+  {
+    "url": "https://dagster-git-release-1012-elementl.vercel.app",
+    "version": "1.0.12"
+  },
+  {
+    "url": "https://dagster-git-release-1013-elementl.vercel.app",
+    "version": "1.0.13"
+  },
+  {
+    "url": "https://dagster-git-release-1014-elementl.vercel.app",
+    "version": "1.0.14"
+  },
+  {
+    "url": "https://dagster-git-release-1015-elementl.vercel.app",
+    "version": "1.0.15"
+  },
+  {
+    "url": "https://dagster-git-release-1016-elementl.vercel.app",
+    "version": "1.0.16"
+  },
+  {
+    "url": "https://dagster-git-release-1017-elementl.vercel.app",
+    "version": "1.0.17"
+  },
+  {
+    "url": "https://dagster-git-release-111-elementl.vercel.app",
+    "version": "1.1.1"
+  },
+  {
+    "url": "https://dagster-git-release-112-elementl.vercel.app",
+    "version": "1.1.2"
+  },
+  {
+    "url": "https://dagster-git-release-113-elementl.vercel.app",
+    "version": "1.1.3"
+  },
+  {
+    "url": "https://dagster-git-release-114-elementl.vercel.app",
+    "version": "1.1.4"
+  },
+  {
+    "url": "https://dagster-git-release-115-elementl.vercel.app",
+    "version": "1.1.5"
+  },
+  {
+    "url": "https://dagster-git-release-116-elementl.vercel.app",
+    "version": "1.1.6"
+  },
+  {
+    "url": "https://dagster-git-release-117-elementl.vercel.app",
+    "version": "1.1.7"
+  },
+  {
+    "url": "https://dagster-git-release-118-elementl.vercel.app",
+    "version": "1.1.8"
+  },
+  {
+    "url": "https://dagster-git-release-119-elementl.vercel.app",
+    "version": "1.1.9"
+  },
+  {
+    "url": "https://dagster-git-release-1110-elementl.vercel.app",
+    "version": "1.1.10"
+  },
+  {
+    "url": "https://dagster-git-release-1111-elementl.vercel.app",
+    "version": "1.1.11"
+  },
+  {
+    "url": "https://dagster-git-release-1113-elementl.vercel.app",
+    "version": "1.1.13"
+  },
+  {
+    "url": "https://dagster-git-release-1114-elementl.vercel.app",
+    "version": "1.1.14"
+  },
+  {
+    "url": "https://dagster-git-release-1115-elementl.vercel.app",
+    "version": "1.1.15"
+  },
+  {
+    "url": "https://dagster-git-release-1117-elementl.vercel.app",
+    "version": "1.1.17"
+  },
+  {
+    "url": "https://dagster-git-release-1118-elementl.vercel.app",
+    "version": "1.1.18"
+  },
+  {
+    "url": "https://dagster-git-release-1119-elementl.vercel.app",
+    "version": "1.1.19"
+  },
+  {
+    "url": "https://dagster-git-release-1120-elementl.vercel.app",
+    "version": "1.1.20"
+  },
+  {
+    "url": "https://dagster-git-release-1121-elementl.vercel.app",
+    "version": "1.1.21"
+  },
+  {
+    "url": "https://dagster-git-release-120-elementl.vercel.app",
+    "version": "1.2.0"
+  },
+  {
+    "url": "https://dagster-git-release-121-elementl.vercel.app",
+    "version": "1.2.1"
+  },
+  {
+    "url": "https://dagster-git-release-122-elementl.vercel.app",
+    "version": "1.2.2"
+  },
+  {
+    "url": "https://dagster-git-release-123-elementl.vercel.app",
+    "version": "1.2.3"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.2.4/getting-started",
+    "version": "1.2.4"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.2.6/getting-started",
+    "version": "1.2.6"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.2.7/getting-started",
+    "version": "1.2.7"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.0/getting-started",
+    "version": "1.3.0"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.1/getting-started",
+    "version": "1.3.1"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.2/getting-started",
+    "version": "1.3.2"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.3/getting-started",
+    "version": "1.3.3"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.4/getting-started",
+    "version": "1.3.4"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.5/getting-started",
+    "version": "1.3.5"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.6/getting-started",
+    "version": "1.3.6"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.7/getting-started",
+    "version": "1.3.7"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.8/getting-started",
+    "version": "1.3.8"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.9/getting-started",
+    "version": "1.3.9"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.10/getting-started",
+    "version": "1.3.10"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.11/getting-started",
+    "version": "1.3.11"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.12/getting-started",
+    "version": "1.3.12"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.13/getting-started",
+    "version": "1.3.13"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.3.14/getting-started",
+    "version": "1.3.14"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.0/getting-started",
+    "version": "1.4.0"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.1/getting-started",
+    "version": "1.4.1"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.2/getting-started",
+    "version": "1.4.2"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.3/getting-started",
+    "version": "1.4.3"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.4/getting-started",
+    "version": "1.4.4"
+  }
 ]
