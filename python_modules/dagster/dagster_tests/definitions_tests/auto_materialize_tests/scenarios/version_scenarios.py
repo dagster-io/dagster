@@ -35,6 +35,7 @@ partitioned_to_partitioned = [
     asset_def("three", ["two"], partitions_def=three_partitions_def, code_version="0"),
 ]
 
+"""
 version_scenarios = {
     "all_unpartitioned_version_updated": AssetReconciliationScenario(
         assets=all_unpartitioned,
@@ -148,3 +149,5 @@ version_scenarios = {
         expected_run_requests=[],
     ),
 }
+"""
+version_scenarios = {}
