@@ -60,6 +60,13 @@ class LateBoundTypesForResourceTypeChecking:
 class BaseConfigMeta(ModelMetaclass):
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         annotations = namespaces.get("__annotations__", {})
+        # for field in annotations:
+        #     if not field.startswith("__"):
+        #         # Check if the annotation is a ResourceDependency
+        #         if annotations[field] == str:
+        #             annotations[field] = Union[str, EnvVar]
+
+        # namespaces["__annotations__"] = annotations
 
         # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
         # being created

@@ -36,7 +36,7 @@ from dagster._config.config_type import (
     ConfigType,
     Noneable,
 )
-from dagster._config.field_utils import config_dictionary_from_values
+from dagster._config.field_utils import EnvVar, IntEnvVar, config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
@@ -235,7 +235,15 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             #     }
             # else:
             modified_data[key] = value
+        print({k: type(v) for k, v in modified_data.items()})
         super().__init__(**modified_data)
+
+        for key, value in modified_data.items():
+            if isinstance(value, (EnvVar, IntEnvVar)):
+                self.__dict__[key] = value
+        print("\n\nI WAS CONSTRUCTED AS")
+        print(self.__dict__)
+        print({k: type(v) for k, v in self.__dict__.items()})
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
