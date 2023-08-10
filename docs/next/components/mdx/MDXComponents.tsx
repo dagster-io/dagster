@@ -5,8 +5,6 @@
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
 
-import path from 'path';
-
 import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
 import {PersistentTabContext} from 'components/PersistentTabContext';
