@@ -618,23 +618,40 @@ def _store_output(
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
 
-    # output_manager.handle_output is either a generator function, or a normal function with or
-    # without a return value. In the case that handle_output is a normal function, we need to
-    # catch errors should they be raised before a return value. We can do this by wrapping
-    # handle_output in a generator so that errors will be caught within iterate_with_context.
+    # TODO - should we handle the op case?
 
-    if not inspect.isgeneratorfunction(output_manager.handle_output):
+    if (
+        output_context.has_asset_key
+        and output_context.dagster_type.is_nothing
+        and output.value is None
+    ):
+        # if the output is from an asset and None is returned, and the type annotation indicates a
+        # Nothing return type don't invoke an I/O manager.
+        def _no_op():
+            yield None
 
-        def _gen_fn():
-            gen_output = output_manager.handle_output(output_context, output.value)
-            for event in output_context.consume_events():
-                yield event
-            if gen_output:
-                yield gen_output
-
-        handle_output_gen = _gen_fn()
+        handle_output_gen = _no_op()
     else:
-        handle_output_gen = output_manager.handle_output(output_context, output.value)
+        # if the output is from an op or if the output is from an asset and is not None we use the
+        # I/O manager.
+
+        # output_manager.handle_output is either a generator function, or a normal function with or
+        # without a return value. In the case that handle_output is a normal function, we need to
+        # catch errors should they be raised before a return value. We can do this by wrapping
+        # handle_output in a generator so that errors will be caught within iterate_with_context.
+
+        if not inspect.isgeneratorfunction(output_manager.handle_output):
+
+            def _gen_fn():
+                gen_output = output_manager.handle_output(output_context, output.value)
+                for event in output_context.consume_events():
+                    yield event
+                if gen_output:
+                    yield gen_output
+
+            handle_output_gen = _gen_fn()
+        else:
+            handle_output_gen = output_manager.handle_output(output_context, output.value)
 
     for elt in iterate_with_context(
         lambda: op_execution_error_boundary(
@@ -657,6 +674,8 @@ def _store_output(
         elif isinstance(elt, dict):  # should remove this?
             experimental_warning("Yielding metadata from an IOManager's handle_output() function")
             manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
+        elif elt is None:
+            continue
         else:
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
