@@ -26,15 +26,13 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
 // only hide version notice in production
 let showVersionNotice = true;
 if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
-  // We use NEXT_PUBLIC_VERCEL_ENV to tell whether it's in production or not
+  // We use NEXT_PUBLIC_VERCEL_ENV to tell whether it's in production or not, because:
   // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
-  // * Vercel previews have NODE_ENV === "production"
+  // * Vercel previews have NODE_ENV === "production", so we can't rely on that.
+  //     As going forward, we are relying on Vercel's previews to version the older docs, we need to
+  //     make sure that when a user lands on the older docs (aka previews), we have the version
+  //     notice as reminder that they are looking at older docs.
   showVersionNotice = false;
-  console.log('process.env.NEXT_PUBLIC_VERCEL_ENV', process.env.NEXT_PUBLIC_VERCEL_ENV);
-} else if (process.env.NODE_ENV === 'production') {
-  // for testing
-  showVersionNotice = false;
-  console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 }
 
 export const useVersion = () => {
