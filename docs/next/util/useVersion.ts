@@ -30,9 +30,11 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
   // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
   // * Vercel previews have NODE_ENV === "production"
   showVersionNotice = false;
+  console.log('process.env.NEXT_PUBLIC_VERCEL_ENV', process.env.NEXT_PUBLIC_VERCEL_ENV);
 } else if (process.env.NODE_ENV === 'production') {
   // for testing
   showVersionNotice = false;
+  console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 }
 
 export const useVersion = () => {
