@@ -237,7 +237,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             modified_data[key] = value
         for key, field in self.model_fields.items():
             if field.is_required() and key not in modified_data:
-                modified_data[key]=None
+                modified_data[key] = None
         print({k: type(v) for k, v in modified_data.items()})
         super().__init__(**modified_data)
 
@@ -1773,7 +1773,7 @@ def infer_schema_from_config_class(
                     and safe_is_subclass(model_cls, ConfigurableResourceFactory),
                 )
 
-    shape_cls = Permissive if model_cls.model_config.get('extra') == 'allow' else Shape
+    shape_cls = Permissive if model_cls.model_config.get("extra") == "allow" else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
 
