@@ -773,6 +773,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             use_asset_versions (bool): If True, will use data versions to filter out asset
                 partitions which were materialized, but not have not had their data versions
                 cahnged since the given cursor.
+                NOTE: This boolean has been temporarily disabled
         """
         if not self.asset_partition_has_materialization_or_observation(
             AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
@@ -790,9 +791,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         if not updated_after_cursor:
             return set()
-        if after_cursor is None or (
-            not self.asset_graph.is_source(asset_key) and not use_asset_versions
-        ):
+        if after_cursor is None or (not self.asset_graph.is_source(asset_key)):
             return updated_after_cursor
 
         # more expensive check to explicitly handle data versions
