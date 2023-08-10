@@ -1,9 +1,8 @@
 import {useNavigation} from 'util/useNavigation';
-import {useVersion} from 'util/useVersion';
+import {useVersion, showVersionNotice} from 'util/useVersion';
 
 import cx from 'classnames';
 import Icons from 'components/Icons';
-import Link from 'components/Link';
 import VersionDropdown from 'components/VersionDropdown';
 import MDXComponents, {SearchIndexContext} from 'components/mdx/MDXComponents';
 import SidebarNavigation from 'components/mdx/SidebarNavigation';
@@ -30,9 +29,7 @@ export type MDXData = {
 };
 
 export const VersionNotice = () => {
-  const {asPath, version, defaultVersion} = useVersion();
-
-  if (version === defaultVersion) {
+  if (!showVersionNotice) {
     return null;
   }
 
@@ -40,31 +37,15 @@ export const VersionNotice = () => {
     <div className="bg-yellow-100 mb-10 mt-6 mx-4 shadow sm:rounded-lg">
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900">
-          {version === 'master'
-            ? 'You are viewing an unreleased version of the documentation.'
-            : 'You are viewing an outdated version of the documentation.'}
+          You are viewing an unreleased or outdated version of the documentation
         </h3>
-        <div className="mt-2 text-sm text-gray-500">
-          {version === 'master' ? (
-            <p>
-              This documentation is for an unreleased version ({version}) of Dagster. The content
-              here is not guaranteed to be correct or stable. You can view the version of this page
-              from our latest release below.
-            </p>
-          ) : (
-            <p>
-              This documentation is for an older version ({version}) of Dagster. You can view the
-              version of this page from our latest release below.
-            </p>
-          )}
-        </div>
         <div className="mt-3 text-sm">
-          <Link href={asPath} version={defaultVersion}>
-            <a className="font-medium text-indigo-600 hover:text-indigo-500">
-              {' '}
-              View Latest Documentation <span aria-hidden="true">→</span>
-            </a>
-          </Link>
+          <a
+            href="https://docs.dagster.io"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            View Latest Documentation <span aria-hidden="true">→</span>
+          </a>
         </div>
       </div>
     </div>

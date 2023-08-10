@@ -677,7 +677,6 @@ const Image = ({children, ...props}) => {
    * - on non-master version
    * - in public/images/ dir
    */
-  const {version} = useVersion();
   const {src} = props;
   if (!src.startsWith('/images/')) {
     return (
@@ -686,19 +685,10 @@ const Image = ({children, ...props}) => {
       </span>
     );
   }
-
-  const resolvedPath =
-    version === 'master'
-      ? src
-      : new URL(
-          path.join('versioned_images', version, src.replace('/images/', '')),
-          'https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com',
-        ).href;
-
   return (
     <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
       <span className="block mx-auto">
-        <NextImage src={resolvedPath} width={props.width} height={props.height} alt={props.alt} />
+        <NextImage src={src} width={props.width} height={props.height} alt={props.alt} />
       </span>
     </Zoom>
   );

@@ -1,14 +1,11 @@
 import masterNavigation from '../../content/_navigation.json';
-import versionedNavigation from '../.versioned_content/_versioned_navigation.json';
-
-import {useVersion, latestVersion, defaultVersion} from './useVersion';
 
 type NavEntry = {
   title: string;
   path: string;
   children?: NavEntry[];
   icon?: string;
-  isUnversioned?: boolean;
+  isNotDynamic?: boolean;
   isExternalLink?: boolean;
 };
 
@@ -36,18 +33,12 @@ export function flatten(yx: any, parentKey = '') {
 }
 
 export const useNavigation = () => {
-  const {version} = useVersion();
-
-  if (version === 'master') {
-    return masterNavigation;
-  }
-
-  return versionedNavigation[version];
+  return masterNavigation;
 };
 
 export const latestAllPaths = () => {
-  // latest version
-  return flatten(versionedNavigation[latestVersion])
+  // include path like /changelog which doesn't go through the markdoc renderer
+  return flatten(masterNavigation)
     .filter((n: {path: any}) => n.path)
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
@@ -59,14 +50,10 @@ export const latestAllPaths = () => {
     });
 };
 
-export const latestAllVersionedPaths = () => {
-  const navigationForLatestVersion =
-    defaultVersion === 'master' // when it's not in prod, the latest version defaults to master
-      ? masterNavigation
-      : versionedNavigation[defaultVersion];
-
-  return flatten(navigationForLatestVersion)
-    .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isUnversioned)
+export const latestAllDynamicPaths = () => {
+  // only include paths that will be dynamically generated
+  return flatten(masterNavigation)
+    .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isNotDynamic)
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
       return {
@@ -75,47 +62,8 @@ export const latestAllVersionedPaths = () => {
         },
       };
     });
-};
-
-export const allPaths = () => {
-  let paths = [];
-
-  // Master
-  const flattenedMasterNavigation = flatten(masterNavigation)
-    .filter((n: {path: any}) => n.path)
-    .map(({path}) => path.split('/').splice(1))
-    .map((page: string[]) => {
-      return {
-        params: {
-          page: ['master', ...page],
-        },
-      };
-    });
-
-  paths = [...flattenedMasterNavigation, ...paths];
-
-  // Always enable versioning when on Vercel
-  if (process.env.VERCEL || !__VERSIONING_DISABLED__) {
-    for (const [key, value] of Object.entries(versionedNavigation)) {
-      const flattenedVersionNavigation = flatten(value)
-        .filter((n: {path: any}) => n.path)
-        .map(({path}) => [key, ...path.split('/').splice(1)])
-        .map((page: string[]) => {
-          return {
-            params: {
-              page,
-            },
-          };
-        });
-
-      paths = [...paths, ...flattenedVersionNavigation];
-    }
-  }
-
-  return paths;
 };
 
 export const navigations = {
   masterNavigation,
-  versionedNavigation,
 };
