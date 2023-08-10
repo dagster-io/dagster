@@ -51,7 +51,8 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     # Build images containing the dagster-test sample project. This is a dependency of certain
     # dagster core and extension lib tests. Run this after we build our library package steps
     # because need to know whether it's a dependency of any of them.
-    steps += build_test_project_steps()
+    if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        steps += build_test_project_steps()
 
     return steps
 
