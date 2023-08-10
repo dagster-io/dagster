@@ -139,18 +139,20 @@ defs = Definitions(
 
 ## Step 4: Cache the dbt Cloud job compilation
 
-<Note>This step is optional.</Note>
-
-- [Step 4.1: Add `DBT_DAGSTER_COMPILE_RUN_ID` environment variable to dbt Cloud](#step-41-add-dbt_dagster_compile_run_id-environment-variable-to-dbt-cloud)
-- [Step 4.2: Override `DBT_DAGSTER_COMPILE_RUN_ID` on dbt Cloud jobs managed by Dagster](#step-42-override-dbt_dagster_compile_run_id-on-dbt-cloud-jobs-managed-by-dagster)
-- [Step 4.3: Test the cache locally](#step-43-test-the-cache-locally)
-- [Step 4.4: Set up a GitHub action to automate the cache](#step-44-set-up-a-github-action-to-automate-the-cache)
+<Note>
+  <strong>If developing locally,</strong> this step is optional.
+  <br />
+  <br /> <strong>In production</strong>, however, caching is recommended as the
+  latency of <a href="#step-2-loading-dbt-cloud-models-as-assets">Step 2</a>{" "}
+  (loading dbt models as Dagster assets) will scale with the size of the dbt
+  project in dbt Cloud.
+</Note>
 
 You'll need the following secrets in your GitHub repository and local environment:
 
 - `DBT_CLOUD_API_TOKEN` - The API token for your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
-- `DBT_CLOUD_ACCOUNT_ID` - The id of your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
-- `DBT_CLOUD_PROJECT_ID` - The id of your dbt Cloud project, that corresponds to the dbt project managed in git.
+- `DBT_CLOUD_ACCOUNT_ID` - The ID of your dbt Cloud account, as described in the [Prerequisites](#prerequisites).
+- `DBT_CLOUD_PROJECT_ID` - The ID of your dbt Cloud project, that corresponds to the dbt project managed in git.
 
 ### Step 4.1 Add DBT_DAGSTER_COMPILE_RUN_ID environment variable to dbt Cloud
 
