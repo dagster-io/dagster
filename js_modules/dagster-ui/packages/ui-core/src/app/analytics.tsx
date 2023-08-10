@@ -21,7 +21,7 @@ const usePageContext = () => {
 
 const useAnalytics = () => {
   const analytics = React.useContext(AnalyticsContext);
-  if (!analytics) {
+  if (!analytics && typeof 'jest' === undefined && !process.env.STORYBOOK) {
     throw new Error('Analytics may only be used within `AnalyticsContext.Provider`.');
   }
   return analytics;

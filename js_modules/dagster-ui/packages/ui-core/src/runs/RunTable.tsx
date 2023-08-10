@@ -12,7 +12,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  BaseTag,
   ButtonLink,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -23,6 +22,7 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AnchorButton} from '../ui/AnchorButton';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';
@@ -278,24 +278,38 @@ const RunRow: React.FC<{
     }
   };
 
+  const [unpinnedTags, setUnpinnedTags] = useStateWithStorage('unpinned-tags', (value) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return [];
+  });
+
+  const allTagsWithPinned = React.useMemo(() => {
+    const allTags: Omit<typeof run.tags[0], '__typename'>[] = [...run.tags];
+    if ((isJob && run.mode !== 'default') || !isJob) {
+      allTags.push({
+        key: 'mode',
+        value: run.mode,
+      });
+    }
+    return allTags.map((tag) => ({
+      ...tag,
+      pinned: unpinnedTags.indexOf(tag.key) === -1,
+    }));
+  }, [run, isJob, unpinnedTags]);
+
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
-  const targetBackfill = run.tags.find((tag) => tag.key === DagsterTag.Backfill);
-  const targetPartition = run.tags.find((tag) => tag.key === DagsterTag.Partition);
-  const targetPartitionSet = run.tags.find((tag) => tag.key === DagsterTag.PartitionSet);
-  const targetPartitionRangeStart = run.tags.find(
-    (tag) => tag.key === DagsterTag.AssetPartitionRangeStart,
-  );
-  const targetPartitionRangeEnd = run.tags.find(
-    (tag) => tag.key === DagsterTag.AssetPartitionRangeEnd,
-  );
+  const targetBackfill = allTagsWithPinned.find((tag) => tag.key === DagsterTag.Backfill);
 
   const [showRunTags, setShowRunTags] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const tagsToShow = React.useMemo(() => {
+    const tagKeys: Set<string> = new Set([]);
     const tags: TagType[] = [];
-    if (targetBackfill) {
+    if (targetBackfill && targetBackfill.pinned) {
       const link = run.assetSelection?.length
         ? `/overview/backfills/${targetBackfill.value}`
         : runsPathWithFilters([
@@ -305,27 +319,36 @@ const RunRow: React.FC<{
             },
           ]);
       tags.push({
-        key: targetBackfill.key,
-        value: targetBackfill.value,
+        ...targetBackfill,
         link,
       });
+      tagKeys.add(DagsterTag.Backfill as string);
     }
-    if (targetPartition) {
-      tags.push(targetPartition);
-    } else if (targetPartitionSet) {
-      tags.push(targetPartitionSet);
-    } else if (targetPartitionRangeStart !== undefined && targetPartitionRangeEnd !== undefined) {
-      tags.push(targetPartitionRangeStart, targetPartitionRangeEnd);
-    }
+    allTagsWithPinned.forEach((tag) => {
+      if (tagKeys.has(tag.key)) {
+        // We already added this tag
+        return;
+      }
+      if (unpinnedTags.indexOf(tag.key) === -1) {
+        tags.push(tag);
+      }
+    });
     return tags;
-  }, [
-    run.assetSelection?.length,
-    targetBackfill,
-    targetPartition,
-    targetPartitionRangeEnd,
-    targetPartitionRangeStart,
-    targetPartitionSet,
-  ]);
+  }, [targetBackfill, allTagsWithPinned, run.assetSelection?.length, unpinnedTags]);
+
+  const onToggleTagPin = React.useCallback(
+    (tagKey: string) => {
+      setUnpinnedTags((unpinnedTags) => {
+        unpinnedTags = unpinnedTags || [];
+        if (unpinnedTags.indexOf(tagKey) !== -1) {
+          return unpinnedTags.filter((key) => key !== tagKey);
+        } else {
+          return [...unpinnedTags, tagKey];
+        }
+      });
+    },
+    [setUnpinnedTags],
+  );
 
   return (
     <Row
@@ -385,34 +408,23 @@ const RunRow: React.FC<{
             </Box>
           )}
           <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
-            {run.tags.length ? (
-              <Box>
-                <BaseTag
-                  fillColor={Colors.Gray100}
-                  label={
-                    <ButtonLink
-                      onClick={() => {
-                        setShowRunTags(true);
-                      }}
-                    >
-                      {run.tags.length} tag{run.tags.length === 1 ? '' : 's'}
-                    </ButtonLink>
-                  }
-                />
-              </Box>
-            ) : null}
             <RunTagsWrapper>
               {tagsToShow.length ? (
-                <RunTags
-                  tags={tagsToShow}
-                  mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-                  onAddTag={onAddTag}
-                />
+                <RunTags tags={tagsToShow} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
               ) : null}
             </RunTagsWrapper>
+            {allTagsWithPinned.length > tagsToShow.length ? (
+              <ButtonLink
+                onClick={() => {
+                  setShowRunTags(true);
+                }}
+              >
+                View all {allTagsWithPinned.length} tag{allTagsWithPinned.length === 1 ? '' : 's'}
+              </ButtonLink>
+            ) : null}
           </Box>
         </Box>
-        {isHovered && run.tags.length ? (
+        {isHovered && allTagsWithPinned.length ? (
           <ShortcutHandler
             key="runtabletags"
             onShortcut={() => {
@@ -454,11 +466,7 @@ const RunRow: React.FC<{
         }}
       >
         <DialogBody>
-          <RunTags
-            tags={run.tags}
-            mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-            onAddTag={onAddTag}
-          />
+          <RunTags tags={allTagsWithPinned} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
         </DialogBody>
         <DialogFooter topBorder>
           <Button

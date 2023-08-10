@@ -30,6 +30,10 @@ const config = {
   docs: {
     autodocs: true,
   },
+  env: (config) => ({
+    ...config,
+    STORYBOOK: true,
+  }),
 };
 
 export default config;
