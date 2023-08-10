@@ -4,7 +4,6 @@
 
 ### New
 
-- The eager `AutoMaterializePolicy` now respects data versions, meaning that if a parent is materialized with the same data version as its previous materialization, a second run will no longer be kicked off.
 - `@graph_asset` now takes a `config` parameter equivalent to the parameter on `@graph`.
 - Added an optional `dynamic_partitions_store` argument to `DynamicPartitionsDefinition` for multi-partition run properly with dynamic partitions (Thanks @elzzz!).
 - [dagster-grpahql] Added `partitionsByAssets`` to `backfillParams`` for ranged partition backfill (Thanks @ruizh22!).
