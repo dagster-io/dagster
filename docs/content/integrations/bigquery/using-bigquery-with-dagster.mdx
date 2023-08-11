@@ -118,6 +118,8 @@ def iris_data(bigquery: BigQueryResource) -> None:
 
 In this example, you're defining an asset that fetches the Iris dataset as a Pandas DataFrame and renames the columns. Then, using the BigQuery resource, the DataFrame is stored in BigQuery as the `iris.iris_data` table.
 
+Now you can run `dagster dev` and materialize the `iris_data` asset from the Dagster UI.
+
 </TabItem>
 
 <TabItem name="Make existing tables available in Dagster">
@@ -138,7 +140,6 @@ In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-e
 
 </TabGroup>
 
-Now you can run `dagster dev` and materialize the `iris_data` asset from the Dagster UI.
 
 ### Step 3: Define downstream assets
 
@@ -235,7 +236,7 @@ To use the BigQuery I/O manager, you'll need to add it to your `Definitions` obj
 - A `project`
 - One method of authentication. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
-You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` and number of `retries` when working with Pandas DataFrames.
+You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` when working with Pandas DataFrames.
 
 ```python file=/integrations/bigquery/tutorial/io_manager/configuration.py startafter=start_example endbefore=end_example
 from dagster_gcp_pandas import BigQueryPandasIOManager
