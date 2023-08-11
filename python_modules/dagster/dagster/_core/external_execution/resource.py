@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Sequence, Union
 
-from dagster_external.protocol import ExternalExecutionUserdata
+from dagster_external.protocol import ExternalExecutionExtras
 from pydantic import Field
 
 from dagster._config.pythonic_config import ConfigurableResource
@@ -34,12 +34,12 @@ class ExternalExecutionResource(ConfigurableResource):
         self,
         command: Union[str, Sequence[str]],
         context: OpExecutionContext,
-        userdata: ExternalExecutionUserdata,
+        extras: ExternalExecutionExtras,
     ) -> None:
         return_code = ExternalExecutionTask(
             command=command,
             context=context,
-            userdata=userdata,
+            extras=extras,
             env=self.env,
             input_mode=self.input_mode,
             output_mode=self.output_mode,
