@@ -621,6 +621,25 @@ class TestRunStorage:
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
+    def test_get_run_ids(self, storage):
+        assert storage
+
+        one, two, three = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
+        storage.add_run(
+            TestRunStorage.build_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
+        )
+        storage.add_run(
+            TestRunStorage.build_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, job_name="some_pipeline", tags={"mytag": "hello"}
+            )
+        )
+
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline"), limit=1) == [three]
+
     def test_fetch_by_status(self, storage):
         assert storage
         one = make_new_run_id()
