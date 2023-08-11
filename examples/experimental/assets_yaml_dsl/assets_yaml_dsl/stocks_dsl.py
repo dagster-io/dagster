@@ -77,6 +77,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     for stock_info in stock_assets.stock_infos:
         ticker = stock_info.ticker
         ticker_asset_key = AssetKey(ticker)
+        # TODO: convert to AssetDeclaration/AssetNode once it lands
         outs[ticker] = AssetOut(
             key=ticker_asset_key,
             description=f"Fetch {ticker} from internal service",
