@@ -605,21 +605,31 @@ class TestRunStorage:
 
         all_runs = storage.get_runs()
         assert len(all_runs) == 3
+        assert storage.get_run_ids() == [three, two, one]
         sliced_runs = storage.get_runs(cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+        assert storage.get_run_ids(cursor=three, limit=1) == [two]
 
         all_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
         assert len(all_runs) == 3
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
         sliced_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"), cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+        assert storage.get_run_ids(RunsFilter(job_name="some_pipeline"), cursor=three, limit=1) == [
+            two
+        ]
 
         all_runs = storage.get_runs(RunsFilter(tags={"mytag": "hello"}))
         assert len(all_runs) == 3
+        assert storage.get_run_ids(RunsFilter(tags={"mytag": "hello"})) == [three, two, one]
         sliced_runs = storage.get_runs(RunsFilter(tags={"mytag": "hello"}), cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
+        assert storage.get_run_ids(RunsFilter(tags={"mytag": "hello"}), cursor=three, limit=1) == [
+            two
+        ]
 
     def test_get_run_ids(self, storage):
         assert storage

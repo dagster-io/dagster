@@ -1654,9 +1654,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_run_ids(
-        self, filters: Optional[RunsFilter] = None, limit: Optional[int] = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Sequence[str]:
-        return self._run_storage.get_run_ids(filters, limit=limit)
+        return self._run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
 
     @traced
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:

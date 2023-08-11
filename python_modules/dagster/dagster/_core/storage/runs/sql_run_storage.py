@@ -347,9 +347,10 @@ class SqlRunStorage(RunStorage):
     def get_run_ids(
         self,
         filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[str]:
-        query = self._runs_query(filters=filters, limit=limit, columns=["run_id"])
+        query = self._runs_query(filters=filters, cursor=cursor, limit=limit, columns=["run_id"])
         rows = self.fetchall(query)
         return [row["run_id"] for row in rows]
 

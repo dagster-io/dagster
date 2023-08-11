@@ -204,9 +204,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_run_ids(
         self,
         filters: Optional["RunsFilter"] = None,
+        cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Iterable[str]:
-        return self._storage.run_storage.get_run_ids(filters, limit=limit)
+        return self._storage.run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
 
     def get_runs_count(self, filters: Optional["RunsFilter"] = None) -> int:
         return self._storage.run_storage.get_runs_count(filters)
