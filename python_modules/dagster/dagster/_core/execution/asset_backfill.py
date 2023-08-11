@@ -475,14 +475,14 @@ class AssetBackfillData(NamedTuple):
 
 
 def fetch_cancelable_run_ids_for_asset_backfill(instance: DagsterInstance, backfill_id: str):
-    backfill_runs = instance.run_storage.get_runs(
+    return instance.run_storage.get_run_ids(
         filters=RunsFilter(
+            statuses=CANCELABLE_RUN_STATUSES,
             tags={
                 BACKFILL_ID_TAG: backfill_id,
-            }
+            },
         )
     )
-    return [run.run_id for run in backfill_runs if run.status in CANCELABLE_RUN_STATUSES]
 
 
 def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:
@@ -593,15 +593,20 @@ def execute_asset_backfill_iteration(
         instance.update_backfill(updated_backfill)
 
     elif backfill.status == BulkActionStatus.CANCELING:
+        if not instance.run_coordinator:
+            check.failed("The instance must have a run coordinator in order to cancel runs")
+
         # Find all cancellable runs and mark them as canceled
         cancelable_run_ids = fetch_cancelable_run_ids_for_asset_backfill(
             instance, backfill.backfill_id
         )
+
+        yield None
+
         if cancelable_run_ids:
-            if not instance.run_coordinator:
-                check.failed("The instance must have a run coordinator in order to cancel runs")
             for run_id in cancelable_run_ids:
                 instance.run_coordinator.cancel_run(run_id)
+                yield None
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
         updated_asset_backfill_data = None
