@@ -263,6 +263,7 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
+    partitioned_config as partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
