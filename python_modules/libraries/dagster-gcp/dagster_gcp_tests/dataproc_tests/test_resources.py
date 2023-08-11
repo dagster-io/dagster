@@ -4,6 +4,7 @@ import uuid
 from unittest import mock
 
 import httplib2
+import pytest
 from dagster import RunConfig, _seven, job
 from dagster_gcp import (
     DataprocOpConfig,
@@ -75,6 +76,7 @@ class HttpSnooper(httplib2.Http):
             return response, content
 
 
+@pytest.mark.integration
 def test_dataproc_resource():
     """Tests dataproc cluster creation/deletion. Requests are captured by the responses library, so
     no actual HTTP requests are made here.
@@ -132,6 +134,7 @@ def test_dataproc_resource():
         assert result.success
 
 
+@pytest.mark.integration
 def test_wait_for_job_with_timeout():
     """Test submitting a job with timeout of 0 second so that it always fails."""
     with mock.patch("httplib2.Http", new=HttpSnooper):
@@ -186,6 +189,7 @@ def test_wait_for_job_with_timeout():
             assert "Job run timed out" in str(e)
 
 
+@pytest.mark.integration
 def test_pydantic_dataproc_resource():
     """Tests pydantic dataproc cluster creation/deletion. Requests are captured by the responses library, so
     no actual HTTP requests are made here.
@@ -237,6 +241,7 @@ def test_pydantic_dataproc_resource():
         assert result.success
 
 
+@pytest.mark.integration
 def test_wait_for_job_with_timeout_pydantic():
     """Test submitting a job with timeout of 0 second so that it always fails."""
     with mock.patch("httplib2.Http", new=HttpSnooper):

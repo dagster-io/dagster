@@ -9,6 +9,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.integration
 def test_old_resource_authenticate_via_config():
     asset_info = dict()
 
@@ -52,6 +53,7 @@ def test_old_resource_authenticate_via_config():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.integration
 def test_pythonic_resource_authenticate_via_config():
     asset_info = dict()
 
@@ -94,6 +96,7 @@ def test_pythonic_resource_authenticate_via_config():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.integration
 def test_pythonic_resource_authenticate_via_env():
     @asset
     def test_asset(bigquery: BigQueryResource) -> int:

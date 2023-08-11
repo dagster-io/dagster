@@ -1,5 +1,6 @@
 import pickle
 
+import pytest
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
@@ -81,6 +82,7 @@ def define_inty_job():
     return basic_external_plan_execution
 
 
+@pytest.mark.integration
 def test_gcs_pickle_io_manager_execution(gcs_bucket):
     inty_job = define_inty_job()
 

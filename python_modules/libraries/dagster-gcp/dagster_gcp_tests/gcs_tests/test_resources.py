@@ -1,9 +1,11 @@
+import pytest
 from dagster import build_op_context, op
 from dagster_gcp.gcs.resources import GCSResource, gcs_resource
 
 PROJECT_ID = "test-project1231"
 
 
+@pytest.mark.integration
 def test_gcs_resource():
     @op(required_resource_keys={"gcs"})
     def gcs_op(context):
@@ -16,6 +18,7 @@ def test_gcs_resource():
     assert gcs_op(context)
 
 
+@pytest.mark.integration
 def test_pydantic_gcs_resource():
     @op
     def gcs_op(gcs: GCSResource):
