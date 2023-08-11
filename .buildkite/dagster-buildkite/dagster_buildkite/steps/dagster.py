@@ -1,3 +1,4 @@
+import logging
 import os
 from glob import glob
 from typing import List
@@ -46,6 +47,7 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
     steps += build_graphql_python_client_backcompat_steps()
+    logging.info(f"CI_DISABLE_INTEGRATION_TESTS: {os.getenv('CI_DISABLE_INTEGRATION_TESTS')}")
     if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         steps += build_integration_steps()
 
