@@ -65,7 +65,7 @@ def asset(
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
     io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
@@ -103,7 +103,7 @@ def asset(
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
@@ -119,7 +119,7 @@ def asset(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    non_argument_deps: Optional[Union[AbstractSet[AssetKey], AbstractSet[str]]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
