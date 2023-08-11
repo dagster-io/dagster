@@ -317,6 +317,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.get_tag(key)
 
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for the current run."""
+        return self._step_execution_context.run_tags
+
     def has_events(self) -> bool:
         return bool(self._events)
 
