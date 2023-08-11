@@ -234,7 +234,7 @@ gcp_extra_cmds = (
         + GCP_CREDS_LOCAL_FILE,
         "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
     ]
-    if os.getenv("CI_DISABLE_INTEGRATION_TESTS")
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS")
     else []
 )
 
