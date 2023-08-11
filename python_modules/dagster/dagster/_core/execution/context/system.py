@@ -165,6 +165,10 @@ class IPlanContext(ABC):
         check.str_param(key, "key")
         return self.dagster_run.tags.get(key)
 
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        return self.dagster_run.tags
+
 
 class PlanData(NamedTuple):
     """The data about a run that is available during both orchestration and execution.
