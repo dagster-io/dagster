@@ -84,6 +84,22 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
+    def get_run_ids(
+        self,
+        filters: Optional[RunsFilter] = None,
+    ) -> Sequence[str]:
+        """Return all the run IDs for runs present in the storage that match the given filters.
+
+        Args:
+            filters (Optional[RunsFilter]) -- The
+                :py:class:`~dagster._core.storage.pipeline_run.RunsFilter` by which to filter
+                runs
+
+        Returns:
+            Sequence[str]
+        """
+
+    @abstractmethod
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         """Return the number of runs present in the storage that match the given filters.
 

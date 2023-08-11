@@ -344,6 +344,14 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
+    def get_run_ids(
+        self,
+        filters: Optional[RunsFilter] = None,
+    ) -> Sequence[str]:
+        query = self._runs_query(filters=filters, columns=["run_id"])
+        rows = self.fetchall(query)
+        return [row["run_id"] for row in rows]
+
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         subquery = db_subquery(self._runs_query(filters=filters))
         query = db_select([db.func.count().label("count")]).select_from(subquery)

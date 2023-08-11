@@ -412,102 +412,111 @@ class TestRunStorage:
 
         assert len(storage.get_runs()) == 4
 
-        some_runs = storage.get_runs(RunsFilter(run_ids=[one]))
-        count = storage.get_runs_count(RunsFilter(run_ids=[one]))
+        run_ids_filter = RunsFilter(run_ids=[one])
+        some_runs = storage.get_runs(run_ids_filter)
+        count = storage.get_runs_count(run_ids_filter)
+        ids = storage.get_run_ids(run_ids_filter)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert ids == [one]
 
-        some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
-        count = storage.get_runs_count(RunsFilter(job_name="some_pipeline"))
+        job_name_filter = RunsFilter(job_name="some_pipeline")
+        some_runs = storage.get_runs(job_name_filter)
+        count = storage.get_runs_count(job_name_filter)
+        ids = storage.get_run_ids(job_name_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
+        assert ids == [two, one]
 
-        some_runs = storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
-        count = storage.get_runs_count(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
+        run_status_filter = RunsFilter(statuses=[DagsterRunStatus.SUCCESS])
+        some_runs = storage.get_runs(run_status_filter)
+        count = storage.get_runs_count(run_status_filter)
+        run_ids = storage.get_run_ids(run_status_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == three
         assert some_runs[1].run_id == one
+        assert run_ids == [three, one]
 
-        some_runs = storage.get_runs(RunsFilter(tags={"tag": "hello"}))
-        count = storage.get_runs_count(RunsFilter(tags={"tag": "hello"}))
+        run_tags_filter = RunsFilter(tags={"tag": "hello"})
+        some_runs = storage.get_runs(run_tags_filter)
+        count = storage.get_runs_count(run_tags_filter)
+        run_ids = storage.get_run_ids(run_tags_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
+        assert run_ids == [two, one]
 
-        some_runs = storage.get_runs(RunsFilter(tags={"tag": "hello", "tag2": "world"}))
-        count = storage.get_runs_count(RunsFilter(tags={"tag": "hello", "tag2": "world"}))
+        two_run_tags_filter = RunsFilter(tags={"tag": "hello", "tag2": "world"})
+        some_runs = storage.get_runs(two_run_tags_filter)
+        count = storage.get_runs_count(two_run_tags_filter)
+        run_ids = storage.get_run_ids(two_run_tags_filter)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert run_ids == [one]
 
-        some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline", tags={"tag": "hello"}))
-        count = storage.get_runs_count(RunsFilter(job_name="some_pipeline", tags={"tag": "hello"}))
+        job_and_tags_filter = RunsFilter(job_name="some_pipeline", tags={"tag": "hello"})
+        some_runs = storage.get_runs(job_and_tags_filter)
+        count = storage.get_runs_count(job_and_tags_filter)
+        run_ids = storage.get_run_ids(job_and_tags_filter)
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
+        assert run_ids == [two, one]
 
-        runs_with_multiple_tag_values = storage.get_runs(
-            RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
-        )
+        multiple_tag_values_filter = RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
+        runs_with_multiple_tag_values = storage.get_runs(multiple_tag_values_filter)
         assert len(runs_with_multiple_tag_values) == 3
         assert runs_with_multiple_tag_values[0].run_id == four
         assert runs_with_multiple_tag_values[1].run_id == two
         assert runs_with_multiple_tag_values[2].run_id == one
 
-        count_with_multiple_tag_values = storage.get_runs_count(
-            RunsFilter(tags={"tag": ["hello", "goodbye", "farewell"]})
-        )
+        count_with_multiple_tag_values = storage.get_runs_count(multiple_tag_values_filter)
         assert count_with_multiple_tag_values == 3
 
-        some_runs = storage.get_runs(
-            RunsFilter(
-                job_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
+        assert storage.get_run_ids(multiple_tag_values_filter) == [four, two, one]
+
+        multiple_filters = RunsFilter(
+            job_name="some_pipeline",
+            tags={"tag": "hello"},
+            statuses=[DagsterRunStatus.SUCCESS],
         )
-        count = storage.get_runs_count(
-            RunsFilter(
-                job_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
-        )
+        some_runs = storage.get_runs(multiple_filters)
+        count = storage.get_runs_count(multiple_filters)
+        run_ids = storage.get_run_ids(multiple_filters)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert run_ids == [one]
 
         # All filters
-        some_runs = storage.get_runs(
-            RunsFilter(
-                run_ids=[one],
-                job_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
+        all_filters = RunsFilter(
+            run_ids=[one],
+            job_name="some_pipeline",
+            tags={"tag": "hello"},
+            statuses=[DagsterRunStatus.SUCCESS],
         )
-        count = storage.get_runs_count(
-            RunsFilter(
-                run_ids=[one],
-                job_name="some_pipeline",
-                tags={"tag": "hello"},
-                statuses=[DagsterRunStatus.SUCCESS],
-            )
-        )
+        some_runs = storage.get_runs(all_filters)
+        count = storage.get_runs_count(all_filters)
+        run_ids = storage.get_run_ids(all_filters)
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
+        assert run_ids == [one]
 
-        some_runs = storage.get_runs(RunsFilter())
-        count = storage.get_runs_count(RunsFilter())
+        empty_filter = RunsFilter()
+        some_runs = storage.get_runs(empty_filter)
+        count = storage.get_runs_count(empty_filter)
+        run_ids = storage.get_run_ids(empty_filter)
         assert len(some_runs) == 4
         assert count == 4
+        assert run_ids == [four, three, two, one]
 
     def test_fetch_count_by_tag(self, storage):
         assert storage
