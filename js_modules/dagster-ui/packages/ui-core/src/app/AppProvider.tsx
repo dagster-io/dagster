@@ -122,10 +122,11 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     statusPolling,
   } = config;
 
+  // todo dish: Change `deleteExisting` to true soon. (Current: 1.4.5)
   React.useEffect(() => {
-    migrateLocalStorageKeys({from: /DAGIT_FLAGS/g, to: 'DAGSTER_FLAGS'});
-    migrateLocalStorageKeys({from: /:dagit/gi, to: ':dagster'});
-    migrateLocalStorageKeys({from: /^dagit(\.v2)?/gi, to: 'dagster'});
+    migrateLocalStorageKeys({from: /DAGIT_FLAGS/g, to: 'DAGSTER_FLAGS', deleteExisting: false});
+    migrateLocalStorageKeys({from: /:dagit/gi, to: ':dagster', deleteExisting: false});
+    migrateLocalStorageKeys({from: /^dagit(\.v2)?/gi, to: 'dagster', deleteExisting: false});
   }, []);
 
   const graphqlPath = `${basePath}/graphql`;
