@@ -841,6 +841,40 @@ def static_partitioned_config(
     return inner
 
 
+def partitioned_config(
+    partitions_def: PartitionsDefinition,
+    tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
+    """Creates a partitioned config for a job given a PartitionsDefinition.
+
+    The partitions_def provides the set of partitions, which may change over time
+        (for example, when using a DynamicPartitionsDefinition).
+
+    The decorated function takes in a partition key and returns a valid run config for a particular
+    target job.
+
+    Args:
+        partitions_def: (Optional[DynamicPartitionsDefinition]): PartitionsDefinition for the job
+        tags_for_partition_key_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
+
+    Returns:
+        PartitionedConfig
+    """
+    check.opt_callable_param(tags_for_partition_key_fn, "tags_for_partition_key_fn")
+
+    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
+        return PartitionedConfig(
+            partitions_def=partitions_def,
+            run_config_for_partition_key_fn=fn,
+            decorated_fn=fn,
+            tags_for_partition_key_fn=tags_for_partition_key_fn,
+        )
+
+    return inner
+
+
 @deprecated_param(
     param="tags_for_partition_fn",
     breaking_version="2.0",
