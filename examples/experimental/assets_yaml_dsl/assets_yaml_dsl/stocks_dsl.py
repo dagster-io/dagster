@@ -1,5 +1,6 @@
 import os
 from typing import Any, Dict, List, NamedTuple
+from dagster._core.types.dagster_type import Nothing
 
 import yaml
 from dagster._core.definitions.events import Output
@@ -82,6 +83,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
             key=ticker_asset_key,
             description=f"Fetch {ticker} from internal service",
             group_name=group_name,
+            dagster_type=Nothing,
         )
         tickers.append(ticker)
         ticker_asset_keys.append(ticker_asset_key)
@@ -90,9 +92,6 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     def fetch_the_tickers():
         for ticker in tickers:
             enrich_and_insert_data(get_ticker_data(ticker))
-
-        # TODO: remove once alex's PR lands
-        return tuple([Output(None, ticker) for ticker in tickers])
 
     @asset(deps=ticker_asset_keys, group_name=group_name)
     def index_strategy() -> None:
