@@ -208,7 +208,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         in Dagster config as dicts with a single key, which is the discriminator value.
         """
         modified_data = {}
-        print("given config dict", config_dict)
         for key, value in config_dict.items():
             field = self.model_fields.get(key)
             if field and not field.is_required() and value is None:
@@ -239,15 +238,11 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         for key, field in self.model_fields.items():
             if field.is_required() and key not in modified_data:
                 modified_data[key] = None
-        print("initing with", {k: type(v) for k, v in modified_data.items()})
         super().__init__(**modified_data)
 
         for key, value in modified_data.items():
             if isinstance(value, (EnvVar, IntEnvVar)):
                 self.__dict__[key] = value
-        print("\n\nI WAS CONSTRUCTED AS")
-        print(self.__dict__)
-        print({k: type(v) for k, v in self.__dict__.items()})
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
@@ -257,7 +252,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         or EnvVars will be converted to the appropriate dictionary representation.
         """
         public_fields = self._get_non_none_public_field_values()
-        print("PUB", public_fields)
         return {
             k: _config_value_to_dict_representation(self.model_fields.get(k), v)
             for k, v in public_fields.items()
@@ -272,7 +266,6 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         output = {}
         for key, value in self.__dict__.items():
-            print("INSPECTING ", key)
             if self._is_field_internal(key):
                 continue
             field = self.model_fields.get(key)
@@ -778,7 +771,6 @@ class ConfigurableResourceFactory(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
-        print("resource data", data, data_without_resources, resource_pointers)
         # Populate config values
         Config.__init__(self, **{**data_without_resources, **resource_pointers})
 
@@ -1486,7 +1478,6 @@ def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type]
 
     field_type = pydantic_field.annotation
 
-    print(field_type)
     if safe_is_subclass(field_type, Config):
         inferred_field = infer_schema_from_config_class(
             field_type,
@@ -1542,7 +1533,6 @@ def _config_type_for_type_on_pydantic_field(
     Args:
         potential_dagster_type (Any): The Python type of the Pydantic field.
     """
-    print("EVALUATING TYPE", potential_dagster_type)
     try:
         from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 
@@ -1569,7 +1559,6 @@ def _config_type_for_type_on_pydantic_field(
         get_origin(potential_dagster_type), Mapping
     ):
         key_type, value_type = get_args(potential_dagster_type)
-        print(_config_type_for_type_on_pydantic_field(key_type))
         return Map(
             key_type,
             _config_type_for_type_on_pydantic_field(value_type),
@@ -1756,7 +1745,6 @@ def infer_schema_from_config_class(
     fields: Dict[str, Field] = {}
     for key, pydantic_field_info in model_cls.model_fields.items():
         alias = pydantic_field_info.alias if pydantic_field_info.alias else key
-        print("GOT FIELD ", alias)
         if key not in fields_to_omit:
             if isinstance(pydantic_field_info.default, Field):
                 raise DagsterInvalidDefinitionError(
@@ -1802,7 +1790,9 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
-    keys_by_alias = {field.alias if field.alias else key : field for key, field in cls.model_fields.items()}
+    keys_by_alias = {
+        field.alias if field.alias else key: field for key, field in cls.model_fields.items()
+    }
     data_with_annotation: List[Tuple[str, Any, Type]] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
         (k, v, keys_by_alias[k].annotation)
