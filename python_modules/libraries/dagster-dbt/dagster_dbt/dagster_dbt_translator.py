@@ -55,7 +55,25 @@ class DagsterDbtTranslator:
                 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     @classmethod
                     def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-                        return AssetKey([dbt_resource_props["alias"]]).with_prefix("prefix")
+                        return super().get_asset_key(dbt_resource_props).with_prefix("prefix")
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster import AssetKey
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    @classmethod
+                    def get_asset_key(cls, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+                        asset_key = super().get_asset_key(dbt_resource_props)
+
+                        if dbt_resource_props["resource_type"] == "source":
+                            asset_key = asset_key.with_prefix("my_prefix")
+
+                        return asset_key
         """
         return default_asset_key_fn(dbt_resource_props)
 

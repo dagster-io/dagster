@@ -236,7 +236,7 @@ def scope_custom_asset_key_dagster_dbt_translator():
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            return self.get_asset_key(dbt_resource_props).with_prefix("snowflake")
+            return super().get_asset_key(dbt_resource_props).with_prefix("snowflake")
 
     @dbt_assets(
         manifest=manifest_path,
