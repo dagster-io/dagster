@@ -118,7 +118,7 @@ defs = Definitions(
          - name: raw_customers
            meta:
              dagster:
-               asset_key: raw_customers
+               asset_key: ["raw_customers"]
    ```
 
 This is a standard dbt source definition, with one addition: it includes metadata, under the `meta` property, that specifies the Dagster asset that it corresponds to. When Dagster reads the contents of the dbt project, it reads this metadata and infers the correspondence. For any dbt model that depends on this dbt source, Dagster then knows that the Dagster asset corresponding to the dbt model should depend on the Dagster asset corresponding to the source.
