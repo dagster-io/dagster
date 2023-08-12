@@ -19,6 +19,7 @@ if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
 else:
     dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 
+
 @dbt_assets(manifest=dbt_manifest_path)
 def {{ dbt_assets_name }}(context: OpExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
