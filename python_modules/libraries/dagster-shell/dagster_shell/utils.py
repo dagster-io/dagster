@@ -25,6 +25,8 @@ from subprocess import PIPE, STDOUT, Popen
 from typing import Mapping, Optional, Tuple
 
 import dagster._check as check
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.external_execution.channel import external_execution_channel
 from dagster._utils import safe_tempfile_path
 from typing_extensions import Final
 
@@ -37,6 +39,7 @@ def execute_script_file(
     log: Logger,
     cwd: Optional[str] = None,
     env: Optional[Mapping[str, str]] = None,
+    context: OpExecutionContext = None,
 ) -> Tuple[str, int]:
     """Execute a shell script file specified by the argument ``shell_script_path``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
@@ -86,47 +89,49 @@ def execute_script_file(
 
     log.info(f"Running command:\n{shell_command}")
 
-    sub_process = None
-    try:
-        stdout_pipe = PIPE
-        stderr_pipe = STDOUT
-        if output_logging == "NONE":
-            stdout_pipe = stderr_pipe = None
+    with external_execution_channel("stdio", context, {}):
+        sub_process = None
+        try:
+            stdout_pipe = PIPE
+            stderr_pipe = STDOUT
+            if output_logging == "NONE":
+                stdout_pipe = stderr_pipe = None
 
-        sub_process = Popen(
-            ["bash", shell_script_path],
-            stdout=stdout_pipe,
-            stderr=stderr_pipe,
-            cwd=cwd,
-            env=env,
-            preexec_fn=pre_exec,
-            encoding="UTF-8",
-        )
+            sub_process = Popen(
+                ["bash", shell_script_path],
+                stdout=stdout_pipe,
+                stderr=stderr_pipe,
+                cwd=cwd,
+                env=env,
+                preexec_fn=pre_exec,
+                encoding="UTF-8",
+            )
 
-        log.info(f"Command pid: {sub_process.pid}")
+            log.info(f"Command pid: {sub_process.pid}")
 
-        output = ""
-        if output_logging == "STREAM":
-            assert sub_process.stdout is not None, "Setting stdout=PIPE should always set stdout."
-            # Stream back logs as they are emitted
-            lines = []
-            for line in sub_process.stdout:
-                log.info(line.rstrip())
-                lines.append(line)
-            output = "".join(lines)
-        elif output_logging == "BUFFER":
-            # Collect and buffer all logs, then emit
-            output, _ = sub_process.communicate()
-            log.info(output)
+            output = ""
+            if output_logging == "STREAM":
+                assert (
+                    sub_process.stdout is not None
+                ), "Setting stdout=PIPE should always set stdout."
+                # Stream back logs as they are emitted
+                lines = []
+                for line in sub_process.stdout:
+                    log.info(line.rstrip())
+                    lines.append(line)
+                output = "".join(lines)
+            elif output_logging == "BUFFER":
+                # Collect and buffer all logs, then emit
+                output, _ = sub_process.communicate()
+                log.info(output)
 
-        sub_process.wait()
-        log.info(f"Command exited with return code {sub_process.returncode}")
-
-        return output, sub_process.returncode
-    finally:
-        # Always terminate subprocess, including in cases where the run is terminated
-        if sub_process:
-            sub_process.terminate()
+            sub_process.wait()
+            log.info(f"Command exited with return code {sub_process.returncode}")
+            return output, sub_process.returncode
+        finally:
+            # Always terminate subprocess, including in cases where the run is terminated
+            if sub_process:
+                sub_process.terminate()
 
 
 def execute(
@@ -135,6 +140,7 @@ def execute(
     log: Logger,
     cwd: Optional[str] = None,
     env: Optional[Mapping[str, str]] = None,
+    context: Optional[OpExecutionContext] = None,
 ) -> Tuple[str, int]:
     """This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
     It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
@@ -180,4 +186,5 @@ def execute(
                 log=log,
                 cwd=(cwd or tmp_path),
                 env=env,
+                context=context,
             )

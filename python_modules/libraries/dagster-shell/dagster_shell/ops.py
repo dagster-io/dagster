@@ -169,7 +169,7 @@ def create_shell_command_op(
 
 
 def create_shell_script_op(
-    shell_script_path,
+    shell_script_path: str,
     name="create_shell_script_op",
     ins: Optional[Mapping[str, In]] = None,
     **kwargs: Any,
