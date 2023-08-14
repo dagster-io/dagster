@@ -41,28 +41,23 @@ To add the `order_count_chart` asset:
 
 1. Replace the imports section with the following:
 
-   ```python file=integrations/dbt/tutorial/downstream_assets/definitions.py startafter=start_imports endbefore=end_imports
+   ```python file=integrations/dbt/tutorial/downstream_assets/assets.py startafter=start_imports endbefore=end_imports
    import os
-   from pathlib import Path
 
    import duckdb
    import pandas as pd
    import plotly.express as px
-   from dagster_dbt import (
-       DbtCliResource,
-       build_schedule_from_dbt_selection,
-       dbt_assets,
-       get_asset_key_for_model,
-   )
+   from dagster import MetadataValue, OpExecutionContext, asset
+   from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
-   from dagster import Definitions, MetadataValue, OpExecutionContext, asset
+   from .constants import dbt_manifest_path, dbt_project_dir
    ```
 
    This adds an import for plotly, as well as <PyObject module="dagster_dbt" object="get_asset_key_for_model" /> and <PyObject module="dagster" object="MetadataValue" />, which we'll use in our asset.
 
-2. Before `defs = Definitions(`, add the definition for the `order_count_chart` asset:
+2. After your definition of `jaffle_shop_dbt_assets`, add the definition for the `order_count_chart` asset:
 
-   ```python file=integrations/dbt/tutorial/downstream_assets/definitions.py startafter=start_downstream_asset endbefore=end_downstream_asset
+   ```python file=integrations/dbt/tutorial/downstream_assets/assets.py startafter=start_downstream_asset endbefore=end_downstream_asset
    @asset(deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"))
    def order_count_chart(context):
        # read the contents of the customers table into a Pandas DataFrame
@@ -89,11 +84,20 @@ To add the `order_count_chart` asset:
 3. Add the `order_count_chart` to the `Definitions`:
 
    ```python file=integrations/dbt/tutorial/downstream_assets/definitions.py startafter=start_defs endbefore=end_defs
+   import os
+
+   from dagster import Definitions
+   from dagster_dbt import DbtCliResource
+
+   from .assets import jaffle_shop_dbt_assets, order_count_chart, raw_customers
+   from .constants import dbt_project_dir
+   from .schedules import schedules
+
    defs = Definitions(
        assets=[raw_customers, jaffle_shop_dbt_assets, order_count_chart],
        schedules=schedules,
        resources={
-           "dbt": dbt,
+           "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
        },
    )
    ```
