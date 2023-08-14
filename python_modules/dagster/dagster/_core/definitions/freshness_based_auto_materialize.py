@@ -100,20 +100,52 @@ def get_execution_period_and_conditions_for_policies(
 
     return merged_period, conditions
 
-def expected_data_time_for_asset_key(
+
+def get_expected_data_time_for_asset_key(
     asset_graph: AssetGraph,
     asset_key: AssetKey,
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+    expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+    data_time_resolver: "CachingDataTimeResolver",
+    current_time: datetime.datetime,
+    will_materialize: bool,
 ) -> Optional[datetime.datetime]:
-    for parent_key in asset_graph.get_parents(asset_key):
-    # find the minimum non-None data time of your parents
-    parent_expected_data_time = expected_data_time_mapping.get(
-        parent_key
-    ) or data_time_resolver.get_current_data_time(parent_key, current_time)
-    expected_data_time = min(
-        filter(None, [expected_data_time, parent_expected_data_time]),
-        default=None,
-    )
+    """Returns the data time that you would expect this asset to have if you were to execute it
+    on this tick.
+    """
+    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
+    # don't bother calculating if no downstream assets have freshness policies
+    if not asset_graph.get_downstream_freshness_policies(asset_key=asset_key):
+        return None
+    # if asset will not be materialized, just return the current time
+    elif not will_materialize:
+        return data_time_resolver.get_current_data_time(asset_key, current_time)
+    elif asset_graph.has_non_source_parents(asset_key):
+        expected_data_time = None
+        for parent_key in asset_graph.get_parents(asset_key):
+            # if the parent will be materialized on this tick, and it's not in the same repo, then
+            # we must wait for this asset to be materialized
+            if (
+                isinstance(asset_graph, ExternalAssetGraph)
+                and AssetKeyPartitionKey(parent_key) in will_materialize_mapping[parent_key]
+            ):
+                parent_repo = asset_graph.get_repository_handle(parent_key)
+                if parent_repo != asset_graph.get_repository_handle(asset_key):
+                    return data_time_resolver.get_current_data_time(asset_key, current_time)
+            # find the minimum non-None data time of your parents
+            parent_expected_data_time = expected_data_time_mapping.get(
+                parent_key
+            ) or data_time_resolver.get_current_data_time(parent_key, current_time)
+            expected_data_time = min(
+                filter(None, [expected_data_time, parent_expected_data_time]),
+                default=None,
+            )
+        return expected_data_time
+    # for root assets, this would just be the current time
+    else:
+        return current_time
+
 
 def freshness_conditions_for_asset_key(
     asset_key: AssetKey,
@@ -132,7 +164,6 @@ def freshness_conditions_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 
     if not asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
@@ -142,30 +173,20 @@ def freshness_conditions_for_asset_key(
     # figure out the current contents of this asset
     current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
 
-    expected_data_time = None
-    # figure out the expected data time of this asset if it were to be executed on this tick
-    # for root assets, this would just be the current time
-    if asset_graph.has_non_source_parents(asset_key):
-        for parent_key in asset_graph.get_parents(asset_key):
-            # if the parent will be materialized on this tick, and it's not in the same repo, then
-            # we must wait for this asset to be materialized
-            if (
-                isinstance(asset_graph, ExternalAssetGraph)
-                and AssetKeyPartitionKey(parent_key) in will_materialize_mapping[parent_key]
-            ):
-                parent_repo = asset_graph.get_repository_handle(parent_key)
-                if parent_repo != asset_graph.get_repository_handle(asset_key):
-                    return {}, set(), current_data_time
-            # find the minimum non-None data time of your parents
-            parent_expected_data_time = expected_data_time_mapping.get(
-                parent_key
-            ) or data_time_resolver.get_current_data_time(parent_key, current_time)
-            expected_data_time = min(
-                filter(None, [expected_data_time, parent_expected_data_time]),
-                default=None,
-            )
-    else:
-        expected_data_time = current_time
+    # figure out the data time you would expect if you were to execute this asset on this tick
+    expected_data_time = get_expected_data_time_for_asset_key(
+        asset_graph=asset_graph,
+        asset_key=asset_key,
+        will_materialize_mapping=will_materialize_mapping,
+        expected_data_time_mapping=expected_data_time_mapping,
+        data_time_resolver=data_time_resolver,
+        current_time=current_time,
+        will_materialize=True,
+    )
+
+    # if executing the asset on this tick would not change its data time, then return
+    if current_data_time == expected_data_time:
+        return {}, set(), None
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
