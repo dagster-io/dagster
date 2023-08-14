@@ -154,11 +154,7 @@ def freshness_conditions_for_asset_key(
     current_time: datetime.datetime,
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-) -> Tuple[
-    Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]],
-    AbstractSet[AssetKeyPartitionKey],
-    Optional[datetime.datetime],
-]:
+) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
@@ -168,7 +164,7 @@ def freshness_conditions_for_asset_key(
     if not asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
     ) or asset_graph.is_partitioned(asset_key):
-        return {}, set(), None
+        return {}
 
     # figure out the current contents of this asset
     current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
@@ -186,7 +182,7 @@ def freshness_conditions_for_asset_key(
 
     # if executing the asset on this tick would not change its data time, then return
     if current_data_time == expected_data_time:
-        return {}, set(), None
+        return {}
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
@@ -224,12 +220,6 @@ def freshness_conditions_for_asset_key(
             for condition in execution_conditions
         )
     ):
-        return (
-            {condition: {asset_partition} for condition in execution_conditions},
-            {asset_partition},
-            expected_data_time,
-        )
+        return {condition: {asset_partition} for condition in execution_conditions}
     else:
-        # if downstream assets consume this, they should expect data time equal to the
-        # current time for this asset, as it's not going to be updated
-        return {}, set(), current_data_time
+        return {}

@@ -39,8 +39,8 @@ from .auto_materialize_condition import (
 )
 from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .auto_materialize_rule import (
-    MaterializeRuleEvaluationContext,
-    SkipRuleEvaluationContext,
+    RuleEvaluationContext,
+    RuleEvaluationContext,
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .partition import (
@@ -320,13 +320,14 @@ class AssetDaemonContext:
         # a set of asset partitions that should be materialized
         candidates: Set[AssetKeyPartitionKey] = set()
 
-        materialize_context = MaterializeRuleEvaluationContext(
+        materialize_context = RuleEvaluationContext(
             asset_key=asset_key,
             cursor=self.cursor,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
+            candidates=set(),
             _daemon_context=self,
         )
 
@@ -359,11 +360,8 @@ class AssetDaemonContext:
                     if candidate in asset_partitions:
                         conditions[condition].remove(candidate)
 
-        skip_context = SkipRuleEvaluationContext.from_materialize_context(
-            materialize_context, candidates
-        )
+        skip_context = materialize_context._replace(candidates=candidates)
 
-        # ParentOutdatedAutoMaterializeCondition (currently no way to disable this)
         for skip_rule in auto_materialize_policy.skip_rules:
             for condition, asset_partitions in skip_rule.evaluate(skip_context).items():
                 conditions[condition].update(asset_partitions)
