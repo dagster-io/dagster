@@ -102,7 +102,6 @@ wordcloud  # (quickstart-*)
 # -e examples/quickstart_etl  # (analyzed but not installed)
 # -e examples/quickstart_gcp  # (analyzed but not installed)
 # -e examples/quickstart_snowflake  # (analyzed but not installed)
--e examples/tutorial_dbt_dagster
 -e examples/tutorial_notebook_assets
 -e examples/with_airflow
 -e examples/with_great_expectations
