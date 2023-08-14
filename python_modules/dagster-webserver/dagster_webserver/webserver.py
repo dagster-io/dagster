@@ -44,7 +44,6 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/favicon-run-pending.svg",
     "/favicon-run-failed.svg",
     "/favicon-run-success.svg",
-    "/asset-manifest.json",
     "/robots.txt",
     "/Dagster_world.mp4",
 ]
@@ -246,14 +245,13 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
     def build_static_routes(self):
         return [
-            # static resources addressed at /static/
             Mount(
-                "/static",
+                "/next",
                 StaticFiles(
-                    directory=self.relative_path("webapp/build/static"),
+                    directory=self.relative_path("webapp/build"),
                     check_dir=False,
                 ),
-                name="static",
+                name="next",
             ),
             # static resources addressed at /vendor/
             Mount(

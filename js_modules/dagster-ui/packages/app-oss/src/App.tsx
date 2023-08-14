@@ -37,7 +37,6 @@ const appCache = createAppCache();
 
 // eslint-disable-next-line import/no-default-export
 export default function AppPage() {
-  console.log('App');
   return (
     <AppProvider appCache={appCache} config={config}>
       <AppTopNav searchPlaceholder="Search…">
