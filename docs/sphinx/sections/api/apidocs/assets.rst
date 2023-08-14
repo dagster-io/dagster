@@ -33,6 +33,8 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autodecorator:: graph_asset
 
+.. autodecorator:: graph_multi_asset
+
 .. autoclass:: AssetOut
 
 .. autoclass:: AssetValueLoader
