@@ -8,8 +8,8 @@ from threading import Thread
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster_external.protocol import (
-    DAGSTER_EXTERNAL_DEFAULT_INPUT_FIFO,
-    DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FIFO,
+    DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME,
+    DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME,
     DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalExecutionUserdata,
 )
@@ -61,9 +61,17 @@ class ExternalExecutionTask:
         read_target, stdout_fd, output_env_vars = self._prepare_output()
 
         input_thread = Thread(target=self._write_input, args=(write_target,), daemon=True)
-        input_thread.start()
         output_thread = Thread(target=self._read_output, args=(read_target,), daemon=True)
-        output_thread.start()
+
+        # Synchronously write the file in advance if using temp_file mode
+        if self._input_mode == "temp_file":
+            input_thread.run()
+        else:
+            input_thread.start()
+
+        # If we're using an output tempfile, we won't read it until the process is done
+        if self._output_mode != "temp_file":
+            output_thread.start()
 
         process = Popen(
             self._command,
@@ -78,8 +86,16 @@ class ExternalExecutionTask:
             os.close(stdout_fd)
 
         process.wait()
-        input_thread.join()
-        output_thread.join()
+
+        # Tempfile input will have been synchronously written without a living thread
+        if self._input_mode != "temp_file":
+            input_thread.join()
+
+        # Read tempfile output synchronously ofter everything the process has finished
+        if self._output_mode == "temp_file":
+            output_thread.run()
+        else:
+            output_thread.join()
 
         if self._tempdir is not None:
             shutil.rmtree(self._tempdir)
@@ -106,6 +122,13 @@ class ExternalExecutionTask:
             env = {
                 DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: "stdio",
             }
+        elif self._input_mode == "temp_file":
+            stdin_fd = None
+            write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME)
+            env = {
+                DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: "temp_file",
+                DAGSTER_EXTERNAL_ENV_KEYS["input"]: write_target,
+            }
         elif self._input_mode == "fifo":
             assert self._input_fifo is not None
             stdin_fd = None
@@ -116,7 +139,7 @@ class ExternalExecutionTask:
             }
         elif self._input_mode == "temp_fifo":
             stdin_fd = None
-            write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FIFO)
+            write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME)
             os.mkfifo(write_target)
             write_target = write_target
             env = {
@@ -133,6 +156,13 @@ class ExternalExecutionTask:
             env = {
                 DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "stdio",
             }
+        elif self._output_mode == "temp_file":
+            stdout_fd = None
+            read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME)
+            env = {
+                DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "temp_file",
+                DAGSTER_EXTERNAL_ENV_KEYS["output"]: read_target,
+            }
         elif self._output_mode == "fifo":
             assert self._output_fifo is not None
             stdout_fd = None
@@ -143,7 +173,7 @@ class ExternalExecutionTask:
             }
         elif self._output_mode == "temp_fifo":
             stdout_fd = None
-            read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FIFO)
+            read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME)
             os.mkfifo(read_target)
             env = {
                 DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "fifo",
