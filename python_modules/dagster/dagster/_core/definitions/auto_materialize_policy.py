@@ -94,6 +94,21 @@ class AutoMaterializePolicy(
     def from_rules(rules: AbstractSet["AutoMaterializeRule"]):
         pass
 
+    @property
+    def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        rules = set()
+        if self.on_missing:
+            rules.add(AutoMaterializeRule.materialize_on_missing())
+        if self.on_new_parent_data:
+            rules.add(AutoMaterializeRule.materialize_on_parent_updated())
+        if self.for_freshness:
+            rules.add(AutoMaterializeRule.materialize_on_required_for_freshness())
+        return rules
+
+    @property
+    def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        return {AutoMaterializeRule.skip_on_parent_outdated()}
+
     @public
     @staticmethod
     def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
