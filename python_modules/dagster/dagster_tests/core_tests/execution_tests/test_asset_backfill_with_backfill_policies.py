@@ -257,7 +257,9 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
 
 def test_asset_backfill_return_multiple_run_request_for_partitioned():
     time_now = pendulum.now("UTC")
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition(
+        "2023-01-01", end_date="2023-08-11"
+    )
     num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(7))
