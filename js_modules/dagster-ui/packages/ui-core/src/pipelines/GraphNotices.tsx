@@ -3,8 +3,14 @@ import capitalize from 'lodash/capitalize';
 import * as React from 'react';
 import styled from 'styled-components';
 
-export const LargeDAGNotice = ({nodeType}: {nodeType: 'op' | 'asset'}) => (
-  <LargeDAGContainer>
+export const LargeDAGNotice = ({
+  nodeType,
+  anchorLeft = '40px',
+}: {
+  nodeType: 'op' | 'asset';
+  anchorLeft?: string;
+}) => (
+  <LargeDAGContainer style={{left: anchorLeft}}>
     <Icon name="arrow_upward" size={24} />
     <LargeDAGInstructionBox>
       <p>
@@ -100,7 +106,6 @@ const CenteredContainer = styled.div`
 const LargeDAGContainer = styled.div`
   width: 45vw;
   position: absolute;
-  left: 40px;
   top: 60px;
   z-index: 2;
   max-width: 500px;
