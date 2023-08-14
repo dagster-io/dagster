@@ -1,6 +1,6 @@
 name: 💡 Request a feature
 description: Suggest an idea for Dagster.
-labels: ["feature-request"]
+labels: ["kind: feature-request"]
 body:
   - type: markdown
     attributes:
