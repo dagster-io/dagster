@@ -328,7 +328,7 @@ class AssetDaemonContext:
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
             candidates=set(),
-            _daemon_context=self,
+            daemon_context=self,
         )
 
         for materialize_rule in auto_materialize_policy.materialize_rules:

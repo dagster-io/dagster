@@ -47,7 +47,7 @@ class RuleEvaluationContext(NamedTuple):
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
-    _daemon_context: "AssetDaemonContext"
+    daemon_context: "AssetDaemonContext"
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -149,7 +149,7 @@ class MaterializeOnParentUpdatedRule(AutoMaterializeRule):
         # next, for each asset partition of this asset which has newly-updated parents, or
         # has a parent that will update, create a ParentMaterializedAutoMaterializeCondition
         has_or_will_update = (
-            context._daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+            context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
                 context.asset_key
             )
             | has_parents_that_will_update
@@ -196,7 +196,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule):
         partitions that the condition applies to.
         """
         missing_asset_partitions = (
-            context._daemon_context.get_never_handled_root_asset_partitions_for_key(
+            context.daemon_context.get_never_handled_root_asset_partitions_for_key(
                 context.asset_key
             )
         )
@@ -204,7 +204,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule):
         # parents to see if they're missing
         for (
             candidate
-        ) in context._daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+        ) in context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
             context.asset_key
         ):
             if not context.instance_queryer.asset_partition_has_materialization_or_observation(
