@@ -22,9 +22,6 @@ import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_based_auto_materialize import (
-    freshness_conditions_for_asset_key,
-)
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
@@ -39,6 +36,9 @@ from .auto_materialize_condition import (
     AutoMaterializeAssetEvaluation,
     AutoMaterializeCondition,
     MaxMaterializationsExceededAutoMaterializeCondition,
+)
+from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
+from .auto_materialize_rule import (
     MaterializeRuleEvaluationContext,
     SkipRuleEvaluationContext,
 )
@@ -155,6 +155,84 @@ class AssetDaemonContext:
         return auto_materialize_policy
 
     @cached_method
+    def _get_never_handled_and_newly_handled_root_asset_partitions(
+        self,
+    ) -> Tuple[
+        Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
+        AbstractSet[AssetKey],
+        Mapping[AssetKey, AbstractSet[str]],
+    ]:
+        """Finds asset partitions that have never been materialized or requested and that have no
+        parents.
+
+        Returns:
+        - Asset (partition)s that have never been materialized or requested.
+        - Non-partitioned assets that had never been materialized or requested up to the previous cursor
+            but are now materialized.
+        - Asset (partition)s that had never been materialized or requested up to the previous cursor but
+            are now materialized.
+        """
+        never_handled = defaultdict(set)
+        newly_materialized_root_asset_keys = set()
+        newly_materialized_root_partitions_by_asset_key = defaultdict(set)
+
+        for asset_key in self.target_asset_keys & self.asset_graph.root_asset_keys:
+            if self.asset_graph.is_partitioned(asset_key):
+                for partition_key in self.cursor.get_unhandled_partitions(
+                    asset_key,
+                    self.asset_graph,
+                    dynamic_partitions_store=self.instance_queryer,
+                    current_time=self.instance_queryer.evaluation_time,
+                ):
+                    asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
+                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
+                        asset_partition
+                    ):
+                        newly_materialized_root_partitions_by_asset_key[asset_key].add(
+                            partition_key
+                        )
+                    else:
+                        never_handled[asset_key].add(asset_partition)
+            else:
+                if not self.cursor.was_previously_handled(asset_key):
+                    asset_partition = AssetKeyPartitionKey(asset_key)
+                    if self.instance_queryer.asset_partition_has_materialization_or_observation(
+                        asset_partition
+                    ):
+                        newly_materialized_root_asset_keys.add(asset_key)
+                    else:
+                        never_handled[asset_key].add(asset_partition)
+
+        return (
+            never_handled,
+            newly_materialized_root_asset_keys,
+            newly_materialized_root_partitions_by_asset_key,
+        )
+
+    def get_never_handled_root_asset_partitions_for_key(
+        self, asset_key: AssetKey
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        """Returns the set of root asset partitions that have never been handled for a given asset
+        key. If the input asset key is not a root asset, this will always be an empty set.
+        """
+        never_handled, _, _ = self._get_never_handled_and_newly_handled_root_asset_partitions()
+        return never_handled.get(asset_key, set())
+
+    def get_newly_updated_roots(
+        self,
+    ) -> Tuple[AbstractSet[AssetKey], Mapping[AssetKey, AbstractSet[str]]]:
+        """Returns the set of unpartitioned root asset keys that have been updated since the last
+        tick, and a mapping from partitioned root asset keys to the set of partition keys that have
+        been materialized since the last tick.
+        """
+        (
+            _,
+            newly_handled_keys,
+            newly_handled_partitions_by_key,
+        ) = self._get_never_handled_and_newly_handled_root_asset_partitions()
+        return newly_handled_keys, newly_handled_partitions_by_key
+
+    @cached_method
     def _get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id(
         self,
     ) -> Tuple[Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]], Optional[int]]:
@@ -218,7 +296,6 @@ class AssetDaemonContext:
     ) -> Tuple[
         Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]],
         AbstractSet[AssetKeyPartitionKey],
-        Optional[datetime.datetime],
     ]:
         """Evaluates the auto materialize policy of a given asset key.
 
@@ -235,7 +312,6 @@ class AssetDaemonContext:
             - A mapping of AutoMaterializeCondition to the set of AssetKeyPartitionKeys that the
                 condition applies to.
             - The set of AssetKeyPartitionKeys that should be materialized.
-            - The expected data time of the asset after this tick.
         """
         auto_materialize_policy = check.not_none(
             self.get_implicit_auto_materialize_policy(asset_key)
@@ -245,8 +321,6 @@ class AssetDaemonContext:
         conditions: Dict[AutoMaterializeCondition, Set[AssetKeyPartitionKey]] = defaultdict(set)
         # a set of asset partitions that should be materialized
         candidates: Set[AssetKeyPartitionKey] = set()
-        # the expected data time of the asset after this tick
-        expected_data_time: Optional[datetime.datetime] = None
 
         materialize_context = MaterializeRuleEvaluationContext(
             asset_key=asset_key,
@@ -255,6 +329,7 @@ class AssetDaemonContext:
             data_time_resolver=self.data_time_resolver,
             will_materialize_mapping=will_materialize_mapping,
             expected_data_time_mapping=expected_data_time_mapping,
+            _daemon_context=self,
         )
 
         for materialize_rule in auto_materialize_policy.materialize_rules:
@@ -307,7 +382,7 @@ class AssetDaemonContext:
                 conditions[condition].update(asset_partitions)
                 candidates.difference_update(asset_partitions)
 
-        return conditions, candidates, expected_data_time
+        return conditions, candidates
 
     def get_auto_materialize_conditions(
         self,
@@ -334,12 +409,20 @@ class AssetDaemonContext:
             (
                 conditions_for_key,
                 to_materialize,
-                expected_data_time,
             ) = self.get_auto_materialize_conditions_for_asset(
                 asset_key, will_materialize_mapping, expected_data_time_mapping
             )
             condition_mapping[asset_key] = conditions_for_key
             will_materialize_mapping[asset_key] = to_materialize
+            expected_data_time = get_expected_data_time_for_asset_key(
+                self.asset_graph,
+                asset_key,
+                will_materialize_mapping=will_materialize_mapping,
+                expected_data_time_mapping=expected_data_time_mapping,
+                data_time_resolver=self.data_time_resolver,
+                current_time=self.instance_queryer.evaluation_time,
+                will_materialize=bool(to_materialize),
+            )
             expected_data_time_mapping[asset_key] = expected_data_time
             # if we need to materialize any partitions of a non-subsettable multi-asset, just copy
             # over conditions to any required neighbor key

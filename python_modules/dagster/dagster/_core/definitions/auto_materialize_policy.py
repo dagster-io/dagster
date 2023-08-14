@@ -1,10 +1,12 @@
 from enum import Enum
-from typing import AbstractSet, NamedTuple, Optional
+from typing import AbstractSet, NamedTuple, Optional, TYPE_CHECKING
 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._serdes.serdes import whitelist_for_serdes
-from .auto_materialize_condition import AutoMaterializeRule
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
 
 class AutoMaterializePolicyType(Enum):
@@ -96,6 +98,8 @@ class AutoMaterializePolicy(
 
     @property
     def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
         rules = set()
         if self.on_missing:
             rules.add(AutoMaterializeRule.materialize_on_missing())
@@ -107,6 +111,8 @@ class AutoMaterializePolicy(
 
     @property
     def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
         return {AutoMaterializeRule.skip_on_parent_outdated()}
 
     @public
