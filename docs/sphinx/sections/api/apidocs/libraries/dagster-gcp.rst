@@ -18,8 +18,6 @@ BigQuery Resource
 .. autoconfigurable:: BigQueryResource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: bigquery_resource
-  :annotation: ResourceDefinition
 
 BigQuery I/O Manager
 ^^^^^^^^^^^^^^^^^^^^^
@@ -27,8 +25,6 @@ BigQuery I/O Manager
 .. autoconfigurable:: BigQueryIOManager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: build_bigquery_io_manager
-  :annotation: IOManagerDefinition
 
 BigQuery Ops
 ^^^^^^^^^^^^^^^
@@ -61,8 +57,6 @@ GCS Resource
 .. autoconfigurable:: GCSResource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: gcs_resource
-  :annotation: ResourceDefinition
 
 GCS I/O Manager
 ^^^^^^^^^^^^^^^^^^
@@ -70,8 +64,6 @@ GCS I/O Manager
 .. autoconfigurable:: ConfigurablePickledObjectGCSIOManager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: gcs_pickle_io_manager
-  :annotation: IOManagerDefinition
 
 File Manager (Experimental)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -80,9 +72,6 @@ File Manager (Experimental)
   :members:
 
 .. autoconfigurable:: GCSFileManagerResource
-  :annotation: ResourceDefinition
-
-.. autodata:: gcs_file_manager
   :annotation: ResourceDefinition
 
 
@@ -95,10 +84,29 @@ Dataproc Resource
 .. autoconfigurable:: DataprocResource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: dataproc_resource
-  :annotation: ResourceDefinition
-
 Dataproc Ops
 ^^^^^^^^^^^^^^
 
 .. autoconfigurable:: dataproc_op
+
+
+Legacy
+------
+
+.. autoconfigurable:: bigquery_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: build_bigquery_io_manager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: gcs_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: gcs_pickle_io_manager
+  :annotation: IOManagerDefinition
+
+.. autodata:: gcs_file_manager
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dataproc_resource
+  :annotation: ResourceDefinition

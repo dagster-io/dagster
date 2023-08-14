@@ -14,8 +14,12 @@ Related Guides:
 .. autoconfigurable:: DuckDBIOManager
   :annotation: IOManagerDefinition
 
-.. autoconfigurable:: build_duckdb_io_manager
-  :annotation: IOManagerDefinition
-
 .. autoconfigurable:: DuckDBResource
   :annotation: ResourceDefinition
+
+
+Legacy
+======
+
+.. autoconfigurable:: build_duckdb_io_manager
+  :annotation: IOManagerDefinition

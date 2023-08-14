@@ -15,9 +15,11 @@ Note that, for the ``databricks_pyspark_step_launcher``, either S3 or Azure Data
 stored as a Databricks Secret and stored in the resource config so that the Databricks cluster can
 access storage.
 
+.. currentmodule:: dagster_databricks
+
 APIs
 ----
-.. currentmodule:: dagster_databricks
+
 
 .. autofunction:: dagster_databricks.create_databricks_run_now_op
 
@@ -31,8 +33,15 @@ APIs
 Resources
 =========
 
+.. autoconfigurable:: DatabricksClientResource
+  :annotation: ResourceDefinition
+
 .. autoclass:: DatabricksClient
   :members:
+
+
+Legacy
+======
 
 .. autoconfigurable:: databricks_client
   :annotation: ResourceDefinition
