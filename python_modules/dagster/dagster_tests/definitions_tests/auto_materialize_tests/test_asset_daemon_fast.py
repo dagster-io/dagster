@@ -69,6 +69,9 @@ def test_reconciliation(scenario):
             )
         ) == _sorted_evaluations(evaluations)
 
+    for evaluation in evaluations:
+        print(".")
+        print(evaluation)
     assert len(run_requests) == len(scenario.expected_run_requests), evaluations
 
     def sort_run_request_key_fn(run_request):

@@ -24,6 +24,8 @@ class AutoMaterializePolicy(
             ("on_new_parent_data", bool),
             ("for_freshness", bool),
             ("max_materializations_per_minute", Optional[int]),
+            ("skip_on_parent_outdated", bool),
+            ("skip_on_parent_missing", bool),
         ],
     )
 ):
@@ -73,6 +75,8 @@ class AutoMaterializePolicy(
         on_new_parent_data: bool,
         for_freshness: bool,
         max_materializations_per_minute: Optional[int] = 1,
+        skip_on_parent_outdated: bool = True,
+        skip_on_parent_missing: bool = True,
     ):
         check.invariant(
             on_new_parent_data or for_freshness,
@@ -90,6 +94,8 @@ class AutoMaterializePolicy(
             on_new_parent_data=on_new_parent_data,
             for_freshness=for_freshness,
             max_materializations_per_minute=max_materializations_per_minute,
+            skip_on_parent_outdated=skip_on_parent_outdated,
+            skip_on_parent_missing=skip_on_parent_missing,
         )
 
     @staticmethod
@@ -113,7 +119,12 @@ class AutoMaterializePolicy(
     def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
-        return {AutoMaterializeRule.skip_on_parent_outdated()}
+        rules = set()
+        if self.skip_on_parent_outdated:
+            rules.add(AutoMaterializeRule.skip_on_parent_outdated())
+        if self.skip_on_parent_missing:
+            rules.add(AutoMaterializeRule.skip_on_parent_missing())
+        return rules
 
     @public
     @staticmethod

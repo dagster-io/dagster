@@ -23,6 +23,7 @@ from .auto_materialize_condition import (
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
+    ParentMissingAutoMaterializeCondition,
 )
 
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -114,6 +115,10 @@ class AutoMaterializeRule(ABC):
     @staticmethod
     def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
         return SkipOnParentOutdatedRule()
+
+    @staticmethod
+    def skip_on_parent_missing() -> "SkipOnParentMissingRule":
+        return SkipOnParentMissingRule()
 
     @abstractmethod
     def evaluate(
@@ -262,13 +267,16 @@ class SkipOnParentMissingRule(AutoMaterializeRule):
         for candidate in context.candidates:
             missing_parent_asset_keys = set()
             for parent in context.non_materializing_parents(candidate):
-                if not context.instance_queryer.asset_partition_has_materialization_or_observation(
-                    parent
+                if (
+                    parent.asset_key in context.asset_graph.materializable_asset_keys
+                    and not context.instance_queryer.asset_partition_has_materialization_or_observation(
+                        parent
+                    )
                 ):
                     missing_parent_asset_keys.add(parent.asset_key)
             if missing_parent_asset_keys:
                 conditions[
-                    ParentOutdatedAutoMaterializeCondition(
+                    ParentMissingAutoMaterializeCondition(
                         waiting_on_asset_keys=frozenset(missing_parent_asset_keys)
                     )
                 ].update({candidate})

@@ -113,6 +113,14 @@ class ParentOutdatedAutoMaterializeCondition(NamedTuple):
 
 
 @whitelist_for_serdes
+class ParentMissingAutoMaterializeCondition(NamedTuple):
+    """Indicates that this asset should be skipped because one or more of its parents are missing."""
+
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
+    waiting_on_asset_keys: Optional[FrozenSet[AssetKey]] = None
+
+
+@whitelist_for_serdes
 class MaxMaterializationsExceededAutoMaterializeCondition(NamedTuple):
     """Indicates that this asset should be discarded because materializing it would exceed the
     maximum number of materializations per minute.
