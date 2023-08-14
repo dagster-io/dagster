@@ -20,8 +20,6 @@ from upath import UPath
 
 from .resources import S3Resource
 
-from botocore.exceptions import ClientError
-
 
 class PickledObjectS3IOManager(UPathIOManager):
     def __init__(
