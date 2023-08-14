@@ -51,6 +51,7 @@ import editor_role from '../icon-svgs/editor-role.svg';
 import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
+import expand from '../icon-svgs/expand.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
@@ -248,6 +249,7 @@ export const Icons = {
   email,
   error,
   error_outline,
+  expand,
   expand_less,
   expand_more,
   filter_alt,
