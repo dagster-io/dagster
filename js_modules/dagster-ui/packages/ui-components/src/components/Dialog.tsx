@@ -91,7 +91,7 @@ export const DialogFooter: React.FC<DialogFooterProps> = ({
   );
 };
 
-const DialogHeaderText = styled.div`
+export const DialogHeaderText = styled.div`
   font-size: 16px;
   font-weight: 500;
   overflow: hidden;
