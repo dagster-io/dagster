@@ -11,9 +11,12 @@
     "@blueprintjs/select": "^4.9.12",
     "@dagster-io/ui-components": "workspace:*",
     "@dagster-io/ui-core": "workspace:*",
+    "@graphql-tools/load-files": "^7.0.0",
     "@rive-app/react-canvas": "^3.0.34",
     "@types/styled-components": "^5.1.26",
+    "eslint-config-next": "^13.4.12",
     "graphql": "^16.6.0",
+    "next": "^13.4.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-is": "^18.2.0",
@@ -43,10 +46,10 @@
     "webpack-bundle-analyzer": "^4.7.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "next dev",
+    "build": "next build",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
-    "test": "react-scripts test",
+    "test": "jest",
     "ts": "tsc -p .",
     "analyze": "webpack-bundle-analyzer 'build/bundle-stats.json'"
   },

@@ -1,0 +1,77 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+// const path = require('path');
+
+const {PHASE_DEVELOPMENT_SERVER} = require('next/constants');
+
+// Dedupe these packages from @dagster-io/ui
+// const _aliases = [
+//   '@apollo/client',
+//   '@apollo/client/link/ws',
+//   '@apollo/client/utilities',
+//   'subscriptions-transport-ws',
+//   '@blueprintjs/core',
+//   '@blueprintjs/popover2',
+//   '@blueprintjs/select',
+//   'react',
+//   'react-dom',
+//   'react-router-dom',
+//   'react-is',
+//   'react-virtualized',
+//   'styled-components',
+// ];
+
+// const aliases = _aliases.reduce((prev, moduleName) => {
+//   prev[moduleName] = path.resolve(`./node_modules/${moduleName}`);
+//   return prev;
+// }, {});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  productionBrowserSourceMaps: true,
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH,
+  transpilePackages: ['@dagster-io/ui-components', '@dagster-io/ui-core'],
+  webpack: (config, _settings) => {
+    // Unset client-side javascript that only works server-side
+    config.resolve.fallback = {fs: false, module: false};
+
+    //https://github.com/vercel/next.js/issues/44273
+    config.externals.push({
+      'utf-8-validate': 'commonjs utf-8-validate',
+      bufferutil: 'commonjs bufferutil',
+    });
+
+    return config;
+  },
+  compiler: {
+    styledComponents: true,
+  },
+  distDir: 'build',
+  assetPrefix: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN ?? ''}/next`,
+  experimental: {
+    appDir: false,
+  },
+};
+
+module.exports = (phase) => {
+  if (phase === PHASE_DEVELOPMENT_SERVER) {
+    // Set output to undefined in DEV mode to enable the rewrites feature
+    // This allows us to redirect all routes back to our index since this is a SPA application
+    return {
+      ...nextConfig,
+      output: undefined,
+      assetPrefix: undefined,
+      async rewrites() {
+        return {
+          fallback: [
+            {
+              source: '/:path*',
+              destination: '/',
+            },
+          ],
+        };
+      },
+    };
+  }
+  return nextConfig;
+};

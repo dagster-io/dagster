@@ -11,6 +11,10 @@
 # production
 /build
 
+# Next development server cache
+/.next
+/tsconfig.tsbuildinfo
+
 # misc
 .DS_Store
 .env.local

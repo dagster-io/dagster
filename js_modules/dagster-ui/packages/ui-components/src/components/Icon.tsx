@@ -310,7 +310,20 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([slack]);
+// TODO: Find more elegant solution
+const copy: any = Icons;
+Object.keys(copy).forEach((key) => {
+  let img = copy[key];
+  if (typeof img === 'object' && 'default' in img) {
+    // in Dagster UI but not in Storybook due to webpack config differences
+    img = (img as {default: any}).default;
+  } else if (img.src) {
+    img = img.src;
+  }
+  copy[key] = img;
+});
+
+const SVGS_WITH_COLORS = new Set([(slack as any).src]);
 
 export type IconName = keyof typeof Icons;
 
