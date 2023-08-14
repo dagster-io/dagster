@@ -112,11 +112,7 @@ class MaterializeOnRequiredForFreshnessRule(AutoMaterializeRule):
     def evaluate(
         self, context: RuleEvaluationContext
     ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
-        (
-            freshness_conditions,
-            _,
-            _,
-        ) = freshness_conditions_for_asset_key(
+        freshness_conditions = freshness_conditions_for_asset_key(
             asset_key=context.asset_key,
             data_time_resolver=context.data_time_resolver,
             asset_graph=context.asset_graph,
