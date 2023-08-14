@@ -79,6 +79,22 @@ class RuleEvaluationContext(NamedTuple):
             )
         )
 
+    def non_materializing_parents(
+        self, asset_partition: AssetKeyPartitionKey
+    ) -> Set[AssetKeyPartitionKey]:
+        """Returns the set of parent asset partitions that will not materialize with this asset partition."""
+        return {
+            parent
+            for parent in self.asset_graph.get_parents_partitions(
+                dynamic_partitions_store=self.instance_queryer,
+                current_time=self.instance_queryer.evaluation_time,
+                asset_key=asset_partition.asset_key,
+                partition_key=asset_partition.partition_key,
+            ).parent_partitions
+            if parent not in self.will_materialize_mapping.get(parent.asset_key, set())
+            or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
+        }
+
 
 class AutoMaterializeRule(ABC):
     decision_type: AutoMaterializeDecisionType
@@ -162,10 +178,7 @@ class MaterializeOnParentUpdatedRule(AutoMaterializeRule):
                 partition_key=asset_partition.partition_key,
             ).parent_partitions
 
-            (
-                updated_parent_asset_partitions,
-                _,
-            ) = context.instance_queryer.get_updated_and_missing_parent_asset_partitions(
+            updated_parent_asset_partitions = context.instance_queryer.get_updated_parent_asset_partitions(
                 asset_partition,
                 parent_asset_partitions,
                 # do a precise check for updated parents, factoring in data versions, as long as
@@ -225,25 +238,38 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule):
         for candidate in context.candidates:
             unreconciled_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
-            for parent in context.asset_graph.get_parents_partitions(
-                context.instance_queryer,
-                context.instance_queryer.evaluation_time,
-                context.asset_key,
-                candidate.partition_key,
-            ).parent_partitions:
-                # parent will not be materialized this tick
-                if parent not in context.will_materialize_mapping.get(
-                    parent.asset_key, set()
-                ) or not context.materializable_in_same_run(candidate.asset_key, parent.asset_key):
-                    unreconciled_ancestors.update(
-                        context.instance_queryer.get_root_unreconciled_ancestors(
-                            asset_partition=parent
-                        )
-                    )
+            for parent in context.non_materializing_parents(candidate):
+                unreconciled_ancestors.update(
+                    context.instance_queryer.get_root_unreconciled_ancestors(asset_partition=parent)
+                )
             if unreconciled_ancestors:
                 conditions[
                     ParentOutdatedAutoMaterializeCondition(
                         waiting_on_asset_keys=frozenset(unreconciled_ancestors)
+                    )
+                ].update({candidate})
+        return conditions
+
+
+class SkipOnParentMissingRule(AutoMaterializeRule):
+    decision_type: AutoMaterializeDecisionType = AutoMaterializeDecisionType.SKIP
+
+    def evaluate(
+        self,
+        context: RuleEvaluationContext,
+    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+        conditions = defaultdict(set)
+        for candidate in context.candidates:
+            missing_parent_asset_keys = set()
+            for parent in context.non_materializing_parents(candidate):
+                if not context.instance_queryer.asset_partition_has_materialization_or_observation(
+                    parent
+                ):
+                    missing_parent_asset_keys.add(parent.asset_key)
+            if missing_parent_asset_keys:
+                conditions[
+                    ParentOutdatedAutoMaterializeCondition(
+                        waiting_on_asset_keys=frozenset(missing_parent_asset_keys)
                     )
                 ].update({candidate})
         return conditions

@@ -799,30 +799,24 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_key, updated_after_cursor, after_cursor
         )
 
-    def get_updated_and_missing_parent_asset_partitions(
+    def get_updated_parent_asset_partitions(
         self,
         asset_partition: AssetKeyPartitionKey,
         parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         use_asset_versions: bool,
-    ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> AbstractSet[AssetKeyPartitionKey]:
         parent_asset_partitions_by_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for parent in parent_asset_partitions:
             parent_asset_partitions_by_key[parent.asset_key].add(parent)
 
         partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
         updated_parents = set()
-        missing_parents = set()
         for parent_key, asset_partitions in parent_asset_partitions_by_key.items():
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
                 parent_key
             ):
                 continue
-
-            # find missing parents
-            for parent in asset_partitions:
-                if not self.asset_partition_has_materialization_or_observation(parent):
-                    missing_parents.add(parent)
 
             # when mapping from time or dynamic downstream to unpartitioned upstream, only check
             # for updates to the latest upstream partition
@@ -848,21 +842,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     use_asset_versions=use_asset_versions,
                 )
             )
-        return updated_parents, missing_parents
+        return updated_parents
 
     @cached_method
     def get_root_unreconciled_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
         """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
-        of ancestors of this asset partition which are unreconciled for a reason other than that
-        one of their ancestors is unreconciled.
+        of ancestors of this asset partition whose parents have been updated more recently than
+        they have.
         """
-        # always treat source assets as reconciled
         if self.asset_graph.is_source(asset_partition.asset_key):
             return set()
-        elif not self.asset_partition_has_materialization_or_observation(asset_partition):
-            return {asset_partition.asset_key}
 
         parent_asset_partitions = self.asset_graph.get_parents_partitions(
             dynamic_partitions_store=self,
@@ -871,17 +862,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             partition_key=asset_partition.partition_key,
         ).parent_partitions
 
-        updated_parents, missing_parents = self.get_updated_and_missing_parent_asset_partitions(
+        updated_parents = self.get_updated_parent_asset_partitions(
             asset_partition, parent_asset_partitions, use_asset_versions=True
         )
-        updated_or_missing_parent_asset_partitions = updated_parents | missing_parents
 
-        root_unreconciled_ancestors = (
-            {asset_partition.asset_key} if updated_or_missing_parent_asset_partitions else set()
-        )
+        root_unreconciled_ancestors = {asset_partition.asset_key} if updated_parents else set()
 
         # recurse over parents
-        for parent in set(parent_asset_partitions) - updated_or_missing_parent_asset_partitions:
+        for parent in set(parent_asset_partitions) - updated_parents:
             root_unreconciled_ancestors.update(
                 self.get_root_unreconciled_ancestors(asset_partition=parent)
             )
