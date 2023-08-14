@@ -35,19 +35,18 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from .asset_graph import AssetGraph
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
     from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
     from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 
 
-@dataclass
-class RuleEvaluationContext:
+class RuleEvaluationContext(NamedTuple):
     asset_key: AssetKey
     cursor: "AssetDaemonCursor"
     instance_queryer: CachingInstanceQueryer
     data_time_resolver: CachingDataTimeResolver
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
+    candidates: AbstractSet[AssetKeyPartitionKey]
     _daemon_context: "AssetDaemonContext"
 
     @property
@@ -78,32 +77,6 @@ class RuleEvaluationContext:
                 or self.asset_graph.get_repository_handle(child_key)
                 == self.asset_graph.get_repository_handle(parent_key)
             )
-        )
-
-
-class MaterializeRuleEvaluationContext(RuleEvaluationContext):
-    pass
-
-
-@dataclass
-class SkipRuleEvaluationContext(RuleEvaluationContext):
-    candidates: AbstractSet[AssetKeyPartitionKey]
-
-    @classmethod
-    def from_materialize_context(
-        cls,
-        context: MaterializeRuleEvaluationContext,
-        candidates: AbstractSet[AssetKeyPartitionKey],
-    ) -> "SkipRuleEvaluationContext":
-        return cls(
-            asset_key=context.asset_key,
-            cursor=context.cursor,
-            instance_queryer=context.instance_queryer,
-            data_time_resolver=context.data_time_resolver,
-            will_materialize_mapping=context.will_materialize_mapping,
-            expected_data_time_mapping=context.expected_data_time_mapping,
-            candidates=candidates,
-            _daemon_context=context._daemon_context,
         )
 
 
@@ -156,7 +129,7 @@ class MaterializeOnRequiredForFreshnessRule(AutoMaterializeRule):
 
 class MaterializeOnParentUpdatedRule(AutoMaterializeRule):
     def evaluate(
-        self, context: MaterializeRuleEvaluationContext
+        self, context: RuleEvaluationContext
     ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
         """Returns a mapping from ParentMaterializedAutoMaterializeCondition to the set of asset
         partitions that the condition applies to.
@@ -221,7 +194,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule):
 
     def evaluate(
         self,
-        context: MaterializeRuleEvaluationContext,
+        context: RuleEvaluationContext,
     ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
         """Returns a mapping from MissingAutoMaterializeCondition to the set of asset
         partitions that the condition applies to.
@@ -250,7 +223,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule):
 
     def evaluate(
         self,
-        context: SkipRuleEvaluationContext,
+        context: RuleEvaluationContext,
     ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
         conditions = defaultdict(set)
         for candidate in context.candidates:
