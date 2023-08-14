@@ -5,8 +5,8 @@ from typing_extensions import Final, TypeAlias, TypedDict
 ExternalExecutionUserdata: TypeAlias = Mapping[str, Any]
 
 DAGSTER_EXTERNAL_DEFAULT_PORT: Final = 9716
-DAGSTER_EXTERNAL_DEFAULT_INPUT_FIFO: Final = "dagster_external_input"
-DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FIFO: Final = "dagster_external_output"
+DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME: Final = "dagster_external_input"
+DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME: Final = "dagster_external_output"
 
 DAGSTER_EXTERNAL_ENV_KEYS: Final = {
     "input_mode": "DAGSTER_EXTERNAL_INPUT_MODE",

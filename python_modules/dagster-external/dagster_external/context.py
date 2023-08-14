@@ -19,6 +19,9 @@ def init_dagster_external() -> "ExternalExecutionContext":
     input_mode = os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["input_mode"], "stdin")
     if input_mode == "stdio":
         input_stream = sys.stdin
+    elif input_mode == "temp_file":
+        file_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["input"]]
+        input_stream = open(file_path, "r")
     elif input_mode == "fifo":
         fifo_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["input"]]
         input_stream = open(fifo_path, "r")
@@ -28,6 +31,9 @@ def init_dagster_external() -> "ExternalExecutionContext":
     output_mode = os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["output_mode"], "stdout")
     if output_mode == "stdio":
         output_stream = sys.stdout
+    elif output_mode == "temp_file":
+        file_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["output"]]
+        output_stream = open(file_path, "a")
     elif output_mode == "fifo":
         fifo_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["output"]]
         output_stream = open(fifo_path, "w")
