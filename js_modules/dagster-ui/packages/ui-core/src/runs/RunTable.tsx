@@ -278,7 +278,7 @@ const RunRow: React.FC<{
     }
   };
 
-  // All system tags are unpinned by default so we track pinned.
+  // Most system tags are unpinned by default so we track pinned for these.
   const [pinnedSystemTags, setPinnedSystemTags] = useStateWithStorage(
     'pinned-system-tags',
     (value) => {
@@ -308,7 +308,7 @@ const RunRow: React.FC<{
     return allTags.map((tag) => {
       return {
         ...tag,
-        pinned: isSystemTag(tag.key)
+        pinned: isUnpinnedByDefaultSystemTag(tag.key)
           ? pinnedSystemTags.indexOf(tag.key) !== -1
           : unpinnedTags.indexOf(tag.key) === -1,
       };
@@ -354,7 +354,7 @@ const RunRow: React.FC<{
 
   const onToggleTagPin = React.useCallback(
     (tagKey: string) => {
-      if (isSystemTag(tagKey)) {
+      if (isUnpinnedByDefaultSystemTag(tagKey)) {
         setPinnedSystemTags((pinnedSystemTags) => toggleTag(pinnedSystemTags, tagKey));
       } else {
         setUnpinnedTags((unpinnedTags) => toggleTag(unpinnedTags, tagKey));
@@ -528,8 +528,13 @@ const RunTagsWrapper = styled.div`
   }
 `;
 
-function isSystemTag(key: string) {
-  return key.startsWith(DagsterTag.Namespace) || key === 'mode';
+function isUnpinnedByDefaultSystemTag(key: string) {
+  return (
+    (key.startsWith(DagsterTag.Namespace) &&
+      key !== DagsterTag.Partition &&
+      key !== DagsterTag.Backfill) ||
+    key === 'mode'
+  );
 }
 
 function toggleTag(tagsArr: string[] | undefined, tagKey: string): string[] {
