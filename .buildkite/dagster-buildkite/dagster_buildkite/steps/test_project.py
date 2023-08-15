@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional, Set
 
 from ..images.versions import (
@@ -94,8 +95,11 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
 
 
 def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    build_test_project_for.add(version)
-    return [_test_project_step_key(version)]
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        build_test_project_for.add(version)
+        return [_test_project_step_key(version)]
+    else:
+        return []
 
 
 def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:
