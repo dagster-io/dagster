@@ -104,6 +104,9 @@ class ExternalExecutionContext:
         self._output_stream.write(json.dumps(notification) + "\n")
         self._output_stream.flush()
 
+    def to_dict(self) -> ExternalExecutionContextData:
+        return self._data
+
     # ########################
     # ##### PUBLIC API
     # ########################

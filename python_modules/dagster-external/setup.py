@@ -41,5 +41,5 @@ setup(
         ]
     },
     zip_safe=False,
-    entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
+    entry_points={"console_scripts": ["dagster-external = dagster_external.cli:main"]},
 )

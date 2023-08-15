@@ -32,50 +32,113 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         yield file.name
 
 
+def python_api_script_fn():
+    from dagster_external import ExternalExecutionContext, init_dagster_external
+
+    init_dagster_external()
+    context = ExternalExecutionContext.get()
+    context.log("hello world")
+    context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
+    context.report_asset_data_version("foo", "alpha")
+
+
+def cli_script_fn():
+    import json
+    import subprocess
+
+    # Call it just to make sure it works
+    context_proc = subprocess.run(
+        ["dagster-external", "get-context"], capture_output=True, encoding="utf8"
+    )
+    context = json.loads(context_proc.stdout)
+
+    extra_proc = subprocess.run(
+        ["dagster-external", "get-extra", "--key=bar"], capture_output=True, encoding="utf8"
+    )
+    bar_extra = json.loads(extra_proc.stdout)
+    assert bar_extra == context["extras"]["bar"]
+
+    context_proc = subprocess.run(
+        ["dagster-external", "log", "--message=hello world"],
+    )
+    subprocess.run(
+        [
+            "dagster-external",
+            "report-asset-metadata",
+            "--asset-key=foo",
+            "--label=bar",
+            # f"--value={extras['bar']}",
+            f"--value={bar_extra}",
+        ]
+    )
+    subprocess.run(
+        ["dagster-external", "report-asset-data-version", "--asset-key=foo", "--data-version=alpha"]
+    )
+
+
 @pytest.mark.parametrize(
-    ["input_spec", "output_spec"],
+    ["script_fn", "input_spec", "output_spec"],
     [
-        ("stdio", "stdio"),
-        ("stdio", "file/auto"),
-        ("stdio", "file/user"),
-        ("stdio", "fifo/auto"),
-        ("stdio", "fifo/user"),
-        ("stdio", "socket"),
-        ("file/auto", "stdio"),
-        ("file/auto", "file/auto"),
-        ("file/auto", "file/user"),
-        ("file/auto", "fifo/auto"),
-        ("file/auto", "fifo/user"),
-        ("file/auto", "socket"),
-        ("file/user", "stdio"),
-        ("file/user", "file/auto"),
-        ("file/user", "file/user"),
-        ("file/user", "fifo/auto"),
-        ("file/user", "fifo/user"),
-        ("file/user", "socket"),
-        ("fifo/auto", "stdio"),
-        ("fifo/auto", "file/auto"),
-        ("fifo/auto", "file/user"),
-        ("fifo/auto", "fifo/auto"),
-        ("fifo/auto", "fifo/user"),
-        ("fifo/auto", "socket"),
-        ("fifo/user", "stdio"),
-        ("fifo/user", "file/auto"),
-        ("fifo/user", "file/user"),
-        ("fifo/user", "fifo/auto"),
-        ("fifo/user", "fifo/user"),
-        ("fifo/user", "socket"),
-        ("socket", "stdio"),
-        ("socket", "file/auto"),
-        ("socket", "file/user"),
-        ("socket", "fifo/auto"),
-        ("socket", "fifo/user"),
-        ("socket", "socket"),
+        (python_api_script_fn, "stdio", "stdio"),
+        (python_api_script_fn, "stdio", "file/auto"),
+        (python_api_script_fn, "stdio", "file/user"),
+        (python_api_script_fn, "stdio", "fifo/auto"),
+        (python_api_script_fn, "stdio", "fifo/user"),
+        (python_api_script_fn, "stdio", "socket"),
+        (python_api_script_fn, "file/auto", "stdio"),
+        (python_api_script_fn, "file/auto", "file/auto"),
+        (python_api_script_fn, "file/auto", "file/user"),
+        (python_api_script_fn, "file/auto", "fifo/auto"),
+        (python_api_script_fn, "file/auto", "fifo/user"),
+        (python_api_script_fn, "file/auto", "socket"),
+        (python_api_script_fn, "file/user", "stdio"),
+        (python_api_script_fn, "file/user", "file/auto"),
+        (python_api_script_fn, "file/user", "file/user"),
+        (python_api_script_fn, "file/user", "fifo/auto"),
+        (python_api_script_fn, "file/user", "fifo/user"),
+        (python_api_script_fn, "file/user", "socket"),
+        (python_api_script_fn, "fifo/auto", "stdio"),
+        (python_api_script_fn, "fifo/auto", "file/auto"),
+        (python_api_script_fn, "fifo/auto", "file/user"),
+        (python_api_script_fn, "fifo/auto", "fifo/auto"),
+        (python_api_script_fn, "fifo/auto", "fifo/user"),
+        (python_api_script_fn, "fifo/auto", "socket"),
+        (python_api_script_fn, "fifo/user", "stdio"),
+        (python_api_script_fn, "fifo/user", "file/auto"),
+        (python_api_script_fn, "fifo/user", "file/user"),
+        (python_api_script_fn, "fifo/user", "fifo/auto"),
+        (python_api_script_fn, "fifo/user", "fifo/user"),
+        (python_api_script_fn, "fifo/user", "socket"),
+        (python_api_script_fn, "socket", "stdio"),
+        (python_api_script_fn, "socket", "file/auto"),
+        (python_api_script_fn, "socket", "file/user"),
+        (python_api_script_fn, "socket", "fifo/auto"),
+        (python_api_script_fn, "socket", "fifo/user"),
+        (python_api_script_fn, "socket", "socket"),
+        (cli_script_fn, "file/auto", "stdio"),
+        (cli_script_fn, "file/auto", "file/auto"),
+        (cli_script_fn, "file/auto", "file/user"),
+        (cli_script_fn, "file/auto", "fifo/auto"),
+        (cli_script_fn, "file/auto", "fifo/user"),
+        (cli_script_fn, "file/auto", "socket"),
+        (cli_script_fn, "file/user", "stdio"),
+        (cli_script_fn, "file/user", "file/auto"),
+        (cli_script_fn, "file/user", "file/user"),
+        (cli_script_fn, "file/user", "fifo/auto"),
+        (cli_script_fn, "file/user", "fifo/user"),
+        (cli_script_fn, "file/user", "socket"),
+        (cli_script_fn, "socket", "stdio"),
+        (cli_script_fn, "socket", "file/auto"),
+        (cli_script_fn, "socket", "file/user"),
+        (cli_script_fn, "socket", "fifo/auto"),
+        (cli_script_fn, "socket", "fifo/user"),
     ],
 )
-def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, capsys):
+def test_external_execution_asset(
+    script_fn: Callable[[], None], input_spec: str, output_spec: str, tmpdir, capsys
+):
     if input_spec in ["stdio", "socket"]:
-        input_mode = ExternalExecutionIOMode(input_spec)
+        input_mode = ExternalExecutionIOMode.stdio
         input_path = None
     else:
         input_mode_spec, input_path_spec = input_spec.split("/")
@@ -95,15 +158,6 @@ def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, cap
             output_path = None
         else:
             output_path = str(tmpdir.join("output"))
-
-    def script_fn():
-        from dagster_external import ExternalExecutionContext, init_dagster_external
-
-        init_dagster_external()
-        context = ExternalExecutionContext.get()
-        context.log("hello world")
-        context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
-        context.report_asset_data_version("foo", "alpha")
 
     @asset
     def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
@@ -138,6 +192,28 @@ def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, cap
 def test_external_execution_asset_failed():
     def script_fn():
         raise Exception("foo")
+
+    @asset
+    def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
+        with temp_script(script_fn) as script_path:
+            cmd = ["python", script_path]
+            ext.run(cmd, context)
+
+    resource = ExternalExecutionResource(
+        input_mode=ExternalExecutionIOMode.stdio,
+    )
+    with pytest.raises(DagsterExternalExecutionError):
+        materialize([foo], resources={"ext": resource})
+
+
+def test_invalid_cli_invocation():
+    def script_fn():
+        import subprocess
+
+        subprocess.run(
+            ["dagster-external", "log", "--message=hello world"],
+            check=True,
+        )
 
     @asset
     def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
