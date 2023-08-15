@@ -19,6 +19,7 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
+    DataVersion,
     extract_data_provenance_from_entry,
 )
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -506,6 +507,15 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             return asset_output_info.key
 
     @public
+    def output_for_asset_key(self, asset_key: AssetKey) -> str:
+        """Return the output name for the corresponding asset key."""
+        node_output_handle = self.job_def.asset_layer.node_output_handle_for_asset(asset_key)
+        if node_output_handle is None:
+            check.failed(f"Asset key '{asset_key}' has no output")
+        else:
+            return node_output_handle.output_name
+
+    @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         """Return the AssetKey for the corresponding input."""
         key = self.job_def.asset_layer.asset_key_for_input(
@@ -629,6 +639,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return (
             None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
         )
+
+    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+        """Set the data version for an asset being materialized by the currently executing step.
+        This is useful for external execution situations where it is not possible to return
+        an `Output`.
+
+        Args:
+            asset_key (AssetKey): Key of the asset for which to set the data version.
+            data_version (DataVersion): The data version to set.
+        """
+        self._step_execution_context.set_data_version(asset_key, data_version)
 
 
 # actually forking the object type for assets is tricky for users in the cases of:

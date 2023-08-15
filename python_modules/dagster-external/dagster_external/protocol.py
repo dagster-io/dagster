@@ -1,8 +1,8 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 from typing_extensions import Final, TypeAlias, TypedDict
 
-ExternalExecutionUserdata: TypeAlias = Mapping[str, Any]
+ExternalExecutionExtras: TypeAlias = Mapping[str, Any]
 
 DAGSTER_EXTERNAL_DEFAULT_PORT: Final = 9716
 DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME: Final = "dagster_external_input"
@@ -29,17 +29,16 @@ class Notification(TypedDict):
 
 
 class ExternalExecutionContextData(TypedDict):
-    asset_key: str
-    code_version: Optional[str]
-    data_provenance: Optional["ExternalDataProvenance"]
+    asset_keys: Optional[Sequence[str]]
+    code_version_by_asset_key: Optional[Mapping[str, Optional[str]]]
+    provenance_by_asset_key: Optional[Mapping[str, Optional["ExternalDataProvenance"]]]
     partition_key: Optional[str]
     partition_key_range: Optional["ExternalPartitionKeyRange"]
     partition_time_window: Optional["ExternalTimeWindow"]
     run_id: str
-    run_tags: Mapping[str, str]
     job_name: str
     retry_number: int
-    userdata: Mapping[str, Any]
+    extras: Mapping[str, Any]
 
 
 class ExternalPartitionKeyRange(TypedDict):

@@ -3,7 +3,7 @@ from typing import Optional
 from dagster_external.protocol import (
     ExternalDataProvenance,
     ExternalExecutionContextData,
-    ExternalExecutionUserdata,
+    ExternalExecutionExtras,
     ExternalTimeWindow,
 )
 
@@ -16,17 +16,36 @@ from dagster._core.execution.context.compute import OpExecutionContext
 
 def build_external_execution_context(
     context: OpExecutionContext,
-    userdata: Optional[ExternalExecutionUserdata],
+    extras: Optional[ExternalExecutionExtras],
 ) -> "ExternalExecutionContextData":
-    asset_key = context.asset_key_for_output()
-    asset_provenance = context.get_asset_provenance(asset_key)
+    asset_keys = (
+        [_convert_asset_key(key) for key in sorted(context.selected_asset_keys)]
+        if context.has_assets_def
+        else None
+    )
+    code_version_by_asset_key = (
+        {
+            _convert_asset_key(key): context.job_def.asset_layer.code_version_for_asset(key)
+            for key in context.selected_asset_keys
+        }
+        if context.has_assets_def
+        else None
+    )
+    provenance_by_asset_key = (
+        {
+            _convert_asset_key(key): _convert_data_provenance(context.get_asset_provenance(key))
+            for key in context.selected_asset_keys
+        }
+        if context.has_assets_def
+        else None
+    )
     partition_key = context.partition_key if context.has_partition_key else None
     partition_time_window = context.partition_time_window if context.has_partition_key else None
     partition_key_range = context.partition_key_range if context.has_partition_key else None
     return ExternalExecutionContextData(
-        asset_key=_convert_asset_key(asset_key),
-        code_version=context.job_def.asset_layer.code_version_for_asset(asset_key),
-        data_provenance=(_convert_data_provenance(asset_provenance) if asset_provenance else None),
+        asset_keys=asset_keys,
+        code_version_by_asset_key=code_version_by_asset_key,
+        provenance_by_asset_key=provenance_by_asset_key,
         partition_key=partition_key,
         partition_key_range=(
             _convert_partition_key_range(partition_key_range) if partition_key_range else None
@@ -35,10 +54,9 @@ def build_external_execution_context(
             _convert_time_window(partition_time_window) if partition_time_window else None
         ),
         run_id=context.run_id,
-        run_tags=context.run_tags,
-        job_name=context.job_name,
+        job_name=context.job_def.name,
         retry_number=context.retry_number,
-        userdata=userdata or {},
+        extras=extras or {},
     )
 
 

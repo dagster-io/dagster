@@ -506,16 +506,25 @@ def _get_output_asset_materializations(
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
         input_provenance_data = _get_input_provenance_data(asset_key, step_context)
+        cached_data_version = (
+            step_context.get_data_version(asset_key)
+            if step_context.has_data_version(asset_key)
+            else None
+        )
+        user_provided_data_version = output.data_version or cached_data_version
         data_version = (
             compute_logical_data_version(
                 code_version,
                 {k: meta["data_version"] for k, meta in input_provenance_data.items()},
             )
-            if output.data_version is None
-            else output.data_version
+            if user_provided_data_version is None
+            else user_provided_data_version
         )
         tags = _build_data_version_tags(
-            data_version, code_version, input_provenance_data, output.data_version is not None
+            data_version,
+            code_version,
+            input_provenance_data,
+            user_provided_data_version is not None,
         )
         if not step_context.has_data_version(asset_key):
             data_version = DataVersion(tags[DATA_VERSION_TAG])
