@@ -97,7 +97,7 @@
     "rollup-plugin-styles": "^4.0.0",
     "storybook": "^7.2.0",
     "typescript": "5.0.2",
-    "webpack": "^5.0.0"
+    "webpack": "^5.88.1"
   },
   "resolutions": {
     "@testing-library/dom": "^9.3.0",

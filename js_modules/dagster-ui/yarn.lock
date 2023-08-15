@@ -2350,7 +2350,7 @@ __metadata:
     rollup-plugin-styles: ^4.0.0
     storybook: ^7.2.0
     typescript: 5.0.2
-    webpack: ^5.0.0
+    webpack: ^5.88.1
     yaml: 2.2.2
   peerDependencies:
     "@blueprintjs/core": ^4.17.8
@@ -2489,7 +2489,7 @@ __metadata:
     ts-node: 9.1.1
     ts-prune: 0.10.3
     typescript: 5.0.2
-    webpack: ^5.0.0
+    webpack: ^5.88.1
     worker-loader: ^3.0.8
     yaml: 2.2.2
   peerDependencies:
@@ -25588,7 +25588,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack@npm:5, webpack@npm:^5, webpack@npm:^5.0.0, webpack@npm:^5.64.4, webpack@npm:^5.88.1":
+"webpack@npm:5, webpack@npm:^5, webpack@npm:^5.64.4, webpack@npm:^5.88.1":
   version: 5.88.2
   resolution: "webpack@npm:5.88.2"
   dependencies:
