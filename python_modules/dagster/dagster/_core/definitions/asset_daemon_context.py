@@ -66,6 +66,7 @@ class AssetDaemonContext:
         observe_run_tags: Optional[Mapping[str, str]],
         auto_observe: bool,
         target_asset_keys: Optional[AbstractSet[AssetKey]],
+        respect_materialization_data_versions: bool,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -80,6 +81,7 @@ class AssetDaemonContext:
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
         self._auto_observe = auto_observe
+        self._respect_materialization_data_versions = respect_materialization_data_versions
 
         # fetch some data in advance to batch some queries
         self.instance_queryer.prefetch_asset_records(
@@ -342,9 +344,9 @@ class AssetDaemonContext:
             ) = self.instance_queryer.get_updated_and_missing_parent_asset_partitions(
                 asset_partition,
                 parent_asset_partitions,
-                # do a precise check for updated parents, factoring in data versions, as long as
-                # we're within reasonable limits on the number of partitions to check
-                use_asset_versions=len(parent_asset_partitions | has_or_will_update) < 100,
+                # do a precise check for updated parents, factoring in data versions, if requested
+                respect_materialization_data_versions=self._respect_materialization_data_versions
+                and len(has_or_will_update | parent_asset_partitions) < 100,
             )
             updated_parents = {parent.asset_key for parent in updated_parent_asset_partitions}
             will_update_parents = will_update_parents_by_asset_partition[asset_partition]
@@ -398,7 +400,8 @@ class AssetDaemonContext:
                 ) or not self.materializable_in_same_run(candidate.asset_key, parent.asset_key):
                     unreconciled_ancestors.update(
                         self.instance_queryer.get_root_unreconciled_ancestors(
-                            asset_partition=parent
+                            asset_partition=parent,
+                            respect_materialization_data_versions=self._respect_materialization_data_versions,
                         )
                     )
             if unreconciled_ancestors:

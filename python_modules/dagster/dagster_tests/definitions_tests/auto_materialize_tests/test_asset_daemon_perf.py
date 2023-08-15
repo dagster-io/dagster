@@ -237,6 +237,7 @@ class PerfScenario(NamedTuple):
                     materialize_run_tags=None,
                     auto_observe=False,
                     observe_run_tags=None,
+                    respect_materialization_data_versions=True,
                 ).evaluate()
 
                 end = time.time()

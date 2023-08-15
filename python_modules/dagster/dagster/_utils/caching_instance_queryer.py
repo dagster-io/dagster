@@ -566,7 +566,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 after_cursor=latest_storage_id,
                 # we don't need to use asset versions here because we will filter out any materialized
                 # but not updated partitions in a later step
-                use_asset_versions=False,
+                respect_materialization_data_versions=False,
             )
             if not new_asset_partitions:
                 continue
@@ -761,7 +761,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset_key: AssetKey,
         asset_partitions: Optional[AbstractSet[AssetKeyPartitionKey]],
         after_cursor: Optional[int],
-        use_asset_versions: bool,
+        respect_materialization_data_versions: bool,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions that have been updated after the given cursor.
 
@@ -791,7 +791,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         if not updated_after_cursor:
             return set()
-        if after_cursor is None or (not self.asset_graph.is_source(asset_key)):
+        if after_cursor is None or (
+            not self.asset_graph.is_source(asset_key) and not respect_materialization_data_versions
+        ):
             return updated_after_cursor
 
         # more expensive check to explicitly handle data versions
@@ -803,7 +805,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self,
         asset_partition: AssetKeyPartitionKey,
         parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
-        use_asset_versions: bool,
+        respect_materialization_data_versions: bool,
     ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
         parent_asset_partitions_by_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
         for parent in parent_asset_partitions:
@@ -845,14 +847,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     after_cursor=self.get_latest_materialization_or_observation_storage_id(
                         asset_partition
                     ),
-                    use_asset_versions=use_asset_versions,
+                    respect_materialization_data_versions=respect_materialization_data_versions,
                 )
             )
         return updated_parents, missing_parents
 
     @cached_method
     def get_root_unreconciled_ancestors(
-        self, *, asset_partition: AssetKeyPartitionKey
+        self, *, asset_partition: AssetKeyPartitionKey, respect_materialization_data_versions: bool
     ) -> AbstractSet[AssetKey]:
         """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
         of ancestors of this asset partition which are unreconciled for a reason other than that
@@ -872,7 +874,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ).parent_partitions
 
         updated_parents, missing_parents = self.get_updated_and_missing_parent_asset_partitions(
-            asset_partition, parent_asset_partitions, use_asset_versions=True
+            asset_partition,
+            parent_asset_partitions,
+            respect_materialization_data_versions=respect_materialization_data_versions,
         )
         updated_or_missing_parent_asset_partitions = updated_parents | missing_parents
 
@@ -883,6 +887,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # recurse over parents
         for parent in set(parent_asset_partitions) - updated_or_missing_parent_asset_partitions:
             root_unreconciled_ancestors.update(
-                self.get_root_unreconciled_ancestors(asset_partition=parent)
+                self.get_root_unreconciled_ancestors(
+                    asset_partition=parent,
+                    respect_materialization_data_versions=respect_materialization_data_versions,
+                )
             )
         return root_unreconciled_ancestors
