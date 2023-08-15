@@ -457,6 +457,9 @@ def load_assets_from_fivetran_instance(
             the IOManager specified determines how the inputs to those ops are loaded. Defaults to "io_manager".
         connector_filter (Optional[Callable[[FivetranConnectorMetadata], bool]]): Optional function which takes
             in connector metadata and returns False if the connector should be excluded from the output assets.
+        connector_to_asset_key_fn (Optional[Callable[[FivetranConnectorMetadata, str], AssetKey]]): Optional function
+            which takes in connector metadata and a table name and returns an AssetKey for that table. Defaults to
+            a function that generates an AssetKey matching the table name, split by ".".
         poll_interval (float): The time (in seconds) that will be waited between successive polls.
         poll_timeout (Optional[float]): The maximum time that will waited before this operation is
             timed out. By default, this will never time out.
