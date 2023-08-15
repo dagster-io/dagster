@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Sequence, Union
 
-from dagster_external.protocol import ExternalExecutionExtras
+from dagster_external.protocol import ExternalExecutionExtras, ExternalExecutionIOMode
 from pydantic import Field
 
 from dagster._config.pythonic_config import ConfigurableResource
@@ -19,22 +19,40 @@ class ExternalExecutionResource(ConfigurableResource):
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to launch the subprocess command."
     )
-    input_mode: str = Field(default="stdio")
-    output_mode: str = Field(default="stdio")
-    input_fifo: Optional[str] = Field(
+    input_mode: ExternalExecutionIOMode = Field(default="stdio")
+    output_mode: ExternalExecutionIOMode = Field(default="stdio")
+    input_path: Optional[str] = Field(
         default=None,
-        description="Path to a pre-existing FIFO to use for input when `input_mode` is `fifo`.",
+        description="""
+        Path to use for output. This can be used in `file`/`fifo` modes to specify a path to a
+        temporary file/fifo used to pass information from the orchestration process to the external
+        process. If this parameter is not set, the framework will use a file/fifo in a temporary
+        directory.
+
+        In both `file` and `fifo` modes, the containing directory must already exist. Any
+        preexisting file at the provided path will be overwritten if it already exists, and the
+        created file/fifo will be deleted after the external process completes.
+        """,
     )
-    output_fifo: Optional[str] = Field(
+    output_path: Optional[str] = Field(
         default=None,
-        description="Path to a pre-existing FIFO to use for output when `output_mode` is `fifo`.",
+        description="""
+        Path to use for output. This can be used in `file`/`fifo` modes to specify a path to a
+        temporary file/fifo used to pass information from the external process to the orchestration
+        process. If this parameter is not set, the framework will use a file/fifo in a temporary
+        directory.
+
+        In both `file` and `fifo` modes, the containing directory must already exist. Any
+        preexisting file at the provided path will be overwritten if it already exists, and the
+        created file/fifo will be deleted after the external process completes.
+        """,
     )
 
     def run(
         self,
         command: Union[str, Sequence[str]],
         context: OpExecutionContext,
-        extras: ExternalExecutionExtras,
+        extras: Optional[ExternalExecutionExtras] = None,
     ) -> None:
         return_code = ExternalExecutionTask(
             command=command,
@@ -43,8 +61,8 @@ class ExternalExecutionResource(ConfigurableResource):
             env=self.env,
             input_mode=self.input_mode,
             output_mode=self.output_mode,
-            input_fifo=self.input_fifo,
-            output_fifo=self.output_fifo,
+            input_path=self.input_path,
+            output_path=self.output_path,
         ).run()
 
         if return_code:

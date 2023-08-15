@@ -1,14 +1,15 @@
 import json
-import os
 import sys
 from typing import IO, Any, ClassVar, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 
+from dagster_external.params import get_external_execution_params
+
 from .protocol import (
-    DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalDataProvenance,
     ExternalExecutionContextData,
+    ExternalExecutionIOMode,
     ExternalPartitionKeyRange,
     ExternalTimeWindow,
     Notification,
@@ -25,30 +26,28 @@ from .util import (
 
 
 def init_dagster_external() -> "ExternalExecutionContext":
-    input_mode = os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["input_mode"], "stdin")
-    if input_mode == "stdio":
+    params = get_external_execution_params()
+    if params.input_mode == ExternalExecutionIOMode.stdio:
         input_stream = sys.stdin
-    elif input_mode == "temp_file":
-        file_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["input"]]
-        input_stream = open(file_path, "r")
-    elif input_mode == "fifo":
-        fifo_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["input"]]
-        input_stream = open(fifo_path, "r")
+    elif params.input_mode == ExternalExecutionIOMode.file:
+        assert params.input_path, "input_path must be set when input_mode is `file`"
+        input_stream = open(params.input_path, "r")
+    elif params.input_mode == ExternalExecutionIOMode.fifo:
+        assert params.input_path, "input_path must be set when input_mode is `fifo`"
+        input_stream = open(params.input_path, "r")
     else:
-        raise Exception(f"Invalid input mode: {input_mode}")
+        raise Exception(f"Invalid input mode: {params.input_mode}")
 
-    output_mode = os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["output_mode"], "stdout")
-    if output_mode == "stdio":
+    if params.output_mode == ExternalExecutionIOMode.stdio:
         output_stream = sys.stdout
-    elif output_mode == "temp_file":
-        file_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["output"]]
-        output_stream = open(file_path, "a")
-    elif output_mode == "fifo":
-        fifo_path = os.environ[DAGSTER_EXTERNAL_ENV_KEYS["output"]]
-        output_stream = open(fifo_path, "w")
+    elif params.output_mode == ExternalExecutionIOMode.file:
+        assert params.output_path, "output_path must be set when output_mode is `file`"
+        output_stream = open(params.output_path, "a")
+    elif params.output_mode == ExternalExecutionIOMode.fifo:
+        assert params.output_path, "output_path must be set when output_mode is `fifo`"
+        output_stream = open(params.output_path, "w")
     else:
-        raise Exception(f"Invalid output mode: {output_mode}")
-
+        raise Exception(f"Invalid output mode: {params.output_mode}")
     with input_stream as f:
         data = json.load(f)
     context = ExternalExecutionContext(data, output_stream)
