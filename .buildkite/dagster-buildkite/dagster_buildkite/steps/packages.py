@@ -5,6 +5,7 @@ from typing import List, Optional
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
@@ -495,6 +496,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_docker_extra_cmds,
+        pytest_step_dependencies=test_project_depends_fn,
         unsupported_python_versions=[
             AvailablePythonVersion.V3_11,  # no celery support for 3.11
         ],
@@ -514,6 +516,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=docker_extra_cmds,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-duckdb-pyspark",
