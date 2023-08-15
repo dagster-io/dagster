@@ -30,13 +30,19 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 
 
 @pytest.mark.parametrize(
+    "respect_materialization_data_versions",
+    [True, False],
+)
+@pytest.mark.parametrize(
     "scenario",
     list(ASSET_RECONCILIATION_SCENARIOS.values()),
     ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
 )
-def test_reconciliation(scenario):
+def test_reconciliation(scenario, respect_materialization_data_versions):
     instance = DagsterInstance.ephemeral()
-    run_requests, _, evaluations = scenario.do_sensor_scenario(instance)
+    run_requests, _, evaluations = scenario.do_sensor_scenario(
+        instance, respect_materialization_data_versions=respect_materialization_data_versions
+    )
 
     def _sorted_evaluations(
         evaluations: Sequence[AutoMaterializeAssetEvaluation],
