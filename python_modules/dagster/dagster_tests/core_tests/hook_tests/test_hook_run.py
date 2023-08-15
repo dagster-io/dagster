@@ -685,7 +685,6 @@ def test_hook_on_job():
         basic()
         basic()
 
-    assert hooked_job.is_job  # Ensure that it's a job def, not a job def
     result = hooked_job.execute_in_process()
     assert result.success
     assert called_hook_to_ops["a_hook"] == {"basic", "basic_2", "basic_3"}

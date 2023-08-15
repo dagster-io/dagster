@@ -28,15 +28,21 @@ def capture(spec: ScreenshotSpec, output_path: str) -> None:
         assert "workspace" in spec, 'spec must define a "workspace"'
         workspace = spec["workspace"]
         if workspace.endswith(".py"):
-            command = ["dagit", "-f", workspace]
+            command = ["dagster", "dev", "-f", workspace]
         elif workspace.endswith(".yaml"):
-            command = ["dagit", "-w", workspace]
+            command = ["dagster", "dev", "-w", workspace]
         else:
             raise Exception("'workspace' must be a .py or .yaml file.")
 
-        print("Starting dagit:")
+        print("Running `dagster dev`:")
         print("  " + " ".join(command))
-        dagit_process = subprocess.Popen(command)
+        try:
+            prev_dagster_home = os.environ["DAGSTER_HOME"]
+            os.environ["DAGSTER_HOME"] = ""
+            dagit_process = subprocess.Popen(command)
+        finally:
+            os.environ["DAGSTER_HOME"] = prev_dagster_home
+
         sleep(DAGIT_STARTUP_TIME)  # Wait for the dagit server to start up
 
         driver = webdriver.Chrome()

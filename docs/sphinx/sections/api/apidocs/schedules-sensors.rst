@@ -75,8 +75,6 @@ Sensors
 
 .. autofunction:: build_multi_asset_sensor_context
 
-.. autofunction:: build_asset_reconciliation_sensor
-
 .. autoclass:: RunStatusSensorDefinition
 
 .. autoclass:: RunStatusSensorContext
@@ -91,3 +89,9 @@ Sensors
 .. autodecorator:: run_status_sensor
 
 .. autodecorator:: run_failure_sensor
+
+.. autoclass:: SensorResult
+
+.. autoclass:: AddDynamicPartitionsRequest
+
+.. autoclass:: DeleteDynamicPartitionsRequest

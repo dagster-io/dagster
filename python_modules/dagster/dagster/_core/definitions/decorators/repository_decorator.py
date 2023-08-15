@@ -17,14 +17,18 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.metadata import (
+    RawMetadataValue,
+    normalize_metadata,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
+from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
-from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
@@ -57,6 +61,7 @@ class _Repository:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -64,6 +69,9 @@ class _Repository:
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
         self.default_executor_def = check.opt_inst_param(
             default_executor_def, "default_executor_def", ExecutorDefinition
         )
@@ -100,7 +108,7 @@ class _Repository:
             Callable[[], RepositoryDictSpec],
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
+        from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         check.callable_param(fn, "fn")
@@ -121,12 +129,11 @@ class _Repository:
                 elif not isinstance(
                     definition,
                     (
-                        PipelineDefinition,
+                        JobDefinition,
                         ScheduleDefinition,
                         UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
                         GraphDefinition,
-                        AssetGroup,
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
@@ -142,7 +149,7 @@ class _Repository:
                 )
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
-                    "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
+                    "must be of type JobDefinition, GraphDefinition, "
                     "ScheduleDefinition, SensorDefinition, "
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
@@ -164,7 +171,7 @@ class _Repository:
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'schedules', 'jobs'}}: found "
+                    "keys other than {{'schedules', 'sensors', 'jobs'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
@@ -190,6 +197,7 @@ class _Repository:
                 self.name,
                 repository_definitions=list(_flatten(repository_definitions)),
                 description=self.description,
+                metadata=self.metadata,
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
                 _top_level_resources=self.top_level_resources,
@@ -198,6 +206,7 @@ class _Repository:
             repository_def = RepositoryDefinition(
                 name=self.name,
                 description=self.description,
+                metadata=self.metadata,
                 repository_data=repository_data,
             )
 
@@ -226,6 +235,7 @@ def repository(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
+    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
@@ -244,6 +254,7 @@ def repository(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    metadata: Optional[Dict[str, RawMetadataValue]] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -254,7 +265,7 @@ def repository(
     The decorated function should take no arguments and its return value should one of:
 
     1. ``List[Union[JobDefinition, ScheduleDefinition, SensorDefinition]]``.
-    Use this form when you have no need to lazy load pipelines or other definitions. This is the
+    Use this form when you have no need to lazy load jobs or other definitions. This is the
     typical use case.
 
     2. A dict of the form:
@@ -279,6 +290,7 @@ def repository(
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
+        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository.
         top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
             resource keys to defintions, for resources which should be displayed in the UI.
 
@@ -321,6 +333,22 @@ def repository(
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 
+            ######################################################################
+            # A simple repository using the first form of the decorated function
+            # and custom metadata that will be displayed in the UI
+            ######################################################################
+
+            ...
+
+            @repository(
+                name='my_repo',
+                metadata={
+                    'team': 'Team A',
+                    'repository_version': '1.2.3',
+                    'environment': 'production',
+             })
+            def simple_repository():
+                return [simple_job, some_sensor, my_schedule]
 
             ######################################################################
             # A lazy-loaded repository
@@ -359,7 +387,7 @@ def repository(
                 def __init__(self, yaml_directory):
                     self._yaml_directory = yaml_directory
 
-                def get_all_pipelines(self):
+                def get_all_jobs(self):
                     return [
                         self._construct_job_def_from_yaml_file(
                           self._yaml_file_for_job_name(file_name)
@@ -382,6 +410,7 @@ def repository(
     return _Repository(
         name=name,
         description=description,
+        metadata=metadata,
         default_executor_def=default_executor_def,
         default_logger_defs=default_logger_defs,
         top_level_resources=_top_level_resources,

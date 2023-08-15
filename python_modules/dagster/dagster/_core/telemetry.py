@@ -38,9 +38,11 @@ import yaml
 from typing_extensions import ParamSpec
 
 import dagster._check as check
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import (
-    ReconstructablePipeline,
+    ReconstructableJob,
     ReconstructableRepository,
     get_ephemeral_repository_name,
 )
@@ -53,7 +55,11 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster._core.host_representation.external import (
+        ExternalJob,
+        ExternalRepository,
+        ExternalResource,
+    )
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -62,7 +68,8 @@ ENABLED_STR = "enabled"
 DAGSTER_HOME_FALLBACK = "~/.dagster"
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
-START_DAGIT_WEBSERVER = "start_dagit_webserver"
+# 'dagit' name is deprecated but we keep the same telemetry action name to avoid data disruption
+START_DAGSTER_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
 SENSOR_RUN_CREATED = "sensor_run_created"
@@ -75,7 +82,7 @@ OS_PLATFORM = platform.system()
 
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    "_logged_execute_pipeline",
+    "_logged_execute_job",
     "execute_execute_command",
     "execute_launch_command",
     "_daemon_run_command",
@@ -217,7 +224,7 @@ class TelemetryEntry(
     Currently, log entries are coerced to the same schema to enable storing all entries in one DB
     table with unified schema.
 
-    action - Name of function called i.e. `execute_pipeline_started` (see: fn telemetry_wrapper)
+    action - Name of function called i.e. `execute_job_started` (see: fn telemetry_wrapper)
     client_time - Client time
     elapsed_time - Time elapsed between start of function and end of function call
     event_id - Unique id for the event
@@ -453,47 +460,147 @@ def hash_name(name: str) -> str:
     return hashlib.sha256(name.encode("utf-8")).hexdigest()
 
 
+def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
+    from dagster._core.host_representation.external_data import (
+        ExternalDynamicPartitionsDefinitionData,
+        ExternalMultiPartitionsDefinitionData,
+    )
+
+    num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
+    num_schedules_in_repo = len(external_repo.get_external_schedules())
+    num_sensors_in_repo = len(external_repo.get_external_sensors())
+    external_asset_nodes = external_repo.get_external_asset_nodes()
+    num_assets_in_repo = len(external_asset_nodes)
+    external_resources = external_repo.get_external_resources()
+
+    num_partitioned_assets_in_repo = 0
+    num_multi_partitioned_assets_in_repo = 0
+    num_dynamic_partitioned_assets_in_repo = 0
+    num_assets_with_freshness_policies_in_repo = 0
+    num_assets_with_eager_auto_materialize_policies_in_repo = 0
+    num_assets_with_lazy_auto_materialize_policies_in_repo = 0
+    num_assets_with_single_run_backfill_policies_in_repo = 0
+    num_assets_with_multi_run_backfill_policies_in_repo = 0
+    num_source_assets_in_repo = 0
+    num_observable_source_assets_in_repo = 0
+    num_dbt_assets_in_repo = 0
+    num_assets_with_code_versions_in_repo = 0
+
+    for asset in external_asset_nodes:
+        if asset.partitions_def_data:
+            num_partitioned_assets_in_repo += 1
+
+            if isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+                num_dynamic_partitioned_assets_in_repo += 1
+
+            if isinstance(asset.partitions_def_data, ExternalMultiPartitionsDefinitionData):
+                num_multi_partitioned_assets_in_repo += 1
+
+        if asset.freshness_policy is not None:
+            num_assets_with_freshness_policies_in_repo += 1
+
+        if asset.auto_materialize_policy is not None:
+            if asset.auto_materialize_policy.policy_type == AutoMaterializePolicyType.EAGER:
+                num_assets_with_eager_auto_materialize_policies_in_repo += 1
+            else:
+                num_assets_with_lazy_auto_materialize_policies_in_repo += 1
+
+        if asset.backfill_policy is not None:
+            if asset.backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN:
+                num_assets_with_single_run_backfill_policies_in_repo += 1
+            else:
+                num_assets_with_multi_run_backfill_policies_in_repo += 1
+
+        if asset.is_source:
+            num_source_assets_in_repo += 1
+
+            if asset.is_observable:
+                num_observable_source_assets_in_repo += 1
+
+        if asset.code_version is not None:
+            num_assets_with_code_versions_in_repo += 1
+
+        if asset.compute_kind == "dbt":
+            num_dbt_assets_in_repo += 1
+
+    num_asset_reconciliation_sensors_in_repo = sum(
+        1
+        for external_sensor in external_repo.get_external_sensors()
+        if external_sensor.name == "asset_reconciliation_sensor"
+    )
+
+    return {
+        **get_resource_stats(external_resources=list(external_resources)),
+        "num_pipelines_in_repo": str(num_pipelines_in_repo),
+        "num_schedules_in_repo": str(num_schedules_in_repo),
+        "num_sensors_in_repo": str(num_sensors_in_repo),
+        "num_assets_in_repo": str(num_assets_in_repo),
+        "num_source_assets_in_repo": str(num_source_assets_in_repo),
+        "num_partitioned_assets_in_repo": str(num_partitioned_assets_in_repo),
+        "num_dynamic_partitioned_assets_in_repo": str(num_dynamic_partitioned_assets_in_repo),
+        "num_multi_partitioned_assets_in_repo": str(num_multi_partitioned_assets_in_repo),
+        "num_assets_with_freshness_policies_in_repo": str(
+            num_assets_with_freshness_policies_in_repo
+        ),
+        "num_assets_with_eager_auto_materialize_policies_in_repo": str(
+            num_assets_with_eager_auto_materialize_policies_in_repo
+        ),
+        "num_assets_with_lazy_auto_materialize_policies_in_repo": str(
+            num_assets_with_lazy_auto_materialize_policies_in_repo
+        ),
+        "num_assets_with_single_run_backfill_policies_in_repo": str(
+            num_assets_with_single_run_backfill_policies_in_repo
+        ),
+        "num_assets_with_multi_run_backfill_policies_in_repo": str(
+            num_assets_with_multi_run_backfill_policies_in_repo
+        ),
+        "num_observable_source_assets_in_repo": str(num_observable_source_assets_in_repo),
+        "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
+        "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
+        "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+    }
+
+
+def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, Any]:
+    used_dagster_resources = []
+    used_custom_resources = False
+
+    for resource in external_resources:
+        resource_type = resource.resource_type
+        split_resource_type = resource_type.split(".")
+        module_name = split_resource_type[0]
+        class_name = split_resource_type[-1]
+
+        if resource.is_dagster_maintained:
+            used_dagster_resources.append({"module_name": module_name, "class_name": class_name})
+        else:
+            used_custom_resources = True
+
+    return {
+        "dagster_resources": used_dagster_resources,
+        "has_custom_resources": str(used_custom_resources),
+    }
+
+
 def log_external_repo_stats(
     instance: DagsterInstance,
     source: str,
     external_repo: "ExternalRepository",
-    external_pipeline: Optional["ExternalPipeline"] = None,
+    external_job: Optional["ExternalJob"] = None,
 ):
-    from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
-    from dagster._core.host_representation.external_data import (
-        ExternalAssetNode,
-        ExternalDynamicPartitionsDefinitionData,
-    )
+    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-
-    def _get_num_dynamic_partitioned_assets(
-        external_asset_nodes: Sequence[ExternalAssetNode],
-    ) -> int:
-        return sum(
-            1
-            for asset in external_asset_nodes
-            if asset.partitions_def_data
-            and isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData)
-        )
+    check.opt_inst_param(external_job, "external_job", ExternalJob)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
+        job_name_hash = hash_name(external_job.name) if external_job else ""
         repo_hash = hash_name(external_repo.name)
         location_name_hash = hash_name(external_repo.handle.location_name)
-        num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
-        num_schedules_in_repo = len(external_repo.get_external_schedules())
-        num_sensors_in_repo = len(external_repo.get_external_sensors())
-        external_asset_nodes = external_repo.get_external_asset_nodes()
-        num_assets_in_repo = len(external_asset_nodes)
-        num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(
-            external_asset_nodes
-        )
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -502,17 +609,11 @@ def log_external_repo_stats(
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 metadata={
+                    **get_stats_from_external_repo(external_repo),
                     "source": source,
-                    "pipeline_name_hash": pipeline_name_hash,
-                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
-                    "num_schedules_in_repo": str(num_schedules_in_repo),
-                    "num_sensors_in_repo": str(num_sensors_in_repo),
-                    "num_assets_in_repo": str(num_assets_in_repo),
+                    "pipeline_name_hash": job_name_hash,
                     "repo_hash": repo_hash,
                     "location_name_hash": location_name_hash,
-                    "num_dynamic_partitioned_assets_in_repo": str(
-                        num_dynamic_partitioned_assets_in_repo
-                    ),
                 },
             )._asdict()
         )
@@ -521,7 +622,7 @@ def log_external_repo_stats(
 def log_repo_stats(
     instance: DagsterInstance,
     source: str,
-    pipeline: Optional[IPipeline] = None,
+    job: Optional[IJob] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -529,7 +630,7 @@ def log_repo_stats(
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.opt_inst_param(pipeline, "pipeline", IPipeline)
+    check.opt_inst_param(job, "job", IJob)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     def _get_num_dynamic_partitioned_assets(asset_defs: Sequence[AssetsDefinition]) -> int:
@@ -543,30 +644,30 @@ def log_repo_stats(
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        if isinstance(pipeline, ReconstructablePipeline):
-            pipeline_name_hash = hash_name(pipeline.get_definition().name)
-            repository = pipeline.get_reconstructable_repository().get_definition()
+        if isinstance(job, ReconstructableJob):
+            job_name_hash = hash_name(job.get_definition().name)
+            repository = job.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.pipeline_names)
+            num_jobs_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         elif isinstance(repo, ReconstructableRepository):
-            pipeline_name_hash = ""
+            job_name_hash = ""
             repository = repo.get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.pipeline_names)
+            num_jobs_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         else:
-            pipeline_name_hash = hash_name(pipeline.get_definition().name)  # type: ignore
-            repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))  # type: ignore
-            num_pipelines_in_repo = 1
+            job_name_hash = hash_name(job.get_definition().name)  # type: ignore
+            repo_hash = hash_name(get_ephemeral_repository_name(job.get_definition().name))  # type: ignore
+            num_jobs_in_repo = 1
             num_schedules_in_repo = 0
             num_sensors_in_repo = 0
             num_assets_in_repo = 0
@@ -580,8 +681,8 @@ def log_repo_stats(
                 instance_id=instance_id,
                 metadata={
                     "source": source,
-                    "pipeline_name_hash": pipeline_name_hash,
-                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
+                    "pipeline_name_hash": job_name_hash,
+                    "num_pipelines_in_repo": str(num_jobs_in_repo),
                     "num_schedules_in_repo": str(num_schedules_in_repo),
                     "num_sensors_in_repo": str(num_sensors_in_repo),
                     "num_assets_in_repo": str(num_assets_in_repo),
@@ -641,12 +742,12 @@ def log_action(
         )
 
 
-def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext) -> None:
+def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext) -> None:
     if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
         return
 
     metadata = {
-        "run_id_hash": hash_name(pipeline_context.run_id),
+        "run_id_hash": hash_name(job_context.run_id),
         "step_key_hash": hash_name(event.step_key),  # type: ignore
     }
 
@@ -660,7 +761,7 @@ def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationCo
         action = STEP_FAILURE_EVENT
 
     log_action(
-        instance=pipeline_context.instance,
+        instance=job_context.instance,
         action=action,
         client_time=datetime.datetime.now(),
         metadata=metadata,
@@ -680,15 +781,11 @@ TELEMETRY_TEXT = """
 
     telemetry:
       enabled: false
-""" % {
-    "telemetry": click.style("Telemetry:", fg="blue", bold=True)
-}
+""" % {"telemetry": click.style("Telemetry:", fg="blue", bold=True)}
 
 SLACK_PROMPT = """
   %(welcome)s
 
   If you have any questions or would like to engage with the Dagster team, please join us on Slack
   (https://bit.ly/39dvSsF).
-""" % {
-    "welcome": click.style("Welcome to Dagster!", bold=True)
-}
+""" % {"welcome": click.style("Welcome to Dagster!", bold=True)}

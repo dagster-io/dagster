@@ -497,15 +497,13 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 class NodeInputHandle(
     NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
 ):
-    """A structured object to uniquely identify inputs in the potentially recursive graph structure.
-    """
+    """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
 ):
-    """A structured object to uniquely identify outputs in the potentially recursive graph structure.
-    """
+    """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
@@ -586,6 +584,10 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def is_dynamic(self) -> bool:
         return self.output_def.is_dynamic
 
+    @property
+    def output_name(self) -> str:
+        return self.output_def.name
+
 
 class DependencyType(Enum):
     DIRECT = "DIRECT"
@@ -600,8 +602,7 @@ class IDependencyDefinition(ABC):
 
     @abstractmethod
     def is_fan_in(self) -> bool:
-        """The result passed to the corresponding input will be a List made from different node outputs.
-        """
+        """The result passed to the corresponding input will be a List made from different node outputs."""
 
 
 class DependencyDefinition(
@@ -664,7 +665,9 @@ class DependencyDefinition(
     def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         return [self]
 
+    @public
     def is_fan_in(self) -> bool:
+        """Return True if the dependency is fan-in (always False for DependencyDefinition)."""
         return False
 
     def get_op_dependencies(self) -> Sequence["DependencyDefinition"]:
@@ -689,7 +692,7 @@ class MultiDependencyDefinition(
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
-    dependency structure of a job or pipeline whose keys represent the dependent ops or graphs and dependent
+    dependency structure of a job whose keys represent the dependent ops or graphs and dependent
     input, so this object only contains information about the dependee.
 
     Concretely, if the input named 'input' of op_c depends on the outputs named 'result' of
@@ -749,16 +752,19 @@ class MultiDependencyDefinition(
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
+        """Return the list of :py:class:`DependencyDefinition` contained by this object."""
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     @public
     def is_fan_in(self) -> bool:
+        """Return `True` if the dependency is fan-in (always True for MultiDependencyDefinition)."""
         return True
 
     @public
     def get_dependencies_and_mappings(
         self,
     ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+        """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
 
 

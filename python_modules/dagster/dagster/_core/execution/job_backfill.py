@@ -4,14 +4,14 @@ import time
 from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
-from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
     CodeLocation,
+    ExternalJob,
     ExternalPartitionSet,
-    ExternalPipeline,
 )
 from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionParamData,
@@ -19,7 +19,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -202,18 +202,16 @@ def submit_backfill_runs(
     if backfill_job.asset_selection:
         # need to make another call to the user code location to properly subset
         # for an asset selection
-        pipeline_selector = PipelineSelector(
+        pipeline_selector = JobSubsetSelector(
             location_name=code_location.name,
             repository_name=repo_name,
-            pipeline_name=external_partition_set.pipeline_name,
-            solid_selection=None,
+            job_name=external_partition_set.job_name,
+            op_selection=None,
             asset_selection=backfill_job.asset_selection,
         )
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        external_job = code_location.get_external_job(pipeline_selector)
     else:
-        external_pipeline = external_repo.get_full_external_job(
-            external_partition_set.pipeline_name
-        )
+        external_job = external_repo.get_full_external_job(external_partition_set.job_name)
     for partition_data in result.partition_data:
         # Refresh the code location in case the workspace has reloaded mid-backfill
         workspace = create_workspace()
@@ -222,7 +220,7 @@ def submit_backfill_runs(
         dagster_run = create_backfill_run(
             instance,
             code_location,
-            external_pipeline,
+            external_job,
             external_partition_set,
             backfill_job,
             partition_data,
@@ -239,7 +237,7 @@ def submit_backfill_runs(
 def create_backfill_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
     partition_data: ExternalPartitionExecutionParamData,
@@ -263,16 +261,16 @@ def create_backfill_run(
         backfill_job.tags,
     )
 
-    solids_to_execute = None
-    solid_selection = None
+    resolved_op_selection = None
+    op_selection = None
     if not backfill_job.from_failure and not backfill_job.reexecution_steps:
         step_keys_to_execute = None
         parent_run_id = None
         root_run_id = None
         known_state = None
-        if external_partition_set.solid_selection:
-            solids_to_execute = frozenset(external_partition_set.solid_selection)
-            solid_selection = external_partition_set.solid_selection
+        if external_partition_set.op_selection:
+            resolved_op_selection = frozenset(external_partition_set.op_selection)
+            op_selection = external_partition_set.op_selection
 
     elif backfill_job.from_failure:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
@@ -281,11 +279,10 @@ def create_backfill_run(
         return instance.create_reexecuted_run(
             parent_run=last_run,
             code_location=code_location,
-            external_pipeline=external_pipeline,
+            external_job=external_pipeline,
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
             run_config=partition_data.run_config,
-            mode=external_partition_set.mode,
             use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
 
@@ -306,50 +303,50 @@ def create_backfill_run(
         else:
             known_state = None
 
-        if external_partition_set.solid_selection:
-            solids_to_execute = frozenset(external_partition_set.solid_selection)
-            solid_selection = external_partition_set.solid_selection
+        if external_partition_set.op_selection:
+            resolved_op_selection = frozenset(external_partition_set.op_selection)
+            op_selection = external_partition_set.op_selection
 
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         partition_data.run_config,
-        check.not_none(external_partition_set.mode),
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,
     )
 
     return instance.create_run(
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        job_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        pipeline_name=external_pipeline.name,
+        parent_job_snapshot=external_pipeline.parent_job_snapshot,
+        job_name=external_pipeline.name,
         run_id=make_new_run_id(),
-        solids_to_execute=solids_to_execute,
+        resolved_op_selection=resolved_op_selection,
         run_config=partition_data.run_config,
-        mode=external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
         status=DagsterRunStatus.NOT_STARTED,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
-        solid_selection=solid_selection,
-        asset_selection=frozenset(backfill_job.asset_selection)
-        if backfill_job.asset_selection
-        else None,
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
+        op_selection=op_selection,
+        asset_selection=(
+            frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
+        ),
     )
 
 
-def _fetch_last_run(instance, external_partition_set, partition_name):
+def _fetch_last_run(
+    instance: DagsterInstance, external_partition_set: ExternalPartitionSet, partition_name: str
+) -> Optional[DagsterRun]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
     check.str_param(partition_name, "partition_name")
 
     runs = instance.get_runs(
         RunsFilter(
-            pipeline_name=external_partition_set.pipeline_name,
+            job_name=external_partition_set.job_name,
             tags={
                 PARTITION_SET_TAG: external_partition_set.name,
                 PARTITION_NAME_TAG: partition_name,

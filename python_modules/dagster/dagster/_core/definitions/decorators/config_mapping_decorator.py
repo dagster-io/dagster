@@ -21,7 +21,7 @@ class _ConfigMapping:
     def __call__(self, fn: Callable[..., Any]) -> ConfigMapping:
         check.callable_param(fn, "fn")
 
-        from dagster._config.structured_config import (
+        from dagster._config.pythonic_config import (
             Config,
             infer_schema_from_config_annotation,
             safe_is_subclass,

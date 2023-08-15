@@ -6,6 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster-gcp",
+        "dagster-gcp-pandas",
         "dagster-cloud",
         "boto3",  # used by Dagster Cloud Serverless
         "pandas",
@@ -16,5 +17,5 @@ setup(
         "pandas_gbq",
         "google-auth",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

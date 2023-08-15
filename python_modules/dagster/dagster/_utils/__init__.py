@@ -49,6 +49,8 @@ from typing_extensions import Literal, TypeAlias, TypeGuard
 import dagster._check as check
 import dagster._seven as seven
 
+from .internal_init import IHasInternalInit as IHasInternalInit
+
 if sys.version_info > (3,):
     from pathlib import Path
 else:
@@ -299,7 +301,7 @@ def check_script(path, return_code=0):
         raise
 
 
-def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
+def check_cli_execute_file_job(path, pipeline_fn_name, env_file=None):
     from dagster._core.test_utils import instance_for_test
 
     with instance_for_test():
@@ -639,6 +641,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 def traced(func: T_Callable) -> T_Callable:
     """A decorator that keeps track of how many times a function is called."""
 
+    @functools.wraps(func)
     def inner(*args, **kwargs):
         counter = traced_counter.get()
         if counter and isinstance(counter, Counter):
@@ -734,3 +737,7 @@ def normalize_to_repository(
         return repository
     else:
         return None
+
+
+def xor(a, b):
+    return bool(a) != bool(b)

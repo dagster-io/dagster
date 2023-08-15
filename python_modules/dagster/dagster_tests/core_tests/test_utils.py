@@ -1,11 +1,17 @@
 import warnings
+from concurrent.futures import as_completed
+from contextvars import ContextVar
 from typing import Dict, List, NamedTuple
 
 import dagster.version
 import pytest
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.test_utils import environ
-from dagster._core.utils import check_dagster_package_version, parse_env_var
+from dagster._core.utils import (
+    InheritContextThreadPoolExecutor,
+    check_dagster_package_version,
+    parse_env_var,
+)
 from dagster._utils import hash_collection, library_version_from_core_version
 
 
@@ -96,3 +102,20 @@ def test_hash_collection():
             return hash_collection(self)
 
     assert hash(Bar([1, 2, 3], {"a": 1}, "alpha")) == hash(Bar([1, 2, 3], {"a": 1}, "alpha"))
+
+
+def test_inherit_context_threadpool():
+    id_cv = ContextVar("id")
+
+    def in_thread(id_passed):
+        assert id_passed == id_cv.get()
+        return True
+
+    with InheritContextThreadPoolExecutor(max_workers=1) as executor:
+        futures = []
+        for i in range(10):
+            id_cv.set(i)
+            futures.append(executor.submit(in_thread, i))
+
+        for f in as_completed(futures):
+            assert f.result()

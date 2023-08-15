@@ -1,5 +1,4 @@
 import inspect
-import warnings
 from functools import wraps
 from typing import (
     Any,
@@ -18,7 +17,7 @@ from typing import (
 
 from typing_extensions import get_args
 
-from dagster._config.structured_config import Config
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
@@ -30,6 +29,7 @@ from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunctio
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..context.compute import OpExecutionContext
 
@@ -69,13 +69,13 @@ def create_op_compute_wrapper(op_def: OpDefinition):
                 fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
             )
             if inspect.iscoroutine(result):
-                return _coerce_async_solid_to_async_gen(result, context, output_defs)
+                return _coerce_async_op_to_async_gen(result, context, output_defs)
             # already a generator
             return result
         else:
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
-            return _coerce_solid_compute_fn_to_iterator(
+            return _coerce_op_compute_fn_to_iterator(
                 fn,
                 output_defs,
                 context,
@@ -88,7 +88,7 @@ def create_op_compute_wrapper(op_def: OpDefinition):
     return compute
 
 
-async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
+async def _coerce_async_op_to_async_gen(awaitable, context, output_defs):
     result = await awaitable
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
@@ -111,12 +111,14 @@ def invoke_compute_fn(
             args_to_pass["config"] = context.op_config
     if resource_args:
         for resource_name, arg_name in resource_args.items():
-            args_to_pass[arg_name] = getattr(context.resources, resource_name)
+            args_to_pass[arg_name] = context.resources._original_resource_dict[  # noqa: SLF001
+                resource_name
+            ]
 
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 
-def _coerce_solid_compute_fn_to_iterator(
+def _coerce_op_compute_fn_to_iterator(
     fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
 ):
     result = invoke_compute_fn(
@@ -126,11 +128,11 @@ def _coerce_solid_compute_fn_to_iterator(
         yield event
 
 
-def _zip_and_iterate_solid_result(
+def _zip_and_iterate_op_result(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Iterator[Tuple[int, Any, OutputDefinition]]:
     if len(output_defs) > 1:
-        _validate_multi_return(context, result, output_defs)
+        result = _validate_multi_return(context, result, output_defs)
         for position, (output_def, element) in enumerate(zip(output_defs, result)):
             yield position, output_def, element
     else:
@@ -141,7 +143,16 @@ def _validate_multi_return(
     context: OpExecutionContext,
     result: Any,
     output_defs: Sequence[OutputDefinition],
-) -> None:
+) -> Any:
+    # special cases for implicit/explicit returned None
+    if result is None:
+        # extrapolate None -> (None, None, ...) when appropriate
+        if all(
+            output_def.dagster_type.is_nothing and output_def.is_required
+            for output_def in output_defs
+        ):
+            return [None for _ in output_defs]
+
     # When returning from an op with multiple outputs, the returned object must be a tuple of the same length as the number of outputs. At the time of the op's construction, we verify that a provided annotation is a tuple with the same length as the number of outputs, so if the result matches the number of output defs on the op, it will transitively also match the annotation.
     if not isinstance(result, tuple):
         raise DagsterInvariantViolationError(
@@ -160,6 +171,7 @@ def _validate_multi_return(
             f"{len(output_tuple)} outputs, while "
             f"{context.op_def.node_type_str} has {len(output_defs)} outputs."
         )
+    return result
 
 
 def _get_annotation_for_output_position(
@@ -190,7 +202,7 @@ def validate_and_coerce_op_result_to_iterator(
     result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
 ) -> Generator[Any, None, None]:
     if inspect.isgenerator(result):
-        # this happens when a user explicitly returns a generator in the solid
+        # this happens when a user explicitly returns a generator in the op
         for event in result:
             yield event
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
@@ -211,7 +223,7 @@ def validate_and_coerce_op_result_to_iterator(
             " return no results."
         )
     elif output_defs:
-        for position, output_def, element in _zip_and_iterate_solid_result(
+        for position, output_def, element in _zip_and_iterate_op_result(
             result, context, output_defs
         ):
             annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)
@@ -234,9 +246,7 @@ def validate_and_coerce_op_result_to_iterator(
                     dynamic_output = cast(DynamicOutput, item)
                     _check_output_object_name(dynamic_output, output_def, position)
 
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore", category=DeprecationWarning)
-
+                    with disable_dagster_warnings():
                         yield DynamicOutput(
                             output_name=output_def.name,
                             value=dynamic_output.value,
@@ -254,9 +264,7 @@ def validate_and_coerce_op_result_to_iterator(
                     )
                 _check_output_object_name(element, output_def, position)
 
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=DeprecationWarning)
-
+                with disable_dagster_warnings():
                     yield Output(
                         output_name=output_def.name,
                         value=element.value,
@@ -274,7 +282,7 @@ def validate_and_coerce_op_result_to_iterator(
                         f"Received instead an object of type {type(element)}."
                     )
                 if result is None and output_def.is_required is False:
-                    context.log.warn(
+                    context.log.warning(
                         'Value "None" returned for non-required output '
                         f'"{output_def.name}" of {context.describe_op()}. '
                         "This value will be passed to downstream "

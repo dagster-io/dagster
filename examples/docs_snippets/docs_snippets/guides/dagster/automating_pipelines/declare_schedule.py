@@ -1,38 +1,33 @@
-# isort: skip_file
-
 from dagster import (
-    AssetSelection,
+    AutoMaterializePolicy,
     Definitions,
     FreshnessPolicy,
     asset,
-    build_asset_reconciliation_sensor,
-    materialize,
+    load_assets_from_current_module,
 )
-
-# declare_schedule_start
 
 
 @asset
-def transactions():
-    pass
+def transactions_cleaned():
+    ...
 
 
 @asset(
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")
+    freshness_policy=FreshnessPolicy(
+        maximum_lag_minutes=9 * 24, cron_schedule="0 9 * * *"
+    )
 )
-def sales(transactions):
-    pass
+def sales_report(transactions_cleaned):
+    ...
 
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=120))
-def expenses(transactions):
-    pass
+def finance_report(transactions_cleaned):
+    ...
 
 
-update_sensor = build_asset_reconciliation_sensor(
-    name="update_sensor", asset_selection=AssetSelection.all()
+defs = Definitions(
+    assets=load_assets_from_current_module(
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+    )
 )
-
-defs = Definitions(assets=[transactions, sales, expenses], sensors=[update_sensor])
-
-# declare_schedule_end

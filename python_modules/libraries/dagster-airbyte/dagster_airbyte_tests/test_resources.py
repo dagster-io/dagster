@@ -495,3 +495,53 @@ def test_sync_and_poll_timeout(
             assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 1) is True
         else:
             assert responses.assert_call_count(f"{ab_resource.api_base_url}/jobs/cancel", 0) is True
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "supports_norm,norm_config_supported",
+    [
+        (True, True),
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
+def test_normalization_support(
+    supports_norm: bool,
+    norm_config_supported: bool,
+    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+):
+    ab_resource = airbyte_instance_constructor(
+        {
+            "host": "some_host",
+            "port": "8000",
+        }
+    )
+    # See https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/destination_definition_specifications/get
+    responses.post(
+        url=ab_resource.api_base_url + "/destination_definition_specifications/get",
+        json={"supportsNormalization": supports_norm},
+    )
+    # See https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/destination_definitions/get
+    responses.post(
+        url=ab_resource.api_base_url + "/destination_definitions/get",
+        json={"normalizationConfig": {"supported": norm_config_supported}},
+    )
+
+    assert ab_resource.does_dest_support_normalization("some_destination", "some_workspace") == any(
+        [supports_norm, norm_config_supported]
+    )
+
+    # Check for expected behaviour when keys do not exist
+    responses.post(
+        url=ab_resource.api_base_url + "/destination_definition_specifications/get",
+        json={},
+    )
+    responses.post(
+        url=ab_resource.api_base_url + "/destination_definitions/get",
+        json={},
+    )
+    assert (
+        ab_resource.does_dest_support_normalization("some_destination", "some_workspace") is False
+    )

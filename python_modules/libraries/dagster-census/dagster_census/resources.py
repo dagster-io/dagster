@@ -6,6 +6,7 @@ from typing import Any, Mapping, Optional
 
 import requests
 from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
@@ -159,7 +160,7 @@ class CensusResource:
 
             sync_id = response_dict["data"]["sync_id"]
 
-            if response_dict["data"]["status"] == "working":
+            if response_dict["data"]["status"] in {"preparing", "working"}:
                 self._log.debug(
                     f"Sync {sync_id} still running after {datetime.datetime.now() - poll_start}."
                 )
@@ -238,6 +239,7 @@ class CensusResource:
         )
 
 
+@dagster_maintained_resource
 @resource(
     config_schema={
         "api_key": Field(

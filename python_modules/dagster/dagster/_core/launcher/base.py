@@ -3,8 +3,8 @@ from enum import Enum
 from typing import NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.origin import PipelinePythonOrigin
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.origin import JobPythonOrigin
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 
@@ -16,8 +16,8 @@ class LaunchRunContext(NamedTuple):
     workspace: Optional[IWorkspace]
 
     @property
-    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
-        return self.dagster_run.pipeline_code_origin
+    def job_code_origin(self) -> Optional[JobPythonOrigin]:
+        return self.dagster_run.job_code_origin
 
 
 class ResumeRunContext(NamedTuple):
@@ -28,8 +28,8 @@ class ResumeRunContext(NamedTuple):
     resume_attempt_number: Optional[int] = None
 
     @property
-    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
-        return self.dagster_run.pipeline_code_origin
+    def job_code_origin(self) -> Optional[JobPythonOrigin]:
+        return self.dagster_run.job_code_origin
 
 
 @whitelist_for_serdes
@@ -46,6 +46,8 @@ class CheckRunHealthResult(NamedTuple):
 
     status: WorkerStatus
     msg: Optional[str] = None
+    transient: Optional[bool] = None
+    run_worker_id: Optional[str] = None  # Identifier for a particular run worker
 
     def __str__(self) -> str:
         return f"{self.status.value}: '{self.msg}'"

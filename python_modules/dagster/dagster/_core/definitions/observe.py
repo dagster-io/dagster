@@ -1,16 +1,12 @@
-import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.assets_job import build_source_asset_observation_job
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._utils.backcompat import ExperimentalWarning
-from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..instance import DagsterInstance
-from .job_definition import default_job_io_manager_with_fs_io_manager_schema
 from .source_asset import SourceAsset
-from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
     from ..execution.execute_in_process_result import ExecuteInProcessResult
@@ -45,29 +41,19 @@ def observe(
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
-    from ..execution.build_resources import wrap_resources_for_execution
-
     source_assets = check.sequence_param(source_assets, "assets", of_type=(SourceAsset))
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
-    resource_defs = wrap_resources_for_execution(resources)
-    resource_defs = merge_dicts(
-        {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema}, resource_defs
-    )
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", category=ExperimentalWarning, message=".*build_source_asset_observation_job.*"
-        )
-
+    with disable_dagster_warnings():
         observation_job = build_source_asset_observation_job(
             "in_process_observation_job", source_assets
         )
         defs = Definitions(
             assets=source_assets,
             jobs=[observation_job],
-            resources=resource_defs,
+            resources=resources,
         )
 
         return defs.get_job_def("in_process_observation_job").execute_in_process(

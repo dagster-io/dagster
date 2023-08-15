@@ -2,7 +2,6 @@
 # We will be filling this file out as part of the PyData workshop!
 import pandas as pd
 from dagstermill import define_dagstermill_asset
-from papermill_origami.noteable_dagstermill import define_noteable_dagster_asset
 
 from dagster import AssetIn, Field, Int, asset, file_relative_path
 
@@ -13,7 +12,7 @@ from dagster import AssetIn, Field, Int, asset, file_relative_path
 # @asset(group_name="template_tutorial")
 # def iris_dataset():
 #     return pd.read_csv(
-#         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+#         "https://docs.dagster.io/assets/iris.csv",
 #         names=[
 #             "Sepal length (cm)",
 #             "Sepal width (cm)",
@@ -32,15 +31,4 @@ from dagster import AssetIn, Field, Int, asset, file_relative_path
 #     notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
 #     group_name="template_tutorial",
 #     # ins={"iris": AssetIn("iris_dataset")},  # this code to remain commented until TODO 3
-# )
-
-# TODO 5: Uncomment the code below to create a Dagster asset backed by a Noteable notebook
-# relevant documentation - https://papermill-origami.readthedocs.io/en/latest/reference/noteable_dagstermill/assets/
-
-# notebook_id = "<your-noteable-notebook-id>"
-# iris_kmeans_noteable_notebook = define_noteable_dagster_asset(
-#     name="iris_kmeans_noteable",
-#     notebook_id=notebook_id,
-#     ins={"iris": AssetIn("iris_dataset")},
-#     group_name="template_tutorial"
 # )

@@ -38,14 +38,14 @@ class GrapheneTarget(graphene.ObjectType):
     class Meta:
         name = "Target"
 
-    def __init__(self, external_target):
+    def __init__(self, external_target: ExternalTargetData):
         self._external_target = check.inst_param(
             external_target, "external_target", ExternalTargetData
         )
         super().__init__(
-            pipelineName=external_target.pipeline_name,
+            pipelineName=external_target.job_name,
             mode=external_target.mode,
-            solidSelection=external_target.solid_selection,
+            solidSelection=external_target.op_selection,
         )
 
 

@@ -2,18 +2,17 @@ from typing import Dict, List
 
 from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
-from dagster._config.structured_config import Config, ConfigurableResource
-from dagster._core.definitions.definitions_class import BindResourcesToJobs
+from dagster._config.pythonic_config import Config, ConfigurableResource
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
-    ExternalPipelineData,
+    ExternalJobData,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
@@ -21,7 +20,7 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
     ResourceJobUsageEntry,
 )
-from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap import JobSnapshot
 
 
 def test_repository_snap_all_props():
@@ -40,14 +39,14 @@ def test_repository_snap_all_props():
     external_repo_data = external_repository_data_from_def(noop_repo)
 
     assert external_repo_data.name == "noop_repo"
-    assert len(external_repo_data.external_pipeline_datas) == 1
-    assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalPipelineData)
+    assert len(external_repo_data.external_job_datas) == 1
+    assert isinstance(external_repo_data.external_job_datas[0], ExternalJobData)
 
-    pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
-    assert isinstance(pipeline_snapshot, PipelineSnapshot)
-    assert pipeline_snapshot.name == "noop_job"
-    assert pipeline_snapshot.description is None
-    assert pipeline_snapshot.tags == {}
+    job_snapshot = external_repo_data.external_job_datas[0].job_snapshot
+    assert isinstance(job_snapshot, JobSnapshot)
+    assert job_snapshot.name == "noop_job"
+    assert job_snapshot.description is None
+    assert job_snapshot.tags == {}
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
@@ -61,7 +60,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 def test_repository_snap_definitions_resources_basic():
     @asset
-    def my_asset(foo: Resource[str]):
+    def my_asset(foo: ResourceParam[str]):
         pass
 
     defs = Definitions(
@@ -100,6 +99,11 @@ def test_repository_snap_definitions_resources_nested() -> None:
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
 
     assert len(foo) == 1
+    assert (
+        foo[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        "test_repository_snap_definitions_resources_nested.<locals>.MyOuterResource"
+    )
 
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
@@ -135,10 +139,20 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+    assert (
+        foo[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyOuterResource"
+    )
 
     assert len(inner[0].parent_resources) == 1
     assert "foo" in inner[0].parent_resources
     assert inner[0].parent_resources["foo"] == "inner"
+    assert (
+        inner[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap."
+        "test_repository_snap_definitions_resources_nested_top_level.<locals>.MyInnerResource"
+    )
 
 
 def test_repository_snap_definitions_function_style_resources_nested() -> None:
@@ -169,10 +183,18 @@ def test_repository_snap_definitions_function_style_resources_nested() -> None:
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+    assert (
+        foo[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap.my_outer_resource"
+    )
 
     assert len(inner[0].parent_resources) == 1
     assert "foo" in inner[0].parent_resources
     assert inner[0].parent_resources["foo"] == "inner"
+    assert (
+        inner[0].resource_type
+        == "dagster_tests.core_tests.snap_tests.test_repository_snap.my_inner_resource"
+    )
 
 
 def test_repository_snap_definitions_resources_nested_many() -> None:
@@ -271,7 +293,7 @@ def test_repository_snap_empty():
 
     external_repo_data = external_repository_data_from_def(empty_repo)
     assert external_repo_data.name == "empty_repo"
-    assert len(external_repo_data.external_pipeline_datas) == 0
+    assert len(external_repo_data.external_job_datas) == 0
     assert len(external_repo_data.external_resource_data) == 0
 
 
@@ -411,11 +433,11 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
         return "foo"
 
     @asset
-    def my_asset(foo: Resource[str]):
+    def my_asset(foo: ResourceParam[str]):
         pass
 
     @asset
-    def my_other_asset(foo: Resource[str]):
+    def my_other_asset(foo: ResourceParam[str]):
         pass
 
     @asset
@@ -480,7 +502,7 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
         my_op_in_other_job()
 
     defs = Definitions(
-        jobs=BindResourcesToJobs([my_first_job, my_second_job]),
+        jobs=[my_first_job, my_second_job],
         resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
     )
 
@@ -540,7 +562,7 @@ def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
         my_op()
 
     defs = Definitions(
-        jobs=BindResourcesToJobs([my_job]),
+        jobs=[my_job],
         resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
     )
 

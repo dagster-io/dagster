@@ -8,7 +8,12 @@ RunStorageSqlMetadata = db.MetaData()
 RunsTable = db.Table(
     "runs",
     RunStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("run_id", db.String(255), unique=True),
     db.Column(
         "snapshot_id",
@@ -46,7 +51,12 @@ RunsTable = db.Table(
 SecondaryIndexMigrationTable = db.Table(
     "secondary_indexes",
     RunStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
@@ -55,7 +65,12 @@ SecondaryIndexMigrationTable = db.Table(
 RunTagsTable = db.Table(
     "run_tags",
     RunStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("run_id", None, db.ForeignKey("runs.run_id", ondelete="CASCADE")),
     db.Column("key", db.Text),
     db.Column("value", db.Text),
@@ -64,7 +79,12 @@ RunTagsTable = db.Table(
 SnapshotsTable = db.Table(
     "snapshots",
     RunStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True, nullable=False),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("snapshot_id", db.String(255), unique=True, nullable=False),
     db.Column("snapshot_body", db.LargeBinary, nullable=False),
     db.Column("snapshot_type", db.String(63), nullable=False),
@@ -88,7 +108,12 @@ DaemonHeartbeatsTable = db.Table(
 BulkActionsTable = db.Table(
     "bulk_actions",
     RunStorageSqlMetadata,
-    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("key", db.String(32), unique=True, nullable=False),
     db.Column("status", db.String(255), nullable=False),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),

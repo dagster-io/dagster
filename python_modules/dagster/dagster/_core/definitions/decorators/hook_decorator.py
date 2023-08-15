@@ -102,8 +102,8 @@ def event_list_hook(
     The user-defined hook function requires two parameters:
     - A `context` object is passed as the first parameter. The context is an instance of
         :py:class:`context <HookContext>`, and provides access to system
-        information, such as loggers (context.log), resources (context.resources), the solid
-        (context.solid) and its execution step (context.step) which triggers this hook.
+        information, such as loggers (context.log), resources (context.resources), the op
+        (context.op) and its execution step (context.step) which triggers this hook.
     - An `event_list` object is passed as the second paramter. It provides the full event list of the
         associated execution step.
 
@@ -119,10 +119,7 @@ def event_list_hook(
             def slack_on_materializations(context, event_list):
                 for event in event_list:
                     if event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-                        message = '{solid} has materialized an asset {key}.'.format(
-                            solid=context.solid.name,
-                            key=event.asset_key
-                        )
+                        message = f'{context.op_name} has materialized an asset {event.asset_key}.'
                         # send a slack message every time a materialization event occurs
                         context.resources.slack.send_message(message)
 

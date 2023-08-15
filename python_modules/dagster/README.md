@@ -27,7 +27,7 @@
   </a>
 </div>
 
-__Dagster is a cloud-native data pipeline orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.__
+**Dagster is a cloud-native data pipeline orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.**
 
 It is designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
 
@@ -58,6 +58,7 @@ def continent_stats(country_populations: DataFrame, continent_change_model: Line
     result["pop_change_factor"] = continent_change_model.coef_
     return result
 ```
+
 The graph loaded into Dagster's web UI:
 
 <p align="center">
@@ -70,16 +71,16 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
-Dagster is available on PyPI and officially supports Python 3.7+.
+Dagster is available on PyPI and officially supports Python 3.8+.
 
 ```bash
-pip install dagster dagit
+pip install dagster dagster-webserver
 ```
 
-This installs two modules:
+This installs two packages:
 
-- **Dagster**: The core programming model.
-- **Dagit**: The web interface for developing and operating Dagster jobs and assets.
+- `dagster`: The core programming model.
+- `dagster-webserver`: The server that hosts Dagster's web UI for developing and operating Dagster jobs and assets.
 
 Running on Using a Mac with an M1 or M2 chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
 
@@ -96,12 +97,15 @@ You can find the full Dagster documentation [here](https://docs.dagster.io), inc
   </p>
 
 ### Dagster as a productivity platform
+
 Identify the key assets you need to create using a declarative approach, or you can focus on running basic tasks. Embrace CI/CD best practices from the get-go: build reusable components, spot data quality issues, and flag bugs early.
 
 ### Dagster as a robust orchestration engine
+
 Put your pipelines into production with a robust multi-tenant, multi-tool engine that scales technically and organizationally.
 
 ### Dagster as a unified control plane
+
 Maintain control over your data as the complexity scales. Centralize your metadata in one tool with built-in observability, diagnostics, cataloging, and lineage. Spot any issues and identify performance improvement opportunities.
 
 <hr />
@@ -125,15 +129,15 @@ our [Dagster Community](https://dagster.io/community) page.
 
 Join our community here:
 
-- 🌟 [Star us on Github](https://github.com/dagster-io/dagster)
+- 🌟 [Star us on GitHub](https://github.com/dagster-io/dagster)
 - 📥 [Subscribe to our Newsletter](https://dagster.io/newsletter-signup)
 - 🐦 [Follow us on Twitter](https://twitter.com/dagster)
 - 🕴️ [Follow us on LinkedIn](https://linkedin.com/showcase/dagster)
-- 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
+- 📺 [Subscribe to our YouTube channel](https://www.youtube.com/@dagsterio)
 - 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)
 - 🗃 [Browse Slack archives](https://discuss.dagster.io)
-- ✏️ [Start a Github Discussion](https://github.com/dagster-io/dagster/discussions)
+- ✏️ [Start a GitHub Discussion](https://github.com/dagster-io/dagster/discussions)
 
 ## Contributing
 

@@ -16,9 +16,6 @@ from .job_decorator import (
     job as job,
 )
 from .op_decorator import op as op
-from .pipeline_decorator import (
-    pipeline as pipeline,
-)
 from .repository_decorator import (
     repository as repository,
 )

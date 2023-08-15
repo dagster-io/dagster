@@ -1,5 +1,6 @@
 import pytest
 from pandas import DataFrame
+
 from project_fully_featured.assets.recommender.comment_stories import comment_stories
 
 
@@ -7,7 +8,11 @@ from project_fully_featured.assets.recommender.comment_stories import comment_st
     "comments, stories, expected",
     [
         ([[2, 1000, "bob"]], [[1000]], [[2, 1000, "bob"]]),
-        ([[2, 1000, "bob"], [3, 2, "alice"]], [[1000]], [[2, 1000, "bob"], [3, 1000, "alice"]]),
+        (
+            [[2, 1000, "bob"], [3, 2, "alice"]],
+            [[1000]],
+            [[2, 1000, "bob"], [3, 1000, "alice"]],
+        ),
     ],
 )
 def test_comment_stories(comments, stories, expected):

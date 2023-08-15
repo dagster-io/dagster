@@ -18,6 +18,8 @@ class Permissions(str, Enum):
     LAUNCH_PARTITION_BACKFILL = "launch_partition_backfill"
     CANCEL_PARTITION_BACKFILL = "cancel_partition_backfill"
     EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
+    TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
+    EDIT_CONCURRENCY_LIMIT = "edit_concurrency_limit"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -38,6 +40,8 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PARTITION_BACKFILL: False,
     Permissions.CANCEL_PARTITION_BACKFILL: False,
     Permissions.EDIT_DYNAMIC_PARTITIONS: False,
+    Permissions.TOGGLE_AUTO_MATERIALIZE: False,
+    Permissions.EDIT_CONCURRENCY_LIMIT: False,
 }
 
 EDITOR_PERMISSIONS: Dict[str, bool] = {
@@ -55,6 +59,8 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PARTITION_BACKFILL: True,
     Permissions.CANCEL_PARTITION_BACKFILL: True,
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,
+    Permissions.TOGGLE_AUTO_MATERIALIZE: True,
+    Permissions.EDIT_CONCURRENCY_LIMIT: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {

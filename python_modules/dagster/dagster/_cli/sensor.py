@@ -25,6 +25,8 @@ from dagster._core.scheduler.instigation import (
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
+from .utils import get_instance_for_cli
+
 
 @click.group(name="sensor")
 def sensor_cli():
@@ -127,7 +129,7 @@ def sensor_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -186,7 +188,7 @@ def sensor_start_command(sensor_name, start_all, **kwargs):
 
 
 def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -223,7 +225,7 @@ def sensor_stop_command(sensor_name, **kwargs):
 
 
 def execute_stop_command(sensor_name, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repo:
@@ -269,7 +271,7 @@ def sensor_preview_command(sensor_name, since, last_run_key, cursor, **kwargs):
 def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_code_location_from_kwargs(
             instance,
             version=dagster_version,
@@ -347,7 +349,7 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_code_location_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as code_location:

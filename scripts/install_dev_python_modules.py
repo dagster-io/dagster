@@ -41,8 +41,10 @@ def main(
     # Supported on all Python versions.
     install_targets += [
         "-e python_modules/dagster[black,pyright,ruff,test]",
+        "-e python_modules/dagster-external",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
+        "-e python_modules/dagster-webserver",
         "-e python_modules/dagit",
         "-e python_modules/automation",
         "-e python_modules/libraries/dagster-managed-elements",

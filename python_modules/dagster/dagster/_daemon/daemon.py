@@ -19,7 +19,10 @@ from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._daemon.monitoring import execute_monitoring_iteration
+from dagster._daemon.monitoring import (
+    execute_concurrency_slots_iteration,
+    execute_run_monitoring_iteration,
+)
 from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
@@ -159,12 +162,10 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
             self._logger.error(
-                (
-                    "Another %s daemon is still sending heartbeats. You likely have multiple "
-                    "daemon processes running at once, which is not supported. "
-                    "Last heartbeat daemon id: %s, "
-                    "Current daemon_id: %s"
-                ),
+                "Another %s daemon is still sending heartbeats. You likely have multiple "
+                "daemon processes running at once, which is not supported. "
+                "Last heartbeat daemon id: %s, "
+                "Current daemon_id: %s",
                 daemon_type,
                 last_stored_heartbeat.daemon_id,
                 daemon_uuid,
@@ -295,4 +296,5 @@ class MonitoringDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
     ) -> DaemonIterator:
-        yield from execute_monitoring_iteration(workspace_process_context, self._logger)
+        yield from execute_run_monitoring_iteration(workspace_process_context, self._logger)
+        yield from execute_concurrency_slots_iteration(workspace_process_context, self._logger)

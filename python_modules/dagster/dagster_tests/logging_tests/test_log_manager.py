@@ -21,35 +21,35 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 def test_metadata_event_tags():
     logging_metadata = DagsterLoggingMetadata(
         run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
-        pipeline_name="my_pipeline",
-        pipeline_tags={"foo": "bar"},
+        job_name="my_job",
+        job_tags={"foo": "bar"},
     )
 
     all_tags = logging_metadata.all_tags()
     event_tags = logging_metadata.event_tags()
 
-    assert all_tags["pipeline_name"] == "my_pipeline"
-    assert all_tags["pipeline_tags"] == "{'foo': 'bar'}"
+    assert all_tags["job_name"] == "my_job"
+    assert all_tags["job_tags"] == "{'foo': 'bar'}"
 
-    assert event_tags["pipeline_name"] == "my_pipeline"
-    assert "pipeline_tags" not in event_tags
+    assert event_tags["job_name"] == "my_job"
+    assert "job_tags" not in event_tags
 
 
 def test_construct_log_string_for_event():
     step_output_event = DagsterEvent(
         event_type_value="STEP_OUTPUT",
-        pipeline_name="my_pipeline",
-        step_key="solid2",
-        node_handle=NodeHandle("solid2", None),
+        job_name="my_job",
+        step_key="op2",
+        node_handle=NodeHandle("op2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
-        event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("solid2", "result")),
-        message='Yielded output "result" of type "Any" for step "solid2". (Type check passed).',
+        event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("op2", "result")),
+        message='Yielded output "result" of type "Any" for step "op2". (Type check passed).',
         pid=54348,
     )
 
     logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
     )
 
     dagster_message_props = DagsterMessageProps(
@@ -59,39 +59,39 @@ def test_construct_log_string_for_event():
 
     assert (
         construct_log_string(logging_metadata=logging_metadata, message_props=dagster_message_props)
-        == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded"
-        ' output "result" of type "Any" for step "solid2". (Type check passed).'
+        == "my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded"
+        ' output "result" of type "Any" for step "op2". (Type check passed).'
     )
 
 
 def test_construct_log_string_for_log():
     logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
     )
     dagster_message_props = DagsterMessageProps(orig_message="hear my tale")
     assert (
         construct_log_string(logging_metadata, dagster_message_props)
-        == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - hear my tale"
+        == "my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - hear my tale"
     )
 
 
 def make_log_string(error, error_source=None):
     step_failure_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
-        pipeline_name="my_pipeline",
-        step_key="solid2",
-        node_handle=NodeHandle("solid2", None),
+        job_name="my_job",
+        step_key="op2",
+        node_handle=NodeHandle("op2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepFailureData(
             error=error, user_failure_data=None, error_source=error_source
         ),
-        message='Execution of step "solid2" failed.',
+        message='Execution of step "op2" failed.',
         pid=54348,
     )
 
     logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
     )
     dagster_message_props = DagsterMessageProps(
         orig_message=step_failure_event.message,
@@ -108,16 +108,14 @@ def test_construct_log_string_with_error():
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = make_log_string(error)
-    expected_start = textwrap.dedent(
-        """
-        my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "solid2" failed.
+    expected_start = textwrap.dedent("""
+        my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         ValueError: some error
 
         Stack Trace:
           File "
-        """
-    ).strip()
+        """).strip()
     assert log_string.startswith(expected_start)
 
 
@@ -132,9 +130,8 @@ def test_construct_log_string_with_user_code_error():
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = make_log_string(error, error_source=ErrorSource.USER_CODE_ERROR)
-    expected_start = textwrap.dedent(
-        """
-        my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "solid2" failed.
+    expected_start = textwrap.dedent("""
+        my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         dagster._core.errors.DagsterUserCodeExecutionError: Error occurred while eating a banana:
 
@@ -142,8 +139,7 @@ def test_construct_log_string_with_user_code_error():
 
         Stack Trace:
           File "
-        """
-    ).strip()
+        """).strip()
 
     assert log_string.startswith(expected_start)
 
@@ -162,40 +158,34 @@ def test_construct_log_string_with_error_raise_from():
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = make_log_string(error)
-    expected_start = textwrap.dedent(
-        """
-        my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "solid2" failed.
+    expected_start = textwrap.dedent("""
+        my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         ValueError: outer error
 
         Stack Trace:
           File "
-        """
-    ).strip()
+        """).strip()
 
     assert log_string.startswith(expected_start)
 
-    expected_cause_substr = textwrap.dedent(
-        """
+    expected_cause_substr = textwrap.dedent("""
         The above exception was caused by the following exception:
         ValueError: middle error
 
         Stack Trace:
           File "
-        """
-    ).strip()
+        """).strip()
 
     assert expected_cause_substr in log_string
 
-    expected_context_substr = textwrap.dedent(
-        """
+    expected_context_substr = textwrap.dedent("""
         The above exception occurred during handling of the following exception:
         ValueError: inner error
 
         Stack Trace:
           File "
-        """
-    ).strip()
+        """).strip()
 
     assert expected_context_substr in log_string
 
@@ -222,7 +212,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
         log_manager=DagsterLogManager(
             dagster_handler=DagsterLogHandler(
                 logging_metadata=DagsterLoggingMetadata(
-                    run_id="123456", pipeline_name="pipeline", step_key="some_step"
+                    run_id="123456", job_name="job", step_key="some_step"
                 ),
                 loggers=[user_logger] if not use_handler else [],
                 handlers=[capture_handler] if use_handler else [],
@@ -240,7 +230,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
     captured_record = capture_handler.captured[0]
 
     assert captured_record.name == "python_log" if use_handler else "user_logger"
-    assert captured_record.msg == "pipeline - 123456 - some_step - critical msg"
+    assert captured_record.msg == "job - 123456 - some_step - critical msg"
     assert captured_record.levelno == logging.CRITICAL
     assert captured_record.dagster_meta["orig_message"] == "critical msg"
 
@@ -267,7 +257,7 @@ def test_log_handler_emit_by_handlers_level():
             dagster_handler=DagsterLogHandler(
                 logging_metadata=DagsterLoggingMetadata(
                     run_id="123456",
-                    pipeline_name="pipeline",
+                    job_name="job",
                     step_key="some_step",
                 ),
                 loggers=[],
@@ -286,7 +276,7 @@ def test_log_handler_emit_by_handlers_level():
     captured_record = capture_handler.captured[0]
 
     assert captured_record.name == "root"
-    assert captured_record.msg == "pipeline - 123456 - some_step - critical msg"
+    assert captured_record.msg == "job - 123456 - some_step - critical msg"
     assert captured_record.levelno == logging.CRITICAL
     assert captured_record.dagster_meta["orig_message"] == "critical msg"
 

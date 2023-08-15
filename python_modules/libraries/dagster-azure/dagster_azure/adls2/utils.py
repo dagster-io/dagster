@@ -20,7 +20,7 @@ def _create_url(storage_account, subdomain):
     return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 
-def create_adls2_client(storage_account, credential):
+def create_adls2_client(storage_account: str, credential) -> DataLakeServiceClient:
     """Create an ADLS2 client."""
     account_url = _create_url(storage_account, "dfs")
     return DataLakeServiceClient(account_url, credential)

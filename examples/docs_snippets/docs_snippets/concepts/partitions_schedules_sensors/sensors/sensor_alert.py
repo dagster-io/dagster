@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 
 # start_alert_sensor_marker
@@ -13,7 +13,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=(
+        text=(
             f'Job "{context.dagster_run.job_name}" failed. Error:'
             f" {context.failure_event.message}"
         ),
@@ -117,7 +117,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.dagster_run.job_name}" succeeded.',
+        text=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 
 
@@ -174,7 +174,7 @@ my_email_sensor(run_status_sensor_context)
 
 # end_run_status_sensor_testing_marker
 
-from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster import SensorDefinition
 from typing import List
 
 my_jobs: List[SensorDefinition] = []

@@ -36,7 +36,7 @@ Once you've done this, you can run:
 dagster dev
 ```
 
-to view this example in Dagster's UI, Dagit.
+to view this example in the Dagster UI.
 
 ---
 
@@ -77,7 +77,7 @@ The way we model resources helps separate the business logic in code from enviro
 
 - [`ParquetIOManager`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py): stores outputs as parquet files in your local file system. It minimizes setup difficulty and is useful for local development.
 - [DuckDBIOManager](/\_apidocs/libraries/dagster-duckdb#dagster_duckdb): Dagster provided DuckDB I/O manager that can store and load data as Pandas or PySpark DataFrames. Useful for local development since DuckDB runs locally and requires minimal setup. In this example, a DuckDB I/O manager that can handle Pandas and PySpark DataFrames is built using the <PyObject module="dagster_duckdb" object="build_duckdb_io_manager" /> function.
-- [`SnowflakeIOManager`](/integrations/snowflake): Dagster provided Snowflake I/O manager that can store and load data as Pandas or PySpark DataFrames. In this example, a DuckDB I/O manager that can handle Pandas and PySpark DataFrames is built using the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> function.
+- [`SnowflakeIOManager`](/integrations/snowflake): Dagster provided Snowflake I/O manager that can store and load data as Pandas or PySpark DataFrames. In this example, a Snowflake I/O manager that can handle Pandas and PySpark DataFrames is built using the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> function.
 
 ### Scheduling and triggering jobs
 

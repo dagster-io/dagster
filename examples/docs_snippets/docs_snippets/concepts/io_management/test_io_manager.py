@@ -1,4 +1,8 @@
-from dagster import IOManager, build_input_context, build_output_context, io_manager
+from dagster import (
+    IOManager,
+    build_input_context,
+    build_output_context,
+)
 
 
 class MyIOManager(IOManager):
@@ -14,20 +18,15 @@ class MyIOManager(IOManager):
         ]
 
 
-@io_manager
-def my_io_manager(_):
-    return MyIOManager()
-
-
 def test_my_io_manager_handle_output():
-    manager = my_io_manager(None)
+    manager = MyIOManager()
     context = build_output_context(name="abc", step_key="123")
     manager.handle_output(context, 5)
     assert manager.storage_dict[("123", "abc")] == 5
 
 
 def test_my_io_manager_load_input():
-    manager = my_io_manager(None)
+    manager = MyIOManager()
     manager.storage_dict[("123", "abc")] = 5
 
     context = build_input_context(

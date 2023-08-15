@@ -63,6 +63,33 @@ def test_format_docstring_for_description():
         == no_indentation_at_start_expected
     )
 
+    def indentation_at_start():
+        """
+        abc
+        123.
+        """  # noqa
+
+    indentation_at_start_expected = "abc\n123."
+
+    assert format_docstring_for_description(indentation_at_start) == indentation_at_start_expected
+
+    def summary_line_and_description():
+        """This is the summary line.
+
+        This is a longer description of what my asset does, and I'd like for the
+        newline between this paragraph and the summary line to be preserved.
+        """
+
+    indentation_at_start_expected = (
+        "This is the summary line.\n\nThis is a longer description of what my asset does, and I'd"
+        " like for the\nnewline between this paragraph and the summary line to be preserved."
+    )
+
+    assert (
+        format_docstring_for_description(summary_line_and_description)
+        == indentation_at_start_expected
+    )
+
 
 def test_empty():
     def empty_docstring():

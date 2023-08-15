@@ -9,7 +9,7 @@ from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
-    "miscellaneous": ":sparkle",
+    "miscellaneous": ":sparkle:",
 }
 
 
@@ -41,8 +41,8 @@ def build_tox_step(
         None,
         [
             "tox",
-            "-vv",  # extra-verbose
             "-c %s " % tox_file if tox_file else None,
+            "-vv",  # extra-verbose
             "-e",
             tox_env,
         ],

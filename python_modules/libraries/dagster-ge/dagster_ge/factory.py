@@ -3,35 +3,51 @@ from typing import Any, Dict
 
 import great_expectations as ge
 from dagster import (
+    ConfigurableResource,
     ExpectationResult,
+    IAttachDifferentObjectToOpContext,
     In,
     MetadataValue,
-    Noneable,
+    OpExecutionContext,
     Out,
     Output,
-    StringSource,
     _check as check,
     op,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_pandas import DataFrame
 from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
+from pydantic import Field
 
 try:
     # ge < v0.13.0
-    from great_expectations.core import convert_to_json_serializable  # type: ignore
+    from great_expectations.core import convert_to_json_serializable
 except ImportError:
     # ge >= v0.13.0
     from great_expectations.core.util import convert_to_json_serializable
 
 
-@resource(config_schema={"ge_root_dir": Noneable(StringSource)})
+class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    ge_root_dir: str = Field(
+        default=None,
+        description="The root directory for your Great Expectations project.",
+    )
+
+    def get_data_context(self):
+        if self.ge_root_dir is None:
+            return ge.data_context.DataContext()
+        return ge.data_context.DataContext(context_root_dir=self.ge_root_dir)
+
+    def get_object_to_set_on_execution_context(self):
+        return self.get_data_context()
+
+
+@dagster_maintained_resource
+@resource(config_schema=GEContextResource.to_config_schema())
 def ge_data_context(context):
-    if context.resource_config["ge_root_dir"] is None:
-        yield ge.data_context.DataContext()
-    else:
-        yield ge.data_context.DataContext(context_root_dir=context.resource_config["ge_root_dir"])
+    return GEContextResource.from_resource_context(context).get_data_context()
 
 
 def ge_validation_op_factory(
@@ -82,8 +98,9 @@ def ge_validation_op_factory(
         required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
+    def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
+
         if validation_operator_name is not None:
             validation_operator = validation_operator_name
         else:
@@ -192,8 +209,9 @@ def ge_validation_op_factory_v3(
         required_resource_keys={"ge_data_context"},
         tags={"kind": "ge"},
     )
-    def _ge_validation_fn(context, dataset):
+    def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
+
         validator_kwargs = {
             "datasource_name": datasource_name,
             "data_connector_name": data_connector_name,

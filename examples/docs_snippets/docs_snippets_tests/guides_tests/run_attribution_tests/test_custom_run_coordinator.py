@@ -7,7 +7,7 @@ from dagster_tests.core_tests.run_coordinator_tests.test_queued_run_coordinator 
 from mock import patch
 
 from dagster._core.run_coordinator import SubmitRunContext
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from docs_snippets.guides.dagster.run_attribution.custom_run_coordinator import (
     CustomRunCoordinator,
 )

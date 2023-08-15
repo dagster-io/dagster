@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Union, cast
+from typing import Any, Dict, Mapping, Optional, cast
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -12,20 +12,23 @@ from dagster import (
     NodeInvocation,
     _check as check,
 )
+from dagster._config import Field, StringSource
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions import (
     GraphDefinition,
     InputMapping,
-    ModeDefinition,
+    JobDefinition,
     OpDefinition,
     OutputMapping,
-    PipelineDefinition,
 )
+from dagster._core.definitions.dependency import Node
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.execution.api import create_execution_plan, execute_pipeline
+from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
-from dagster._core.execution.context_creation_pipeline import (
+from dagster._core.execution.context_creation_job import (
     create_context_creation_data,
     create_execution_data,
     create_executor,
@@ -35,9 +38,13 @@ from dagster._core.execution.context_creation_pipeline import (
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.utility_solids import create_stub_op
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.sqlite_storage import SqliteStorageConfig
+from dagster._core.utility_ops import create_stub_op
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
+from dagster._utils.concurrency import ConcurrencyClaimStatus
 
 # re-export
 from ..temp_file import (
@@ -49,9 +56,6 @@ from ..temp_file import (
     get_temp_file_names as get_temp_file_names,
 )
 
-if TYPE_CHECKING:
-    from dagster._core.execution.results import CompositeSolidExecutionResult, OpExecutionResult
-
 
 def create_test_pipeline_execution_context(
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None
@@ -59,19 +63,19 @@ def create_test_pipeline_execution_context(
     loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
-    mode_def = ModeDefinition(logger_defs=loggers)
-    pipeline_def = PipelineDefinition(
-        name="test_legacy_context", node_defs=[], mode_defs=[mode_def]
-    )
+    job_def = GraphDefinition(
+        name="test_legacy_context",
+        node_defs=[],
+    ).to_job(executor_def=in_process_executor, logger_defs=logger_defs)
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
-    pipeline_run = DagsterRun(pipeline_name="test_legacy_context", run_config=run_config)
+    dagster_run = DagsterRun(job_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
+    execution_plan = create_execution_plan(job=job_def, run_config=run_config)
     creation_data = create_context_creation_data(
-        InMemoryPipeline(pipeline_def),
+        InMemoryJob(job_def),
         execution_plan,
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     )
     log_manager = create_log_manager(creation_data)
@@ -89,102 +93,51 @@ def create_test_pipeline_execution_context(
     )
 
 
-def _dep_key_of(solid):
-    return NodeInvocation(solid.definition.name, solid.name)
+def _dep_key_of(node: Node) -> NodeInvocation:
+    return NodeInvocation(node.definition.name, node.name)
 
 
-def build_pipeline_with_input_stubs(
-    pipeline_def: PipelineDefinition, inputs: Mapping[str, Mapping[str, object]]
-) -> PipelineDefinition:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def build_job_with_input_stubs(
+    job_def: JobDefinition, inputs: Mapping[str, Mapping[str, object]]
+) -> JobDefinition:
+    check.inst_param(job_def, "pipeline_def", JobDefinition)
     check.mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
-    deps: Dict[str, Dict[str, object]] = defaultdict(dict)
-    for solid_name, dep_dict in pipeline_def.dependencies.items():
+    deps: Dict[NodeInvocation, Dict[str, object]] = defaultdict(dict)
+    for node_name, dep_dict in job_def.dependencies.items():
         for input_name, dep in dep_dict.items():
-            deps[solid_name][input_name] = dep  # type: ignore
+            deps[node_name][input_name] = dep
 
-    stub_solid_defs = []
+    stub_node_defs = []
 
-    for solid_name, input_dict in inputs.items():
-        if not pipeline_def.has_node_named(solid_name):
+    for node_name, input_dict in inputs.items():
+        if not job_def.has_node_named(node_name):
             raise DagsterInvariantViolationError(
                 (
-                    "You are injecting an input value for solid {solid_name} "
-                    "into pipeline {pipeline_name} but that solid was not found"
-                ).format(solid_name=solid_name, pipeline_name=pipeline_def.name)
+                    "You are injecting an input value for node {node_name} "
+                    "into pipeline {job_name} but that node was not found"
+                ).format(node_name=node_name, job_name=job_def.name)
             )
 
-        solid = pipeline_def.get_node_named(solid_name)
+        node = job_def.get_node_named(node_name)
         for input_name, input_value in input_dict.items():
-            stub_solid_def = create_stub_op(
-                "__stub_{solid_name}_{input_name}".format(
-                    solid_name=solid_name, input_name=input_name
+            stub_node_def = create_stub_op(
+                "__stub_{node_name}_{input_name}".format(
+                    node_name=node_name, input_name=input_name
                 ),
                 input_value,
             )
-            stub_solid_defs.append(stub_solid_def)
-            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
+            stub_node_defs.append(stub_node_def)
+            deps[_dep_key_of(node)][input_name] = DependencyDefinition(stub_node_def.name)
 
-    return PipelineDefinition(
-        name=pipeline_def.name + "_stubbed",
-        node_defs=[*pipeline_def.top_level_node_defs, *stub_solid_defs],
-        mode_defs=pipeline_def.mode_definitions,
-        dependencies=deps,  # type: ignore
+    return JobDefinition(
+        name=job_def.name + "_stubbed",
+        graph_def=GraphDefinition(
+            node_defs=[*job_def.top_level_node_defs, *stub_node_defs],
+            dependencies=deps,  # type: ignore
+        ),
+        resource_defs=job_def.resource_defs,
     )
-
-
-def execute_solids_within_pipeline(
-    pipeline_def: PipelineDefinition,
-    solid_names: AbstractSet[str],
-    inputs: Optional[Mapping[str, Mapping[str, object]]] = None,
-    run_config: Optional[Mapping[str, object]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    instance: Optional[DagsterInstance] = None,
-) -> Mapping[str, Union["CompositeSolidExecutionResult", "OpExecutionResult"]]:
-    """Execute a set of solids within an existing pipeline.
-
-    Intended to support tests. Input values may be passed directly.
-
-    Args:
-        pipeline_def (PipelineDefinition): The pipeline within which to execute the solid.
-        solid_names (FrozenSet[str]): A set of the solid names, or the aliased solids, to execute.
-        inputs (Optional[Dict[str, Dict[str, Any]]]): A dict keyed on solid names, whose values are
-            dicts of input names to input values, used to pass input values to the solids directly.
-            You may also use the ``run_config`` to configure any inputs that are configurable.
-        run_config (Optional[dict]): The configuration that parameterized this
-            execution, as a dict.
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-
-    Returns:
-        Dict[str, Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results of
-        executing the solids, keyed by solid name.
-    """
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    check.set_param(solid_names, "solid_names", of_type=str)
-    inputs = check.opt_mapping_param(inputs, "inputs", key_type=str, value_type=dict)
-
-    sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
-    stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
-    result = execute_pipeline(
-        stubbed_pipeline,
-        run_config=run_config,
-        mode=mode,
-        preset=preset,
-        tags=tags,
-        instance=instance,
-    )
-
-    return {sr.node.name: sr for sr in result.node_result_list}
 
 
 def wrap_op_in_graph(
@@ -285,53 +238,6 @@ def wrap_op_in_graph_and_execute(
     )
 
 
-def execute_solid_within_pipeline(
-    pipeline_def: PipelineDefinition,
-    solid_name: str,
-    inputs: Optional[Dict[str, object]] = None,
-    run_config: Optional[Dict[str, object]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
-    tags: Optional[Dict[str, str]] = None,
-    instance: Optional[DagsterInstance] = None,
-) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
-    """Execute a single solid within an existing pipeline.
-
-    Intended to support tests. Input values may be passed directly.
-
-    Args:
-        pipeline_def (PipelineDefinition): The pipeline within which to execute the solid.
-        solid_name (str): The name of the solid, or the aliased solid, to execute.
-        inputs (Optional[Dict[str, Any]]): A dict of input names to input values, used to
-            pass input values to the solid directly. You may also use the ``run_config`` to
-            configure any inputs that are configurable.
-        run_config (Optional[dict]): The configuration that parameterized this
-            execution, as a dict.
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-
-    Returns:
-        Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
-        solid.
-    """
-    return execute_solids_within_pipeline(
-        pipeline_def,
-        solid_names={solid_name},
-        inputs={solid_name: inputs} if inputs else None,
-        run_config=run_config,
-        mode=mode,
-        preset=preset,
-        tags=tags,
-        instance=instance,
-    )[solid_name]
-
-
 @contextmanager
 def copy_directory(src):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -376,3 +282,53 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
 
     def wipe(self, instance: DagsterInstance) -> None:
         pass
+
+
+class TestStorageConfig(SqliteStorageConfig):
+    # interval to sleep between claim checks
+    sleep_interval: int
+
+
+class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, ConfigurableClass):
+    """Sqlite is sorta supported for concurrency, as long as the rate of concurrent writes is tolerably
+    low.  Officially, we should not support, but in the spirit of getting code coverage in the core
+    dagster package, let's mark it as that.
+    """
+
+    __test__ = False
+
+    def __init__(
+        self,
+        base_dir: str,
+        sleep_interval: Optional[float] = None,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
+        self._sleep_interval = sleep_interval
+        self._check_calls = defaultdict(int)
+        super().__init__(base_dir, inst_data)
+
+    @classmethod
+    def config_type(cls) -> UserConfigSchema:
+        return {"base_dir": StringSource, "sleep_interval": Field(float, is_required=False)}
+
+    @classmethod
+    def from_config_value(
+        cls, inst_data: Optional[ConfigurableClassData], config_value: TestStorageConfig
+    ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
+        return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
+
+    @property
+    def supports_global_concurrency_limits(self) -> bool:
+        return True
+
+    def get_check_calls(self, step_key: str) -> int:
+        return self._check_calls[step_key]
+
+    def check_concurrency_claim(
+        self, concurrency_key: str, run_id: str, step_key: str
+    ) -> ConcurrencyClaimStatus:
+        self._check_calls[step_key] += 1
+        claim_status = super().check_concurrency_claim(concurrency_key, run_id, step_key)
+        if not self._sleep_interval:
+            return claim_status
+        return claim_status.with_sleep_interval(float(self._sleep_interval))

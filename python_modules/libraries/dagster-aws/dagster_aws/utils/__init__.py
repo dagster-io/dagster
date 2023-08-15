@@ -1,8 +1,11 @@
+from typing import Optional, TypeVar
+
 import dagster._check as check
 from botocore import __version__ as botocore_version
 from botocore.config import Config
-from dagster import Field
+from dagster import ConfigurableResource
 from packaging import version
+from pydantic import Field
 
 
 def construct_boto_client_retry_config(max_attempts):
@@ -16,24 +19,20 @@ def construct_boto_client_retry_config(max_attempts):
     return Config(retries=retry_config)
 
 
-BOTO3_SESSION_CONFIG = {
-    "region_name": Field(
-        str,
-        description="Specifies a custom region for the Boto3 session",
-        is_required=False,
-    ),
-    "max_attempts": Field(
-        int,
+T = TypeVar("T")
+
+
+class ResourceWithBoto3Configuration(ConfigurableResource):
+    region_name: Optional[str] = Field(
+        default=None, description="Specifies a custom region for the Boto3 session"
+    )
+    max_attempts: int = Field(
+        default=5,
         description=(
-            "This provides Boto3's retry handler with a value of maximum retry attempts, "
-            "where the initial call counts toward the max_attempts value that you provide"
+            "This provides Boto3's retry handler with a value of maximum retry attempts, where the"
+            " initial call counts toward the max_attempts value that you provide"
         ),
-        is_required=False,
-        default_value=5,
-    ),
-    "profile_name": Field(
-        str,
-        description="Specifies a profile to connect that session",
-        is_required=False,
-    ),
-}
+    )
+    profile_name: Optional[str] = Field(
+        default=None, description="Specifies a profile to connect that session"
+    )

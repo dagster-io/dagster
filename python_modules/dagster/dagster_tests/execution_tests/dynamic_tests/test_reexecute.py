@@ -15,6 +15,7 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
@@ -363,9 +364,9 @@ def fail_once(context: OpExecutionContext, x):
     map_key = context.get_mapping_key()
     if map_key:
         key += f"[{map_key}]"
-    if context.instance.run_storage.kvs_get({key}).get(key):
+    if context.instance.run_storage.get_cursor_values({key}).get(key):
         return x
-    context.instance.run_storage.kvs_set({key: "true"})
+    context.instance.run_storage.set_cursor_values({key: "true"})
     raise Exception("failed (just this once)")
 
 
@@ -484,11 +485,11 @@ def fail_n(context: OpExecutionContext, x):
     assert map_key
     key = f"{context.op_handle.name}[{map_key}]"
 
-    fails = int(context.instance.run_storage.kvs_get({key}).get(key, "0"))
+    fails = int(context.instance.run_storage.get_cursor_values({key}).get(key, "0"))
     if fails >= int(map_key):
         return x
     fails += 1
-    context.instance.run_storage.kvs_set({key: str(fails)})
+    context.instance.run_storage.set_cursor_values({key: str(fails)})
     raise Exception(f"failed {fails} out of {map_key}")
 
 
@@ -572,14 +573,15 @@ def asset_job():
         ),
         executor_def=in_process_executor,
     ).resolve(
-        assets=[
-            branching_asset,
-            echo_branching,
-            absent_asset,
-            mapped_fail_asset,
-            echo_mapped,
-        ],
-        source_assets=[],
+        asset_graph=AssetGraph.from_assets(
+            [
+                branching_asset,
+                echo_branching,
+                absent_asset,
+                mapped_fail_asset,
+                echo_mapped,
+            ]
+        )
     )
 
 

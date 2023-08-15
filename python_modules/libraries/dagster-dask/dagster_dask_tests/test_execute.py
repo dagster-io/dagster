@@ -162,13 +162,11 @@ def sleepy_dask_job() -> JobDefinition:
     return job_def
 
 
-@pytest.mark.skip(
-    """
+@pytest.mark.skip("""
     Fails because 'DagsterExecutionInterruptedError' is not actually raised-- there's a timeout
     instead. It's not clear that the test ever was working-- prior to conversion to op/job/graph
     APIs, it appears to have been mistakenly not using the dask executor. 
-    """
-)
+    """)
 def test_dask_terminate():
     run_config = {
         "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
@@ -185,13 +183,13 @@ def test_dask_terminate():
     result_types = []
 
     with instance_for_test() as instance:
-        dagster_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_job(
             sleepy_dask_job(),
             run_config=run_config,
         )
 
         for event in execute_run_iterator(
-            pipeline=reconstructable(sleepy_dask_job),
+            i_job=reconstructable(sleepy_dask_job),
             dagster_run=dagster_run,
             instance=instance,
         ):

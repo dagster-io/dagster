@@ -29,7 +29,11 @@ class DatabricksRunLifeCycleState(str, Enum):
             DatabricksRunLifeCycleState.TERMINATING,
             DatabricksRunLifeCycleState.TERMINATED,
             DatabricksRunLifeCycleState.INTERNAL_ERROR,
+            DatabricksRunLifeCycleState.SKIPPED,
         ]
+
+    def is_skipped(self) -> bool:
+        return self == DatabricksRunLifeCycleState.SKIPPED
 
 
 class DatabricksRunState(NamedTuple):
@@ -42,6 +46,9 @@ class DatabricksRunState(NamedTuple):
     def has_terminated(self) -> bool:
         """Has the job terminated?"""
         return self.life_cycle_state.has_terminated()
+
+    def is_skipped(self) -> bool:
+        return self.life_cycle_state.is_skipped()
 
     def is_successful(self) -> bool:
         """Was the job successful?"""

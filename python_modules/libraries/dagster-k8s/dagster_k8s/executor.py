@@ -4,13 +4,13 @@ import kubernetes.config
 from dagster import (
     Field,
     IntSource,
+    Noneable,
     StringSource,
     _check as check,
     executor,
 )
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
@@ -38,6 +38,24 @@ from .job import (
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),
     {
+        "load_incluster_config": Field(
+            bool,
+            is_required=False,
+            description="""Whether or not the executor is running within a k8s cluster already. If
+            the job is using the `K8sRunLauncher`, the default value of this parameter will be
+            the same as the corresponding value on the run launcher.
+            If ``True``, we assume the executor is running within the target cluster and load config
+            using ``kubernetes.config.load_incluster_config``. Otherwise, we will use the k8s config
+            specified in ``kubeconfig_file`` (using ``kubernetes.config.load_kube_config``) or fall
+            back to the default kubeconfig.""",
+        ),
+        "kubeconfig_file": Field(
+            Noneable(str),
+            is_required=False,
+            description="""Path to a kubeconfig file to use, if not using default kubeconfig. If
+            the job is using the `K8sRunLauncher`, the default value of this parameter will be
+            the same as the corresponding value on the run launcher.""",
+        ),
         "job_namespace": Field(StringSource, is_required=False),
         "retries": get_retries_config(),
         "max_concurrent": Field(
@@ -94,14 +112,11 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     Configuration set using `tags` on a `@job` will only apply to the `run` level. For configuration
     to apply at each `step` it must be set using `tags` for each `@op`.
     """
-    run_launcher = init_context.instance.run_launcher
-    if not isinstance(run_launcher, K8sRunLauncher):
-        raise DagsterUnmetExecutorRequirementsError(
-            (
-                "This engine is only compatible with a K8sRunLauncher; configure the "
-                "K8sRunLauncher on your instance to use it."
-            ),
-        )
+    run_launcher = (
+        init_context.instance.run_launcher
+        if isinstance(init_context.instance.run_launcher, K8sRunLauncher)
+        else None
+    )
 
     exc_cfg = init_context.executor_config
 
@@ -120,12 +135,22 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
     )
 
+    if "load_incluster_config" in exc_cfg:
+        load_incluster_config = cast(bool, exc_cfg["load_incluster_config"])
+    else:
+        load_incluster_config = run_launcher.load_incluster_config if run_launcher else True
+
+    if "kubeconfig_file" in exc_cfg:
+        kubeconfig_file = cast(Optional[str], exc_cfg["kubeconfig_file"])
+    else:
+        kubeconfig_file = run_launcher.kubeconfig_file if run_launcher else None
+
     return StepDelegatingExecutor(
         K8sStepHandler(
             image=exc_cfg.get("job_image"),  # type: ignore
             container_context=k8s_container_context,
-            load_incluster_config=run_launcher.load_incluster_config,
-            kubeconfig_file=run_launcher.kubeconfig_file,
+            load_incluster_config=load_incluster_config,
+            kubeconfig_file=kubeconfig_file,
         ),
         retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
@@ -196,7 +221,7 @@ class K8sStepHandler(StepHandler):
         step_key = self._get_step_key(step_handler_context)
 
         name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
+            step_handler_context.execute_step_args.run_id,
             step_key,
         )
 
@@ -225,12 +250,22 @@ class K8sStepHandler(StepHandler):
 
         if not job_config.job_image:
             job_config = job_config.with_image(
-                step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
+                step_handler_context.execute_step_args.job_origin.repository_origin.container_image
             )
 
         if not job_config.job_image:
             raise Exception("No image included in either executor config or the job")
 
+        run = step_handler_context.dagster_run
+        labels = {
+            "dagster/job": run.job_name,
+            "dagster/op": step_key,
+            "dagster/run-id": step_handler_context.execute_step_args.run_id,
+        }
+        if run.external_job_origin:
+            labels["dagster/code-location"] = (
+                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,
@@ -238,16 +273,12 @@ class K8sStepHandler(StepHandler):
             pod_name=pod_name,
             component="step_worker",
             user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
-            labels={
-                "dagster/job": step_handler_context.dagster_run.pipeline_name,
-                "dagster/op": step_key,
-                "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
-            },
+            labels=labels,
             env_vars=[
                 *step_handler_context.execute_step_args.get_command_env(),
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": step_handler_context.dagster_run.pipeline_name,
+                    "value": run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
                 *container_context.env,
@@ -262,9 +293,8 @@ class K8sStepHandler(StepHandler):
             },
         )
 
-        self._api_client.batch_api.create_namespaced_job(
-            body=job, namespace=container_context.namespace
-        )
+        namespace = check.not_none(container_context.namespace)
+        self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_key = self._get_step_key(step_handler_context)

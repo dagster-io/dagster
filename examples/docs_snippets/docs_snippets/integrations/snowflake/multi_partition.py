@@ -37,7 +37,7 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     # the time of the row as an integer of seconds since epoch
     full_df = get_iris_data_for_date(date)
 
-    return full_df[full_df["Species"] == species]
+    return full_df[full_df["species"] == species]
 
 
 @asset

@@ -5,12 +5,19 @@ from typing import Any, Dict, Mapping, Optional
 from dotenv import dotenv_values
 from typing_extensions import Self
 
-import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 
 from .loader import SecretsLoader
+
+
+def get_env_var_dict(base_dir: str) -> Dict[str, str]:
+    env_file_path = os.path.join(base_dir, ".env")
+    if not os.path.exists(env_file_path):
+        return {}
+
+    return {key: val for key, val in dotenv_values(env_file_path).items() if val is not None}
 
 
 class EnvFileLoader(SecretsLoader, ConfigurableClass):
@@ -25,14 +32,7 @@ class EnvFileLoader(SecretsLoader, ConfigurableClass):
     def get_secrets_for_environment(self, location_name: Optional[str]) -> Dict[str, str]:
         env_file_path = os.path.join(self._base_dir, ".env")
 
-        if not os.path.exists(env_file_path):
-            return {}
-
-        env_var_dict: Dict[str, str] = {
-            key: check.not_none(val)
-            for key, val in dotenv_values(env_file_path).items()
-            if val is not None
-        }
+        env_var_dict = get_env_var_dict(env_file_path)
 
         if len(env_var_dict):
             logging.getLogger("dagster").info(

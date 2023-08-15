@@ -9,7 +9,7 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-1. Install Python 3.7 or above.
+1. Install Python 3.8 or above.
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
 
@@ -44,7 +44,7 @@ We love to see our community members get involved! If you are planning to contri
    git clone git@github.com:dagster-io/dagster.git
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of rebuild_dagit) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of `rebuild_ui`) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
 
    ```bash
    make dev_install
@@ -70,23 +70,23 @@ Some notes on developing in Dagster:
 - **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
-## Developing Dagit
+## Developing the Dagster webserver/UI
 
-For development, run the Dagit GraphQL server on a different port than the webapp, with any pipeline. For example:
+For development, run an instance of the webserver providing GraphQL service on a different port than the webapp, with any pipeline. For example:
 
 ```bash
 cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/
-dagit -p 3333 -f complex_pipeline.py
+dagster-webserver -p 3333 -f complex_pipeline.py
 ```
 
 Keep this running. Then, in another terminal, run the local development (autoreloading, etc.) version of the webapp:
 
 ```bash
-cd dagster/js_modules/dagit
+cd dagster/js_modules/dagster-ui
 make dev_webapp
 ```
 
-During development, you might find these commands useful. Run them from `dagster/js_modules/dagit`:
+During development, you might find these commands useful. Run them from `dagster/js_modules/dagster-ui`:
 
 - `yarn ts`: Typescript typechecking
 - `yarn lint`: Linting with autofix

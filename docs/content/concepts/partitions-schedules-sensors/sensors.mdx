@@ -43,13 +43,16 @@ To define a sensor, use the <PyObject object="sensor" decorator /> decorator. Th
 Let's say you have a job that logs a filename that is specified in the op configuration of the `process_file` op:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_job_marker endbefore=end_sensor_job_marker
-from dagster import op, job
+from dagster import op, job, Config
 
 
-@op(config_schema={"filename": str})
-def process_file(context):
-    filename = context.op_config["filename"]
-    context.log.info(filename)
+class FileConfig(Config):
+    filename: str
+
+
+@op
+def process_file(context, config: FileConfig):
+    context.log.info(config.filename)
 
 
 @job
@@ -61,7 +64,7 @@ You can write a sensor that watches for new files in a specific directory and yi
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_directory_sensor_marker endbefore=end_directory_sensor_marker
 import os
-from dagster import sensor, RunRequest
+from dagster import sensor, RunRequest, RunConfig
 
 
 @sensor(job=log_file_job)
@@ -71,9 +74,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config=RunConfig(
+                    ops={"process_file": FileConfig(filename=filename)}
+                ),
             )
 ```
 
@@ -90,7 +93,7 @@ def materializes_asset_sensor():
     yield RunRequest(...)
 ```
 
-Once a sensor is added to a <PyObject object="Definitions" /> object with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in Dagit, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
+Once a sensor is added to a <PyObject object="Definitions" /> object with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in the Dagster UI, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
@@ -98,7 +101,7 @@ def my_running_sensor():
     ...
 ```
 
-If you manually start or stop a sensor in Dagit, that will override any default status that is set in code.
+If you manually start or stop a sensor in the UI, that will override any default status that is set in code.
 
 Once your sensor is started, if you're running a [Dagster daemon](/deployment/dagster-daemon) as part of your deployment, the sensor will begin executing immediately without needing to restart the dagster-daemon process.
 
@@ -154,7 +157,7 @@ def my_directory_sensor_cursor(context):
                 continue
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{str(file_mtime)}"
+            run_key = f"{filename}:{file_mtime}"
             run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
@@ -193,7 +196,7 @@ If a sensor evaluation function takes more than 60 seconds to return its results
 
 ## Skipping sensor evaluations
 
-For debugging purposes, it's often useful to describe why a sensor might not yield any runs for a given evaluation. The sensor evaluation function can yield a <PyObject object="SkipReason" /> with a string description that will be displayed in Dagit.
+For debugging purposes, it's often useful to describe why a sensor might not yield any runs for a given evaluation. The sensor evaluation function can yield a <PyObject object="SkipReason" /> with a string description that will be displayed in the UI.
 
 For example, here is our directory sensor that now provides a `SkipReason` when no files are encountered:
 
@@ -217,12 +220,71 @@ def my_directory_sensor_with_skip_reasons():
 
 ---
 
+## Using resources in sensors
+
+Dagster's [resources](/concepts/resources) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided which provides access to an external API. The same resource could be used in the job that the sensor triggers.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_sensor endbefore=end_new_resource_on_sensor dedent=4
+from dagster import (
+    sensor,
+    RunRequest,
+    SensorEvaluationContext,
+    ConfigurableResource,
+    job,
+    Definitions,
+    RunConfig,
+)
+import requests
+from typing import List
+
+class UsersAPI(ConfigurableResource):
+    url: str
+
+    def fetch_users(self) -> List[str]:
+        return requests.get(self.url).json()
+
+@job
+def process_user():
+    ...
+
+@sensor(job=process_user)
+def process_new_users_sensor(
+    context: SensorEvaluationContext,
+    users_api: UsersAPI,
+):
+    last_user = int(context.cursor) if context.cursor else 0
+    users = users_api.fetch_users()
+
+    num_users = len(users)
+    for user_id in users[last_user:]:
+        yield RunRequest(
+            run_key=user_id,
+            tags={"user_id": user_id},
+        )
+
+    context.update_cursor(str(num_users))
+
+defs = Definitions(
+    jobs=[process_user],
+    sensors=[process_new_users_sensor],
+    resources={"users_api": UsersAPI(url="https://my-api.com/users")},
+)
+```
+
+For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing sensors with resources](#testing-sensors-with-resources).
+
+---
+
 ## Testing sensors
 
 <TabGroup>
-<TabItem name="Via Dagit">
+<TabItem name="Via the Dagster UI">
 
-### Via Dagit
+### Via the Dagster UI
 
 <Note>
   <strong>Before you test</strong>: Test evaluations of sensors run the sensor's
@@ -230,7 +292,7 @@ def my_directory_sensor_with_skip_reasons():
   that sensor's function may be executed.
 </Note>
 
-In Dagit, you can manually trigger a test evaluation of a sensor and view the results.
+In the UI, you can manually trigger a test evaluation of a sensor and view the results.
 
 1. Click **Overview > Sensors**.
 
@@ -314,7 +376,7 @@ def my_directory_sensor_cursor(context):
                 continue
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{str(file_mtime)}"
+            run_key = f"{filename}:{file_mtime}"
             run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
@@ -332,6 +394,25 @@ def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
     for run_request in my_directory_sensor_cursor(context):
         assert validate_run_config(log_file_job, run_request.run_config)
+```
+
+#### Testing sensors with resources
+
+For sensors which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the sensor function.
+
+Below is a test for the `process_new_users_sensor` that we defined in the [Using resources in sensors](#using-resources-in-sensors) section, which uses the `users_api` resource.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4
+from dagster import build_sensor_context, validate_run_config
+
+def test_process_new_users_sensor():
+    class FakeUsersAPI:
+        def fetch_users(self) -> List[str]:
+            return ["1", "2", "3"]
+
+    context = build_sensor_context()
+    run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
+    assert len(run_requests) == 3
 ```
 
 </TabItem>
@@ -354,22 +435,22 @@ def logs_then_skips(context):
     return SkipReason("Nothing to do")
 ```
 
-These logs can be viewed in Dagit on the corresponding sensor page, after first enabling the **Experimental schedule/sensor logging view** option in **User Settings**.
+These logs can be viewed in the UI on the corresponding sensor page, after first enabling the **Experimental schedule/sensor logging view** option in **User Settings**.
 
 ---
 
-## Monitoring sensors in Dagit
+## Monitoring sensors in the Dagster UI
 
 <!--
     These images were generated by running
 
     ```
     cd dagster/examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/
-    dagit -f sensors.py
+    dagster-webserver -f sensors.py
     ```
  -->
 
-Using Dagit, you can monitor and operate sensors. Dagit provides multiple views that help with observing sensor evaluations, skip reasons, and errors.
+Using the UI, you can monitor and operate sensors. The UI provides multiple views that help with observing sensor evaluations, skip reasons, and errors.
 
 To view all sensors, navigate to **Overview > Sensors**. Here, you can start and stop sensors, and view their frequency, last tick, and last run:
 
@@ -379,7 +460,7 @@ width={1280}
 height={376}
 />
 
-Click on any sensor to [test the sensor](#via-dagit), monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor.
+Click on any sensor to [test the sensor](#via-the-dagster-ui), monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor.
 
 ---
 
@@ -423,7 +504,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.dagster_run.job_name}" succeeded.',
+        text=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 ```
 
@@ -465,7 +546,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=(
+        text=(
             f'Job "{context.dagster_run.job_name}" failed. Error:'
             f" {context.failure_event.message}"
         ),
@@ -690,35 +771,6 @@ def my_s3_sensor(context):
     context.update_cursor(last_key)
     return run_requests
 ```
-
-### Using resources in sensors
-
-If you want to use resources within your sensor, you can use the <PyObject object="build_resources"/> API to perform the initialization.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_build_resources_example endbefore=end_build_resources_example
-from dagster import resource, build_resources, sensor
-
-
-@resource
-def the_credentials():
-    ...
-
-
-@resource(required_resource_keys={"credentials"})
-def the_db_connection(init_context):
-    get_the_db_connection(init_context.resources.credentials)
-
-
-@sensor(job=the_job)
-def uses_db_connection():
-    with build_resources(
-        {"db_connection": the_db_connection, "credentials": the_credentials}
-    ) as resources:
-        conn = resources.db_connection
-        ...
-```
-
-If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
 
 ---
 

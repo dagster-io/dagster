@@ -40,10 +40,10 @@ Here’s an overview of the main concepts we’ll be using:
 To complete the steps in this guide, you'll need:
 
 - A Dagster Cloud account
-- An existing Branch Deployments setup that uses [GitHub actions](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
+- An existing Branch Deployments setup that uses [GitHub actions](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Gitlab CI/CD](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
-- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-cloud/account/managing-users#branch-deployment-permissions)
+- User permissions in Dagster Cloud that allow you to [access Branch Deployments](/dagster-cloud/account/managing-users/managing-user-roles-permissions)
 
 ---
 
@@ -73,21 +73,24 @@ In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, 
 import pandas as pd
 import requests
 
-from dagster import asset
+from dagster import Config, asset
+
+
+class ItemsConfig(Config):
+    base_item_id: int
 
 
 @asset(
-    config_schema={"N": int},
     io_manager_key="snowflake_io_manager",
 )
-def items(context) -> pd.DataFrame:
+def items(config: ItemsConfig) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
     max_id = requests.get(
         "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
     ).json()
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
+    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         rows.append(requests.get(item_url, timeout=5).json())
 
@@ -123,7 +126,7 @@ At runtime, we’d like to determine which environment our code is running in: b
 
 To ensure we can't accidentally write to production from within our branch deployment, we’ll use a different set of credentials from production and write to our database clone.
 
-Dagster automatically sets certain [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
+Dagster automatically sets certain [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
 
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
 
@@ -142,21 +145,15 @@ snowflake_config = {
 
 resources = {
     "branch": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                **snowflake_config,
-                "database": (
-                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
-                ),
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            **snowflake_config,
+            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
     },
-    "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                **snowflake_config,
-                "database": "PRODUCTION",
-            }
+    "prod": {
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            **snowflake_config,
+            database="PRODUCTION",
         ),
     },
 }
@@ -173,7 +170,7 @@ defs = Definitions(
 )
 ```
 
-Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/developing-testing/environment-variables-and-secrets) for more info about available environment variables.
+Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/managing-deployments/environment-variables-and-secrets) for more info about available environment variables.
 
 ---
 
@@ -182,17 +179,22 @@ Refer to the [Dagster Cloud environment variables documentation](/dagster-cloud/
 We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py startafter=start_clone_db endbefore=end_clone_db
+from dagster_snowflake import SnowflakeConnection
+
+from dagster import In, Nothing, ResourceParam, graph, op
+
+
 @op(required_resource_keys={"snowflake"})
-def drop_database_clone(context):
-    context.resources.snowflake.execute_query(
+def drop_database_clone(snowflake: ResourceParam[SnowflakeConnection]):
+    snowflake.execute_query(
         "DROP DATABASE IF EXISTS"
         f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
     )
 
 
-@op(required_resource_keys={"snowflake"}, ins={"start": In(Nothing)})
-def clone_production_database(context):
-    context.resources.snowflake.execute_query(
+@op(ins={"start": In(Nothing)})
+def clone_production_database(snowflake: ResourceParam[SnowflakeConnection]):
+    snowflake.execute_query(
         "CREATE DATABASE"
         f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE"
         ' "PRODUCTION"'
@@ -216,13 +218,9 @@ We now need to define resources that configure our jobs to the current environme
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_resources endbefore=end_resources
 resources = {
     "branch": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                **snowflake_config,
-                "database": (
-                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
-                ),
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            **snowflake_config,
+            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
         "snowflake": snowflake_resource.configured(
             {
@@ -233,12 +231,10 @@ resources = {
             }
         ),
     },
-    "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                **snowflake_config,
-                "database": "PRODUCTION",
-            }
+    "prod": {
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            **snowflake_config,
+            database="PRODUCTION",
         ),
         "snowflake": snowflake_resource.configured(
             {**snowflake_config, "database": "PRODUCTION"}
@@ -251,15 +247,17 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_repository endbefore=end_repository
 branch_deployment_jobs = [
-    clone_prod.to_job(resource_defs=resources[get_current_env()]),
-    drop_prod_clone.to_job(resource_defs=resources[get_current_env()]),
+    clone_prod.to_job(),
+    drop_prod_clone.to_job(),
 ]
 defs = Definitions(
     assets=[items, comments, stories],
     resources=resources[get_current_env()],
-    jobs=branch_deployment_jobs
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-    else [],
+    jobs=(
+        branch_deployment_jobs
+        if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+        else []
+    ),
 )
 ```
 
@@ -294,7 +292,7 @@ name: Dagster Branch Deployments
           if: github.event.action != 'closed'
           uses: dagster-io/dagster-cloud-action/actions/utils/run@v0.1
           with:
-            location_name: ${{ toJson(matrix.location) }}
+            location_name: ${{ matrix.location.name }}
             deployment: ${{ steps.deploy.outputs.deployment }}
             job: clone_prod
           env:
@@ -429,7 +427,7 @@ name: Dagster Branch Deployments
           if: github.event.action == 'closed'
           uses: dagster-io/dagster-cloud-action/actions/utils/run@v0.1
           with:
-            location_name: ${{ toJson(matrix.location) }}
+            location_name: ${{ matrix.location.name }}
             deployment: ${{ steps.deploy.outputs.deployment }}
             job: drop_prod_clone
           env:

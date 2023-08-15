@@ -1,10 +1,19 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import dagster._check as check
-from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -20,7 +29,8 @@ from .events import (
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import BoundOpExecutionContext, UnboundOpExecutionContext
+    from ..execution.context.invocation import BoundOpExecutionContext
+    from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
@@ -29,104 +39,185 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def op_invocation_result(
-    op_def_or_invocation: Union["OpDefinition", "PendingNodeInvocation[OpDefinition]"],
-    context: Optional["UnboundOpExecutionContext"],
+class SeparatedArgsKwargs(NamedTuple):
+    input_args: Tuple[Any, ...]
+    input_kwargs: Dict[str, Any]
+    resources_by_param_name: Dict[str, Any]
+    config_arg: Any
+
+
+def _separate_args_and_kwargs(
+    compute_fn: "DecoratedOpFunction",
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+    resource_arg_mapping: Dict[str, Any],
+) -> SeparatedArgsKwargs:
+    """Given a decorated compute function, a set of args and kwargs, and set of resource param names,
+    separates the set of resource inputs from op/asset inputs returns a tuple of the categorized
+    args and kwargs.
+
+    We use the remaining args and kwargs to cleanly invoke the compute function, and we use the
+    extracted resource inputs to populate the execution context.
+    """
+    resources_from_args_and_kwargs = {}
+    params = get_function_params(compute_fn.decorated_fn)
+
+    adjusted_args = []
+
+    params_without_context = params[1:] if compute_fn.has_context_arg() else params
+
+    config_arg = kwargs.get("config")
+
+    # Get any (non-kw) args that correspond to resource inputs & strip them from the args list
+    for i, arg in enumerate(args):
+        param = params_without_context[i] if i < len(params_without_context) else None
+        if param and param.kind != inspect.Parameter.KEYWORD_ONLY:
+            if param.name in resource_arg_mapping:
+                resources_from_args_and_kwargs[param.name] = arg
+                continue
+            if param.name == "config":
+                config_arg = arg
+                continue
+
+        adjusted_args.append(arg)
+
+    # Get any kwargs that correspond to resource inputs & strip them from the kwargs dict
+    for resource_arg in resource_arg_mapping:
+        if resource_arg in kwargs:
+            resources_from_args_and_kwargs[resource_arg] = kwargs[resource_arg]
+
+    adjusted_kwargs = {
+        k: v for k, v in kwargs.items() if k not in resources_from_args_and_kwargs and k != "config"
+    }
+
+    return SeparatedArgsKwargs(
+        input_args=tuple(adjusted_args),
+        input_kwargs=adjusted_kwargs,
+        resources_by_param_name=resources_from_args_and_kwargs,
+        config_arg=config_arg,
+    )
+
+
+def direct_invocation_result(
+    def_or_invocation: Union[
+        "OpDefinition", "PendingNodeInvocation[OpDefinition]", "AssetsDefinition"
+    ],
     *args,
     **kwargs,
 ) -> Any:
-    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-    from dagster._core.execution.context.invocation import build_op_context
-
-    from .composition import PendingNodeInvocation
-
-    op_def = (
-        op_def_or_invocation.node_def
-        if isinstance(op_def_or_invocation, PendingNodeInvocation)
-        else op_def_or_invocation
+    from dagster._config.pythonic_config import Config
+    from dagster._core.execution.context.invocation import (
+        UnboundOpExecutionContext,
+        build_op_context,
     )
 
-    _check_invocation_requirements(op_def, context)
+    from ..execution.plan.compute_generator import invoke_compute_fn
+    from .assets import AssetsDefinition
+    from .composition import PendingNodeInvocation
+    from .decorators.op_decorator import DecoratedOpFunction
+    from .op_definition import OpDefinition
+
+    if isinstance(def_or_invocation, OpDefinition):
+        op_def = def_or_invocation
+        pending_invocation = None
+        assets_def = None
+    elif isinstance(def_or_invocation, AssetsDefinition):
+        assets_def = def_or_invocation
+        op_def = assets_def.op
+        pending_invocation = None
+    elif isinstance(def_or_invocation, PendingNodeInvocation):
+        pending_invocation = def_or_invocation
+        op_def = def_or_invocation.node_def
+        assets_def = None
+    else:
+        check.failed(f"unexpected direct invocation target {def_or_invocation}")
 
     compute_fn = op_def.compute_fn
     if not isinstance(compute_fn, DecoratedOpFunction):
-        check.failed("op invocation only works with decorated op fns")
+        raise DagsterInvalidInvocationError(
+            "Attempted to directly invoke an op/asset that was not constructed using the `@op` or"
+            " `@asset` decorator. Only decorated functions can be directly invoked."
+        )
 
-    compute_fn = cast(DecoratedOpFunction, compute_fn)
-
-    from ..execution.plan.compute_generator import invoke_compute_fn
-
-    context = context or build_op_context()
+    context = None
+    if compute_fn.has_context_arg():
+        if len(args) + len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                f"Decorated function '{compute_fn.name}' has context argument, but"
+                " no context was provided when invoking."
+            )
+        if len(args) > 0:
+            if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
+                raise DagsterInvalidInvocationError(
+                    f"Decorated function '{compute_fn.name}' has context argument, "
+                    "but no context was provided when invoking."
+                )
+            context = cast(UnboundOpExecutionContext, args[0])
+            # update args to omit context
+            args = args[1:]
+        else:  # context argument is provided under kwargs
+            context_param_name = get_function_params(compute_fn.decorated_fn)[0].name
+            if context_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Decorated function '{compute_fn.name}' has context argument "
+                    f"'{context_param_name}', but no value for '{context_param_name}' was "
+                    f"found when invoking. Provided kwargs: {kwargs}"
+                )
+            context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
+            # update kwargs to remove context
+            kwargs = {
+                kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
+            }
+    # allow passing context, even if the function doesn't have an arg for it
+    elif len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
+        context = cast(UnboundOpExecutionContext, args[0])
+        args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
-    resource_args_from_kwargs = {}
-    for resource_arg in resource_arg_mapping:
-        if resource_arg in kwargs:
-            resource_args_from_kwargs[resource_arg] = kwargs[resource_arg]
-            del kwargs[resource_arg]
 
-    resources_provided_in_multiple_places = (resource_args_from_kwargs) and (context.resource_keys)
-    if resources_provided_in_multiple_places:
-        raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
+    # The user is allowed to invoke an op with an arbitrary mix of args and kwargs.
+    # We ensure that these args and kwargs are correctly categorized as inputs, config, or resource objects and then validated.
+    #
+    # Depending on arg/kwarg type, we do various things:
+    # - Any resources passed as parameters are also made available to user-defined code as part of the op execution context
+    # - Provide high-quality error messages (e.g. if something tried to pass a value to an input typed Nothing)
+    # - Default values are applied appropriately
+    # - Inputs are type checked
+    #
+    # We recollect all the varying args/kwargs into a dictionary and invoke the user-defined function with kwargs only.
+    extracted = _separate_args_and_kwargs(compute_fn, args, kwargs, resource_arg_mapping)
 
-    if resource_args_from_kwargs:
-        context = context.replace_resources(resource_args_from_kwargs)
+    input_args = extracted.input_args
+    input_kwargs = extracted.input_kwargs
+    resources_by_param_name = extracted.resources_by_param_name
+    config_input = extracted.config_arg
 
-    try:
-        bound_context = context.bind(op_def_or_invocation)
-    except DagsterInvalidDefinitionError as e:
-        if any(isinstance(arg, ResourceDefinition) for arg in args):
-            raise DagsterInvalidInvocationError(
-                str(e)
-                + "\n\nIf directly invoking an op/asset, you may not provide resources as"
-                " positional"
-                " arguments, only as keyword arguments."
-            ) from e
-        raise
-    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
+    bound_context = (context or build_op_context()).bind(
+        op_def=op_def,
+        pending_invocation=pending_invocation,
+        assets_def=assets_def,
+        resources_from_args=resources_by_param_name,
+        config_from_args=(
+            config_input._convert_to_config_dictionary()  # noqa: SLF001
+            if isinstance(config_input, Config)
+            else config_input
+        ),
+    )
+
+    input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
 
     result = invoke_compute_fn(
         fn=compute_fn.decorated_fn,
         context=bound_context,
         kwargs=input_dict,
         context_arg_provided=compute_fn.has_context_arg(),
-        config_arg_cls=compute_fn.get_config_arg().annotation
-        if compute_fn.has_config_arg()
-        else None,
+        config_arg_cls=(
+            compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
+        ),
         resource_args=resource_arg_mapping,
     )
 
     return _type_check_output_wrapper(op_def, result, bound_context)
-
-
-def _check_invocation_requirements(
-    op_def: "OpDefinition", context: Optional["UnboundOpExecutionContext"]
-) -> None:
-    """Ensure that provided context fulfills requirements of op definition.
-
-    If no context was provided, then construct an enpty UnboundOpExecutionContext
-    """
-    # Check resource requirements
-    if (
-        op_def.required_resource_keys
-        and cast("DecoratedOpFunction", op_def.compute_fn).has_context_arg()
-        and context is None
-    ):
-        node_label = op_def.node_type_str
-        raise DagsterInvalidInvocationError(
-            f'{node_label} "{op_def.name}" has required resources, but no context was provided.'
-            f" Use the `build_{node_label}_context` function to construct a context with the"
-            " required resources."
-        )
-
-    # Check config requirements
-    if not context and op_def.config_schema.as_field().is_required:
-        node_label = op_def.node_type_str
-        raise DagsterInvalidInvocationError(
-            f'{node_label} "{op_def.name}" has required config schema, but no context was'
-            f" provided. Use the `build_{node_label}_context` function to create a context with"
-            " config."
-        )
 
 
 def _resolve_inputs(

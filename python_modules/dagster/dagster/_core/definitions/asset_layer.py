@@ -18,8 +18,10 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
+    RawMetadataValue,
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
 
@@ -197,9 +199,9 @@ def _get_dependency_node_output_handles(
     if node_output_handle in dep_node_output_handles_by_node_output_handle:
         return dep_node_output_handles_by_node_output_handle[node_output_handle]
 
-    dependency_node_output_handles: List[
-        NodeOutputHandle
-    ] = []  # first node in list is node output handle that outputs the asset
+    dependency_node_output_handles: List[NodeOutputHandle] = (
+        []
+    )  # first node in list is node output handle that outputs the asset
 
     if curr_node_handle not in outputs_by_graph_handle:
         dependency_node_output_handles.append(node_output_handle)
@@ -226,9 +228,9 @@ def _get_dependency_node_output_handles(
         )
 
     if curr_node_handle not in outputs_by_graph_handle:
-        dep_node_output_handles_by_node_output_handle[
-            node_output_handle
-        ] = dependency_node_output_handles
+        dep_node_output_handles_by_node_output_handle[node_output_handle] = (
+            dependency_node_output_handles
+        )
 
     return dependency_node_output_handles
 
@@ -289,15 +291,13 @@ def asset_key_to_dep_node_handles(
     dep_node_outputs_by_asset_key: Dict[AssetKey, List[NodeOutputHandle]] = {}
 
     for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        dep_node_output_handles_by_node: Dict[
-            NodeOutputHandle, Sequence[NodeOutputHandle]
-        ] = (
+        dep_node_output_handles_by_node: Dict[NodeOutputHandle, Sequence[NodeOutputHandle]] = (
             {}
         )  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
-            dep_nodes_by_asset_key[
-                asset_key
-            ] = []  # first element in list is node that outputs asset
+            dep_nodes_by_asset_key[asset_key] = (
+                []
+            )  # first element in list is node that outputs asset
 
             dep_node_outputs_by_asset_key[asset_key] = []
 
@@ -317,7 +317,7 @@ def asset_key_to_dep_node_handles(
                 dep_node_outputs_by_asset_key[asset_key].extend(dep_node_output_handles)
 
     # handle internal_asset_deps within graph-backed assets
-    for _, assets_def in assets_defs_by_node_handle.items():
+    for assets_def in assets_defs_by_node_handle.values():
         for asset_key, dep_asset_keys in assets_def.asset_deps.items():
             if asset_key not in assets_def.keys:
                 continue
@@ -354,7 +354,7 @@ def asset_key_to_dep_node_handles(
 
 
 class AssetLayer:
-    """Stores all of the asset-related information for a Dagster job / pipeline. Maps each
+    """Stores all of the asset-related information for a Dagster job. Maps each
     input / output in the underlying graph to the asset it represents (if any), and records the
     dependencies between each asset.
 
@@ -506,9 +506,9 @@ class AssetLayer:
 
                 partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
                 if partition_mapping is not None:
-                    partition_mappings_by_asset_dep[
-                        (node_handle, resolved_asset_key)
-                    ] = partition_mapping
+                    partition_mappings_by_asset_dep[(node_handle, resolved_asset_key)] = (
+                        partition_mapping
+                    )
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -584,6 +584,9 @@ class AssetLayer:
         )
         return self._asset_deps[asset_key]
 
+    def downstream_assets_for_asset(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
+        return {k for k, v in self._asset_deps.items() if asset_key in v}
+
     @property
     def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[NodeHandle]]:
         return self._dependency_node_handles_by_asset_key
@@ -604,6 +607,9 @@ class AssetLayer:
     def has_assets_defs(self) -> bool:
         return len(self.assets_defs_by_key) > 0
 
+    def has_assets_def_for_asset(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.assets_defs_by_key
+
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
 
@@ -622,11 +628,18 @@ class AssetLayer:
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
 
+    def input_for_asset_key(self, node_handle: NodeHandle, key: AssetKey) -> Optional[str]:
+        return next(
+            (
+                input_handle.input_name
+                for input_handle, k in self._asset_keys_by_node_input_handle.items()
+                if k == key
+            ),
+            None,
+        )
+
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
         return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
-
-    def is_source_for_asset(self, asset_key: AssetKey) -> bool:
-        return asset_key in self.source_assets_by_key
 
     def is_observable_for_asset(self, asset_key: AssetKey) -> bool:
         return (
@@ -741,8 +754,10 @@ def build_asset_selection_job(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
 ) -> "JobDefinition":
     from dagster._core.definitions.assets_job import (
         build_assets_job,
@@ -762,11 +777,9 @@ def build_asset_selection_job(
         for asset in included_assets:
             check.invariant(
                 asset.partitions_def == partitions_def or asset.partitions_def is None,
-                (
-                    f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
-                    f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
-                    f"{partitions_def}."
-                ),
+                f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
+                f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
+                f"{partitions_def}.",
             )
 
     if len(included_assets) > 0:
@@ -780,6 +793,8 @@ def build_asset_selection_job(
             partitions_def=partitions_def,
             description=description,
             tags=tags,
+            metadata=metadata,
+            hooks=hooks,
             _asset_selection_data=asset_selection_data,
         )
     else:
@@ -792,6 +807,7 @@ def build_asset_selection_job(
             partitions_def=partitions_def,
             description=description,
             tags=tags,
+            hooks=hooks,
             _asset_selection_data=asset_selection_data,
         )
 
@@ -805,8 +821,6 @@ def _subset_assets_defs(
     """Given a list of asset key selection queries, generate a set of AssetsDefinition objects
     representing the included/excluded definitions.
     """
-    from dagster._core.definitions import AssetsDefinition
-
     included_assets: Set[AssetsDefinition] = set()
     excluded_assets: Set[AssetsDefinition] = set()
 

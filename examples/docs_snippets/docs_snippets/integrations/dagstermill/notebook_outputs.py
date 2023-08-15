@@ -9,7 +9,7 @@ dagstermill.yield_result(3, output_name="my_output")
 
 
 # start_py_file
-from dagstermill import define_dagstermill_op, local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op
 
 from dagster import Out, file_relative_path, job, op
 
@@ -28,7 +28,7 @@ def add_two(x):
 
 @job(
     resource_defs={
-        "output_notebook_io_manager": local_output_notebook_io_manager,
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
     }
 )
 def my_job():

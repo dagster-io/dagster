@@ -3,44 +3,53 @@ from dagster import (
     AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
-    Definitions,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     asset,
     define_asset_job,
-    load_assets_from_current_module,
 )
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def dynamic_partitions_asset1():
+def customers_dynamic_partitions_asset1():
     ...
 
 
 @asset(partitions_def=customers_partitions_def, group_name="dynamic_asset_partitions")
-def dynamic_partitions_asset2(dynamic_partitions_asset1):
+def customers_dynamic_partitions_asset2(customers_dynamic_partitions_asset1):
     ...
 
-
-dynamic_partitions_job = define_asset_job(
-    "dynamic_partitions_job",
-    selection=AssetSelection.groups("dynamic_asset_partitions"),
-    partitions_def=customers_partitions_def,
-)
 
 multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(
     {"customers": customers_partitions_def, "daily": DailyPartitionsDefinition("2023-01-01")}
 )
 
 
-@asset(partitions_def=multipartition_w_dynamic_partitions_def)
+@asset(
+    partitions_def=multipartition_w_dynamic_partitions_def,
+    group_name="dynamic_asset_partitions",
+)
 def multipartitioned_with_dynamic_dimension():
     return 1
 
 
-defs = Definitions(assets=load_assets_from_current_module(), jobs=[dynamic_partitions_job])
+ints_dynamic_partitions_def = DynamicPartitionsDefinition(name="ints")
+
+
+@asset(partitions_def=ints_dynamic_partitions_def, group_name="dynamic_asset_partitions")
+def ints_dynamic_asset():
+    return 1
+
+
+customers_dynamic_partitions_job = define_asset_job(
+    "customers_dynamic_partitions_job",
+    selection=AssetSelection.assets(
+        customers_dynamic_partitions_asset1, customers_dynamic_partitions_asset2
+    ),
+    partitions_def=customers_partitions_def,
+)
 
 
 @click.command()

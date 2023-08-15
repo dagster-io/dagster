@@ -1,5 +1,6 @@
 import json
 
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
 from dagster_graphql.test.utils import infer_pipeline_selector
 
@@ -7,30 +8,32 @@ from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
 
 
-def get_expectation_results(logs, solid_name):
+def get_expectation_results(logs, op_name: str):
     def _f():
         for log in logs:
             if log["__typename"] == "StepExpectationResultEvent" and log["stepKey"] == "{}".format(
-                solid_name
+                op_name
             ):
                 yield log
 
     return list(_f())
 
 
-def get_expectation_result(logs, solid_name):
-    expt_results = get_expectation_results(logs, solid_name)
+def get_expectation_result(logs, op_name: str):
+    expt_results = get_expectation_results(logs, op_name)
     if len(expt_results) != 1:
         raise Exception("Only expected one expectation result")
     return expt_results[0]
 
 
 class TestExpectations(ExecutingGraphQLContextTestMatrix):
-    def test_basic_expectations_within_compute_step_events(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "pipeline_with_expectations")
+    def test_basic_expectations_within_compute_step_events(
+        self, graphql_context: WorkspaceRequestContext, snapshot
+    ):
+        selector = infer_pipeline_selector(graphql_context, "job_with_expectations")
         logs = sync_execute_get_events(
             context=graphql_context,
-            variables={"executionParams": {"selector": selector, "mode": "default"}},
+            variables={"executionParams": {"selector": selector}},
         )
 
         emit_failed_expectation_event = get_expectation_result(logs, "emit_failed_expectation")
@@ -67,7 +70,9 @@ class TestExpectations(ExecutingGraphQLContextTestMatrix):
             get_expectation_results(logs, "emit_successful_expectation_no_metadata")
         )
 
-    def test_basic_input_output_expectations(self, graphql_context, snapshot):
+    def test_basic_input_output_expectations(
+        self, graphql_context: WorkspaceRequestContext, snapshot
+    ):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world_with_expectations")
         logs = sync_execute_get_events(
             context=graphql_context,
@@ -75,18 +80,17 @@ class TestExpectations(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": {
-                        "solids": {
-                            "sum_solid": {
+                        "ops": {
+                            "sum_op": {
                                 "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
                             }
                         }
                     },
-                    "mode": "default",
                 }
             },
         )
 
-        expectation_results = get_expectation_results(logs, "df_expectations_solid")
+        expectation_results = get_expectation_results(logs, "df_expectations_op")
         assert len(expectation_results) == 2
 
         snapshot.assert_match(expectation_results)

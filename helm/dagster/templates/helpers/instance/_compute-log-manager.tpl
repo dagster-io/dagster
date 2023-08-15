@@ -82,9 +82,7 @@ config:
   use_ssl: {{ $s3ComputeLogManagerConfig.useSsl }}
   {{- end }}
 
-  {{- if $s3ComputeLogManagerConfig.verify }}
-  verify: {{ $s3ComputeLogManagerConfig.verify }}
-  {{- end }}
+  verify: {{ ne $s3ComputeLogManagerConfig.verify false }}
 
   {{- if $s3ComputeLogManagerConfig.verifyCertPath }}
   verify_cert_path: {{ include "stringSource" $s3ComputeLogManagerConfig.verifyCertPath }}
@@ -104,6 +102,14 @@ config:
 
   {{- if $s3ComputeLogManagerConfig.uploadExtraArgs }}
   upload_extra_args: {{ $s3ComputeLogManagerConfig.uploadExtraArgs | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $s3ComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $s3ComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
+  {{- if $s3ComputeLogManagerConfig.region }}
+  region: {{ $s3ComputeLogManagerConfig.region }}
   {{- end }}
 {{- end }}
 

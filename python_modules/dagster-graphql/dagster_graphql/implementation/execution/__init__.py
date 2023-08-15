@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple,
 
 # re-exports
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
 from ..utils import (
     assert_permission,
     assert_permission_for_location,
-    capture_error,
 )
 from .backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
@@ -98,9 +98,7 @@ def terminate_pipeline_execution(
     run = record.dagster_run
     graphene_run = GrapheneRun(record)
 
-    location_name = (
-        run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
-    )
+    location_name = run.external_job_origin.location_name if run.external_job_origin else None
 
     if location_name:
         assert_permission_for_location(
@@ -109,7 +107,7 @@ def terminate_pipeline_execution(
     else:
         assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
 
-    can_cancel_run = run.status == DagsterRunStatus.STARTED or run.status == DagsterRunStatus.QUEUED
+    can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
     valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 
@@ -127,11 +125,9 @@ def terminate_pipeline_execution(
                 instance.run_coordinator.cancel_run(run_id)
         except:
             instance.report_engine_event(
-                (
-                    "Exception while attempting to force-terminate run. Run will still be marked as"
-                    " canceled."
-                ),
-                pipeline_name=run.pipeline_name,
+                "Exception while attempting to force-terminate run. Run will still be marked as"
+                " canceled.",
+                job_name=run.job_name,
                 run_id=run.run_id,
                 engine_event_data=EngineEventData(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
@@ -147,7 +143,6 @@ def terminate_pipeline_execution(
     )
 
 
-@capture_error
 def delete_pipeline_run(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneDeletePipelineRunSuccess", "GrapheneRunNotFoundError"]:
@@ -160,9 +155,7 @@ def delete_pipeline_run(
     if not run:
         return GrapheneRunNotFoundError(run_id)
 
-    location_name = (
-        run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
-    )
+    location_name = run.external_job_origin.location_name if run.external_job_origin else None
     if location_name:
         assert_permission_for_location(
             graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
@@ -175,8 +168,17 @@ def delete_pipeline_run(
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
+@deprecated(
+    breaking_version="2.0",
+    emit_runtime_warning=False,
+    additional_warn_text="DAGIT_EVENT_LOAD_CHUNK_SIZE is the only deprecated part.",
+)
 def get_chunk_size() -> int:
-    return int(os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000"))
+    return int(
+        os.getenv(
+            "DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000")
+        )
+    )
 
 
 async def gen_events_for_run(
@@ -231,7 +233,7 @@ async def gen_events_for_run(
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
                 messages=[
-                    from_event_record(record.event_log_entry, run.pipeline_name)
+                    from_event_record(record.event_log_entry, run.job_name)
                     for record in connection.records
                 ],
                 hasMorePastEvents=connection.has_more,
@@ -253,7 +255,7 @@ async def gen_events_for_run(
             event, cursor = await queue.get()
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
-                messages=[from_event_record(event, run.pipeline_name)],
+                messages=[from_event_record(event, run.job_name)],
                 hasMorePastEvents=False,
                 cursor=cursor,
             )
@@ -325,7 +327,6 @@ async def gen_captured_log_data(
         subscription.dispose()
 
 
-@capture_error
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_keys: Sequence[AssetKey]
 ) -> "GrapheneAssetWipeSuccess":

@@ -1,6 +1,7 @@
 from typing import Any
 
 from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
@@ -31,8 +32,8 @@ BaseTestSuite: Any = make_graphql_context_test_suite(
 
 
 class TestBasicLaunch(BaseTestSuite):
-    def test_run_launcher(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
+    def test_run_launcher(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "no_config_job")
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -52,10 +53,8 @@ class TestBasicLaunch(BaseTestSuite):
         assert result.data["pipelineRunOrError"]["__typename"] == "Run"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
 
-    def test_run_launcher_subset(self, graphql_context):
-        selector = infer_pipeline_selector(
-            graphql_context, "more_complicated_config", ["noop_solid"]
-        )
+    def test_run_launcher_subset(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "more_complicated_config", ["noop_op"])
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -88,8 +87,8 @@ LaunchFailTestSuite: Any = make_graphql_context_test_suite(
 
 
 class TestFailedLaunch(LaunchFailTestSuite):
-    def test_launch_failure(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
+    def test_launch_failure(self, graphql_context: WorkspaceRequestContext):
+        selector = infer_pipeline_selector(graphql_context, "no_config_job")
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,

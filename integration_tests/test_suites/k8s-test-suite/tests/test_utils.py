@@ -56,10 +56,10 @@ def test_wait_for_pod(cluster_provider, namespace):
 
     try:
         api_client.core_api.create_namespaced_pod(
-            body=construct_pod_manifest("sayhi1", 'echo "hello world"'), namespace=namespace
+            body=construct_pod_manifest("waitforpod1", 'echo "hello world"'), namespace=namespace
         )
-        api_client.wait_for_pod("sayhi1", namespace=namespace)
-        assert api_client.retrieve_pod_logs("sayhi1", namespace=namespace) == "hello world\n"
+        api_client.wait_for_pod("waitforpod1", namespace=namespace)
+        assert api_client.retrieve_pod_logs("waitforpod1", namespace=namespace) == "hello world\n"
 
         api_client.core_api.create_namespaced_pod(
             body=construct_pod_manifest("sayhi2", 'echo "hello world"'), namespace=namespace
@@ -79,18 +79,18 @@ def test_wait_for_pod(cluster_provider, namespace):
 
         with pytest.raises(DagsterK8sError) as exc_info:
             api_client.core_api.create_namespaced_pod(
-                body=construct_pod_manifest("fail", 'echo "whoops!"; exit 1'),
+                body=construct_pod_manifest("failwaitforpod", 'echo "whoops!"; exit 1'),
                 namespace=namespace,
             )
             api_client.wait_for_pod(
-                "fail", namespace=namespace, wait_for_state=WaitForPodState.Terminated
+                "failwaitforpod", namespace=namespace, wait_for_state=WaitForPodState.Terminated
             )
 
         # not doing total match because integration test. unit tests test full log message
         assert "Pod did not exit successfully." in str(exc_info.value)
 
     finally:
-        for pod_name in ["sayhi1", "sayhi2", "sayhi3", "fail"]:
+        for pod_name in ["waitforpod1", "sayhi2", "sayhi3", "failwaitforpod"]:
             try:
                 api_client.core_api.delete_namespaced_pod(pod_name, namespace=namespace)
             except kubernetes.client.rest.ApiException:
@@ -117,6 +117,7 @@ def test_pod_debug_info_failure(cluster_provider, namespace, should_cleanup):
             namespace=namespace,
         )
         api_client.wait_for_job("resourcelimit", namespace=namespace)
+        api_client.wait_for_job_to_have_pods("resourcelimit", namespace=namespace)
 
         pod_names = api_client.get_pod_names_in_job("resourcelimit", namespace=namespace)
 
@@ -126,12 +127,12 @@ def test_pod_debug_info_failure(cluster_provider, namespace, should_cleanup):
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Pending
+
 Warning events for pod:
-FailedScheduling: 0/1 nodes are available: 1 Insufficient memory."""
-        )
+FailedScheduling: 0/1 nodes are available: 1 Insufficient memory.""")
 
         # Test case where the pod is still running
         api_client.batch_api.create_namespaced_job(
@@ -159,12 +160,12 @@ FailedScheduling: 0/1 nodes are available: 1 Insufficient memory."""
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Running
 Container 'waitforever' status: Ready
-Last 25 log lines:"""
-        )
+
+Last 25 log lines:""")
 
         assert "No warning events for pod." in pod_debug_info
 
@@ -190,15 +191,16 @@ Last 25 log lines:"""
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Failed
 Container 'execformaterror' status: Terminated with exit code 1: Error
+
 Pod logs contained `exec format error`, which usually means that your Docker image was built using the wrong architecture.
 Try rebuilding your docker image with the `--platform linux/amd64` flag set.
+
 Last 25 log lines:
-"""
-        )
+""")
 
         assert "exec /usr/local/bin/dagster: exec format error" in pod_debug_info
         assert "No warning events for pod." in pod_debug_info
@@ -243,12 +245,12 @@ Last 25 log lines:
 
         print(str(pod_debug_info))  # noqa
 
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Pending
 Container 'missingsecret' status: Waiting: CreateContainerConfigError: secret "missing-secret" not found
-Warning events for pod:"""
-        )
+
+Warning events for pod:""")
 
         # Test case where an unpullable image is used
         api_client.batch_api.create_namespaced_job(
@@ -275,73 +277,73 @@ Warning events for pod:"""
             time.sleep(5)
 
         print(str(pod_debug_info))  # noqa
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Pending
 Container 'pullfail' status: Waiting: ErrImagePull: rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/fakeimage:latest": failed to resolve reference "docker.io/library/fakeimage:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
-Warning events for pod:"""
-        )
+
+Warning events for pod:""")
         assert "Failed: Error: ErrImagePull" in pod_debug_info
         assert "Failed: Error: ImagePullBackOff" in pod_debug_info
 
         # Test case where the pod unexpectedly terminates
         api_client.batch_api.create_namespaced_job(
-            body=construct_job_manifest("fail", 'echo "whoops!"; exit 1'),
+            body=construct_job_manifest("failpoddebug", 'echo "whoops!"; exit 1'),
             namespace=namespace,
         )
 
         with pytest.raises(
             DagsterK8sError,
-            match="Encountered failed job pods for job fail with status:",
+            match="Encountered failed job pods for job failpoddebug with status:",
         ):
-            api_client.wait_for_job_success("fail", namespace=namespace)
+            api_client.wait_for_job_success("failpoddebug", namespace=namespace)
 
-        pod_names = api_client.get_pod_names_in_job("fail", namespace=namespace)
+        pod_names = api_client.get_pod_names_in_job("failpoddebug", namespace=namespace)
 
         pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="fail"
+            pod_names[0], namespace=namespace, container_name="failpoddebug"
         )
 
         print(pod_debug_info)  # noqa
 
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Failed
-Container 'fail' status: Terminated with exit code 1: Error
-Last 25 log lines:"""
-        )
+Container 'failpoddebug' status: Terminated with exit code 1: Error
+
+Last 25 log lines:""")
         assert " whoops!\n" in pod_debug_info
         assert pod_debug_info.endswith("No warning events for pod.")
 
         # Test case where the pod completes successfully
         api_client.batch_api.create_namespaced_job(
-            body=construct_job_manifest("sayhi1", 'echo "hello world"'), namespace=namespace
+            body=construct_job_manifest("goodpod1", 'echo "hello world"'), namespace=namespace
         )
-        api_client.wait_for_job_success("sayhi1", namespace=namespace)
+        api_client.wait_for_job_success("goodpod1", namespace=namespace)
 
-        pod_names = api_client.get_pod_names_in_job("sayhi1", namespace=namespace)
+        pod_names = api_client.get_pod_names_in_job("goodpod1", namespace=namespace)
 
         pod_debug_info = api_client.get_pod_debug_info(
-            pod_names[0], namespace=namespace, container_name="sayhi1"
+            pod_names[0], namespace=namespace, container_name="goodpod1"
         )
         print(pod_debug_info)  # noqa
 
-        assert pod_debug_info.startswith(
-            f"""Debug information for pod {pod_names[0]}:
+        assert pod_debug_info.startswith(f"""Debug information for pod {pod_names[0]}:
+
 Pod status: Succeeded
-Container 'sayhi1' status: Terminated with exit code 0: Completed
-Last 25 log lines:"""
-        )
+Container 'goodpod1' status: Terminated with exit code 0: Completed
+
+Last 25 log lines:""")
         assert "hello world" in pod_debug_info
         assert "No warning events for pod." in pod_debug_info
 
     finally:
         if should_cleanup:
             for job in [
-                "fail",
+                "failpoddebug",
                 "pullfail",
                 "missingsecret",
-                "sayhi1",
+                "goodpod1",
                 "waitforever",
                 "execformaterror",
                 "resourcelimit",
@@ -369,9 +371,9 @@ def test_wait_for_job(cluster_provider, namespace, should_cleanup):
         api_client = DagsterKubernetesClient.production_client()
 
         api_client.batch_api.create_namespaced_job(
-            body=construct_job_manifest("sayhi1", 'echo "hello world"'), namespace=namespace
+            body=construct_job_manifest("waitforjob", 'echo "hello world"'), namespace=namespace
         )
-        api_client.wait_for_job_success("sayhi1", namespace=namespace)
+        api_client.wait_for_job_success("waitforjob", namespace=namespace)
 
         with pytest.raises(
             DagsterK8sError, match="Timed out while waiting for job sayhi2 to complete"
@@ -384,17 +386,17 @@ def test_wait_for_job(cluster_provider, namespace, should_cleanup):
 
         with pytest.raises(
             DagsterK8sError,
-            match="Encountered failed job pods for job fail with status:",
+            match="Encountered failed job pods for job failwaitforjob with status:",
         ):
             api_client.batch_api.create_namespaced_job(
-                body=construct_job_manifest("fail", 'echo "whoops!"; exit 1'),
+                body=construct_job_manifest("failwaitforjob", 'echo "whoops!"; exit 1'),
                 namespace=namespace,
             )
-            api_client.wait_for_job_success("fail", namespace=namespace)
+            api_client.wait_for_job_success("failwaitforjob", namespace=namespace)
 
     finally:
         if should_cleanup:
-            for job in ["sayhi1", "sayhi2", "fail"]:
+            for job in ["waitforjob", "sayhi2", "failwaitforjob"]:
                 try:
                     api_client.batch_api.delete_namespaced_job(
                         job, namespace=namespace, propagation_policy="Foreground"

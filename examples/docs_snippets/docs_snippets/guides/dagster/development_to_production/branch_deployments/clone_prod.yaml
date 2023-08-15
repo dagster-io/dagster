@@ -20,7 +20,7 @@ name: Dagster Branch Deployments
           if: github.event.action != 'closed'
           uses: dagster-io/dagster-cloud-action/actions/utils/run@v0.1
           with:
-            location_name: ${{ toJson(matrix.location) }}
+            location_name: ${{ matrix.location.name }}
             deployment: ${{ steps.deploy.outputs.deployment }}
             job: clone_prod
           env:

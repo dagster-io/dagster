@@ -23,11 +23,9 @@ setup(
     description="Package for GE-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -38,5 +36,11 @@ setup(
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
     ],
+    extras_require={
+        "test": [
+            # https://github.com/great-expectations/great_expectations/issues/7990
+            "typing_extensions<4.6.0",
+        ],
+    },
     zip_safe=False,
 )

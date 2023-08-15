@@ -25,7 +25,6 @@ from dagster._config import (
 )
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
@@ -111,7 +110,6 @@ class DagsterType(RequiresResources):
         required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = t.Any,
-        metadata_entries: t.Optional[t.Sequence[MetadataEntry]] = None,
         metadata: t.Optional[t.Mapping[str, RawMetadataValue]] = None,
     ):
         check.opt_str_param(key, "key")
@@ -157,11 +155,19 @@ class DagsterType(RequiresResources):
 
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
-            check.opt_list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
         )
 
     @public
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
+        """Type check the value against the type.
+
+        Args:
+            context (TypeCheckContext): The context of the type check.
+            value (Any): The value to check.
+
+        Returns:
+            TypeCheck: The result of the type check.
+        """
         retval = self._type_check_fn(context, value)
 
         if not isinstance(retval, (bool, TypeCheck)):
@@ -196,6 +202,7 @@ class DagsterType(RequiresResources):
     @public
     @property
     def required_resource_keys(self) -> TypingAbstractSet[str]:
+        """AbstractSet[str]: Set of resource keys required by the type check function."""
         return self._required_resource_keys
 
     @public
@@ -207,8 +214,7 @@ class DagsterType(RequiresResources):
     @public
     @property
     def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types.
-        """
+        """The unique name of this type. Can be None if the type is not unique, such as container types."""
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(
             self._name is not None,
@@ -219,21 +225,25 @@ class DagsterType(RequiresResources):
     @public
     @property
     def has_unique_name(self) -> bool:
+        """bool: Whether the type has a unique name."""
         return self._name is not None
 
     @public
     @property
     def typing_type(self) -> t.Any:
+        """Any: The python typing type for this type."""
         return self._typing_type
 
     @public
     @property
     def loader(self) -> t.Optional[DagsterTypeLoader]:
+        """Optional[DagsterTypeLoader]: Loader for this type, if any."""
         return self._loader
 
     @public
     @property
     def description(self) -> t.Optional[str]:
+        """Optional[str]: Description of the type, or None if not provided."""
         return self._description
 
     @property

@@ -1,4 +1,4 @@
-from typing import Any, ContextManager, Mapping, Optional
+from typing import Any, ContextManager, Mapping, Optional, Sequence
 
 import dagster._check as check
 import sqlalchemy as db
@@ -12,12 +12,14 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
+    DynamicPartitionsTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -25,6 +27,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
 from sqlalchemy.engine import Connection
 
@@ -36,7 +39,6 @@ from ..utils import (
     retry_pg_connection_fn,
     retry_pg_creation_fn,
 )
-from .event_watcher import PostgresEventWatcher
 
 CHANNEL_NAME = "run_events"
 
@@ -45,7 +47,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """Postgres-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
     To use Postgres for all of the components of your instance storage, you can add the following
@@ -89,8 +91,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
 
-        # lazy init
-        self._event_watcher: Optional[PostgresEventWatcher] = None
+        self._event_watcher = SqlPollingEventWatcher(self)
 
         self._secondary_index_cache = {}
 
@@ -111,8 +112,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold an open connection and set statement_timeout
+    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+        # When running in dagster-webserver, hold an open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
@@ -165,7 +166,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a run.
 
         Args:
             event (EventLogEntry): The event to store.
@@ -180,11 +181,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
             res = result.fetchone()
             result.close()
+
+            # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew
             conn.execute(
-                f"""NOTIFY {CHANNEL_NAME}, %s; """,
-                (res[0] + "_" + str(res[1]),),  # type: ignore
+                db.text(f"""NOTIFY {CHANNEL_NAME}, :notify_id; """),
+                {"notify_id": res[0] + "_" + str(res[1])},  # type: ignore
             )
-            event_id = res[1]  # type: ignore
+            event_id = int(res[1])  # type: ignore
 
         if (
             event.is_dagster_event
@@ -207,7 +210,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
-        # pipeline, run_id, etc.
+        # job, run_id, etc.
         #
         # This should make certain asset queries way more performant, without having to do extra
         # queries against the event log.
@@ -222,7 +225,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
         # event creation, we want to extend this functionality to ensure that assets with any event
         # (observation, materialization, or materialization planned) yielded with timestamp
-        # > wipe timestamp display in Dagit.
+        # > wipe timestamp display in the Dagster UI.
 
         # As of the following PRs, we update last_materialization_timestamp to store the timestamp
         # of the latest asset observation, materialization, or materialization_planned that has occurred.
@@ -251,6 +254,26 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else:
                 query = query.on_conflict_do_nothing()
             conn.execute(query)
+
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        if not partition_keys:
+            return
+
+        # Overload base implementation to push upsert logic down into the db layer
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            conn.execute(
+                db_dialects.postgresql.insert(DynamicPartitionsTable)
+                .values(
+                    [
+                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                        for partition_key in partition_keys
+                    ]
+                )
+                .on_conflict_do_nothing(),
+            )
 
     def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
@@ -285,28 +308,18 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
             check.failed("Cannot call `watch` with an offset cursor")
 
-        if self._event_watcher is None:
-            self._event_watcher = PostgresEventWatcher(
-                self.postgres_url,
-                [CHANNEL_NAME],
-                self._gen_event_log_entry_from_cursor,
-            )
-
         self._event_watcher.watch_run(run_id, cursor, callback)
 
     def _gen_event_log_entry_from_cursor(self, cursor) -> EventLogEntry:
         with self._engine.connect() as conn:
             cursor_res = conn.execute(
-                db.select([SqlEventLogStorageTable.c.event]).where(
+                db_select([SqlEventLogStorageTable.c.event]).where(
                     SqlEventLogStorageTable.c.id == cursor
                 ),
             )
             return deserialize_value(cursor_res.scalar(), EventLogEntry)  # type: ignore
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
-        if self._event_watcher is None:
-            return
-
         self._event_watcher.unwatch_run(run_id, handler)
 
     def __del__(self) -> None:
@@ -316,8 +329,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def dispose(self) -> None:
         if not self._disposed:
             self._disposed = True
-            if self._event_watcher:
-                self._event_watcher.close()
+            self._event_watcher.close()
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)

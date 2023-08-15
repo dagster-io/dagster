@@ -22,7 +22,7 @@ class ContextFilter(logging.Filter):
     description="A JSON-formatted console logger",
 )
 def papertrail_logger(init_context):
-    """Use this logger to configure your Dagster pipeline to log to Papertrail. You'll need an
+    """Use this logger to configure your Dagster job to log to Papertrail. You'll need an
     active Papertrail account with URL and port.
 
     Example:
@@ -47,7 +47,7 @@ def papertrail_logger(init_context):
                     "papertrail": {
                         "config": {
                             "log_level": "INFO",
-                            "name": "hello_pipeline",
+                            "name": "hello_job",
                             "papertrail_address": "127.0.0.1",
                             "papertrail_port": 12345,
                         }

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
@@ -7,20 +5,20 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 from typing_extensions import Protocol
 
 import dagster._check as check
-from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
 from dagster._utils.log import get_dagster_logger
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance
     from dagster._core.events import DagsterEvent
+    from dagster._core.storage.dagster_run import DagsterRun
 
 DAGSTER_META_KEY = "dagster_meta"
 
 
 class IDagsterMeta(Protocol):
     @property
-    def dagster_meta(self) -> DagsterLoggingMetadata:
+    def dagster_meta(self) -> "DagsterLoggingMetadata":
         ...
 
 
@@ -108,10 +106,10 @@ class DagsterLoggingMetadata(
         "_DagsterLoggingMetadata",
         [
             ("run_id", Optional[str]),
-            ("pipeline_name", Optional[str]),
-            ("pipeline_tags", Mapping[str, str]),
+            ("job_name", Optional[str]),
+            ("job_tags", Mapping[str, str]),
             ("step_key", Optional[str]),
-            ("solid_name", Optional[str]),
+            ("op_name", Optional[str]),
             ("resource_name", Optional[str]),
             ("resource_fn_name", Optional[str]),
         ],
@@ -124,20 +122,20 @@ class DagsterLoggingMetadata(
     def __new__(
         cls,
         run_id: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
-        pipeline_tags: Optional[Mapping[str, str]] = None,
+        job_name: Optional[str] = None,
+        job_tags: Optional[Mapping[str, str]] = None,
         step_key: Optional[str] = None,
-        solid_name: Optional[str] = None,
+        op_name: Optional[str] = None,
         resource_name: Optional[str] = None,
         resource_fn_name: Optional[str] = None,
     ):
         return super().__new__(
             cls,
             run_id=run_id,
-            pipeline_name=pipeline_name,
-            pipeline_tags=pipeline_tags or {},
+            job_name=job_name,
+            job_tags=job_tags or {},
             step_key=step_key,
-            solid_name=solid_name,
+            op_name=op_name,
             resource_name=resource_name,
             resource_fn_name=resource_fn_name,
         )
@@ -145,7 +143,7 @@ class DagsterLoggingMetadata(
     @property
     def log_source(self) -> str:
         if self.resource_name is None:
-            return self.pipeline_name or "system"
+            return self.job_name or "system"
         return f"resource:{self.resource_name}"
 
     def all_tags(self) -> Mapping[str, str]:
@@ -154,7 +152,7 @@ class DagsterLoggingMetadata(
 
     def event_tags(self) -> Mapping[str, str]:
         # Exclude pipeline_tags since it can be quite large and can be found on the run
-        return {k: str(v) for k, v in self._asdict().items() if k != "pipeline_tags"}
+        return {k: str(v) for k, v in self._asdict().items() if k != "job_tags"}
 
 
 def construct_log_string(
@@ -224,7 +222,7 @@ class DagsterLogHandler(logging.Handler):
     def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._logging_metadata
 
-    def with_tags(self, **new_tags: str) -> DagsterLogHandler:
+    def with_tags(self, **new_tags: str) -> "DagsterLogHandler":
         return DagsterLogHandler(
             logging_metadata=self.logging_metadata._replace(**new_tags),
             loggers=self._loggers,
@@ -366,8 +364,8 @@ class DagsterLogManager(logging.Logger):
         if dagster_run:
             logging_metadata = DagsterLoggingMetadata(
                 run_id=dagster_run.run_id,
-                pipeline_name=dagster_run.pipeline_name,
-                pipeline_tags=dagster_run.tags,
+                job_name=dagster_run.job_name,
+                job_tags=dagster_run.tags,
             )
         else:
             logging_metadata = DagsterLoggingMetadata()
@@ -423,7 +421,7 @@ class DagsterLogManager(logging.Logger):
         if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
             self._log(level, msg, args, **kwargs)
 
-    def with_tags(self, **new_tags: str) -> DagsterLogManager:
+    def with_tags(self, **new_tags: str) -> "DagsterLogManager":
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
 

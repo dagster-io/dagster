@@ -1,4 +1,4 @@
-from dagster_gcp_pyspark import bigquery_pyspark_io_manager
+from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
 from pyspark.sql import (
@@ -23,28 +23,26 @@ def iris_data(context) -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = "https://docs.dagster.io/assets/iris.csv"
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pyspark_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "dataset": "IRIS",
-            }
+        "io_manager": BigQueryPySparkIOManager(
+            project="my-gcp-project",
+            location="us-east5",
         ),
         "pyspark": pyspark_resource.configured(
             {"spark_conf": {"spark.jars.packages": BIGQUERY_JARS}}

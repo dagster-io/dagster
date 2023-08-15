@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import graphene
 from dagster import (
@@ -14,7 +14,6 @@ from dagster._core.host_representation import (
     GrpcServerCodeLocation,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
@@ -45,6 +44,9 @@ from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
 from .util import ResolveInfo, non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.external_data import ExternalAssetNode
 
 GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 
@@ -286,7 +288,7 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_pipelines(self, _graphene_info: ResolveInfo):
         return [
-            GraphenePipeline(pipeline, self._batch_loader)
+            GraphenePipeline(pipeline)
             for pipeline in sorted(
                 self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )
@@ -294,11 +296,10 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_jobs(self, _graphene_info: ResolveInfo):
         return [
-            GrapheneJob(pipeline, self._batch_loader)
+            GrapheneJob(pipeline)
             for pipeline in sorted(
                 self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
             )
-            if pipeline.is_job
         ]
 
     def resolve_usedSolid(self, _graphene_info: ResolveInfo, name):
@@ -370,10 +371,14 @@ class GrapheneRepositoryConnection(graphene.ObjectType):
 
 
 class GrapheneWorkspace(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     locationEntries = non_null_list(GrapheneWorkspaceLocationEntry)
 
     class Meta:
         name = "Workspace"
+
+    def resolve_id(self, _graphene_info: ResolveInfo):
+        return "Workspace"
 
 
 class GrapheneLocationStateChangeEvent(graphene.ObjectType):

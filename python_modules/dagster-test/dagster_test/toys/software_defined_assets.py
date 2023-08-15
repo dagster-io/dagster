@@ -1,7 +1,6 @@
 import time
 
-from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset
-from dagster._legacy import AssetGroup
+from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset, with_resources
 
 sfo_q2_weather_sample = SourceAsset(key=AssetKey("sfo_q2_weather_sample"))
 
@@ -49,8 +48,11 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     return DataFrame()
 
 
-software_defined_assets = AssetGroup(
-    assets=[daily_temperature_highs, hottest_dates],
-    source_assets=[sfo_q2_weather_sample],
+software_defined_assets = with_resources(
+    [
+        daily_temperature_highs,
+        hottest_dates,
+        sfo_q2_weather_sample,
+    ],
     resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager())},
 )

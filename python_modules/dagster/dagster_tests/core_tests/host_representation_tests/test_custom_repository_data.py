@@ -2,8 +2,7 @@ import sys
 from typing import Iterator
 
 import pytest
-from dagster import file_relative_path, op, repository
-from dagster._core.definitions.decorators.job_decorator import job
+from dagster import file_relative_path, job, op, repository
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition import RepositoryData
 from dagster._core.instance import DagsterInstance
@@ -41,8 +40,8 @@ class TestDynamicRepositoryData(RepositoryData):
     def __init__(self):
         self._num_calls = 0
 
-    # List of pipelines changes everytime get_all_pipelines is called
-    def get_all_pipelines(self):
+    # List of jobs changes everytime get_all_jobs is called
+    def get_all_jobs(self):
         self._num_calls = self._num_calls + 1
         return [define_foo_job(self._num_calls)]
 
@@ -98,14 +97,13 @@ def test_repository_data_can_reload_without_restarting(
     request_context = workspace_process_context.create_request_context()
     code_location = request_context.get_code_location("test")
     repo = code_location.get_repository("bar_repo")
-    # get_all_pipelines called on server init twice, then on repository load, so starts at 3
+    # get_all_jobs called on server init, then on repository load, so starts at 2
     # this is a janky test
-    assert repo.has_external_job("foo_3")
+    assert repo.has_external_job("foo_2")
     assert not repo.has_external_job("foo_1")
-    assert not repo.has_external_job("foo_2")
 
-    external_pipeline = repo.get_full_external_job("foo_3")
-    assert external_pipeline.has_solid_invocation("do_something_3")
+    external_job = repo.get_full_external_job("foo_2")
+    assert external_job.has_node_invocation("do_something_2")
 
     # Reloading the location changes the pipeline without needing
     # to restart the server process
@@ -113,8 +111,8 @@ def test_repository_data_can_reload_without_restarting(
     request_context = workspace_process_context.create_request_context()
     code_location = request_context.get_code_location("test")
     repo = code_location.get_repository("bar_repo")
-    assert repo.has_external_job("foo_5")
+    assert repo.has_external_job("foo_4")
     assert not repo.has_external_job("foo_3")
 
-    external_pipeline = repo.get_full_external_job("foo_5")
-    assert external_pipeline.has_solid_invocation("do_something_5")
+    external_job = repo.get_full_external_job("foo_4")
+    assert external_job.has_node_invocation("do_something_4")

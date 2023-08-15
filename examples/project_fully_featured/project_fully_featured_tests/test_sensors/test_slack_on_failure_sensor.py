@@ -1,5 +1,8 @@
 from dagster import repository
-from project_fully_featured.sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
+
+from project_fully_featured.sensors.slack_on_failure_sensor import (
+    make_slack_on_failure_sensor,
+)
 
 
 def test_slack_on_failure_def():

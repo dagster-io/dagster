@@ -1,6 +1,7 @@
+from typing import TYPE_CHECKING
+
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector
-from dagster._core.host_representation.code_location import CodeLocation
 from graphene import ResolveInfo
 
 from dagster_graphql.schema.env_vars import (
@@ -9,10 +10,10 @@ from dagster_graphql.schema.env_vars import (
     GrapheneEnvVarWithConsumersListOrError,
 )
 
-from .utils import capture_error
+if TYPE_CHECKING:
+    from dagster._core.host_representation.code_location import CodeLocation
 
 
-@capture_error
 def get_utilized_env_vars_or_error(
     graphene_info, repository_selector
 ) -> GrapheneEnvVarWithConsumersListOrError:

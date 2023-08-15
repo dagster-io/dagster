@@ -1,5 +1,4 @@
-from dagster import ScheduleDefinition, op, repository
-from dagster._legacy import pipeline
+from dagster import ScheduleDefinition, job, op, repository
 
 
 @op
@@ -12,7 +11,7 @@ def mult_two(num: int) -> int:
     return num * 2
 
 
-@pipeline
+@job
 def math():
     mult_two(add_one())
 
@@ -27,7 +26,7 @@ def no_config():
     return "ok"
 
 
-@pipeline
+@job
 def subset_test():
     no_config()
     needs_config()
@@ -38,7 +37,7 @@ def define_schedules():
         name="math_hourly_schedule",
         cron_schedule="0 0 * * *",
         job_name="math",
-        run_config={"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
+        run_config={"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
     )
 
     return [math_hourly_schedule]

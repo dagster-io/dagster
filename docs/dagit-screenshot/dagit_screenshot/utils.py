@@ -17,6 +17,7 @@ class RawScreenshotSpec(TypedDict):
     width: NotRequired[int]
     height: NotRequired[int]
 
+
 class ScreenshotSpec(TypedDict):
     id: str
     base_url: str
@@ -26,7 +27,6 @@ class ScreenshotSpec(TypedDict):
     vetted: NotRequired[bool]
     width: NotRequired[int]
     height: NotRequired[int]
-
 
 
 SpecDB: TypeAlias = Sequence[ScreenshotSpec]
@@ -49,7 +49,6 @@ def _normalize_path(path: str, root: str):
 
 
 def load_spec(spec_id: str, spec_db_path: str) -> ScreenshotSpec:
-
     if _is_single_file_spec_db(spec_db_path):
         raw_spec = _load_spec_from_yaml(spec_id, spec_db_path)
     else:
@@ -57,7 +56,7 @@ def load_spec(spec_id: str, spec_db_path: str) -> ScreenshotSpec:
         db_nested_path = os.path.join(spec_db_path, *id_parts[:-1]) + ".yaml"
         if os.path.exists(db_nested_path):
             relative_id = id_parts[-1]
-            raw_spec =_load_spec_from_yaml(relative_id, db_nested_path)
+            raw_spec = _load_spec_from_yaml(relative_id, db_nested_path)
         else:
             db_index_path = os.path.join(spec_db_path, "index.yaml")
             raw_spec = _load_spec_from_yaml(spec_id, db_index_path)
@@ -71,7 +70,8 @@ def load_spec_db(spec_db_path: str) -> SpecDB:
         db += _load_yaml(spec_db_path)
     else:
         yaml_files = [
-            os.path.relpath(p, start=spec_db_path) for p in glob(f"{spec_db_path}/**/*.yaml", recursive=True)
+            os.path.relpath(p, start=spec_db_path)
+            for p in glob(f"{spec_db_path}/**/*.yaml", recursive=True)
         ]
 
         for p in yaml_files:
@@ -81,21 +81,29 @@ def load_spec_db(spec_db_path: str) -> SpecDB:
 
     return db
 
+
 def _normalize_spec(raw_spec: RawScreenshotSpec, filepath: str) -> ScreenshotSpec:
-    if filepath != '_global.yaml':
+    if filepath != "_global.yaml":
         raw_id_parts = os.path.splitext(filepath)[0]
-        id_parts = os.path.dirname(raw_id_parts) if os.path.basename(raw_id_parts) == 'index' else raw_id_parts
+        id_parts = (
+            os.path.dirname(raw_id_parts)
+            if os.path.basename(raw_id_parts) == "index"
+            else raw_id_parts
+        )
         raw_spec["id"] = os.path.join(id_parts, raw_spec["id"])
 
     spec = _apply_defaults(raw_spec)
     return spec
 
+
 def _is_single_file_spec_db(spec_db_path: str) -> bool:
     return not os.path.isdir(spec_db_path)
+
 
 def _load_yaml(path: str):
     with open(path, "r", encoding="utf8") as f:
         return yaml.safe_load(f)
+
 
 def _load_spec_from_yaml(spec_id: str, yaml_path: str) -> RawScreenshotSpec:
     specs = _load_yaml(yaml_path)
@@ -105,6 +113,7 @@ def _load_spec_from_yaml(spec_id: str, yaml_path: str) -> RawScreenshotSpec:
     elif len(matches) > 1:
         raise Exception(f"Multiple matches for spec [{spec_id}] found in {yaml_path}.")
     return matches[0]
+
 
 def _apply_defaults(raw_spec: RawScreenshotSpec) -> ScreenshotSpec:
     raw_spec.setdefault("base_url", "http://localhost:3000")

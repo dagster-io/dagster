@@ -1,10 +1,21 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    cast,
+)
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
@@ -19,11 +30,9 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import (
@@ -33,16 +42,14 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._utils.backcompat import deprecation_warning
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
-    """
+    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
     def has_tag(self, key: str) -> bool:
@@ -89,18 +96,17 @@ class AbstractComputeExecutionContext(ABC):
 
 
 class OpExecutionContext(AbstractComputeExecutionContext):
-    """The ``context`` object that can be made available as the first argument to an op's compute
-    function.
+    """The ``context`` object that can be made available as the first argument to the function
+    used for computing an op or asset.
 
-    The context object provides system information such as resources, config,
-    and logging to an op's compute function. Users should not instantiate this
-    object directly. To construct an `OpExecutionContext` for testing
-    purposes, use :py:func:`dagster.build_op_context`.
+    This context object provides system information such as resources, config, and logging.
+
+    To construct an execution context for testing purposes, use :py:func:`dagster.build_op_context`.
 
     Example:
         .. code-block:: python
 
-            from dagster import op
+            from dagster import op, OpExecutionContext
 
             @op
             def hello_world(context: OpExecutionContext):
@@ -122,17 +128,18 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def op_config(self) -> Any:
+        """Any: The parsed config specific to this op."""
         return self._step_execution_context.op_config
 
     @property
-    def pipeline_run(self) -> DagsterRun:
+    def dagster_run(self) -> DagsterRun:
         """PipelineRun: The current pipeline run."""
         return self._step_execution_context.dagster_run
 
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
-        return self.pipeline_run
+        return self.dagster_run
 
     @public
     @property
@@ -191,39 +198,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
 
-    @property
-    def pipeline_def(self) -> PipelineDefinition:
-        """PipelineDefinition: The currently executing pipeline."""
-        return self._step_execution_context.pipeline_def
-
     @public
     @property
     def job_def(self) -> JobDefinition:
-        """JobDefinition: The currently executing job."""
-        return cast(
-            JobDefinition,
-            check.inst(
-                self.pipeline_def,
-                JobDefinition,
-                "Accessing job_def inside a legacy pipeline. Use pipeline_def instead.",
-            ),
-        )
-
-    @property
-    def pipeline_name(self) -> str:
-        """str: The name of the currently executing pipeline."""
-        return self._step_execution_context.pipeline_name
+        """JobDefinition: The currently executing pipeline."""
+        return self._step_execution_context.job_def
 
     @public
     @property
     def job_name(self) -> str:
-        """str: The name of the currently executing job."""
-        return self.pipeline_name
-
-    @property
-    def mode_def(self) -> ModeDefinition:
-        """ModeDefinition: The mode of the current execution."""
-        return self._step_execution_context.mode_def
+        """str: The name of the currently executing pipeline."""
+        return self._step_execution_context.job_name
 
     @public
     @property
@@ -233,7 +218,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def node_handle(self) -> NodeHandle:
-        """NodeHandle: The current solid's handle.
+        """NodeHandle: The current op's handle.
 
         :meta private:
         """
@@ -248,38 +233,19 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self.node_handle
 
     @property
-    def solid(self) -> Node:
-        """Solid: The current solid object.
-
-        :meta private:
-
-        """
-        return self._step_execution_context.pipeline_def.get_node(self.node_handle)
-
-    @property
     def op(self) -> Node:
-        """Solid: The current op object.
+        """Node: The object representing the invoked op within the graph.
 
         :meta private:
 
         """
-        return self.solid
+        return self._step_execution_context.job_def.get_node(self.node_handle)
 
     @public
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
         return cast(OpDefinition, self.op.definition)
-
-    @public
-    @property
-    def assets_def(self) -> AssetsDefinition:
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
-        if assets_def is None:
-            raise DagsterInvalidPropertyError(
-                f"Op '{self.op.name}' does not have an assets definition."
-            )
-        return assets_def
 
     @public
     @property
@@ -296,12 +262,24 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The asset partition key for the current run.
+        """The range of partition keys for the current run.
 
-        Raises an error if the current run is not a partitioned run.
+        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+        """
+        return self.partition_key_range
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The range of partition keys for the current run.
+
+        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+        end. Raises an error if the current run is not a partitioned run.
         """
         return self._step_execution_context.asset_partition_key_range
 
@@ -314,158 +292,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         definition is not a TimeWindowPartitionsDefinition.
         """
         return self._step_execution_context.partition_time_window
-
-    @public
-    @property
-    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
-        if assets_def is None:
-            return set()
-        return assets_def.keys
-
-    @public
-    @property
-    def selected_output_names(self) -> AbstractSet[str]:
-        # map selected asset keys to the output names they correspond to
-        selected_asset_keys = self.selected_asset_keys
-        selected_outputs: Set[str] = set()
-        for output_name in self.op.output_dict.keys():
-            asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.node_handle, output_name
-            )
-            if any(  #  For graph-backed assets, check if a downstream asset is selected
-                [
-                    asset_key in selected_asset_keys
-                    for asset_key in self.job_def.asset_layer.downstream_dep_assets(
-                        self.node_handle, output_name
-                    )
-                ]
-            ) or (asset_info and asset_info.key in selected_asset_keys):
-                selected_outputs.add(output_name)
-
-        return selected_outputs
-
-    @public
-    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
-            node_handle=self.op_handle, output_name=output_name
-        )
-        if asset_output_info is None:
-            check.failed(f"Output '{output_name}' has no asset")
-        else:
-            return asset_output_info.key
-
-    @public
-    def asset_key_for_input(self, input_name: str) -> AssetKey:
-        key = self.pipeline_def.asset_layer.asset_key_for_input(
-            node_handle=self.op_handle, input_name=input_name
-        )
-        if key is None:
-            check.failed(f"Input '{input_name}' has no asset")
-        else:
-            return key
-
-    def output_asset_partition_key(self, output_name: str = "result") -> str:
-        deprecation_warning(
-            "OpExecutionContext.output_asset_partition_key",
-            "1.0.0",
-            additional_warn_txt="Use OpExecutionContext.asset_partition_key_for_output instead.",
-        )
-
-        return self.asset_partition_key_for_output(output_name)
-
-    @public
-    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
-        name of the default output.
-        """
-        return self._step_execution_context.asset_partition_key_for_output(output_name)
-
-    def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
-        deprecation_warning(
-            "OpExecutionContext.output_asset_partitions_time_window",
-            "1.0.0",
-            additional_warn_txt=(
-                "Use OpExecutionContext.asset_partitions_time_window_for_output instead."
-            ),
-        )
-
-        return self.asset_partitions_time_window_for_output(output_name)
-
-    @public
-    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
-        """The time window for the partitions of the output asset.
-
-        Raises an error if either of the following are true:
-        - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
-        MultiPartitionsDefinition with one time-partitioned dimension.
-        """
-        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
-
-    @public
-    def asset_partition_key_range_for_output(
-        self, output_name: str = "result"
-    ) -> PartitionKeyRange:
-        return self._step_execution_context.asset_partition_key_range_for_output(output_name)
-
-    @public
-    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
-
-    @public
-    def asset_partition_key_for_input(self, input_name: str) -> str:
-        """Returns the partition key of the upstream asset corresponding to the given input."""
-        return self._step_execution_context.asset_partition_key_for_input(input_name)
-
-    @public
-    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        asset_key = self.asset_key_for_output(output_name)
-        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
-            asset_key
-        )
-        if result is None:
-            raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not"
-                " partitioned"
-            )
-
-        return result
-
-    @public
-    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
-        asset_key = self.asset_key_for_input(input_name)
-        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
-            asset_key
-        )
-        if result is None:
-            raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not"
-                " partitioned"
-            )
-
-        return result
-
-    @public
-    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """Returns a list of the partition keys for the given output."""
-        return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name),
-            dynamic_partitions_store=self.instance,
-        )
-
-    @public
-    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
-        """Returns a list of the partition keys of the upstream asset corresponding to the
-        given input.
-        """
-        return list(
-            self._step_execution_context.asset_partitions_subset_for_input(
-                input_name
-            ).get_partition_keys()
-        )
 
     @public
     def has_tag(self, key: str) -> bool:
@@ -490,6 +316,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             Optional[str]: The value of the tag, if present.
         """
         return self._step_execution_context.get_tag(key)
+
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for the current run."""
+        return self._step_execution_context.run_tags
 
     def has_events(self) -> bool:
         return bool(self._events)
@@ -598,8 +429,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def retry_number(self) -> int:
-        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
-        """
+        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self):
@@ -607,9 +437,179 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def get_mapping_key(self) -> Optional[str]:
-        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
-        """
+        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None."""
         return self._step_execution_context.step.get_mapping_key()
+
+    #############################################################################################
+    # asset related methods
+    #############################################################################################
+
+    @public
+    @property
+    def has_assets_def(self) -> bool:
+        """If there is a backing AssetsDefinition for what is currently executing."""
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        return assets_def is not None
+
+    @public
+    @property
+    def assets_def(self) -> AssetsDefinition:
+        """The backing AssetsDefinition for what is currently executing, errors if not available."""
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        if assets_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an assets definition."
+            )
+        return assets_def
+
+    @public
+    @property
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Get the set of AssetKeys this execution is expected to materialize."""
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        if assets_def is None:
+            return set()
+        return assets_def.keys
+
+    @public
+    @property
+    def selected_output_names(self) -> AbstractSet[str]:
+        """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
+        # map selected asset keys to the output names they correspond to
+        selected_asset_keys = self.selected_asset_keys
+        selected_outputs: Set[str] = set()
+        for output_name in self.op.output_dict.keys():
+            asset_info = self.job_def.asset_layer.asset_info_for_output(
+                self.node_handle, output_name
+            )
+            if any(  #  For graph-backed assets, check if a downstream asset is selected
+                [
+                    asset_key in selected_asset_keys
+                    for asset_key in self.job_def.asset_layer.downstream_dep_assets(
+                        self.node_handle, output_name
+                    )
+                ]
+            ) or (asset_info and asset_info.key in selected_asset_keys):
+                selected_outputs.add(output_name)
+
+        return selected_outputs
+
+    @public
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        """Return the AssetKey for the corresponding output."""
+        asset_output_info = self.job_def.asset_layer.asset_info_for_output(
+            node_handle=self.op_handle, output_name=output_name
+        )
+        if asset_output_info is None:
+            check.failed(f"Output '{output_name}' has no asset")
+        else:
+            return asset_output_info.key
+
+    @public
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        """Return the AssetKey for the corresponding input."""
+        key = self.job_def.asset_layer.asset_key_for_input(
+            node_handle=self.op_handle, input_name=input_name
+        )
+        if key is None:
+            check.failed(f"Input '{input_name}' has no asset")
+        else:
+            return key
+
+    @public
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
+        return self._step_execution_context.asset_partition_key_for_output(output_name)
+
+    @public
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    @public
+    def asset_partition_key_range_for_output(
+        self, output_name: str = "result"
+    ) -> PartitionKeyRange:
+        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
+        return self._step_execution_context.asset_partition_key_range_for_output(output_name)
+
+    @public
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one."""
+        return self._step_execution_context.asset_partition_key_range_for_input(input_name)
+
+    @public
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        """Returns the partition key of the upstream asset corresponding to the given input."""
+        return self._step_execution_context.asset_partition_key_for_input(input_name)
+
+    @public
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key_for_output(output_name)
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
+            asset_key
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
+            )
+
+        return result
+
+    @public
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key_for_input(input_name)
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
+            asset_key
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
+            )
+
+        return result
+
+    @public
+    def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
+        """Returns a list of the partition keys for the given output."""
+        return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
+            self._step_execution_context.asset_partition_key_range_for_output(output_name),
+            dynamic_partitions_store=self.instance,
+        )
+
+    @public
+    def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
+        """Returns a list of the partition keys of the upstream asset corresponding to the
+        given input.
+        """
+        return list(
+            self._step_execution_context.asset_partitions_subset_for_input(
+                input_name
+            ).get_partition_keys()
+        )
+
+    @public
+    def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
     @experimental
@@ -631,4 +631,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         )
 
 
-SourceAssetObserveContext: TypeAlias = OpExecutionContext
+# actually forking the object type for assets is tricky for users in the cases of:
+#  * manually constructing ops to make AssetsDefinitions
+#  * having ops in a graph that form a graph backed asset
+# so we have a single type that users can call by their preferred name where appropriate
+AssetExecutionContext: TypeAlias = OpExecutionContext

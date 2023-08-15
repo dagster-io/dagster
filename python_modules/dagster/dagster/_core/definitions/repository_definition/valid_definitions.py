@@ -4,14 +4,13 @@ from typing_extensions import TypeAlias
 
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import AssetGroup, AssetsDefinition
+    from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
@@ -20,7 +19,6 @@ if TYPE_CHECKING:
 SINGLETON_REPOSITORY_NAME = "__repository__"
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
-    "pipelines",
     "schedules",
     "sensors",
     "jobs",
@@ -28,7 +26,6 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 
 T_RepositoryLevelDefinition = TypeVar(
     "T_RepositoryLevelDefinition",
-    PipelineDefinition,
     JobDefinition,
     ScheduleDefinition,
     SensorDefinition,
@@ -36,9 +33,8 @@ T_RepositoryLevelDefinition = TypeVar(
 
 RepositoryListDefinition: TypeAlias = Union[
     "AssetsDefinition",
-    "AssetGroup",
     GraphDefinition,
-    PipelineDefinition,
+    JobDefinition,
     ScheduleDefinition,
     SensorDefinition,
     SourceAsset,

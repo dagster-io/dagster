@@ -22,13 +22,13 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    job,
     op,
     repository,
 )
 from dagster._core.definitions import (
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -37,7 +37,7 @@ from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     step_did_not_run,
@@ -48,12 +48,11 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import ModeDefinition
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
-default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 
 
 def _failure_flag_file():
@@ -145,7 +144,7 @@ def _large_partition_config(_):
 
 config_job_config = PartitionedConfig(
     partitions_def=one_two_three_partitions,
-    run_config_for_partition_fn=_large_partition_config,
+    run_config_for_partition_key_fn=_large_partition_config,
 )
 
 
@@ -635,9 +634,7 @@ def test_backfill_from_partitioned_job(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    partition_name_list = [
-        partition.name for partition in my_config.partitions_def.get_partitions()
-    ]
+    partition_keys = my_config.partitions_def.get_partition_keys()
     external_partition_set = external_repo.get_external_partition_set(
         "comp_always_succeed_partition_set"
     )
@@ -646,7 +643,7 @@ def test_backfill_from_partitioned_job(
             backfill_id="partition_schedule_from_job",
             partition_set_origin=external_partition_set.get_external_origin(),
             status=BulkActionStatus.REQUESTED,
-            partition_names=partition_name_list[:3],
+            partition_names=partition_keys[:3],
             from_failure=False,
             reexecution_steps=None,
             tags=None,
@@ -661,7 +658,7 @@ def test_backfill_from_partitioned_job(
     runs = reversed(list(instance.get_runs()))
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
-        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_NAME_TAG] == partition_keys[idx]
 
 
 def test_backfill_with_asset_selection(
@@ -669,7 +666,7 @@ def test_backfill_with_asset_selection(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
     job_def = the_repo.get_implicit_job_def_for_assets(asset_selection)
     assert job_def
@@ -681,7 +678,7 @@ def test_backfill_with_asset_selection(
             backfill_id="backfill_with_asset_selection",
             partition_set_origin=external_partition_set.get_external_origin(),
             status=BulkActionStatus.REQUESTED,
-            partition_names=partition_name_list,
+            partition_names=partition_keys,
             from_failure=False,
             reexecution_steps=None,
             tags=None,
@@ -700,7 +697,7 @@ def test_backfill_with_asset_selection(
     runs = reversed(list(instance.get_runs()))
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
-        assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
+        assert run.tags[PARTITION_NAME_TAG] == partition_keys[idx]
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
@@ -712,30 +709,31 @@ def test_backfill_with_asset_selection(
         assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
-def test_pure_asset_backfill_with_multiple_asset_selections(
+def test_pure_asset_backfill_with_multiple_assets_selected(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
     asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
 
-    partition_name_list = [partition.name for partition in partitions_a.get_partitions()]
+    partition_keys = partitions_a.get_partition_keys()
 
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
             asset_graph=ExternalAssetGraph.from_workspace(
                 workspace_context.create_request_context()
             ),
-            backfill_id="backfill_with_multiple_asset_selections",
+            backfill_id="backfill_with_multiple_assets_selected",
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
-            partition_names=partition_name_list,
+            partition_names=partition_keys,
             dynamic_partitions_store=instance,
+            all_partitions=False,
         )
     )
     assert instance.get_runs_count() == 0
-    backfill = instance.get_backfill("backfill_with_multiple_asset_selections")
+    backfill = instance.get_backfill("backfill_with_multiple_assets_selected")
     assert backfill
     assert backfill.status == BulkActionStatus.REQUESTED
 
@@ -751,7 +749,7 @@ def test_pure_asset_backfill_with_multiple_asset_selections(
     wait_for_all_runs_to_start(instance, timeout=30)
     wait_for_all_runs_to_finish(instance, timeout=30)
     run = instance.get_runs()[0]
-    assert run.tags[BACKFILL_ID_TAG] == "backfill_with_multiple_asset_selections"
+    assert run.tags[BACKFILL_ID_TAG] == "backfill_with_multiple_assets_selected"
     assert run.tags["custom_tag_key"] == "custom_tag_value"
     assert run.asset_selection == {AssetKey(["asset_a"])}
 
@@ -782,7 +780,7 @@ def test_pure_asset_backfill(
 ):
     del external_repo
 
-    partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
+    partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
@@ -793,8 +791,9 @@ def test_pure_asset_backfill(
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
-            partition_names=partition_name_list,
+            partition_names=partition_keys,
             dynamic_partitions_store=instance,
+            all_partitions=False,
         )
     )
     assert instance.get_runs_count() == 0
@@ -866,5 +865,103 @@ def test_backfill_from_failure_for_subselection(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 2
     child_run = list(instance.get_runs(limit=1))[0]
-    assert child_run.solids_to_execute == run.solids_to_execute
-    assert child_run.solid_selection == run.solid_selection
+    assert child_run.resolved_op_selection == run.resolved_op_selection
+    assert child_run.op_selection == run.op_selection
+
+
+def test_asset_backfill_cancellation(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    backfill_id = "backfill_with_multiple_assets_selected"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 1
+    run = instance.get_runs()[0]
+    assert run.tags[BACKFILL_ID_TAG] == backfill_id
+    assert run.asset_selection == {AssetKey(["asset_a"])}
+
+    wait_for_all_runs_to_start(instance, timeout=30)
+    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.CANCELED
+    assert instance.get_runs_count() == 1  # Assert that additional runs are not created
+
+
+def test_error_code_location(
+    caplog, instance, workspace_context, unloadable_location_workspace_context
+):
+    asset_selection = [AssetKey("asset_a")]
+    partition_keys = partitions_a.get_partition_keys()
+    backfill_id = "dummy_backfill"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+
+    errors = list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+
+    assert len(errors) == 1
+    assert (
+        "dagster._core.errors.DagsterAssetBackfillDataLoadError: Asset asset_a existed at"
+        " storage-time, but no longer does. This could be because it's inside a code location"
+        " that's failing to load"
+        in errors[0].message
+    )
+    assert "Failure loading location" in caplog.text

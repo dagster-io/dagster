@@ -60,25 +60,21 @@ The Snowflake I/O manager requires some configuration to connect to your Snowfla
 You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
 
 ```python file=/integrations/snowflake/configuration.py startafter=start_example endbefore=end_example
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",  # required
-                "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {
-                    "env": "SNOWFLAKE_PASSWORD"
-                },  # password or private key required
-                "database": "FLOWERS",  # required
-                "role": "writer",  # optional, defaults to the default role for the account
-                "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
-                "schema": "IRIS,",  # optional, defaults to PUBLIC
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",  # required
+            user=EnvVar("SNOWFLAKE_USER"),  # required
+            password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
+            database="FLOWERS",  # required
+            role="writer",  # optional, defaults to the default role for the account
+            warehouse="PLANTS",  # optional, defaults to default warehouse for the account
+            schema="IRIS",  # optional, defaults to PUBLIC
         )
     },
 )
@@ -86,9 +82,9 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> API documentation.
 
 ---
 
@@ -113,13 +109,13 @@ from dagster import asset
 @asset
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 ```
@@ -164,15 +160,15 @@ from dagster import asset
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
+def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
     return iris_dataset.dropna().drop_duplicates()
 ```
 
 In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example to the `iris_cleaned` asset.
 
-In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
+In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-managed-loading-dependencies).
 
-When materializing these assets, Dagster will use the `snowflake_pandas_io_manager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `snowflake_pandas_io_manager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
+When materializing these assets, Dagster will use the `SnowflakePandasIOManager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `SnowflakePandasIOManager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
 
 ---
 
@@ -182,9 +178,9 @@ When finished, your code should look like the following:
 
 ```python file=/integrations/snowflake/full_example.py
 import pandas as pd
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, SourceAsset, asset
+from dagster import Definitions, EnvVar, SourceAsset, asset
 
 iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
@@ -192,33 +188,33 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 @asset
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
+def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
     return iris_dataset.dropna().drop_duplicates()
 
 
 defs = Definitions(
     assets=[iris_dataset, iris_harvest_data, iris_cleaned],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "schema": "IRIS,",
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            role="writer",
+            warehouse="PLANTS",
+            schema="IRIS",
         )
     },
 )

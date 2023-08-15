@@ -12,8 +12,8 @@ celeryConfigSecretName: "dagster-celery-config-secret"
 ####################################################################################################
 # User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
 # each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
-# GRPC server that Dagit/Dagster communicates with to get repository information and the current
-# image information. These deployments can be updated independently of Dagit, and Dagit/Dagster
+# GRPC server that Dagster communicates with to get repository information and the current
+# image information. These deployments can be updated independently of the webserver, and Dagster
 # will pull the current image for all execution. When using a distributed executor (such as
 # Celery-K8s) for pipeline run, the current image will be queried once and used for all
 # solid executions for that pipeline run. In order to guarantee that all solid executions within a
@@ -32,13 +32,17 @@ deployments:
       # almost certainly not what you want.
       pullPolicy: Always
     # Arguments to `dagster api grpc`.
-    # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+    # Ex: "dagster api grpc -m dagster_test.test_project.test_jobs.repo -a define_demo_execution_repo"
     # would translate to:
     # dagsterApiGrpcArgs:
     #   - "-m"
-    #   - "dagster_test.test_project.test_pipelines.repo"
+    #   - "dagster_test.test_project.test_jobs.repo"
     #   - "-a"
     #   - "define_demo_execution_repo"
+    # The `dagsterApiGrpcArgs` key can also be replaced with `codeServerArgs` to use a new
+    # experimental `dagster code-server start` command instead of `dagster api grpc`, which takes
+    # identical arguments but can reload its definitions from within the Dagster UI without
+    # needing to restart the user code deployment pod.
     dagsterApiGrpcArgs:
       - "-f"
       - "/example_project/example_repo/repo.py"
@@ -116,11 +120,13 @@ deployments:
     # Readiness probe detects when the pod is ready to serve requests.
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
     readinessProbe:
+      # Readiness probes are enabled by default.
+      enabled: true
       # If `readinessProbe` has no `exec` field, then the following default will be used:
       # exec:
       #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
       periodSeconds: 20
-      timeoutSeconds: 3
+      timeoutSeconds: 10
       successThreshold: 1
       failureThreshold: 3
 

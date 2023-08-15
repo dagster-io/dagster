@@ -589,7 +589,6 @@ def test_config_defaults():
         assert prev_sum == 6
         return prev_sum + _context.op_config["sum"]
 
-    # addition_graph
     def addition_graph_config_fn(config):
         child_config = {"config": {"sum": config["a"] + config["b"] + config["c"]}}
         return {"one": child_config, "two": child_config}
@@ -675,12 +674,12 @@ def test_build_optionality():
     assert optional_test_type.fields["optional"].is_required is False
 
 
-def test_wrong_solid_name():
+def test_wrong_op_name():
     @op(name="some_op", ins={}, out={}, config_schema=Int)
     def some_op(_):
         return None
 
-    @job(name="pipeline_wrong_op_name")
+    @job(name="job_wrong_op_name")
     def job_def():
         some_op()
 
@@ -704,7 +703,7 @@ def dummy_resource(config_schema=None):
 
 def test_wrong_resources():
     job_def = GraphDefinition(
-        name="pipeline_test_multiple_context",
+        name="job_test_multiple_context",
         node_defs=[],
     ).to_job(
         resource_defs={
@@ -720,7 +719,7 @@ def test_wrong_resources():
         job_def.execute_in_process({"resources": {"nope": {}}})
 
 
-def test_solid_list_config():
+def test_op_list_config():
     value = [1, 2]
     called = {}
 
@@ -729,7 +728,7 @@ def test_solid_list_config():
         assert context.op_config == value
         called["yup"] = True
 
-    @job(name="op_list_config_pipeline")
+    @job(name="op_list_config_job")
     def job_def():
         op_list_config()
 
@@ -1039,7 +1038,7 @@ def test_multilevel_good_error_handling_ops():
     assert str(expected_suggested_config) in missing_field_pe_info.value.errors[0].message
 
 
-def test_multilevel_good_error_handling_solid_name_ops():
+def test_multilevel_good_error_handling_op_name_ops():
     @op(config_schema=Int)
     def good_error_handling(_context):
         pass

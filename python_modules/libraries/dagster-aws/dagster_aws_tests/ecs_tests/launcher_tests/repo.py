@@ -1,5 +1,4 @@
 import dagster
-import dagster._legacy as legacy
 
 
 @dagster.op
@@ -7,11 +6,11 @@ def node(_):
     pass
 
 
-@legacy.pipeline
-def pipeline():
+@dagster.job
+def job():
     node()
 
 
 @dagster.repository
 def repository():
-    return {"pipelines": {"pipeline": pipeline}}
+    return {"jobs": {"job": job}}

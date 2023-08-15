@@ -17,6 +17,7 @@ from .errors import (
     create_missing_required_field_error,
     create_missing_required_fields_error,
     create_none_not_allowed_error,
+    create_pydantic_env_var_error,
     create_scalar_error,
     create_selector_multiple_fields_error,
     create_selector_multiple_fields_no_field_selected_error,
@@ -80,6 +81,8 @@ def validate_config_from_snap(
 
 
 def _validate_config(context: ValidationContext, config_value: object) -> EvaluateValueResult[Any]:
+    from dagster._config.field_utils import EnvVar, IntEnvVar
+
     check.inst_param(context, "context", ValidationContext)
 
     kind = context.config_type_snap.kind
@@ -100,6 +103,13 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
     if kind == ConfigTypeKind.SCALAR:
         if not is_config_scalar_valid(context.config_type_snap, config_value):
             return EvaluateValueResult.for_error(create_scalar_error(context, config_value))
+        # If user passes an EnvVar or IntEnvVar to a non-structured run config dictionary, throw explicit error
+        if context.config_type_snap.scalar_kind == ConfigScalarKind.STRING and isinstance(
+            config_value, (EnvVar, IntEnvVar)
+        ):
+            return EvaluateValueResult.for_error(
+                create_pydantic_env_var_error(context, config_value)
+            )
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)
@@ -191,21 +201,23 @@ def validate_selector_config(
 
     child_evaluate_value_result = _validate_config(
         context.for_field_snap(field_snap),
-        # This is a very particular special case where we want someone
-        # to be able to select a selector key *without* a value
-        #
-        # e.g.
-        # storage:
-        #   filesystem:
-        #
-        # And we want the default values of the child elements of filesystem:
-        # to "fill in"
-        {}
-        if field_value is None
-        and ConfigTypeKind.has_fields(
-            context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
-        )
-        else field_value,
+        (
+            # This is a very particular special case where we want someone
+            # to be able to select a selector key *without* a value
+            #
+            # e.g.
+            # storage:
+            #   filesystem:
+            #
+            # And we want the default values of the child elements of filesystem:
+            # to "fill in"
+            {}
+            if field_value is None
+            and ConfigTypeKind.has_fields(
+                context.config_schema_snapshot.get_config_snap(field_snap.type_key).kind
+            )
+            else field_value
+        ),
     )
 
     if child_evaluate_value_result.success:

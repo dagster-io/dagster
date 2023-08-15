@@ -3,6 +3,11 @@ DuckDB (dagster-duckdb)
 
 This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ database.
 
+Related Guides:
+
+* `Using Dagster with DuckDB guide </integrations/duckdb>`_
+* `DuckDB I/O manager reference </integrations/duckdb/reference>`_
+
 
 .. currentmodule:: dagster_duckdb
 
@@ -11,3 +16,6 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. autoconfigurable:: build_duckdb_io_manager
   :annotation: IOManagerDefinition
+
+.. autoconfigurable:: DuckDBResource
+  :annotation: ResourceDefinition

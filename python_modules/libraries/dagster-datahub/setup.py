@@ -26,7 +26,6 @@ setup(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datahub"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -37,7 +36,7 @@ setup(
     packages=find_packages(exclude=["dagster_datahub_tests*"]),
     include_package_data=True,
     install_requires=[
-        "acryl-datahub[datahub-rest, datahub-kafka]<0.8.41.2",
+        "acryl-datahub[datahub-rest, datahub-kafka]<=0.10.2",
         f"dagster{pin}",
         "packaging",
         "requests",

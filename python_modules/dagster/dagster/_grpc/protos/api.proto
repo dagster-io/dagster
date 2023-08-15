@@ -28,6 +28,7 @@ service DagsterApi {
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
+  rpc ReloadCode (ReloadCodeRequest) returns (ReloadCodeReply) {}
 }
 
 message Empty {}
@@ -183,5 +184,12 @@ message ExternalJobRequest {
 
 message ExternalJobReply {
   string serialized_job_data = 1;
+  string serialized_error = 2;
+}
+
+message ReloadCodeRequest {
+}
+
+message ReloadCodeReply {
   string serialized_error = 2;
 }

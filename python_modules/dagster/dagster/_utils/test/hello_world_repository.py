@@ -1,4 +1,4 @@
-from dagster._core.definitions import op, pipeline, repository
+from dagster._core.definitions import job, op, repository
 
 
 @op
@@ -6,11 +6,11 @@ def hello_world(_):
     pass
 
 
-@pipeline
-def hello_world_pipeline():
+@job
+def hello_world_job():
     hello_world()
 
 
 @repository
 def hello_world_repository():
-    return [hello_world_pipeline]
+    return [hello_world_job]

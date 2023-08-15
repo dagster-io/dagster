@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
 from ...utils import kubernetes
 
@@ -9,10 +9,16 @@ class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
     enabled: bool
 
 
+ReadinessProbeWithEnabled = create_model(
+    "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool)
+)
+
+
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
-    dagsterApiGrpcArgs: List[str]
+    dagsterApiGrpcArgs: Optional[List[str]]
+    codeServerArgs: Optional[List[str]]
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
     port: int
     env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]]
@@ -26,7 +32,7 @@ class UserDeployment(BaseModel):
     securityContext: Optional[kubernetes.SecurityContext]
     resources: Optional[kubernetes.Resources]
     livenessProbe: Optional[kubernetes.LivenessProbe]
-    readinessProbe: Optional[kubernetes.ReadinessProbe]
+    readinessProbe: Optional[ReadinessProbeWithEnabled]
     startupProbe: Optional[kubernetes.StartupProbe]
     labels: Optional[Dict[str, str]]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]

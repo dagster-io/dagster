@@ -4,9 +4,8 @@ from typing import Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.structured_config import (
+from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactory,
-    infer_schema_from_config_class,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -16,6 +15,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._utils.backoff import backoff
 from pydantic import Field
 
@@ -84,7 +84,8 @@ def build_duckdb_io_manager(
 
     """
 
-    @io_manager(config_schema=infer_schema_from_config_class(DuckDBIOManager))
+    @dagster_maintained_io_manager
+    @io_manager(config_schema=DuckDBIOManager.to_config_schema())
     def duckdb_io_manager(init_context):
         """IO Manager for storing outputs in a DuckDB database.
 
@@ -233,9 +234,11 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
     return " AND\n".join(
-        _time_window_where_clause(partition_dimension)
-        if isinstance(partition_dimension.partitions, TimeWindow)
-        else _static_where_clause(partition_dimension)
+        (
+            _time_window_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partitions, TimeWindow)
+            else _static_where_clause(partition_dimension)
+        )
         for partition_dimension in partition_dimensions
     )
 

@@ -1,12 +1,18 @@
-from dagster import job, op
+from dagster import Config, RunConfig, job, op
 
 
-@op(config_schema={"config_param": str})
-def do_something(context):
-    context.log.info("config_param: " + context.op_config["config_param"])
+class DoSomethingConfig(Config):
+    config_param: str
 
 
-default_config = {"ops": {"do_something": {"config": {"config_param": "stuff"}}}}
+@op
+def do_something(context, config: DoSomethingConfig):
+    context.log.info("config_param: " + config.config_param)
+
+
+default_config = RunConfig(
+    ops={"do_something": DoSomethingConfig(config_param="stuff")}
+)
 
 
 @job(config=default_config)

@@ -30,12 +30,14 @@ I/O Manager
 Resource
 ========
 
+.. autoconfigurable:: SnowflakeResource
+  :annotation: ResourceDefinition
+
 .. autoconfigurable:: snowflake_resource
   :annotation: ResourceDefinition
 
 .. autoclass:: SnowflakeConnection
   :members:
-  :undoc-members:
 
 Ops
 ===

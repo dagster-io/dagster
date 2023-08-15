@@ -1,12 +1,12 @@
 import dagster._check as check
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     Field,
-    OpExecutionContext,
     Out,
     Output,
     ReexecutionOptions,
@@ -377,11 +377,11 @@ def echo(x):
 
 
 @op
-def fail_once(context: OpExecutionContext, x):
+def fail_once(context: AssetExecutionContext, x):
     key = context.op_handle.name
-    if context.instance.run_storage.kvs_get({key}).get(key):
+    if context.instance.run_storage.get_cursor_values({key}).get(key):
         return x
-    context.instance.run_storage.kvs_set({key: "true"})
+    context.instance.run_storage.set_cursor_values({key: "true"})
     raise Exception("failed (just this once)")
 
 

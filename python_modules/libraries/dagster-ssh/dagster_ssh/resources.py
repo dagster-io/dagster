@@ -11,6 +11,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils import mkdir_p
 from dagster._utils.merger import merge_dicts
 from paramiko.config import SSH_PORT
@@ -58,9 +59,6 @@ class SSHResource:
         self.keepalive_interval = check.opt_int_param(keepalive_interval, "keepalive_interval")
         self.compress = check.opt_bool_param(compress, "compress")
         self.no_host_key_check = check.opt_bool_param(no_host_key_check, "no_host_key_check")
-        self.allow_host_key_change = check.opt_bool_param(
-            allow_host_key_change, "allow_host_key_change"
-        )
         self.log = logger
 
         self.host_proxy = None
@@ -95,12 +93,7 @@ class SSHResource:
         :rtype: paramiko.client.SSHClient
         """
         client = paramiko.SSHClient()
-        if not self.allow_host_key_change:
-            self.log.warning(
-                "Remote Identification Change is not verified. This won't protect against "
-                "Man-In-The-Middle attacks"
-            )
-            client.load_system_host_keys()
+        client.load_system_host_keys()
         if self.no_host_key_check:
             self.log.warning(
                 "No Host Key Verification. This won't protect against Man-In-The-Middle attacks"
@@ -212,6 +205,7 @@ class SSHResource:
         return local_filepath
 
 
+@dagster_maintained_resource
 @resource(
     config_schema={
         "remote_host": Field(
@@ -255,7 +249,9 @@ class SSHResource:
         ),
         "compress": Field(BoolSource, is_required=False, default_value=True),
         "no_host_key_check": Field(BoolSource, is_required=False, default_value=True),
-        "allow_host_key_change": Field(BoolSource, is_required=False, default_value=False),
+        "allow_host_key_change": Field(
+            BoolSource, description="[Deprecated]", is_required=False, default_value=False
+        ),
     }
 )
 def ssh_resource(init_context):

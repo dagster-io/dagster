@@ -53,11 +53,11 @@ def test_repeated_evaluation():
     @freshness_policy_sensor(asset_selection=AssetSelection.all() - AssetSelection.keys("a"))
     def all_sensor(context):
         if len(_minutes_late_by_key[context.asset_key]) == 0:
-            assert context.previous_minutes_late is None
+            assert context.previous_minutes_overdue is None
         else:
-            assert context.previous_minutes_late == _minutes_late_by_key[context.asset_key][-1]
+            assert context.previous_minutes_overdue == _minutes_late_by_key[context.asset_key][-1]
 
-        _minutes_late_by_key[context.asset_key].append(context.minutes_late)
+        _minutes_late_by_key[context.asset_key].append(context.minutes_overdue)
 
     with instance_for_test() as instance:
         materialize([a, b, c, d, e], instance=instance)

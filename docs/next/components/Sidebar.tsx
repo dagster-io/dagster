@@ -15,6 +15,7 @@ const useCurrentSection = (navigation) => {
   const match = navigation.find((item) => item.path !== '/' && asPath.startsWith(item.path));
   return match || navigation.find((item) => item.path === '/');
 };
+
 interface MenuItemProps {
   item: any;
   match: boolean;
@@ -25,21 +26,32 @@ interface MenuItemProps {
 
 const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<MenuItemProps>>(
   ({item, match, lvl, onClick, expanded}, ref) => {
-    const rightIcon = item.isExternalLink
-      ? Icons['ExternalLink']
-      : item.children && (expanded ? Icons['ChevronDown'] : Icons['ChevronRight']);
+    const rightIcon = () => {
+      if (item.isExternalLink) {
+        return <ExternalLinkIcon match={match} />;
+      }
+      if (item.children) {
+        return <ChevronButton expanded={expanded} match={match} onClick={() => onClick()} />;
+      }
+      return null;
+    };
 
-    const itemClassName = cx(
-      'w-full  transition group flex justify-between items-center rounded-md text-gray-800 text-left',
+    const itemClassName = cx('relative transition rounded-md select-none', {
+      'hover:bg-lavender hover:bg-opacity-50': match,
+      'hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50': !match,
+    });
+
+    const innerClassName = cx(
+      'w-full relative transition group flex justify-between items-center text-gray-800 text-left select-none',
       {
-        'hover:bg-lavender hover:bg-opacity-50 text-blurple': match,
-        'hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50': !match,
+        'text-blurple': match,
         'px-2 py-2 pl-3 pr-2 font-medium': lvl === 0,
         'py-2 ml-0 pl-2 pr-2 font-normal text-gray-500': lvl >= 1,
         'text-sm content-box w-full ': lvl >= 2,
       },
     );
-    const children: JSX.Element = (
+
+    const itemContents = (
       <>
         <div className="flex justify-start content-box w-full">
           {item.icon && (
@@ -62,57 +74,110 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
           )}
           <span className="font-normal">{item.title}</span>
         </div>
-        {rightIcon && (
-          <svg
-            className={cx('mr-2 h-6 w-6 p-1 rounded-full text-gray-400 transition flex-shrink-0', {
-              'text-blurple': match,
-              'group-hover:text-gray-600': !match,
-            })}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            {rightIcon}
-          </svg>
-        )}
       </>
     );
-    const hyperlink: JSX.Element = (
-      <a
-        className={itemClassName}
-        href={item.path}
-        onClick={onClick}
-        ref={ref}
-        target={item.isExternalLink ? '_blank' : '_self'}
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
+
+    if (item.path === undefined) {
+      return (
+        <div className={itemClassName}>
+          <button className={innerClassName} onClick={onClick}>
+            {itemContents}
+          </button>
+          {rightIcon()}
+        </div>
+      );
+    }
+
+    const linkElement = (
+      <div className={itemClassName}>
+        <a
+          className={innerClassName}
+          href={item.path}
+          ref={ref}
+          target={item.isExternalLink ? '_blank' : '_self'}
+          rel="noopener noreferrer"
+        >
+          {itemContents}
+        </a>
+        {rightIcon()}
+      </div>
     );
 
-    return item.path === undefined ? (
-      // no link
-      <button className={itemClassName} onClick={onClick}>
-        {children}
-      </button>
-    ) : item.isExternalLink ? (
-      // external link
-      hyperlink
-    ) : item.isUnversioned ? (
-      // unversioned link
-      <NextLink href={item.path} passHref>
-        {hyperlink}
-      </NextLink>
-    ) : (
-      // versioned link
+    if (item.isExternalLink) {
+      return linkElement;
+    }
+
+    if (item.isUnversioned) {
+      return (
+        <NextLink href={item.path} passHref>
+          {linkElement}
+        </NextLink>
+      );
+    }
+
+    // Versioned link
+    return (
       <Link href={item.path} passHref>
-        {hyperlink}
+        {linkElement}
       </Link>
     );
   },
 );
+
+const ExternalLinkIcon = ({match}: {match: boolean}) => {
+  return (
+    <div className="absolute right-0 top-1">
+      <svg
+        className={cx('mr-2 h-6 w-6 p-1 rounded-full text-gray-400 transition flex-shrink-0', {
+          'text-blurple': match,
+          'group-hover:text-gray-600': !match,
+        })}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        {Icons.ExternalLink}
+      </svg>
+    </div>
+  );
+};
+
+const ChevronButton = ({
+  expanded,
+  match,
+  onClick,
+}: {
+  expanded: boolean;
+  match: boolean;
+  onClick: () => void;
+}) => {
+  // Disallow any NextLink wrapper from handling the click as it bubbles.
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onClick();
+  };
+
+  return (
+    <button onClick={handleClick} className="absolute right-2 top-2 p-2 -m-2">
+      <svg
+        className={cx('h-6 w-6 p-1 rounded-full text-gray-400 transition flex-shrink-0', {
+          'text-blurple': match,
+          'group-hover:text-gray-600': !match,
+          'rotate-90': expanded,
+        })}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        {expanded ? Icons.ChevronDown : Icons.ChevronRight}
+      </svg>
+    </button>
+  );
+};
 
 const RecursiveNavigation = ({
   itemOrSection,

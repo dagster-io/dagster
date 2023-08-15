@@ -36,7 +36,7 @@ def test_config_enum_error():
     assert not validate_config(define_test_enum_type(), "NOT_PRESENT").success
 
 
-def test_enum_in_pipeline_execution():
+def test_enum_in_job_execution():
     called = {}
 
     @op(
@@ -50,9 +50,9 @@ def test_enum_in_pipeline_execution():
         assert context.op_config["enum_field"] == "ENUM_VALUE"
         called["yup"] = True
 
-    pipeline_def = GraphDefinition(name="enum_in_pipeline", node_defs=[config_me]).to_job()
+    job_def = GraphDefinition(name="enum_in_job", node_defs=[config_me]).to_job()
 
-    result = pipeline_def.execute_in_process(
+    result = job_def.execute_in_process(
         {"ops": {"config_me": {"config": {"int_field": 2, "enum_field": "ENUM_VALUE"}}}},
     )
 
@@ -60,7 +60,7 @@ def test_enum_in_pipeline_execution():
     assert called["yup"]
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        pipeline_def.execute_in_process(
+        job_def.execute_in_process(
             {"ops": {"config_me": {"config": {"int_field": 2, "enum_field": "NOPE"}}}},
         )
 
@@ -91,11 +91,9 @@ def test_native_enum_dagster_enum():
         assert context.op_config == NativeEnum.BAR
         called["yup"] = True
 
-    pipeline_def = GraphDefinition(
-        name="native_enum_dagster_pipeline", node_defs=[dagster_enum_me]
-    ).to_job()
+    job_def = GraphDefinition(name="native_enum_dagster_job", node_defs=[dagster_enum_me]).to_job()
 
-    result = pipeline_def.execute_in_process({"ops": {"dagster_enum_me": {"config": "BAR"}}})
+    result = job_def.execute_in_process({"ops": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
     assert called["yup"]
 
@@ -109,11 +107,9 @@ def test_native_enum_dagster_enum_from_classmethod():
         assert context.op_config == NativeEnum.BAR
         called["yup"] = True
 
-    pipeline_def = GraphDefinition(
-        name="native_enum_dagster_pipeline", node_defs=[dagster_enum_me]
-    ).to_job()
+    job_def = GraphDefinition(name="native_enum_dagster_job", node_defs=[dagster_enum_me]).to_job()
 
-    result = pipeline_def.execute_in_process({"ops": {"dagster_enum_me": {"config": "BAR"}}})
+    result = job_def.execute_in_process({"ops": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
     assert called["yup"]
 

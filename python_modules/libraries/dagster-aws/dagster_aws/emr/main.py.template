@@ -3,7 +3,7 @@ import sys
 from pyspark import SparkFiles
 from pyspark.sql import SparkSession
 
-spark = SparkSession.builder.getOrCreate()
+spark = SparkSession.builder.getOrCreate() # type: ignore
 sc = spark.sparkContext
 sys.path.insert(0, SparkFiles.getRootDirectory())
 

@@ -40,7 +40,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.output import get_output_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
@@ -339,15 +339,15 @@ def execute_job_with_steps(
     plan = create_execution_plan(
         recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
     )
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=recon_job.get_definition(),
+    dagster_run = instance.create_run_for_job(
+        job_def=recon_job.get_definition(),
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
         root_run_id=root_run_id,
         run_config=run_config,
     )
-    return execute_plan(plan, recon_job, instance, pipeline_run, run_config=run_config)
+    return execute_plan(plan, recon_job, instance, dagster_run, run_config=run_config)
 
 
 def define_metadata_job():
@@ -576,7 +576,7 @@ def test_io_manager_resources_on_context():
         return InternalIOManager()
 
     @op(
-        ins={"_manager_input": In(root_manager_key="io_manager_reqs_resources")},
+        ins={"_manager_input": In(input_manager_key="io_manager_reqs_resources")},
         out=Out(dagster_type=str, io_manager_key="io_manager_reqs_resources"),
     )
     def big_op(_manager_input):
@@ -596,7 +596,7 @@ def test_io_manager_resources_on_context():
     assert result.success
 
 
-def test_mem_io_managers_result_for_solid():
+def test_mem_io_managers_result_for_op():
     @op
     def one():
         return 1
@@ -650,7 +650,7 @@ def test_get_output_context_with_resources():
     ):
         get_output_context(
             execution_plan=create_execution_plan(basic_job),
-            pipeline_def=basic_job,
+            job_def=basic_job,
             resolved_run_config=ResolvedRunConfig.build(basic_job),
             step_output_handle=StepOutputHandle("basic_op", "result"),
             run_id=None,
@@ -679,10 +679,10 @@ def test_error_boundary_with_gen():
         return 5
 
     @job(resource_defs={"io_manager": error_io_manager})
-    def single_solid_job():
+    def single_op_job():
         basic_op()
 
-    result = single_solid_job.execute_in_process(raise_on_error=False)
+    result = single_op_job.execute_in_process(raise_on_error=False)
     step_failure = [
         event for event in result.all_events if event.event_type_value == "STEP_FAILURE"
     ][0]
@@ -740,12 +740,12 @@ def test_asset_key():
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.asset_key == before.asset_key
-            assert context.upstream_output.asset_key == before.asset_key
+            assert context.asset_key == before.key
+            assert context.upstream_output.asset_key == before.key
             return 1
 
         def handle_output(self, context, obj):
-            assert context.asset_key in {before.asset_key, after.asset_key}
+            assert context.asset_key in {before.key, after.key}
 
     result = materialize([before, after], resources={"io_manager": MyIOManager()})
     assert result.success
@@ -1086,3 +1086,34 @@ def test_instance_set_on_asset_loader():
         defs.load_asset_value("another_asset", instance=instance)
 
         assert executed["yes"]
+
+
+def test_telemetry_custom_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    assert not my_io_manager._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_telemetry_dagster_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            return {}
+
+        def load_input(self, context):
+            return 1
+
+    @dagster_maintained_io_manager
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    assert my_io_manager._is_dagster_maintained()  # noqa: SLF001

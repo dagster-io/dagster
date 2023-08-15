@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 import pytest
 from dagster import job
 from dagster._check import CheckError
-from dagster_databricks import databricks_client
+from dagster_databricks import DatabricksClientResource, databricks_client
 from dagster_databricks.ops import (
     create_databricks_run_now_op,
     create_databricks_submit_run_op,
@@ -43,28 +43,42 @@ def _mock_get_run_response() -> Sequence[dict]:
     ]
 
 
+@pytest.fixture(params=["pythonic", "legacy"])
+def databricks_client_factory(request):
+    if request.param == "pythonic":
+        return DatabricksClientResource
+    else:
+        return lambda **kwargs: databricks_client.configured(kwargs)
+
+
 @pytest.mark.parametrize(
-    "databricks_job_configuration",
+    "databricks_job_configuration,databricks_resource_key",
     [
-        None,
-        {},
-        {
-            "python_params": [
-                "--input",
-                "schema.db.input_table",
-                "--output",
-                "schema.db.output_table",
-            ]
-        },
+        (None, None),
+        ({}, "databricks"),
+        (
+            {
+                "python_params": [
+                    "--input",
+                    "schema.db.input_table",
+                    "--output",
+                    "schema.db.output_table",
+                ]
+            },
+            "custom_databricks_resource_key",
+        ),
     ],
     ids=[
-        "no Databricks job configuration",
-        "empty Databricks job configuration",
-        "Databricks job configuration with python params",
+        "no Databricks job configuration, no databricks resource key",
+        "empty Databricks job configuration, and default databricks resource key",
+        "Databricks job configuration with python params and custom databricks resource key",
     ],
 )
 def test_databricks_run_now_op(
-    mocker: MockerFixture, databricks_job_configuration: Optional[dict]
+    databricks_client_factory,
+    mocker: MockerFixture,
+    databricks_job_configuration: Optional[dict],
+    databricks_resource_key: Optional[str],
 ) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
@@ -73,16 +87,28 @@ def test_databricks_run_now_op(
     mock_run_now.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
-    test_databricks_run_now_op = create_databricks_run_now_op(
-        databricks_job_id=databricks_job_id,
-        databricks_job_configuration=databricks_job_configuration,
-        poll_interval_seconds=0.01,
+    if databricks_resource_key is not None:
+        test_databricks_run_now_op = create_databricks_run_now_op(
+            databricks_job_id=databricks_job_id,
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+            databricks_resource_key=databricks_resource_key,
+        )
+    else:
+        test_databricks_run_now_op = create_databricks_run_now_op(
+            databricks_job_id=databricks_job_id,
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+        )
+
+    databricks_resource_name = (
+        databricks_resource_key if databricks_resource_key is not None else "databricks"
     )
 
     @job(
         resource_defs={
-            "databricks": databricks_client.configured(
-                {"host": "https://abc123.cloud.databricks.com/", "token": "token"}
+            databricks_resource_name: databricks_client_factory(
+                host="https://abc123.cloud.databricks.com/", token="token"
             )
         }
     )
@@ -99,7 +125,20 @@ def test_databricks_run_now_op(
     assert mock_get_run.call_count == 4
 
 
-def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
+@pytest.mark.parametrize(
+    "databricks_resource_key",
+    [None, "databricks", "custom_databricks_resource_key"],
+    ids=[
+        "no databricks resource key",
+        "default databricks resource key",
+        "custom databricks resource key",
+    ],
+)
+def test_databricks_submit_run_op(
+    databricks_client_factory,
+    mocker: MockerFixture,
+    databricks_resource_key: Optional[str],
+) -> None:
     mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
     databricks_job_configuration = {
@@ -115,15 +154,26 @@ def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
     mock_submit_run.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
-    test_databricks_submit_run_op = create_databricks_submit_run_op(
-        databricks_job_configuration=databricks_job_configuration,
-        poll_interval_seconds=0.01,
+    if databricks_resource_key is not None:
+        test_databricks_submit_run_op = create_databricks_submit_run_op(
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+            databricks_resource_key=databricks_resource_key,
+        )
+    else:
+        test_databricks_submit_run_op = create_databricks_submit_run_op(
+            databricks_job_configuration=databricks_job_configuration,
+            poll_interval_seconds=0.01,
+        )
+
+    databricks_resource_name = (
+        databricks_resource_key if databricks_resource_key is not None else "databricks"
     )
 
     @job(
         resource_defs={
-            "databricks": databricks_client.configured(
-                {"host": "https://abc123.cloud.databricks.com/", "token": "token"}
+            databricks_resource_name: databricks_client_factory(
+                host="https://abc123.cloud.databricks.com/", token="token"
             )
         }
     )
@@ -140,3 +190,24 @@ def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
 def test_databricks_submit_run_op_no_job() -> None:
     with pytest.raises(CheckError):
         create_databricks_submit_run_op(databricks_job_configuration={})
+
+
+def test_databricks_op_name():
+    databricks_job_configuration = {
+        "new_cluster": {
+            "spark_version": "2.1.0-db3-scala2.11",
+            "num_workers": 2,
+        },
+        "notebook_task": {
+            "notebook_path": "/Users/dagster@example.com/PrepareData",
+        },
+    }
+
+    @job
+    def databricks_job():
+        create_databricks_run_now_op(
+            databricks_job_id=1,
+        )()
+        create_databricks_run_now_op(databricks_job_id=1, name="other_name")()
+        create_databricks_submit_run_op(databricks_job_configuration)()
+        create_databricks_submit_run_op(databricks_job_configuration, name="other_name_2")()

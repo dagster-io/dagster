@@ -3,7 +3,7 @@ from dagster._core.snap import build_dagster_type_namespace_snapshot
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string_type
 
 
-def test_simple_pipeline_input_dagster_type_namespace():
+def test_simple_job_input_dagster_type_namespace():
     SomethingType = create_string_type("SomethingType", description="desc")
 
     @op(ins={"something": In(SomethingType)})
@@ -26,7 +26,7 @@ def test_simple_pipeline_input_dagster_type_namespace():
     assert type_snap.loader_schema_key == SomethingType.loader_schema_key
 
 
-def test_simple_pipeline_output_dagster_type_namespace():
+def test_simple_job_output_dagster_type_namespace():
     SomethingType = create_string_type("SomethingType")
 
     @op(out=Out(SomethingType))

@@ -22,9 +22,9 @@ class MyAssets(CacheableAssetsDefinition):
         instance = DagsterInstance.get()
         kvs_key = f"compute_cacheable_data_called_{self.unique_id}"
         compute_cacheable_data_called = int(
-            instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0")
+            instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0")
         )
-        instance.run_storage.kvs_set({kvs_key: str(compute_cacheable_data_called + 1)})
+        instance.run_storage.set_cursor_values({kvs_key: str(compute_cacheable_data_called + 1)})
 
         return [
             AssetsDefinitionCacheableData(
@@ -50,8 +50,10 @@ class MyAssets(CacheableAssetsDefinition):
         # used for tracking how many times we've executed this function
         instance = DagsterInstance.get()
         kvs_key = f"get_definitions_called_{self.unique_id}"
-        get_definitions_called = int(instance.run_storage.kvs_get({kvs_key}).get(kvs_key, "0"))
-        instance.run_storage.kvs_set({kvs_key: str(get_definitions_called + 1)})
+        get_definitions_called = int(
+            instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0")
+        )
+        instance.run_storage.set_cursor_values({kvs_key: str(get_definitions_called + 1)})
 
         @op(name=f"my_op_{self.unique_id}", ins={"inp": In(Nothing)})
         def my_op():

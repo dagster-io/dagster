@@ -12,7 +12,6 @@ from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_m
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
-from dagster_test.toys.conditional_assets import get_conditional_assets_repo
 from dagster_test.toys.cross_repo_assets import (
     downstream_repo1_assets,
     downstream_repo2_assets,
@@ -27,7 +26,6 @@ from dagster_test.toys.log_asset import log_asset_job
 from dagster_test.toys.log_file import log_file_job
 from dagster_test.toys.log_s3 import log_s3_job
 from dagster_test.toys.log_spew import log_spew
-from dagster_test.toys.long_asset_keys import long_asset_keys_group
 from dagster_test.toys.longitudinal import longitudinal_job
 from dagster_test.toys.many_events import many_events, many_events_subset_job
 from dagster_test.toys.metadata import with_metadata
@@ -54,6 +52,12 @@ from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
 
+from .auto_materializing.large_graph import (
+    auto_materialize_large_static_graph as auto_materialize_large_static_graph,
+    auto_materialize_large_time_graph as auto_materialize_large_time_graph,
+)
+from .auto_materializing.repo_1 import auto_materialize_repo_1 as auto_materialize_repo_1
+from .auto_materializing.repo_2 import auto_materialize_repo_2 as auto_materialize_repo_2
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
@@ -98,7 +102,7 @@ def toys_repository():
             model_job,
             multi_inputs_outputs_job,
             hello_world_notebook_pipeline,
-            software_defined_assets,
+            *software_defined_assets,
             with_metadata,
             succeeds_job,
             return_run_request_succeeds_sensor,
@@ -121,18 +125,6 @@ def toys_repository():
 
 
 @repository
-def more_toys_repository():
-    return [fails_job, succeeds_job]
-
-
-@repository
-def asset_groups_repository():
-    from . import asset_groups
-
-    return load_assets_from_modules([asset_groups])
-
-
-@repository
 def basic_assets_repository():
     from . import basic_assets
 
@@ -140,17 +132,16 @@ def basic_assets_repository():
 
 
 @repository
-def nothing_repository():
-    from .nothing_assets import nothing_job
-
-    return [nothing_job]
-
-
-@repository
 def partitioned_assets_repository():
     from . import partitioned_assets
 
-    return load_assets_from_modules([partitioned_assets])
+    return [
+        load_assets_from_modules([partitioned_assets]),
+        partitioned_assets.customers_dynamic_partitions_job,
+        partitioned_assets.ints_dynamic_partitions_job_sensor,
+        partitioned_assets.ints_dynamic_partitions_asset_selection_sensor,
+        partitioned_assets.upstream_daily_partitioned_asset_sensor,
+    ]
 
 
 @repository
@@ -162,7 +153,9 @@ def table_metadata_repository():
 
 @repository
 def long_asset_keys_repository():
-    return [long_asset_keys_group]
+    from . import long_asset_keys
+
+    return load_assets_from_modules([long_asset_keys])
 
 
 @repository
@@ -197,4 +190,13 @@ def assets_with_sensors_repository():
 
 @repository
 def conditional_assets_repository():
-    return get_conditional_assets_repo()
+    from . import conditional_assets
+
+    return load_assets_from_modules([conditional_assets])
+
+
+@repository
+def data_versions_repository():
+    from . import data_versions
+
+    return load_assets_from_modules([data_versions])

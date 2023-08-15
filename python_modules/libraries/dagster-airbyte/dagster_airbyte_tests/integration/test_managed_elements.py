@@ -346,6 +346,7 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
         assert ManagedElementDiff() != check_result
 
 
+@pytest.mark.flaky(reruns=1)
 def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")

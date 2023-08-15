@@ -51,48 +51,33 @@ def test_nullable_list_combos():
 
 
 def test_basic_map_type_print():
-    assert (
-        print_config_type_to_string({str: int})
-        == """{
+    assert print_config_type_to_string({str: int}) == """{
   [String]: Int
 }"""
-    )
     assert_inner_types({str: int}, int, str)
 
-    assert (
-        print_config_type_to_string({int: int})
-        == """{
+    assert print_config_type_to_string({int: int}) == """{
   [Int]: Int
 }"""
-    )
     assert_inner_types({int: int}, int, int)
 
 
 def test_map_name_print():
-    assert (
-        print_config_type_to_string(Map(str, int, key_label_name="name"))
-        == """{
+    assert print_config_type_to_string(Map(str, int, key_label_name="name")) == """{
   [name: String]: Int
 }"""
-    )
 
-    assert (
-        print_config_type_to_string(Map(int, float, key_label_name="title"))
-        == """{
+    assert print_config_type_to_string(Map(int, float, key_label_name="title")) == """{
   [title: Int]: Float
 }"""
-    )
 
 
 def test_double_map_type_print():
-    assert (
-        print_config_type_to_string({str: {str: int}})
-        == """{
+    assert print_config_type_to_string({str: {str: int}}) == """{
   [String]: {
     [String]: Int
   }
 }"""
-    )
     int_map = {str: int}
     map_int_map = {str: int_map}
     assert_inner_types(map_int_map, Int, int_map, String)
@@ -232,7 +217,7 @@ def test_scalar_union():
     assert_inner_types(scalar_union_type, String, Int, non_scalar_type)
 
 
-def test_test_type_pipeline_construction():
+def test_test_type_job_construction():
     assert define_test_type_pipeline()
 
 
@@ -244,8 +229,8 @@ def define_solid_for_test_type(name, config):
     return a_op
 
 
-# launch in dagit with this command:
-# dagit -f test_type_printer.py -n define_test_type_pipeline
+# launch in UI with this command:
+# dagster dev -f test_type_printer.py -n define_test_type_pipeline
 def define_test_type_pipeline():
     return GraphDefinition(
         name="test_type_pipeline",

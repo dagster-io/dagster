@@ -191,13 +191,13 @@ def test_concat():
     assert res.output_value() == "foobar"
 
 
-def test_nothing_pipeline():
+def test_nothing_job():
     res = nothing_job.execute_in_process()
     assert res.output_for_node("wait") is None
     assert res.output_for_node("done") == "done"
 
 
-def test_nothing_int_pipeline():
+def test_nothing_int_job():
     res = nothing_int_job.execute_in_process()
     assert res.output_for_node("wait_int") == 1
     assert res.output_for_node("done") == "done"
@@ -213,7 +213,7 @@ def test_concat_list():
     assert res.output_value() == "foobarbaz"
 
 
-def test_sum_pipeline():
+def test_sum_job():
     res = sum_job.execute_in_process()
     assert res.output_for_node("sum_op") == 6
 

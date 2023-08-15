@@ -6,13 +6,11 @@ def test_header():
         printer.write_header()
         result = printer.read()
 
-    assert result.startswith(
-        """'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
+    assert result.startswith("""'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
 
 @generated
 
-Produced via:"""
-    )
+Produced via:""")
 
 
 def test_rest():
@@ -23,14 +21,11 @@ def test_rest():
         with printer.with_indent():
             printer.line("indented")
         result = printer.read()
-    assert (
-        result
-        == """foo bar
+    assert result == """foo bar
 
 # this is a comment
     indented
 """
-    )
 
 
 def test_block():

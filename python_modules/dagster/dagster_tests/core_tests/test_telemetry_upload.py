@@ -17,7 +17,7 @@ def path_to_file(path):
 
 
 # Note that both environment must be set together. Otherwise, if env={"BUILDKITE": None} ran in the
-# azure pipeline, then this test would fail, because TF_BUILD would be set implicitly, resulting in
+# azure job, then this test would fail, because TF_BUILD would be set implicitly, resulting in
 # no logs being uploaded. The same applies in the reverse way, if only TF_BUILD is set to None.
 @pytest.mark.parametrize(
     "env", [{"BUILDKITE": None, "TF_BUILD": None, "DAGSTER_DISABLE_TELEMETRY": None}]

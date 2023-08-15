@@ -3,8 +3,10 @@ from typing import Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
+from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
@@ -23,8 +25,8 @@ from ...implementation.execution import (
     terminate_pipeline_execution,
     wipe_assets,
 )
-from ...implementation.external import fetch_workspace, get_full_external_pipeline_or_raise
-from ...implementation.telemetry import log_dagit_telemetry_event
+from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
+from ...implementation.telemetry import log_ui_telemetry_event
 from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -93,14 +95,14 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 GrapheneConflictingExecutionParamsError(conflicting_param="mode")
             )
 
-        if selector.solid_selection:
+        if selector.op_selection:
             raise UserFacingGraphQLError(
                 GrapheneConflictingExecutionParamsError(
                     conflicting_param="selector.solid_selection"
                 )
             )
 
-        external_pipeline = get_full_external_pipeline_or_raise(
+        external_pipeline = get_full_external_job_or_raise(
             graphene_info,
             selector,
         )
@@ -113,7 +115,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         preset = external_pipeline.get_preset(preset_name)
 
         return ExecutionParams(
-            selector=selector.with_solid_selection(preset.solid_selection),
+            selector=selector.with_op_selection(preset.op_selection),
             run_config=preset.run_config,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(
@@ -248,8 +250,6 @@ class GrapheneTerminateRunResult(graphene.Union):
 
 
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
-    # refactored into a helper function here in order to wrap with @capture_error,
-    # because create_execution_params may raise
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
         graphene_info,
@@ -359,10 +359,7 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
         )
 
 
-@capture_error
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
-    # refactored into a helper function here in order to wrap with @capture_error,
-    # because create_execution_params may raise
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
         graphene_info,
@@ -392,10 +389,10 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
         executionParams: Optional[GrapheneExecutionParams] = None,
         reexecutionParams: Optional[GrapheneReexecutionParams] = None,
     ):
-        check.invariant(
-            bool(executionParams) != bool(reexecutionParams),
-            "Must only provide one of either executionParams or reexecutionParams",
-        )
+        if bool(executionParams) == bool(reexecutionParams):
+            raise DagsterInvariantViolationError(
+                "Must only provide one of either executionParams or reexecutionParams"
+            )
 
         if executionParams:
             return create_execution_params_and_launch_pipeline_reexec(
@@ -670,7 +667,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
     def mutate(
         self, graphene_info: ResolveInfo, action: str, clientTime: str, clientId: str, metadata: str
     ):
-        action = log_dagit_telemetry_event(
+        action = log_ui_telemetry_event(
             graphene_info,
             action=action,
             client_time=clientTime,
@@ -694,34 +691,94 @@ class GrapheneSetNuxSeenMutation(graphene.Mutation):
         return get_has_seen_nux()
 
 
-class GrapheneDagitMutation(graphene.ObjectType):
+class GrapheneSetAutoMaterializePausedMutation(graphene.Mutation):
+    """Toggle asset auto materializing on or off."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "SetAutoMaterializedPausedMutation"
+
+    class Arguments:
+        paused = graphene.Argument(graphene.NonNull(graphene.Boolean))
+
+    @capture_error
+    @check_permission(Permissions.TOGGLE_AUTO_MATERIALIZE)
+    def mutate(self, graphene_info, paused: bool):
+        set_auto_materialize_paused(graphene_info.context.instance, paused)
+        return paused
+
+
+class GrapheneSetConcurrencyLimitMutation(graphene.Mutation):
+    """Sets the concurrency limit for a given concurrency key."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "SetConcurrencyLimitMutation"
+
+    class Arguments:
+        concurrencyKey = graphene.Argument(graphene.NonNull(graphene.String))
+        limit = graphene.Argument(graphene.NonNull(graphene.Int))
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, concurrencyKey: str, limit: int):
+        graphene_info.context.instance.event_log_storage.set_concurrency_slots(
+            concurrencyKey, limit
+        )
+        return True
+
+
+class GrapheneFreeConcurrencySlotsForRunMutation(graphene.Mutation):
+    """Frees the concurrency slots occupied by a specific run."""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "FreeConcurrencySlotsForRunMutation"
+
+    class Arguments:
+        runId = graphene.Argument(graphene.NonNull(graphene.String))
+
+    @capture_error
+    @check_permission(Permissions.EDIT_CONCURRENCY_LIMIT)
+    def mutate(self, graphene_info, runId: str):
+        graphene_info.context.instance.event_log_storage.free_concurrency_slots_for_run(runId)
+        return True
+
+
+class GrapheneMutation(graphene.ObjectType):
     """The root for all mutations to modify data in your Dagster instance."""
 
     class Meta:
-        name = "DagitMutation"
+        name = "Mutation"
 
-    launch_pipeline_execution = GrapheneLaunchRunMutation.Field()
-    launch_run = GrapheneLaunchRunMutation.Field()
-    launch_pipeline_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
-    launch_run_reexecution = GrapheneLaunchRunReexecutionMutation.Field()
-    start_schedule = GrapheneStartScheduleMutation.Field()
-    stop_running_schedule = GrapheneStopRunningScheduleMutation.Field()
-    start_sensor = GrapheneStartSensorMutation.Field()
-    set_sensor_cursor = GrapheneSetSensorCursorMutation.Field()
-    stop_sensor = GrapheneStopSensorMutation.Field()
-    sensor_dry_run = GrapheneSensorDryRunMutation.Field()
-    schedule_dry_run = GrapheneScheduleDryRunMutation.Field()
-    terminate_pipeline_execution = GrapheneTerminateRunMutation.Field()
-    terminate_run = GrapheneTerminateRunMutation.Field()
-    delete_pipeline_run = GrapheneDeleteRunMutation.Field()
-    delete_run = GrapheneDeleteRunMutation.Field()
-    reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
-    reload_workspace = GrapheneReloadWorkspaceMutation.Field()
-    shutdown_repository_location = GrapheneShutdownRepositoryLocationMutation.Field()
-    wipe_assets = GrapheneAssetWipeMutation.Field()
-    launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
-    resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
-    cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
-    log_telemetry = GrapheneLogTelemetryMutation.Field()
-    set_nux_seen = GrapheneSetNuxSeenMutation.Field()
-    add_dynamic_partition = GrapheneAddDynamicPartitionMutation.Field()
+    launchPipelineExecution = GrapheneLaunchRunMutation.Field()
+    launchRun = GrapheneLaunchRunMutation.Field()
+    launchPipelineReexecution = GrapheneLaunchRunReexecutionMutation.Field()
+    launchRunReexecution = GrapheneLaunchRunReexecutionMutation.Field()
+    startSchedule = GrapheneStartScheduleMutation.Field()
+    stopRunningSchedule = GrapheneStopRunningScheduleMutation.Field()
+    startSensor = GrapheneStartSensorMutation.Field()
+    setSensorCursor = GrapheneSetSensorCursorMutation.Field()
+    stopSensor = GrapheneStopSensorMutation.Field()
+    sensorDryRun = GrapheneSensorDryRunMutation.Field()
+    scheduleDryRun = GrapheneScheduleDryRunMutation.Field()
+    terminatePipelineExecution = GrapheneTerminateRunMutation.Field()
+    terminateRun = GrapheneTerminateRunMutation.Field()
+    deletePipelineRun = GrapheneDeleteRunMutation.Field()
+    deleteRun = GrapheneDeleteRunMutation.Field()
+    reloadRepositoryLocation = GrapheneReloadRepositoryLocationMutation.Field()
+    reloadWorkspace = GrapheneReloadWorkspaceMutation.Field()
+    shutdownRepositoryLocation = GrapheneShutdownRepositoryLocationMutation.Field()
+    wipeAssets = GrapheneAssetWipeMutation.Field()
+    launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
+    resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
+    cancelPartitionBackfill = GrapheneCancelBackfillMutation.Field()
+    logTelemetry = GrapheneLogTelemetryMutation.Field()
+    setNuxSeen = GrapheneSetNuxSeenMutation.Field()
+    addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
+    setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
+    setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
+    freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()

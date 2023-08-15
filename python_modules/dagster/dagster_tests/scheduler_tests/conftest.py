@@ -5,10 +5,23 @@ from typing import Iterator, Optional
 import pytest
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
+from dagster._core.test_utils import (
+    SingleThreadPoolExecutor,
+    create_test_daemon_workspace_context,
+    instance_for_test,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
+
+
+@pytest.fixture(params=["synchronous", "threadpool"])
+def submit_executor(request):
+    if request.param == "synchronous":
+        yield None
+    elif request.param == "threadpool":
+        with SingleThreadPoolExecutor() as executor:
+            yield executor
 
 
 @pytest.fixture(name="instance_session_scoped", scope="session")
@@ -37,9 +50,11 @@ def instance_fixture(instance_session_scoped: DagsterInstance) -> Iterator[Dagst
     yield instance_session_scoped
 
 
-def workspace_load_target(attribute: Optional[str] = "the_repo") -> ModuleTarget:
+def workspace_load_target(
+    module: Optional[str] = "test_scheduler_run", attribute: Optional[str] = "the_repo"
+) -> ModuleTarget:
     return ModuleTarget(
-        module_name="dagster_tests.scheduler_tests.test_scheduler_run",
+        module_name=f"dagster_tests.scheduler_tests.{module}",
         attribute=attribute,
         working_directory=os.path.dirname(__file__),
         location_name="test_location",
@@ -72,3 +87,25 @@ def loadable_target_origin() -> LoadableTargetOrigin:
         working_directory=os.getcwd(),
         attribute="the_repo",
     )
+
+
+@pytest.fixture(name="workspace_one", scope="session")
+def workspace_one_fixture(
+    instance_session_scoped: DagsterInstance,
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=workspace_load_target("simple_repo_one"),
+        instance=instance_session_scoped,
+    ) as workspace:
+        yield workspace
+
+
+@pytest.fixture(name="workspace_two", scope="session")
+def workspace_two_fixture(
+    instance_session_scoped: DagsterInstance,
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=workspace_load_target("simple_repo_two"),
+        instance=instance_session_scoped,
+    ) as workspace:
+        yield workspace

@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from dagster import (
-    Field,
     In,
     Nothing,
     OpExecutionContext,
@@ -10,12 +9,15 @@ from dagster import (
 )
 from dagster._core.definitions.op_definition import OpDefinition
 from databricks_cli.sdk import JobsService
-
-from .databricks import DatabricksClient
+from pydantic import Field
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 # wait at most 24 hours by default for run execution
 DEFAULT_MAX_WAIT_TIME_SECONDS = 24 * 60 * 60
+from dagster import Config
+
+if TYPE_CHECKING:
+    from .databricks import DatabricksClient
 
 
 def create_databricks_run_now_op(
@@ -23,6 +25,8 @@ def create_databricks_run_now_op(
     databricks_job_configuration: Optional[dict] = None,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
+    name: Optional[str] = None,
+    databricks_resource_key: str = "databricks",
 ) -> OpDefinition:
     """Creates an op that launches an existing databricks job.
 
@@ -40,6 +44,10 @@ def create_databricks_run_now_op(
             Databricks job has finished running.
         max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
             before raising an error.
+        name (Optional[str]): The name of the op. If not provided, the name will be
+            _databricks_run_now_op.
+        databricks_resource_key (str): The name of the resource key used by this op. If not
+            provided, the resource key will be "databricks".
 
     Returns:
         OpDefinition: An op definition to run the Databricks Job.
@@ -48,7 +56,7 @@ def create_databricks_run_now_op(
         .. code-block:: python
 
             from dagster import job
-            from dagster_databricks import create_databricks_run_now_op, databricks_client
+            from dagster_databricks import create_databricks_run_now_op, DatabricksClientResource
 
             DATABRICKS_JOB_ID = 1234
 
@@ -67,42 +75,41 @@ def create_databricks_run_now_op(
 
             @job(
                 resource_defs={
-                    "databricks": databricks_client.configured(
-                        {
-                            "host": {"env": "DATABRICKS_HOST"},
-                            "token": {"env": "DATABRICKS_TOKEN"}
-                        }
+                    "databricks": DatabricksClientResource(
+                        host=EnvVar("DATABRICKS_HOST"),
+                        token=EnvVar("DATABRICKS_TOKEN")
                     )
                 }
             )
             def do_stuff():
                 run_now_op()
     """
+    _poll_interval_seconds = poll_interval_seconds
+    _max_wait_time_seconds = max_wait_time_seconds
+
+    class DatabricksRunNowOpConfig(Config):
+        poll_interval_seconds: float = Field(
+            default=_poll_interval_seconds,
+            description="Check whether the Databricks Job is done at this interval, in seconds.",
+        )
+        max_wait_time_seconds: int = Field(
+            default=_max_wait_time_seconds,
+            description=(
+                "If the Databricks Job is not complete after this length of time, in seconds,"
+                " raise an error."
+            ),
+        )
 
     @op(
         ins={"start_after": In(Nothing)},
-        config_schema={
-            "poll_interval_seconds": Field(
-                float,
-                description=(
-                    "Check whether the Databricks Job is done at this interval, in seconds."
-                ),
-                default_value=poll_interval_seconds,
-            ),
-            "max_wait_time_seconds": Field(
-                float,
-                description=(
-                    "If the Databricks Job is not complete after this length of time, in seconds,"
-                    " raise an error."
-                ),
-                default_value=max_wait_time_seconds,
-            ),
-        },
-        required_resource_keys={"databricks"},
+        required_resource_keys={databricks_resource_key},
         tags={"kind": "databricks"},
+        name=name,
     )
-    def _databricks_run_now_op(context: OpExecutionContext) -> None:
-        databricks: DatabricksClient = context.resources.databricks
+    def _databricks_run_now_op(
+        context: OpExecutionContext, config: DatabricksRunNowOpConfig
+    ) -> None:
+        databricks: DatabricksClient = getattr(context.resources, databricks_resource_key)
         jobs_service = JobsService(databricks.api_client)
 
         run_id: int = jobs_service.run_now(
@@ -120,8 +127,8 @@ def create_databricks_run_now_op(
         databricks.wait_for_run_to_complete(
             logger=context.log,
             databricks_run_id=run_id,
-            poll_interval_sec=context.op_config["poll_interval_seconds"],
-            max_wait_time_sec=context.op_config["max_wait_time_seconds"],
+            poll_interval_sec=config.poll_interval_seconds,
+            max_wait_time_sec=config.max_wait_time_seconds,
         )
 
     return _databricks_run_now_op
@@ -131,6 +138,8 @@ def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
+    name: Optional[str] = None,
+    databricks_resource_key: str = "databricks",
 ) -> OpDefinition:
     """Creates an op that submits a one-time run of a set of tasks on Databricks.
 
@@ -145,6 +154,10 @@ def create_databricks_submit_run_op(
             Databricks job has finished running.
         max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
             before raising an error.
+        name (Optional[str]): The name of the op. If not provided, the name will be
+            _databricks_submit_run_op.
+        databricks_resource_key (str): The name of the resource key used by this op. If not
+            provided, the resource key will be "databricks".
 
     Returns:
         OpDefinition: An op definition to submit a one-time run of a set of tasks on Databricks.
@@ -153,7 +166,7 @@ def create_databricks_submit_run_op(
         .. code-block:: python
 
             from dagster import job
-            from dagster_databricks import create_databricks_submit_run_op, databricks_client
+            from dagster_databricks import create_databricks_submit_run_op, DatabricksClientResource
 
 
             submit_run_op = create_databricks_submit_run_op(
@@ -170,11 +183,9 @@ def create_databricks_submit_run_op(
 
             @job(
                 resource_defs={
-                    "databricks": databricks_client.configured(
-                        {
-                            "host": {"env": "DATABRICKS_HOST"},
-                            "token": {"env": "DATABRICKS_TOKEN"}
-                        }
+                    "databricks": DatabricksClientResource(
+                        host=EnvVar("DATABRICKS_HOST"),
+                        token=EnvVar("DATABRICKS_TOKEN")
                     )
                 }
             )
@@ -186,30 +197,32 @@ def create_databricks_submit_run_op(
         "Configuration for the one-time Databricks Job is required.",
     )
 
+    _poll_interval_seconds = poll_interval_seconds
+    _max_wait_time_seconds = max_wait_time_seconds
+
+    class DatabricksSubmitRunOpConfig(Config):
+        poll_interval_seconds: float = Field(
+            default=_poll_interval_seconds,
+            description="Check whether the Databricks Job is done at this interval, in seconds.",
+        )
+        max_wait_time_seconds: int = Field(
+            default=_max_wait_time_seconds,
+            description=(
+                "If the Databricks Job is not complete after this length of time, in seconds,"
+                " raise an error."
+            ),
+        )
+
     @op(
         ins={"start_after": In(Nothing)},
-        config_schema={
-            "poll_interval_seconds": Field(
-                float,
-                description=(
-                    "Check whether the Databricks Job is done at this interval, in seconds."
-                ),
-                default_value=poll_interval_seconds,
-            ),
-            "max_wait_time_seconds": Field(
-                float,
-                description=(
-                    "If the Databricks Job is not complete after this length of time, in seconds,"
-                    " raise an error."
-                ),
-                default_value=max_wait_time_seconds,
-            ),
-        },
-        required_resource_keys={"databricks"},
+        required_resource_keys={databricks_resource_key},
         tags={"kind": "databricks"},
+        name=name,
     )
-    def _databricks_submit_run_op(context: OpExecutionContext) -> None:
-        databricks: DatabricksClient = context.resources.databricks
+    def _databricks_submit_run_op(
+        context: OpExecutionContext, config: DatabricksSubmitRunOpConfig
+    ) -> None:
+        databricks: DatabricksClient = getattr(context.resources, databricks_resource_key)
         jobs_service = JobsService(databricks.api_client)
 
         run_id: int = jobs_service.submit_run(**databricks_job_configuration)["run_id"]
@@ -224,8 +237,8 @@ def create_databricks_submit_run_op(
         databricks.wait_for_run_to_complete(
             logger=context.log,
             databricks_run_id=run_id,
-            poll_interval_sec=context.op_config["poll_interval_seconds"],
-            max_wait_time_sec=context.op_config["max_wait_time_seconds"],
+            poll_interval_sec=config.poll_interval_seconds,
+            max_wait_time_sec=config.max_wait_time_seconds,
         )
 
     return _databricks_submit_run_op

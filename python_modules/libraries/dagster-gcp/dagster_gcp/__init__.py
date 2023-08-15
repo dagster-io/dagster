@@ -12,14 +12,30 @@ from .bigquery.ops import (
     import_file_to_bq as import_file_to_bq,
     import_gcs_paths_to_bq as import_gcs_paths_to_bq,
 )
-from .bigquery.resources import bigquery_resource as bigquery_resource
+from .bigquery.resources import (
+    BigQueryResource as BigQueryResource,
+    bigquery_resource as bigquery_resource,
+)
 from .bigquery.types import BigQueryError as BigQueryError
-from .dataproc.ops import dataproc_op as dataproc_op
-from .dataproc.resources import dataproc_resource as dataproc_resource
+from .dataproc.ops import (
+    DataprocOpConfig as DataprocOpConfig,
+    configurable_dataproc_op as configurable_dataproc_op,
+    dataproc_op as dataproc_op,
+)
+from .dataproc.resources import (
+    DataprocResource as DataprocResource,
+    dataproc_resource as dataproc_resource,
+)
 from .gcs import (
     GCSFileHandle as GCSFileHandle,
+    GCSFileManagerResource as GCSFileManagerResource,
+    GCSResource as GCSResource,
     gcs_file_manager as gcs_file_manager,
     gcs_resource as gcs_resource,
+)
+from .gcs.io_manager import (
+    ConfigurablePickledObjectGCSIOManager as ConfigurablePickledObjectGCSIOManager,
+    gcs_pickle_io_manager as gcs_pickle_io_manager,
 )
 from .version import __version__
 

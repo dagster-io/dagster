@@ -85,8 +85,7 @@ def demo_repo():
 
 
 def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Optional[str]):
-    """Generates an SVG for the given code file & entry function, saving it to the given destination path.
-    """
+    """Generates an SVG for the given code file & entry function, saving it to the given destination path."""
     driver = None
     dagit_process = None
 

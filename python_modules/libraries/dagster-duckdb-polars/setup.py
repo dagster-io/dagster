@@ -22,9 +22,8 @@ setup(
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="Package for storing Polars DataFrames in DuckDB.",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckb-polars",
+    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckdb-polars",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

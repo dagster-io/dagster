@@ -1,7 +1,6 @@
-from dagster import Failure
+from dagster import Failure, job
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._legacy import execute_pipeline, pipeline
 
 
 def test_failure():
@@ -12,13 +11,13 @@ def test_failure():
             metadata={"label": "text"},
         )
 
-    @pipeline
+    @job
     def failure():
         throw()
 
-    result = execute_pipeline(failure, raise_on_error=False)
+    result = failure.execute_in_process(raise_on_error=False)
     assert not result.success
-    failure_data = result.result_for_node("throw").failure_data
+    failure_data = result.failure_data_for_node("throw")
     assert failure_data
     assert failure_data.error.cls_name == "Failure"
 

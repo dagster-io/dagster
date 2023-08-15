@@ -2,6 +2,7 @@ from functools import lru_cache, update_wrapper
 from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     List,
@@ -9,13 +10,13 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Set,
     Union,
     cast,
     overload,
 )
 
 import dagster._check as check
+from dagster._annotations import deprecated_param
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -25,10 +26,12 @@ from dagster._core.decorator_utils import (
     positional_arg_name_list,
 )
 from dagster._core.definitions.inference import infer_input_props
-from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_annotation import (
+    get_resource_args,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.backcompat import canonicalize_backcompat_args
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..input import In, InputDefinition
 from ..output import Out
@@ -44,7 +47,7 @@ class _Op:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
         config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         code_version: Optional[str] = None,
@@ -60,20 +63,24 @@ class _Op:
 
         self.description = check.opt_str_param(description, "description")
 
-        # these will be checked within SolidDefinition
+        # these will be checked within OpDefinition
         self.required_resource_keys = required_resource_keys
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
 
-        # config will be checked within SolidDefinition
+        # config will be checked within OpDefinition
         self.config_schema = config_schema
 
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
+        from dagster._config.pythonic_config import validate_resource_annotated_function
+
         from ..op_definition import OpDefinition
+
+        validate_resource_annotated_function(fn)
 
         if not self.name:
             self.name = fn.__name__
@@ -90,7 +97,7 @@ class _Op:
                 "If the @op has a config arg, you cannot specify a config schema",
             )
 
-            from dagster._config.structured_config import infer_schema_from_config_annotation
+            from dagster._config.pythonic_config import infer_schema_from_config_annotation
 
             # Parse schema from the type annotation of the config arg
             config_arg = compute_fn.get_config_arg()
@@ -110,14 +117,12 @@ class _Op:
         decorator_resource_keys = set(self.required_resource_keys or [])
         check.param_invariant(
             len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            (
-                "Cannot specify resource requirements in both @op decorator and as arguments to the"
-                " decorated function"
-            ),
+            "Cannot specify resource requirements in both @op decorator and as arguments to the"
+            " decorated function",
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        op_def = OpDefinition(
+        op_def = OpDefinition.dagster_internal_init(
             name=self.name,
             ins=self.ins,
             outs=outs,
@@ -128,6 +133,7 @@ class _Op:
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
+            version=None,  # code_version has replaced version
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -146,7 +152,7 @@ def op(
     ins: Optional[Mapping[str, In]] = ...,
     out: Optional[Union[Out, Mapping[str, Out]]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
-    required_resource_keys: Optional[Set[str]] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
@@ -155,6 +161,9 @@ def op(
     ...
 
 
+@deprecated_param(
+    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
+)
 def op(
     compute_fn: Optional[Callable] = None,
     *,
@@ -163,7 +172,7 @@ def op(
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
@@ -235,8 +244,11 @@ def op(
             def multi_out() -> Tuple[str, int]:
                 return 'cool', 4
     """
-    code_version = canonicalize_backcompat_args(
-        code_version, "code_version", version, "version", "2.0"
+    code_version = normalize_renamed_param(
+        code_version,
+        "code_version",
+        version,
+        "version",
     )
 
     if compute_fn is not None:
@@ -262,9 +274,13 @@ def op(
 
 
 class DecoratedOpFunction(NamedTuple):
-    """Wrapper around the decorated solid function to provide commonly used util methods."""
+    """Wrapper around the decorated op function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
+
+    @property
+    def name(self):
+        return self.decorated_fn.__name__
 
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
@@ -314,8 +330,8 @@ class DecoratedOpFunction(NamedTuple):
 
 
 class NoContextDecoratedOpFunction(DecoratedOpFunction):
-    """Wrapper around a decorated solid function, when the decorator does not permit a context
-    parameter (such as lambda_solid).
+    """Wrapper around a decorated op function, when the decorator does not permit a context
+    parameter.
     """
 
     @lru_cache(maxsize=1)
@@ -329,7 +345,7 @@ def is_context_provided(params: Sequence[Parameter]) -> bool:
     return params[0].name in get_valid_name_permutations("context")
 
 
-def resolve_checked_solid_fn_inputs(
+def resolve_checked_op_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: DecoratedOpFunction,
@@ -340,10 +356,10 @@ def resolve_checked_solid_fn_inputs(
     Returns the resolved set of InputDefinitions.
 
     Args:
-        decorator_name (str): Name of the decorator that is wrapping the op/solid function.
+        decorator_name (str): Name of the decorator that is wrapping the op function.
         fn_name (str): Name of the decorated function.
-        compute_fn (DecoratedSolidFunction): The decorated function, wrapped in the
-            DecoratedSolidFunction wrapper.
+        compute_fn (DecoratedOpFunction): The decorated function, wrapped in the
+            DecoratedOpFunction wrapper.
         explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
             provided in the decorator.
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn

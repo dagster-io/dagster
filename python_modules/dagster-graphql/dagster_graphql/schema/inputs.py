@@ -1,6 +1,6 @@
 import graphene
 import pendulum
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -53,12 +53,11 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
-            pipeline_name=self.pipelineName,
+            job_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
             updated_after=updated_after,
-            mode=self.mode,
             created_before=created_before,
         )
 
@@ -138,9 +137,36 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
         name = "PartitionSetSelector"
 
 
+class GraphenePartitionRangeSelector(graphene.InputObjectType):
+    start = graphene.NonNull(graphene.String)
+    end = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = """This type represents a partition range selection with start and end."""
+        name = "PartitionRangeSelector"
+
+
+class GraphenePartitionsSelector(graphene.InputObjectType):
+    range = graphene.NonNull(GraphenePartitionRangeSelector)
+
+    class Meta:
+        description = """This type represents a partitions selection."""
+        name = "PartitionsSelector"
+
+
+class GraphenePartitionsByAssetSelector(graphene.InputObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitions = graphene.InputField(GraphenePartitionsSelector)
+
+    class Meta:
+        description = """This type represents a partitions selection for an asset."""
+        name = "PartitionsByAssetSelector"
+
+
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
+    partitionsByAssets = graphene.List(GraphenePartitionsByAssetSelector)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
     fromFailure = graphene.Boolean()
@@ -302,6 +328,7 @@ types = [
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,
     GraphenePartitionSetSelector,
+    GraphenePartitionsByAssetSelector,
     GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,

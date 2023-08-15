@@ -61,7 +61,7 @@ def pandera_schema_to_dagster_type(
     `name` is defined, a name of the form `DagsterPanderaDataframe<n>` is generated.
 
     Additional metadata is also extracted from the Pandera schema and attached to the returned
-    `DagsterType` in an `MetadataEntry` object. The extracted metadata includes:
+    `DagsterType` as a metadata dictionary. The extracted metadata includes:
 
     - Descriptions on the schema and constituent columns and checks.
     - Data types for each column.

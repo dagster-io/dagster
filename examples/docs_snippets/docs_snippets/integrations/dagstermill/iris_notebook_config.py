@@ -1,4 +1,5 @@
 from dagster import asset
+from dagster._core.definitions.asset_graph import AssetGraph
 
 
 # placeholder so that the test works. this isn't used in the docs
@@ -28,21 +29,21 @@ iris_kmeans_jupyter_notebook = define_dagstermill_asset(
 # end
 
 
-# this is hacky so that we can test this code snippet. We need a ReconstructablePipeline to run dagstermill, and
-# ReconstructablePipeline.for_module() find the jobs defined in this file. So we need to resolve all
+# this is hacky so that we can test this code snippet. We need a ReconstructableJob to run dagstermill, and
+# ReconstructableJob.for_module() find the jobs defined in this file. So we need to resolve all
 # of the asset jobs.
 
-from dagstermill import local_output_notebook_io_manager
+from dagstermill import ConfigurableLocalOutputNotebookIOManager
 
 from dagster import AssetSelection, define_asset_job, with_resources
 
 assets_with_resource = with_resources(
     [iris_kmeans_jupyter_notebook, iris_dataset],
     resource_defs={
-        "output_notebook_io_manager": local_output_notebook_io_manager,
+        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager(),
     },
 )
 config_asset_job = define_asset_job(
     name="config_asset_job",
     selection=AssetSelection.assets(iris_kmeans_jupyter_notebook).upstream(),
-).resolve(assets_with_resource, [])
+).resolve(asset_graph=AssetGraph.from_assets(assets_with_resource))

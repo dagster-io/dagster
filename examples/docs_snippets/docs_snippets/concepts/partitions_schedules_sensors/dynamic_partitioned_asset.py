@@ -5,6 +5,7 @@ from dagster import (
     Definitions,
     DynamicPartitionsDefinition,
     RunRequest,
+    SensorResult,
     asset,
     define_asset_job,
     sensor,
@@ -39,12 +40,14 @@ def image_sensor(context):
         )
     ]
 
-    context.instance.add_dynamic_partitions(images_partitions_def.name, new_images)
-
-    run_requests = [
-        RunRequest(partition_key=img_filename) for img_filename in new_images
-    ]
-    return run_requests
+    return SensorResult(
+        run_requests=[
+            RunRequest(partition_key=img_filename) for img_filename in new_images
+        ],
+        dynamic_partitions_requests=[
+            images_partitions_def.build_add_request(new_images)
+        ],
+    )
 
 
 # end_dynamic_partitions_2

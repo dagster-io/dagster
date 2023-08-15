@@ -2,9 +2,7 @@ import sys
 import time
 
 import pytest
-from dagster import Output
-from dagster._core.definitions.decorators import op
-from dagster._legacy import PipelineDefinition, execute_pipeline
+from dagster import GraphDefinition, Output, op
 
 
 @pytest.mark.skipif(
@@ -12,13 +10,14 @@ from dagster._legacy import PipelineDefinition, execute_pipeline
 )
 def test_event_timing_before_yield():
     @op
-    def before_yield_solid(_context):
+    def before_yield_op(_context):
         time.sleep(0.01)
         yield Output(None)
 
-    pipeline_def = PipelineDefinition(node_defs=[before_yield_solid], name="test")
-    pipeline_result = execute_pipeline(pipeline_def)
-    success_event = pipeline_result.result_for_node("before_yield_solid").get_step_success_event()
+    job_def = GraphDefinition(node_defs=[before_yield_op], name="test").to_job()
+    result = job_def.execute_in_process()
+    success_event = result.get_step_success_events()[0]
+
     assert success_event.event_specific_data.duration_ms >= 10.0
 
 
@@ -27,13 +26,13 @@ def test_event_timing_before_yield():
 )
 def test_event_timing_after_yield():
     @op
-    def after_yield_solid(_context):
+    def after_yield_op(_context):
         yield Output(None)
         time.sleep(0.01)
 
-    pipeline_def = PipelineDefinition(node_defs=[after_yield_solid], name="test")
-    pipeline_result = execute_pipeline(pipeline_def)
-    success_event = pipeline_result.result_for_node("after_yield_solid").get_step_success_event()
+    job_def = GraphDefinition(node_defs=[after_yield_op], name="test").to_job()
+    result = job_def.execute_in_process()
+    success_event = result.get_step_success_events()[0]
     assert success_event.event_specific_data.duration_ms >= 10.0
 
 
@@ -42,11 +41,11 @@ def test_event_timing_after_yield():
 )
 def test_event_timing_direct_return():
     @op
-    def direct_return_solid(_context):
+    def direct_return_op(_context):
         time.sleep(0.01)
         return None
 
-    pipeline_def = PipelineDefinition(node_defs=[direct_return_solid], name="test")
-    pipeline_result = execute_pipeline(pipeline_def)
-    success_event = pipeline_result.result_for_node("direct_return_solid").get_step_success_event()
+    job_def = GraphDefinition(node_defs=[direct_return_op], name="test").to_job()
+    result = job_def.execute_in_process()
+    success_event = result.get_step_success_events()[0]
     assert success_event.event_specific_data.duration_ms >= 10.0

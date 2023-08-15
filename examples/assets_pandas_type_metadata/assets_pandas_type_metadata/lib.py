@@ -64,8 +64,7 @@ def normalize_path(path: str) -> str:
 
 
 def download_file(url: str, path: str):
-    """Download a file from a URL to a local path. If relative path, will be resolved relative to `DATA_ROOT`.
-    """
+    """Download a file from a URL to a local path. If relative path, will be resolved relative to `DATA_ROOT`."""
     path = normalize_path(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
@@ -117,8 +116,8 @@ def compute_bollinger_bands_multi(
     """Compute Bollinger bands for a set of stocks over time. The input dataframe can contain
     multiple timeseries grouped by the `name` column.
     """
-    odf = df.groupby("name").apply(
-        lambda idf: compute_bollinger_bands(idf, dropna=False, rate=rate, sigma=sigma)
+    odf = df.groupby("name", group_keys=False).apply(
+        lambda idf: compute_bollinger_bands(idf, dropna=False, rate=rate, sigma=sigma),
     )
     return odf.dropna().reset_index() if dropna else odf
 

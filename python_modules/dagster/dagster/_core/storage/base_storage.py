@@ -12,7 +12,7 @@ class DagsterStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     events, and schedule/sensor state.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
-    by internal machinery when ``dagit`` and ``dagster-daemon`` load, based on the values in the
+    by internal machinery when ``dagster-webserver`` and ``dagster-daemon`` load, based on the values in the
     ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
     should be done by setting values in that file.
     """

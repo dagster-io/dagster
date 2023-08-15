@@ -7,13 +7,13 @@ from typing_extensions import Self, TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import Int
-from dagster._config import Field, Selector, UserConfigSchema
+from dagster._config import Field, Noneable, Selector, UserConfigSchema
 from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.job_base import IJob
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
@@ -33,10 +33,10 @@ if TYPE_CHECKING:
 
 class ExecutorRequirement(PyEnum):
     """An ExecutorDefinition can include a list of requirements that the system uses to
-    check whether the executor will be able to work for a particular job/pipeline execution.
+    check whether the executor will be able to work for a particular job execution.
     """
 
-    # The passed in IPipeline must be reconstructable across process boundaries
+    # The passed in IJob must be reconstructable across process boundaries
     RECONSTRUCTABLE_PIPELINE = (  # This needs to still exist for folks who may have written their own executor
         "RECONSTRUCTABLE_PIPELINE"
     )
@@ -45,7 +45,7 @@ class ExecutorRequirement(PyEnum):
     # The DagsterInstance must be loadable in a different process
     NON_EPHEMERAL_INSTANCE = "NON_EPHEMERAL_INSTANCE"
 
-    # Any solid outputs on the pipeline must be persisted
+    # Any op outputs on the job must be persisted
     PERSISTENT_OUTPUTS = "PERSISTENT_OUTPUTS"
 
 
@@ -71,7 +71,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             available in `init_context.executor_config`. If not set, Dagster will accept any config
             provided.
         requirements (Optional[List[ExecutorRequirement]]): Any requirements that must
-            be met in order for the executor to be usable for a particular pipeline execution.
+            be met in order for the executor to be usable for a particular job execution.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -128,6 +128,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     @public
     @property
     def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
+        """Callable that takes an :py:class:`InitExecutorContext` and returns an instance of
+        :py:class:`Executor`.
+        """
         return self._executor_creation_fn
 
     def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
@@ -162,7 +165,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         object.
 
         Using ``configured`` may result in config values being displayed in
-        Dagit, so it is not recommended to use this API with sensitive values,
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
         such as secrets.
 
         Args:
@@ -224,7 +227,7 @@ def executor(
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.executor_config`. If not set, Dagster will accept any config provided for.
         requirements (Optional[List[ExecutorRequirement]]): Any requirements that must
-            be met in order for the executor to be usable for a particular pipeline execution.
+            be met in order for the executor to be usable for a particular job execution.
     """
     if callable(name):
         check.invariant(config_schema is None)
@@ -291,15 +294,14 @@ IN_PROC_CONFIG = Field(
 def in_process_executor(init_context):
     """The in-process executor executes all steps in a single process.
 
-    For legacy pipelines, this will be the default executor. To select it explicitly,
-    include the following top-level fragment in config:
+    To select it, include the following top-level fragment in config:
 
     .. code-block:: yaml
 
         execution:
           in_process:
 
-    Execution priority can be configured using the ``dagster/priority`` tag via solid/op metadata,
+    Execution priority can be configured using the ``dagster/priority`` tag via op metadata,
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
@@ -333,7 +335,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
         start_method, start_cfg = list(start_selector.items())[0]
 
     return MultiprocessExecutor(
-        max_concurrent=check.int_elem(config, "max_concurrent"),
+        max_concurrent=check.opt_int_elem(config, "max_concurrent"),
         tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
@@ -344,8 +346,8 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
 MULTI_PROC_CONFIG = Field(
     {
         "max_concurrent": Field(
-            Int,
-            default_value=0,
+            Noneable(Int),
+            default_value=None,
             description=(
                 "The number of processes that may run concurrently. "
                 "By default, this is set to be the return value of `multiprocessing.cpu_count()`."
@@ -405,8 +407,8 @@ def multiprocess_executor(init_context):
     """The multiprocess executor executes each step in an individual process.
 
     Any job that does not specify custom executors will use the multiprocess_executor by default.
-    For jobs or legacy pipelines, to configure the multiprocess executor, include a fragment such
-    as the following in your run config:
+    To configure the multiprocess executor, include a fragment such as the following in your run
+    config:
 
     .. code-block:: yaml
 
@@ -416,17 +418,14 @@ def multiprocess_executor(init_context):
               max_concurrent: 4
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
-    concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
+    concurrently. By default, or if you set ``max_concurrent`` to be None or 0, this is the return value of
     :py:func:`python:multiprocessing.cpu_count`.
 
-    Execution priority can be configured using the ``dagster/priority`` tag via solid/op metadata,
+    Execution priority can be configured using the ``dagster/priority`` tag via op metadata,
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
     return _core_multiprocess_executor_creation(init_context.executor_config)
-
-
-default_executors: Sequence[ExecutorDefinition] = [in_process_executor, multiprocess_executor]
 
 
 def check_cross_process_constraints(init_context: "InitExecutorContext") -> None:
@@ -436,25 +435,21 @@ def check_cross_process_constraints(init_context: "InitExecutorContext") -> None
     requirements_lst = init_context.executor_def.get_requirements(init_context.executor_config)
 
     if ExecutorRequirement.RECONSTRUCTABLE_JOB in requirements_lst:
-        _check_intra_process_pipeline(init_context.pipeline)
+        _check_intra_process_job(init_context.job)
 
     if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in requirements_lst:
         _check_non_ephemeral_instance(init_context.instance)
 
 
-def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
-    from dagster._core.definitions import JobDefinition
-
-    if not isinstance(pipeline, ReconstructablePipeline):
-        target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
+def _check_intra_process_job(job: IJob) -> None:
+    if not isinstance(job, ReconstructableJob):
         raise DagsterUnmetExecutorRequirementsError(
-            "You have attempted to use an executor that uses multiple processes with the {target}"
-            ' "{name}" that is not reconstructable. {target_cap} must be loaded in a way that'
-            " allows dagster to reconstruct them in a new process. This means: \n  * using the"
-            " file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n  *"
-            " loading the {target} through the reconstructable() function\n".format(
-                target=target, name=pipeline.get_definition().name, target_cap=target.capitalize()
-            )
+            "You have attempted to use an executor that uses multiple processes with the job"
+            f' "{job.get_definition().name}" that is not reconstructable. Job must be loaded in a'
+            " way that allows dagster to reconstruct them in a new process. This means: \n  *"
+            " using the file, module, or workspace.yaml arguments of"
+            " dagster-webserver/dagster-graphql/dagster\n  * loading the job through the"
+            " reconstructable() function\n"
         )
 
 
@@ -514,7 +509,7 @@ def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Execut
             multiprocess:
               max_concurrent: 4
               retries:
-              enabled:
+                enabled:
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
@@ -522,7 +517,7 @@ def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Execut
 
     When using the in_process mode, then only retries can be configured.
 
-    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    Execution priority can be configured using the ``dagster/priority`` tag via op metadata,
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """

@@ -4,7 +4,7 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
 
 import nbformat
 import papermill
@@ -16,9 +16,11 @@ from dagster import (
     _check as check,
     _seven,
 )
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._config.pythonic_config.utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
@@ -38,7 +40,7 @@ from .translator import DagsterTranslator
 
 
 def _clean_path_for_windows(notebook_path: str) -> str:
-    """In windows, the notebook cant render in dagit unless the C: prefix is removed.
+    """In windows, the notebook can't render in the Dagster UI unless the C: prefix is removed.
     os.path.splitdrive will split the path into (drive, tail), so just return the tail.
     """
     return os.path.splitdrive(notebook_path)[1]
@@ -121,7 +123,7 @@ def get_papermill_parameters(
     marshal_dir = os.path.normpath(os.path.join(temp_dir, "dagstermill", str(run_id), "marshal"))
     mkdir_p(marshal_dir)
 
-    if not isinstance(step_context.pipeline, ReconstructablePipeline):
+    if not isinstance(step_context.job, ReconstructableJob):
         if compute_descriptor == "asset":
             raise DagstermillError(
                 "Can't execute a dagstermill asset that is not reconstructable. "
@@ -133,7 +135,7 @@ def get_papermill_parameters(
                 "Use the reconstructable() function if executing from python"
             )
 
-    dm_executable_dict = step_context.pipeline.to_dict()
+    dm_executable_dict = step_context.job.to_dict()
 
     dm_context_dict = {
         "output_log_path": output_log_path,
@@ -235,7 +237,7 @@ def _handle_events_from_notebook(
 
     output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-    for output_name, _ in step_context.op_def.output_dict.items():
+    for output_name in step_context.op_def.output_dict.keys():
         data_dict = output_nb.scraps.data_dict
         if output_name in data_dict:
             # read outputs that were passed out of process via io manager from `yield_result`
@@ -324,7 +326,7 @@ def _make_dagstermill_compute_fn(
                     op_context.log.warning(
                         "Error when attempting to materialize executed notebook using file"
                         " manager:"
-                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        f" {serializable_error_info_from_exc_info(sys.exc_info())}\nNow"
                         " falling back to local: notebook execution was temporarily materialized"
                         f" at {executed_notebook_path}\nIf you have supplied a file manager and"
                         " expect to use it for materializing the notebook, please include"
@@ -416,19 +418,18 @@ def define_dagstermill_op(
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
-            (
-                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
-                " is reserved for use by Dagster"
-            ),
+            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+            " is reserved for use by Dagster",
         )
         check.invariant(
             "kind" not in tags,
-            (
-                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
-                " use by Dagster"
-            ),
+            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            " use by Dagster",
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+
+    if safe_is_subclass(config_schema, Config):
+        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
 
     return OpDefinition(
         name=name,

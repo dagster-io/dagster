@@ -2,11 +2,11 @@ import re
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     Definitions,
-    OpExecutionContext,
     ResourceDefinition,
     ScheduleDefinition,
     SourceAsset,
@@ -24,7 +24,7 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -503,11 +503,11 @@ def test_implicit_global_job_with_job_defined():
 
 def test_implicit_global_job_with_partitioned_asset():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def daily_partition_asset(context: OpExecutionContext):
+    def daily_partition_asset(context: AssetExecutionContext):
         return context.partition_key
 
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-02-02-10:00"))
-    def hourly_partition_asset(context: OpExecutionContext):
+    def hourly_partition_asset(context: AssetExecutionContext):
         return context.partition_key
 
     @asset
@@ -619,8 +619,7 @@ def test_asset_missing_resources():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "SourceAsset with asset key AssetKey(['foo']) requires IO manager with key 'foo', but"
-            " none was provided."
+            "io manager with key 'foo' required by SourceAsset with key [\"foo\"] was not provided"
         ),
     ):
         Definitions(assets=[source_asset_io_req])
@@ -727,3 +726,38 @@ def test_graph_backed_asset_resources():
         ),
     ):
         Definitions([the_asset, other_asset])
+
+
+def test_job_with_reserved_name():
+    @graph
+    def the_graph():
+        pass
+
+    the_job = the_graph.to_job(name="__ASSET_JOB")
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
+        ),
+    ):
+        Definitions(jobs=[the_job])
+
+
+def test_asset_cycle():
+    from toposort import CircularDependencyError
+
+    @asset
+    def a(s, c):
+        return s + c
+
+    @asset
+    def b(a):
+        return a + 1
+
+    @asset
+    def c(b):
+        return b + 1
+
+    s = SourceAsset(key="s")
+    with pytest.raises(CircularDependencyError):
+        Definitions(assets=[a, b, c, s])

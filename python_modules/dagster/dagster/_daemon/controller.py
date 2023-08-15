@@ -16,6 +16,7 @@ from dagster._core.host_representation.grpc_server_registry import GrpcServerReg
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 from dagster._daemon.daemon import (
     BackfillDaemon,
@@ -47,8 +48,10 @@ HEARTBEAT_CHECK_INTERVAL = 15
 
 RELOAD_WORKSPACE_INTERVAL = 60
 
-DAEMON_GRPC_SERVER_RELOAD_INTERVAL = 60
-DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
+# Amount of time that a local code server spun up by the daemon will keep running
+# after it is no longer receiving any heartbeat pings - for this duration there may be
+# multiple code server processes running
+DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 20
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:
@@ -66,11 +69,12 @@ def create_daemon_grpc_server_registry(
     instance: DagsterInstance, code_server_log_level: str = "INFO"
 ) -> GrpcServerRegistry:
     return GrpcServerRegistry(
-        instance=instance,
-        reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
+        instance_ref=instance.get_ref(),
+        reload_interval=0,  # refresh_workspace call handles the reload
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
         log_level=code_server_log_level,
+        wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
     )
 
 
@@ -108,6 +112,7 @@ def daemon_controller_from_instance(
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
                 heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
                 error_interval_seconds=error_interval_seconds,
+                grpc_server_registry=grpc_server_registry,
             )
         )
 
@@ -117,6 +122,7 @@ def daemon_controller_from_instance(
 class DagsterDaemonController(AbstractContextManager):
     _daemon_uuid: str
     _daemons: Dict[str, DagsterDaemon]
+    _grpc_server_registry: Optional[GrpcServerRegistry]
     _daemon_threads: Dict[str, threading.Thread]
     _workspace_process_context: IWorkspaceProcessContext
     _instance: DagsterInstance
@@ -131,6 +137,7 @@ class DagsterDaemonController(AbstractContextManager):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         daemons: Sequence[DagsterDaemon],
+        grpc_server_registry: Optional[GrpcServerRegistry] = None,
         heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -152,6 +159,8 @@ class DagsterDaemonController(AbstractContextManager):
         self._heartbeat_tolerance_seconds = check.numeric_param(
             heartbeat_tolerance_seconds, "heartbeat_tolerance_seconds"
         )
+
+        self._grpc_server_registry = grpc_server_registry
 
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
@@ -266,7 +275,9 @@ class DagsterDaemonController(AbstractContextManager):
 
                 # periodically refresh the shared workspace context
                 if (time.time() - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
-                    self._workspace_process_context.reload_workspace()
+                    if self._grpc_server_registry:
+                        self._grpc_server_registry.clear_all_grpc_endpoints()
+                    self._workspace_process_context.refresh_workspace()
                     last_workspace_update_time = time.time()
 
                 if self._instance.daemon_skip_heartbeats_without_errors:
@@ -334,6 +345,14 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     elif daemon_type == EventLogConsumerDaemon.daemon_type():
         return EventLogConsumerDaemon()
+    elif daemon_type == AssetDaemon.daemon_type():
+        return AssetDaemon(
+            interval_seconds=(
+                instance.auto_materialize_minimum_interval_seconds
+                if instance.auto_materialize_minimum_interval_seconds is not None
+                else DEFAULT_DAEMON_INTERVAL_SECONDS
+            )
+        )
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 
@@ -362,8 +381,7 @@ def all_daemons_live(
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
-    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
-    """
+    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors."""
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),

@@ -18,10 +18,6 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     href="/concepts/assets/software-defined-assets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Asset materializations"
-    href="/concepts/assets/asset-materializations"
-  ></ArticleListItem>
-  <ArticleListItem
     title="Asset observations"
     href="/concepts/assets/asset-observations"
   ></ArticleListItem>
@@ -33,6 +29,10 @@ An asset is an object in persistent storage, such as a table, file, or persisted
     title="Asset selection syntax"
     href="/concepts/assets/asset-selection-syntax"
   ></ArticleListItem>
+  <ArticleListItem
+    title="Auto-materializing assets"
+    href="/concepts/assets/asset-auto-execution"
+  ></ArticleListItem>
 </ArticleList>
 
 ---
@@ -40,6 +40,8 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 ## Ops
 
 Ops are the core unit of computation in Dagster. They typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
+
+An op graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
 <ArticleList>
   <ArticleListItem
@@ -58,25 +60,16 @@ Ops are the core unit of computation in Dagster. They typically perform relative
     title="Op retries"
     href="/concepts/ops-jobs-graphs/op-retries"
   ></ArticleListItem>
-</ArticleList>
-
----
-
-## Graphs
-
-A graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
-
-<ArticleList>
   <ArticleListItem
-    title="Graphs"
+    title="Op graphs"
     href="/concepts/ops-jobs-graphs/graphs"
   ></ArticleListItem>
   <ArticleListItem
-    title="Nesting graphs"
+    title="Nesting op graphs"
     href="/concepts/ops-jobs-graphs/nesting-graphs"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dynamic graphs"
+    title="Dynamic op graphs"
     href="/concepts/ops-jobs-graphs/dynamic-graphs"
   ></ArticleListItem>
 </ArticleList>
@@ -164,17 +157,13 @@ Dagster provides a configuration system that allows you to document, schematize,
     title="Run configuration"
     href="/concepts/configuration/config-schema"
   ></ArticleListItem>
-  <ArticleListItem
-    title="Definition-time configuration"
-    href="/concepts/configuration/configured"
-  ></ArticleListItem>
 </ArticleList>
 
 ---
 
 ## Code locations
 
-A code location is a collection of Dagster definitions, including assets, jobs, schedules, sensors, and resources. Dagster tools like Dagit and the Dagster CLI use code locations to load your code.
+A code location is a collection of Dagster definitions, including assets, jobs, schedules, sensors, and resources. Dagster tools like the Dagster webserver/UI and CLI use code locations to load your code.
 
 [Learn more about code locations](/concepts/code-locations).
 
@@ -188,11 +177,11 @@ Resources enable you to separate logic from external dependencies, making develo
 
 ---
 
-## Dagit
+## Dagster UI
 
-Dagit is a web-based interface for viewing and interacting with Dagster objects.
+The Dagster UI is a web-based interface for viewing and interacting with Dagster objects.
 
-[Learn more about Dagit](/concepts/dagit/dagit).
+[Learn more about the Dagster UI](/concepts/webserver/ui).
 
 ---
 
@@ -203,11 +192,11 @@ The GraphQL API allows you to interact programmatically with Dagster.
 <ArticleList>
   <ArticleListItem
     title="GraphQL API"
-    href="/concepts/dagit/graphql"
+    href="/concepts/webserver/graphql"
   ></ArticleListItem>
   <ArticleListItem
     title="GraphQL Python client"
-    href="/concepts/dagit/graphql-client"
+    href="/concepts/webserver/graphql-client"
   ></ArticleListItem>
 </ArticleList>
 

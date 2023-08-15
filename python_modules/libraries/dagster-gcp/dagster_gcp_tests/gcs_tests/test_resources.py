@@ -1,5 +1,5 @@
 from dagster import build_op_context, op
-from dagster_gcp.gcs.resources import gcs_resource
+from dagster_gcp.gcs.resources import GCSResource, gcs_resource
 
 PROJECT_ID = "test-project1231"
 
@@ -14,3 +14,15 @@ def test_gcs_resource():
     context = build_op_context(resources={"gcs": gcs_resource.configured({"project": PROJECT_ID})})
 
     assert gcs_op(context)
+
+
+def test_pydantic_gcs_resource():
+    @op
+    def gcs_op(gcs: GCSResource):
+        assert gcs
+        assert gcs.project == PROJECT_ID
+        return 1
+
+    gcs = GCSResource(project=PROJECT_ID)
+
+    assert gcs_op(gcs)

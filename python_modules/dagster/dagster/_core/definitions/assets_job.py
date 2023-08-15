@@ -1,5 +1,7 @@
 from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -15,6 +17,7 @@ from typing import (
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
@@ -33,6 +36,7 @@ from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition, default_job_io_manager
+from .metadata import RawMetadataValue
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition
@@ -42,6 +46,9 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 
 # Prefix for auto created jobs that are used to materialize assets
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.run_config import RunConfig
 
 
 def is_base_asset_job_name(name: str) -> bool:
@@ -54,12 +61,18 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    assets_by_partitions_def: Dict[
-        Optional[PartitionsDefinition], List[AssetsDefinition]
-    ] = defaultdict(list)
+    assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
+        defaultdict(list)
+    )
     for assets_def in assets:
         assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
+    # We need to create "empty" jobs for each partitions def that is used by an observable but no
+    # materializable asset. They are empty because we don't assign the source asset to the `assets`,
+    # but rather the `source_assets` argument of `build_assets_job`.
+    for observable in [sa for sa in source_assets if sa.is_observable]:
+        if observable.partitions_def not in assets_by_partitions_def:
+            assets_by_partitions_def[observable.partitions_def] = []
     if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
         return [
             build_assets_job(
@@ -78,19 +91,21 @@ def get_base_asset_jobs(
         jobs = []
 
         # sort to ensure some stability in the ordering
-        for i, (_, assets_with_partitions) in enumerate(
+        for i, (partitions_def, assets_with_partitions) in enumerate(
             sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
         ):
             jobs.append(
                 build_assets_job(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                    assets=assets_with_partitions + unpartitioned_assets,
+                    assets=[*assets_with_partitions, *unpartitioned_assets],
                     source_assets=[*source_assets, *assets],
                     resource_defs=resource_defs,
                     executor_def=executor_def,
+                    # Only explicitly set partitions_def for observable-only jobs since it can't be
+                    # auto-detected from the passed assets (which is an empty list).
+                    partitions_def=partitions_def if len(assets_with_partitions) == 0 else None,
                 )
             )
-
         return jobs
 
 
@@ -98,12 +113,16 @@ def build_assets_job(
     name: str,
     assets: Sequence[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object]]] = None,
+    config: Optional[
+        Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+    ] = None,
     tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
-    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
@@ -118,7 +137,7 @@ def build_assets_job(
             decorator.
         source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
+        resource_defs (Optional[Mapping[str, object]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
 
@@ -138,6 +157,8 @@ def build_assets_job(
     Returns:
         JobDefinition: A job that materializes the given assets.
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
     check.str_param(name, "name")
     check.iterable_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     source_assets = check.opt_sequence_param(
@@ -151,6 +172,7 @@ def build_assets_job(
 
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
+    wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
     # turn any AssetsDefinitions into SourceAssets
     resolved_source_assets: List[SourceAsset] = []
@@ -189,7 +211,7 @@ def build_assets_job(
         graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
     )
 
-    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
+    all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
@@ -202,7 +224,7 @@ def build_assets_job(
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
             metadata=original_job.metadata,
-            logger_defs=original_job.get_mode_definition().loggers,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
@@ -212,9 +234,11 @@ def build_assets_job(
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
+        metadata=metadata,
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
+        hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
 
@@ -228,6 +252,7 @@ def build_source_asset_observation_job(
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that observes the given source assets.
@@ -301,7 +326,7 @@ def build_source_asset_observation_job(
             asset_layer=asset_layer,
             _asset_selection_data=_asset_selection_data,
             metadata=original_job.metadata,
-            logger_defs=original_job.get_mode_definition().loggers,
+            logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
             version_strategy=original_job.version_strategy,
@@ -314,6 +339,7 @@ def build_source_asset_observation_job(
         executor_def=executor_def,
         partitions_def=partitions_def,
         asset_layer=asset_layer,
+        hooks=hooks,
         _asset_selection_data=_asset_selection_data,
     )
 
@@ -326,9 +352,9 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
-    first_asset_with_partitions_def: Union[
-        AssetsDefinition, SourceAsset
-    ] = assets_with_partitions_defs[0]
+    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = (
+        assets_with_partitions_defs[0]
+    )
     for asset in assets_with_partitions_defs:
         if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
             first_asset_key = _key_for_asset(asset).to_string()
@@ -511,8 +537,7 @@ def _ensure_resources_dont_conflict(
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
-    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict.
-    """
+    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict."""
     resource_defs_from_assets = {}
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
     for asset in all_assets:

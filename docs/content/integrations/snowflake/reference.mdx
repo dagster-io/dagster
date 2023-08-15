@@ -11,6 +11,7 @@ This reference page provides information for working with [`dagster-snowflake`](
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
+- [Storing timestamp data in Pandas DataFrames](#storing-timestamp-data-in-pandas-dataframes)
 - [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
 - [Storing and loading PySpark DataFrames in Snowflake](#storing-and-loading-pyspark-dataframes-in-snowflake)
 - [Using Pandas and PySpark DataFrames with Snowflake](#using-pandas-and-pyspark-dataframes-with-snowflake)
@@ -28,21 +29,19 @@ You can provide the private key directly to the Snowflake I/O manager, or via a 
 <TabItem name="Directly to the I/O manager">
 
 ```python file=/integrations/snowflake/private_key_auth.py startafter=start_direct_key endbefore=end_direct_key
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "private_key": {"env": "SNOWFLAKE_PK"},
-                "private_key_password": {"env": "SNOWFLAKE_PK_PASSWORD"},
-                "database": "FLOWERS",
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            private_key=EnvVar("SNOWFLAKE_PK"),
+            private_key_password=EnvVar("SNOWFLAKE_PK_PASSWORD"),
+            database="FLOWERS",
         )
     },
 )
@@ -52,21 +51,19 @@ defs = Definitions(
 <TabItem name="Via a file">
 
 ```python file=/integrations/snowflake/private_key_auth_file.py startafter=start_key_file endbefore=end_key_file
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "private_key_path": "/path/to/private/key/file.p8",
-                "private_key_password": {"env": "SNOWFLAKE_PK_PASSWORD"},
-                "database": "FLOWERS",
-            }
+        "io_manager": SnowflakePandasIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            private_key_path="/path/to/private/key/file.p8",
+            private_key_password=EnvVar("SNOWFLAKE_PK_PASSWORD"),
+            database="FLOWERS",
         )
     },
 )
@@ -86,7 +83,6 @@ import pandas as pd
 
 from dagster import AssetIn, asset
 
-
 # this example uses the iris_dataset asset from Step 2 of the Using Dagster with Snowflake tutorial
 
 
@@ -94,20 +90,20 @@ from dagster import AssetIn, asset
     ins={
         "iris_sepal": AssetIn(
             key="iris_dataset",
-            metadata={"columns": ["Sepal length (cm)", "Sepal width (cm)"]},
+            metadata={"columns": ["sepal_length_cm", "sepal_width_cm"]},
         )
     }
 )
 def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
-    iris_sepal["Sepal area (cm2)"] = (
-        iris_sepal["Sepal length (cm)"] * iris_sepal["Sepal width (cm)"]
+    iris_sepal["sepal_area_cm2"] = (
+        iris_sepal["sepal_length_cm"] * iris_sepal["sepal_width_cm"]
     )
     return iris_sepal
 ```
 
 In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
-When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
+When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
 
 ---
 
@@ -138,13 +134,13 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
@@ -264,7 +260,7 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     # the time of the row as an integer of seconds since epoch
     full_df = get_iris_data_for_date(date)
 
-    return full_df[full_df["Species"] == species]
+    return full_df[full_df["species"] == species]
 
 
 @asset
@@ -307,13 +303,13 @@ daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 ```
@@ -330,6 +326,21 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 ---
 
+## Storing timestamp data in Pandas DataFrames
+
+Due to a longstanding [issue](https://github.com/snowflakedb/snowflake-connector-python/issues/319) with the Snowflake Pandas connector, loading timestamp data from a Pandas DataFrame to Snowflake sometimes causes the data to be corrupted. In order to store timestamp data properly, it must have a timezone attached. When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager will check if timestamp data has a timezone attached, and if not, **it will assign the UTC timezone**. In Snowflake, you will see the timestamp data stored as the TIMESTAMP_NTZ(9) type, as this is the type assigned by the Snowflake Pandas connector.
+
+<Note>
+  Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager
+  converted all timestamp data to strings before loading the data in Snowflake,
+  and did the opposite conversion when fetching a DataFrame from Snowflake. If
+  you have used a version of `dagster-snowflake` prior to version `0.19.0`
+  please see the <a href="/migration#extension-libraries">Migration Guide</a>{" "}
+  for information about migrating you database tables.
+</Note>
+
+---
+
 ## Using the Snowflake I/O manager with other I/O managers
 
 You may have assets that you don't want to store in Snowflake. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the `asset` decorator:
@@ -337,21 +348,21 @@ You may have assets that you don't want to store in Snowflake. You can provide a
 ```python file=/integrations/snowflake/multiple_io_managers.py startafter=start_example endbefore=end_example
 import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, asset
+from dagster import Definitions, EnvVar, asset
 
 
 @asset(io_manager_key="warehouse_io_manager")
 def iris_dataset() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
@@ -366,14 +377,12 @@ def iris_plots(iris_dataset):
 defs = Definitions(
     assets=[iris_dataset, iris_plots],
     resources={
-        "warehouse_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                "database": "FLOWERS",
-                "schema": "IRIS",
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-            }
+        "warehouse_io_manager": SnowflakePandasIOManager(
+            database="FLOWERS",
+            schema="IRIS",
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
         ),
         "blob_io_manager": s3_pickle_io_manager,
     },
@@ -386,32 +395,30 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 ## Storing and loading PySpark DataFrames in Snowflake
 
-The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_snowflake_pyspark" object="snowflake_pyspark_io_manager" />, first install the package:
+The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
 ```shell
 pip install dagster-snowflake-pyspark
 ```
 
-Then you can use the `snowflake_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
 ```python file=/integrations/snowflake/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
-from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pyspark_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",  # required
-                "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
-                "database": "FLOWERS",  # required
-                "warehouse": "PLANTS",  # required for pyspark
-                "role": "writer",  # optional, defaults to the default role for the account
-                "schema": "IRIS",  # optional, defaults to PUBLIC
-            }
+        "io_manager": SnowflakePySparkIOManager(
+            account="abc1234.us-east-1",  # required
+            user=EnvVar("SNOWFLAKE_USER"),  # required
+            password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
+            database="FLOWERS",  # required
+            warehouse="PLANTS",  # required for PySpark
+            role="writer",  # optional, defaults to the default role for the account
+            schema="IRIS",  # optional, defaults to PUBLIC
         )
     },
 )
@@ -422,18 +429,17 @@ defs = Definitions(
   <code>warehouse</code> configuration is required.
 </Note>
 
-The `snowflake_pyspark_io_manager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
+The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
 
 <TabGroup>
 <TabItem name="With the spark_resource">
 
 ```python file=/integrations/snowflake/pyspark_with_spark_resource.py
 from dagster_pyspark import pyspark_resource
-from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
-    SparkSession,
 )
 from pyspark.sql.types import (
     DoubleType,
@@ -442,7 +448,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import Definitions, EnvVar, asset
 
 SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
@@ -453,32 +459,30 @@ def iris_dataset(context) -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = "https://docs.dagster.io/assets/iris.csv"
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pyspark_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "warehouse": "PLANTS",
-                "schema": "IRIS",
-            }
+        "io_manager": SnowflakePySparkIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            warehouse="PLANTS",
+            schema="IRIS",
         ),
         "pyspark": pyspark_resource.configured(
             {"spark_conf": {"spark.jars.packages": SNOWFLAKE_JARS}}
@@ -491,7 +495,7 @@ defs = Definitions(
 <TabItem name="With your own SparkSession">
 
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
-from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
@@ -504,7 +508,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import Definitions, EnvVar, asset
 
 SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
@@ -518,33 +522,31 @@ def iris_dataset() -> DataFrame:
 
     schema = StructType(
         [
-            StructField("Sepal length (cm)", DoubleType()),
-            StructField("Sepal width (cm)", DoubleType()),
-            StructField("Petal length (cm)", DoubleType()),
-            StructField("Petal width (cm)", DoubleType()),
-            StructField("Species", StringType()),
+            StructField("sepal_length_cm", DoubleType()),
+            StructField("sepal_width_cm", DoubleType()),
+            StructField("petal_length_cm", DoubleType()),
+            StructField("petal_width_cm", DoubleType()),
+            StructField("species", StringType()),
         ]
     )
 
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    url = ("https://docs.dagster.io/assets/iris.csv",)
     spark.sparkContext.addFile(url)
 
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pyspark_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "warehouse": "PLANTS",
-                "schema": "IRIS",
-            }
-        )
+        "io_manager": SnowflakePySparkIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            warehouse="PLANTS",
+            schema="IRIS",
+        ),
     },
 )
 ```
@@ -556,31 +558,48 @@ defs = Definitions(
 
 ## Using Pandas and PySpark DataFrames with Snowflake
 
-If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can construct a Snowflake I/O manager using <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />:
+If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject module="dagster_snowflake" object="SnowflakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `SnowflakeIOManager`.
 
 ```python file=/integrations/snowflake/pandas_and_pyspark.py startafter=start_example endbefore=end_example
-from dagster_snowflake import build_snowflake_io_manager
+from typing import Optional, Type
+
+import pandas as pd
+from dagster_snowflake import SnowflakeIOManager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
-snowflake_io_manager = build_snowflake_io_manager(
-    [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
-)
+
+class SnowflakePandasPySparkIOManager(SnowflakeIOManager):
+    @staticmethod
+    def type_handlers():
+        """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
+        Here we return the SnowflakePandasTypeHandler and SnowflakePySparkTypeHandler so that the I/O
+        manager can store Pandas DataFrames and PySpark DataFrames.
+        """
+        return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        """If an asset is not annotated with an return type, default_load_type will be used to
+        determine which TypeHandler to use to store and load the output.
+        In this case, unannotated assets will be stored and loaded as Pandas DataFrames.
+        """
+        return pd.DataFrame
+
 
 defs = Definitions(
     assets=[iris_dataset, rose_dataset],
     resources={
-        "io_manager": snowflake_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "warehouse": "PLANTS",
-                "schema": "IRIS",
-            }
+        "io_manager": SnowflakePandasPySparkIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            role="writer",
+            warehouse="PLANTS",
+            schema="IRIS",
         )
     },
 )
@@ -592,43 +611,43 @@ defs = Definitions(
 
 In addition to the Snowflake I/O manager, Dagster also provides a Snowflake [resource](/concepts/resources) for executing custom SQL queries.
 
-```python file=/integrations/snowflake/resource.py
-from dagster_snowflake import snowflake_resource
+```python file=/integrations/snowflake/resource.py startafter=start endbefore=end
+import pandas as pd
+from dagster_snowflake import SnowflakeResource
 
-from dagster import Definitions, asset
+from dagster import Definitions, EnvVar, asset
 
 # this example executes a query against the IRIS_DATASET table created in Step 2 of the
 # Using Dagster with Snowflake tutorial
 
 
-@asset(required_resource_keys={"snowflake"})
-def small_petals(context):
-    return context.resources.snowflake.execute_query(
-        (
-            'SELECT * FROM IRIS_DATASET WHERE "Petal length (cm)" < 1 AND "Petal width'
-            ' (cm)" < 1'
-        ),
-        fetch_results=True,
-        use_pandas_result=True,
-    )
+@asset
+def small_petals(snowflake: SnowflakeResource) -> pd.DataFrame:
+    with snowflake.get_connection() as conn:
+        return (
+            conn.cursor()
+            .execute(
+                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
+                " 'petal_width_cm' < 1"
+            )
+            .fetch_pandas_all()
+        )
 
 
 defs = Definitions(
     assets=[small_petals],
     resources={
-        "snowflake": snowflake_resource.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "schema": "IRIS,",
-            }
+        "snowflake": SnowflakeResource(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            schema="IRIS",
         )
     },
 )
 ```
 
-In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `execute_query` method of the resource to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager method of the resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection). We use this connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource).
+For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource).

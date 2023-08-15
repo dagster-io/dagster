@@ -132,6 +132,23 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
     calls["num_calls"] = 0
     calls["final_state"] = {
         "state": {
+            "result_state": None,
+            "life_cycle_state": DatabricksRunLifeCycleState.SKIPPED,
+            "state_message": "Skipped",
+        }
+    }
+
+    databricks_client.wait_for_run_to_complete(
+        logger=context.log,
+        databricks_run_id=1,
+        poll_interval_sec=0.01,
+        max_wait_time_sec=10,
+        verbose_logs=True,
+    )
+
+    calls["num_calls"] = 0
+    calls["final_state"] = {
+        "state": {
             "result_state": DatabricksRunResultState.FAILED,
             "life_cycle_state": DatabricksRunLifeCycleState.TERMINATED,
             "state_message": "Failed",

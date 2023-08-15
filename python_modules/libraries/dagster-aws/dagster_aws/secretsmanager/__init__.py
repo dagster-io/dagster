@@ -1,4 +1,6 @@
 from .resources import (
+    SecretsManagerResource as SecretsManagerResource,
+    SecretsManagerSecretsResource as SecretsManagerSecretsResource,
     secretsmanager_resource as secretsmanager_resource,
     secretsmanager_secrets_resource as secretsmanager_secrets_resource,
 )

@@ -28,27 +28,15 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            # Expect experimental warnings to be thrown for direct
-            # resource_defs and io_manager_def arguments.
-            if (
-                "resource_defs" in w.message.args[0]
-                or "io_manager_def" in w.message.args[0]
-                or "SQLALCHEMY" in w.message.args[0]
-            ):
-                continue
-            assert False, f"Unexpected warning: {str(w)}"
+    warnings.filterwarnings("error")
 
 
 def test_basic_materialize():
@@ -93,6 +81,7 @@ def test_materialize_bad_config():
             )
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_materialize_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("blah")})
     def the_asset(context):
@@ -120,6 +109,7 @@ def test_materialize_resources_not_satisfied():
         ).success
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_materialize_conflicting_resources():
     @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
     def first():
@@ -139,6 +129,7 @@ def test_materialize_conflicting_resources():
             materialize([first, second], instance=instance)
 
 
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_materialize_source_assets():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -163,6 +154,8 @@ def test_materialize_source_assets():
         assert result.output_for_node("the_asset") == 6
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_materialize_source_asset_conflicts():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -262,8 +255,8 @@ def test_materialize_multi_asset():
         },
     )
     def multi_asset_with_internal_deps(thing):
-        yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
+        yield Output(1, "my_out_name")
 
     with instance_for_test() as instance:
         result = materialize([thing_asset, multi_asset_with_internal_deps], instance=instance)

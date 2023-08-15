@@ -8,7 +8,7 @@ from .config_schema import DagsterTypeLoader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 PythonSet = PythonObjectDagsterType(
-    set, "PythonSet", description="""Represents a python dictionary to pass between solids"""
+    set, "PythonSet", description="""Represents a python dictionary to pass between ops"""
 )
 
 

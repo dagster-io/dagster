@@ -18,15 +18,13 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
-from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
-    MetadataEntry,
     MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
@@ -160,7 +158,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return {"path": self.path}
 
     @staticmethod
-    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
+    def from_coercible(arg: "CoercibleToAssetKey") -> "AssetKey":
         if isinstance(arg, AssetKey):
             return check.inst_param(arg, "arg", AssetKey)
         elif isinstance(arg, str):
@@ -173,6 +171,13 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return AssetKey(arg)
         else:
             check.failed(f"Unexpected type for AssetKey: {type(arg)}")
+
+    def has_prefix(self, prefix: Sequence[str]) -> bool:
+        return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix
+
+    def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
+        prefix = key_prefix_from_coercible(prefix)
+        return AssetKey(list(prefix) + list(self.path))
 
 
 class AssetKeyPartitionKey(NamedTuple):
@@ -191,16 +196,21 @@ CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 def check_opt_coercible_to_asset_key_prefix_param(
     prefix: Optional[CoercibleToAssetKeyPrefix], param_name: str
 ) -> Optional[Sequence[str]]:
-    if prefix is None:
-        return prefix
-    elif isinstance(prefix, str):
-        return [prefix]
-    elif isinstance(prefix, list):
-        return prefix
-    else:
+    try:
+        return key_prefix_from_coercible(prefix) if prefix is not None else None
+    except check.CheckError:
         raise check.ParameterCheckError(
             f'Param "{param_name}" is not a string or a sequence of strings'
         )
+
+
+def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence[str]:
+    if isinstance(key_prefix, str):
+        return [key_prefix]
+    elif isinstance(key_prefix, list):
+        return key_prefix
+    else:
+        check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
@@ -219,6 +229,7 @@ class AssetLineageInfo(
 T = TypeVar("T")
 
 
+@experimental_param(param="data_version")
 class Output(Generic[T]):
     """Event corresponding to one of a op's outputs.
 
@@ -234,9 +245,6 @@ class Output(Generic[T]):
         value (Any): The value returned by the compute function.
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
-        metadata_entries (Optional[MetadataEntry]):
-            (Deprecated) A set of metadata entries to attach to events related to this Output. Use
-            `metadata` instead.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -249,18 +257,14 @@ class Output(Generic[T]):
         self,
         value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
     ):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
-        if data_version is not None:
-            experimental_class_param_warning("data_version", "Output")
         self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
-            check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
         )
 
     @property
@@ -270,16 +274,19 @@ class Output(Generic[T]):
     @public
     @property
     def value(self) -> Any:
+        """Any: The value returned by the compute function."""
         return self._value
 
     @public
     @property
     def output_name(self) -> str:
+        """str: Name of the corresponding :py:class:`Out`."""
         return self._output_name
 
     @public
     @property
     def data_version(self) -> Optional[DataVersion]:
+        """Optional[DataVersion]: A data version that was manually set on the `Output`."""
         return self._data_version
 
     def __eq__(self, other: object) -> bool:
@@ -309,9 +316,6 @@ class DynamicOutput(Generic[T]):
         output_name (Optional[str]):
             Name of the corresponding :py:class:`DynamicOut` defined on the op.
             (default: "result")
-        metadata_entries (Optional[MetadataEntry]):
-            (Deprecated) A set of metadata entries to attach to events related to this Output. Use
-            `metadata` instead.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -323,7 +327,6 @@ class DynamicOutput(Generic[T]):
         value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
@@ -331,7 +334,6 @@ class DynamicOutput(Generic[T]):
         self._value = value
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
-            check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
         )
 
     @property
@@ -341,16 +343,19 @@ class DynamicOutput(Generic[T]):
     @public
     @property
     def mapping_key(self) -> str:
+        """The mapping_key that was set for this DynamicOutput at instantiation."""
         return self._mapping_key
 
     @public
     @property
     def value(self) -> T:
+        """The value that is returned by the compute function for this DynamicOut."""
         return self._value
 
     @public
     @property
     def output_name(self) -> str:
+        """Name of the :py:class:`DynamicOut` defined on the op that this DynamicOut is associated with."""
         return self._output_name
 
     def __eq__(self, other: object) -> bool:
@@ -361,21 +366,6 @@ class DynamicOutput(Generic[T]):
             and self.mapping_key == other.mapping_key
             and self.metadata == other.metadata
         )
-
-
-# This is a temporary function to consolidate metadata normalization logic on event classes where
-# we've had to mangle the signature for backcompat reasons. Can be deleted when we remove
-# `metadata_entries`/`MetadataEntry`.
-def _normalize_event_metadata(
-    metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
-    metadata_entries: Optional[Sequence[MetadataEntry]] = None,
-) -> MetadataMapping:
-    metadata_dict = metadata if isinstance(metadata, dict) else {}
-    metadata_entries = metadata if isinstance(metadata, list) else metadata_entries
-    return normalize_metadata(
-        check.opt_mapping_param(metadata_dict, "metadata_dict", key_type=str),
-        check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
-    )
 
 
 @whitelist_for_serdes(
@@ -398,8 +388,6 @@ class AssetObservation(
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
-        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
-            asset. Use `metadata` instead.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
@@ -414,10 +402,9 @@ class AssetObservation(
         cls,
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -434,7 +421,9 @@ class AssetObservation(
                 "The tags argument is reserved for system-populated tags."
             )
 
-        metadata = _normalize_event_metadata(metadata, metadata_entries)
+        metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
 
         return super(AssetObservation, cls).__new__(
             cls,
@@ -457,11 +446,11 @@ class AssetMaterializationSerializer(NamedTupleSerializer):
     # There are old `Materialization` objects in storage. We set the default value for asset key to
     # be `AssetKey(["__undefined__"])` to ensure that we can load these objects, without needing to
     # allow for the construction of new `AssetMaterialization` objects with no defined AssetKey.
-    def before_unpack(self, **raw_dict: Any) -> Any:
+    def before_unpack(self, context, unpacked_dict: Any) -> Any:
         # cover both the case where "asset_key" is not present at all and where it is None
-        if raw_dict.get("asset_key") is None:
-            raw_dict["asset_key"] = {"__class__": "AssetKey", "path": UNDEFINED_ASSET_KEY_PATH}
-        return raw_dict
+        if unpacked_dict.get("asset_key") is None:
+            unpacked_dict["asset_key"] = AssetKey(UNDEFINED_ASSET_KEY_PATH)
+        return unpacked_dict
 
 
 @whitelist_for_serdes(
@@ -491,14 +480,12 @@ class AssetMaterialization(
     framework.
 
     Op authors should use these events to organize metadata about the side effects of their
-    computations, enabling tooling like the Assets dashboard in Dagit.
+    computations, enabling tooling like the Assets dashboard in the Dagster UI.
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
             job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary
-            metadata about the materialized value. Use `metadata` instead.
         partition (Optional[str]): The name of the partition
             that was materialized.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
@@ -513,10 +500,9 @@ class AssetMaterialization(
         cls,
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
@@ -536,7 +522,9 @@ class AssetMaterialization(
                 " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
-        metadata = _normalize_event_metadata(metadata, metadata_entries)
+        metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
 
         partition = check.opt_str_param(partition, "partition")
 
@@ -612,8 +600,6 @@ class ExpectationResult(
         success (bool): Whether the expectation passed or not.
         label (Optional[str]): Short display name for expectation. Defaults to "result".
         description (Optional[str]): A longer human-readable description of the expectation.
-        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
-            expectation. Use `metadata` instead.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -625,10 +611,11 @@ class ExpectationResult(
         success: bool,
         label: Optional[str] = None,
         description: Optional[str] = None,
-        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = _normalize_event_metadata(metadata, metadata_entries)
+        metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
 
         return super(ExpectationResult, cls).__new__(
             cls,
@@ -661,13 +648,11 @@ class TypeCheck(
     :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
     :py:func:`PythonObjectDagsterType` API.)
 
-    Solid compute functions should generally avoid yielding events of this type to avoid confusion.
+    Op compute functions should generally avoid yielding events of this type to avoid confusion.
 
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.
         description (Optional[str]): A human-readable description of the type check.
-        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
-            type check. Use `metadata` instead.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -678,10 +663,11 @@ class TypeCheck(
         cls,
         success: bool,
         description: Optional[str] = None,
-        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = _normalize_event_metadata(metadata, metadata_entries)
+        metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
 
         return super(TypeCheck, cls).__new__(
             cls,
@@ -700,8 +686,6 @@ class Failure(Exception):
 
     Args:
         description (Optional[str]): A human-readable description of the failure.
-        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
-            failure. Use `metadata` instead.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -714,7 +698,6 @@ class Failure(Exception):
     def __init__(
         self,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
@@ -722,7 +705,6 @@ class Failure(Exception):
         self.description = check.opt_str_param(description, "description")
         self.metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
-            check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
         )
         self.allow_retries = check.opt_bool_param(allow_retries, "allow_retries", True)
 

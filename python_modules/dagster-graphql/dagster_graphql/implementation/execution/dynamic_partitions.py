@@ -7,7 +7,7 @@ from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.schema.errors import GrapheneDuplicateDynamicPartitionError
 
-from ..utils import UserFacingGraphQLError, assert_permission_for_location, capture_error
+from ..utils import UserFacingGraphQLError, assert_permission_for_location
 
 if TYPE_CHECKING:
     from ...schema.inputs import GrapheneRepositorySelector
@@ -53,7 +53,6 @@ def _repository_contains_dynamic_partitions_def(
     return False
 
 
-@capture_error
 def add_dynamic_partition(
     graphene_info,
     repository_selector: "GrapheneRepositorySelector",

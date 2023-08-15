@@ -19,6 +19,7 @@ paths = [
     "../../python_modules/dagster",
     "../../python_modules/dagster-graphql",
     "../../python_modules/dagit",
+    "../../python_modules/dagster-webserver",
     "../../python_modules/libraries/dagster-airbyte",
     "../../python_modules/libraries/dagster-airflow",
     "../../python_modules/libraries/dagster-aws",
@@ -39,6 +40,7 @@ paths = [
     "../../python_modules/libraries/dagster-mysql",
     "../../python_modules/libraries/dagster-pagerduty",
     "../../python_modules/libraries/dagster-pandas",
+    "../../python_modules/libraries/dagster-pandera",
     "../../python_modules/libraries/dagster-papertrail",
     "../../python_modules/libraries/dagster-postgres",
     "../../python_modules/libraries/dagster-prometheus",
@@ -118,7 +120,7 @@ extensions = [
 # directive invocation. Note that filtration by publicity (done in the `autodoc_dagster` extension)
 # is performed on the member list controlled by this option-- without `members` set, even a method
 # marked `@public` will _not_ be included in the docs!
-autodoc_default_options = {"members": True}
+autodoc_default_options = {"members": True, "undoc-members": True}
 
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
@@ -147,6 +149,8 @@ autodoc_mock_imports = [
     "mlflow",
     "mysql",
     "oauth2client",
+    "orjson",
+    "pandera",
     "prometheus_client",
     "psycopg2",
     "pypd",

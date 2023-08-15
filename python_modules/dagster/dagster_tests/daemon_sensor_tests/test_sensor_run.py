@@ -1,49 +1,49 @@
-import os
 import random
 import string
-import sys
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
+from typing import Any
 from unittest import mock
 
 import pendulum
 import pytest
 from dagster import (
-    Any,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetSelection,
     CodeLocationSelector,
     DagsterRunStatus,
+    DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     Field,
     HourlyPartitionsDefinition,
     JobSelector,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Output,
     RepositorySelector,
     SourceAsset,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
     asset,
-    build_asset_reconciliation_sensor,
     define_asset_job,
-    graph,
     load_assets_from_current_module,
     materialize,
     multi_asset_sensor,
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators import op
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_pipeline
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
@@ -51,10 +51,15 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+from dagster._core.scheduler.instigation import (
+    DynamicPartitionsRequestResult,
+    InstigatorState,
+    InstigatorStatus,
+    TickStatus,
+)
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
-    SingleThreadPoolExecutor,
+    BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
     wait_for_futures,
@@ -62,7 +67,6 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster._legacy import pipeline
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .conftest import create_workspace_load_target
@@ -87,62 +91,54 @@ asset_job = define_asset_job("abc", selection=AssetSelection.keys("c", "b").upst
 
 
 @op
-def the_solid(_):
+def the_op(_):
     return 1
 
 
-@pipeline
-def the_pipeline():
-    the_solid()
+@job
+def the_job():
+    the_op()
 
 
-@graph()
-def the_graph():
-    the_solid()
-
-
-the_job = the_graph.to_job()
+@job
+def the_other_job():
+    the_op()
 
 
 @op(config_schema=Field(Any))
-def config_solid(_):
+def config_op(_):
     return 1
 
 
-@pipeline
-def config_pipeline():
-    config_solid()
-
-
-@graph()
-def config_graph():
-    config_solid()
+@job
+def config_job():
+    config_op()
 
 
 @op
-def foo_solid():
+def foo_op():
     yield AssetMaterialization(asset_key=AssetKey("foo"))
     yield Output(1)
 
 
-@pipeline
-def foo_pipeline():
-    foo_solid()
+@job
+def foo_job():
+    foo_op()
 
 
 @op
-def foo_observation_solid():
+def foo_observation_op():
     yield AssetObservation(asset_key=AssetKey("foo"), metadata={"text": "FOO"})
     yield Output(5)
 
 
-@pipeline
-def foo_observation_pipeline():
-    foo_observation_solid()
+@job
+def foo_observation_job():
+    foo_observation_op()
 
 
 @op
-def hanging_solid():
+def hanging_op():
     start_time = time.time()
     while True:
         if time.time() - start_time > 10:
@@ -150,30 +146,27 @@ def hanging_solid():
         time.sleep(0.5)
 
 
-@pipeline
-def hanging_pipeline():
-    hanging_solid()
+@job
+def hanging_job():
+    hanging_op()
 
 
 @op
-def failure_solid():
+def failure_op():
     raise Exception("womp womp")
 
 
-@pipeline
-def failure_pipeline():
-    failure_solid()
+@job
+def failure_job():
+    failure_op()
 
 
-@graph()
-def failure_graph():
-    failure_solid()
+@job
+def failure_job_2():
+    failure_op()
 
 
-failure_job = failure_graph.to_job()
-
-
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def simple_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -181,33 +174,33 @@ def simple_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def always_on_sensor(_context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def run_key_sensor(_context):
     return RunRequest(run_key="only_once", run_config={}, tags={})
 
 
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def error_sensor(context):
     context.update_cursor("the exception below should keep this from being persisted")
     raise Exception("womp womp")
 
 
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def wrong_config_sensor(_context):
     return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
 
 
-@sensor(job_name="the_pipeline", minimum_interval_seconds=60)
+@sensor(job_name="the_job", minimum_interval_seconds=60)
 def custom_interval_sensor(_context):
     return SkipReason()
 
 
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def skip_cursor_sensor(context):
     if not context.cursor:
         cursor = 1
@@ -218,7 +211,7 @@ def skip_cursor_sensor(context):
     return SkipReason()
 
 
-@sensor(job_name="the_pipeline")
+@sensor(job_name="the_job")
 def run_cursor_sensor(context):
     if not context.cursor:
         cursor = 1
@@ -383,7 +376,7 @@ def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
 
-@sensor(job_name="config_pipeline")
+@sensor(job_name="config_job")
 def large_sensor(_context):
     # create a gRPC response payload larger than the limit (4194304)
     REQUEST_COUNT = 25
@@ -395,8 +388,18 @@ def large_sensor(_context):
         config_garbage = {
             _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
         }
-        config = {"solids": {"config_solid": {"config": {"foo": config_garbage}}}}
+        config = {"ops": {"config_op": {"config": {"foo": config_garbage}}}}
         yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
+
+
+@sensor(job_name="config_job")
+def many_request_sensor(_context):
+    # create a gRPC response payload larger than the limit (4194304)
+    REQUEST_COUNT = 15
+
+    for _ in range(REQUEST_COUNT):
+        config = {"ops": {"config_op": {"config": {"foo": "bar"}}}}
+        yield RunRequest(run_key=None, run_config=config)
 
 
 @sensor(job=asset_job)
@@ -416,7 +419,7 @@ def partitioned_asset_selection_sensor(_context):
     )
 
 
-@asset_sensor(job_name="the_pipeline", asset_key=AssetKey("foo"))
+@asset_sensor(job_name="the_job", asset_key=AssetKey("foo"))
 def asset_foo_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
@@ -429,9 +432,14 @@ def asset_job_sensor(context, _event):
 @run_failure_sensor
 def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
+    if "failure_op" in context.failure_event.message:
+        step_failure_events = context.get_step_failure_events()
+        assert len(step_failure_events) == 1
+        step_error_str = step_failure_events[0].event_specific_data.error.to_string()
+        assert "womp womp" in step_error_str, step_error_str
 
 
-@run_failure_sensor(monitored_jobs=[failure_job])
+@run_failure_sensor(job_selection=[failure_job])
 def my_run_failure_sensor_filtered(context):
     assert isinstance(context.instance, DagsterInstance)
 
@@ -442,16 +450,13 @@ def my_run_failure_sensor_that_itself_fails(context):
 
 
 @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
-def my_pipeline_success_sensor(context):
+def my_job_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
 @run_status_sensor(run_status=DagsterRunStatus.STARTED)
-def my_pipeline_started_sensor(context):
+def my_job_started_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
-
-
-config_job = config_graph.to_job()
 
 
 @sensor(jobs=[the_job, config_job])
@@ -463,7 +468,7 @@ def two_job_sensor(context):
         yield RunRequest(
             run_key=str(counter),
             job_name=config_job.name,
-            run_config={"solids": {"config_solid": {"config": {"foo": "blah"}}}},
+            run_config={"ops": {"config_op": {"config": {"foo": "blah"}}}},
         )
     context.update_cursor(str(counter + 1))
 
@@ -475,7 +480,7 @@ def bad_request_untargeted(_ctx):
 
 @sensor(job=the_job)
 def bad_request_mismatch(_ctx):
-    yield RunRequest(run_key=None, job_name="config_pipeline")
+    yield RunRequest(run_key=None, job_name="config_job")
 
 
 @sensor(jobs=[the_job, config_job])
@@ -493,11 +498,11 @@ def request_list_sensor(_ctx):
         JobSelector(
             location_name="test_location",
             repository_name="the_other_repo",
-            job_name="the_pipeline",
+            job_name="the_job",
         )
     ],
     run_status=DagsterRunStatus.SUCCESS,
-    request_job=the_job,
+    request_job=the_other_job,
 )
 def cross_repo_job_sensor():
     from time import time
@@ -555,7 +560,7 @@ quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def
 def add_dynamic_partitions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
-            quux.build_add_request(["baz"]),
+            quux.build_add_request(["baz", "foo"]),
         ],
     )
 
@@ -565,7 +570,7 @@ def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
             quux.build_add_request(["1"]),
-            quux.build_delete_request(["2"]),
+            quux.build_delete_request(["2", "3"]),
         ],
         run_requests=[RunRequest(partition_key="1")],
     )
@@ -581,15 +586,90 @@ def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
     )
 
 
+dynamic1 = DynamicPartitionsDefinition(name="dynamic1")
+dynamic2 = DynamicPartitionsDefinition(name="dynamic2")
+
+
+@asset(partitions_def=MultiPartitionsDefinition({"dynamic1": dynamic1, "dynamic2": dynamic2}))
+def multipartitioned_with_two_dynamic_dims():
+    pass
+
+
+@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+def success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
+    return SensorResult(
+        dynamic_partitions_requests=[
+            dynamic1.build_add_request(["1"]),
+            dynamic2.build_add_request(["2"]),
+        ],
+        run_requests=[
+            RunRequest(partition_key=MultiPartitionKey({"dynamic1": "1", "dynamic2": "2"}))
+        ],
+    )
+
+
+@sensor(asset_selection=AssetSelection.keys(multipartitioned_with_two_dynamic_dims.key))
+def error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor(context):
+    return SensorResult(
+        dynamic_partitions_requests=[
+            dynamic1.build_add_request(["1"]),
+            dynamic2.build_add_request(["2"]),
+        ],
+        run_requests=[
+            RunRequest(partition_key=MultiPartitionKey({"dynamic1": "2", "dynamic2": "1"}))
+        ],
+    )
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+            "time": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+)
+def multipartitioned_asset_with_static_time_dimensions():
+    pass
+
+
+@sensor(asset_selection=AssetSelection.keys(multipartitioned_asset_with_static_time_dimensions.key))
+def multipartitions_with_static_time_dimensions_run_requests_sensor(context):
+    return SensorResult(
+        run_requests=[
+            RunRequest(partition_key=MultiPartitionKey({"static": "b", "time": "2023-01-05"}))
+        ],
+    )
+
+
+daily_partitions_def = DailyPartitionsDefinition(start_date="2022-08-01")
+
+
+@asset(partitions_def=daily_partitions_def)
+def partitioned_asset():
+    return 1
+
+
+daily_partitioned_job = define_asset_job(
+    "daily_partitioned_job",
+    partitions_def=daily_partitions_def,
+).resolve(asset_graph=AssetGraph.from_assets([partitioned_asset]))
+
+
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, monitored_jobs=[daily_partitioned_job])
+def partitioned_pipeline_success_sensor(_context):
+    assert _context.partition_key == "2022-08-01"
+
+
 @repository
 def the_repo():
     return [
-        the_pipeline,
         the_job,
-        config_pipeline,
+        the_other_job,
         config_job,
-        foo_pipeline,
+        foo_job,
         large_sensor,
+        many_request_sensor,
         simple_sensor,
         error_sensor,
         wrong_config_sensor,
@@ -603,11 +683,11 @@ def the_repo():
         my_run_failure_sensor,
         my_run_failure_sensor_filtered,
         my_run_failure_sensor_that_itself_fails,
-        my_pipeline_success_sensor,
-        my_pipeline_started_sensor,
-        failure_pipeline,
+        my_job_success_sensor,
+        my_job_started_sensor,
         failure_job,
-        hanging_pipeline,
+        failure_job_2,
+        hanging_job,
         two_job_sensor,
         bad_request_untargeted,
         bad_request_mismatch,
@@ -637,18 +717,23 @@ def the_repo():
         add_dynamic_partitions_sensor,
         quux_asset_job,
         error_on_deleted_dynamic_partitions_run_requests_sensor,
+        partitioned_pipeline_success_sensor,
+        daily_partitioned_job,
+        success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
+        error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor,
+        multipartitions_with_static_time_dimensions_run_requests_sensor,
     ]
 
 
 @repository
 def the_other_repo():
     return [
-        the_pipeline,
+        the_job,
         run_key_sensor,
     ]
 
 
-@sensor(job_name="the_pipeline", default_status=DefaultSensorStatus.RUNNING)
+@sensor(job_name="the_job", default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -656,7 +741,7 @@ def always_running_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(job_name="the_pipeline", default_status=DefaultSensorStatus.STOPPED)
+@sensor(job_name="the_job", default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -667,7 +752,7 @@ def never_running_sensor(context):
 @repository
 def the_status_in_code_repo():
     return [
-        the_pipeline,
+        the_job,
         always_running_sensor,
         never_running_sensor,
     ]
@@ -775,95 +860,13 @@ def asset_sensor_repo():
         depends_on_source,
         the_job,
         monitor_source_asset_sensor,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_OR",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y),
-            name="just_y_AND",
-            run_tags={"hello": "world"},
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d),
-            name="just_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f),
-            name="d_and_f_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(d, f, g),
-            name="d_and_f_and_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, d),
-            name="y_and_d_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(y, i),
-            name="y_and_i_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(g),
-            name="just_g_AND",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(waits_on_sleep),
-            name="in_progress_condition_sensor",
-        ),
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(depends_on_source),
-            name="source_asset_sensor",
-        ),
     ]
 
 
-def get_sensor_executors():
-    is_buildkite = os.getenv("BUILDKITE") is not None
-    return [
-        pytest.param(
-            None,
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="synchronous",
-        ),
-        pytest.param(
-            SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
-            id="threadpool",
-        ),
-    ]
+FUTURES_TIMEOUT = 75
 
 
-def evaluate_sensors(workspace_context, executor, timeout=75):
+def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=FUTURES_TIMEOUT):
     logger = get_default_daemon_logger("SensorDaemon")
     futures = {}
     list(
@@ -872,6 +875,7 @@ def evaluate_sensors(workspace_context, executor, timeout=75):
             logger,
             threadpool_executor=executor,
             sensor_tick_futures=futures,
+            submit_threadpool_executor=submit_executor,
         )
     )
 
@@ -890,7 +894,7 @@ def validate_tick(
     assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
     assert tick_data.instigator_name == external_sensor.name
     assert tick_data.instigator_type == InstigatorType.SENSOR
-    assert tick_data.status == expected_status
+    assert tick_data.status == expected_status, tick_data.error
     if expected_datetime:
         assert tick_data.timestamp == expected_datetime.timestamp()
     if expected_run_ids is not None:
@@ -945,7 +949,6 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_simple_sensor(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1006,7 +1009,6 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensors_keyed_on_selector_not_origin(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
@@ -1055,7 +1057,6 @@ def test_sensors_keyed_on_selector_not_origin(
         assert len(ticks) == 1
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_load_sensor_repository(
     caplog: pytest.LogCaptureFixture,
     executor: ThreadPoolExecutor,
@@ -1103,7 +1104,6 @@ def test_bad_load_sensor_repository(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_load_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1138,7 +1138,6 @@ def test_bad_load_sensor(caplog, executor, instance, workspace_context, external
         assert "Could not find sensor invalid_sensor in repository the_repo." in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_error_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1194,7 +1193,6 @@ def test_error_sensor(caplog, executor, instance, workspace_context, external_re
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_wrong_config_sensor(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -1235,10 +1233,10 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
             freeze_datetime,
             TickStatus.FAILURE,
             [],
-            "Error in config for pipeline",
+            "Error in config for job",
         )
 
-        assert "Error in config for pipeline" in caplog.text
+        assert "Error in config for job" in caplog.text
 
     freeze_datetime = freeze_datetime.add(seconds=60)
     caplog.clear()
@@ -1258,13 +1256,12 @@ def test_wrong_config_sensor(caplog, executor, instance, workspace_context, exte
             freeze_datetime,
             TickStatus.FAILURE,
             [],
-            "Error in config for pipeline",
+            "Error in config for job",
         )
 
-        assert "Error in config for pipeline" in caplog.text
+        assert "Error in config for job" in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_launch_failure(caplog, executor, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1315,7 +1312,6 @@ def test_launch_failure(caplog, executor, workspace_context, external_repo):
             assert "The entire purpose of this is to throw on launch" in caplog.text
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_launch_once(caplog, executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -1390,8 +1386,7 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         launched_run = instance.get_runs()[0]
 
         # Manually create a new run with the same tags
-        execute_pipeline(
-            the_pipeline,
+        the_job.execute_in_process(
             run_config=launched_run.run_config,
             tags=launched_run.tags,
             instance=instance,
@@ -1414,123 +1409,6 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         )
 
 
-@contextmanager
-def instance_with_sensors_no_run_bucketing():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
-            overrides={
-                "run_storage": {
-                    "module": "dagster_tests.storage_tests.test_run_storage",
-                    "class": "NonBucketQuerySqliteRunStorage",
-                    "config": {"base_dir": temp_dir},
-                },
-                "run_launcher": {
-                    "module": "dagster._core.test_utils",
-                    "class": "MockedRunLauncher",
-                },
-            }
-        ) as instance:
-            yield instance
-
-
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_launch_once_unbatched(caplog, executor, workspace_context, external_repo):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
-    with instance_with_sensors_no_run_bucketing() as instance:
-        no_bucket_workspace_context = workspace_context.copy_for_test_instance(instance)
-
-        with pendulum.test(freeze_datetime):
-            external_sensor = external_repo.get_external_sensor("run_key_sensor")
-            instance.add_instigator_state(
-                InstigatorState(
-                    external_sensor.get_external_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.RUNNING,
-                )
-            )
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 0
-
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            wait_for_all_runs_to_start(instance)
-
-            assert instance.get_runs_count() == 1
-            run = instance.get_runs()[0]
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 1
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SUCCESS,
-                expected_run_ids=[run.run_id],
-            )
-
-        # run again (after 30 seconds), to ensure that the run key maintains idempotence
-        freeze_datetime = freeze_datetime.add(seconds=30)
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            assert instance.get_runs_count() == 1
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-            assert len(ticks) == 2
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
-            assert (
-                "Skipping 1 run for sensor run_key_sensor already completed with run keys:"
-                ' ["only_once"]'
-                in caplog.text
-            )
-
-            launched_run = instance.get_runs()[0]
-
-            # Manually create a new run with the same tags
-            execute_pipeline(
-                the_pipeline,
-                run_config=launched_run.run_config,
-                tags=launched_run.tags,
-                instance=instance,
-            )
-
-            # Sensor loop still executes
-        freeze_datetime = freeze_datetime.add(seconds=30)
-        with pendulum.test(freeze_datetime):
-            evaluate_sensors(no_bucket_workspace_context, executor)
-            ticks = instance.get_ticks(
-                external_sensor.get_external_origin_id(), external_sensor.selector_id
-            )
-
-            assert len(ticks) == 3
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                TickStatus.SKIPPED,
-            )
-
-
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_custom_interval_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, tz="UTC"), "US/Central"
@@ -1579,7 +1457,6 @@ def test_custom_interval_sensor(executor, instance, workspace_context, external_
         validate_tick(ticks[0], external_sensor, expected_datetime, TickStatus.SKIPPED)
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_custom_interval_sensor_with_offset(
     monkeypatch, executor, instance, workspace_context, external_repo
 ):
@@ -1644,7 +1521,6 @@ def test_custom_interval_sensor_with_offset(
         assert sum(sleeps) == 65
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_start_stop(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1702,7 +1578,6 @@ def test_sensor_start_stop(executor, instance, workspace_context, external_repo)
         assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_large_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1724,7 +1599,27 @@ def test_large_sensor(executor, instance, workspace_context, external_repo):
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_many_request_sensor(executor, submit_executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("many_request_sensor")
+        instance.start_sensor(external_sensor)
+        evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+
 def test_cursor_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1786,7 +1681,6 @@ def test_cursor_sensor(executor, instance, workspace_context, external_repo):
         assert run_ticks[0].cursor == "2"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1824,7 +1718,6 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_stale_asset_selection_sensor_never_materialized(
     executor, instance, workspace_context, external_repo
 ):
@@ -1837,12 +1730,11 @@ def test_run_request_stale_asset_selection_sensor_never_materialized(
         external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
         instance.start_sensor(external_sensor)
         evaluate_sensors(workspace_context, executor)
-        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
+        sensor_run = next((r for r in instance.get_runs() if r.job_name == "abc"), None)
         assert sensor_run is not None
         assert sensor_run.asset_selection == {AssetKey("a"), AssetKey("b"), AssetKey("c")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_stale_asset_selection_sensor_empty(
     executor, instance, workspace_context, external_repo
 ):
@@ -1857,11 +1749,10 @@ def test_run_request_stale_asset_selection_sensor_empty(
         external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
         instance.start_sensor(external_sensor)
         evaluate_sensors(workspace_context, executor)
-        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
+        sensor_run = next((r for r in instance.get_runs() if r.job_name == "abc"), None)
         assert sensor_run is None
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_stale_asset_selection_sensor_subset(
     executor, instance, workspace_context, external_repo
 ):
@@ -1876,12 +1767,11 @@ def test_run_request_stale_asset_selection_sensor_subset(
         external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
         instance.start_sensor(external_sensor)
         evaluate_sensors(workspace_context, executor)
-        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
+        sensor_run = next((r for r in instance.get_runs() if r.job_name == "abc"), None)
         assert sensor_run is not None
         assert sensor_run.asset_selection == {AssetKey("b"), AssetKey("c")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_targets_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1930,7 +1820,6 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
         assert set(planned_asset_keys) == {AssetKey("asset_a"), AssetKey("asset_b")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_partitioned_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1970,7 +1859,6 @@ def test_partitioned_asset_selection_sensor(executor, instance, workspace_contex
         assert planned_asset_keys == {AssetKey("hourly_asset_3")}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -1994,7 +1882,7 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
         # should generate the foo asset
-        execute_pipeline(foo_pipeline, instance=instance)
+        foo_job.execute_in_process(instance=instance)
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2012,7 +1900,6 @@ def test_asset_sensor(executor, instance, workspace_context, external_repo):
         assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2037,7 +1924,7 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
         # should generate the foo asset
-        execute_pipeline(foo_pipeline, instance=instance)
+        foo_job.execute_in_process(instance=instance)
 
         # should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2055,7 +1942,6 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
         assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_sensor_not_triggered_on_observation(
     executor, instance, workspace_context, external_repo
 ):
@@ -2068,7 +1954,7 @@ def test_asset_sensor_not_triggered_on_observation(
         instance.start_sensor(foo_sensor)
 
         # generates the foo asset observation
-        execute_pipeline(foo_observation_pipeline, instance=instance)
+        foo_observation_job.execute_in_process(instance=instance)
 
         # observation should not fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2085,7 +1971,7 @@ def test_asset_sensor_not_triggered_on_observation(
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
         # should generate the foo asset
-        execute_pipeline(foo_pipeline, instance=instance)
+        foo_job.execute_in_process(instance=instance)
 
         # materialization should fire the asset sensor
         evaluate_sensors(workspace_context, executor)
@@ -2103,7 +1989,6 @@ def test_asset_sensor_not_triggered_on_observation(
         assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2169,7 +2054,6 @@ def test_multi_asset_sensor(executor, instance, workspace_context, external_repo
         assert run.tags.get("dagster/sensor_name") == "asset_a_and_b_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_asset_selection_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2193,7 +2077,6 @@ def test_asset_selection_sensor(executor, instance, workspace_context, external_
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_targets_asset_selection(
     executor, instance, workspace_context, external_repo
 ):
@@ -2267,7 +2150,6 @@ def test_multi_asset_sensor_targets_asset_selection(
         assert run.asset_selection == {AssetKey(["asset_c"])}
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2332,7 +2214,6 @@ def test_multi_asset_sensor_w_many_events(executor, instance, workspace_context,
         assert run.tags.get("dagster/sensor_name") == "backlog_sensor"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_w_no_cursor_update(
     executor, instance, workspace_context, external_repo
 ):
@@ -2375,7 +2256,6 @@ def test_multi_asset_sensor_w_no_cursor_update(
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2022, month=8, day=2, tz="UTC"),
@@ -2405,7 +2285,6 @@ def test_multi_asset_sensor_hourly_to_weekly(executor, instance, workspace_conte
         assert run.tags.get("dagster/partition") == "2022-07-31"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
@@ -2450,7 +2329,6 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
         validate_tick(ticks[0], cursor_sensor, freeze_datetime, TickStatus.SKIPPED)
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
@@ -2474,7 +2352,6 @@ def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context,
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_cursor_update_sensor_result_multi_asset_sensor(
     executor, instance, workspace_context, external_repo
 ):
@@ -2501,7 +2378,6 @@ def test_cursor_update_sensor_result_multi_asset_sensor(
         assert "Cannot set cursor in a multi_asset_sensor" in ticks[0].error.message
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2525,7 +2401,7 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
         run = instance.get_runs()[0]
         assert run.run_config == {}
         assert run.tags.get("dagster/sensor_name") == "two_job_sensor"
-        assert run.pipeline_name == "the_graph"
+        assert run.job_name == "the_job"
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
@@ -2540,13 +2416,12 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
             TickStatus.SUCCESS,
         )
         run = instance.get_runs()[0]
-        assert run.run_config == {"solids": {"config_solid": {"config": {"foo": "blah"}}}}
+        assert run.run_config == {"ops": {"config_op": {"config": {"foo": "blah"}}}}
         assert run.tags
         assert run.tags.get("dagster/sensor_name") == "two_job_sensor"
-        assert run.pipeline_name == "config_graph"
+        assert run.job_name == "config_job"
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_run_request_untargeted(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2566,15 +2441,12 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                "RunRequest for a sensor lacking a specified target (job_name, job, or "
-                "jobs)."
-            ),
+            "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
+            "RunRequest for a sensor lacking a specified target (job_name, job, or "
+            "jobs).",
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_run_request_mismatch(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2594,14 +2466,11 @@ def test_bad_run_request_mismatch(executor, instance, workspace_context, externa
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
-                "job_name config_pipeline. Expected one of: ['the_graph']"
-            ),
+            "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
+            "job_name config_job. Expected one of: ['the_job']",
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_bad_run_request_unspecified(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
@@ -2621,15 +2490,12 @@ def test_bad_run_request_unspecified(executor, instance, workspace_context, exte
             freeze_datetime,
             TickStatus.FAILURE,
             None,
-            (
-                "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
-                "did not specify job_name for the requested run. Expected one of: "
-                "['the_graph', 'config_graph']"
-            ),
+            "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
+            "did not specify job_name for the requested run. Expected one of: "
+            "['the_job', 'config_job']",
         )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_status_in_code_sensor(executor, instance):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2732,7 +2598,6 @@ def test_status_in_code_sensor(executor, instance):
             )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_run_request_list_sensor(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2762,7 +2627,6 @@ def test_run_request_list_sensor(executor, instance, workspace_context, external
         assert len(ticks) == 1
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_purge(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2810,7 +2674,6 @@ def test_sensor_purge(executor, instance, workspace_context, external_repo):
         assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_custom_purge(executor, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -2866,7 +2729,6 @@ def test_sensor_custom_purge(executor, workspace_context, external_repo):
             assert len(ticks) == 2
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_repository_namespacing(executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(
@@ -2954,7 +2816,6 @@ def test_settings():
         assert thread_inst.get_settings("sensors") == settings
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_sensor_logging(executor, instance, workspace_context, external_repo):
     external_sensor = external_repo.get_external_sensor("logging_sensor")
     instance.add_instigator_state(
@@ -2985,12 +2846,13 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_add_dynamic_partitions_sensor(
     caplog, executor, instance, workspace_context, external_repo
 ):
-    execute_pipeline(foo_pipeline, instance=instance)  # creates event log storage tables
-    assert set(instance.get_dynamic_partitions("quux")) == set()
+    foo_job.execute_in_process(instance=instance)  # creates event log storage tables
+    instance.add_dynamic_partitions("quux", ["foo"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["foo"])
+
     external_sensor = external_repo.get_external_sensor("add_dynamic_partitions_sensor")
     instance.add_instigator_state(
         InstigatorState(
@@ -3006,19 +2868,28 @@ def test_add_dynamic_partitions_sensor(
 
     evaluate_sensors(workspace_context, executor)
 
-    assert set(instance.get_dynamic_partitions("quux")) == set(["baz"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["baz", "foo"])
     ticks = instance.get_ticks(
         external_sensor.get_external_origin_id(), external_sensor.selector_id
     )
 
     assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
+    assert (
+        "Skipping addition of partition keys for dynamic partitions definition 'quux' that already"
+        " exist: ['foo']"
+        in caplog.text
+    )
+    assert ticks[0].tick_data.dynamic_partitions_request_results == [
+        DynamicPartitionsRequestResult(
+            "quux", added_partitions=["baz"], deleted_partitions=None, skipped_partitions=["foo"]
+        ),
+    ]
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_add_dynamic_partitions_and_launch_runs(
+def test_add_delete_skip_dynamic_partitions(
     caplog, executor, instance, workspace_context, external_repo
 ):
-    execute_pipeline(foo_pipeline, instance=instance)  # creates event log storage tables
+    foo_job.execute_in_process(instance=instance)  # creates event log storage tables
     instance.add_dynamic_partitions("quux", ["2"])
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
     external_sensor = external_repo.get_external_sensor(
@@ -3036,28 +2907,87 @@ def test_add_dynamic_partitions_and_launch_runs(
     )
     assert len(ticks) == 0
 
-    evaluate_sensors(workspace_context, executor)
-
-    ticks = instance.get_ticks(
-        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2023,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
     )
-    assert len(ticks) == 1
-    assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
 
-    assert instance.get_runs_count() == 2
-    assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
-    assert "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
-    run = instance.get_runs()[0]
-    assert run.run_config == {}
-    assert run.tags
-    assert run.tags.get("dagster/partition") == "1"
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
+
+        assert instance.get_runs_count() == 2
+
+        assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
+        assert (
+            "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
+        )
+        assert (
+            "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
+            " not exist: ['3']"
+            in caplog.text
+        )
+        assert ticks[0].tick_data.dynamic_partitions_request_results == [
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=["1"], deleted_partitions=None, skipped_partitions=[]
+            ),
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=None, deleted_partitions=["2"], skipped_partitions=["3"]
+            ),
+        ]
+
+        run = instance.get_runs()[0]
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/partition") == "1"
+
+    freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2
+
+        assert ticks[0].tick_data.dynamic_partitions_request_results == [
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=[], deleted_partitions=None, skipped_partitions=["1"]
+            ),
+            DynamicPartitionsRequestResult(
+                "quux", added_partitions=None, deleted_partitions=[], skipped_partitions=["2", "3"]
+            ),
+        ]
+
+        assert (
+            "Skipping addition of partition keys for dynamic partitions definition 'quux' that"
+            " already exist: ['1']"
+            in caplog.text
+        )
+        assert (
+            "Skipping deletion of partition keys for dynamic partitions definition 'quux' that do"
+            " not exist: ['2', '3']"
+            in caplog.text
+        )
 
 
-@pytest.mark.parametrize("executor", get_sensor_executors())
 def test_error_on_deleted_dynamic_partitions_run_request(
     executor, instance, workspace_context, external_repo
 ):
-    execute_pipeline(foo_pipeline, instance=instance)  # creates event log storage tables
+    foo_job.execute_in_process(instance=instance)  # creates event log storage tables
     instance.add_dynamic_partitions("quux", ["2"])
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
     external_sensor = external_repo.get_external_sensor(
@@ -3092,6 +3022,89 @@ def test_error_on_deleted_dynamic_partitions_run_request(
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
 
 
+@pytest.mark.parametrize(
+    "sensor_name, is_expected_success",
+    [
+        ("success_on_multipartition_run_request_with_two_dynamic_dimensions_sensor", True),
+        ("error_on_multipartition_run_request_with_two_dynamic_dimensions_sensor", False),
+    ],
+)
+def test_multipartitions_with_dynamic_dims_run_request_sensor(
+    sensor_name, is_expected_success, executor, instance, workspace_context, external_repo
+):
+    external_sensor = external_repo.get_external_sensor(sensor_name)
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+
+    if is_expected_success:
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            expected_datetime=None,
+            expected_status=TickStatus.SUCCESS,
+            expected_run_ids=None,
+        )
+    else:
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            expected_datetime=None,
+            expected_status=TickStatus.FAILURE,
+            expected_run_ids=None,
+            expected_error="does not exist in the set of valid partition keys",
+        )
+
+
+def test_multipartition_asset_with_static_time_dimensions_run_requests_sensor(
+    executor, instance, workspace_context, external_repo
+):
+    external_sensor = external_repo.get_external_sensor(
+        "multipartitions_with_static_time_dimensions_run_requests_sensor"
+    )
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+
+    validate_tick(
+        ticks[0],
+        external_sensor,
+        expected_datetime=None,
+        expected_status=TickStatus.SUCCESS,
+        expected_run_ids=None,
+    )
+
+
 def test_code_location_construction():
     # this just gets code coverage in in the run status sensor definition constructor
     @run_status_sensor(
@@ -3106,3 +3119,98 @@ def test_code_location_construction():
         raise Exception("never executed")
 
     assert cross_code_location_sensor
+
+
+def test_stale_request_context(instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+
+    executor = ThreadPoolExecutor()
+    blocking_executor = BlockingThreadPoolExecutor()
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                external_sensor.get_external_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 0
+
+        futures = {}
+        list(
+            execute_sensor_iteration(
+                workspace_context,
+                get_default_daemon_logger("SensorDaemon"),
+                threadpool_executor=executor,
+                sensor_tick_futures=futures,
+            )
+        )
+        blocking_executor.allow()
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+    blocking_executor.block()
+    freeze_datetime = freeze_datetime.add(seconds=30)
+
+    with pendulum.test(freeze_datetime):
+        futures = {}
+        list(
+            execute_sensor_iteration(
+                workspace_context,
+                get_default_daemon_logger("SensorDaemon"),
+                threadpool_executor=executor,
+                sensor_tick_futures=futures,
+                submit_threadpool_executor=blocking_executor,
+            )
+        )
+
+        # Reload the workspace (and kill previous server) before unblocking the threads.
+        # This will cause failures if the threads do not refresh their request contexts.
+        p = workspace_context._grpc_server_registry._all_processes[0]  # noqa: SLF001
+        workspace_context.reload_workspace()
+        p.server_process.kill()
+        p.wait()
+
+        blocking_executor.allow()
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+        ticks = instance.get_ticks(
+            external_sensor.get_external_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2
+
+        wait_for_all_runs_to_start(instance)
+        assert instance.get_runs_count() == 1, ticks[0].error
+        run = instance.get_runs()[0]
+        validate_run_started(run)
+
+        expected_datetime = create_pendulum_time(
+            year=2019, month=2, day=28, hour=0, minute=0, second=29
+        )
+        validate_tick(
+            ticks[0],
+            external_sensor,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id],
+        )

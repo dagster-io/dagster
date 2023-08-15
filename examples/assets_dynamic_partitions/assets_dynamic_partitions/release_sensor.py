@@ -3,7 +3,7 @@ import os
 from typing import Tuple
 
 import requests
-from dagster import AssetSelection, RunRequest, SkipReason, sensor
+from dagster import AssetSelection, RunRequest, SensorResult, SkipReason, sensor
 
 from . import assets
 
@@ -41,15 +41,17 @@ def release_sensor(context):
 
     if len(new_releases) > 0:
         partitions_to_add = sorted(new_releases, key=semver_tuple)
-        context.log.info(f"Adding partitions: {partitions_to_add}")
-        context.instance.add_dynamic_partitions(
-            assets.releases_partitions_def.name, partitions_to_add
-        )
+        context.log.info(f"Requesting to add partitions: {partitions_to_add}")
 
         # We only launch a run for the latest release, to avoid unexpected large numbers of runs the
         # first time the sensor turns on. This means that you might need to manually backfill earlier
         # releases.
-        context.update_cursor(new_releases[-1])
-        return RunRequest(partition_key=new_releases[-1])
+        return SensorResult(
+            run_requests=[RunRequest(partition_key=new_releases[-1])],
+            cursor=new_releases[-1],
+            dynamic_partitions_requests=[
+                assets.releases_partitions_def.build_add_request(partitions_to_add)
+            ],
+        )
     else:
         return SkipReason("No new releases")

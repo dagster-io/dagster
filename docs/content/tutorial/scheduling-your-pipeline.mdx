@@ -14,7 +14,7 @@ By the end of this part of the tutorial, you'll be able to:
 
 ---
 
-## Defining what assets to update
+## Step 1: Defining what assets to update
 
 A _job_ lets you target a selection of assets to materialize them together as a single action. Assets can belong to multiple jobs.
 
@@ -43,9 +43,9 @@ defs = Definitions(
 
 Dagster's <PyObject object="AssetSelection"/> module lets you choose which assets to attach to a job. In the example above, <PyObject object="AssetSelection" method="all"/> selects all assets.
 
-Once you have a job, you can execute it on a schedule, by clicking a button in the UI, the CLI, or via Dagster's GraphQL endpoints. Confirm that your job was defined by:
+Once you have a job, you can execute it on a schedule, by clicking a button in the Dagster UI, the CLI, or via Dagster's GraphQL endpoints. Confirm that your job was defined by:
 
-1. Going to the Dagster UI
+1. Going to the UI
 2. Reloading your project through the **Reload Definitions** button in the asset graph or on the **Deployments** page
 3. Navigating to **Overview > Jobs**
 4. Clicking on the job
@@ -58,9 +58,7 @@ width={1146}
 height={640}
 />
 
----
-
-## About definitions
+### About definitions
 
 Up until this point, you defined assets using the <PyObject object="asset" decorator /> decorator. Dagster definitions are entities that Dagster learns about by importing your code. Just now, you used a different kind of definition: a job definition.
 
@@ -68,7 +66,7 @@ Managing one type of definition, such as assets, is easy. However, it can quickl
 
 ---
 
-## Scheduling the materializations
+## Step 2: Scheduling the materializations
 
 After defining a job, it can be attached to a schedule. A schedule's responsibility is to start a run of the assigned job at a specified time. Schedules are added with the <PyObject object="ScheduleDefinition" /> class.
 
@@ -92,13 +90,17 @@ hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all
 
 # Addition: a ScheduleDefinition the job it should run and a cron schedule of how frequently to run it
 hackernews_schedule = ScheduleDefinition(
-    job=hackernews_job, cron_schedule="0 * * * *"  # every hour
+    job=hackernews_job,
+    cron_schedule="0 * * * *",  # every hour
 )
 
-defs = Definitions(assets=all_assets, schedules=[hackernews_schedule])
+defs = Definitions(
+    assets=all_assets,
+    schedules=[hackernews_schedule],
+)
 ```
 
-Go to the Dagster UI, click **Overview > Schedules tab**, and observe your new schedule with the attached job.
+Go to the UI, click **Overview > Schedules tab**, and observe your new schedule with the attached job.
 
 <Image
 alt="a schedule in the Dagster UI"
@@ -118,7 +120,7 @@ height={968}
 
 <Note>
   Schedules are just one way to start jobs. Jobs can also be run by using the
-  CLI, a Python function, or the Dagit UI. Refer to the{" "}
+  CLI, a Python function, or the UI. Refer to the{" "}
   <a href="/concepts/ops-jobs-graphs/job-execution#executing-a-job">
     Jobs documentation
   </a>{" "}
@@ -139,4 +141,4 @@ By now, you've:
 - Defined a sequence of materializations with a job
 - Run the job on a schedule
 
-Move on to find out what to do now that you've completed the tutorial in the [next steps](/tutorial/next-steps) section.
+In the next section, you'll learn how to use [I/O managers to save your data](/tutorial/saving-your-data).

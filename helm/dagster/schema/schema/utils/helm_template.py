@@ -27,7 +27,8 @@ class HelmTemplate:
     output: Optional[str] = None
     model: Optional[Any] = None
     release_name: str = "release-name"
-    api_client: ApiClient = ApiClient()
+    api_client: ApiClient = ApiClient()  # noqa: RUF009
+    namespace: str = "default"
 
     def render(
         self,
@@ -56,6 +57,8 @@ class HelmTemplate:
                 self.release_name,
                 helm_dir_path,
                 "--debug",
+                "--namespace",
+                self.namespace,
                 "--values",
                 tmp_file.name,
             ]

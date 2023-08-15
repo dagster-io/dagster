@@ -48,20 +48,18 @@ The BigQuery I/O manager requires some configuration to connect to your Bigquery
 You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` and number of `retries` when working with Pandas DataFrames.
 
 ```python file=/integrations/bigquery/configuration.py startafter=start_example endbefore=end_example
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from dagster import Definitions
 
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",  # required
-                "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
-                "dataset": "IRIS",  # optional, defaults to PUBLIC
-                "timeout": 15.0,  # optional, defaults to None
-            }
+        "io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",  # required
+            location="us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
+            dataset="IRIS",  # optional, defaults to PUBLIC
+            timeout=15.0,  # optional, defaults to None
         )
     },
 )
@@ -69,9 +67,9 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_data`, the BigQuery I/O manager would store the data in the `IRIS.IRIS_DATA` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" /> API documentation.
 
 ---
 
@@ -96,13 +94,13 @@ from dagster import asset
 @asset
 def iris_data() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 ```
@@ -147,15 +145,15 @@ from dagster import asset
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame):
+def iris_cleaned(iris_data: pd.DataFrame) -> pd.DataFrame:
     return iris_data.dropna().drop_duplicates()
 ```
 
 In this example, we want to provide the `iris_data` asset from the [Store a Dagster asset as a table in BigQuery](#store-a-dagster-asset-as-a-table-in-bigquery) example to the `iris_cleaned` asset.
 
-In `iris_cleaned`, the `iris_data` parameter tells Dagster that the value for the `iris_data` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
+In `iris_cleaned`, the `iris_data` parameter tells Dagster that the value for the `iris_data` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-managed-loading-dependencies).
 
-When materializing these assets, Dagster will use the `bigquery_pandas_io_manager` to fetch the `IRIS.IRIS_DATA` as a Pandas DataFrame and pass this DataFrame as the `iris_data` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `bigquery_pandas_io_manager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
+When materializing these assets, Dagster will use the `BigQueryPandasIOManager` to fetch the `IRIS.IRIS_DATA` as a Pandas DataFrame and pass this DataFrame as the `iris_data` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `BigQueryPandasIOManager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
 
 ---
 
@@ -165,7 +163,7 @@ When finished, your code should look like the following:
 
 ```python file=/integrations/bigquery/full_example.py
 import pandas as pd
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from dagster import Definitions, SourceAsset, asset
 
@@ -175,31 +173,30 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 @asset
 def iris_data() -> pd.DataFrame:
     return pd.read_csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        "https://docs.dagster.io/assets/iris.csv",
         names=[
-            "Sepal length (cm)",
-            "Sepal width (cm)",
-            "Petal length (cm)",
-            "Petal width (cm)",
-            "Species",
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
         ],
     )
 
 
 @asset
-def iris_cleaned(iris_data: pd.DataFrame):
+def iris_cleaned(iris_data: pd.DataFrame) -> pd.DataFrame:
     return iris_data.dropna().drop_duplicates()
 
 
 defs = Definitions(
     assets=[iris_data, iris_harvest_data, iris_cleaned],
     resources={
-        "io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-                "dataset": "IRIS",
-            }
+        "io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",
+            location="us-east5",
+            dataset="IRIS",
+            timeout=15.0,
         )
     },
 )

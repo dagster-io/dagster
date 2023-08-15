@@ -17,12 +17,18 @@ from dagster import (
     op,
 )
 from dagster._config import ConfigTypeKind, process_config
+from dagster._config.config_type import ConfigType
 from dagster._core.definitions import create_run_config_schema
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_node_shape,
 )
-from dagster._core.system_config.objects import OpConfig, ResolvedRunConfig, ResourceConfig
+from dagster._core.system_config.objects import (
+    OpConfig,
+    ResolvedRunConfig,
+    ResourceConfig,
+)
 from dagster._loggers import default_loggers
 
 
@@ -31,19 +37,16 @@ def create_creation_data(job_def):
         job_def.name,
         job_def.nodes,
         job_def.dependency_structure,
-        job_def.mode_definition,
         logger_defs=default_loggers(),
         ignored_nodes=[],
         required_resources=set(),
-        is_using_graph_job_op_apis=job_def.is_job,
-        direct_inputs=job_def._input_values if job_def.is_job else {},  # noqa: SLF001
+        direct_inputs=job_def._input_values,  # noqa: SLF001
         asset_layer=job_def.asset_layer,
     )
 
 
-def create_run_config_schema_type(job_def):
-    schema = create_run_config_schema(pipeline_def=job_def, mode=None)
-    return schema.config_type
+def create_run_config_schema_type(job_def: JobDefinition) -> ConfigType:
+    return job_def.run_config_schema.config_type
 
 
 def test_all_types_provided():
@@ -124,13 +127,13 @@ def test_default_environment():
     assert ResolvedRunConfig.build(job_def, {})
 
 
-def test_solid_config():
+def test_op_config():
     solid_config_type = Shape({"config": Field(Int)})
     solid_inst = process_config(solid_config_type, {"config": 1})
     assert solid_inst.value["config"] == 1
 
 
-def test_solid_dictionary_type():
+def test_op_dictionary_type():
     job_def = define_test_solids_config_pipeline()
 
     env_obj = ResolvedRunConfig.build(
@@ -183,7 +186,7 @@ def assert_has_fields(dtype, *fields):
     return set(dtype.fields.keys()) == set(fields)
 
 
-def test_solid_configs_defaults():
+def test_op_configs_defaults():
     env_type = create_run_config_schema_type(define_test_solids_config_pipeline())
 
     solids_field = env_type.fields["ops"]
@@ -205,7 +208,7 @@ def test_solid_configs_defaults():
     assert not int_solid_config_field.default_provided
 
 
-def test_solid_dictionary_some_no_config():
+def test_op_dictionary_some_no_config():
     @op(name="int_config_op", config_schema=Int, ins={}, out={})
     def int_config_op(_):
         return None
@@ -272,7 +275,7 @@ def test_whole_environment():
     }
 
 
-def test_solid_config_error():
+def test_op_config_error():
     job_def = define_test_solids_config_pipeline()
     solid_dict_type = define_node_shape(
         nodes=job_def.nodes,
@@ -280,7 +283,6 @@ def test_solid_config_error():
         dependency_structure=job_def.dependency_structure,
         parent_handle=None,
         resource_defs={},
-        is_using_graph_job_op_apis=False,
         asset_layer=job_def.asset_layer,
         node_input_source_assets={},
     )
@@ -295,7 +297,7 @@ def test_solid_config_error():
     assert not res.success
 
 
-def test_optional_solid_with_no_config():
+def test_optional_op_with_no_config():
     def _assert_config_none(context, value):
         assert context.op_config is value
 
@@ -321,7 +323,7 @@ def test_optional_solid_with_no_config():
     assert job_def.execute_in_process({"ops": {"int_config_op": {"config": 234}}}).success
 
 
-def test_optional_solid_with_optional_scalar_config():
+def test_optional_op_with_optional_scalar_config():
     def _assert_config_none(context, value):
         assert context.op_config is value
 
@@ -351,7 +353,7 @@ def test_optional_solid_with_optional_scalar_config():
     assert env_obj.ops["int_config_op"].config is None
 
 
-def test_optional_solid_with_required_scalar_config():
+def test_optional_op_with_required_scalar_config():
     def _assert_config_none(context, value):
         assert context.op_config is value
 
@@ -387,7 +389,7 @@ def test_optional_solid_with_required_scalar_config():
     job_def.execute_in_process({"ops": {"int_config_op": {"config": 234}}})
 
 
-def test_required_solid_with_required_subfield():
+def test_required_op_with_required_subfield():
     job_def = GraphDefinition(
         name="some_pipeline",
         node_defs=[
@@ -427,7 +429,7 @@ def test_required_solid_with_required_subfield():
     assert not res.success
 
 
-def test_optional_solid_with_optional_subfield():
+def test_optional_op_with_optional_subfield():
     job_def = GraphDefinition(
         name="some_pipeline",
         node_defs=[

@@ -24,7 +24,6 @@ setup(
     description="A Dagster integration for docker",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-docker",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -33,6 +32,8 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
-    install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
+    # urllib3<2 pin needed until docker-py is updated
+    # see: https://github.com/docker/docker-py/issues/3113
+    install_requires=[f"dagster{pin}", "docker", "docker-image-py", "urllib3<2"],
     zip_safe=False,
 )

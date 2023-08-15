@@ -94,10 +94,10 @@ def test_display_name():
 
 
 def test_builtins_available():
-    pipeline_def = GraphDefinition(name="test_builting_available", node_defs=[]).to_job()
+    job_def = GraphDefinition(name="test_builting_available", node_defs=[]).to_job()
     for builtin_type in ALL_RUNTIME_BUILTINS:
-        assert pipeline_def.has_dagster_type(builtin_type.unique_name)
-        assert pipeline_def.dagster_type_named(builtin_type.unique_name).is_builtin
+        assert job_def.has_dagster_type(builtin_type.unique_name)
+        assert job_def.dagster_type_named(builtin_type.unique_name).is_builtin
 
 
 def test_python_mapping():

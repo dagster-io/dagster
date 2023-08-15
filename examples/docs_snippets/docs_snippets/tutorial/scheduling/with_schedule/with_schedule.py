@@ -15,7 +15,11 @@ hackernews_job = define_asset_job("hackernews_job", selection=AssetSelection.all
 
 # Addition: a ScheduleDefinition the job it should run and a cron schedule of how frequently to run it
 hackernews_schedule = ScheduleDefinition(
-    job=hackernews_job, cron_schedule="0 * * * *"  # every hour
+    job=hackernews_job,
+    cron_schedule="0 * * * *",  # every hour
 )
 
-defs = Definitions(assets=all_assets, schedules=[hackernews_schedule])
+defs = Definitions(
+    assets=all_assets,
+    schedules=[hackernews_schedule],
+)

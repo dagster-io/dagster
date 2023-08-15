@@ -9,42 +9,53 @@ To complete this tutorial, you'll need:
 
 - **To install Python and pip.** This tutorial assumes that you have some familiarity with Python, but you should be able to follow along even if you're coming from a different programming language. To check that Python and `pip` (Python's package manager) are already installed in your environment or install them, follow the instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/). <DagsterVersion />
 
-- To install Dagster, Dagit, and the packages you'll be using during this tutorial, run the following command from your terminal:
+- **To install Dagster**. Run the following command from your terminal:
 
   ```bash
-  pip install dagster dagit requests pandas matplotlib wordcloud dagster_duckdb dagster_duckdb_pandas
+  pip install dagster
   ```
-
-  This installs the following Python packages:
-
-  - `dagster` is the command line interface (CLI) tool to run Dagster. For more information, refer to the [Dagster installation guide](/getting-started/install).
-  - `dagit` is the web-based UI for operating Dagster jobs, a library for your assets, a type-aware config editor, and a live execution interface
-
-  It also installs packages that aren't necessary for every Dagster project but are used for this tutorial. You don't have to read up on them, but if you're curious:
-
-  - `requests` will be used to download data from the internet
-  - `pandas` is a popular library for working with tabular data
-  - `matplotlib` makes it easy to make charts in Python
-  - `wordcloud` has utilities for text processing and making word clouds
-  - `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-memory data warehouse similar to SQLite, that you'll use for this tutorial
-  - `dagster_duckdb_pandas` allows loading data from DuckDB into Pandas DataFrames
 
 ---
 
 ## Creating your first Dagster project
 
-To verify that your Dagster installation was successful, it's time for you to create your first Dagster project! You'll use the Dagster scaffolding command to give you an empty Dagster project that you can run locally.
+To verify that you successfully installed Dagster, let's create your first Dagster project! You'll use the Dagster scaffolding command to give you an empty Dagster project that you can run locally.
 
 To create the project, run:
 
 ```bash
-dagster project scaffold --name tutorial-project
+dagster project from-example --example tutorial
 ```
+
+After running this command, you should see a new directory called `tutorial` in your current directory. This directory contains the files that make up your Dagster project. Next, you'll install the Python dependencies you'll be using during the tutorial.
+
+```bash
+cd tutorial
+pip install -e ".[dev]"
+```
+
+This command also installs packages that aren't necessary for every Dagster project but are used for this tutorial. You don't have to read up on them, but if you're curious:
+
+- `requests` will be used to download data from the internet
+- `pandas` is a popular library for working with tabular data
+- `matplotlib` makes it easy to make charts in Python
+- `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-process data warehouse similar to SQLite, that you'll use for this tutorial
+- `dagster_duckdb_pandas` allows loading data from DuckDB into Pandas DataFrames
+- `Faker` is a library for generating fake data
+
+<Note>
+  The <code>-e</code> flag installs the project in{" "}
+  <a href="https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs">
+    editable mode
+  </a>
+  , which means that most changes you make in your Dagster project will automatically
+  be applied. The main exceptions are when you're adding new assets or installing
+  additional dependencies.
+</Note>
 
 To verify that it worked and that you can run Dagster locally, run:
 
 ```bash
-cd tutorial-project
 dagster dev
 ```
 

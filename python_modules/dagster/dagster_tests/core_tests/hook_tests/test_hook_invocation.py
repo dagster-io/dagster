@@ -215,7 +215,7 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
             hook(build_hook_context(resources={"cm": cm_resource}))
 
 
-def test_hook_invocation_with_solid():
+def test_hook_invocation_with_op():
     @success_hook
     def basic_hook(context):
         assert context.op.name == "foo"

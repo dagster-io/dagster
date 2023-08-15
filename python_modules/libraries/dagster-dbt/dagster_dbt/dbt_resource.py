@@ -7,8 +7,8 @@ from dagster import get_dagster_logger
 from .types import DbtOutput
 
 
-class DbtResource:
-    """Base class for a resource allowing users to interface with dbt."""
+class DbtClient:
+    """Base class for a client allowing users to interface with dbt."""
 
     def __init__(
         self,
@@ -214,3 +214,7 @@ class DbtResource:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
                 for this dbt project.
         """
+
+
+class DbtResource(DbtClient):
+    pass

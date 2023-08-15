@@ -1,9 +1,7 @@
-# pylint doesn't know about pytest fixtures
-
-
 import os
 
-from dagster._core.execution.api import execute_pipeline
+import pytest
+from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -18,6 +16,7 @@ from dagster_test.test_project import (
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
+@pytest.mark.integration
 def test_docker_executor(aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {
@@ -44,12 +43,12 @@ def test_docker_executor(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job("demo_job_docker", docker_image)
-            assert execute_pipeline(
-                recon_pipeline, run_config=run_config, instance=instance
-            ).success
+            recon_job = get_test_project_recon_job("demo_job_docker", docker_image)
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
+                assert result.success
 
 
+@pytest.mark.integration
 def test_docker_executor_check_step_health(aws_env):
     executor_config = {
         "execution": {
@@ -78,12 +77,12 @@ def test_docker_executor_check_step_health(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job("demo_job_docker", docker_image)
-            assert not execute_pipeline(
-                recon_pipeline, run_config=run_config, instance=instance
-            ).success
+            recon_job = get_test_project_recon_job("demo_job_docker", docker_image)
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
+                assert not result.success
 
 
+@pytest.mark.integration
 def test_docker_executor_config_on_container_context(aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {"execution": {"config": {}}}
@@ -106,7 +105,7 @@ def test_docker_executor_config_on_container_context(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job(
+            recon_job = get_test_project_recon_job(
                 "demo_job_docker",
                 docker_image,
                 container_context={
@@ -116,11 +115,11 @@ def test_docker_executor_config_on_container_context(aws_env):
                     }
                 },
             )
-            assert execute_pipeline(
-                recon_pipeline, run_config=run_config, instance=instance
-            ).success
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
+                assert result.success
 
 
+@pytest.mark.integration
 def test_docker_executor_retries(aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {
@@ -146,6 +145,6 @@ def test_docker_executor_retries(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_job("step_retries_job_docker", docker_image)
-            result = execute_pipeline(recon_pipeline, run_config=run_config, instance=instance)
-            assert result.success
+            recon_job = get_test_project_recon_job("step_retries_job_docker", docker_image)
+            with execute_job(recon_job, run_config=run_config, instance=instance) as result:
+                assert result.success

@@ -26,6 +26,7 @@ import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
+import ScimSupportedFeatures from './includes/dagster-cloud/ScimSupportedFeatures.mdx';
 import AmazonEcsEnvVarsConfiguration from './includes/dagster-cloud/agents/AmazonEcsEnvVarsConfiguration.mdx';
 import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEnvVarsConfiguration.mdx';
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
@@ -367,8 +368,16 @@ const PlaceholderImage = ({caption = 'Placeholder Image'}) => {
 
 const Experimental = () => {
   return (
-    <div className="inline-flex items-center px-3 py-0.5 rounded-full align-baseline text-xs uppercase font-medium bg-sea-foam text-gable-green">
-      Experimental
+    <div className="experimental-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green">
+      <span className="hidden">(</span>Experimental<span className="hidden">)</span>
+    </div>
+  );
+};
+
+const Legacy = () => {
+  return (
+    <div className="legacy-tag inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700">
+      <span className="hidden">(</span>Legacy<span className="hidden">)</span>
     </div>
   );
 };
@@ -756,6 +765,7 @@ export default {
   TODO,
   PlaceholderImage,
   Experimental,
+  Legacy,
   Icons,
   ReferenceTable,
   ReferenceTableItem,
@@ -764,6 +774,7 @@ export default {
   AddGitlabVariable,
   AddGitubRepositorySecret,
   GenerateAgentToken,
+  ScimSupportedFeatures,
   BDCreateConfigureAgent,
   DbtModelAssetExplanation,
   EnvironmentVariablesIntro,

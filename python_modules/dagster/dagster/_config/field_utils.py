@@ -1,7 +1,6 @@
 # encoding: utf-8
 import hashlib
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import public
@@ -114,7 +113,7 @@ class Shape(_ConfigHasFields):
             The specification of the config dict.
         field_aliases (Dict[str, str]):
             Maps a string key to an alias that can be used instead of the original key. For example,
-            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            an entry {"foo": "bar"} means that someone could use "bar" instead of "foo" as a
             top level string key.
     """
 
@@ -207,7 +206,8 @@ class Map(ConfigType):
 
     @public
     @property
-    def key_label_name(self):
+    def key_label_name(self) -> Optional[str]:
+        """Name which describes the role of keys in the map, if provided."""
         return self.given_name
 
     def type_iterator(self) -> Iterator["ConfigType"]:
@@ -402,7 +402,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            f"Map dict must have a scalar type as its only key. Got key {repr(key)}",
+            f"Map dict must have a scalar type as its only key. Got key {key!r}",
         )
 
     inner_type = _convert_potential_type(original_root, the_dict[key], stack)
@@ -460,26 +460,6 @@ def _convert_potential_field(
     return Field(_convert_potential_type(original_root, potential_field, stack))
 
 
-def _config_dictionary_from_values_inner(obj: Any):
-    from dagster._config.structured_config import Config
-
-    if isinstance(obj, dict):
-        return {k: _config_dictionary_from_values_inner(v) for k, v in obj.items() if v is not None}
-    elif isinstance(obj, list):
-        return [_config_dictionary_from_values_inner(v) for v in obj]
-    elif isinstance(obj, EnvVar):
-        return {"env": str(obj)}
-    elif isinstance(obj, Config):
-        return {
-            k: _config_dictionary_from_values_inner(v)
-            for k, v in obj._as_config_dict().items()  # noqa: SLF001
-        }
-    elif isinstance(obj, Enum):
-        return obj.name
-
-    return obj
-
-
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
@@ -489,8 +469,34 @@ def config_dictionary_from_values(
     """
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
 
-    return check.is_dict(_config_dictionary_from_values_inner(values))
+    from dagster._config.pythonic_config import _config_value_to_dict_representation
+
+    return check.is_dict(_config_value_to_dict_representation(None, values))
+
+
+class IntEnvVar(int):
+    """Class used to represent an environment variable in the Dagster config system.
+
+    The environment variable will be resolved to an int value when the config is
+    loaded.
+    """
+
+    name: str
+
+    @classmethod
+    def create(cls, name: str) -> "IntEnvVar":
+        var = IntEnvVar(0)
+        var.name = name
+        return var
 
 
 class EnvVar(str):
-    pass
+    """Class used to represent an environment variable in the Dagster config system.
+
+    The environment variable will be resolved to a string value when the config is
+    loaded.
+    """
+
+    @classmethod
+    def int(cls, name: str) -> "IntEnvVar":
+        return IntEnvVar.create(name=name)

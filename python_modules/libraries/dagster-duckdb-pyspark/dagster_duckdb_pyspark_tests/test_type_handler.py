@@ -39,7 +39,7 @@ def io_managers(tmp_path):
 
 @op(out=Out(metadata={"schema": "a_df"}))
 def a_df() -> SparkDF:
-    spark = SparkSession.builder.getOrCreate()
+    spark = SparkSession.builder.getOrCreate()  # type: ignore
     data = [(1, 4), (2, 5), (3, 6)]
     return spark.createDataFrame(data)
 
@@ -78,7 +78,7 @@ def test_duckdb_io_manager_with_ops(tmp_path, io_managers):
 
 @asset(key_prefix=["my_schema"])
 def b_df() -> SparkDF:
-    spark = SparkSession.builder.getOrCreate()
+    spark = SparkSession.builder.getOrCreate()  # type: ignore
     data = [(1, 4), (2, 5), (3, 6)]
     return spark.createDataFrame(data)
 
@@ -111,7 +111,7 @@ def test_duckdb_io_manager_with_assets(tmp_path, io_managers):
 def test_duckdb_io_manager_with_schema(tmp_path):
     @asset
     def my_df() -> SparkDF:
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.getOrCreate()  # type: ignore
         data = [(1, 4), (2, 5), (3, 6)]
         return spark.createDataFrame(data)
 
@@ -187,7 +187,7 @@ def daily_partitioned(context) -> SparkDF:
             "b": [4, 5, 6],
         }
     )
-    spark = SparkSession.builder.getOrCreate()
+    spark = SparkSession.builder.getOrCreate()  # type: ignore
     return spark.createDataFrame(pd_df)
 
 
@@ -252,7 +252,7 @@ def static_partitioned(context) -> SparkDF:
         }
     )
 
-    spark = SparkSession.builder.getOrCreate()
+    spark = SparkSession.builder.getOrCreate()  # type: ignore
     return spark.createDataFrame(pd_df)
 
 
@@ -322,7 +322,7 @@ def multi_partitioned(context) -> SparkDF:
         }
     )
 
-    spark = SparkSession.builder.getOrCreate()
+    spark = SparkSession.builder.getOrCreate()  # type: ignore
     return spark.createDataFrame(pd_df)
 
 
@@ -401,7 +401,7 @@ def dynamic_partitioned(context) -> SparkDF:
         }
     )
 
-    spark = SparkSession.builder.getOrCreate()
+    spark = SparkSession.builder.getOrCreate()  # type: ignore
     return spark.createDataFrame(pd_df)
 
 
@@ -491,7 +491,7 @@ def test_self_dependent_asset(tmp_path, io_managers):
             }
         )
 
-        spark = SparkSession.builder.getOrCreate()
+        spark = SparkSession.builder.getOrCreate()  # type: ignore
         return spark.createDataFrame(pd_df)
 
     for io_manager in io_managers:

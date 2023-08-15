@@ -4,13 +4,14 @@ import time
 from logging import Logger
 from typing import Any, Mapping, Optional, cast
 
+import dagster._check as check
 import pendulum
 import pytest
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -21,7 +22,11 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
+from dagster._daemon.monitoring.run_monitoring import (
+    monitor_canceling_run,
+    monitor_started_run,
+    monitor_starting_run,
+)
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
@@ -92,7 +97,7 @@ def instance():
                 "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
                 "class": "TestRunLauncher",
             },
-            "run_monitoring": {"enabled": True},
+            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 3},
         },
     ) as instance:
         yield instance
@@ -114,13 +119,13 @@ def logger():
 def report_starting_event(instance, run, timestamp):
     launch_started_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
     )
 
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
         run_id=run.run_id,
         error_info=None,
         timestamp=timestamp,
@@ -130,16 +135,35 @@ def report_starting_event(instance, run, timestamp):
     instance.handle_new_event(event_record)
 
 
-def report_started_event(instance, run, timestamp):
+def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: float) -> None:
     launch_started_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_START.value,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
     )
 
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name=run.pipeline_name,
+        job_name=run.job_name,
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=timestamp,
+        dagster_event=launch_started_event,
+    )
+
+    instance.handle_new_event(event_record)
+
+
+def report_canceling_event(instance, run, timestamp):
+    launch_started_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
+        job_name=run.job_name,
+    )
+
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.INFO,
+        job_name=run.job_name,
         run_id=run.run_id,
         error_info=None,
         timestamp=timestamp,
@@ -152,7 +176,7 @@ def report_started_event(instance, run, timestamp):
 def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
-        pipeline_name="foo",
+        job_name="foo",
     )
     report_starting_event(instance, run, timestamp=time.time())
     monitor_starting_run(
@@ -164,12 +188,12 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     assert run
     assert run.status == DagsterRunStatus.STARTING
 
-    run = create_run_for_test(instance, pipeline_name="foo")
+    run = create_run_for_test(instance, job_name="foo")
     report_starting_event(instance, run, timestamp=time.time() - 1000)
 
     monitor_starting_run(
         instance,
-        instance.get_run_record_by_id(run.run_id),  # type: ignore  # (possible none)
+        check.not_none(instance.get_run_record_by_id(run.run_id)),
         logger,
     )
     run = instance.get_run_by_id(run.run_id)
@@ -177,12 +201,43 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     assert run.status == DagsterRunStatus.FAILURE
 
 
+def test_monitor_canceling(instance: DagsterInstance, logger: Logger):
+    run = create_run_for_test(
+        instance,
+        job_name="foo",
+    )
+
+    now = time.time()
+
+    report_starting_event(instance, run, timestamp=now)
+    report_canceling_event(instance, run, timestamp=now + 1)
+
+    monitor_canceling_run(
+        instance,
+        check.not_none(instance.get_run_record_by_id(run.run_id)),
+        logger,
+    )
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.CANCELING
+
+    run = create_run_for_test(instance, job_name="foo")
+    report_canceling_event(instance, run, timestamp=now - 1000)
+
+    monitor_canceling_run(
+        instance,
+        check.not_none(instance.get_run_record_by_id(run.run_id)),
+        logger,
+    )
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.CANCELED
+
+
 def test_monitor_started(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
-    run_id = create_run_for_test(
-        instance, pipeline_name="foo", status=DagsterRunStatus.STARTED
-    ).run_id
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
     run_record = instance.get_run_record_by_id(run_id)
     assert run_record is not None
     workspace = workspace_context.create_request_context()
@@ -229,22 +284,22 @@ def test_long_running_termination(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        initial = pendulum.now().subtract(1000)
+        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
         with pendulum.test(initial):
             too_long_run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )
             okay_run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "1000"},
             )
             run_no_tag = create_run_for_test(
-                instance, pipeline_name="foo", status=DagsterRunStatus.STARTING
+                instance, job_name="foo", status=DagsterRunStatus.STARTING
             )
         started_time = initial.add(seconds=1)
         with pendulum.test(started_time):
@@ -311,17 +366,17 @@ def test_long_running_termination_failure(
     workspace_context: WorkspaceProcessContext,
     logger: Logger,
     failure_case: str,
-):
+) -> None:
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
         if failure_case == "fail_termination":
             instance.run_launcher.should_fail_termination = True  # type: ignore
         else:
             instance.run_launcher.should_except_termination = True  # type: ignore
-        initial = pendulum.now().subtract(1000)
+        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
         with pendulum.test(initial):
             too_long_run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )

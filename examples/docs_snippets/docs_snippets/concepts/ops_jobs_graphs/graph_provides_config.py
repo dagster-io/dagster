@@ -1,14 +1,22 @@
-from dagster import graph, op
+from dagster import Config, graph, op
 
 
-@op(config_schema={"n": float})
-def add_n(context, number):
-    return number + context.op_config["n"]
+class AddNConfig(Config):
+    n: float
 
 
-@op(config_schema={"m": float})
-def multiply_by_m(context, number):
-    return number * context.op_config["m"]
+@op
+def add_n(config: AddNConfig, number):
+    return number + config.n
+
+
+class MultiplyByMConfig(Config):
+    m: float
+
+
+@op
+def multiply_by_m(config: MultiplyByMConfig, number):
+    return number * config.m
 
 
 @graph(config={"multiply_by_m": {"config": {"m": 1.8}}, "add_n": {"config": {"n": 32}}})

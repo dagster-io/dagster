@@ -1,3 +1,4 @@
+import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -14,11 +15,15 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
-from dagster._utils.backcompat import deprecation_warning
 
 from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
-from .events import AssetKey, CoercibleToAssetKey
+from .events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+    key_prefix_from_coercible,
+)
 from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
@@ -55,6 +60,9 @@ class AssetSelection(ABC):
 
             # Select all assets except for those in group "marketing"
             AssetSelection.all() - AssetSelection.groups("marketing")
+
+            # Select all assets which are materialized by the same op as "projections":
+            AssetSelection.keys("projections").required_multi_asset_neighbors()
     """
 
     @public
@@ -89,19 +97,47 @@ class AssetSelection(ABC):
                 AssetSelection.keys(*asset_key_list)
         """
         _asset_keys = [
-            AssetKey.from_user_string(key)
-            if isinstance(key, str)
-            else AssetKey.from_coerceable(key)
+            AssetKey.from_user_string(key) if isinstance(key, str) else AssetKey.from_coercible(key)
             for key in asset_keys
         ]
         return KeysAssetSelection(*_asset_keys)
 
     @public
     @staticmethod
-    def groups(*group_strs) -> "GroupsAssetSelection":
-        """Returns a selection that includes assets that belong to any of the provided groups."""
+    def key_prefixes(
+        *key_prefixes: CoercibleToAssetKeyPrefix, include_sources: bool = False
+    ) -> "KeyPrefixesAssetSelection":
+        """Returns a selection that includes assets that match any of the provided key prefixes.
+
+        Args:
+            include_sources (bool): If True, then include source assets matching the key prefix(es)
+                in the selection.
+
+        Examples:
+            .. code-block:: python
+
+              # match any asset key where the first segment is equal to "a" or "b"
+              # e.g. AssetKey(["a", "b", "c"]) would match, but AssetKey(["abc"]) would not.
+              AssetSelection.key_prefixes("a", "b")
+
+              # match any asset key where the first two segments are ["a", "b"] or ["a", "c"]
+              AssetSelection.key_prefixes(["a", "b"], ["a", "c"])
+        """
+        _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
+        return KeyPrefixesAssetSelection(*_asset_key_prefixes, include_sources=include_sources)
+
+    @public
+    @staticmethod
+    def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
+        """Returns a selection that includes materializable assets that belong to any of the
+        provided groups.
+
+        Args:
+            include_sources (bool): If True, then include source assets matching the group in the
+                selection.
+        """
         check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(*group_strs)
+        return GroupsAssetSelection(*group_strs, include_sources=include_sources)
 
     @public
     def downstream(
@@ -126,12 +162,12 @@ class AssetSelection(ABC):
     def upstream(
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
-        """Returns a selection that includes all assets that are upstream of any of the assets in
-        this selection, selecting the assets in this selection by default. Iterates through each
-        asset in this selection and returns the union of all upstream assets.
+        """Returns a selection that includes all materializable assets that are upstream of any of
+        the assets in this selection, selecting the assets in this selection by default. Iterates
+        through each asset in this selection and returns the union of all upstream assets.
 
-        Because mixed selections of source and regular assets are currently not supported, keys
-        corresponding to `SourceAssets` will not be included as upstream of regular assets.
+        Because mixed selections of source and materializable assets are currently not supported,
+        keys corresponding to `SourceAssets` will not be included as upstream of regular assets.
 
         Args:
             depth (Optional[int]): If provided, then only include assets to the given depth. A depth
@@ -156,30 +192,48 @@ class AssetSelection(ABC):
         return SinkAssetSelection(self)
 
     @public
+    def required_multi_asset_neighbors(self) -> "RequiredNeighborsAssetSelection":
+        """Given an asset selection in which some assets are output from a multi-asset compute op
+        which cannot be subset, returns a new asset selection that contains all of the assets
+        required to execute the original asset selection.
+        """
+        return RequiredNeighborsAssetSelection(self)
+
+    @public
     def roots(self) -> "RootAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection.
 
         A root asset is an asset that has no upstream dependencies within the asset selection.
         The root asset can have downstream dependencies outside of the asset selection.
+
+        Because mixed selections of source and materializable assets are currently not supported,
+        keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
+        use the `upstream_source_assets` method.
         """
         return RootAssetSelection(self)
 
     @public
-    @deprecated
+    @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
     def sources(self) -> "RootAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection.
 
-        A root asset is an asset that has no upstream dependencies within the asset selection.
-        The root asset can have downstream dependencies outside of the asset selection.
+        A root asset is a materializable asset that has no upstream dependencies within the asset
+        selection. The root asset can have downstream dependencies outside of the asset selection.
+
+        Because mixed selections of source and materializable assets are currently not supported,
+        keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
+        use the `upstream_source_assets` method.
         """
-        deprecation_warning(
-            "AssetSelection.sources",
-            "2.0",
-            "Use AssetSelection.roots instead.",
-        )
         return self.roots()
+
+    @public
+    def upstream_source_assets(self) -> "SourceAssetSelection":
+        """Given an asset selection, returns a new asset selection that contains all of the source
+        assets upstream of assets in the original selection.
+        """
+        return SourceAssetSelection(self)
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
@@ -207,10 +261,8 @@ class AssetSelection(ABC):
         resolved_regular_assets = resolved - asset_graph.source_asset_keys
         check.invariant(
             not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
-            (
-                "Asset selection specified both regular assets and source assets. This is not"
-                " currently supported. Selections must be all regular assets or all source assets."
-            ),
+            "Asset selection specified both regular assets and source assets. This is not"
+            " currently supported. Selections must be all regular assets or all source assets.",
         )
         return resolved
 
@@ -243,11 +295,13 @@ class AssetSelection(ABC):
             return cls._selection_from_string(selection)
         elif isinstance(selection, AssetSelection):
             return selection
-        elif isinstance(selection, list) and all(isinstance(el, str) for el in selection):
+        elif isinstance(selection, collections.abc.Sequence) and all(
+            isinstance(el, str) for el in selection
+        ):
             return reduce(
                 operator.or_, [cls._selection_from_string(cast(str, s)) for s in selection]
             )
-        elif isinstance(selection, list) and all(
+        elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
             return AssetSelection.keys(
@@ -259,7 +313,9 @@ class AssetSelection(ABC):
                     )
                 )
             )
-        elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
+        elif isinstance(selection, collections.abc.Sequence) and all(
+            isinstance(el, AssetKey) for el in selection
+        ):
             return cls.keys(*cast(Sequence[AssetKey], selection))
         else:
             check.failed(
@@ -271,7 +327,7 @@ class AssetSelection(ABC):
 
 class AllAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
-        return asset_graph.all_asset_keys
+        return asset_graph.materializable_asset_keys
 
 
 class AndAssetSelection(AssetSelection):
@@ -299,6 +355,18 @@ class SinkAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self._child.resolve_inner(asset_graph)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
+
+
+class RequiredNeighborsAssetSelection(AssetSelection):
+    def __init__(self, child: AssetSelection):
+        self._child = child
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        selection = self._child.resolve_inner(asset_graph)
+        output = set(selection)
+        for asset_key in selection:
+            output.update(asset_graph.get_required_multi_asset_keys(asset_key))
+        return output
 
 
 class RootAssetSelection(AssetSelection):
@@ -343,14 +411,20 @@ class DownstreamAssetSelection(AssetSelection):
 
 
 class GroupsAssetSelection(AssetSelection):
-    def __init__(self, *groups: str):
+    def __init__(self, *groups: str, include_sources: bool):
         self._groups = groups
+        self._include_sources = include_sources
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        base_set = (
+            asset_graph.all_asset_keys
+            if self._include_sources
+            else asset_graph.materializable_asset_keys
+        )
         return {
             asset_key
             for asset_key, group in asset_graph.group_names_by_key.items()
-            if group in self._groups and asset_key not in asset_graph.source_asset_keys
+            if group in self._groups and asset_key in base_set
         }
 
 
@@ -360,11 +434,7 @@ class KeysAssetSelection(AssetSelection):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self._keys)
-        invalid_keys = {
-            key
-            for key in specified_keys
-            if key not in asset_graph.all_asset_keys and key not in asset_graph.source_asset_keys
-        }
+        invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
         if invalid_keys:
             raise DagsterInvalidSubsetError(
                 f"AssetKey(s) {invalid_keys} were selected, but no AssetsDefinition objects supply "
@@ -372,6 +442,22 @@ class KeysAssetSelection(AssetSelection):
                 "are correctly added to the `Definitions`."
             )
         return specified_keys
+
+
+class KeyPrefixesAssetSelection(AssetSelection):
+    def __init__(self, *key_prefixes: Sequence[str], include_sources: bool):
+        self._key_prefixes = key_prefixes
+        self._include_sources = include_sources
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        base_set = (
+            asset_graph.all_asset_keys
+            if self._include_sources
+            else asset_graph.materializable_asset_keys
+        )
+        return {
+            key for key in base_set if any(key.has_prefix(prefix) for prefix in self._key_prefixes)
+        }
 
 
 class OrAssetSelection(AssetSelection):
@@ -383,13 +469,38 @@ class OrAssetSelection(AssetSelection):
         return self._left.resolve_inner(asset_graph) | self._right.resolve_inner(asset_graph)
 
 
+def _fetch_all_upstream(
+    selection: AbstractSet[AssetKey],
+    asset_graph: AssetGraph,
+    depth: Optional[int] = None,
+    include_self: bool = True,
+) -> AbstractSet[AssetKey]:
+    return operator.sub(
+        reduce(
+            operator.or_,
+            [
+                {asset_key}
+                | fetch_connected(
+                    item=asset_key,
+                    graph=asset_graph.asset_dep_graph,
+                    direction="upstream",
+                    depth=depth,
+                )
+                for asset_key in selection
+            ],
+            set(),
+        ),
+        selection if not include_self else set(),
+    )
+
+
 class UpstreamAssetSelection(AssetSelection):
     def __init__(
         self,
         child: AssetSelection,
         *,
         depth: Optional[int] = None,
-        include_self: Optional[bool] = True,
+        include_self: bool = True,
     ):
         self._child = child
         self.depth = depth
@@ -397,20 +508,19 @@ class UpstreamAssetSelection(AssetSelection):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self._child.resolve_inner(asset_graph)
-        all_upstream = operator.sub(
-            reduce(
-                operator.or_,
-                [
-                    {asset_key}
-                    | fetch_connected(
-                        item=asset_key,
-                        graph=asset_graph.asset_dep_graph,
-                        direction="upstream",
-                        depth=self.depth,
-                    )
-                    for asset_key in selection
-                ],
-            ),
-            selection if not self.include_self else set(),
-        )
+        if len(selection) == 0:
+            return selection
+        all_upstream = _fetch_all_upstream(selection, asset_graph, self.depth, self.include_self)
         return {key for key in all_upstream if key not in asset_graph.source_asset_keys}
+
+
+class SourceAssetSelection(AssetSelection):
+    def __init__(self, child: AssetSelection):
+        self._child = child
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        selection = self._child.resolve_inner(asset_graph)
+        if len(selection) == 0:
+            return selection
+        all_upstream = _fetch_all_upstream(selection, asset_graph)
+        return {key for key in all_upstream if key in asset_graph.source_asset_keys}

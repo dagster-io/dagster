@@ -13,7 +13,7 @@ Related Guides:
 
 .. autofunction:: define_dagstermill_op
 
-.. autofunction:: local_output_notebook_io_manager
+.. autoclass:: ConfigurableLocalOutputNotebookIOManager
 
 .. autofunction:: get_context
 
@@ -22,6 +22,5 @@ Related Guides:
 .. autofunction:: yield_result
 
 .. autoclass:: DagstermillExecutionContext
-    :members:
 
 .. autoclass:: DagstermillError

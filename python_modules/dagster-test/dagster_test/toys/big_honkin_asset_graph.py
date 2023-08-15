@@ -11,11 +11,11 @@ def generate_big_honkin_assets() -> List[AssetsDefinition]:
     assets = []
 
     for i in range(N_ASSETS):
-        non_argument_deps = {
+        non_argument_deps = [
             AssetKey(f"asset_{j}") for j in random.sample(range(i), min(i, random.randint(0, 3)))
-        }
+        ]
 
-        @asset(name=f"asset_{i}", non_argument_deps=non_argument_deps)
+        @asset(name=f"asset_{i}", deps=non_argument_deps)
         def some_asset():
             pass
 

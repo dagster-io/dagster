@@ -1,6 +1,6 @@
 import os
 
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 # start_repository
 # __init__.py
@@ -17,21 +17,15 @@ snowflake_config = {
 
 resources = {
     "branch": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                **snowflake_config,
-                "database": (
-                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
-                ),
-            }
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            **snowflake_config,
+            database=f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
         ),
     },
-    "production": {
-        "snowflake_io_manager": snowflake_pandas_io_manager.configured(
-            {
-                **snowflake_config,
-                "database": "PRODUCTION",
-            }
+    "prod": {
+        "snowflake_io_manager": SnowflakePandasIOManager(
+            **snowflake_config,
+            database="PRODUCTION",
         ),
     },
 }

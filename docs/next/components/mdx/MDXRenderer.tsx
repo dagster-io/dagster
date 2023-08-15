@@ -221,7 +221,10 @@ const RightSidebar = ({editMode, navigationItems, githubLink, toggleFeedback}) =
 export const VersionedContentLayout = ({children, asPath = null}) => {
   return (
     <div className="flex-1 w-full min-w-0 relative z-0 focus:outline-none" tabIndex={0}>
-      <div className="flex flex-col lg:mt-5">
+      <div
+        className="flex flex-col lg:mt-5 max-w-7xl"
+        style={{marginLeft: 'auto', marginRight: 'auto'}}
+      >
         <div className="flex justify-between px-4 mb-4">
           <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full">
             <div className="flex">
@@ -250,9 +253,11 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
 export function UnversionedMDXRenderer({
   data,
   toggleFeedback,
+  bottomContent,
 }: {
   data: MDXData;
   toggleFeedback: any;
+  bottomContent?: React.ReactNode | null;
 }) {
   const {query} = useRouter();
   const {editMode} = query;
@@ -279,11 +284,15 @@ export function UnversionedMDXRenderer({
         }}
       />
       <div className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4" tabIndex={0}>
-        <div className="flex flex-row pb-8">
+        <div
+          className="flex flex-row pb-8 max-w-7xl"
+          style={{marginLeft: 'auto', marginRight: 'auto'}}
+        >
           {/* Start main area*/}
 
           <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
             <div className="DocSearch-content prose dark:prose-dark max-w-none">{content}</div>
+            {bottomContent ?? null}
           </div>
           {/* End main area */}
         </div>

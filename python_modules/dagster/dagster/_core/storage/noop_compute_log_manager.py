@@ -39,10 +39,10 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
     ) -> Self:
         return NoOpComputeLogManager(inst_data=inst_data, **config_value)
 
-    def enabled(self, _pipeline_run, _step_key):
+    def enabled(self, _dagster_run, _step_key):
         return False
 
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(self, dagster_run, step_key=None):
         pass
 
     def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
@@ -51,10 +51,10 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
     def is_watch_completed(self, run_id, key):
         return True
 
-    def on_watch_start(self, pipeline_run, step_key):
+    def on_watch_start(self, dagster_run, step_key):
         pass
 
-    def on_watch_finish(self, pipeline_run, step_key):
+    def on_watch_finish(self, dagster_run, step_key):
         pass
 
     def download_url(self, run_id, key, io_type):

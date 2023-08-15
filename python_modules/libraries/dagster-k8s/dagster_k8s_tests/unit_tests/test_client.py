@@ -91,6 +91,61 @@ def test_wait_for_job_success():
     assert not mock_client.sleeper.mock_calls
 
 
+def test_create_job_success():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    # Finishes without issue
+    mock_client.create_namespaced_job_with_retries(
+        body=V1Job(metadata=a_job_metadata),
+        namespace=namespace,
+    )
+
+
+def test_create_job_failure_errors():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    mock_client.batch_api.create_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(status=500, reason="Bad"),
+        kubernetes.client.rest.ApiException(status=500, reason="Worse"),
+        kubernetes.client.rest.ApiException(status=500, reason="Even worse"),
+        kubernetes.client.rest.ApiException(status=500, reason="The worst"),
+    ]
+
+    with pytest.raises(DagsterK8sAPIRetryLimitExceeded):
+        mock_client.create_namespaced_job_with_retries(
+            body=V1Job(metadata=a_job_metadata),
+            namespace=namespace,
+        )
+
+
+def test_create_job_with_idempotence_api_errors():
+    mock_client = create_mocked_client()
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    mock_client.batch_api.create_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(
+            status=500, reason="This is a lie, I actually made the job"
+        ),
+        kubernetes.client.rest.ApiException(status=409, reason="Job already exists"),
+    ]
+
+    mock_client.create_namespaced_job_with_retries(
+        body=V1Job(metadata=a_job_metadata),
+        namespace=namespace,
+    )
+
+
 def test_wait_for_job_success_with_api_errors():
     mock_client = create_mocked_client()
 

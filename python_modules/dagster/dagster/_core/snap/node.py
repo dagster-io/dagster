@@ -6,10 +6,10 @@ from dagster._core.definitions import (
     GraphDefinition,
     InputDefinition,
     InputMapping,
+    JobDefinition,
     OpDefinition,
     OutputDefinition,
     OutputMapping,
-    PipelineDefinition,
 )
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -53,7 +53,7 @@ class InputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
+                check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
             ),
         )
 
@@ -92,7 +92,7 @@ class OutputDefSnap(
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
+                check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
             ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
         )
@@ -346,11 +346,11 @@ class NodeDefsSnapshot(
         )
 
 
-def build_node_defs_snapshot(pipeline_def: PipelineDefinition) -> NodeDefsSnapshot:
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
+    check.inst_param(job_def, "job_def", JobDefinition)
     op_def_snaps = []
     graph_def_snaps = []
-    for node_def in pipeline_def.all_node_defs:
+    for node_def in job_def.all_node_defs:
         if isinstance(node_def, OpDefinition):
             op_def_snaps.append(build_op_def_snap(node_def))
         elif isinstance(node_def, GraphDefinition):
@@ -372,13 +372,13 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
         output_def_snaps=list(map(build_output_def_snap, graph_def.output_defs)),
         description=graph_def.description,
         tags=graph_def.tags,
-        config_field_snap=snap_from_field(
-            "config", graph_def.config_mapping.config_schema.as_field()
-        )
-        if graph_def.config_mapping
-        and graph_def.config_mapping.config_schema
-        and graph_def.config_mapping.config_schema.as_field()
-        else None,
+        config_field_snap=(
+            snap_from_field("config", graph_def.config_mapping.config_schema.as_field())
+            if graph_def.config_mapping
+            and graph_def.config_mapping.config_schema
+            and graph_def.config_mapping.config_schema.as_field()
+            else None
+        ),
         dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
         input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
         output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
@@ -394,9 +394,11 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
         description=op_def.description,
         tags=op_def.tags,
         required_resource_keys=sorted(list(op_def.required_resource_keys)),
-        config_field_snap=snap_from_field("config", op_def.config_field)  # type: ignore  # (possible none)
-        if op_def.has_config_field
-        else None,
+        config_field_snap=(
+            snap_from_field("config", op_def.config_field)  # type: ignore  # (possible none)
+            if op_def.has_config_field
+            else None
+        ),
     )
 
 

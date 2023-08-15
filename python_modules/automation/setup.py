@@ -9,7 +9,6 @@ setup(
     description="Tools for infrastructure automation",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/automation",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -26,7 +25,6 @@ setup(
         "requests",
         "twine==1.15.0",
         "virtualenv==20.13.2",
-        "wheel==0.33.6",
         "urllib3",
     ],
     extras_require={

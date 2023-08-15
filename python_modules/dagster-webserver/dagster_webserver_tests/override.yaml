@@ -1,0 +1,4 @@
+load_from:
+  - python_file:
+      relative_path: override_job.py
+      location_name: load_from_file

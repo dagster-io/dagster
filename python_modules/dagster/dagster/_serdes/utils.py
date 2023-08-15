@@ -1,11 +1,12 @@
 import hashlib
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
-from .serdes import serialize_value
+from .serdes import WhitelistMap, serialize_value
 
 
-def create_snapshot_id(snapshot: NamedTuple) -> str:
-    json_rep = serialize_value(snapshot)
+def create_snapshot_id(snapshot: NamedTuple, whitelist_map: Optional[WhitelistMap] = None) -> str:
+    kwargs = dict(whitelist_map=whitelist_map) if whitelist_map else {}
+    json_rep = serialize_value(snapshot, **kwargs)
     return hash_str(json_rep)
 
 

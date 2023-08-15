@@ -17,7 +17,10 @@ from dagster import (
     graph_multi_asset,
     op,
 )
+from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
@@ -62,6 +65,108 @@ def test_single_asset_job():
             group_name=DEFAULT_GROUP_NAME,
         )
     ]
+
+
+def test_asset_with_default_backfill_policy():
+    @asset(description="hullo")
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+            backfill_policy=None,
+        ),
+    ]
+
+
+def test_asset_with_single_run_backfill_policy():
+    @asset(description="hullo_single_run", backfill_policy=BackfillPolicy.single_run())
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo_single_run",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+            backfill_policy=BackfillPolicy.single_run(),
+        )
+    ]
+
+
+def test_asset_with_multi_run_backfill_policy():
+    partitions_def_data = ExternalTimeWindowPartitionsDefinitionData(
+        cron_schedule="5 13 * * 0",
+        start=pendulum.instance(datetime(year=2022, month=5, day=5), tz="US/Central").timestamp(),
+        timezone="US/Central",
+        fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+        end_offset=1,
+    )
+    partitions_def = partitions_def_data.get_partitions_definition()
+
+    @asset(
+        description="hullo_ten_partitions_per_run",
+        partitions_def=partitions_def,
+        backfill_policy=BackfillPolicy.multi_run(10),
+    )
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo_ten_partitions_per_run",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+            partitions_def_data=partitions_def_data,
+            backfill_policy=BackfillPolicy.multi_run(10),
+        )
+    ]
+
+
+def test_non_partitioned_asset_with_multi_run_backfill_policy():
+    with pytest.raises(
+        ParameterCheckError, match="Non partitioned asset can only have single run backfill policy"
+    ):
+
+        @asset(description="hullo", backfill_policy=BackfillPolicy.multi_run(10))
+        def asset1():
+            return 1
 
 
 def test_asset_with_group_name():
@@ -145,7 +250,7 @@ def test_two_asset_job():
 def test_input_name_matches_output_name():
     not_result = SourceAsset(key=AssetKey("not_result"), description=None)
 
-    @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
+    @asset(ins={"result": AssetIn(key=AssetKey("not_result"))})
     def something(result):
         pass
 
@@ -194,8 +299,12 @@ def test_assets_excluded_from_subset_not_in_job():
         return c
 
     all_assets = [abc, a2, c2]
-    as_job = define_asset_job("as_job", selection="a*").resolve(all_assets, [])
-    cs_job = define_asset_job("cs_job", selection="*c2").resolve(all_assets, [])
+    as_job = define_asset_job("as_job", selection="a*").resolve(
+        asset_graph=AssetGraph.from_assets(all_assets)
+    )
+    cs_job = define_asset_job("cs_job", selection="*c2").resolve(
+        asset_graph=AssetGraph.from_assets(all_assets)
+    )
 
     external_asset_nodes = external_asset_graph_from_defs([as_job, cs_job], source_assets_by_key={})
 
@@ -340,7 +449,7 @@ def test_cross_job_asset_dependency():
     ]
 
 
-def test_same_asset_in_multiple_pipelines():
+def test_same_asset_in_multiple_jobs():
     @asset
     def asset1():
         return 1
@@ -428,9 +537,14 @@ def test_inter_op_dependency():
     def assets(in1, in2):
         pass
 
-    assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
+    subset_job = define_asset_job("subset_job", selection="mixed").resolve(
+        asset_graph=AssetGraph.from_assets([in1, in2, assets, downstream]),
+    )
+    all_assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs(
+        [subset_job, all_assets_job], source_assets_by_key={}
+    )
     # sort so that test is deterministic
     sorted_nodes = sorted(
         [
@@ -508,7 +622,7 @@ def test_inter_op_dependency():
             graph_name=None,
             op_names=["assets"],
             op_description=None,
-            job_names=["assets_job"],
+            job_names=["subset_job", "assets_job"],
             output_name="mixed",
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -933,7 +1047,7 @@ def test_back_compat_external_sensor():
     assert "my_pipeline" in external_sensor_data.target_dict
     target = external_sensor_data.target_dict["my_pipeline"]
     assert isinstance(target, ExternalTargetData)
-    assert target.pipeline_name == "my_pipeline"
+    assert target.job_name == "my_pipeline"
 
 
 def _check_partitions_def_equal(

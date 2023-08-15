@@ -1,4 +1,4 @@
 load_from:
   - python_module:
-      module_name: dagster_test.test_project.test_pipelines.repo
+      module_name: dagster_test.test_project.test_jobs.repo
       attribute: define_demo_execution_repo

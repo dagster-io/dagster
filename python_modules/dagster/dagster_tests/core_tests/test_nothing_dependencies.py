@@ -20,7 +20,7 @@ from dagster import (
 from dagster._core.execution.api import create_execution_plan
 
 
-def _define_nothing_dep_pipeline():
+def _define_nothing_dep_job():
     @op(out={"complete": Out(Nothing)})
     def start_nothing():
         pass
@@ -69,7 +69,7 @@ def _define_nothing_dep_pipeline():
 
 
 def test_valid_nothing_dependencies():
-    result = _define_nothing_dep_pipeline().execute_in_process()
+    result = _define_nothing_dep_job().execute_in_process()
 
     assert result.success
 

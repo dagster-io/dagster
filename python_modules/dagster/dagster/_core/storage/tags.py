@@ -39,9 +39,7 @@ MEMOIZED_RUN_TAG = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
 
 STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
-SOLID_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
-
-PRESET_NAME_TAG = f"{SYSTEM_TAG_PREFIX}preset_name"
+OP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
 
 GRPC_INFO_TAG = f"{HIDDEN_TAG_PREFIX}grpc_info"
 
@@ -59,11 +57,27 @@ RETRY_STRATEGY_TAG = f"{SYSTEM_TAG_PREFIX}retry_strategy"
 
 MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
 
+AUTO_MATERIALIZE_TAG = f"{SYSTEM_TAG_PREFIX}auto_materialize"
+ASSET_EVALUATION_ID_TAG = f"{SYSTEM_TAG_PREFIX}asset_evaluation_id"
+AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
+
+
+RUN_WORKER_ID_TAG = f"{HIDDEN_TAG_PREFIX}run_worker"
+GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
+
+# In cloud, we tag runs with the email of the user who triggered the run
+# This is used to display the user in the UI
+USER_TAG = "user"
+
+RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
+
+
 USER_EDITABLE_SYSTEM_TAGS = [
     PRIORITY_TAG,
     MAX_RETRIES_TAG,
     RETRY_STRATEGY_TAG,
     MAX_RUNTIME_SECONDS_TAG,
+    RUN_ISOLATION_TAG,
 ]
 
 

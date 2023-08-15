@@ -44,11 +44,11 @@ def test_bad_deprecated_resource_tags():
             }
         }
     )
-    def resource_tags_pipeline():
+    def resource_tags_job():
         pass
 
     with pytest.raises(DagsterInvalidConfigError):
-        get_user_defined_k8s_config(resource_tags_pipeline.tags)
+        get_user_defined_k8s_config(resource_tags_job.tags)
 
 
 def test_user_defined_k8s_config_tags():
@@ -196,14 +196,14 @@ def test_tags_to_dynamic_plan():
 
 def test_bad_user_defined_k8s_config_tags():
     @job(tags={USER_DEFINED_K8S_CONFIG_KEY: {"other": {}}})
-    def my_pipeline():
+    def my_job():
         pass
 
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Received unexpected config entry "other" at the root',
     ):
-        get_user_defined_k8s_config(my_pipeline.tags)
+        get_user_defined_k8s_config(my_job.tags)
 
 
 def test_user_defined_config_from_tags():
@@ -216,15 +216,13 @@ def test_user_defined_config_from_tags():
         },
         "pod_template_spec_metadata": {"namespace": "pod_template_spec_value"},
         "pod_spec_config": {"dns_policy": "pod_spec_config_value"},
-        "job_config": {"status": {"completed_indexes": "job_config_value"}},
+        "job_config": {"status": {"active": 1}},
         "job_metadata": {"namespace": "job_metadata_value"},
         "job_spec_config": {"backoff_limit": 120},
     }
 
     @job(tags={USER_DEFINED_K8S_CONFIG_KEY: config_args})
-    def my_pipeline():
+    def my_job():
         pass
 
-    assert get_user_defined_k8s_config(my_pipeline.tags) == UserDefinedDagsterK8sConfig(
-        **config_args
-    )
+    assert get_user_defined_k8s_config(my_job.tags) == UserDefinedDagsterK8sConfig(**config_args)

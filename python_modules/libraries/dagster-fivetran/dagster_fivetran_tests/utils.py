@@ -1,6 +1,7 @@
 from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_CONNECTOR_ID = "some_connector"
+DEFAULT_CONNECTOR_ID_2 = "some_other_connector"
 
 
 def get_sample_connector_response(**kwargs):
@@ -203,5 +204,33 @@ def get_sample_connectors_response():
                 "service": "some_service",
                 "schema": "some_service.some_name",
             }
+        ]
+    }
+
+
+def get_sample_connectors_response_multiple():
+    return {
+        "items": [
+            {
+                "id": DEFAULT_CONNECTOR_ID,
+                "service": "some_service",
+                "schema": "some_service.some_name",
+            },
+            {
+                "id": DEFAULT_CONNECTOR_ID_2,
+                "service": "some_other_service",
+                "schema": "some_other_service.some_name",
+                "status": {
+                    "setup_state": "connected",
+                },
+            },
+            {
+                "id": "FAKE",
+                "service": "some_other_service",
+                "schema": "some_other_service.some_name",
+                "status": {
+                    "setup_state": "broken",
+                },
+            },
         ]
     }

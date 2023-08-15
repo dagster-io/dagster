@@ -65,11 +65,13 @@ class RunCoordinator(BaseModel):
 class Sensors(BaseModel):
     useThreads: bool
     numWorkers: Optional[int]
+    numSubmitWorkers: Optional[int]
 
 
 class Schedules(BaseModel):
     useThreads: bool
     numWorkers: Optional[int]
+    numSubmitWorkers: Optional[int]
 
 
 class Daemon(BaseModel):

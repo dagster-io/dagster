@@ -165,10 +165,12 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping(
     downstream_partitions_subset,
 ):
     assert (
-        MultiToSingleDimensionPartitionMapping().get_upstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping()
+        .get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_subset,
             upstream_partitions_def,
         )
+        .partitions_subset
         == upstream_partitions_subset
     )
 
@@ -184,7 +186,7 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
     single_dimension_def = StaticPartitionsDefinition(["1", "2", "3"])
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
-        MultiToSingleDimensionPartitionMapping().get_upstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
             multipartitions_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange(
                     MultiPartitionKey({"a": "1", "b": "1"}),
@@ -206,7 +208,7 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
-        MultiToSingleDimensionPartitionMapping().get_upstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
             single_dimension_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange("1", "1")
             ),
@@ -594,10 +596,50 @@ def test_multipartitions_mapping_get_upstream_partitions(
     upstream_partition_keys,
     downstream_partition_keys,
 ):
-    assert partitions_mapping.get_upstream_partitions_for_partitions(
+    result = partitions_mapping.get_upstream_mapped_partitions_result_for_partitions(
         downstream_partitions_def.empty_subset().with_partition_keys(downstream_partition_keys),
         upstream_partitions_def,
-    ).get_partition_keys() == set(upstream_partition_keys)
+    )
+    assert result.partitions_subset.get_partition_keys() == set(upstream_partition_keys)
+
+
+def test_multipartitions_required_but_invalid_upstream_partitions():
+    may_multipartitions_def = MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition("2023-05-01"),
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+        }
+    )
+    june_multipartitions_def = MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition("2023-06-01"),
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+        }
+    )
+    result = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping(
+                dimension_name="123",
+                partition_mapping=IdentityPartitionMapping(),
+            ),
+            "time": DimensionPartitionMapping(
+                dimension_name="time",
+                partition_mapping=TimeWindowPartitionMapping(),
+            ),
+        }
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        may_multipartitions_def.empty_subset().with_partition_keys(
+            [
+                MultiPartitionKey({"time": "2023-05-01", "123": "1"}),
+                MultiPartitionKey({"time": "2023-06-01", "123": "1"}),
+            ]
+        ),
+        june_multipartitions_def,
+    )
+    assert result.partitions_subset.get_partition_keys() == set(
+        [MultiPartitionKey({"time": "2023-06-01", "123": "1"})]
+    )
+    assert result.required_but_nonexistent_partition_keys == ["2023-05-01"]
 
 
 @pytest.mark.parametrize(
@@ -638,13 +680,14 @@ def test_multipartitions_mapping_dynamic():
                 "456": StaticPartitionsDefinition(["4", "5", "6"]),
             }
         )
-        assert mapping.get_upstream_partitions_for_partitions(
+        mapped_partitions_result = mapping.get_upstream_mapped_partitions_result_for_partitions(
             downstream_partitions_def.empty_subset().with_partition_keys(
                 [MultiPartitionKey({"dynamic": "a", "123": "1"})]
             ),
             upstream_partitions_def,
             dynamic_partitions_store=instance,
-        ).get_partition_keys() == set(
+        )
+        assert mapped_partitions_result.partitions_subset.get_partition_keys() == set(
             [
                 MultiPartitionKey({"dynamic": val[1], "abc": val[0]})
                 for val in [("4", "a"), ("5", "a"), ("6", "a")]
@@ -675,20 +718,4 @@ def test_error_multipartitions_mapping():
                     "other nonexistent dimension", SpecificPartitionsPartitionMapping(["c"])
                 )
             }
-        ).get_upstream_partitions_for_partitions(weekly_abc.empty_subset(), daily_123)
-
-    with pytest.raises(ValueError):
-        MultiPartitionMapping(
-            {
-                "123": DimensionPartitionMapping(
-                    "abc",
-                    StaticPartitionMapping({"1": "a", "2": "b", "3": "c"}),
-                ),
-                "daily": DimensionPartitionMapping("weekly", IdentityPartitionMapping()),  # Invalid
-            }
-        ).get_upstream_partitions_for_partitions(
-            weekly_abc.empty_subset().with_partition_keys(
-                MultiPartitionKey({"abc": "a", "weekly": "2023-01-01"})
-            ),
-            daily_123,
-        )
+        ).get_upstream_mapped_partitions_result_for_partitions(weekly_abc.empty_subset(), daily_123)

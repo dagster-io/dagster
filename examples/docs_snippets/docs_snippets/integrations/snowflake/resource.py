@@ -1,34 +1,40 @@
-from dagster_snowflake import snowflake_resource
+# pyright: reportGeneralTypeIssues=none
+# pyright: reportOptionalMemberAccess=none
 
-from dagster import Definitions, asset
+# start
+import pandas as pd
+from dagster_snowflake import SnowflakeResource
+
+from dagster import Definitions, EnvVar, asset
 
 # this example executes a query against the IRIS_DATASET table created in Step 2 of the
 # Using Dagster with Snowflake tutorial
 
 
-@asset(required_resource_keys={"snowflake"})
-def small_petals(context):
-    return context.resources.snowflake.execute_query(
-        (
-            'SELECT * FROM IRIS_DATASET WHERE "Petal length (cm)" < 1 AND "Petal width'
-            ' (cm)" < 1'
-        ),
-        fetch_results=True,
-        use_pandas_result=True,
-    )
+@asset
+def small_petals(snowflake: SnowflakeResource) -> pd.DataFrame:
+    with snowflake.get_connection() as conn:
+        return (
+            conn.cursor()
+            .execute(
+                "SELECT * FROM IRIS_DATASET WHERE 'petal_length_cm' < 1 AND"
+                " 'petal_width_cm' < 1"
+            )
+            .fetch_pandas_all()
+        )
 
 
 defs = Definitions(
     assets=[small_petals],
     resources={
-        "snowflake": snowflake_resource.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "schema": "IRIS,",
-            }
+        "snowflake": SnowflakeResource(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            schema="IRIS",
         )
     },
 )
+
+# end

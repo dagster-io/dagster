@@ -8,20 +8,19 @@ def iris_data():
 
 # start_example
 
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
-from dagster import Definitions
+from dagster import Definitions, EnvVar
 
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "location": "us-east5",
-                "dataset": "IRIS",
-                "gcp_credential": {"env": "GCP_CREDS"},
-            }
+        "io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",
+            location="us-east5",
+            dataset="IRIS",
+            timeout=15.0,
+            gcp_credentials=EnvVar("GCP_CREDS"),
         )
     },
 )

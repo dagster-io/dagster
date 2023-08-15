@@ -5,12 +5,12 @@ import click
 import dagster._check as check
 import dagster._seven as seven
 import requests
+from dagster._cli.utils import get_instance_for_cli, get_temporary_instance_for_cli
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import get_stack_trace_array
@@ -98,14 +98,15 @@ def execute_query_against_remote(host, query, variables):
     parsed_url = urlparse(host)
     if not (parsed_url.scheme and parsed_url.netloc):
         raise click.UsageError(
-            "Host {host} is not a valid URL. Host URL should include scheme ie http://localhost"
-            .format(host=host)
+            f"Host {host} is not a valid URL. Host URL should include scheme ie http://localhost."
         )
 
-    sanity_check = requests.get(urljoin(host, "/dagit_info"))
+    sanity_check = requests.get(urljoin(host, "/server_info"))
     sanity_check.raise_for_status()
-    if "dagit" not in sanity_check.text:
-        raise click.UsageError(f"Host {host} failed sanity check. It is not a dagit server.")
+    if "dagster_webserver" not in sanity_check.text:
+        raise click.UsageError(
+            f"Host {host} failed sanity check. It is not a dagster-webserver instance."
+        )
     response = requests.post(
         urljoin(host, "/graphql"),
         # send query and vars as post body to avoid uri length limits
@@ -161,7 +162,7 @@ PREDEFINED_QUERIES = {
     "--remote",
     "-r",
     type=click.STRING,
-    help="A URL for a remote instance running dagit server to send the GraphQL request to.",
+    help="A URL for a remote instance running dagster-webserver to send the GraphQL request to.",
 )
 @click.option(
     "--output",
@@ -196,16 +197,18 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
         res = execute_query_against_remote(remote, query, variables)
         print(res)  # noqa: T201
     else:
-        instance = DagsterInstance.ephemeral() if ephemeral_instance else DagsterInstance.get()
-        with get_workspace_process_context_from_kwargs(
-            instance, version=__version__, read_only=False, kwargs=kwargs
-        ) as workspace_process_context:
-            execute_query_from_cli(
-                workspace_process_context,
-                query,
-                variables,
-                output,
-            )
+        with (
+            get_temporary_instance_for_cli() if ephemeral_instance else get_instance_for_cli()
+        ) as instance:
+            with get_workspace_process_context_from_kwargs(
+                instance, version=__version__, read_only=False, kwargs=kwargs
+            ) as workspace_process_context:
+                execute_query_from_cli(
+                    workspace_process_context,
+                    query,
+                    variables,
+                    output,
+                )
 
 
 cli = create_dagster_graphql_cli()

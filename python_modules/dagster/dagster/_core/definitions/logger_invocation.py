@@ -8,7 +8,7 @@ def logger_invocation_result(logger_def: LoggerDefinition, init_context: Unbound
     logger_config = resolve_bound_config(init_context.logger_config, logger_def)
 
     bound_context = InitLoggerContext(
-        logger_config, logger_def, init_context.pipeline_def, init_context.run_id
+        logger_config, logger_def, init_context.job_def, init_context.run_id
     )
 
     return logger_def.logger_fn(bound_context)

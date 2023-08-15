@@ -1,6 +1,6 @@
 ---
 title: Structuring your Dagster project  | Dagster Docs
-description: This guide talks about Dagster's recommendations on structuring larger projects
+description: "Learn about Dagster's recommendations for structuring larger projects."
 ---
 
 # Structuring your Dagster project
@@ -80,7 +80,9 @@ project_fully_featured
 
 ## Setting up your project
 
-This project was scaffolded by the `dagster project` CLI. This tool generates files and folder structures that enable you to quickly get started with everything set up, especially the Python setup. Refer to the [Create a new project guide](/getting-started/create-new-project) to learn more about the default project skeleton.
+This project was scaffolded by the `dagster project` CLI. This tool generates files and folder structures that enable you to quickly get started with everything set up, especially the Python setup.
+
+Refer to the [Dagster project files reference](/getting-started/project-file-reference) for more info about the default files in a Dagster project. This reference also includes details about additional configuration files, like `dagster.yaml` and `workspace.yaml`.
 
 ---
 
@@ -161,13 +163,18 @@ We recommend defining ops and graphs a job file along with the job definition wi
 
 So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions. We don't recommend over-abstracting too early; in most cases, one code location should be sufficient. A helpful pattern uses multiple code locations to separate conflicting dependencies, where each definition has its own package requirements (e.g., `setup.py`) and deployment specs (e.g., Dockerfile).
 
+To include multiple code locations in a single project, you'll need to add a [configuration file](/getting-started/project-file-reference#configuration-files) to your project:
+
+- **If using Dagster Cloud**, add a [`dagster_cloud.yaml` file](/dagster-cloud/managing-deployments/dagster-cloud-yaml) to the root of your project.
+- **If developing locally or deploying to your infrastructure**, add a `workspace.yaml` file to the root of your project. Refer to the [workspace files documentation](/concepts/code-locations/workspace-files) for more info.
+
 ---
 
 ## For tests
 
 We recommend setting up a separate test folder structure that mirrors the main project (e.g., having a folder for test assets with any applicable subfolders), which contains the unit tests for each of the components of the data pipeline.
 
-- Each of the components in Dagster such as assets, sensors, and resources can all be tested separately. Refer to the [Testing in Dagster](https://docs.dagster.io/concepts/testing) documentation for more info.
+Each of the components in Dagster such as assets, sensors, and resources can all be tested separately. Refer to the [Testing in Dagster](https://docs.dagster.io/concepts/testing) documentation for more info.
 
 ---
 
@@ -175,7 +182,7 @@ We recommend setting up a separate test folder structure that mirrors the main p
 
 As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as [dbt projects](/integrations/dbt) or [Jupyter notebooks](/integrations/dagstermill/using-notebooks-with-dagster).
 
-To learn more about Dagster's intergrations, [visit this page](/integrations) for guidance and integration libraries.
+To learn more about Dagster's integrations, [visit this page](/integrations) for guidance and integration libraries.
 
 ```shell
 project_fully_featured
@@ -205,3 +212,26 @@ project_fully_featured
 ├── project_fully_featured
 │ ...
 ```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster project files"
+    href="/getting-started/project-file-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster instance (dagster.yaml)"
+    href="/deployment/dagster-instance"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Workspace files (workspace.yaml)"
+    href="/concepts/code-locations/workspace-files"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Code locations"
+    href="/concepts/code-locations"
+  ></ArticleListItem>
+</ArticleList>

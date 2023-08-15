@@ -56,22 +56,22 @@ class ShutdownRepositoryLocationInfo(NamedTuple):
     message: Optional[str] = None
 
 
-class PipelineInfo(NamedTuple):
+class JobInfo(NamedTuple):
     repository_location_name: str
     repository_name: str
-    pipeline_name: str
+    job_name: str
 
     @staticmethod
-    def from_node(node: Dict[str, Any]) -> List["PipelineInfo"]:
+    def from_node(node: Dict[str, Any]) -> List["JobInfo"]:
         repo_name = node["name"]
         repo_location_name = node["location"]["name"]
         return [
-            PipelineInfo(
+            JobInfo(
                 repository_location_name=repo_location_name,
                 repository_name=repo_name,
-                pipeline_name=pipeline["name"],
+                job_name=job["name"],
             )
-            for pipeline in node["pipelines"]
+            for job in node["pipelines"]
         ]
 
 

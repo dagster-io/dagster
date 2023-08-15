@@ -1,16 +1,18 @@
 import logging
 import os
-from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster import DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
 
 from ..daemon import IntervalDaemon
 from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution
+
+if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
 
 _INTERVAL_SECONDS = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_INTERVAL_SECONDS", 5))
 _EVENT_LOG_FETCH_LIMIT = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_FETCH_LIMIT", 500))
@@ -35,8 +37,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     def handle_updated_runs_fns(
         self,
     ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
-        """List of functions that will be called with the list of run records that have new events.
-        """
+        """List of functions that will be called with the list of run records that have new events."""
         return [consume_new_runs_for_automatic_reexecution]
 
     def run_iteration(self, workspace_process_context: IWorkspaceProcessContext):
@@ -48,9 +49,9 @@ class EventLogConsumerDaemon(IntervalDaemon):
         overall_max_event_id = instance.event_log_storage.get_maximum_record_id()
 
         events: List[EventLogEntry] = []
-        new_cursors: Dict[
-            DagsterEventType, int
-        ] = {}  # keep these in memory until we handle the events
+        new_cursors: Dict[DagsterEventType, int] = (
+            {}
+        )  # keep these in memory until we handle the events
         for event_type in DAGSTER_EVENT_TYPES:
             yield
 
@@ -107,7 +108,7 @@ def _fetch_persisted_cursors(
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
 
     # get the persisted cursor for each event type
-    persisted_cursors = instance.run_storage.kvs_get(
+    persisted_cursors = instance.daemon_cursor_storage.get_cursor_values(
         {_create_cursor_key(event_type) for event_type in event_types}
     )
 
@@ -134,7 +135,7 @@ def _persist_cursors(instance: DagsterInstance, cursors: Mapping[DagsterEventTyp
     check.mapping_param(cursors, "cursors", key_type=DagsterEventType, value_type=int)
 
     if cursors:
-        instance.run_storage.kvs_set(
+        instance.daemon_cursor_storage.set_cursor_values(
             {
                 _create_cursor_key(event_type): str(cursor_value)
                 for event_type, cursor_value in cursors.items()

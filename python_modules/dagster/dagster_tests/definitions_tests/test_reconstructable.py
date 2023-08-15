@@ -17,13 +17,13 @@ from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.snap import PipelineSnapshot, create_pipeline_snapshot_id
+from dagster._core.snap import JobSnapshot, create_job_snapshot_id
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin
 
 
 @op
@@ -52,7 +52,7 @@ lambda_version = lambda: the_job
 
 
 def pid(pipeline_def):
-    return create_pipeline_snapshot_id(PipelineSnapshot.from_pipeline_def(pipeline_def))
+    return create_job_snapshot_id(JobSnapshot.from_job_def(pipeline_def))
 
 
 @job
@@ -88,8 +88,7 @@ def test_not_defined_in_module(mocker):
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "reconstructable() can not reconstruct jobs or pipelines defined in interactive"
-            " environments"
+            "reconstructable() can not reconstruct jobs defined in interactive environments"
         ),
     ):
         reconstructable(get_the_pipeline)
@@ -120,7 +119,7 @@ def test_bad_target():
         DagsterInvariantViolationError,
         match=re.escape(
             "Loadable attributes must be either a JobDefinition, GraphDefinition,"
-            " PipelineDefinition, AssetGroup, or RepositoryDefinition. Got None."
+            " or RepositoryDefinition. Got None."
         ),
     ):
         reconstructable(not_the_pipeline)
@@ -149,13 +148,13 @@ def test_inner_decorator():
         reconstructable(pipe)
 
 
-def test_solid_selection():
+def test_op_selection():
     recon_pipe = reconstructable(get_the_pipeline)
-    sub_pipe_full = recon_pipe.subset_for_execution(["the_op"], asset_selection=None)
-    assert sub_pipe_full.solid_selection == ["the_op"]
+    sub_pipe_full = recon_pipe.get_subset(op_selection={"the_op"})
+    assert sub_pipe_full.op_selection == {"the_op"}
 
-    sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_op+"], asset_selection=None)
-    assert sub_pipe_unresolved.solid_selection == ["the_op+"]
+    sub_pipe_unresolved = recon_pipe.get_subset(op_selection={"the_op+"})
+    assert sub_pipe_unresolved.op_selection == {"the_op+"}
 
 
 def test_reconstructable_module():
@@ -171,8 +170,8 @@ def test_reconstructable_module():
 
 
 def test_reconstruct_from_origin():
-    origin = PipelinePythonOrigin(
-        pipeline_name="foo_pipe",
+    origin = JobPythonOrigin(
+        job_name="foo_pipe",
         repository_origin=RepositoryPythonOrigin(
             executable_path="my_python",
             code_pointer=FileCodePointer(
@@ -186,13 +185,13 @@ def test_reconstruct_from_origin():
         ),
     )
 
-    recon_pipeline = recon_pipeline_from_origin(origin)
+    recon_job = recon_job_from_origin(origin)
 
-    assert recon_pipeline.pipeline_name == origin.pipeline_name
-    assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
-    assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
-    assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path
-    assert recon_pipeline.repository.container_context == origin.repository_origin.container_context
+    assert recon_job.job_name == origin.job_name
+    assert recon_job.repository.pointer == origin.repository_origin.code_pointer
+    assert recon_job.repository.container_image == origin.repository_origin.container_image
+    assert recon_job.repository.executable_path == origin.repository_origin.executable_path
+    assert recon_job.repository.container_context == origin.repository_origin.container_context
 
 
 def test_reconstructable_memoize():

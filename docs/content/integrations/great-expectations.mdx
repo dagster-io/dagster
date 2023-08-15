@@ -34,23 +34,7 @@ You can configure the GE Data Context via the `ge_data_context` resource from `d
 Finally, here's the full job definition using the GE op, with a default run configuration to use the correct set of data:
 
 ```python file=../../with_great_expectations/with_great_expectations/ge_demo.py startafter=start_ge_demo_marker_job endbefore=end_ge_demo_marker_job
-@job(
-    resource_defs={"ge_data_context": ge_data_context},
-    config={
-        "resources": {
-            "ge_data_context": {
-                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
-            }
-        },
-        "ops": {
-            "read_in_datafile": {
-                "inputs": {
-                    "csv_path": {"value": file_relative_path(__file__, "./data/succeed.csv")}
-                }
-            }
-        },
-    },
-)
+@job
 def payroll_data():
     output_df = read_in_datafile()
 

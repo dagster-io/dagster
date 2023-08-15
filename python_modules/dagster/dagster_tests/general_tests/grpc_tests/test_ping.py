@@ -1,6 +1,8 @@
 import os
 import re
+import threading
 import time
+from unittest import mock
 
 import dagster._check as check
 import dagster._seven as seven
@@ -13,19 +15,15 @@ from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port, safe_tempfile_path
 
 
-def server_thread_runnable(**kwargs):
-    def _runnable():
-        server = DagsterGrpcServer(**kwargs)
-        server.serve()
-
-    return _runnable
-
-
 @pytest.mark.skipif(not seven.IS_WINDOWS, reason="Windows-only test")
 def test_server_socket_on_windows():
     with safe_tempfile_path() as skt:
         with pytest.raises(check.CheckError, match=re.escape("`socket` not supported")):
-            DagsterGrpcServer(socket=skt)
+            DagsterGrpcServer(
+                server_termination_event=threading.Event(),
+                dagster_api_servicer=mock.MagicMock(),
+                socket=skt,
+            )
 
 
 def test_server_port_and_socket():
@@ -34,7 +32,12 @@ def test_server_port_and_socket():
             check.CheckError,
             match=re.escape("You must pass one and only one of `port` or `socket`."),
         ):
-            DagsterGrpcServer(socket=skt, port=find_free_port())
+            DagsterGrpcServer(
+                server_termination_event=threading.Event(),
+                dagster_api_servicer=mock.MagicMock(),
+                socket=skt,
+                port=find_free_port(),
+            )
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")

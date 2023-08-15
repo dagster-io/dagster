@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from dagster._core.assets import AssetDetails
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import utc_datetime_from_timestamp
 
@@ -48,7 +49,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
         return
 
     query = (
-        db.select([SqlEventLogStorageTable.c.asset_key])
+        db_select([SqlEventLogStorageTable.c.asset_key])
         .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
         .group_by(SqlEventLogStorageTable.c.asset_key)
     )
@@ -86,7 +87,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
         if print_fn:
             print_fn("Querying asset keys.")
         results = conn.execute(
-            db.select(
+            db_select(
                 [
                     AssetKeyTable.c.asset_key,
                     AssetKeyTable.c.asset_details,
@@ -118,7 +119,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
 
             if not event:
                 materialization_query = (
-                    db.select([SqlEventLogStorageTable.c.event])
+                    db_select([SqlEventLogStorageTable.c.event])
                     .where(
                         SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     )
@@ -136,9 +137,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .values(
                         last_materialization=None,
                         last_materialization_timestamp=None,
-                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
-                        if wipe_timestamp
-                        else None,
+                        wipe_timestamp=(
+                            utc_datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
+                        ),
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
@@ -150,9 +151,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .values(
                         last_materialization=serialize_value(event),
                         last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
-                        if wipe_timestamp
-                        else None,
+                        wipe_timestamp=(
+                            utc_datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
+                        ),
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
@@ -164,7 +165,7 @@ def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
     from .schema import SqlEventLogStorageTable
 
     while True:
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
+        query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
             SqlEventLogStorageTable.c.asset_key != None  # noqa: E711
         )
         if cursor:

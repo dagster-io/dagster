@@ -1,21 +1,23 @@
-from typing import Any, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer, is_packed_enum
+from dagster._serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
 from dagster._utils.error import SerializableErrorInfo
 
 
 class DaemonHeartbeatSerializer(NamedTupleSerializer["DaemonHeartbeat"]):
-    def before_unpack(self, **packed_dict: Any):
+    def before_unpack(self, context, unpacked_dict):
         # Previously daemon types were enums, now they are strings. If we find a packed enum,
         # just extract the name, which is the string we want.
-        if is_packed_enum(packed_dict.get("daemon_type")):
-            packed_dict["daemon_type"] = packed_dict["daemon_type"]["__enum__"].split(".")[-1]
-        if packed_dict.get("error"):
-            packed_dict["errors"] = [packed_dict["error"]]
-            del packed_dict["error"]
-        return packed_dict
+        if isinstance(unpacked_dict.get("daemon_type"), UnknownSerdesValue):
+            unknown = unpacked_dict["daemon_type"]
+            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]
+            context.clear_ignored_unknown_values(unknown)
+        if unpacked_dict.get("error"):
+            unpacked_dict["errors"] = [unpacked_dict["error"]]
+            del unpacked_dict["error"]
+        return unpacked_dict
 
 
 @whitelist_for_serdes(serializer=DaemonHeartbeatSerializer)

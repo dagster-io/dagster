@@ -7,7 +7,7 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .repo import csv_hello_world_solids_config
+from .repo import csv_hello_world_ops_config
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {
@@ -31,7 +31,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
+                    "runConfigData": csv_hello_world_ops_config(),
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
@@ -56,7 +56,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
+                    "runConfigData": csv_hello_world_ops_config(),
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,
@@ -81,7 +81,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
+                    "runConfigData": csv_hello_world_ops_config(),
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
@@ -106,7 +106,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
+                    "runConfigData": csv_hello_world_ops_config(),
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,
@@ -123,7 +123,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         assert query_result["run"]["parentRunId"] == run_id
 
     def test_pipeline_reexecution_successful_launch(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "no_config_job")
         run_id = make_new_run_id()
         result = execute_dagster_graphql(
             context=graphql_context,

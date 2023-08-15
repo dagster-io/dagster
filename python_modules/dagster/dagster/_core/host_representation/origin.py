@@ -13,6 +13,8 @@ from typing import (
     cast,
 )
 
+import grpc
+
 import dagster._check as check
 from dagster._core.definitions.selector import PartitionSetSelector, RepositorySelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
@@ -109,6 +111,10 @@ class CodeLocationOrigin(ABC, tuple):
     def create_location(self) -> "CodeLocation":
         pass
 
+    @abstractmethod
+    def reload_location(self, instance: "DagsterInstance") -> "CodeLocation":
+        pass
+
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
@@ -129,8 +135,14 @@ class RegisteredCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A RegisteredCodeLocationOrigin does not have enough information to load its "
-            "repository location on its own."
+            "A RegisteredCodeLocationOrigin does not have enough information to create its "
+            "code location on its own."
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "A RegisteredCodeLocationOrigin does not have enough information to reload its "
+            "code location on its own."
         )
 
 
@@ -150,7 +162,7 @@ class InProcessCodeLocationOrigin(
     CodeLocationOrigin,
 ):
     """Identifies a repository location constructed in the same process. Primarily
-    used in tests, since Dagster system processes like Dagit and the daemon do not
+    used in tests, since Dagster system processes like the webserver and daemon do not
     load user code in the same process.
     """
 
@@ -193,6 +205,9 @@ class InProcessCodeLocationOrigin(
 
         return InProcessCodeLocation(self)
 
+    def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
+        raise NotImplementedError
+
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
@@ -215,9 +230,11 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
             ),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_loadable_target_origin_name(loadable_target_origin),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_loadable_target_origin_name(loadable_target_origin)
+            ),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -233,8 +250,14 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a DynamicWorkspace"
-            " in order to create a handle."
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
+            " in order to create a code location."
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a GrpcServerRegistry"
+            " in order to reload a code location."
         )
 
     @contextmanager
@@ -242,18 +265,21 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         self,
         instance: "DagsterInstance",
     ) -> Iterator["GrpcServerCodeLocation"]:
-        from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
+        from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
 
         from .code_location import GrpcServerCodeLocation
         from .grpc_server_registry import GrpcServerRegistry
 
         with GrpcServerRegistry(
-            instance=instance,
+            instance_ref=instance.get_ref(),
             reload_interval=0,
-            heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=instance.code_server_process_startup_timeout
-            if instance
-            else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+            heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
+            startup_timeout=(
+                instance.code_server_process_startup_timeout
+                if instance
+                else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+            ),
+            wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerCodeLocation(
@@ -303,9 +329,11 @@ class GrpcServerCodeLocationOrigin(
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
             check.opt_str_param(socket, "socket"),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_grpc_location_name(port, socket, host),
+            (
+                check.str_param(location_name, "location_name")
+                if location_name
+                else _assign_grpc_location_name(port, socket, host)
+            ),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
 
@@ -316,6 +344,25 @@ class GrpcServerCodeLocationOrigin(
             "socket": self.socket,
         }
         return {key: value for key, value in metadata.items() if value is not None}
+
+    def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
+        )
+
+        try:
+            self.create_client().reload_code(timeout=instance.code_server_reload_timeout)
+        except Exception as e:
+            # Handle case when this is called against `dagster api grpc` servers that don't have this API method implemented
+            if (
+                isinstance(e.__cause__, grpc.RpcError)
+                and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+            ):
+                pass
+            else:
+                raise
+
+        return GrpcServerCodeLocation(self)
 
     def create_location(self) -> "GrpcServerCodeLocation":
         from dagster._core.host_representation.code_location import (
@@ -376,8 +423,8 @@ class ExternalRepositoryOrigin(
     def get_label(self) -> str:
         return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
-    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
-        return ExternalPipelineOrigin(self, pipeline_name)
+    def get_job_origin(self, job_name: str) -> "ExternalJobOrigin":
+        return ExternalJobOrigin(self, job_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
         return ExternalInstigatorOrigin(self, instigator_name)
@@ -386,26 +433,28 @@ class ExternalRepositoryOrigin(
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
 
-@whitelist_for_serdes
-class ExternalPipelineOrigin(
+@whitelist_for_serdes(
+    storage_name="ExternalPipelineOrigin", storage_field_names={"job_name": "pipeline_name"}
+)
+class ExternalJobOrigin(
     NamedTuple(
-        "_ExternalPipelineOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("pipeline_name", str)],
+        "_ExternalJobOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("job_name", str)],
     )
 ):
     """Serializable representation of an ExternalPipeline that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, pipeline_name: str):
-        return super(ExternalPipelineOrigin, cls).__new__(
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, job_name: str):
+        return super(ExternalJobOrigin, cls).__new__(
             cls,
             check.inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,
             ),
-            check.str_param(pipeline_name, "pipeline_name"),
+            check.str_param(job_name, "job_name"),
         )
 
     def get_id(self) -> str:

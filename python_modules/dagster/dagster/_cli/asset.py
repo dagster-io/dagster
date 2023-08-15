@@ -11,16 +11,16 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.selector.subset_selector import parse_asset_selection
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import (
-    recon_pipeline_from_origin,
+    recon_job_from_origin,
     recon_repository_from_origin,
 )
 from dagster._utils.interrupts import capture_interrupts
 
-from .utils import get_instance_for_service
+from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 
 @click.group(name="asset")
@@ -34,7 +34,9 @@ def asset_cli():
 @click.option("--partition", help="Asset partition to target", required=False)
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
-        with get_instance_for_service("``dagster asset materialize``") as instance:
+        with get_possibly_temporary_instance_for_cli(
+            "``dagster asset materialize``",
+        ) as instance:
             execute_materialize_command(instance, kwargs)
 
 
@@ -60,8 +62,8 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
             " PartitionsDefinition"
         )
 
-    reconstructable_job = recon_pipeline_from_origin(
-        PipelinePythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
+    reconstructable_job = recon_job_from_origin(
+        JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")
     if partition:
@@ -86,7 +88,6 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
 @click.option("--select", help="Asset selection to target", required=False)
 def asset_list_command(**kwargs):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
-
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
 
@@ -134,7 +135,7 @@ def asset_wipe_command(key, **cli_args):
 
     noprompt = cli_args.get("noprompt")
 
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         if len(key) > 0:
             asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
             prompt = (
@@ -165,7 +166,7 @@ def asset_wipe_command(key, **cli_args):
 @click.option("--all", is_flag=True, help="Wipe partitions status cache of all asset keys")
 @click.option("--noprompt", is_flag=True)
 def asset_wipe_cache_command(key, **cli_args):
-    r"""Clears the asset partitions status cache, which is used by Dagit to load partition
+    r"""Clears the asset partitions status cache, which is used by the webserver to load partition
     pages more quickly. The cache will be rebuilt the next time the partition pages are loaded,
     if caching is enabled.
 
@@ -186,7 +187,7 @@ def asset_wipe_cache_command(key, **cli_args):
 
     noprompt = cli_args.get("noprompt")
 
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         if instance.can_cache_asset_status_data() is False:
             raise click.UsageError(
                 "Error, the instance does not support caching asset status. Wiping the cache is not"

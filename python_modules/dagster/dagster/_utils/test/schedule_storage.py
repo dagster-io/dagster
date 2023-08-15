@@ -4,6 +4,13 @@ import time
 import pendulum
 import pytest
 
+from dagster import StaticPartitionsDefinition
+from dagster._core.definitions.auto_materialize_condition import (
+    AutoMaterializeAssetEvaluation,
+    MissingAutoMaterializeCondition,
+)
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -50,6 +57,9 @@ class TestScheduleStorage:
         return True
 
     def can_purge(self):
+        return True
+
+    def can_store_auto_materialize_asset_evaluations(self):
         return True
 
     @staticmethod
@@ -669,3 +679,153 @@ class TestScheduleStorage:
         assert len(ticks_by_origin["sensor_one"]) == 1
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
+
+    def test_auto_materialize_asset_evaluations(self, storage):
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_two"),
+                    partition_subsets_by_condition=[(MissingAutoMaterializeCondition(), None)],
+                    num_requested=1,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 1
+        assert res[0].evaluation.asset_key == AssetKey("asset_one")
+        assert res[0].evaluation_id == 10
+        assert res[0].evaluation.num_requested == 0
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_two"), limit=100
+        )
+        assert len(res) == 1
+        assert res[0].evaluation.asset_key == AssetKey("asset_two")
+        assert res[0].evaluation_id == 10
+        assert res[0].evaluation.num_requested == 1
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 2
+        assert res[0].evaluation_id == 11
+        assert res[1].evaluation_id == 10
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=1
+        )
+        assert len(res) == 1
+        assert res[0].evaluation_id == 11
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=1, cursor=11
+        )
+        assert len(res) == 1
+        assert res[0].evaluation_id == 10
+
+    def test_auto_materialize_asset_evaluations_with_partitions(self, storage):
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+        subset = partitions_def.empty_subset().with_partition_keys(["a"])
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_two"),
+                    partition_subsets_by_condition=[
+                        (
+                            MissingAutoMaterializeCondition(),
+                            SerializedPartitionsSubset.from_subset(subset, partitions_def, None),
+                        )
+                    ],
+                    num_requested=1,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_two"), limit=100
+        )
+        assert len(res) == 1
+        assert res[0].evaluation.asset_key == AssetKey("asset_two")
+        assert res[0].evaluation_id == 10
+        assert res[0].evaluation.num_requested == 1
+
+        assert (
+            res[0].evaluation.partition_subsets_by_condition[0][0]
+            == MissingAutoMaterializeCondition()
+        )
+        assert (
+            res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)
+        )
+        assert (
+            partitions_def.deserialize_subset(
+                res[0].evaluation.partition_subsets_by_condition[0][1].serialized_subset
+            )
+            == subset
+        )
+
+    def test_purge_asset_evaluations(self, storage):
+        if not self.can_purge():
+            pytest.skip("Storage cannot purge")
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AutoMaterializeAssetEvaluation(
+                    asset_key=AssetKey("asset_one"),
+                    partition_subsets_by_condition=[],
+                    num_requested=0,
+                    num_skipped=0,
+                    num_discarded=0,
+                ),
+            ],
+        )
+
+        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 1
+
+        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
+
+        res = storage.get_auto_materialize_asset_evaluations(
+            asset_key=AssetKey("asset_one"), limit=100
+        )
+        assert len(res) == 0

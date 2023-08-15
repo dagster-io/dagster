@@ -9,28 +9,29 @@ def test_validate_run_config():
         pass
 
     @job
-    def basic_pipeline():
+    def basic_job():
         basic()
 
-    validate_run_config(basic_pipeline)
+    validate_run_config(basic_job)
 
     @op(config_schema={"foo": str})
     def requires_config(_):
         pass
 
     @job
-    def pipeline_requires_config():
+    def job_requires_config():
         requires_config()
 
     result = validate_run_config(
-        pipeline_requires_config, {"ops": {"requires_config": {"config": {"foo": "bar"}}}}
+        job_requires_config,
+        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {
             "multi_or_in_process_executor": {
-                "multiprocess": {"max_concurrent": 0, "retries": {"enabled": {}}}
+                "multiprocess": {"max_concurrent": None, "retries": {"enabled": {}}}
             }
         },
         "resources": {"io_manager": {"config": None}},
@@ -38,4 +39,4 @@ def test_validate_run_config():
     }
 
     with pytest.raises(DagsterInvalidConfigError):
-        validate_run_config(pipeline_requires_config)
+        validate_run_config(job_requires_config)

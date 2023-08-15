@@ -8,8 +8,12 @@ from dagster import (
     AssetOut,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    DimensionPartitionMapping,
     FreshnessPolicy,
+    IdentityPartitionMapping,
     In,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
     Nothing,
     OpExecutionContext,
     Out,
@@ -18,7 +22,7 @@ from dagster import (
     String,
     TimeWindowPartitionMapping,
     _check as check,
-    build_op_context,
+    build_asset_context,
     graph_asset,
     graph_multi_asset,
     io_manager,
@@ -26,6 +30,8 @@ from dagster import (
     op,
     resource,
 )
+from dagster._check import CheckError
+from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -33,23 +39,21 @@ from dagster._core.definitions import (
     build_assets_job,
     multi_asset,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.test_utils import ignore_warning
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 @pytest.fixture(autouse=True)
-def check_experimental_warnings():
-    with warnings.catch_warnings(record=True) as record:
-        # turn off any outer warnings filters
-        warnings.resetwarnings()
+def error_on_warning():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
 
-        yield
-
-        for w in record:
-            if "asset_key" in w.message.args[0]:
-                assert False, f"Unexpected warning: {w.message.args[0]}"
+    warnings.filterwarnings("error")
 
 
 def test_asset_no_decorator_args():
@@ -302,6 +306,7 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
@@ -311,6 +316,7 @@ def test_asset_with_code_version():
     assert my_asset.op.output_def_named("result").code_version == "foo"
 
 
+@ignore_warning("Property `OpDefinition.version` is deprecated")
 def test_asset_with_code_version_direct_call():
     def func(arg1):
         return arg1
@@ -552,7 +558,7 @@ def test_invoking_asset_with_context():
         assert isinstance(context, OpExecutionContext)
         return arg1
 
-    ctx = build_op_context()
+    ctx = build_asset_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
 
@@ -603,8 +609,8 @@ def test_kwargs_with_context():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
-    assert my_asset(build_op_context(), upstream=5) == 7
-    assert my_asset.op(build_op_context(), upstream=5) == 7
+    assert my_asset(build_asset_context(), upstream=5) == 7
+    assert my_asset.op(build_asset_context(), upstream=5) == 7
 
     @asset
     def upstream():
@@ -644,8 +650,8 @@ def test_kwargs_multi_asset_with_context():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
-    assert my_asset(build_op_context(), upstream=5) == (7,)
-    assert my_asset.op(build_op_context(), upstream=5) == (7,)
+    assert my_asset(build_asset_context(), upstream=5) == (7,)
+    assert my_asset.op(build_asset_context(), upstream=5) == (7,)
 
     @asset
     def upstream():
@@ -654,6 +660,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -700,6 +707,8 @@ def test_multi_asset_code_versions():
     }
 
 
+@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_asset_io_manager_def():
     @io_manager
     def the_manager():
@@ -748,34 +757,86 @@ def test_multi_asset_retry_policy():
     assert my_asset.op.retry_policy == retry_policy
 
 
-def test_invalid_self_dep():
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @asset
-        def a(a):
-            del a
-
-    with pytest.raises(DagsterInvalidDefinitionError):
+@pytest.mark.parametrize(
+    "partitions_def,partition_mapping",
+    [
+        (None, None),
+        (DailyPartitionsDefinition(start_date="2020-01-01"), TimeWindowPartitionMapping()),
+        (
+            DailyPartitionsDefinition(start_date="2020-01-01"),
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=0),
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            None,
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            MultiPartitionMapping({}),
+        ),
+        (
+            MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                }
+            ),
+            MultiPartitionMapping(
+                {
+                    "time": DimensionPartitionMapping(
+                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
+                    ),
+                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                }
+            ),
+        ),
+    ],
+)
+def test_invalid_self_dep(partitions_def, partition_mapping):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can only depend on themselves if"
+    ):
 
         @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-            ins={"b": AssetIn(partition_mapping=TimeWindowPartitionMapping())},
+            partitions_def=partitions_def,
+            ins={"b": AssetIn(partition_mapping=partition_mapping)},
         )
         def b(b):
             del b
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+
+@ignore_warning("Class `MultiPartitionMapping` is experimental")
+def test_invalid_self_dep_no_time_dimension():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+    partition_mapping = MultiPartitionMapping(
+        {
+            "123": DimensionPartitionMapping("123", IdentityPartitionMapping()),
+            "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+        }
+    )
+    with pytest.raises(CheckError, match="Expected exactly one time window partitioned dimension"):
 
         @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-            ins={
-                "c": AssetIn(
-                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
-                )
-            },
+            partitions_def=partitions_def,
+            ins={"b": AssetIn(partition_mapping=partition_mapping)},
         )
-        def c(c):
-            del c
+        def b(b):
+            del b
 
 
 def test_asset_in_nothing():
@@ -825,7 +886,14 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Parameter `resource_defs` .* is experimental")
 def test_graph_asset_with_args():
+    @resource
+    def foo_resource():
+        pass
+
     @op
     def my_op1(x):
         return x
@@ -838,6 +906,8 @@ def test_graph_asset_with_args():
         group_name="group1",
         metadata={"my_metadata": "some_metadata"},
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+        auto_materialize_policy=AutoMaterializePolicy.lazy(),
+        resource_defs={"foo": foo_resource},
     )
     def my_asset(x):
         return my_op2(my_op1(x))
@@ -847,6 +917,11 @@ def test_graph_asset_with_args():
     assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
+    assert (
+        my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
+        == AutoMaterializePolicy.lazy()
+    )
+    assert my_asset.resource_defs["foo"] == foo_resource
 
 
 def test_graph_asset_partitioned():
@@ -915,7 +990,52 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
+def test_graph_asset_w_config_dict():
+    class FooConfig(Config):
+        val: int
+
+    @op
+    def foo_op(config: FooConfig):
+        return config.val
+
+    @graph_asset(config={"foo_op": {"config": {"val": 1}}})
+    def foo():
+        return foo_op()
+
+    result = materialize_to_memory([foo])
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+
+def test_graph_asset_w_config_mapping():
+    class FooConfig(Config):
+        val: int
+
+    @op
+    def foo_op(config: FooConfig):
+        return config.val
+
+    @config_mapping(config_schema=int)
+    def foo_config_mapping(val: Any) -> Any:
+        return {"foo_op": {"config": {"val": val}}}
+
+    @graph_asset(config=foo_config_mapping)
+    def foo():
+        return foo_op()
+
+    result = materialize_to_memory([foo], run_config={"ops": {"foo": {"config": 1}}})
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+
+@ignore_warning("Class `FreshnessPolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Parameter `resource_defs`")
 def test_graph_multi_asset_decorator():
+    @resource
+    def foo_resource():
+        pass
+
     @op(out={"one": Out(), "two": Out()})
     def two_in_two_out(context, in1, in2):
         assert context.asset_key_for_input("in1") == AssetKey("x")
@@ -926,10 +1046,11 @@ def test_graph_multi_asset_decorator():
 
     @graph_multi_asset(
         outs={
-            "first_asset": AssetOut(),
+            "first_asset": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
             "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
         },
         group_name="grp",
+        resource_defs={"foo": foo_resource},
     )
     def two_assets(x, y):
         one, two = two_in_two_out(x, y)
@@ -947,6 +1068,14 @@ def test_graph_multi_asset_decorator():
     assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == FreshnessPolicy(
         maximum_lag_minutes=5
     )
+
+    assert (
+        two_assets.auto_materialize_policies_by_key[AssetKey("first_asset")]
+        == AutoMaterializePolicy.eager()
+    )
+    assert two_assets.auto_materialize_policies_by_key.get(AssetKey("second_asset")) is None
+
+    assert two_assets.resource_defs["foo"] == foo_resource
 
     @asset
     def x():
@@ -1000,3 +1129,87 @@ def test_graph_multi_asset_w_key_prefix():
         AssetKey(["this", "is", "a", "prefix", "first_asset"]): "grp",
         AssetKey(["second_asset"]): "grp",
     }
+
+
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+def test_multi_asset_with_bare_resource():
+    class BareResourceObject:
+        pass
+
+    executed = {}
+
+    @multi_asset(outs={"o1": AssetOut()}, resource_defs={"bare_resource": BareResourceObject()})
+    def my_asset(context):
+        assert context.resources.bare_resource
+        executed["yes"] = True
+
+    materialize_to_memory([my_asset])
+
+    assert executed["yes"]
+
+
+@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+def test_multi_asset_with_auto_materialize_policy():
+    @multi_asset(
+        outs={
+            "o1": AssetOut(),
+            "o2": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
+            "o3": AssetOut(auto_materialize_policy=AutoMaterializePolicy.lazy()),
+        }
+    )
+    def my_asset():
+        ...
+
+    assert my_asset.auto_materialize_policies_by_key == {
+        AssetKey("o2"): AutoMaterializePolicy.eager(),
+        AssetKey("o3"): AutoMaterializePolicy.lazy(),
+    }
+
+
+@pytest.mark.parametrize(
+    "key,expected_key",
+    [
+        (
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+            AssetKey(["this", "is", "a", "prefix", "the_asset"]),
+        ),
+        ("the_asset", AssetKey(["the_asset"])),
+        (["prefix", "the_asset"], AssetKey(["prefix", "the_asset"])),
+        (("prefix", "the_asset"), AssetKey(["prefix", "the_asset"])),
+    ],
+)
+def test_asset_key_provided(key, expected_key):
+    @asset(key=key)
+    def foo():
+        return 1
+
+    assert foo.key == expected_key
+
+
+def test_error_on_asset_key_provided():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", key_prefix="foo")
+        def one():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo")
+        def two():
+            ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="key argument is provided",
+    ):
+
+        @asset(key="the_asset", name="foo", key_prefix="bar")
+        def three():
+            ...

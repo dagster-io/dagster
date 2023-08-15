@@ -1,5 +1,6 @@
 import os
-from typing import Any, Mapping, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import boto3
 import dagster._seven as seven
@@ -11,6 +12,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_type import Noneable
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
@@ -48,6 +50,10 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             endpoint_url: "http://alternate-s3-host.io"
             skip_empty_files: true
             upload_interval: 30
+            upload_extra_args:
+              ServerSideEncryption: "AES256"
+            show_url_only: false
+            region: "us-west-1"
 
     Args:
         bucket (str): The name of the s3 bucket to which to log.
@@ -61,6 +67,9 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         endpoint_url (Optional[str]): Override for the S3 endpoint url.
         skip_empty_files: (Optional[bool]): Skip upload of empty log files.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files to S3. By default, will only upload when the capture is complete.
+        upload_extra_args: (Optional[dict]): Extra args for S3 file upload
+        show_url_only: (Optional[bool]): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
+        region: (Optional[str]): The region of the S3 bucket. If not specified, will use the default region of the AWS session.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -78,6 +87,8 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         skip_empty_files=False,
         upload_interval=None,
         upload_extra_args=None,
+        show_url_only=False,
+        region=None,
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
@@ -97,6 +108,12 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         check.opt_dict_param(upload_extra_args, "upload_extra_args")
         self._upload_extra_args = upload_extra_args
+        self._show_url_only = show_url_only
+        if region is None:
+            # if unspecified, use the current session name
+            self._region = self._s3_session.meta.region_name
+        else:
+            self._region = region
 
     @property
     def inst_data(self):
@@ -117,6 +134,8 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "upload_extra_args": Field(
                 Permissive(), is_required=False, description="Extra args for S3 file upload"
             ),
+            "show_url_only": Field(bool, is_required=False, default_value=False),
+            "region": Field(StringSource, is_required=False),
         }
 
     @classmethod
@@ -146,6 +165,21 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             filename = f"{filename}.partial"
         paths = [self._s3_prefix, "storage", *namespace, filename]
         return "/".join(paths)  # s3 path delimiter
+
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            if not self._show_url_only:
+                yield local_context
+            else:
+                out_key = self._s3_key(log_key, ComputeIOType.STDOUT)
+                err_key = self._s3_key(log_key, ComputeIOType.STDERR)
+                s3_base = f"https://s3.console.aws.amazon.com/s3/object/{self._s3_bucket}?region={self._region}"
+                yield CapturedLogContext(
+                    local_context.log_key,
+                    external_stdout_url=f"{s3_base}&prefix={out_key}",
+                    external_stderr_url=f"{s3_base}&prefix={err_key}",
+                )
 
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
@@ -208,9 +242,11 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
 
         s3_key = self._s3_key(log_key, io_type, partial=partial)
         with open(path, "rb") as data:
-            self._s3_session.upload_fileobj(
-                data, self._s3_bucket, s3_key, ExtraArgs=self._upload_extra_args
-            )
+            extra_args = {
+                "ContentType": "text/plain",
+                **(self._upload_extra_args if self._upload_extra_args else {}),
+            }
+            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

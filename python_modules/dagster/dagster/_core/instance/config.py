@@ -81,10 +81,8 @@ def dagster_instance_config(
 
     if "run_queue" in dagster_config_dict and "run_coordinator" in dagster_config_dict:
         raise DagsterInvalidConfigError(
-            (
-                "Found config for `run_queue` which is incompatible with `run_coordinator` config"
-                " entry."
-            ),
+            "Found config for `run_queue` which is incompatible with `run_coordinator` config"
+            " entry.",
             [],
             None,
         )
@@ -95,20 +93,16 @@ def dagster_instance_config(
         or "schedule_storage" in dagster_config_dict
     ):
         raise DagsterInvalidConfigError(
-            (
-                "Found config for `storage` which is incompatible with `run_storage`, "
-                "`event_log_storage`, and `schedule_storage` config entries."
-            ),
+            "Found config for `storage` which is incompatible with `run_storage`, "
+            "`event_log_storage`, and `schedule_storage` config entries.",
             [],
             None,
         )
     elif "storage" in dagster_config_dict:
         if len(dagster_config_dict["storage"]) != 1:
             raise DagsterInvalidConfigError(
-                (
-                    f"Errors whilst loading dagster storage at {config_filename}, Expected one of:"
-                    "['postgres', 'mysql', 'sqlite', 'custom']"
-                ),
+                f"Errors whilst loading dagster storage at {config_filename}, Expected one of:"
+                "['postgres', 'mysql', 'sqlite', 'custom']",
                 [],
                 dagster_config_dict["storage"],
             )
@@ -250,7 +244,22 @@ def sensors_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
-            "num_workers": Field(int, is_required=False),
+            "num_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to process ticks from multiple sensors in parallel"
+                ),
+            ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from sensor ticks. Can be used to"
+                    " decrease latency when a sensor emits multiple run requests within a single"
+                    " tick."
+                ),
+            ),
         },
         is_required=False,
     )
@@ -260,7 +269,22 @@ def schedules_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
-            "num_workers": Field(int, is_required=False),
+            "num_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to process ticks from multiple schedules in parallel"
+                ),
+            ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from schedule ticks. Can be used to"
+                    " decrease latency when a schedule emits multiple run requests within a single"
+                    " tick."
+                ),
+            ),
         },
         is_required=False,
     )
@@ -303,9 +327,11 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             {
                 "enabled": Field(Bool, is_required=False),
                 "start_timeout_seconds": Field(int, is_required=False),
+                "cancel_timeout_seconds": Field(int, is_required=False),
                 "max_resume_run_attempts": Field(int, is_required=False),
                 "poll_interval_seconds": Field(int, is_required=False),
                 "cancellation_thread_poll_interval_seconds": Field(int, is_required=False),
+                "free_slots_after_run_end_seconds": Field(int, is_required=False),
             },
         ),
         "run_retries": Field(
@@ -317,6 +343,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "code_servers": Field(
             {
                 "local_startup_timeout": Field(int, is_required=False),
+                "reload_timeout": Field(int, is_required=False),
                 "wait_for_local_processes_on_shutdown": Field(bool, is_required=False),
             },
             is_required=False,
@@ -325,4 +352,11 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "retention": retention_config_schema(),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),
+        "auto_materialize": Field(
+            {
+                "enabled": Field(Bool, is_required=False),
+                "minimum_interval_seconds": Field(int, is_required=False),
+                "run_tags": Field(dict, is_required=False),
+            }
+        ),
     }

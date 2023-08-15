@@ -1,3 +1,2 @@
 examples/assets_pandas_type_metadata
-examples/experimental/project_fully_featured_v2_resources
 examples/project_fully_featured

@@ -86,26 +86,26 @@ You'll find the messages have been logged through a built-in logger:
 
 The `context` object passed to every op execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
 
-When you run Dagster jobs in Dagit, you'll notice that log messages are visible as colored messages in the console. For example:
+When you run Dagster jobs in the Dagster UI, you'll notice that log messages are visible as colored messages in the console. For example:
 
-- **Logs stream back to the Dagit frontend in real time**:
+- **Logs stream back to the the UI frontend in real time**:
 
-  <!-- ![Real time logs in Dagit](/images/concepts/logging/job-log-dagit.png) -->
+  <!-- ![Real time logs in the Dagster UI](/images/concepts/logging/job-log-ui.png) -->
 
   <Image
-  alt="Real time logs in Dagit"
-  src="/images/concepts/logging/job-log-dagit.png"
+  alt="Real time logs in the Dagster UI"
+  src="/images/concepts/logging/job-log-ui.png"
   width={3574}
   height={1962}
   />
 
 - **Filtering log messages based on execution steps and log levels**:
 
-  <!-- ![Log filtering in Dagit](/images/concepts/logging/job-dagit-filter.png) -->
+  <!-- ![Log filtering in the Dagster UI](/images/concepts/logging/job-ui-filter.png) -->
 
   <Image
-  alt="Log filtering in Dagit"
-  src="/images/concepts/logging/job-dagit-filter.png"
+  alt="Log filtering in the Dagster UI"
+  src="/images/concepts/logging/job-ui-filter.png"
   width={3574}
   height={1962}
   />
@@ -132,15 +132,15 @@ def demo_job_error():
     hello_logs_error()
 ```
 
-Errors in user code are caught by the Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to Dagit.
+Errors in user code are caught by the Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to the UI.
 
-Messages at level `ERROR` or above are highlighted both in Dagit and in the console logs, so they can be easily identified even without filtering:
+Messages at level `ERROR` or above are highlighted both in the UI and in the console logs, so they can be easily identified even without filtering:
 
-<!-- ![ERROR level in logs in Dagit](/images/concepts/logging/job-dagit-error.png) -->
+<!-- ![ERROR level in logs in the Dagster UI](/images/concepts/logging/job-ui-error.png) -->
 
 <Image
-alt="ERROR level in logs in Dagit"
-src="/images/concepts/logging/job-dagit-error.png"
+alt="ERROR level in logs in the Dagster UI"
+src="/images/concepts/logging/job-ui-error.png"
 width={4586}
 height={3054}
 />
@@ -331,7 +331,7 @@ prod_logs = hello_logs.to_job(
 )
 ```
 
-From Dagit, you can view and execute the `prod_logs` job and edit config in order to use the new Cloudwatch logger, for example:
+From the UI, you can view and execute the `prod_logs` job and edit config in order to use the new Cloudwatch logger, for example:
 
 ```yaml file=/concepts/logging/config_prod_job.yaml
 loggers:
