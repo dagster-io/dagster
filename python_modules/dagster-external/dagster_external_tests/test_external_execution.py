@@ -1,11 +1,16 @@
 import inspect
 import os
+import re
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterator, Mapping
 
 import pytest
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
+    DATA_VERSION_TAG,
+)
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -46,7 +51,7 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         ("fifo", "temp_file"),
     ],
 )
-def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir):
+def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir, capsys):
     if input_mode == "fifo":
         input_fifo = str(tmpdir.join("input"))
         os.mkfifo(input_fifo)
@@ -64,14 +69,16 @@ def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir):
 
         init_dagster_external()
         context = ExternalExecutionContext.get()
-        context.report_asset_metadata("foo", context.userdata["foo"])
+        context.log("hello world")
+        context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
+        context.report_asset_data_version("foo", "alpha")
 
     @asset
     def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
-        userdata = {"foo": "bar"}
+        extras = {"bar": "baz"}
         with temp_script(script_fn) as script_path:
             cmd = ["python", script_path]
-            ext.run(cmd, context, userdata)
+            ext.run(cmd, context, extras)
 
     resource_kwargs: Mapping[str, Any] = {
         "input_mode": input_mode,
@@ -87,4 +94,10 @@ def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir):
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
-        assert mat.asset_materialization.metadata["foo"].value == "bar"
+        assert mat.asset_materialization.metadata["bar"].value == "baz"
+        assert mat.asset_materialization.tags
+        assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+        assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+
+        captured = capsys.readouterr()
+        assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)

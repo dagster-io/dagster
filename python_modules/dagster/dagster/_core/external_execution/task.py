@@ -11,11 +11,13 @@ from dagster_external.protocol import (
     DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME,
     DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME,
     DAGSTER_EXTERNAL_ENV_KEYS,
-    ExternalExecutionUserdata,
+    ExternalExecutionExtras,
 )
 
 import dagster._check as check
 from dagster import OpExecutionContext
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.events import AssetKey
 from dagster._core.external_execution.context import build_external_execution_context
 
 
@@ -24,7 +26,7 @@ class ExternalExecutionTask:
         self,
         command: Sequence[str],
         context: OpExecutionContext,
-        userdata: Optional[ExternalExecutionUserdata],
+        extras: Optional[ExternalExecutionExtras],
         env: Optional[Mapping[str, str]] = None,
         input_mode: str = "stdio",
         output_mode: str = "stdio",
@@ -33,7 +35,7 @@ class ExternalExecutionTask:
     ):
         self._command = command
         self._context = context
-        self._userdata = userdata
+        self._extras = extras
         self._input_mode = input_mode
         self._output_mode = output_mode
         self._tempdir = None
@@ -103,7 +105,7 @@ class ExternalExecutionTask:
         return process.returncode
 
     def _write_input(self, input_target: Union[str, int]) -> None:
-        external_context = build_external_execution_context(self._context, self._userdata)
+        external_context = build_external_execution_context(self._context, self._extras)
         with open(input_target, "w") as input_stream:
             json.dump(external_context, input_stream)
 
@@ -113,6 +115,8 @@ class ExternalExecutionTask:
                 message = json.loads(line)
                 if message["method"] == "report_asset_metadata":
                     self._handle_report_asset_metadata(**message["params"])
+                elif message["method"] == "report_asset_data_version":
+                    self._handle_report_asset_data_version(**message["params"])
                 elif message["method"] == "log":
                     self._handle_log(**message["params"])
 
@@ -193,9 +197,15 @@ class ExternalExecutionTask:
     # ##### HANDLE NOTIFICATIONS
     # ########################
 
+    def _handle_report_asset_metadata(self, asset_key: str, label: str, value: Any) -> None:
+        key = AssetKey.from_user_string(asset_key)
+        output_name = self._context.output_for_asset_key(key)
+        self._context.add_output_metadata({label: value}, output_name)
+
+    def _handle_report_asset_data_version(self, asset_key: str, data_version: str) -> None:
+        key = AssetKey.from_user_string(asset_key)
+        self._context.set_data_version(key, DataVersion(data_version))
+
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")
         self._context.log.log(level, message)
-
-    def _handle_report_asset_metadata(self, label: str, value: Any) -> None:
-        self._context.add_output_metadata({label: value})
