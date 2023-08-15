@@ -842,7 +842,7 @@
                 "path": "/guides/customizing-run-queue-priority"
               },
               {
-                "title": "Validating data",
+                "title": "Validating data with Dagster Type factories",
                 "path": "/guides/dagster/dagster_type_factories"
               }
             ]
