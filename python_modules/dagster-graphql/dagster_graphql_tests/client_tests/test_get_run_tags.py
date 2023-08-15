@@ -10,8 +10,9 @@ from .conftest import MockClient, python_client_test_suite
 
 @python_client_test_suite
 def test_get_run_tags_success(mock_client: MockClient):
-    expected_result = [{"tag1": "value1", "tag2": "value2"}]
-    response = {"pipelineRunOrError": {"__typename": "PipelineRun", "tags": expected_result}}
+    expected_result = {"tag1": "value1", "tag2": "value2"}
+    tags = [{"key": key, "value": value} for key, value in expected_result.items()]
+    response = {"pipelineRunOrError": {"__typename": "PipelineRun", "tags": tags}}
     mock_client.mock_gql_client.execute.return_value = response
 
     actual_result = mock_client.python_client.get_run_tags("foo")
@@ -52,6 +53,9 @@ def test_get_run_tags_fails_with_query_error(mock_client: MockClient):
 
 class TestGetRunTagsWithClient(ExecutingGraphQLContextTestMatrix):
     def test_get_run_tags(self, graphql_context, graphql_client):
+        expected_result = {"tag1": "value1", "tag2": "value2"}
+        tags = [{"key": key, "value": value} for key, value in expected_result.items()]
+        
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
@@ -61,7 +65,7 @@ class TestGetRunTagsWithClient(ExecutingGraphQLContextTestMatrix):
                     "selector": selector,
                     "runConfigData": csv_hello_world_ops_config(),
                     "mode": "default",
-                    "executionMetadata": {"tags": [{"key": "dagster/test_key", "value": "test_value"}]},
+                    "executionMetadata": {"tags": tags},
                 }
             },
         )
@@ -71,8 +75,6 @@ class TestGetRunTagsWithClient(ExecutingGraphQLContextTestMatrix):
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
-        tags = graphql_client.get_run_tags(run_id)
+        actual_result = graphql_client.get_run_tags(run_id)
         
-        tag = [tag for tag in tags if tag["key"] == "dagster/test_key"]
-        assert len(tag) == 1, f"Expected to a tag with key 'dagster/test_key' in {tags}"
-        assert tag["dagster/test_key"] == "test_value"
+        assert actual_result == expected_result

@@ -309,7 +309,7 @@ class DagsterGraphQLClient:
         query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "PipelineRun" or query_result_type == "Run":
-            return query_result["tags"]
+            return {tag["key"]: tag["value"] for tag in query_result["tags"]}
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
