@@ -45,7 +45,7 @@ export const RunTags: React.FC<{
         ? {
             label: 'Add tag to filter',
             onClick: (tag: TagType) => {
-              onAddTag({token: 'tag', value: `${tag.key}=${tag.value}`});
+              onAddTag({token: 'tag', value: `${tag.originalKey || tag.key}=${tag.value}`});
             },
           }
         : null,
@@ -61,7 +61,7 @@ export const RunTags: React.FC<{
       list.push({
         label: tag.pinned ? 'Hide tag' : 'Show tag in table',
         onClick: () => {
-          onToggleTagPin(tag.key);
+          onToggleTagPin(tag.originalKey || tag.key);
         },
       });
     }
@@ -71,11 +71,17 @@ export const RunTags: React.FC<{
   const displayedTags = React.useMemo(() => {
     const priority = [];
     const others = [];
-    const copiedTags = tags.map(({key, value, pinned, link}) => ({key, value, pinned, link}));
+    const copiedTags: TagType[] = tags.map(({key, value, pinned, link}) => ({
+      key,
+      value,
+      pinned,
+      link,
+    }));
     for (const tag of copiedTags) {
       const {key} = tag;
       if (renamedTags.hasOwnProperty(key)) {
         tag.key = renamedTags[key as keyof typeof renamedTags];
+        tag.originalKey = key;
       }
 
       if (
