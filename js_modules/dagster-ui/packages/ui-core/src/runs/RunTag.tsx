@@ -38,6 +38,7 @@ export type TagType = {
   value: string;
   link?: string;
   pinned?: boolean;
+  originalKey?: string;
 };
 
 export type TagAction = {
