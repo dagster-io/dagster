@@ -96,6 +96,7 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
           ref={ref}
           target={item.isExternalLink ? '_blank' : '_self'}
           rel="noopener noreferrer"
+          onClick={onClick}
         >
           {itemContents}
         </a>
