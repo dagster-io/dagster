@@ -54,14 +54,13 @@ class OutputContext:
     :py:func:`dagster.build_output_context`.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import IOManager, OutputContext
+            from dagster import IOManager, OutputContext
 
-        class MyIOManager(IOManager):
-            def handle_output(self, context: OutputContext, obj):
-                ...
-
+            class MyIOManager(IOManager):
+                def handle_output(self, context: OutputContext, obj):
+                    ...
     """
 
     _step_key: Optional[str]
@@ -605,13 +604,13 @@ class OutputContext:
             event (Union[AssetMaterialization, AssetObservation]): The event to log.
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster import IOManager, AssetMaterialization
+                from dagster import IOManager, AssetMaterialization
 
-            class MyIOManager(IOManager):
-                def handle_output(self, context, obj):
-                    context.log_event(AssetMaterialization("foo"))
+                class MyIOManager(IOManager):
+                    def handle_output(self, context, obj):
+                        context.log_event(AssetMaterialization("foo"))
         """
         from dagster._core.events import DagsterEvent
 
@@ -673,13 +672,13 @@ class OutputContext:
             metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster import IOManager
+                from dagster import IOManager
 
-            class MyIOManager(IOManager):
-                def handle_output(self, context, obj):
-                    context.add_output_metadata({"foo": "bar"})
+                class MyIOManager(IOManager):
+                    def handle_output(self, context, obj):
+                        context.add_output_metadata({"foo": "bar"})
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
