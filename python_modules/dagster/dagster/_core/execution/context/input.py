@@ -44,14 +44,13 @@ class InputContext:
     :py:func:`dagster.build_input_context`.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import IOManager, InputContext
+            from dagster import IOManager, InputContext
 
-        class MyIOManager(IOManager):
-            def load_input(self, context: InputContext):
-                ...
-
+            class MyIOManager(IOManager):
+                def load_input(self, context: InputContext):
+                    ...
     """
 
     def __init__(
