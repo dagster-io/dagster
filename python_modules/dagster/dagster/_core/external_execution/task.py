@@ -12,7 +12,9 @@ from dagster_external.protocol import (
     DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME,
     DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalExecutionExtras,
+    ExternalExecutionIOMode,
 )
+from typing_extensions import Literal
 
 import dagster._check as check
 from dagster import OpExecutionContext
@@ -28,10 +30,10 @@ class ExternalExecutionTask:
         context: OpExecutionContext,
         extras: Optional[ExternalExecutionExtras],
         env: Optional[Mapping[str, str]] = None,
-        input_mode: str = "stdio",
-        output_mode: str = "stdio",
-        input_fifo: Optional[str] = None,
-        output_fifo: Optional[str] = None,
+        input_mode: ExternalExecutionIOMode = ExternalExecutionIOMode.stdio,
+        output_mode: ExternalExecutionIOMode = ExternalExecutionIOMode.stdio,
+        input_path: Optional[str] = None,
+        output_path: Optional[str] = None,
     ):
         self._command = command
         self._context = context
@@ -39,24 +41,9 @@ class ExternalExecutionTask:
         self._input_mode = input_mode
         self._output_mode = output_mode
         self._tempdir = None
-
-        if input_mode == "fifo":
-            self._validate_fifo("input", input_fifo)
-        self._input_fifo = check.opt_str_param(input_fifo, "input_fifo")
-
-        if output_mode == "fifo":
-            self._validate_fifo("output", output_fifo)
-        self._output_fifo = check.opt_str_param(output_fifo, "output_fifo")
-
+        self._input_path = input_path
+        self._output_path = output_path
         self.env = copy(env) if env is not None else {}
-
-    def _validate_fifo(self, input_output: str, value: Optional[str]) -> None:
-        if value is None or not os.path.exists(value):
-            check.failed(
-                f'Must provide pre-existing `{input_output}_fifo` when using "fifo"'
-                f' `{input_output}_mode`. Set `{input_output}_mode="temp_fifo"` to use a'
-                " system-generated temporary FIFO."
-            )
 
     def run(self) -> int:
         write_target, stdin_fd, input_env_vars = self._prepare_input()
@@ -65,14 +52,14 @@ class ExternalExecutionTask:
         input_thread = Thread(target=self._write_input, args=(write_target,), daemon=True)
         output_thread = Thread(target=self._read_output, args=(read_target,), daemon=True)
 
-        # Synchronously write the file in advance if using temp_file mode
-        if self._input_mode == "temp_file":
+        # Synchronously write the file in advance if using file mode
+        if self._input_mode == ExternalExecutionIOMode.file:
             input_thread.run()
         else:
             input_thread.start()
 
-        # If we're using an output tempfile, we won't read it until the process is done
-        if self._output_mode != "temp_file":
+        # If we're using an output file, we won't read it until the process is done
+        if self._output_mode != ExternalExecutionIOMode.file:
             output_thread.start()
 
         process = Popen(
@@ -90,15 +77,19 @@ class ExternalExecutionTask:
         process.wait()
 
         # Tempfile input will have been synchronously written without a living thread
-        if self._input_mode != "temp_file":
+        if self._input_mode != ExternalExecutionIOMode.file:
             input_thread.join()
 
         # Read tempfile output synchronously ofter everything the process has finished
-        if self._output_mode == "temp_file":
+        if self._output_mode == ExternalExecutionIOMode.file:
             output_thread.run()
         else:
             output_thread.join()
 
+        if self._input_path:
+            os.remove(self._input_path)
+        if self._output_path:
+            os.remove(self._output_path)
         if self._tempdir is not None:
             shutil.rmtree(self._tempdir)
 
@@ -121,71 +112,58 @@ class ExternalExecutionTask:
                     self._handle_log(**message["params"])
 
     def _prepare_input(self) -> Tuple[Union[str, int], Optional[int], Mapping[str, str]]:
-        if self._input_mode == "stdio":
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: self._input_mode.value}
+        if self._input_mode == ExternalExecutionIOMode.stdio:
             stdin_fd, write_target = os.pipe()
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: "stdio",
-            }
-        elif self._input_mode == "temp_file":
+        elif self._input_mode in [ExternalExecutionIOMode.file, ExternalExecutionIOMode.fifo]:
             stdin_fd = None
-            write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME)
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: "temp_file",
-                DAGSTER_EXTERNAL_ENV_KEYS["input"]: write_target,
-            }
-        elif self._input_mode == "fifo":
-            assert self._input_fifo is not None
-            stdin_fd = None
-            write_target = self._input_fifo
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: "fifo",
-                DAGSTER_EXTERNAL_ENV_KEYS["input"]: self._input_fifo,
-            }
-        elif self._input_mode == "temp_fifo":
-            stdin_fd = None
-            write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME)
-            os.mkfifo(write_target)
-            write_target = write_target
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: "fifo",
-                DAGSTER_EXTERNAL_ENV_KEYS["input"]: write_target,
-            }
+            if self._input_path is None:
+                write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME)
+            else:
+                self._validate_target_path(self._input_path, "input")
+                self._clear_target_path(self._input_path)
+                write_target = self._input_path
+            if self._input_mode == ExternalExecutionIOMode.fifo and not os.path.exists(
+                write_target
+            ):
+                os.mkfifo(write_target)
+            env[DAGSTER_EXTERNAL_ENV_KEYS["input"]] = write_target
         else:
             check.failed(f"Unsupported input mode: {self._input_mode}")
         return write_target, stdin_fd, env
 
     def _prepare_output(self) -> Tuple[Union[str, int], Optional[int], Mapping[str, str]]:
-        if self._output_mode == "stdio":
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: self._output_mode.value}
+        if self._output_mode == ExternalExecutionIOMode.stdio:
             read_target, stdout_fd = os.pipe()
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "stdio",
-            }
-        elif self._output_mode == "temp_file":
+        elif self._output_mode in [ExternalExecutionIOMode.file, ExternalExecutionIOMode.fifo]:
             stdout_fd = None
-            read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME)
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "temp_file",
-                DAGSTER_EXTERNAL_ENV_KEYS["output"]: read_target,
-            }
-        elif self._output_mode == "fifo":
-            assert self._output_fifo is not None
-            stdout_fd = None
-            read_target = self._output_fifo
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "fifo",
-                DAGSTER_EXTERNAL_ENV_KEYS["output"]: self._output_fifo,
-            }
-        elif self._output_mode == "temp_fifo":
-            stdout_fd = None
-            read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME)
-            os.mkfifo(read_target)
-            env = {
-                DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: "fifo",
-                DAGSTER_EXTERNAL_ENV_KEYS["output"]: read_target,
-            }
+            if self._output_path is None:
+                read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME)
+            else:
+                self._validate_target_path(self._output_path, "output")
+                self._clear_target_path(self._output_path)
+                read_target = self._output_path
+            if self._output_mode == ExternalExecutionIOMode.fifo and not os.path.exists(
+                read_target
+            ):
+                os.mkfifo(read_target)
+            env[DAGSTER_EXTERNAL_ENV_KEYS["output"]] = read_target
         else:
             check.failed(f"Unsupported output mode: {self._output_mode}")
         return read_target, stdout_fd, env
+
+    def _validate_target_path(self, path: str, target: Literal["input", "output"]) -> None:
+        dirname = os.path.dirname(path)
+        check.invariant(
+            os.path.isdir(dirname),
+            f"{path} has been specified as `{target}_path` but directory {dirname} does not"
+            " currently exist. You must create it.",
+        )
+
+    def _clear_target_path(self, path: str) -> None:
+        if os.path.exists(path):
+            os.remove(path)
 
     @property
     def tempdir(self) -> str:
