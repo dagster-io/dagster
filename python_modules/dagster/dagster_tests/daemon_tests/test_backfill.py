@@ -44,6 +44,7 @@ from dagster._core.host_representation import (
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.test_utils import (
+    environ,
     step_did_not_run,
     step_failed,
     step_succeeded,
@@ -646,6 +647,43 @@ def test_unloadable_backfill(instance, workspace_context):
     backfill = instance.get_backfill("simple")
     assert backfill.status == BulkActionStatus.FAILED
     assert isinstance(backfill.error, SerializableErrorInfo)
+
+def test_unloadable_backfill_retry(instance, workspace_context, unloadable_location_workspace_context):
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id="retry_backfill",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    with environ({"RETRY_CODE_LOCATION_ERROR": "1"}):
+        # backfill can't start, but doesn't error
+        list(execute_backfill_iteration(unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")))
+        assert instance.get_runs_count() == 0
+        backfill = instance.get_backfill("retry_backfill")
+        assert backfill.status == BulkActionStatus.REQUESTED
+
+        # retries, still not loadable
+        list(execute_backfill_iteration(unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")))
+        assert instance.get_runs_count() == 0
+        backfill = instance.get_backfill("retry_backfill")
+        assert backfill.status == BulkActionStatus.REQUESTED
+
+        # continues once the code location is loadable again
+        list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+        assert instance.get_runs_count() == 1
 
 
 def test_backfill_from_partitioned_job(

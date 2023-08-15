@@ -10,7 +10,6 @@ from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
-RETRY_CODE_LOCATION_ERROR = bool(os.environ.get("RETRY_CODE_LOCATION_ERROR", ""))
 
 def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
@@ -43,7 +42,7 @@ def execute_backfill_iteration(
                 )
         except Exception as e:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            if RETRY_CODE_LOCATION_ERROR and isinstance(e, DagsterAssetBackfillDataLoadError):
+            if os.environ.get("RETRY_CODE_LOCATION_ERROR") and isinstance(e, DagsterAssetBackfillDataLoadError):
                 logger.error(f"Backfill error for {backfill.backfill_id}: {error_info.to_string()}. Will retry.")
             else:
                 instance.update_backfill(
