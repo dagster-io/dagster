@@ -52,7 +52,7 @@ export const ProductTour: React.FC<Props> = ({
       return <img src={img} style={{borderRadius: '6px'}} />;
     }
     if (video) {
-      return <video src={video} style={{borderRadius: '6px'}} autoPlay loop muted controls />;
+      return <video src={video} style={{borderRadius: '6px'}} autoPlay loop muted />;
     }
     return object;
   }, [img, video, object]);
