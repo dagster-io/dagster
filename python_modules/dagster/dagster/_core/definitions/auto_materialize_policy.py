@@ -1,12 +1,36 @@
 from enum import Enum
-from typing import AbstractSet, NamedTuple, Optional, TYPE_CHECKING
+from typing import AbstractSet, Dict, NamedTuple, Optional, TYPE_CHECKING, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+    UnpackContext,
+    UnpackedValue,
+    whitelist_for_serdes,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
+
+class AutoMaterializePolicySerializer(NamedTupleSerializer):
+    def before_unpack(
+        self, context: UnpackContext, unpacked_dict: Dict[str, UnpackedValue]
+    ) -> Dict[str, UnpackedValue]:
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
+        rules = check.is_list(unpacked_dict.get("rules", []), AutoMaterializeRule)
+        # handle backcompat for policies serialized with a set of booleans
+        for field, rule in [
+            ("on_missing", AutoMaterializeRule.materialize_on_missing()),
+            ("on_new_parent_data", AutoMaterializeRule.materialize_on_parent_updated()),
+            ("for_freshness", AutoMaterializeRule.materialize_on_required_for_freshness()),
+        ]:
+            if unpacked_dict.get(field):
+                rules.append(rule)
+        return unpacked_dict
 
 
 class AutoMaterializePolicyType(Enum):
@@ -20,9 +44,7 @@ class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
         [
-            ("on_missing", bool),
-            ("on_new_parent_data", bool),
-            ("for_freshness", bool),
+            ("rules", Sequence["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
         ],
     )
@@ -69,15 +91,11 @@ class AutoMaterializePolicy(
 
     def __new__(
         cls,
-        on_missing: bool,
-        on_new_parent_data: bool,
-        for_freshness: bool,
+        rules: Sequence["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
     ):
-        check.invariant(
-            on_new_parent_data or for_freshness,
-            "One of on_new_parent_data or for_freshness must be True",
-        )
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+
         check.invariant(
             max_materializations_per_minute is None or max_materializations_per_minute > 0,
             "max_materializations_per_minute must be positive. To disable rate-limiting, set it"
@@ -86,9 +104,7 @@ class AutoMaterializePolicy(
 
         return super(AutoMaterializePolicy, cls).__new__(
             cls,
-            on_missing=on_missing,
-            on_new_parent_data=on_new_parent_data,
-            for_freshness=for_freshness,
+            rules=check.list_param(rules, "rules", of_type=AutoMaterializeRule),
             max_materializations_per_minute=max_materializations_per_minute,
         )
 
@@ -98,22 +114,17 @@ class AutoMaterializePolicy(
 
     @property
     def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
-        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-
-        rules = set()
-        if self.on_missing:
-            rules.add(AutoMaterializeRule.materialize_on_missing())
-        if self.on_new_parent_data:
-            rules.add(AutoMaterializeRule.materialize_on_parent_updated())
-        if self.for_freshness:
-            rules.add(AutoMaterializeRule.materialize_on_required_for_freshness())
-        return rules
+        return {
+            rule
+            for rule in self.rules
+            if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE
+        }
 
     @property
     def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
-        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-
-        return {AutoMaterializeRule.skip_on_parent_outdated()}
+        return {
+            rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
+        }
 
     @public
     @staticmethod
@@ -127,9 +138,12 @@ class AutoMaterializePolicy(
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
-            on_missing=True,
-            on_new_parent_data=True,
-            for_freshness=True,
+            rules=[
+                AutoMaterializeRule.materialize_on_missing(),
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                AutoMaterializeRule.skip_on_parent_outdated(),
+            ],
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
             ),
@@ -147,9 +161,10 @@ class AutoMaterializePolicy(
                 and will require manual materialization in order to be updated. Defaults to 1.
         """
         return AutoMaterializePolicy(
-            on_missing=False,
-            on_new_parent_data=False,
-            for_freshness=True,
+            rules=[
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                AutoMaterializeRule.skip_on_parent_outdated(),
+            ],
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
             ),
@@ -157,6 +172,6 @@ class AutoMaterializePolicy(
 
     @property
     def policy_type(self) -> AutoMaterializePolicyType:
-        if self.on_new_parent_data is True:
+        if AutoMaterializeRule.materialize_on_parent_updated() in self.rules:
             return AutoMaterializePolicyType.EAGER
         return AutoMaterializePolicyType.LAZY
