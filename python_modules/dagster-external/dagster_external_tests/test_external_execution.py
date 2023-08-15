@@ -1,12 +1,12 @@
 import inspect
-import os
 import re
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator, Mapping
+from typing import Any, Callable, Iterator, Mapping, Optional
 
 import pytest
+from dagster._check import CheckError
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
@@ -18,6 +18,7 @@ from dagster._core.external_execution.resource import (
     ExternalExecutionResource,
 )
 from dagster._core.instance_for_test import instance_for_test
+from dagster_external.protocol import ExternalExecutionIOMode
 
 
 @contextmanager
@@ -31,38 +32,57 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
 
 
 @pytest.mark.parametrize(
-    ["input_mode", "output_mode"],
+    ["input_spec", "output_spec"],
     [
         ("stdio", "stdio"),
-        ("stdio", "temp_fifo"),
-        ("stdio", "fifo"),
-        ("stdio", "temp_file"),
-        ("temp_file", "stdio"),
-        ("temp_file", "temp_fifo"),
-        ("temp_file", "fifo"),
-        ("temp_file", "temp_file"),
-        ("temp_fifo", "stdio"),
-        ("temp_fifo", "temp_fifo"),
-        ("temp_fifo", "fifo"),
-        ("temp_fifo", "temp_file"),
-        ("fifo", "stdio"),
-        ("fifo", "temp_fifo"),
-        ("fifo", "fifo"),
-        ("fifo", "temp_file"),
+        ("stdio", "file/auto"),
+        ("stdio", "file/user"),
+        ("stdio", "fifo/auto"),
+        ("stdio", "fifo/user"),
+        ("file/auto", "stdio"),
+        ("file/auto", "file/auto"),
+        ("file/auto", "file/user"),
+        ("file/auto", "fifo/auto"),
+        ("file/auto", "fifo/user"),
+        ("file/user", "stdio"),
+        ("file/user", "file/auto"),
+        ("file/user", "file/user"),
+        ("file/user", "fifo/auto"),
+        ("file/user", "fifo/user"),
+        ("fifo/auto", "stdio"),
+        ("fifo/auto", "file/auto"),
+        ("fifo/auto", "file/user"),
+        ("fifo/auto", "fifo/auto"),
+        ("fifo/auto", "fifo/user"),
+        ("fifo/user", "stdio"),
+        ("fifo/user", "file/auto"),
+        ("fifo/user", "file/user"),
+        ("fifo/user", "fifo/auto"),
+        ("fifo/user", "fifo/user"),
     ],
 )
-def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir, capsys):
-    if input_mode == "fifo":
-        input_fifo = str(tmpdir.join("input"))
-        os.mkfifo(input_fifo)
+def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, capsys):
+    if input_spec == "stdio":
+        input_mode = ExternalExecutionIOMode.stdio
+        input_path = None
     else:
-        input_fifo = None
+        input_mode_spec, input_path_spec = input_spec.split("/")
+        input_mode = ExternalExecutionIOMode(input_mode_spec)
+        if input_path_spec == "auto":
+            input_path = None
+        else:
+            input_path = str(tmpdir.join("input"))
 
-    if output_mode == "fifo":
-        output_fifo = str(tmpdir.join("output"))
-        os.mkfifo(output_fifo)
+    if output_spec == "stdio":
+        output_mode = ExternalExecutionIOMode.stdio
+        output_path = None
     else:
-        output_fifo = None
+        output_mode_spec, output_path_spec = output_spec.split("/")
+        output_mode = ExternalExecutionIOMode(output_mode_spec)
+        if output_path_spec == "auto":
+            output_path = None
+        else:
+            output_path = str(tmpdir.join("output"))
 
     def script_fn():
         from dagster_external import ExternalExecutionContext, init_dagster_external
@@ -83,8 +103,8 @@ def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir, cap
     resource_kwargs: Mapping[str, Any] = {
         "input_mode": input_mode,
         "output_mode": output_mode,
-        "input_fifo": input_fifo,
-        "output_fifo": output_fifo,
+        "input_path": input_path,
+        "output_path": output_path,
     }
     with instance_for_test() as instance:
         materialize(
@@ -101,3 +121,40 @@ def test_external_execution_asset(input_mode: str, output_mode: str, tmpdir, cap
 
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
+
+
+PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
+
+
+@pytest.mark.parametrize(
+    ["input_mode_name", "input_path", "output_mode_name", "output_path"],
+    [
+        ("file", PATH_WITH_NONEXISTENT_DIR, "stdio", None),
+        ("fifo", PATH_WITH_NONEXISTENT_DIR, "stdio", None),
+        ("stdio", None, "file", PATH_WITH_NONEXISTENT_DIR),
+        ("stdio", None, "fifo", PATH_WITH_NONEXISTENT_DIR),
+    ],
+)
+def test_external_execution_invalid_path(
+    input_mode_name: str,
+    input_path: Optional[str],
+    output_mode_name: str,
+    output_path: Optional[str],
+):
+    def script_fn():
+        pass
+
+    @asset
+    def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
+        with temp_script(script_fn) as script_path:
+            cmd = ["python", script_path]
+            ext.run(cmd, context)
+
+    resource = ExternalExecutionResource(
+        input_mode=ExternalExecutionIOMode(input_mode_name),
+        input_path=input_path,
+        output_mode=ExternalExecutionIOMode(output_mode_name),
+        output_path=output_path,
+    )
+    with pytest.raises(CheckError, match=r"directory \S+ does not currently exist"):
+        materialize([foo], resources={"ext": resource})

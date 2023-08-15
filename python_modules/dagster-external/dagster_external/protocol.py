@@ -1,10 +1,16 @@
+from enum import Enum
 from typing import Any, Mapping, Optional, Sequence
 
 from typing_extensions import Final, TypeAlias, TypedDict
 
 ExternalExecutionExtras: TypeAlias = Mapping[str, Any]
 
+# ##### PARAMETERS
+
+DAGSTER_EXTERNAL_DEFAULT_HOST: Final = "localhost"
 DAGSTER_EXTERNAL_DEFAULT_PORT: Final = 9716
+DAGSTER_EXTERNAL_DEFAULT_INPUT_MODE: Final = "stdio"
+DAGSTER_EXTERNAL_DEFAULT_OUTPUT_MODE: Final = "stdio"
 DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME: Final = "dagster_external_input"
 DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME: Final = "dagster_external_output"
 
@@ -17,15 +23,24 @@ DAGSTER_EXTERNAL_ENV_KEYS: Final = {
     "port": "DAGSTER_EXTERNAL_PORT",
 }
 
+# ##### IO MODES
+
+
+class ExternalExecutionIOMode(str, Enum):
+    stdio = "stdio"
+    file = "file"
+    fifo = "fifo"
+
+
+# ##### NOTIFICATION
+
 
 class Notification(TypedDict):
     method: str
     params: Optional[Mapping[str, Any]]
 
 
-# ########################
 # ##### EXTERNAL EXECUTION CONTEXT
-# ########################
 
 
 class ExternalExecutionContextData(TypedDict):
