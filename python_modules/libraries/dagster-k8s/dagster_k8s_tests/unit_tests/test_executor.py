@@ -54,6 +54,11 @@ VOLUME_MOUNTS_TAGS = [{"name": "volume1", "mount_path": "foo/bar", "sub_path": "
 
 OTHER_VOLUME_MOUNTS_TAGS = [{"name": "volume2", "mount_path": "baz/quux", "sub_path": "voom.txt"}]
 
+THIRD_RESOURCES_TAGS = {
+    "limits": {"cpu": "5000m", "memory": "2560Mi"},
+    "requests": {"cpu": "2500m", "memory": "1280Mi"},
+}
+
 
 @job(
     executor_def=k8s_job_executor,
@@ -645,11 +650,18 @@ def test_step_raw_k8s_config_inheritance(
     )
 
     # Verifies that raw k8s config for step pods is pulled from the container context and
-    # dagster-k8s/config tags on the op, but *not* from tags on the job
+    # executor-level config and dagster-k8s/config tags on the op, but *not* from tags on the job
     executor = _get_executor(
         k8s_run_launcher_instance,
         reconstructable(bar_with_tags_in_job_and_op),
-        {},
+        {
+            "step_k8s_config": {  # injected into every step
+                "container_config": {
+                    "working_dir": "MY_WORKING_DIR",  # set on every step
+                    "resources": THIRD_RESOURCES_TAGS,  # overridden at the op level, so ignored
+                }
+            }
+        },
     )
 
     run = create_run_for_test(
@@ -672,4 +684,5 @@ def test_step_raw_k8s_config_inheritance(
     raw_k8s_config = container_context.get_run_user_defined_k8s_config()
 
     assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
+    assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
     assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS
