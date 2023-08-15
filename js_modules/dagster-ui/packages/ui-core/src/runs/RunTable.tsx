@@ -15,6 +15,7 @@ import {
   ButtonLink,
   ProductTour,
   ProductTourPosition,
+  Caption,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -425,20 +426,27 @@ const RunRow: React.FC<{
               </Link>
             </Box>
           )}
-          <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
+          <Box
+            flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
+            style={{gap: '4px 8px'}}
+          >
             <RunTagsWrapper>
               {tagsToShow.length ? (
                 <RunTags tags={tagsToShow} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
               ) : null}
             </RunTagsWrapper>
             {allTagsWithPinned.length > tagsToShow.length ? (
-              <ButtonLink
-                onClick={() => {
-                  setShowRunTags(true);
-                }}
-              >
-                View all {allTagsWithPinned.length} tag{allTagsWithPinned.length === 1 ? '' : 's'}
-              </ButtonLink>
+              <Caption>
+                <ButtonLink
+                  onClick={() => {
+                    setShowRunTags(true);
+                  }}
+                  color={Colors.Gray700}
+                  style={{margin: '-4px', padding: '4px'}}
+                >
+                  View all tags ({allTagsWithPinned.length})
+                </ButtonLink>
+              </Caption>
             ) : null}
           </Box>
         </Box>
