@@ -59,7 +59,7 @@ export const RunTags: React.FC<{
     }
     if (onToggleTagPin) {
       list.push({
-        label: tag.pinned ? 'Unpin tag' : 'Pin tag',
+        label: tag.pinned ? 'Hide tag' : 'Show tag in table',
         onClick: () => {
           onToggleTagPin(tag.key);
         },
