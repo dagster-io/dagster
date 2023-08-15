@@ -3,7 +3,6 @@ from typing import AbstractSet, Dict, NamedTuple, Optional, TYPE_CHECKING, Seque
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -108,12 +107,10 @@ class AutoMaterializePolicy(
             max_materializations_per_minute=max_materializations_per_minute,
         )
 
-    @staticmethod
-    def from_rules(rules: AbstractSet["AutoMaterializeRule"]):
-        pass
-
     @property
     def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
+
         return {
             rule
             for rule in self.rules
@@ -122,6 +119,8 @@ class AutoMaterializePolicy(
 
     @property
     def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
+        from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
+
         return {
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
         }
