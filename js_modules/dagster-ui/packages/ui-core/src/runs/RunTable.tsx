@@ -13,6 +13,8 @@ import {
   DialogBody,
   DialogFooter,
   ButtonLink,
+  ProductTour,
+  ProductTourPosition,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -42,6 +44,7 @@ import {
   titleForRun,
 } from './RunUtils';
 import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
+import ShowAndHideTagsMP4 from './ShowAndHideRunTags.mp4';
 import {RunTableRunFragment} from './types/RunTable.types';
 
 interface RunTableProps {
@@ -136,7 +139,9 @@ export const RunTable = (props: RunTableProps) => {
               ) : null}
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
-              <th>Target</th>
+              <th>
+                <TargetHeader />
+              </th>
               {hideCreatedBy ? null : <th style={{width: 160}}>Launched by</th>}
               <th style={{width: 120}}>Status</th>
               <th style={{width: 190}}>Duration</th>
@@ -544,4 +549,35 @@ function toggleTag(tagsArr: string[] | undefined, tagKey: string): string[] {
   } else {
     return [...tags, tagKey];
   }
+}
+
+function TargetHeader() {
+  const [hideTabPinningNux, setHideTabPinningNux] = useStateWithStorage<any>(
+    'RunTableTabPinningNux',
+    (value) => value,
+  );
+  if (hideTabPinningNux) {
+    return <div>Target</div>;
+  }
+  return (
+    <ProductTour
+      title="Hide and show run tags"
+      description={
+        <>
+          You can show tags that you prefer quick access to and hide tags you don&apos;t by hovering
+          over the tag and selecting the show/hide tag option.
+        </>
+      }
+      position={ProductTourPosition.BOTTOM_RIGHT}
+      video={ShowAndHideTagsMP4}
+      width="616px"
+      actions={{
+        dismiss: () => {
+          setHideTabPinningNux('1');
+        },
+      }}
+    >
+      <div>Target</div>
+    </ProductTour>
+  );
 }

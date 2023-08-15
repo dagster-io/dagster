@@ -15,35 +15,35 @@ export const RunsRootMock = buildQueryMock<RunsRootQuery, RunsRootQueryVariables
           tags: [
             buildPipelineTag({
               key: DagsterTag.Partition,
-              value: 'five',
+              value: '5',
             }),
             buildPipelineTag({
               key: DagsterTag.Backfill,
-              value: 'seven',
+              value: 'abc123',
             }),
             buildPipelineTag({
               key: DagsterTag.SensorName,
-              value: 'sensor',
+              value: 's3_sensor',
             }),
             buildPipelineTag({
-              key: 'Marco',
-              value: 'Polo',
+              key: 'snowflake_db',
+              value: 'customers',
             }),
             buildPipelineTag({
-              key: 'Test',
-              value: 'Test2',
+              key: 'team',
+              value: 'sales',
             }),
             buildPipelineTag({
-              key: 'PinMe',
-              value: 'Please',
+              key: 'job',
+              value: 'cloud_analytics',
             }),
             buildPipelineTag({
-              key: 'context',
-              value: 'contextValue',
+              key: 'max_run_time',
+              value: '2700',
             }),
             buildPipelineTag({
-              key: 'Marco2',
-              value: 'Polo2',
+              key: 'automated',
+              value: 'true',
             }),
           ],
         }),

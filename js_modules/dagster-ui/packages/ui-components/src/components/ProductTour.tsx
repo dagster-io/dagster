@@ -45,14 +45,14 @@ export const ProductTour: React.FC<Props> = ({
   img,
   video,
   object,
-  width,
+  width = '260px',
 }) => {
   const media = React.useMemo(() => {
     if (img) {
       return <img src={img} style={{borderRadius: '6px'}} />;
     }
     if (video) {
-      return <video src={video} style={{borderRadius: '6px'}} />;
+      return <video src={video} style={{borderRadius: '6px'}} autoPlay loop muted controls />;
     }
     return object;
   }, [img, video, object]);
@@ -102,7 +102,6 @@ const ProductTourContainer = styled(Box)`
   padding: 16px;
   box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.12);
 
-  width: 260px;
   &,
   button {
     &,
