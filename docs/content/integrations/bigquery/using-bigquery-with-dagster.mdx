@@ -140,7 +140,6 @@ In this example, you're creating a <PyObject object="SourceAsset" /> for a pre-e
 
 </TabGroup>
 
-
 ### Step 3: Define downstream assets
 
 Once you have created an asset or source asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data.
@@ -272,7 +271,7 @@ The BigQuery I/O manager can create and update tables for your Dagster defined a
 
 #### Store a Dagster asset as a table in BigQuery
 
-To store data in BigQuery using the BigQuery I/O manager,you can simply return a Pandas DataFrame from your asset. Dagster will handle storing and loading your assets in BigQuery.
+To store data in BigQuery using the BigQuery I/O manager, you can simply return a Pandas DataFrame from your asset. Dagster will handle storing and loading your assets in BigQuery.
 
 ```python file=/integrations/bigquery/tutorial/io_manager/basic_example.py
 import pandas as pd
