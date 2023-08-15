@@ -278,6 +278,18 @@ const RunRow: React.FC<{
     }
   };
 
+  // All system tags are unpinned by default so we track pinned.
+  const [pinnedSystemTags, setPinnedSystemTags] = useStateWithStorage(
+    'pinned-system-tags',
+    (value) => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      return [];
+    },
+  );
+
+  // All user tags are pinned by default so we track unpinned.
   const [unpinnedTags, setUnpinnedTags] = useStateWithStorage('unpinned-tags', (value) => {
     if (Array.isArray(value)) {
       return value;
@@ -293,11 +305,15 @@ const RunRow: React.FC<{
         value: run.mode,
       });
     }
-    return allTags.map((tag) => ({
-      ...tag,
-      pinned: unpinnedTags.indexOf(tag.key) === -1,
-    }));
-  }, [run, isJob, unpinnedTags]);
+    return allTags.map((tag) => {
+      return {
+        ...tag,
+        pinned: isSystemTag(tag.key)
+          ? pinnedSystemTags.indexOf(tag.key) !== -1
+          : unpinnedTags.indexOf(tag.key) === -1,
+      };
+    });
+  }, [run, isJob, pinnedSystemTags, unpinnedTags]);
 
   const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
@@ -329,25 +345,26 @@ const RunRow: React.FC<{
         // We already added this tag
         return;
       }
-      if (unpinnedTags.indexOf(tag.key) === -1) {
+      if (tag.pinned) {
         tags.push(tag);
       }
     });
     return tags;
-  }, [targetBackfill, allTagsWithPinned, run.assetSelection?.length, unpinnedTags]);
+  }, [targetBackfill, allTagsWithPinned, run.assetSelection?.length]);
 
   const onToggleTagPin = React.useCallback(
     (tagKey: string) => {
-      setUnpinnedTags((unpinnedTags) => {
-        unpinnedTags = unpinnedTags || [];
-        if (unpinnedTags.indexOf(tagKey) !== -1) {
-          return unpinnedTags.filter((key) => key !== tagKey);
-        } else {
-          return [...unpinnedTags, tagKey];
-        }
-      });
+      if (isSystemTag(tagKey)) {
+        setPinnedSystemTags((pinnedSystemTags) => {
+          return toggleTag(pinnedSystemTags, tagKey);
+        });
+      } else {
+        setUnpinnedTags((unpinnedTags) => {
+          return toggleTag(unpinnedTags, tagKey);
+        });
+      }
     },
-    [setUnpinnedTags],
+    [setUnpinnedTags, setPinnedSystemTags],
   );
 
   return (
@@ -514,3 +531,16 @@ const RunTagsWrapper = styled.div`
     display: contents;
   }
 `;
+
+function isSystemTag(key: string) {
+  return key.startsWith(DagsterTag.Namespace) || key === 'mode';
+}
+
+function toggleTag(tagsArr: string[] | undefined, tagKey: string): string[] {
+  const tags = tagsArr || [];
+  if (tags.indexOf(tagKey) !== -1) {
+    return tags.filter((key) => key !== tagKey);
+  } else {
+    return [...tags, tagKey];
+  }
+}
