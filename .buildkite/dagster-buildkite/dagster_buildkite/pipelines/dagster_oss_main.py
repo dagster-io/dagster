@@ -22,7 +22,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     # overridden by setting the `INTERNAL_BRANCH` environment variable or passing
     # `[INTERNAL_BRANCH=<branch>]` in the commit message. Master/release branches
     # always run on the matching internal branch.
-    if not oss_contribution:
+    if not oss_contribution and not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         if branch_name == "master" or is_release_branch(branch_name):
             pipeline_name = "internal"
             trigger_branch = branch_name  # build on matching internal release branch
