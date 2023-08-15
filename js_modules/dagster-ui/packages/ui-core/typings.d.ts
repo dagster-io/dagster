@@ -18,6 +18,12 @@ declare module '*.svg' {
   export default content;
 }
 
+declare module '*.mp4' {
+  const src: string;
+  // eslint-disable-next-line import/no-default-export
+  export default src;
+}
+
 declare module 'worker-loader!*' {
   class WebpackWorker extends Worker {
     constructor();
