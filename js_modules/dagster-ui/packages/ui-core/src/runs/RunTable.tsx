@@ -355,13 +355,9 @@ const RunRow: React.FC<{
   const onToggleTagPin = React.useCallback(
     (tagKey: string) => {
       if (isSystemTag(tagKey)) {
-        setPinnedSystemTags((pinnedSystemTags) => {
-          return toggleTag(pinnedSystemTags, tagKey);
-        });
+        setPinnedSystemTags((pinnedSystemTags) => toggleTag(pinnedSystemTags, tagKey));
       } else {
-        setUnpinnedTags((unpinnedTags) => {
-          return toggleTag(unpinnedTags, tagKey);
-        });
+        setUnpinnedTags((unpinnedTags) => toggleTag(unpinnedTags, tagKey));
       }
     },
     [setUnpinnedTags, setPinnedSystemTags],
