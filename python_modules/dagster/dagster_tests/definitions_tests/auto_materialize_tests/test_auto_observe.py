@@ -110,6 +110,7 @@ def test_reconcile():
         cursor=AssetDaemonCursor.empty(),
         materialize_run_tags=None,
         observe_run_tags={"tag1": "tag_value"},
+        respect_materialization_data_versions=False,
     ).evaluate()
     assert len(run_requests) == 1
     assert run_requests[0].tags.get("tag1") == "tag_value"

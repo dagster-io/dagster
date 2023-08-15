@@ -881,6 +881,12 @@ class DagsterInstance(DynamicPartitionsStore):
     def auto_materialize_run_tags(self) -> Dict[str, str]:
         return self.get_settings("auto_materialize").get("run_tags", {})
 
+    @property
+    def auto_materialize_respect_materialization_data_versions(self) -> bool:
+        return self.get_settings("auto_materialize").get(
+            "respect_materialization_data_versions", False
+        )
+
     # python logs
 
     @property

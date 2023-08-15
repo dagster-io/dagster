@@ -32,7 +32,6 @@ partitioned_to_partitioned = [
     asset_def("three", ["two"], partitions_def=three_partitions_def, code_version="0"),
 ]
 
-"""
 version_scenarios = {
     "all_unpartitioned_version_updated": AssetReconciliationScenario(
         assets=all_unpartitioned,
@@ -49,6 +48,7 @@ version_scenarios = {
         ),
         unevaluated_runs=[run(["two"])],
         expected_run_requests=[],
+        requires_respect_materialization_data_versions=True,
     ),
     "partitioned_to_unpartitioned_version_updated": AssetReconciliationScenario(
         assets=partitioned_to_unpartitioned,
@@ -77,6 +77,7 @@ version_scenarios = {
         ),
         unevaluated_runs=[run(["two"], partition_key="c")],
         expected_run_requests=[],
+        requires_respect_materialization_data_versions=True,
     ),
     "unpartitioned_to_partitioned_version_updated": AssetReconciliationScenario(
         assets=unpartitioned_to_partitioned,
@@ -109,6 +110,7 @@ version_scenarios = {
         ),
         unevaluated_runs=[run(["two"])],
         expected_run_requests=[],
+        requires_respect_materialization_data_versions=True,
     ),
     "partitioned_to_partitioned_version_updated": AssetReconciliationScenario(
         assets=partitioned_to_partitioned,
@@ -144,7 +146,6 @@ version_scenarios = {
             run(["two"], partition_key="c"),
         ],
         expected_run_requests=[],
+        requires_respect_materialization_data_versions=True,
     ),
 }
-"""
-version_scenarios = {}
