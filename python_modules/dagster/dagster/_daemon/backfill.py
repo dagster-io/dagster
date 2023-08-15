@@ -1,13 +1,16 @@
 import logging
+import os
 import sys
 from typing import Iterable, Mapping, Optional, cast
 
+from dagster._core.errors import DagsterAssetBackfillDataLoadError
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+RETRY_CODE_LOCATION_ERROR = bool(os.environ.get("RETRY_CODE_LOCATION_ERROR", ""))
 
 def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
@@ -38,10 +41,14 @@ def execute_backfill_iteration(
                 yield from execute_job_backfill_iteration(
                     backfill, logger, workspace_process_context, debug_crash_flags, instance
                 )
-        except Exception:
+        except Exception as e:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            instance.update_backfill(
-                backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
-            )
-            logger.error(f"Backfill failed for {backfill.backfill_id}: {error_info.to_string()}")
+            if RETRY_CODE_LOCATION_ERROR and isinstance(e, DagsterAssetBackfillDataLoadError):
+                logger.error(f"Backfill error for {backfill.backfill_id}: {error_info.to_string()}. Will retry.")
+            else:
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                )
+                logger.error(f"Backfill failed for {backfill.backfill_id}: {error_info.to_string()}")
+
             yield error_info
