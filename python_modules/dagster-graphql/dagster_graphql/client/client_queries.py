@@ -110,6 +110,26 @@ query($runId: ID!) {
 }
 """
 
+GET_PIPELINE_RUN_TAGS_QUERY = """
+query($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on PipelineRun {
+        tags {
+          key
+          value
+        }
+    }
+    ... on PipelineRunNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
 SHUTDOWN_REPOSITORY_LOCATION_MUTATION = """
 mutation ($repositoryLocationName: String!) {
    shutdownRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
