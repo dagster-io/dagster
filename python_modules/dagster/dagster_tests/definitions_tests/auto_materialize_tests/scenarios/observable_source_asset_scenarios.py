@@ -1,6 +1,10 @@
 import datetime
 
-from dagster import PartitionKeyRange
+from dagster import AssetKey, PartitionKeyRange
+from dagster._core.definitions.auto_materialize_condition import (
+    MissingAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
+)
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from ..base_scenario import (
@@ -195,6 +199,31 @@ observable_source_asset_scenarios = {
             run_request(["asset1"], partition_key="a"),
             run_request(["asset1"], partition_key="b"),
         ],
+    ),
+    "partitioned_downstream_of_changing_observable_source_observed": AssetReconciliationScenario(
+        assets=partitioned_downstream_of_changing_observable_source,
+        unevaluated_runs=[
+            run(["source_asset"], is_observation=True),
+            run(["asset1"], partition_key="a"),
+        ],
+        expected_run_requests=[
+            run_request(["asset1"], partition_key="b"),
+        ],
+        expected_conditions={
+            ("asset1", "b"): {
+                ParentMaterializedAutoMaterializeCondition(
+                    updated_asset_keys=frozenset({AssetKey("source_asset")}),
+                    will_update_asset_keys=frozenset(),
+                ),
+                MissingAutoMaterializeCondition(),
+            },
+        },
+    ),
+    "partitioned_downstream_of_changing_observable_source_empty": AssetReconciliationScenario(
+        assets=partitioned_downstream_of_changing_observable_source,
+        unevaluated_runs=[],
+        expected_run_requests=[],
+        expected_conditions={},
     ),
     "partitioned_downstream_of_unchanging_observable_source": AssetReconciliationScenario(
         assets=partitioned_downstream_of_unchanging_observable_source,
