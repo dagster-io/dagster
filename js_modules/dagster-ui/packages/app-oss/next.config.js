@@ -1,29 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-// const path = require('path');
 
 const {PHASE_DEVELOPMENT_SERVER} = require('next/constants');
-
-// Dedupe these packages from @dagster-io/ui
-// const _aliases = [
-//   '@apollo/client',
-//   '@apollo/client/link/ws',
-//   '@apollo/client/utilities',
-//   'subscriptions-transport-ws',
-//   '@blueprintjs/core',
-//   '@blueprintjs/popover2',
-//   '@blueprintjs/select',
-//   'react',
-//   'react-dom',
-//   'react-router-dom',
-//   'react-is',
-//   'react-virtualized',
-//   'styled-components',
-// ];
-
-// const aliases = _aliases.reduce((prev, moduleName) => {
-//   prev[moduleName] = path.resolve(`./node_modules/${moduleName}`);
-//   return prev;
-// }, {});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
