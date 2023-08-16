@@ -3,7 +3,7 @@ import re
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator, Mapping, Optional
+from typing import Any, Callable, Iterator, Optional
 
 import pytest
 from dagster._check import CheckError
@@ -13,6 +13,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.materialize import materialize
+from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.external_execution.resource import (
     ExternalExecutionResource,
@@ -111,17 +112,17 @@ def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, cap
             cmd = ["python", script_path]
             ext.run(cmd, context, extras)
 
-    resource_kwargs: Mapping[str, Any] = {
-        "input_mode": input_mode,
-        "output_mode": output_mode,
-        "input_path": input_path,
-        "output_path": output_path,
-    }
+    resource = ExternalExecutionResource(
+        input_mode=input_mode,
+        output_mode=output_mode,
+        input_path=input_path,
+        output_path=output_path,
+    )
     with instance_for_test() as instance:
         materialize(
             [foo],
             instance=instance,
-            resources={"ext": ExternalExecutionResource(**resource_kwargs)},
+            resources={"ext": resource},
         )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
@@ -132,6 +133,23 @@ def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, cap
 
         captured = capsys.readouterr()
         assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
+
+
+def test_external_execution_asset_failed():
+    def script_fn():
+        raise Exception("foo")
+
+    @asset
+    def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
+        with temp_script(script_fn) as script_path:
+            cmd = ["python", script_path]
+            ext.run(cmd, context)
+
+    resource = ExternalExecutionResource(
+        input_mode=ExternalExecutionIOMode.stdio,
+    )
+    with pytest.raises(DagsterExternalExecutionError):
+        materialize([foo], resources={"ext": resource})
 
 
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"

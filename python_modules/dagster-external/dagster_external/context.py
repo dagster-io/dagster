@@ -1,20 +1,20 @@
 import json
 import socket
 import sys
-from typing import IO, Any, ClassVar, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, ClassVar, Mapping, Optional, Sequence, TextIO
 
 from typing_extensions import Self
 
-from dagster_external.params import get_external_execution_params
+from dagster_external.params import ExternalExecutionParams, get_external_execution_params
 
 from .protocol import (
-    GET_CONTEXT_MESSAGE,
     ExternalDataProvenance,
     ExternalExecutionContextData,
     ExternalExecutionIOMode,
     ExternalPartitionKeyRange,
     ExternalTimeWindow,
     Notification,
+    SocketServerControlMessage,
 )
 from .util import (
     assert_defined_asset_property,
@@ -29,44 +29,54 @@ from .util import (
 
 def init_dagster_external() -> "ExternalExecutionContext":
     params = get_external_execution_params()
+    data = _read_input(params)
+    output_stream = _get_output_stream(params)
+
+    context = ExternalExecutionContext(data, output_stream)
+    ExternalExecutionContext.set(context)
+    return context
+
+
+def _read_input(params: ExternalExecutionParams) -> ExternalExecutionContextData:
     if params.input_mode == ExternalExecutionIOMode.stdio:
         with sys.stdin as f:
-            data = json.load(f)
+            return json.load(f)
     elif params.input_mode == ExternalExecutionIOMode.file:
         assert params.input_path, "input_path must be set when input_mode is `file`"
         with open(params.input_path, "r") as f:
-            data = json.load(f)
+            return json.load(f)
     elif params.input_mode == ExternalExecutionIOMode.fifo:
         assert params.input_path, "input_path must be set when input_mode is `fifo`"
         with open(params.input_path, "r") as f:
-            data = json.load(f)
+            return json.load(f)
     elif params.input_mode == ExternalExecutionIOMode.socket:
         assert params.host, "host must be set when input_mode is `socket`"
         assert params.port, "port must be set when input_mode is `socket`"
         with socket.create_connection((params.host, params.port)) as sock:
-            sock.makefile("w").write(f"{GET_CONTEXT_MESSAGE}\n")
-            data = json.loads(sock.makefile("r").readline())
-
+            sock.makefile("w").write(f"{SocketServerControlMessage.get_context}\n")
+            return json.loads(sock.makefile("r").readline())
     else:
         raise Exception(f"Invalid input mode: {params.input_mode}")
 
+
+def _get_output_stream(params: ExternalExecutionParams) -> TextIO:
     if params.output_mode == ExternalExecutionIOMode.stdio:
-        output_target = sys.stdout
+        return sys.stdout
     elif params.output_mode == ExternalExecutionIOMode.file:
         assert params.output_path, "output_path must be set when output_mode is `file`"
-        output_target = open(params.output_path, "a")
+        return open(params.output_path, "a")
     elif params.output_mode == ExternalExecutionIOMode.fifo:
         assert params.output_path, "output_path must be set when output_mode is `fifo`"
-        output_target = open(params.output_path, "w")
+        return open(params.output_path, "w")
     elif params.output_mode == ExternalExecutionIOMode.socket:
         assert params.host, "host must be set when output_mode is `socket`"
         assert params.port, "port must be set when output_mode is `socket`"
-        output_target = (params.host, params.port)
+        sock = socket.create_connection((params.host, params.port))
+        stream = sock.makefile("w")
+        stream.write(f"{SocketServerControlMessage.initiate_client_stream}\n")
+        return stream
     else:
         raise Exception(f"Invalid output mode: {params.output_mode}")
-    context = ExternalExecutionContext(data, output_target)
-    ExternalExecutionContext.set(context)
-    return context
 
 
 class ExternalExecutionContext:
@@ -85,19 +95,14 @@ class ExternalExecutionContext:
             )
         return cls._instance
 
-    def __init__(
-        self, data: ExternalExecutionContextData, output_target: Union[IO, Tuple[str, int]]
-    ) -> None:
+    def __init__(self, data: ExternalExecutionContextData, output_stream: TextIO) -> None:
         self._data = data
-        self._output_target = output_target
+        self._output_stream = output_stream
 
     def _send_notification(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         notification = Notification(method=method, params=params)
-        if isinstance(self._output_target, tuple):  # socket
-            with socket.create_connection(self._output_target) as sock:
-                sock.makefile("w").write((json.dumps(notification) + "\n"))
-        else:
-            self._output_target.write(json.dumps(notification) + "\n")
+        self._output_stream.write(json.dumps(notification) + "\n")
+        self._output_stream.flush()
 
     # ########################
     # ##### PUBLIC API

@@ -668,3 +668,7 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """Indicates that a stored value can't be deserialized because the definition needed to interpret
     it has changed.
     """
+
+
+class DagsterExternalExecutionError(DagsterError):
+    """Indicates that an error occurred during the execution of an external process."""

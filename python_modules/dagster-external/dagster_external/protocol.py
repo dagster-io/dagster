@@ -23,6 +23,15 @@ DAGSTER_EXTERNAL_ENV_KEYS: Final = {
     "port": "DAGSTER_EXTERNAL_PORT",
 }
 
+# ##### SOCKET SERVER
+
+
+class SocketServerControlMessage(str, Enum):
+    shutdown = "__shutdown__"
+    get_context = "__get_context__"
+    initiate_client_stream = "__initiate_client_stream__"
+
+
 # ##### IO MODES
 
 
@@ -34,8 +43,6 @@ class ExternalExecutionIOMode(str, Enum):
 
 
 # ##### NOTIFICATION
-
-GET_CONTEXT_MESSAGE: Final = "__get_context__"
 
 
 class Notification(TypedDict):

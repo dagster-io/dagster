@@ -28,7 +28,7 @@ def _make_external_execution_context(**kwargs):
     kwargs = {**TEST_EXTERNAL_EXECUTION_CONTEXT_DEFAULTS, **kwargs}
     return ExternalExecutionContext(
         data=ExternalExecutionContextData(**kwargs),
-        output_target=MagicMock(),
+        output_stream=MagicMock(),
     )
 
 
