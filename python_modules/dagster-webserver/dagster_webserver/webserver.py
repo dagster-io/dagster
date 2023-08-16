@@ -273,7 +273,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
     def build_static_routes(self):
         return [
-            *self.next_static_file_routes(),
             # static resources addressed at /vendor/
             Mount(
                 "/vendor",
@@ -285,6 +284,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             ),
             # specific static resources addressed at /
             *self.root_static_file_routes(),
+            *self.next_static_file_routes(),
         ]
 
     @deprecated(
