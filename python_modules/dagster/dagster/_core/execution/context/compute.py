@@ -251,7 +251,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run."""
+        """Whether the current run is a partitioned run.
+
+        Returns:
+            bool:
+        """
         return self._step_execution_context.has_partition_key
 
     @public
@@ -260,6 +264,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
+
+        Returns:
+            str:
         """
         return self._step_execution_context.partition_key
 
@@ -281,6 +288,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         If run is for a single partition key, return a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.
+
+        Returns:
+            PartitionKeyRange:
         """
         return self._step_execution_context.asset_partition_key_range
 
@@ -291,6 +301,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         Raises an error if the current run is not a partitioned run, or if the job's partition
         definition is not a TimeWindowPartitionsDefinition.
+
+        Returns:
+            TimeWindow:
         """
         return self._step_execution_context.partition_time_window
 
@@ -497,7 +510,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
-        """Return the AssetKey for the corresponding output."""
+        """Return the AssetKey for the corresponding output.
+
+        Returns:
+            AssetKey:
+        """
         asset_output_info = self.job_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
         )
@@ -517,7 +534,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
-        """Return the AssetKey for the corresponding input."""
+        """Return the AssetKey for the corresponding input.
+
+        Returns:
+            AssetKey:
+        """
         key = self.job_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
         )
@@ -528,8 +549,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
-        name of the default output.
+        """Returns the asset partition key for the given output.
+
+        Args:
+            output_name (str): Defaults to "result", which is the name of the default output.
+
+        Returns:
+            str:
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
@@ -541,6 +567,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Returns:
+            TimeWindow:
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
@@ -548,17 +577,35 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding output. Errors if not present."""
+        """Return the PartitionKeyRange for the corresponding output.
+
+        Errors if not present.
+
+        Returns:
+            PartitionKeyRange:
+        """
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one."""
+        """Return the PartitionKeyRange for the corresponding input.
+
+        Errors if there is more or less than one.
+
+        Returns:
+            PartitionKeyRange:
+        """
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
-        """Returns the partition key of the upstream asset corresponding to the given input."""
+        """Returns the partition key of the upstream asset corresponding to the given input.
+
+        Raises an error if the input corresponds to multiple partitions.
+
+        Returns:
+            str:
+        """
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
     @public
@@ -593,7 +640,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
-        """Returns a list of the partition keys for the given output."""
+        """Returns a list of the partition keys for the given output.
+
+        Returns:
+            Sequence[str]:
+        """
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_output(output_name),
             dynamic_partitions_store=self.instance,
@@ -603,6 +654,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
         """Returns a list of the partition keys of the upstream asset corresponding to the
         given input.
+
+        Returns:
+            Sequence[str]:
         """
         return list(
             self._step_execution_context.asset_partitions_subset_for_input(
@@ -618,6 +672,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         - The input asset has no partitioning.
         - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
         MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Returns:
+            TimeWindow:
         """
         return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
