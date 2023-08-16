@@ -1,12 +1,14 @@
 import json
+import socket
 import sys
-from typing import IO, Any, ClassVar, Mapping, Optional, Sequence
+from typing import IO, Any, ClassVar, Mapping, Optional, Sequence, Tuple, Union
 
 from typing_extensions import Self
 
 from dagster_external.params import get_external_execution_params
 
 from .protocol import (
+    GET_CONTEXT_MESSAGE,
     ExternalDataProvenance,
     ExternalExecutionContextData,
     ExternalExecutionIOMode,
@@ -28,29 +30,41 @@ from .util import (
 def init_dagster_external() -> "ExternalExecutionContext":
     params = get_external_execution_params()
     if params.input_mode == ExternalExecutionIOMode.stdio:
-        input_stream = sys.stdin
+        with sys.stdin as f:
+            data = json.load(f)
     elif params.input_mode == ExternalExecutionIOMode.file:
         assert params.input_path, "input_path must be set when input_mode is `file`"
-        input_stream = open(params.input_path, "r")
+        with open(params.input_path, "r") as f:
+            data = json.load(f)
     elif params.input_mode == ExternalExecutionIOMode.fifo:
         assert params.input_path, "input_path must be set when input_mode is `fifo`"
-        input_stream = open(params.input_path, "r")
+        with open(params.input_path, "r") as f:
+            data = json.load(f)
+    elif params.input_mode == ExternalExecutionIOMode.socket:
+        assert params.host, "host must be set when input_mode is `socket`"
+        assert params.port, "port must be set when input_mode is `socket`"
+        with socket.create_connection((params.host, params.port)) as sock:
+            sock.makefile("w").write(f"{GET_CONTEXT_MESSAGE}\n")
+            data = json.loads(sock.makefile("r").readline())
+
     else:
         raise Exception(f"Invalid input mode: {params.input_mode}")
 
     if params.output_mode == ExternalExecutionIOMode.stdio:
-        output_stream = sys.stdout
+        output_target = sys.stdout
     elif params.output_mode == ExternalExecutionIOMode.file:
         assert params.output_path, "output_path must be set when output_mode is `file`"
-        output_stream = open(params.output_path, "a")
+        output_target = open(params.output_path, "a")
     elif params.output_mode == ExternalExecutionIOMode.fifo:
         assert params.output_path, "output_path must be set when output_mode is `fifo`"
-        output_stream = open(params.output_path, "w")
+        output_target = open(params.output_path, "w")
+    elif params.output_mode == ExternalExecutionIOMode.socket:
+        assert params.host, "host must be set when output_mode is `socket`"
+        assert params.port, "port must be set when output_mode is `socket`"
+        output_target = (params.host, params.port)
     else:
         raise Exception(f"Invalid output mode: {params.output_mode}")
-    with input_stream as f:
-        data = json.load(f)
-    context = ExternalExecutionContext(data, output_stream)
+    context = ExternalExecutionContext(data, output_target)
     ExternalExecutionContext.set(context)
     return context
 
@@ -71,13 +85,19 @@ class ExternalExecutionContext:
             )
         return cls._instance
 
-    def __init__(self, data: ExternalExecutionContextData, output_stream: IO) -> None:
+    def __init__(
+        self, data: ExternalExecutionContextData, output_target: Union[IO, Tuple[str, int]]
+    ) -> None:
         self._data = data
-        self._output_stream = output_stream
+        self._output_target = output_target
 
     def _send_notification(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         notification = Notification(method=method, params=params)
-        self._output_stream.write(json.dumps(notification) + "\n")
+        if isinstance(self._output_target, tuple):  # socket
+            with socket.create_connection(self._output_target) as sock:
+                sock.makefile("w").write((json.dumps(notification) + "\n"))
+        else:
+            self._output_target.write(json.dumps(notification) + "\n")
 
     # ########################
     # ##### PUBLIC API

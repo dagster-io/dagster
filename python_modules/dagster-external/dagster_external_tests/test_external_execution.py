@@ -39,31 +39,42 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         ("stdio", "file/user"),
         ("stdio", "fifo/auto"),
         ("stdio", "fifo/user"),
+        ("stdio", "socket"),
         ("file/auto", "stdio"),
         ("file/auto", "file/auto"),
         ("file/auto", "file/user"),
         ("file/auto", "fifo/auto"),
         ("file/auto", "fifo/user"),
+        ("file/auto", "socket"),
         ("file/user", "stdio"),
         ("file/user", "file/auto"),
         ("file/user", "file/user"),
         ("file/user", "fifo/auto"),
         ("file/user", "fifo/user"),
+        ("file/user", "socket"),
         ("fifo/auto", "stdio"),
         ("fifo/auto", "file/auto"),
         ("fifo/auto", "file/user"),
         ("fifo/auto", "fifo/auto"),
         ("fifo/auto", "fifo/user"),
+        ("fifo/auto", "socket"),
         ("fifo/user", "stdio"),
         ("fifo/user", "file/auto"),
         ("fifo/user", "file/user"),
         ("fifo/user", "fifo/auto"),
         ("fifo/user", "fifo/user"),
+        ("fifo/user", "socket"),
+        ("socket", "stdio"),
+        ("socket", "file/auto"),
+        ("socket", "file/user"),
+        ("socket", "fifo/auto"),
+        ("socket", "fifo/user"),
+        ("socket", "socket"),
     ],
 )
 def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, capsys):
-    if input_spec == "stdio":
-        input_mode = ExternalExecutionIOMode.stdio
+    if input_spec in ["stdio", "socket"]:
+        input_mode = ExternalExecutionIOMode(input_spec)
         input_path = None
     else:
         input_mode_spec, input_path_spec = input_spec.split("/")
@@ -73,8 +84,8 @@ def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, cap
         else:
             input_path = str(tmpdir.join("input"))
 
-    if output_spec == "stdio":
-        output_mode = ExternalExecutionIOMode.stdio
+    if output_spec in ["stdio", "socket"]:
+        output_mode = ExternalExecutionIOMode(output_spec)
         output_path = None
     else:
         output_mode_spec, output_path_spec = output_spec.split("/")
