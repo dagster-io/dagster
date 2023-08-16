@@ -89,6 +89,21 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
 
             try:
                 while not daemon_shutdown_event.is_set():
+                    # Check to see if it's time to add a heartbeat initially and after each time
+                    # the daemon yields
+                    try:
+                        self._check_add_heartbeat(
+                            workspace_process_context.instance,
+                            daemon_uuid,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                        )
+                    except Exception:
+                        self._logger.error(
+                            "Failed to add heartbeat: \n%s",
+                            serializable_error_info_from_exc_info(sys.exc_info()),
+                        )
+
                     try:
                         result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
                         if result:
@@ -109,19 +124,6 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         daemon_generator = self.core_loop(
                             workspace_process_context, daemon_shutdown_event
                         )
-                    finally:
-                        try:
-                            self._check_add_heartbeat(
-                                workspace_process_context.instance,
-                                daemon_uuid,
-                                heartbeat_interval_seconds,
-                                error_interval_seconds,
-                            )
-                        except Exception:
-                            self._logger.error(
-                                "Failed to add heartbeat: \n%s",
-                                serializable_error_info_from_exc_info(sys.exc_info()),
-                            )
             finally:
                 # cleanup the generator if it was stopped part-way through
                 daemon_generator.close()
@@ -219,7 +221,6 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
         while True:
             start_time = time.time()
             try:
-                yield None  # Heartbeat once at the beginning to kick things off
                 yield from self.run_iteration(workspace_process_context)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
