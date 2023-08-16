@@ -37,7 +37,6 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
 const testValue: AppContextValue = {
   basePath: '',
   rootServerURI: '',
-  staticPathRoot: '/',
   telemetryEnabled: false,
 };
 

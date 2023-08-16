@@ -104,7 +104,6 @@ export interface AppProviderProps {
     basePath?: string;
     headers?: {[key: string]: string};
     origin: string;
-    staticPathRoot?: string;
     telemetryEnabled?: boolean;
     statusPolling: Set<DeploymentStatusType>;
   };
@@ -117,7 +116,6 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     basePath = '',
     headers = {},
     origin,
-    staticPathRoot = '/',
     telemetryEnabled = false,
     statusPolling,
   } = config;
@@ -172,10 +170,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     () => ({
       basePath,
       rootServerURI,
-      staticPathRoot,
       telemetryEnabled,
     }),
-    [basePath, rootServerURI, staticPathRoot, telemetryEnabled],
+    [basePath, rootServerURI, telemetryEnabled],
   );
 
   const analytics = React.useMemo(() => dummyAnalytics(), []);

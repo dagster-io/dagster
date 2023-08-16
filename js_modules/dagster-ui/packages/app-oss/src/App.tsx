@@ -28,7 +28,6 @@ const config = {
   apolloLinks,
   basePath: pathPrefix,
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
-  staticPathRoot: pathPrefix,
   telemetryEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
 };
