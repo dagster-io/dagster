@@ -860,7 +860,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         of ancestors of this asset partition which are unreconciled for a reason other than that
         one of their ancestors is unreconciled.
         """
-        # always treat source assets as reconciled
+        # always treat non observable source assets as reconciled
         if self.asset_graph.is_source(
             asset_partition.asset_key
         ) and not self.asset_graph.is_observable(asset_partition.asset_key):
