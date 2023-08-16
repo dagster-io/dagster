@@ -110,6 +110,7 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+from dagster._core.definitions import AssetCheckResult as AssetCheckResult
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
