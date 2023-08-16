@@ -179,7 +179,9 @@ class AssetDaemonContext:
         newly_materialized_root_asset_keys = set()
         newly_materialized_root_partitions_by_asset_key = defaultdict(set)
 
-        for asset_key in self.target_asset_keys & self.asset_graph.root_asset_keys_with_observables:
+        for asset_key in (
+            self.target_asset_keys & self.asset_graph.root_materializable_or_observable_asset_keys
+        ):
             if self.asset_graph.is_partitioned(asset_key):
                 for partition_key in self.cursor.get_unhandled_partitions(
                     asset_key,

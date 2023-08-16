@@ -26,7 +26,11 @@ import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
+from dagster._core.selector.subset_selector import (
+    DependencyGraph,
+    fetch_sources,
+    generate_asset_dep_graph,
+)
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition
@@ -112,19 +116,15 @@ class AssetGraph:
         return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
 
     @property
-    def root_asset_keys_with_observables(self) -> AbstractSet[AssetKey]:
-        """Non-source asset keys or observable source asset keys that have no parents outside of
-        this set.
+    def root_materializable_or_observable_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Materializable or observable source asset keys that have no parents which are
+        materializable or observable.
         """
-        from .asset_selection import AssetSelection
-
         observable_keys = {
             key for key, is_observable in self._is_observable_by_key.items() if is_observable
         }
-        return (
-            AssetSelection.keys(*self.materializable_asset_keys, *observable_keys)
-            .roots()
-            .resolve(self)
+        return fetch_sources(
+            self._asset_dep_graph, observable_keys | self.materializable_asset_keys
         )
 
     @property
