@@ -37,12 +37,12 @@ from .auto_materialize_condition import (
     AutoMaterializeCondition,
     MaxMaterializationsExceededAutoMaterializeCondition,
 )
-from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .auto_materialize_rule import (
-    RuleEvaluationContext,
+    AutoMaterializeRule,
     RuleEvaluationContext,
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
+from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .partition import (
     PartitionsDefinition,
     ScheduleType,
@@ -129,6 +129,10 @@ class AssetDaemonContext:
             for parent in self.asset_graph.get_parents(asset_key)
         } | self.target_asset_keys
 
+    @property
+    def respect_materialization_data_versions(self) -> bool:
+        return self._respect_materialization_data_versions
+
     def get_implicit_auto_materialize_policy(
         self, asset_key: AssetKey
     ) -> Optional[AutoMaterializePolicy]:
@@ -144,12 +148,15 @@ class AssetDaemonContext:
                 max_materializations_per_minute = 24
             else:
                 max_materializations_per_minute = 1
+            rules = {
+                AutoMaterializeRule.materialize_on_missing(),
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                AutoMaterializeRule.skip_on_parent_outdated(),
+            }
+            if not bool(self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
+                rules.add(AutoMaterializeRule.materialize_on_parent_updated())
             return AutoMaterializePolicy(
-                on_missing=True,
-                on_new_parent_data=not bool(
-                    self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
-                ),
-                for_freshness=True,
+                rules=rules,
                 max_materializations_per_minute=max_materializations_per_minute,
             )
         return auto_materialize_policy
@@ -176,7 +183,9 @@ class AssetDaemonContext:
         newly_materialized_root_asset_keys = set()
         newly_materialized_root_partitions_by_asset_key = defaultdict(set)
 
-        for asset_key in self.target_asset_keys & self.asset_graph.root_asset_keys:
+        for asset_key in (
+            self.target_asset_keys & self.asset_graph.root_materializable_or_observable_asset_keys
+        ):
             if self.asset_graph.is_partitioned(asset_key):
                 for partition_key in self.cursor.get_unhandled_partitions(
                     asset_key,

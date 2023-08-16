@@ -160,7 +160,6 @@ def freshness_conditions_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-
     if not asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
     ) or asset_graph.is_partitioned(asset_key):

@@ -131,21 +131,11 @@ multi_code_location_scenarios = {
         code_locations={
             "foo": with_auto_materialize_policy(
                 diamond_freshness[:-1],
-                AutoMaterializePolicy(
-                    for_freshness=True,
-                    on_missing=False,
-                    on_new_parent_data=False,
-                    max_materializations_per_minute=None,
-                ),
+                AutoMaterializePolicy.lazy(max_materializations_per_minute=None),
             ),
             "bar": with_auto_materialize_policy(
                 diamond_freshness[-1:],
-                AutoMaterializePolicy(
-                    for_freshness=True,
-                    on_missing=False,
-                    on_new_parent_data=False,
-                    max_materializations_per_minute=None,
-                ),
+                AutoMaterializePolicy.lazy(max_materializations_per_minute=None),
             ),
         },
         unevaluated_runs=[run(["asset1", "asset2", "asset3"])],
@@ -156,21 +146,11 @@ multi_code_location_scenarios = {
         code_locations={
             "foo": with_auto_materialize_policy(
                 diamond_freshness[:1],
-                AutoMaterializePolicy(
-                    for_freshness=True,
-                    on_missing=False,
-                    on_new_parent_data=False,
-                    max_materializations_per_minute=None,
-                ),
+                AutoMaterializePolicy.lazy(max_materializations_per_minute=None),
             ),
             "bar": with_auto_materialize_policy(
                 diamond_freshness[1:],
-                AutoMaterializePolicy(
-                    for_freshness=True,
-                    on_missing=False,
-                    on_new_parent_data=False,
-                    max_materializations_per_minute=None,
-                ),
+                AutoMaterializePolicy.lazy(max_materializations_per_minute=None),
             ),
         },
         unevaluated_runs=[],

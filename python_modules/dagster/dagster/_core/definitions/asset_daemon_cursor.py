@@ -12,10 +12,8 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     cast,
 )
-from dagster._utils.cached_method import cached_method
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
