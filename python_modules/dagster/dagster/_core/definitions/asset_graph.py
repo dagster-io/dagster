@@ -112,6 +112,22 @@ class AssetGraph:
         return AssetSelection.keys(*self.materializable_asset_keys).roots().resolve(self)
 
     @property
+    def root_asset_keys_with_observables(self) -> AbstractSet[AssetKey]:
+        """Non-source asset keys or observable source asset keys that have no parents outside of
+        this set.
+        """
+        from .asset_selection import AssetSelection
+
+        observable_keys = {
+            key for key, is_observable in self._is_observable_by_key.items() if is_observable
+        }
+        return (
+            AssetSelection.keys(*self.materializable_asset_keys, *observable_keys)
+            .roots()
+            .resolve(self)
+        )
+
+    @property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
         return self._freshness_policies_by_key
 
