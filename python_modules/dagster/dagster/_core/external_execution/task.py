@@ -108,29 +108,34 @@ class ExternalExecutionTask:
     @contextmanager
     def _stdio_input(self) -> Iterator[InputIOYield]:
         read_fd, write_fd = os.pipe()
-        thread = self._default_input_thread(write_fd)
+        self._write_input(write_fd)
         yield read_fd, {}
         os.close(read_fd)
-        thread.join()
 
     @contextmanager
     def _file_input(self) -> Iterator[InputIOYield]:
         path = self._prepare_io_path(self._input_path, "input")
         env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
-        self._write_input(path)
-        yield None, env
-        os.remove(path)
+        try:
+            self._write_input(path)
+            yield None, env
+        finally:
+            os.remove(path)
 
     @contextmanager
     def _fifo_input(self) -> Iterator[InputIOYield]:
         path = self._prepare_io_path(self._input_path, "input")
         if not os.path.exists(path):
             os.mkfifo(path)
-        thread = self._default_input_thread(path)
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
-        yield None, env
-        thread.join()
-        os.remove(path)
+        try:
+            # Use thread to prevent blocking
+            thread = Thread(target=self._write_input, args=(path,), daemon=True)
+            thread.start()
+            env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
+            yield None, env
+            thread.join()
+        finally:
+            os.remove(path)
 
     # Socket server is started/shutdown in a dedicated context manager to share logic between input
     # and output.
@@ -170,9 +175,11 @@ class ExternalExecutionTask:
     def _file_output(self) -> Iterator[OutputIOYield]:
         path = self._prepare_io_path(self._output_path, "output")
         env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
-        yield None, env
-        self._read_output(path)
-        os.remove(path)
+        try:
+            yield None, env
+            self._read_output(path)
+        finally:
+            os.remove(path)
 
     @contextmanager
     def _fifo_output(self) -> Iterator[OutputIOYield]:
@@ -180,18 +187,20 @@ class ExternalExecutionTask:
         env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
         if not os.path.exists(path):
             os.mkfifo(path)
-        # We open a write file descriptor for a FIFO in the orchestration
-        # process in order to keep the FIFO open for reading. Otherwise, the
-        # FIFO will receive EOF after the first file descriptor writing it is
-        # closed in an external process. Note that `O_RDWR` is required for
-        # this call to succeed when no readers are yet available, and
-        # `O_NONBLOCK` is required to prevent the `open` call from blocking.
-        dummy_handle = os.open(path, os.O_RDWR | os.O_NONBLOCK)
-        thread = self._default_output_thread(path)
-        yield None, env
-        os.close(dummy_handle)
-        thread.join()
-        os.remove(path)
+        try:
+            # We open a write file descriptor for a FIFO in the orchestration
+            # process in order to keep the FIFO open for reading. Otherwise, the
+            # FIFO will receive EOF after the first file descriptor writing it is
+            # closed in an external process. Note that `O_RDWR` is required for
+            # this call to succeed when no readers are yet available, and
+            # `O_NONBLOCK` is required to prevent the `open` call from blocking.
+            dummy_handle = os.open(path, os.O_RDWR | os.O_NONBLOCK)
+            thread = self._default_output_thread(path)
+            yield None, env
+            os.close(dummy_handle)
+            thread.join()
+        finally:
+            os.remove(path)
 
     # Socket server is started/shutdown in a dedicated context manager to share logic between input
     # and output.
@@ -228,11 +237,6 @@ class ExternalExecutionTask:
         )
         thread.start()
         is_server_started.wait()
-        return thread
-
-    def _default_input_thread(self, path_or_fd: Union[str, int]) -> Thread:
-        thread = Thread(target=self._write_input, args=(path_or_fd,), daemon=True)
-        thread.start()
         return thread
 
     def _default_output_thread(self, path_or_fd: Union[str, int]) -> Thread:
