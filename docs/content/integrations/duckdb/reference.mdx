@@ -20,8 +20,6 @@ DuckDB I/O manager:
 - [Storing and loading PySpark or Polars DataFrames in DuckDB](#storing-and-loading-pyspark-or-polars-dataframes-in-duckdb)
 - [Storing multiple DataFrame types in DuckDB](#storing-multiple-dataframe-types-in-duckdb)
 
-
-
 ---
 
 ## DuckDB resource
@@ -51,7 +49,6 @@ def small_petals(duckdb: DuckDBResource) -> None:
 ```
 
 In this example, we attach the DuckDB resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can use this connection to execute a custom SQL query against the `iris_dataset` table created in [Step 2: Create tables in DuckDB](/integrations/duckdb/using-duckdb-with-dagster#store-a-dagster-asset-as-a-table-in-duckdb) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster). When the `duckdb.get_connection` context is exited, the DuckDB connection will be closed.
-
 
 ---
 
@@ -89,7 +86,6 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
 In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in DuckDB](/integrations/duckdb/using-duckdb-with-dagster#store-a-dagster-asset-as-a-table-in-duckdb) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the DuckDB I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
-
 
 ### Storing partitioned assets
 
@@ -268,7 +264,6 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 </TabItem>
 </TabGroup>
 
-
 ### Storing tables in multiple schemas
 
 You may want to have different assets stored in different DuckDB schemas. The DuckDB I/O manager allows you to specify the schema in several ways.
@@ -311,7 +306,6 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
   either from configuration or asset keys, the default schema{" "}
   <code>PUBLIC</code> will be used.
 </Note>
-
 
 ### Using the DuckDB I/O manager with other I/O managers
 
@@ -363,7 +357,6 @@ In this example:
 - The `iris_dataset` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` uses the I/O manager bound to the key `blob_io_manager`
 - In the <PyObject object="Definitions" /> object, we supply the I/O managers for those keys
 - When the assets are materialized, the `iris_dataset` will be stored in DuckDB, and `iris_plots` will be saved in Amazon S3
-
 
 ### Storing and loading PySpark or Polars DataFrames in DuckDB
 
@@ -537,7 +530,6 @@ defs = Definitions(
 
 </TabItem>
 </TabGroup>
-
 
 ### Storing multiple DataFrame types in DuckDB
 
