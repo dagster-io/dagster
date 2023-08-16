@@ -1,40 +1,37 @@
 import json
 import os
-import shutil
 import socket
 import socketserver
 import tempfile
+from contextlib import ExitStack, contextmanager
 from copy import copy
-from dataclasses import dataclass
 from subprocess import Popen
 from threading import Event, Thread
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, ContextManager, Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster_external.protocol import (
+    DAGSTER_EXTERNAL_DEFAULT_HOST,
     DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME,
     DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME,
     DAGSTER_EXTERNAL_DEFAULT_PORT,
     DAGSTER_EXTERNAL_ENV_KEYS,
-    GET_CONTEXT_MESSAGE,
     ExternalExecutionExtras,
     ExternalExecutionIOMode,
+    SocketServerControlMessage,
 )
-from typing_extensions import Literal
+from typing_extensions import Literal, TypeAlias
 
 import dagster._check as check
 from dagster import OpExecutionContext
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.external_execution.context import build_external_execution_context
 
-
-@dataclass
-class SocketAddress:
-    host: str
-    port: int
-
-
-CLOSE_SOCKET_MESSAGE = "__CLOSE_SOCKET__"
+# (host, port)
+SocketAddress: TypeAlias = Tuple[str, int]
+InputIOYield: TypeAlias = Tuple[Optional[int], Mapping[str, str]]
+OutputIOYield: TypeAlias = InputIOYield
 
 
 class ExternalExecutionTask:
@@ -48,6 +45,8 @@ class ExternalExecutionTask:
         output_mode: ExternalExecutionIOMode = ExternalExecutionIOMode.stdio,
         input_path: Optional[str] = None,
         output_path: Optional[str] = None,
+        socket_server_host: Optional[str] = None,
+        socket_server_port: Optional[int] = None,
     ):
         self._command = command
         self._context = context
@@ -57,228 +56,228 @@ class ExternalExecutionTask:
         self._tempdir = None
         self._input_path = input_path
         self._output_path = output_path
+        self._socket_server_host = socket_server_host
+        self._socket_server_port = socket_server_port
         self.env = copy(env) if env is not None else {}
 
-    def run(self) -> int:
-        write_target, stdin_fd, input_env_vars = self._prepare_input()
-        read_target, stdout_fd, output_env_vars = self._prepare_output()
+    def run(self) -> None:
+        base_env = {
+            **os.environ,
+            **self.env,
+            DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: self._input_mode.value,
+            DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: self._output_mode.value,
+        }
 
+        with ExitStack() as stack:
+            # tempdir may be accessed in input/output context managers
+            self._tempdir = stack.enter_context(tempfile.TemporaryDirectory())
+            if ExternalExecutionIOMode.socket in (self._input_mode, self._output_mode):
+                stack.enter_context(self._socket_server_context_manager())
+            stdin_fd, input_env_vars = stack.enter_context(self._input_context_manager())
+            stdout_fd, output_env_vars = stack.enter_context(self._output_context_manager())
+
+            process = Popen(
+                self._command,
+                stdin=stdin_fd,
+                stdout=stdout_fd,
+                env={**base_env, **input_env_vars, **output_env_vars},
+            )
+            process.wait()
+
+            if process.returncode != 0:
+                raise DagsterExternalExecutionError(
+                    f"External execution process failed with code {process.returncode}"
+                )
+
+    # ########################
+    # ##### IO CONTEXT MANAGERS
+    # ########################
+
+    def _input_context_manager(self) -> ContextManager[InputIOYield]:
         if self._input_mode == ExternalExecutionIOMode.stdio:
-            assert isinstance(write_target, int)
-            input_thread = self._default_input_thread(write_target)
-            input_thread.start()
+            return self._stdio_input()
         elif self._input_mode == ExternalExecutionIOMode.file:
-            assert isinstance(write_target, str)
-            input_thread = None
-            self._write_input(write_target)
+            return self._file_input()
         elif self._input_mode == ExternalExecutionIOMode.fifo:
-            assert isinstance(write_target, str)
-            input_thread = self._default_input_thread(write_target)
-            input_thread.start()
+            return self._fifo_input()
         elif self._input_mode == ExternalExecutionIOMode.socket:
-            assert isinstance(write_target, SocketAddress)
-            input_thread = self._start_socket_server(write_target)
+            return self._socket_input()
         else:
             check.failed(f"Unsupported input mode: {self._input_mode}")
 
-        if self._output_mode == ExternalExecutionIOMode.stdio:
-            assert isinstance(read_target, int)
-            output_thread = self._default_output_thread(read_target)
-            output_thread.start()
-        elif self._output_mode == ExternalExecutionIOMode.file:
-            output_thread = None
-        elif self._output_mode == ExternalExecutionIOMode.fifo:
-            assert isinstance(read_target, str)
-            output_thread = self._default_output_thread(read_target)
-            output_thread.start()
-        elif self._output_mode == ExternalExecutionIOMode.socket:
-            assert isinstance(read_target, SocketAddress)
-            # thread already exists
-            if self._input_mode == ExternalExecutionIOMode.socket:
-                output_thread = input_thread
-            else:
-                output_thread = self._start_socket_server(read_target)
-        else:
-            check.failed(f"Unsupported output mode: {self._output_mode}")
+    @contextmanager
+    def _stdio_input(self) -> Iterator[InputIOYield]:
+        read_fd, write_fd = os.pipe()
+        self._write_input(write_fd)
+        yield read_fd, {}
+        os.close(read_fd)
 
-        process = Popen(
-            self._command,
-            stdin=stdin_fd,
-            stdout=stdout_fd,
-            env={**os.environ, **self.env, **input_env_vars, **output_env_vars},
-        )
-        process.wait()
-
-        if self._input_mode == ExternalExecutionIOMode.stdio:
-            assert stdin_fd is not None
-            os.close(stdin_fd)
-            assert input_thread is not None
-            input_thread.join()
-        elif self._input_mode == ExternalExecutionIOMode.file:
-            pass
-        elif self._input_mode == ExternalExecutionIOMode.fifo:
-            assert input_thread is not None
-            input_thread.join()
-        elif self._input_mode == ExternalExecutionIOMode.socket:
-            assert isinstance(write_target, SocketAddress)
-            self._shutdown_socket_server(write_target)
-            assert input_thread is not None
-            input_thread.join()
-        else:
-            check.failed(f"Unsupported input mode: {self._input_mode}")
-
-        if self._output_mode == ExternalExecutionIOMode.stdio:
-            assert stdout_fd is not None
-            os.close(stdout_fd)
-            assert output_thread is not None
-            output_thread.join()
-        elif self._output_mode == ExternalExecutionIOMode.file:
-            assert isinstance(read_target, str)
-            self._read_output(read_target)
-        elif self._output_mode == ExternalExecutionIOMode.fifo:
-            assert output_thread is not None
-            output_thread.join()
-        elif self._output_mode == ExternalExecutionIOMode.socket:
-            # If input_mode is socket, we will have already shut down the socket server and joined
-            # the socket thread
-            if self._input_mode != ExternalExecutionIOMode.socket:
-                assert isinstance(read_target, SocketAddress)
-                self._shutdown_socket_server(read_target)
-                assert output_thread is not None
-                output_thread.join()
-        else:
-            check.failed(f"Unsupported output mode: {self._output_mode}")
-
-        if self._input_path:
-            os.remove(self._input_path)
-        if self._output_path:
-            os.remove(self._output_path)
-        if self._tempdir is not None:
-            shutil.rmtree(self._tempdir)
-
-        return process.returncode
-
-    def process_notification(self, message: Mapping[str, Any]) -> None:
-        if message["method"] == "report_asset_metadata":
-            self._handle_report_asset_metadata(**message["params"])
-        elif message["method"] == "report_asset_data_version":
-            self._handle_report_asset_data_version(**message["params"])
-        elif message["method"] == "log":
-            self._handle_log(**message["params"])
-
-    def _prepare_input(
-        self,
-    ) -> Tuple[Union[str, int, SocketAddress], Optional[int], Mapping[str, str]]:
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: self._input_mode.value}
-        if self._input_mode == ExternalExecutionIOMode.stdio:
-            stdin_fd, write_target = os.pipe()
-        elif self._input_mode in [ExternalExecutionIOMode.file, ExternalExecutionIOMode.fifo]:
-            stdin_fd = None
-            if self._input_path is None:
-                write_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME)
-            else:
-                self._validate_target_path(self._input_path, "input")
-                self._clear_target_path(self._input_path)
-                write_target = self._input_path
-            if self._input_mode == ExternalExecutionIOMode.fifo and not os.path.exists(
-                write_target
-            ):
-                os.mkfifo(write_target)
-            env[DAGSTER_EXTERNAL_ENV_KEYS["input"]] = write_target
-        elif self._input_mode == ExternalExecutionIOMode.socket:
-            stdin_fd = None
-            write_target = SocketAddress("localhost", DAGSTER_EXTERNAL_DEFAULT_PORT)
-
-            env[DAGSTER_EXTERNAL_ENV_KEYS["host"]] = write_target.host
-            env[DAGSTER_EXTERNAL_ENV_KEYS["port"]] = str(write_target.port)
-        else:
-            check.failed(f"Unsupported input mode: {self._input_mode}")
-        return write_target, stdin_fd, env
-
-    def _prepare_output(
-        self,
-    ) -> Tuple[Union[str, int, SocketAddress], Optional[int], Mapping[str, str]]:
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: self._output_mode.value}
-        if self._output_mode == ExternalExecutionIOMode.stdio:
-            read_target, stdout_fd = os.pipe()
-        elif self._output_mode in [ExternalExecutionIOMode.file, ExternalExecutionIOMode.fifo]:
-            stdout_fd = None
-            if self._output_path is None:
-                read_target = os.path.join(self.tempdir, DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME)
-            else:
-                self._validate_target_path(self._output_path, "output")
-                self._clear_target_path(self._output_path)
-                read_target = self._output_path
-            if self._output_mode == ExternalExecutionIOMode.fifo and not os.path.exists(
-                read_target
-            ):
-                os.mkfifo(read_target)
-            env[DAGSTER_EXTERNAL_ENV_KEYS["output"]] = read_target
-        elif self._output_mode == ExternalExecutionIOMode.socket:
-            stdout_fd = None
-            read_target = SocketAddress("localhost", DAGSTER_EXTERNAL_DEFAULT_PORT)
-            env[DAGSTER_EXTERNAL_ENV_KEYS["host"]] = read_target.host
-            env[DAGSTER_EXTERNAL_ENV_KEYS["port"]] = str(read_target.port)
-        else:
-            check.failed(f"Unsupported output mode: {self._output_mode}")
-        return read_target, stdout_fd, env
-
-    def _validate_target_path(self, path: str, target: Literal["input", "output"]) -> None:
-        dirname = os.path.dirname(path)
-        check.invariant(
-            os.path.isdir(dirname),
-            f"{path} has been specified as `{target}_path` but directory {dirname} does not"
-            " currently exist. You must create it.",
-        )
-
-    def _clear_target_path(self, path: str) -> None:
-        if os.path.exists(path):
+    @contextmanager
+    def _file_input(self) -> Iterator[InputIOYield]:
+        path = self._prepare_io_path(self._input_path, "input")
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
+        try:
+            self._write_input(path)
+            yield None, env
+        finally:
             os.remove(path)
 
-    @property
-    def tempdir(self) -> str:
-        if self._tempdir is None:
-            self._tempdir = tempfile.mkdtemp()
-        return self._tempdir
+    @contextmanager
+    def _fifo_input(self) -> Iterator[InputIOYield]:
+        path = self._prepare_io_path(self._input_path, "input")
+        if not os.path.exists(path):
+            os.mkfifo(path)
+        try:
+            # Use thread to prevent blocking
+            thread = Thread(target=self._write_input, args=(path,), daemon=True)
+            thread.start()
+            env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
+            yield None, env
+            thread.join()
+        finally:
+            os.remove(path)
+
+    # Socket server is started/shutdown in a dedicated context manager to share logic between input
+    # and output.
+    @contextmanager
+    def _socket_input(self) -> Iterator[InputIOYield]:
+        env = {
+            DAGSTER_EXTERNAL_ENV_KEYS["host"]: (
+                self._socket_server_host or DAGSTER_EXTERNAL_DEFAULT_HOST
+            ),
+            DAGSTER_EXTERNAL_ENV_KEYS["port"]: str(
+                self._socket_server_port or DAGSTER_EXTERNAL_DEFAULT_PORT
+            ),
+        }
+        yield None, env
+
+    def _output_context_manager(self) -> ContextManager[OutputIOYield]:
+        if self._output_mode == ExternalExecutionIOMode.stdio:
+            return self._stdio_output()
+        elif self._output_mode == ExternalExecutionIOMode.file:
+            return self._file_output()
+        elif self._output_mode == ExternalExecutionIOMode.fifo:
+            return self._fifo_output()
+        elif self._output_mode == ExternalExecutionIOMode.socket:
+            return self.socket_output()
+        else:
+            check.failed(f"Unsupported output mode: {self._output_mode}")
+
+    @contextmanager
+    def _stdio_output(self) -> Iterator[OutputIOYield]:
+        read_fd, write_fd = os.pipe()
+        thread = self._default_output_thread(read_fd)
+        yield write_fd, {}
+        os.close(write_fd)
+        thread.join()
+
+    @contextmanager
+    def _file_output(self) -> Iterator[OutputIOYield]:
+        path = self._prepare_io_path(self._output_path, "output")
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
+        try:
+            yield None, env
+            self._read_output(path)
+        finally:
+            os.remove(path)
+
+    @contextmanager
+    def _fifo_output(self) -> Iterator[OutputIOYield]:
+        path = self._prepare_io_path(self._output_path, "output")
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
+        if not os.path.exists(path):
+            os.mkfifo(path)
+        try:
+            # We open a write file descriptor for a FIFO in the orchestration
+            # process in order to keep the FIFO open for reading. Otherwise, the
+            # FIFO will receive EOF after the first file descriptor writing it is
+            # closed in an external process. Note that `O_RDWR` is required for
+            # this call to succeed when no readers are yet available, and
+            # `O_NONBLOCK` is required to prevent the `open` call from blocking.
+            dummy_handle = os.open(path, os.O_RDWR | os.O_NONBLOCK)
+            thread = self._default_output_thread(path)
+            yield None, env
+            os.close(dummy_handle)
+            thread.join()
+        finally:
+            os.remove(path)
+
+    # Socket server is started/shutdown in a dedicated context manager to share logic between input
+    # and output.
+    @contextmanager
+    def socket_output(self) -> Iterator[OutputIOYield]:
+        env = {
+            DAGSTER_EXTERNAL_ENV_KEYS["host"]: (
+                self._socket_server_host or DAGSTER_EXTERNAL_DEFAULT_HOST
+            ),
+            DAGSTER_EXTERNAL_ENV_KEYS["port"]: str(
+                self._socket_server_port or DAGSTER_EXTERNAL_DEFAULT_PORT
+            ),
+        }
+        yield None, env
+
+    @contextmanager
+    def _socket_server_context_manager(self) -> Iterator[None]:
+        host = self._socket_server_host or DAGSTER_EXTERNAL_DEFAULT_HOST
+        port = self._socket_server_port or DAGSTER_EXTERNAL_DEFAULT_PORT
+        sockaddr = (host, port)
+        thread = self._start_socket_server_thread(sockaddr)
+        yield
+        self._shutdown_socket_server(sockaddr)
+        thread.join()
 
     # ########################
     # ##### THREADED IO ROUTINES
     # ########################
 
-    def _default_input_thread(self, write_target) -> Thread:
-        return Thread(target=self._write_input, args=(write_target,), daemon=True)
+    def _start_socket_server_thread(self, sockaddr: SocketAddress) -> Thread:
+        is_server_started = Event()
+        thread = Thread(
+            target=self._start_socket_server, args=(sockaddr, is_server_started), daemon=True
+        )
+        thread.start()
+        is_server_started.wait()
+        return thread
 
-    def _default_output_thread(self, read_target) -> Thread:
-        return Thread(target=self._read_output, args=(read_target,), daemon=True)
+    def _default_output_thread(self, path_or_fd: Union[str, int]) -> Thread:
+        thread = Thread(target=self._read_output, args=(path_or_fd,), daemon=True)
+        thread.start()
+        return thread
 
     # Not used in socket mode
-    def _write_input(self, input_target: Union[str, int]) -> None:
+    def _write_input(self, path_or_fd: Union[str, int]) -> None:
         external_context = build_external_execution_context(self._context, self._extras)
-        with open(input_target, "w") as input_stream:
+        with open(path_or_fd, "w") as input_stream:
             json.dump(external_context, input_stream)
 
     # Not used in socket mode
-    def _read_output(self, output_target: Union[str, int]) -> Any:
-        with open(output_target, "r") as output_stream:
+    def _read_output(self, path_or_fd: Union[str, int]) -> Any:
+        with open(path_or_fd, "r") as output_stream:
             for line in output_stream:
                 notification = json.loads(line)
-                self.process_notification(notification)
+                self.handle_notification(notification)
 
     # Only used in socket mode
-    def _socket_serve(self, socket_address: SocketAddress, ready_event: Event) -> None:
+    def _start_socket_server(self, sockaddr: SocketAddress, is_server_started: Event) -> None:
         context = build_external_execution_context(self._context, self._extras)
-
-        handle_notification = self.process_notification
+        handle_notification = self.handle_notification
 
         class Handler(socketserver.StreamRequestHandler):
             def handle(self):
                 data = self.rfile.readline().strip().decode("utf-8")
-                if data == CLOSE_SOCKET_MESSAGE:
+                if data == SocketServerControlMessage.shutdown:
                     self.server.shutdown()
-                elif data == GET_CONTEXT_MESSAGE:
-                    serialized_context = json.dumps(context) + "\n"
-                    self.wfile.write(serialized_context.encode("utf-8"))
+                elif data == SocketServerControlMessage.get_context:
+                    response_data = f"{json.dumps(context)}\n".encode("utf-8")
+                    self.wfile.write(response_data)
+                elif data == SocketServerControlMessage.initiate_client_stream:
+                    self.notification_stream_loop()
                 else:
+                    raise Exception(f"Unrecognized control message: {data}")
+
+            def notification_stream_loop(self):
+                while True:
+                    data = self.rfile.readline().strip().decode("utf-8")
                     notification = json.loads(data)
                     handle_notification(notification)
 
@@ -288,29 +287,26 @@ class ExternalExecutionTask:
         class Server(socketserver.ThreadingTCPServer):
             allow_reuse_address = True
 
-        with Server((socket_address.host, socket_address.port), Handler) as server:
-            ready_event.set()
+        with Server(sockaddr, Handler) as server:
+            is_server_started.set()
             server.serve_forever()
 
-    def _start_socket_server(self, write_target: SocketAddress) -> Thread:
-        ready_event = Event()
-        thread = Thread(target=self._socket_serve, args=(write_target, ready_event), daemon=True)
-        thread.start()
-
-        if not ready_event.is_set():
-            ready_event.wait()
-
-        return thread
-
-    def _shutdown_socket_server(self, address: SocketAddress) -> None:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((address.host, address.port))
-            message = CLOSE_SOCKET_MESSAGE + "\n"
-            sock.sendall(message.encode("utf-8"))
+    # Only used in socket mode
+    def _shutdown_socket_server(self, sockaddr: SocketAddress) -> None:
+        with socket.create_connection(sockaddr) as sock:
+            sock.makefile("w").write(f"{SocketServerControlMessage.shutdown}\n")
 
     # ########################
     # ##### HANDLE NOTIFICATIONS
     # ########################
+
+    def handle_notification(self, message: Mapping[str, Any]) -> None:
+        if message["method"] == "report_asset_metadata":
+            self._handle_report_asset_metadata(**message["params"])
+        elif message["method"] == "report_asset_data_version":
+            self._handle_report_asset_data_version(**message["params"])
+        elif message["method"] == "log":
+            self._handle_log(**message["params"])
 
     def _handle_report_asset_metadata(self, asset_key: str, label: str, value: Any) -> None:
         key = AssetKey.from_user_string(asset_key)
@@ -324,3 +320,32 @@ class ExternalExecutionTask:
     def _handle_log(self, message: str, level: str = "info") -> None:
         check.str_param(message, "message")
         self._context.log.log(level, message)
+
+    # ########################
+    # ##### UTILITIES
+    # ########################
+
+    def _prepare_io_path(self, path: Optional[str], target: Literal["input", "output"]) -> str:
+        if path is None:
+            if target == "input":
+                filename = DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME
+            else:  # output
+                filename = DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME
+            assert self._tempdir is not None
+            return os.path.join(self._tempdir, filename)
+        else:
+            self._validate_io_path(path, target)
+            self._clear_io_path(path)
+            return path
+
+    def _validate_io_path(self, path: str, target: Literal["input", "output"]) -> None:
+        dirname = os.path.dirname(path)
+        check.invariant(
+            os.path.isdir(dirname),
+            f"{path} has been specified as `{target}_path` but directory {dirname} does not"
+            " currently exist. You must create it.",
+        )
+
+    def _clear_io_path(self, path: str) -> None:
+        if os.path.exists(path):
+            os.remove(path)
