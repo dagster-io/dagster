@@ -54,8 +54,7 @@ Resources (dbt Core)
 CLI Resource
 ------------
 
-.. autoconfigurable:: DbtCliResource
-    :annotation: ResourceDefinition
+.. autoclass:: DbtCliResource
 
 .. autoclass:: DbtCliInvocation
 
