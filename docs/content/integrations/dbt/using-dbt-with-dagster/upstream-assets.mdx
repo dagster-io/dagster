@@ -49,15 +49,15 @@ import os
 
 import duckdb
 import pandas as pd
-from dagster_dbt import DbtCliResource, dbt_assets
 from dagster import OpExecutionContext, asset
+from dagster_dbt import DbtCliResource, dbt_assets
 
 from .constants import dbt_manifest_path, dbt_project_dir
 
 duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
-@asset
+@asset(compute_kind="python")
 def raw_customers(context) -> None:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     connection = duckdb.connect(os.fspath(duckdb_database_path))
@@ -81,7 +81,7 @@ Let's review the changes we made:
 
 2. We added a `duckdb_database_path` variable, which holds the location of our DuckDB database. Remember that DuckDB databases are just regular files on the local filesystem. The path is the same path that we used when we configured our `profiles.yml` file. This variable is used in the implementations of the `raw_customers` asset.
 
-3. We added a definition for the `raw_customers` table by writing a function named `raw_customers` and decorating it with the <PyObject object="asset" decorator /> decorator. The implementation inside the function fetches data from the internet and writes it to a table in our DuckDB database. Similar to how running a dbt model executes a select statement, materializing this asset will execute this Python code.
+3. We added a definition for the `raw_customers` table by writing a function named `raw_customers` and decorating it with the <PyObject object="asset" decorator /> decorator. We labeled it with `compute_kind="python"` to indicate in the Dagster UI that this is an asset defined in Python. The implementation inside the function fetches data from the internet and writes it to a table in our DuckDB database. Similar to how running a dbt model executes a select statement, materializing this asset will execute this Python code.
 
 Finally, let's update the `assets` argument of our `Definitions` object, in `definitions.py`, to include the new asset we just defined:
 
@@ -163,28 +163,13 @@ This is a standard dbt source definition, with one addition: it includes metadat
 
 ## Step 4: Materialize the assets using the Dagster UI
 
-Now let's load our data pipeline in the UI to see what we've built:
+If the Dagster UI is still running from the previous section, click the "Reload Definitions" button in the upper right corner. If you shut it down, then you can launch it again with the same command from the previous section:
 
 ```shell
-cd jaffle_dagster/
-
 DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
 ```
 
-When you open the UI, you'll be looking at a job that contains only your dbt assets, with a link to the `raw_customers` asset.
-
-<!--
-![dbt job with link to upstream asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/job.png)
--->
-
-<Image
-alt="dbt job with link to upstream asset"
-src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/job.png"
-width={2992}
-height={1704}
-/>
-
-If you click on "default" under the "Asset groups" section in the left navigation pane, you'll get to a view that includes all your assets - the dbt ones and the `raw_customers` one.
+Our `raw_customers` model is now defined as a Python asset. We can also see that assets downstream of this new Python asset, such as `stg_customers` and `customers`, are now marked stale because the code definition of `raw_customers` has changed.
 
 <!--
 ![Asset group with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/asset-group.png)
@@ -192,9 +177,9 @@ If you click on "default" under the "Asset groups" section in the left navigatio
 
 <Image
 alt="Asset group with dbt models and Python asset"
-src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/asset-group.png"
-width={2992}
-height={1706}
+src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/asset-graph.png"
+width={2688}
+height={1680}
 />
 
 Click the **Materialize all** button. This will launch a run with two steps:
@@ -211,8 +196,8 @@ If you click to view the run, you can see a graphical representation of these st
 <Image
 alt="Run page for run with dbt models and Python asset"
 src="/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/run-page.png"
-width={2992}
-height={1708}
+width={2688}
+height={1680}
 />
 
 ---
