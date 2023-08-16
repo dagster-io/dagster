@@ -4,7 +4,7 @@
 
 ### New
 
-- `@graph_asset` now takes a `config` parameter equivalent to the parameter on `@graph`.
+- `@graph_asset` now takes a `config` parameter equivalent to the parameter on `@graph`
 - Added an optional `dynamic_partitions_store` argument to `DynamicPartitionsDefinition` for multi-partition run properly with dynamic partitions (Thanks @elzzz!).
 - [dagster-grpahql] Added `partitionsByAssets`` to `backfillParams`` for ranged partition backfill (Thanks @ruizh22!).
 - [dagster-dbt] Support for `dbt-core==1.6` has been added.
