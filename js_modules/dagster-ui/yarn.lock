@@ -2314,6 +2314,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/dagster-ui-workspace@workspace:."
   dependencies:
+    file-loader: ^6.2.0
     graphql.macro: ^1.4.2
   languageName: unknown
   linkType: soft
