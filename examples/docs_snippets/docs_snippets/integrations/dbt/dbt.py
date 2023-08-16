@@ -322,3 +322,53 @@ def scope_custom_metadata_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_metadata_dagster_dbt_translator
+
+
+def scope_custom_auto_materialize_policy_dagster_dbt_translator():
+    # start_custom_auto_materialize_policy_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import OpExecutionContext, AutoMaterializePolicy
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_auto_materialize_policy(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[AutoMaterializePolicy]:
+            return AutoMaterializePolicy.eager()
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_auto_materialize_policy_dagster_dbt_translator
+
+
+def scope_custom_freshness_policy_dagster_dbt_translator():
+    # start_custom_freshness_policy_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import OpExecutionContext, FreshnessPolicy
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping, Optional
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_freshness_policy(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[FreshnessPolicy]:
+            return FreshnessPolicy(maximum_lag_minutes=60)
+
+    @dbt_assets(
+        manifest=manifest_path,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_custom_freshness_policy_dagster_dbt_translator

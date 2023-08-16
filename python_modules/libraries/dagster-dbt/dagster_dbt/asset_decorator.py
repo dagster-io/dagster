@@ -27,9 +27,7 @@ from dagster import (
 from .asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     MANIFEST_METADATA_KEY,
-    default_auto_materialize_policy_fn,
     default_code_version_fn,
-    default_freshness_policy_fn,
     get_deps,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -295,8 +293,10 @@ def get_dbt_multi_asset_args(
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),
-            freshness_policy=default_freshness_policy_fn(dbt_resource_props),
-            auto_materialize_policy=default_auto_materialize_policy_fn(dbt_resource_props),
+            freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
+            auto_materialize_policy=dagster_dbt_translator.get_auto_materialize_policy(
+                dbt_resource_props
+            ),
         )
 
         # Translate parent unique ids to internal asset deps and non argument dep
