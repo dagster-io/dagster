@@ -1,5 +1,48 @@
 # Changelog
 
+# 1.4.6 / 0.20.6 (libraries)
+
+### New
+
+- ops or assets with multiple outputs that are all required and return type `None`/ `Nothing` will interpret an explicitly or implicitly returned value `None` to indicate that all outputs were successful.
+- The `skip_reason` argument to the constructor of `SensorResult` now accepts a string in addition to a `SkipReason`.
+- [dagster-k8s] Added a `step_k8s_config` field to `k8s_job_executor` that allows you to customize the raw Kubernetes config for each step in a job. See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#kubernetes-configuration-on-every-step-in-a-run) for more information.
+- [dagster-k8s] Launched run pods now have an additional code location label.
+- [dagster-ui] The runs table now lets you toggle which tags are always visible.
+- [dagster-dbt] `dagster-dbt project scaffold` now creates the scaffold in multiple files:
+    - `constants.py` contains a reference to your manifest and dbt project directory
+    - `assets.py` contains your initial dbt assets definitions
+    - `definitions.py` contains the code to load your asset definitions into the Dagster UI
+    - `schedules.py` contains an optional schedule to add for your dbt assets
+- [dagster-dbt] Added new methods `get_auto_materialize_policy` and `get_freshness_policy` to `DagsterDbtTranslator`.
+- [dagster-fivertran] Sync options can now be passed to `load_assets_from_fivetran_instance`.
+- [dagster-wandb] W&B IO Manager now handles partitions natively. (Thanks [@chrishiste](https://github.com/chrishiste)!)
+
+### Bugfixes
+
+- Previously, canceling large asset backfills would cause the daemon to time out and display a “not running” error. This has been fixed.
+- [dagster-ssh] Previously the `SSHResource` would warn when `allow_host_key_change` was set. Now known hosts are always loaded from the system hosts file, and the `allow_host_key_change` parameter is ignored.
+- Previously, when using AutoMaterializePolicies, partitioned assets downstream of partitioned observable source assets could be materialized before their parent partitions were observed. This has been fixed.
+
+### Documentation
+
+- `@graph_multi_asset` now has an API docs entry.
+- The `GCSComputeLogManager` example in the [Dagster Instance reference](https://docs.dagster.io/deployment/dagster-instance#gcscomputelogmanager) is now correct.
+- Several outdated K8s documentation links have been removed from the [Customizing your Kubernetes deployment guide](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment).
+- Added callouts to the [GitHub](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) and [GitLab](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab) Branch Deployment guides specifying that some steps are optional for Serverless users.
+- The “Graphs” page under the “Concepts” section has been renamed to “Op Graphs” and moved inside under the “Ops” heading.
+- [dagster-dbt] Added API examples for `@dbt_assets` for the following use-cases:
+    - Running dbt commands with flags
+    - Running dbt commands with `--vars`
+    - Running multiple dbt commands
+    - Retrieving dbt artifacts after running a dbt command
+    - Invoking other Dagster resouces alongside dbt
+    - Defining and accessing Dagster config alongside dbt
+
+### Dagster Cloud
+
+- The viewer role now has permission to edit their own user tokens.
+
 # 1.4.5 / 0.20.5 (libraries)
 
 ### New
