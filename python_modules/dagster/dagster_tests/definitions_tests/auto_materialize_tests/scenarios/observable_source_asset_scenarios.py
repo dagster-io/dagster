@@ -196,6 +196,11 @@ observable_source_asset_scenarios = {
             run_request(["asset1"], partition_key="b"),
         ],
     ),
+    "partitioned_downstream_of_changing_observable_source_empty": AssetReconciliationScenario(
+        assets=partitioned_downstream_of_changing_observable_source,
+        unevaluated_runs=[],
+        expected_run_requests=[],
+    ),
     "partitioned_downstream_of_unchanging_observable_source": AssetReconciliationScenario(
         assets=partitioned_downstream_of_unchanging_observable_source,
         cursor_from=AssetReconciliationScenario(
