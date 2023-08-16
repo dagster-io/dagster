@@ -257,6 +257,42 @@ def test_with_group_replacements() -> None:
         assert group == expected_group
 
 
+def test_with_freshness_policy_replacements() -> None:
+    expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_freshness_policy(
+            cls, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[FreshnessPolicy]:
+            return expected_freshness_policy
+
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
+    def my_dbt_assets():
+        ...
+
+    for freshness_policy in my_dbt_assets.freshness_policies_by_key.values():
+        assert freshness_policy == expected_freshness_policy
+
+
+def test_with_auto_materialize_policy_replacements() -> None:
+    expected_auto_materialize_policy = AutoMaterializePolicy.eager()
+
+    class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
+        @classmethod
+        def get_auto_materialize_policy(
+            cls, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[AutoMaterializePolicy]:
+            return expected_auto_materialize_policy
+
+    @dbt_assets(manifest=manifest, dagster_dbt_translator=CustomizedDagsterDbtTranslator())
+    def my_dbt_assets():
+        ...
+
+    for auto_materialize_policy in my_dbt_assets.auto_materialize_policies_by_key.values():
+        assert auto_materialize_policy == expected_auto_materialize_policy
+
+
 def test_dbt_meta_auto_materialize_policy() -> None:
     @dbt_assets(manifest=test_dagster_metadata_manifest)
     def my_dbt_assets():
