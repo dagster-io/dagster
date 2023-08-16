@@ -58,7 +58,10 @@ To add the `order_count_chart` asset:
 2. After your definition of `jaffle_shop_dbt_assets`, add the definition for the `order_count_chart` asset:
 
    ```python file=integrations/dbt/tutorial/downstream_assets/assets.py startafter=start_downstream_asset endbefore=end_downstream_asset
-   @asset(deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"))
+   @asset(
+       compute_kind="python",
+       deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"),
+   )
    def order_count_chart(context):
        # read the contents of the customers table into a Pandas DataFrame
        connection = duckdb.connect(os.fspath(duckdb_database_path))
@@ -106,34 +109,38 @@ To add the `order_count_chart` asset:
 
 ## Step 3: Materialize the order_count_chart asset
 
-If the Dagster UI is still running from the previous section, you can just click the "Reload Definitions" button in the upper right corner. If you shut it down, then you can launch it again with the same command from the previous section:
+If the Dagster UI is still running from the previous section, click the "Reload Definitions" button in the upper right corner. If you shut it down, then you can launch it again with the same command from the previous section:
 
 ```shell
 DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
 ```
 
-Make sure that the "default" asset group is selected in the left navigation pane. The UI will look like this:
+The UI will look like this:
 
 <!--
-![Asset group with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/asset-group.png)
+![Asset group with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/asset-graph.png)
 -->
 
 <Image
 alt="Asset group with dbt models and Python asset"
-src="/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/asset-group.png"
-width={2992}
-height={1706}
+src="/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/asset-graph.png"
+width={2688}
+height={1680}
 />
 
 A new asset named `order_count_chart` is at the bottom, downstream of the `customers` asset. Click on `order_count_chart` and click **Materialize selected**.
 
 That's it! When the run successfully completes, the following chart will automatically open in your browser:
 
+<!--
+![plotly chart asset displayed in Chrome](/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/order-count-chart.png)
+-->
+
 <Image
 alt="plotly chart asset displayed in Chrome"
-src="/images/integrations/dbt/using-dbt-with-dagster/downstream-assets-order-count-chart.png"
-width={1156}
-height={645}
+src="/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/order-count-chart.png"
+width={2688}
+height={1680}
 />
 
 ---

@@ -61,12 +61,12 @@ You'll set up dbt to work with DuckDB by configuring a dbt [profile](https://doc
 
    ```yaml
    jaffle_shop:
-     target: local
+     target: dev
      outputs:
-       local:
+       dev:
          type: duckdb
          path: tutorial.duckdb
-         schema: jaffle_shop
+         threads: 24
    ```
 
 ---
