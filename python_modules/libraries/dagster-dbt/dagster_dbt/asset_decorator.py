@@ -51,6 +51,9 @@ def dbt_assets(
     dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
 ) -> Callable[..., AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
+    When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
+    :py:meth:`~dagster_dbt.DbtCliResource.cli` method, Dagster events are emitted by calling
+    ``yield from`` on the event stream returned by :py:meth:`~dagster_dbt.DbtCliInvocation.stream`.
 
     Args:
         manifest (Union[Mapping[str, Any], Path]): The contents of a manifest.json file
@@ -70,6 +73,8 @@ def dbt_assets(
             dbt models, seeds, etc. to asset keys and asset metadata.
 
     Examples:
+        Running ``dbt build`` for a dbt project:
+
         .. code-block:: python
 
             from pathlib import Path
@@ -81,6 +86,72 @@ def dbt_assets(
             @dbt_assets(manifest=Path("target", "manifest.json"))
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
+
+        Running dbt commands with flags:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                yield from dbt.cli(["build", "--full-refresh"], context=context).stream()
+
+        Running dbt commands with ``--vars``:
+
+        .. code-block:: python
+
+            import json
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                dbt_vars = {"key": "value"}
+
+                yield from dbt.cli(["build", "--vars", json.dumps(dbt_vars)], context=context).stream()
+
+        Retrieving dbt artifacts after running a dbt command:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                dbt_build_invocation = dbt.cli(["build"], context=context)
+
+                yield from dbt_build_invocation.stream()
+
+                run_results_json = dbt_build_invocation.get_artifact("run_results.json")
+
+        Running multiple dbt commands for a dbt project:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                yield from dbt.cli(["run"], context=context).stream()
+                yield from dbt.cli(["test"], context=context).stream()
+
+        Customizing the Dagster asset metadata inferred from a dbt project using :py:class:`~dagster_dbt.DagsterDbtTranslator`:
 
         .. code-block:: python
 
@@ -100,6 +171,46 @@ def dbt_assets(
             )
             def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
                 yield from dbt.cli(["build"], context=context).stream()
+
+        Invoking another Dagster :py:class:`~dagster.ResourceDefinition` alongside dbt:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import OpExecutionContext
+            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+            from dagster_slack import SlackResource
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource, slack: SlackResource):
+                yield from dbt.cli(["build"], context=context).stream()
+
+                slack_client = slack.get_client()
+                slack_client.chat_postMessage(channel="#my-channel", text="dbt build succeeded!")
+
+        Defining and accessing Dagster :py:class:`~dagster.Config` alongside dbt:
+
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster import Config, OpExecutionContext
+            from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+
+
+            class MyDbtConfig(Config):
+                full_refresh: bool
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource, config: MyDbtConfig):
+                dbt_build_args = ["build"]
+                if config.full_refresh:
+                    dbt_build_args += ["--full-refresh"]
+
+                yield from dbt.cli(dbt_build_args, context=context).stream()
     """
     check.inst_param(
         dagster_dbt_translator,
