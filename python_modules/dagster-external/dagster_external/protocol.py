@@ -30,9 +30,12 @@ class ExternalExecutionIOMode(str, Enum):
     stdio = "stdio"
     file = "file"
     fifo = "fifo"
+    socket = "socket"
 
 
 # ##### NOTIFICATION
+
+GET_CONTEXT_MESSAGE: Final = "__get_context__"
 
 
 class Notification(TypedDict):
