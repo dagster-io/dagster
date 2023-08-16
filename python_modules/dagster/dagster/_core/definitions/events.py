@@ -846,3 +846,4 @@ class HookExecutionResult(
 
 
 UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]
+

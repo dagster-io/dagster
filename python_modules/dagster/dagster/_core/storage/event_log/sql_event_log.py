@@ -28,6 +28,8 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
+from dagster._core.definitions import AssetCheckResult
+from dagster._core.definitions.asset_check_execution import AssetCheckExecution
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
@@ -74,6 +76,7 @@ from .base import (
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import (
+    AssetChecksTable,
     AssetEventTagsTable,
     AssetKeyTable,
     ConcurrencySlotsTable,
@@ -2459,6 +2462,39 @@ class SqlEventLogStorage(EventLogStorage):
 
             # return the concurrency keys for the freed slots
             return [cast(str, row[1]) for row in rows]
+
+    def store_asset_check_planned(self, asset_key: AssetKey, run_id: str) -> None:
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetChecksTable.insert().values(
+                    asset_key=asset_key.to_string(),
+                    run_id=run_id,
+                    status='PLANNED',
+                )
+            )
+
+    def store_asset_check_result(self, asset_check_result: AssetCheckResult, run_id:str, materialization_storage_id:int):
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetChecksTable.insert().values(
+                    asset_key=asset_check_result.asset_key.to_string(),
+                    run_id=run_id,
+                    status='SUCCESS' if asset_check_result.success else 'FAILURE',
+                    serialize_value=serialize_value(asset_check_result),
+                )
+            )
+
+    def get_asset_check_result(self, asset_key: AssetKey, run_id: str) -> Optional[AssetCheckExecution]:
+        with self.index_connection() as conn:
+            row = conn.execute(
+                db_select([AssetChecksTable.c.serialize_value])
+                .where(AssetChecksTable.c.asset_key == asset_key.to_string())
+                .where(AssetChecksTable.c.run_id == run_id)
+            ).fetchone()
+            if not row:
+                return None
+            return deserialize_value(cast(str, row[0]))
+        
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
