@@ -370,31 +370,35 @@ def python_target_click_options(allow_multiple_python_targets: bool) -> Sequence
     ]
 
 
-def grpc_server_target_click_options() -> Sequence[ClickOption]:
+def grpc_server_target_click_options(hidden=False) -> Sequence[ClickOption]:
     return [
         click.option(
             "--grpc-port",
             type=click.INT,
             required=False,
             help="Port to use to connect to gRPC server",
+            hidden=hidden,
         ),
         click.option(
             "--grpc-socket",
             type=click.Path(),
             required=False,
             help="Named socket to use to connect to gRPC server",
+            hidden=hidden,
         ),
         click.option(
             "--grpc-host",
             type=click.STRING,
             required=False,
             help="Host to use to connect to gRPC server, defaults to localhost",
+            hidden=hidden,
         ),
         click.option(
             "--use-ssl",
             is_flag=True,
             required=False,
             help="Use a secure channel when connecting to the gRPC server",
+            hidden=hidden,
         ),
     ]
 
