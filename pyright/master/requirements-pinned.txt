@@ -471,7 +471,6 @@ tornado==6.3.2
 tox==3.25.0
 tqdm==4.65.0
 traitlets==5.9.0
--e examples/tutorial_dbt_dagster
 -e examples/tutorial_notebook_assets
 twilio==8.5.0
 twine==1.15.0

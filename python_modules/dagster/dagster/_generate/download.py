@@ -24,7 +24,6 @@ AVAILABLE_EXAMPLES = [
     "quickstart_gcp",
     "quickstart_snowflake",
     "tutorial",
-    "tutorial_dbt_dagster",
     "tutorial_notebook_assets",
     "deploy_docker",
     "deploy_ecs",
