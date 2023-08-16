@@ -38,18 +38,6 @@ from starlette.types import Message
 from .graphql import GraphQLServer
 from .version import __version__
 
-ROOT_ADDRESS_STATIC_RESOURCES = [
-    "/manifest.json",
-    "/favicon.ico",
-    "/favicon.png",
-    "/favicon.svg",
-    "/favicon-run-pending.svg",
-    "/favicon-run-failed.svg",
-    "/favicon-run-success.svg",
-    "/robots.txt",
-    "/Dagster_world.mp4",
-]
-
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
@@ -236,22 +224,17 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 "make rebuild_ui" in the project root.
                 """)
 
-    def root_static_file_routes(self) -> List[Route]:
-        def _static_file(file_path):
-            return Route(
-                file_path,
-                lambda _: FileResponse(path=self.relative_path(f"webapp/build{file_path}")),
-                name="root_static",
-            )
-
-        return [_static_file(f) for f in ROOT_ADDRESS_STATIC_RESOURCES]
-
     def next_static_file_routes(self) -> List[Route]:
         def next_file_response(file_path):
-            with open(file_path, encoding="utf8") as f:
-                content = f.read().replace(
-                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
-                )
+            with open(file_path, mode="rb") as f:
+                content = f.read()
+                try:
+                    content = content.replace(
+                        "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                    )
+                except:
+                    # Ignore files that are byte content (eg. mp4 files)
+                    pass
                 return Response(content=content, media_type=guess_type(file_path)[0])
 
         def _next_static_file(path, file_path):
@@ -283,7 +266,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 name="vendor",
             ),
             # specific static resources addressed at /
-            *self.root_static_file_routes(),
             *self.next_static_file_routes(),
         ]
 
