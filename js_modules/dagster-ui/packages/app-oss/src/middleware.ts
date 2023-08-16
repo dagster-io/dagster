@@ -5,7 +5,6 @@ import type {NextRequest} from 'next/server';
 
 export function middleware(request: NextRequest) {
   if (shouldProxy(request)) {
-    console.log('proxying request', request.nextUrl.href);
     return NextResponse.rewrite(
       new URL(
         request.nextUrl.pathname,

@@ -18,5 +18,8 @@
   "packageManager": "yarn@3.3.0",
   "dependencies": {
     "graphql.macro": "^1.4.2"
+  },
+  "devDependencies": {
+    "file-loader": "^6.2.0"
   }
 }

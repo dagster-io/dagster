@@ -31,7 +31,7 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   transpilePackages: ['@dagster-io/ui-components', '@dagster-io/ui-core'],
-  webpack: (config, _settings) => {
+  webpack: (config, {isServer}) => {
     // Unset client-side javascript that only works server-side
     config.resolve.fallback = {fs: false, module: false};
 
@@ -39,6 +39,22 @@ const nextConfig = {
     config.externals.push({
       'utf-8-validate': 'commonjs utf-8-validate',
       bufferutil: 'commonjs bufferutil',
+    });
+
+    const prefix = config.assetPrefix ?? config.basePath ?? '';
+    // Use file-loader to load mp4 files.
+    config.module.rules.push({
+      test: /\.mp4$/,
+      use: [
+        {
+          loader: 'file-loader',
+          options: {
+            publicPath: `${prefix}/next/_next/static/media/`,
+            outputPath: `${isServer ? '../' : ''}static/media/`,
+            name: '[name].[hash].[ext]',
+          },
+        },
+      ],
     });
 
     return config;
@@ -64,6 +80,10 @@ module.exports = (phase) => {
       async rewrites() {
         return {
           fallback: [
+            {
+              source: '/graphql',
+              destination: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}/graphql`,
+            },
             {
               source: '/:path*',
               destination: '/',
