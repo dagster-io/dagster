@@ -22,10 +22,8 @@ self.addEventListener('message', (event) => {
     case 'query': {
       if (fuseObject) {
         const {queryString} = data;
-
         // Consider the empty string as returning no results.
         const results = queryString ? fuseObject.search(queryString) : [];
-        console.log({queryString, results});
         self.postMessage({type: 'results', queryString, results});
       }
     }

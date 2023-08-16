@@ -1,7 +1,7 @@
 import gzip
 import io
 import uuid
-from os import path
+from os import path, walk
 from typing import Generic, List, TypeVar
 
 import dagster._check as check
@@ -27,7 +27,9 @@ from starlette.responses import (
     JSONResponse,
     PlainTextResponse,
     RedirectResponse,
+    Response,
     StreamingResponse,
+    guess_type,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
@@ -216,8 +218,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     **self.make_security_headers(),
                 }
                 return HTMLResponse(
-                    rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
-                    .replace('src="/', f'src="{self._app_path_prefix}/')
+                    rendered_template.replace(
+                        "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                    )
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
                     .replace(
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
@@ -243,16 +246,34 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
         return [_static_file(f) for f in ROOT_ADDRESS_STATIC_RESOURCES]
 
+    def next_static_file_routes(self) -> List[Route]:
+        def next_file_response(file_path):
+            with open(file_path, encoding="utf8") as f:
+                content = f.read().replace(
+                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                )
+                return Response(content=content, media_type=guess_type(file_path)[0])
+
+        def _next_static_file(path, file_path):
+            return Route(
+                path,
+                lambda _: next_file_response(file_path),
+                name="next",
+            )
+
+        routes = []
+        base_dir = self.relative_path("webapp/build/")
+        for subdir, _, files in walk(base_dir):
+            for file in files:
+                full_path = path.join(subdir, file)
+                relative_path = full_path[len(base_dir) :].lstrip(path.sep)
+                routes.append(_next_static_file("/" + relative_path, full_path))
+
+        return routes
+
     def build_static_routes(self):
         return [
-            Mount(
-                "/next",
-                StaticFiles(
-                    directory=self.relative_path("webapp/build"),
-                    check_dir=False,
-                ),
-                name="next",
-            ),
+            *self.next_static_file_routes(),
             # static resources addressed at /vendor/
             Mount(
                 "/vendor",

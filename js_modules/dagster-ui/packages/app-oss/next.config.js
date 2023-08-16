@@ -63,7 +63,7 @@ const nextConfig = {
     styledComponents: true,
   },
   distDir: 'build',
-  assetPrefix: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN ?? ''}/next`,
+  assetPrefix: 'BUILDTIME_ASSETPREFIX_REPLACE_ME',
   experimental: {
     appDir: false,
   },
