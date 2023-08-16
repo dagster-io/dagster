@@ -101,58 +101,7 @@
           }
         ]
       },
-      {
-        "title": "Ops",
-        "path": "/concepts/ops-jobs-graphs/ops",
-        "children": [
-          {
-            "title": "Ops",
-            "path": "/concepts/ops-jobs-graphs/ops"
-          },
-          {
-            "title": "Op events",
-            "path": "/concepts/ops-jobs-graphs/op-events"
-          },
-          {
-            "title": "Op hooks",
-            "path": "/concepts/ops-jobs-graphs/op-hooks"
-          },
-          {
-            "title": "Op retries",
-            "path": "/concepts/ops-jobs-graphs/op-retries"
-          },
-          {
-            "title": "Op graphs",
-            "path": "/concepts/ops-jobs-graphs/graphs"
-          },
-          {
-            "title": "Nesting op graphs",
-            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
-          },
-          {
-            "title": "Dynamic op graphs",
-            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
-          }
-        ]
-      },
-      {
-        "title": "Jobs",
-        "path": "/concepts/ops-jobs-graphs/jobs",
-        "children": [
-          {
-            "title": "Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs"
-          },
-          {
-            "title": "Job execution",
-            "path": "/concepts/ops-jobs-graphs/job-execution"
-          },
-          {
-            "title": "Metadata & tags",
-            "path": "/concepts/ops-jobs-graphs/metadata-tags"
-          }
-        ]
-      },
+      
       {
         "title": "Schedules & Sensors",
         "path": "/concepts/partitions-schedules-sensors/schedules",
@@ -186,23 +135,12 @@
         ]
       },
       {
-        "title": "I/O management",
-        "path": "/concepts/io-management/io-managers",
+        "title": "Resources & configuration",
         "children": [
           {
-            "title": "I/O managers",
-            "path": "/concepts/io-management/io-managers"
+            "title": "Resources",
+            "path": "/concepts/resources"
           },
-          {
-            "title": "Unconnected inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
-          }
-        ]
-      },
-      {
-        "title": "Configuration",
-        "path": "/concepts/configuration/config-schema",
-        "children": [
           {
             "title": "Run configuration",
             "path": "/concepts/configuration/config-schema"
@@ -212,10 +150,6 @@
             "path": "/concepts/configuration/advanced-config-types"
           }
         ]
-      },
-      {
-        "title": "Resources",
-        "path": "/concepts/resources"
       },
       {
         "title": "Code locations",
@@ -232,42 +166,113 @@
         ]
       },
       {
-        "title": "Dagster webserver & UI",
-        "children": [
-          {
-            "title": "Dagster UI",
-            "path": "/concepts/webserver/ui"
-          },
-          {
-            "title": "GraphQL API",
-            "path": "/concepts/webserver/graphql"
-          },
-          {
-            "title": "GraphQL Python client",
-            "path": "/concepts/webserver/graphql-client"
-          }
-        ]
-      },
-      {
-        "title": "Dagster Types",
-        "path": "/concepts/types"
-      },
-      {
-        "title": "Logging",
-        "children": [
-          {
-            "title": "Loggers",
-            "path": "/concepts/logging/loggers"
-          },
-          {
-            "title": "Python logging",
-            "path": "/concepts/logging/python-logging"
-          }
-        ]
+        "title": "Dagster UI",
+        "path": "/concepts/webserver/ui"
       },
       {
         "title": "Testing",
         "path": "/concepts/testing"
+      },
+      {
+        "title": "Advanced",
+        "children": [
+          {
+            "title": "Ops",
+            "path": "/concepts/ops-jobs-graphs/ops",
+            "children": [
+              {
+                "title": "Ops",
+                "path": "/concepts/ops-jobs-graphs/ops"
+              },
+              {
+                "title": "Op events",
+                "path": "/concepts/ops-jobs-graphs/op-events"
+              },
+              {
+                "title": "Op hooks",
+                "path": "/concepts/ops-jobs-graphs/op-hooks"
+              },
+              {
+                "title": "Op retries",
+                "path": "/concepts/ops-jobs-graphs/op-retries"
+              },
+              {
+                "title": "Op graphs",
+                "path": "/concepts/ops-jobs-graphs/graphs"
+              },
+              {
+                "title": "Nesting op graphs",
+                "path": "/concepts/ops-jobs-graphs/nesting-graphs"
+              },
+              {
+                "title": "Dynamic op graphs",
+                "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+              }
+            ]
+          },
+          {
+            "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs",
+            "children": [
+              {
+                "title": "Jobs",
+                "path": "/concepts/ops-jobs-graphs/jobs"
+              },
+              {
+                "title": "Job execution",
+                "path": "/concepts/ops-jobs-graphs/job-execution"
+              },
+              {
+                "title": "Metadata & tags",
+                "path": "/concepts/ops-jobs-graphs/metadata-tags"
+              }
+            ]
+          },
+          {
+            "title": "I/O management",
+            "path": "/concepts/io-management/io-managers",
+            "children": [
+              {
+                "title": "I/O managers",
+                "path": "/concepts/io-management/io-managers"
+              },
+              {
+                "title": "Unconnected inputs",
+                "path": "/concepts/io-management/unconnected-inputs"
+              }
+            ]
+          },
+          {
+            "title": "Dagster Types",
+            "path": "/concepts/types"
+          },
+          {
+            "title": "Logging",
+            "children": [
+              {
+                "title": "Loggers",
+                "path": "/concepts/logging/loggers"
+              },
+              {
+                "title": "Python logging",
+                "path": "/concepts/logging/python-logging"
+              }
+            ]
+          },
+          {
+            "title": "GraphQL",
+            "children": [
+              {
+                "title": "GraphQL API",
+                "path": "/concepts/webserver/graphql"
+              },
+              {
+                "title": "GraphQL Python client",
+                "path": "/concepts/webserver/graphql-client"
+              }
+            ]
+          }
+        ]
       }
     ]
   },
