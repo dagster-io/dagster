@@ -1,7 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -10,7 +9,6 @@ from typing import (
     Optional,
 )
 
-import dagster._check as check
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
@@ -76,36 +74,46 @@ class RuleEvaluationContext(NamedTuple):
         )
 
 
-class AutoMaterializeRuleType(Enum):
-    """An Enum representing the types of the valid auto materialization rules."""
+class AutoMaterializeRule(ABC):
+    @staticmethod
+    def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
+        return MaterializeOnRequiredForFreshnessRule()
 
-    MATERIALIZE_ON_REQUIRED_FOR_FRESHNESS = "MATERIALIZE_ON_REQUIRED_FOR_FRESHNESS"
-    MATERIALIZE_ON_PARENT_UPDATED = "MATERIALIZE_ON_PARENT_UPDATED"
-    MATERIALIZE_ON_MISSING = "MATERIALIZE_ON_MISSING"
-    SKIP_ON_PARENT_OUTDATED = "SKIP_ON_PARENT_OUTDATED"
+    @staticmethod
+    def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
+        return MaterializeOnParentUpdatedRule()
 
+    @staticmethod
+    def materialize_on_missing() -> "MaterializeOnMissingRule":
+        return MaterializeOnMissingRule()
 
-class AutoMaterializeRuleEvaluator(ABC):
-    """An AutoMaterializeRuleEvaluator defines a strucutured function that maps
-    AutoMaterializeConditions to the AssetKeyPartitionKeys that they apply to.
-    """
+    @staticmethod
+    def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
+        return SkipOnParentOutdatedRule()
 
     @abstractproperty
     def decision_type(self) -> AutoMaterializeDecisionType:
-        """The type of decision this rule evaluator makes (either SKIP or MATERIALIZE)."""
         ...
 
     @abstractmethod
     def evaluate(
         self, context: RuleEvaluationContext
     ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
-        """Returns a mapping from AutoMaterializeCondition to the set of asset partitions that the
-        condition applies to.
-        """
         ...
 
+    def __eq__(self, other) -> bool:
+        # override the default NamedTuple __eq__ method to factor in types
+        return type(self) == type(other) and super().__eq__(other)
 
-class MaterializeOnRequiredForFreshnessRuleEvaluator(AutoMaterializeRuleEvaluator):
+    def __hash__(self) -> int:
+        # override the default NamedTuple __hash__ method to factor in types
+        return hash(hash(type(self)) + super().__hash__())
+
+
+@whitelist_for_serdes
+class MaterializeOnRequiredForFreshnessRule(
+    AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
+):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
@@ -124,7 +132,10 @@ class MaterializeOnRequiredForFreshnessRuleEvaluator(AutoMaterializeRuleEvaluato
         return freshness_conditions
 
 
-class MaterializeOnParentUpdatedRuleEvaluator(AutoMaterializeRuleEvaluator):
+@whitelist_for_serdes
+class MaterializeOnParentUpdatedRule(
+    AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
+):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
@@ -191,7 +202,8 @@ class MaterializeOnParentUpdatedRuleEvaluator(AutoMaterializeRuleEvaluator):
         return conditions
 
 
-class MaterializeOnMissingRuleEvaluator(AutoMaterializeRuleEvaluator):
+@whitelist_for_serdes
+class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
@@ -222,7 +234,8 @@ class MaterializeOnMissingRuleEvaluator(AutoMaterializeRuleEvaluator):
         return {MissingAutoMaterializeCondition(): missing_asset_partitions}
 
 
-class SkipOnParentOutdatedRuleEvaluator(AutoMaterializeRuleEvaluator):
+@whitelist_for_serdes
+class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOutdatedRule", [])):
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
@@ -258,52 +271,3 @@ class SkipOnParentOutdatedRuleEvaluator(AutoMaterializeRuleEvaluator):
                     )
                 ].update({candidate})
         return conditions
-
-
-@whitelist_for_serdes
-class AutoMaterializeRule(NamedTuple):
-    rule_type: AutoMaterializeRuleType
-
-    @staticmethod
-    def materialize_on_required_for_freshness() -> "AutoMaterializeRule":
-        return AutoMaterializeRule(
-            rule_type=AutoMaterializeRuleType.MATERIALIZE_ON_REQUIRED_FOR_FRESHNESS
-        )
-
-    @staticmethod
-    def materialize_on_parent_updated() -> "AutoMaterializeRule":
-        return AutoMaterializeRule(rule_type=AutoMaterializeRuleType.MATERIALIZE_ON_PARENT_UPDATED)
-
-    @staticmethod
-    def materialize_on_missing() -> "AutoMaterializeRule":
-        return AutoMaterializeRule(rule_type=AutoMaterializeRuleType.MATERIALIZE_ON_MISSING)
-
-    @staticmethod
-    def skip_on_parent_outdated() -> "AutoMaterializeRule":
-        return AutoMaterializeRule(rule_type=AutoMaterializeRuleType.SKIP_ON_PARENT_OUTDATED)
-
-    @property
-    def evaluator(self) -> AutoMaterializeRuleEvaluator:
-        if self.rule_type == AutoMaterializeRuleType.MATERIALIZE_ON_REQUIRED_FOR_FRESHNESS:
-            return MaterializeOnRequiredForFreshnessRuleEvaluator()
-        elif self.rule_type == AutoMaterializeRuleType.MATERIALIZE_ON_PARENT_UPDATED:
-            return MaterializeOnParentUpdatedRuleEvaluator()
-        elif self.rule_type == AutoMaterializeRuleType.MATERIALIZE_ON_MISSING:
-            return MaterializeOnMissingRuleEvaluator()
-        elif self.rule_type == AutoMaterializeRuleType.SKIP_ON_PARENT_OUTDATED:
-            return SkipOnParentOutdatedRuleEvaluator()
-        else:
-            check.failed(f"Unexpected rule type {self.rule_type}")
-
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return self.evaluator.decision_type
-
-    def evaluate(
-        self, context: RuleEvaluationContext
-    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
-        print("----")
-        print("EVALUATING", self.rule_type)
-        ret = self.evaluator.evaluate(context)
-        print(ret)
-        return ret

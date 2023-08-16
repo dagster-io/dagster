@@ -342,10 +342,15 @@ class AssetDaemonContext:
             daemon_context=self,
         )
 
+        print(asset_key)
+        print(auto_materialize_policy)
         for materialize_rule in auto_materialize_policy.materialize_rules:
+            print("....")
+            print(materialize_rule)
             for condition, asset_partitions in materialize_rule.evaluate(
                 materialize_context
             ).items():
+                print(condition, asset_partitions)
                 conditions[condition].update(asset_partitions)
                 candidates.update(asset_partitions)
 

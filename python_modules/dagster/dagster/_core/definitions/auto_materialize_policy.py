@@ -189,7 +189,7 @@ class AutoMaterializePolicy(
         check.param_invariant(
             not non_matching_rules,
             "rules_to_remove",
-            f"Rules [{(rule for rule in rules_to_remove if rule in non_matching_rules)}] do not"
+            f"Rules {[rule for rule in rules_to_remove if rule in non_matching_rules]} do not"
             " exist in this policy.",
         )
         return self._replace(
