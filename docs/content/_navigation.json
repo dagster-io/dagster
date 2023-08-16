@@ -73,7 +73,6 @@
     "children": [
       {
         "title": "Assets",
-        "path": "/concepts/assets/software-defined-assets",
         "children": [
           {
             "title": "Software-defined Assets",
@@ -104,7 +103,6 @@
       
       {
         "title": "Schedules & Sensors",
-        "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
             "title": "Schedules",
@@ -121,8 +119,7 @@
         ]
       },
       {
-        "title": "Partitions & Backfills",
-        "path": "/concepts/partitions-schedules-sensors/partitions",
+        "title": "Partitions & backfills",
         "children": [
           {
             "title": "Partitions",
@@ -153,7 +150,6 @@
       },
       {
         "title": "Code locations",
-        "path": "/concepts/code-locations",
         "children": [
           {
             "title": "Code locations (Definitions)",
@@ -178,7 +174,6 @@
         "children": [
           {
             "title": "Ops",
-            "path": "/concepts/ops-jobs-graphs/ops",
             "children": [
               {
                 "title": "Ops",
@@ -212,7 +207,6 @@
           },
           {
             "title": "Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs",
             "children": [
               {
                 "title": "Jobs",
@@ -230,7 +224,6 @@
           },
           {
             "title": "I/O management",
-            "path": "/concepts/io-management/io-managers",
             "children": [
               {
                 "title": "I/O managers",
