@@ -256,7 +256,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 else:
                     routes.append(
                         Route(
-                            relative_path,
+                            "/" + relative_path,
                             lambda _: FileResponse(path=full_path),
                             name="static",
                         )
