@@ -15,7 +15,7 @@ from .constants import dbt_manifest_path, dbt_project_dir
 duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
 
 
-@asset
+@asset(compute_kind="python")
 def raw_customers(context) -> None:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     connection = duckdb.connect(os.fspath(duckdb_database_path))
@@ -34,7 +34,10 @@ def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
 
 
 # start_downstream_asset
-@asset(deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"))
+@asset(
+    compute_kind="python",
+    deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"),
+)
 def order_count_chart(context):
     # read the contents of the customers table into a Pandas DataFrame
     connection = duckdb.connect(os.fspath(duckdb_database_path))
