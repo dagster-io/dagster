@@ -110,6 +110,8 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+from dagster._core.definitions.asset_check_result import AssetCheckResult as AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec as AssetCheckSpec
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
@@ -127,6 +129,9 @@ from dagster._core.definitions.data_version import (
     DataProvenance as DataProvenance,
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
+)
+from dagster._core.definitions.decorators.asset_check_decorator import (
+    asset_check as asset_check,
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
@@ -438,6 +443,7 @@ from dagster._core.execution.context.system import (
     StepExecutionContext as StepExecutionContext,
     TypeCheckContext as TypeCheckContext,
 )
+from dagster._core.execution.execute_in_process import execute_in_process as execute_in_process
 from dagster._core.execution.execute_in_process_result import (
     ExecuteInProcessResult as ExecuteInProcessResult,
 )

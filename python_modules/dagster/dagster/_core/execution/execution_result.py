@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 from typing import AbstractSet, Callable, List, Optional, Sequence, Set, cast
 
 import dagster._check as check
-from dagster._core.definitions import JobDefinition, NodeHandle
+from dagster._core.definitions import AssetCheckEvaluation, JobDefinition, NodeHandle
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.events import (
+    AssetCheckEvaluationData,
     AssetObservationData,
     DagsterEvent,
     DagsterEventType,
@@ -175,6 +176,13 @@ class ExecutionResult(ABC):
 
     def get_asset_materialization_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_materialization]
+
+    def get_asset_check_evaluations(self) -> Sequence[AssetCheckEvaluation]:
+        return [
+            cast(AssetCheckEvaluationData, event.event_specific_data).asset_check_evaluation
+            for event in self.all_events
+            if event.event_type_value == DagsterEventType.ASSET_CHECK_RESULT.value
+        ]
 
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]

@@ -16,6 +16,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
@@ -650,6 +651,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             data_version (DataVersion): The data version to set.
         """
         self._step_execution_context.set_data_version(asset_key, data_version)
+
+    @property
+    def asset_check_spec(self) -> AssetCheckSpec:
+        asset_checks_def = self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle)
+        return asset_checks_def.spec
 
 
 # actually forking the object type for assets is tricky for users in the cases of:

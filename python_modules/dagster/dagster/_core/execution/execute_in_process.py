@@ -1,8 +1,23 @@
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, Mapping, Optional, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    FrozenSet,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
+from dagster import _check as check
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
@@ -22,6 +37,59 @@ from .execute_in_process_result import ExecuteInProcessResult
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.outputs import StepOutputHandle
+
+
+def execute_in_process(
+    *,
+    assets: Optional[Sequence[Union[AssetsDefinition, SourceAsset]]] = None,
+    asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
+    resources: Optional[Mapping[str, object]] = None,
+    instance: Optional[DagsterInstance] = None,
+    raise_on_error: bool = True,
+    run_config: Any = None,
+    tags: Optional[Mapping[str, str]] = None,
+) -> ExecuteInProcessResult:
+    """Executes a single-threaded, in-process run which observes, materializes, and checks provided
+    assets.
+
+    Does the following:
+    - For any included assets that are observable source assets, runs their observation functions.
+    - For any included assets that are materializable, runs their materialization functions.
+    - Executes all included checks.
+
+    Returns:
+        ExecuteInProcessResult:
+    """
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+
+    assets = check.opt_sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
+    asset_checks = check.opt_sequence_param(
+        asset_checks, "asset_checks", of_type=AssetChecksDefinition
+    )
+    instance = check.opt_inst_param(instance, "instance", DagsterInstance)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
+
+    all_executable_keys: Set[AssetKey] = set()
+    for asset in assets:
+        if isinstance(asset, AssetsDefinition):
+            all_executable_keys = all_executable_keys.union(set(asset.keys))
+
+    JOB_NAME = "__ephemeral_asset_job__"
+
+    defs = Definitions(
+        jobs=[define_asset_job(name=JOB_NAME)],
+        assets=assets,
+        resources=resources,
+        asset_checks=asset_checks,
+    )
+    job_def = check.not_none(defs.get_job_def(JOB_NAME), "This should always return a job")
+    return job_def.execute_in_process(
+        run_config=run_config,
+        instance=instance,
+        raise_on_error=raise_on_error,
+        tags=tags,
+    )
 
 
 def core_execute_in_process(

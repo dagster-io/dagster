@@ -27,6 +27,7 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
+from dagster._core.definitions.asset_check_result import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -74,6 +75,7 @@ EventSpecificData = Union[
     "ComputeLogsCaptureData",
     "AssetObservationData",
     "AssetMaterializationPlannedData",
+    "AssetCheckEvaluationData",
 ]
 
 
@@ -104,6 +106,7 @@ class DagsterEventType(str, Enum):
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
+    ASSET_CHECK_RESULT = "ASSET_CHECK_RESULT"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
@@ -945,6 +948,16 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def asset_check_evaluation(
+        step_context: IStepContext, asset_check_evaluation: AssetCheckEvaluation
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ASSET_CHECK_RESULT,
+            step_context=step_context,
+            event_specific_data=AssetCheckEvaluationData(asset_check_evaluation),
+        )
+
+    @staticmethod
     def step_expectation_result(
         step_context: IStepContext, expectation_result: ExpectationResult
     ) -> "DagsterEvent":
@@ -1425,6 +1438,19 @@ class AssetObservationData(
             cls,
             asset_observation=check.inst_param(
                 asset_observation, "asset_observation", AssetObservation
+            ),
+        )
+
+
+@whitelist_for_serdes
+class AssetCheckEvaluationData(
+    NamedTuple("_AssetCheckEvaluationData", [("asset_check_evaluation", AssetCheckEvaluation)])
+):
+    def __new__(cls, asset_check_evaluation: AssetCheckEvaluation):
+        return super(AssetCheckEvaluationData, cls).__new__(
+            cls,
+            asset_check_evaluation=check.inst_param(
+                asset_check_evaluation, "asset_check_evaluation", AssetCheckEvaluation
             ),
         )
 

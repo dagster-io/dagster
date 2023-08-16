@@ -15,6 +15,8 @@ from typing_extensions import TypedDict
 
 import dagster._check as check
 from dagster._core.definitions import (
+    AssetCheckEvaluation,
+    AssetCheckResult,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -72,6 +74,24 @@ from dagster._utils.warnings import (
 from .compute import OpOutputUnion
 from .compute_generator import create_op_compute_wrapper
 from .utils import op_execution_error_boundary
+
+
+def _asset_check_results_to_outputs_and_evaluations(
+    step_context: StepExecutionContext, user_event_sequence: Iterator[OpOutputUnion]
+) -> Iterator[OpOutputUnion]:
+    for user_event in user_event_sequence:
+        if isinstance(user_event, AssetCheckResult):
+            asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+
+            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+                asset_check_evaluation.asset_key, asset_check_evaluation.check_name
+            )
+            output = Output(value=None, output_name=output_name)
+
+            yield asset_check_evaluation
+            yield output
+        else:
+            yield user_event
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -404,7 +424,10 @@ def core_dagster_event_sequence_for_step(
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
         for user_event in check.generator(
-            _step_output_error_checked_user_event_sequence(step_context, user_event_sequence)
+            _step_output_error_checked_user_event_sequence(
+                step_context,
+                _asset_check_results_to_outputs_and_evaluations(step_context, user_event_sequence),
+            )
         ):
             if isinstance(user_event, DagsterEvent):
                 yield user_event
@@ -417,6 +440,8 @@ def core_dagster_event_sequence_for_step(
                 yield DagsterEvent.asset_materialization(step_context, user_event)
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
+            elif isinstance(user_event, AssetCheckEvaluation):
+                yield DagsterEvent.asset_check_evaluation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
