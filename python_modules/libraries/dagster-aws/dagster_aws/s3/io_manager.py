@@ -78,7 +78,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         return f"s3://{self.bucket}/{path}"
 
 
-class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
+class S3PickleIOManager(ConfigurableIOManager):
     """Persistent IO manager using S3 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -99,7 +99,7 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import asset, Definitions
-        from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+        from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 
         @asset
@@ -149,9 +149,13 @@ class ConfigurablePickledObjectS3IOManager(ConfigurableIOManager):
         return self.inner_io_manager().handle_output(context, obj)
 
 
+# S3PickleIOManager used to be named ConfigurablePickledObjectS3IOManager, keep this symbol around for backcompat
+ConfigurablePickledObjectS3IOManager = S3PickleIOManager
+
+
 @dagster_maintained_io_manager
 @io_manager(
-    config_schema=ConfigurablePickledObjectS3IOManager.to_config_schema(),
+    config_schema=S3PickleIOManager.to_config_schema(),
     required_resource_keys={"s3"},
 )
 def s3_pickle_io_manager(init_context):
