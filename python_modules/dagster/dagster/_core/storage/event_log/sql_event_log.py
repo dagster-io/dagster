@@ -29,7 +29,10 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import AssetCheckResult
-from dagster._core.definitions.asset_check_execution import AssetCheckExecution
+from dagster._core.definitions.asset_check_execution import (
+    AssetCheckExecution,
+    AssetCheckExecutionStatus,
+)
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
@@ -2463,38 +2466,72 @@ class SqlEventLogStorage(EventLogStorage):
             # return the concurrency keys for the freed slots
             return [cast(str, row[1]) for row in rows]
 
-    def store_asset_check_planned(self, asset_key: AssetKey, run_id: str) -> None:
+    def store_asset_check_execution_planned(
+        self, asset_check_execution: AssetCheckExecution
+    ) -> None:
+        check.invariant(
+            asset_check_execution.check_status == AssetCheckExecutionStatus.PLANNED,
+            "Can only store planned asset check executions",
+        )
         with self.index_connection() as conn:
             conn.execute(
                 AssetChecksTable.insert().values(
-                    asset_key=asset_key.to_string(),
-                    run_id=run_id,
-                    status='PLANNED',
+                    asset_key=asset_check_execution.asset_key.to_string(),
+                    check_name=asset_check_execution.check_name,
+                    run_id=asset_check_execution.run_id,
+                    status=asset_check_execution.check_status.value,
+                    check_execution=serialize_value(asset_check_execution),
                 )
             )
 
-    def store_asset_check_result(self, asset_check_result: AssetCheckResult, run_id:str, materialization_storage_id:int):
+    def update_asset_check_execution(self, asset_check_execution: AssetCheckExecution) -> None:
+        check.invariant(
+            asset_check_execution.check_status != AssetCheckExecutionStatus.PLANNED,
+            "Can only update with non-planned asset check executions",
+        )
         with self.index_connection() as conn:
             conn.execute(
-                AssetChecksTable.insert().values(
-                    asset_key=asset_check_result.asset_key.to_string(),
-                    run_id=run_id,
-                    status='SUCCESS' if asset_check_result.success else 'FAILURE',
-                    serialize_value=serialize_value(asset_check_result),
+                AssetChecksTable.update()
+                .where(
+                    db.and_(
+                        AssetChecksTable.c.asset_key == asset_check_execution.asset_key.to_string(),
+                        AssetChecksTable.c.check_name == asset_check_execution.check_name,
+                        AssetChecksTable.c.run_id == asset_check_execution.run_id,
+                    )
+                )
+                .values(
+                    status=asset_check_execution.check_status.value,
+                    check_execution=serialize_value(asset_check_execution),
+                    materialization_storage_id=(
+                        asset_check_execution.target_materialization_record.storage_id
+                        if asset_check_execution.target_materialization_record
+                        else None
+                    ),
+                    start_timestamp=datetime.utcfromtimestamp(
+                        asset_check_execution.start_timestamp
+                    ),
+                    end_timestamp=datetime.utcfromtimestamp(asset_check_execution.end_timestamp),
                 )
             )
 
-    def get_asset_check_result(self, asset_key: AssetKey, run_id: str) -> Optional[AssetCheckExecution]:
+    def get_latest_asset_check_execution(
+        self, asset_key: AssetKey, check_name: str
+    ) -> Optional[AssetCheckExecution]:
         with self.index_connection() as conn:
             row = conn.execute(
-                db_select([AssetChecksTable.c.serialize_value])
-                .where(AssetChecksTable.c.asset_key == asset_key.to_string())
-                .where(AssetChecksTable.c.run_id == run_id)
-            ).fetchone()
-            if not row:
-                return None
-            return deserialize_value(cast(str, row[0]))
-        
+                db_select([AssetChecksTable.c.check_execution])
+                .where(
+                    db.and_(
+                        AssetChecksTable.c.asset_key == asset_key.to_string(),
+                        AssetChecksTable.c.check_name == check_name,
+                    )
+                )
+                .order_by(AssetChecksTable.c.id.desc())
+                .limit(1)
+            ).first()
+            if row:
+                return deserialize_value(cast(str, row[0]), AssetCheckExecution)
+            return None
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

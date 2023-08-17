@@ -5,7 +5,13 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
+from tracemalloc import start
 from typing import List, Optional, Sequence, Tuple, cast
+from dagster._core.definitions.asset_check_execution import (
+    AssetCheckExecution,
+    AssetCheckExecutionStatus,
+)
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 import mock
 import pendulum
@@ -3898,3 +3904,45 @@ class TestEventLogStorage:
             assert foo_info.assigned_step_count == 0
 
             assert all(f.done() for f in futures)
+
+    def test_asset_checks(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        planned_execution = AssetCheckExecution.planned(
+            asset_key=AssetKey("a"),
+            check_name="some_check",
+            run_id=run_id,
+        )
+
+        storage.store_asset_check_execution_planned(planned_execution)
+
+        assert (
+            storage.get_latest_asset_check_execution(
+                AssetKey("a"),
+                "some_check",
+            ).check_status
+            == AssetCheckExecutionStatus.PLANNED
+        )
+
+        storage.update_asset_check_execution(
+            planned_execution.with_result(
+                AssetCheckResult(
+                    asset_key=AssetKey("a"),
+                    check_name="some_check",
+                    success=True,
+                ),
+                start_timestamp=datetime.datetime.now().timestamp() - 100,
+                end_timestamp=datetime.datetime.now().timestamp(),
+            )
+        )
+
+        assert (
+            storage.get_latest_asset_check_execution(
+                AssetKey("a"),
+                "some_check",
+            ).check_status
+            == AssetCheckExecutionStatus.RESULT_SUCCESS
+        )

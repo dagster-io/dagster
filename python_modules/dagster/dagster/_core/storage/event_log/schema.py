@@ -146,15 +146,28 @@ AssetChecksTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("name", db.Text),
+    db.Column("check_name", db.Text),
     db.Column("asset_key", db.Text),
-    db.Column("partition", db.Text), # Currently unused. Planned for future partition support
+    db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
     db.Column("status", db.Text),
     db.Column("run_id", db.Text),
-    db.Column("materialization_storage_id", db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),),
-    db.Column("result_body", db.Text),
-    db.Column("assigned_timestamp", db.DateTime),
+    db.Column(
+        "materialization_storage_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),
+    db.Column("check_execution", db.Text),
+    db.Column("start_timestamp", db.DateTime),
+    db.Column("end_timestamp", db.DateTime),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+db.Index(
+    "idx_asset_checks_unique",
+    AssetChecksTable.c.asset_key,
+    AssetChecksTable.c.check_name,
+    AssetChecksTable.c.run_id,
+    AssetChecksTable.c.partition,
+    unique=True,
 )
 
 

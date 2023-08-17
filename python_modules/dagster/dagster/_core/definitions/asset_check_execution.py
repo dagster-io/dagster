@@ -96,9 +96,9 @@ class AssetCheckExecution(
     def with_result(
         self,
         check_result: AssetCheckResult,
-        target_materialization_record: "EventLogRecord",
         start_timestamp: float,
         end_timestamp: float,
+        target_materialization_record: Optional["EventLogRecord"] = None,
     ):
         return AssetCheckExecution(
             asset_key=self.asset_key,
