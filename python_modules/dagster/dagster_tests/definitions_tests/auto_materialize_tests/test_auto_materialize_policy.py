@@ -1,9 +1,9 @@
+import pytest
 from dagster import AutoMaterializePolicy
+from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._check import CheckError
 from dagster._serdes import deserialize_value, serialize_value
-import pytest
 
 
 def test_type():
