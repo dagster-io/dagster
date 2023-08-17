@@ -399,7 +399,7 @@ def execute_sensor_iteration(
 
     if not sensors:
         if log_verbose_checks:
-            logger.info("Not checking for any runs since no sensors have been started.")
+            logger.debug("Not checking for any runs since no sensors have been started.")
         yield
         return
 
