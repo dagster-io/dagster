@@ -5,7 +5,7 @@ import {Html, Head, Main, NextScript} from 'next/document';
 import React from 'react';
 
 function getSecurityPolicy() {
-  return fs.readFileSync(path.join(__dirname, '../../../csp-header.conf'), {encoding: 'utf8'});
+  return fs.readFileSync(path.join(__dirname, '../../../csp-header-dev.txt'), {encoding: 'utf8'});
 }
 
 // eslint-disable-next-line import/no-default-export
