@@ -82,7 +82,6 @@ basic_scenarios = {
         expected_conditions={
             "asset1": {MissingAutoMaterializeCondition()},
             "asset2": {
-                MissingAutoMaterializeCondition(),
                 ParentMaterializedAutoMaterializeCondition(
                     updated_asset_keys=frozenset(),
                     will_update_asset_keys=frozenset([AssetKey("asset1")]),
