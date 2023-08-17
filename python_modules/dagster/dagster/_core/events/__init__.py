@@ -27,6 +27,7 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -55,6 +56,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
+    from dagster._core.storage.event_log.base import (
+        EventLogRecord,
+    )
 
 EventSpecificData = Union[
     StepOutputData,
@@ -105,6 +109,8 @@ class DagsterEventType(str, Enum):
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
+    ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
+    ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -169,6 +175,7 @@ STEP_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
+    DagsterEventType.ASSET_CHECK_EVALUATION,
     DagsterEventType.OBJECT_STORE_OPERATION,
     DagsterEventType.HANDLED_OUTPUT,
     DagsterEventType.LOADED_INPUT,
@@ -1486,6 +1493,62 @@ class StepExpectationResultData(
                 expectation_result, "expectation_result", ExpectationResult
             ),
         )
+
+
+@whitelist_for_serdes
+class AssetCheckEvaluationPlannedData(
+    NamedTuple(
+        "_AssetCheckEvaluationPlannedData",
+        [
+            ("asset_key", AssetKey),
+            ("check_name", str),
+        ],
+    )
+):
+    def __new__(cls, asset_key: AssetKey, check_name: str):
+        return super(AssetCheckEvaluationPlannedData, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            check_name=check.str_param(check_name, "check_name"),
+        )
+
+
+@whitelist_for_serdes
+class AssetCheckEvaluationData(
+    NamedTuple(
+        "_AssetCheckEvaluationData",
+        [
+            ("result", AssetCheckResult),
+            ("target_materialization_record", Optional["EventLogRecord"]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        result: AssetCheckResult,
+        target_materialization_record: Optional["EventLogRecord"] = None,
+    ):
+        from dagster._core.storage.event_log.base import (
+            EventLogRecord,
+        )
+
+        return super(AssetCheckEvaluationData, cls).__new__(
+            cls,
+            result=check.inst_param(result, "result", AssetCheckResult),
+            target_materialization_record=check.opt_inst_param(
+                target_materialization_record,
+                "target_materialization_record",
+                EventLogRecord,
+            ),
+        )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.result.asset_key
+
+    @property
+    def check_name(self) -> str:
+        return self.result.check_name
 
 
 @whitelist_for_serdes(
