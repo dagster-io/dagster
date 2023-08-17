@@ -105,7 +105,7 @@ const BreadcrumbNav = ({asPath}) => {
   }
 
   return (
-    breadcrumbItems.length > 1 && (
+    breadcrumbItems.length >= 1 && (
       <nav className="flex py-2" aria-label="Breadcrumb">
         <ol className="inline-flex">
           {breadcrumbItems.map((item, index) => {
