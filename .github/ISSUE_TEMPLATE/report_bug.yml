@@ -1,6 +1,6 @@
 name: 🪲 Report a bug
 description: Report problems and issues with the Dagster framework.
-labels: ["kind: bug"]
+labels: ["type: bug"]
 body:
   - type: markdown
     attributes:
