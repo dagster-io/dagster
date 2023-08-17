@@ -217,12 +217,12 @@ class ExternalExecutionTask:
         yield None, env
 
     @contextmanager
-    def _socket_server_context_manager(self) -> Iterator[None]:
+    def _socket_server_context_manager(self) -> Iterator[Tuple[str, int]]:
         host = self._socket_server_host or DAGSTER_EXTERNAL_DEFAULT_HOST
         port = self._socket_server_port or DAGSTER_EXTERNAL_DEFAULT_PORT
         sockaddr = (host, port)
         thread = self._start_socket_server_thread(sockaddr)
-        yield
+        yield sockaddr
         self._shutdown_socket_server(sockaddr)
         thread.join()
 
