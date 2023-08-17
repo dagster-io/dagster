@@ -33,6 +33,7 @@ from dagster import (
     get_dagster_logger,
     op,
 )
+from dagster._annotations import deprecated_param
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -41,11 +42,11 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._utils.backcompat import (
-    canonicalize_backcompat_args,
-    deprecation_warning,
-)
 from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.warnings import (
+    deprecation_warning,
+    normalize_renamed_param,
+)
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -326,10 +327,8 @@ def _get_dbt_op(
         check.inst(
             dbt_resource,
             (DbtCliResource, DbtCliClient),
-            (
-                "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
-                f" object, but is a {type(dbt_resource)}"
-            ),
+            "Resource with key 'dbt_resource_key' must be a DbtCliResource or DbtCliClient"
+            f" object, but is a {type(dbt_resource)}",
         )
 
         kwargs: Dict[str, Any] = {}
@@ -516,7 +515,7 @@ def load_assets_from_dbt_project(
             to include. Defaults to `"fqn:*"`.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
-        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allow customizing how to map
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
             dbt models, seeds, etc. to asset keys and asset metadata.
         key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all assets loaded
             from the dbt project. Does not apply to input assets. Deprecated: use
@@ -633,6 +632,45 @@ def load_assets_from_dbt_project(
     )
 
 
+@deprecated_param(
+    param="manifest_json", breaking_version="0.21", additional_warn_text="Use manifest instead"
+)
+@deprecated_param(
+    param="selected_unique_ids",
+    breaking_version="0.21",
+    additional_warn_text="Use the select parameter instead.",
+)
+@deprecated_param(
+    param="dbt_resource_key",
+    breaking_version="0.21",
+    additional_warn_text=(
+        "Use the `@dbt_assets` decorator if you need to customize your resource key."
+    ),
+)
+@deprecated_param(
+    param="use_build_command",
+    breaking_version="0.21",
+    additional_warn_text=(
+        "Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands."
+    ),
+)
+@deprecated_param(
+    param="partitions_def",
+    breaking_version="0.21",
+    additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
+)
+@deprecated_param(
+    param="partition_key_to_vars_fn",
+    breaking_version="0.21",
+    additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
+)
+@deprecated_param(
+    param="runtime_metadata_fn",
+    breaking_version="0.21",
+    additional_warn_text=(
+        "Use the `@dbt_assets` decorator if you need to customize runtime metadata."
+    ),
+)
 def load_assets_from_dbt_manifest(
     manifest: Optional[Union[Path, Mapping[str, Any]]] = None,
     *,
@@ -683,7 +721,7 @@ def load_assets_from_dbt_manifest(
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
-        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allow customizing how to map
+        dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
             dbt models, seeds, etc. to asset keys and asset metadata.
         key_prefix (Optional[Union[str, List[str]]]): [Deprecated] A key prefix to apply to all assets loaded
             from the dbt project. Does not apply to input assets. Deprecated: use
@@ -700,7 +738,6 @@ def load_assets_from_dbt_manifest(
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
             Deprecated: use the @dbt_assets decorator if you need to customize runtime metadata.
-        manifest_json (Optional[Mapping[str, Any]]): [Deprecated] Use the manifest argument instead.
         selected_unique_ids (Optional[Set[str]]): [Deprecated] The set of dbt unique_ids that you want to load
             as assets. Deprecated: use the select argument instead.
         node_info_to_asset_key (Mapping[str, Any] -> AssetKey): [Deprecated] A function that takes a dictionary
@@ -746,8 +783,11 @@ def load_assets_from_dbt_manifest(
             this flag to False is advised to reduce the size of the resulting snapshot. Deprecated:
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
-    manifest = canonicalize_backcompat_args(
-        manifest, "manifest", manifest_json, "manifest_json", "0.21", stacklevel=4
+    manifest = normalize_renamed_param(
+        manifest,
+        "manifest",
+        manifest_json,
+        "manifest_json",
     )
     manifest = cast(
         Union[Mapping[str, Any], Path], check.inst_param(manifest, "manifest", (Path, dict))
@@ -949,54 +989,6 @@ def _raise_warnings_for_deprecated_args(
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ],
 ):
-    if selected_unique_ids is not None:
-        deprecation_warning(
-            f"The selected_unique_ids arg of {public_fn_name}",
-            "0.21",
-            "Use the select parameter instead.",
-            stacklevel=4,
-        )
-
-    if dbt_resource_key is not None:
-        deprecation_warning(
-            f"The dbt_resource_key arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator if you need to customize your resource key.",
-            stacklevel=4,
-        )
-
-    if use_build_command is not None:
-        deprecation_warning(
-            f"The use_build_command arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator if you need to customize the underlying dbt commands.",
-            stacklevel=4,
-        )
-
-    if partitions_def is not None:
-        deprecation_warning(
-            f"The partitions_def arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator to define partitioned dbt assets.",
-            stacklevel=4,
-        )
-
-    if partition_key_to_vars_fn is not None:
-        deprecation_warning(
-            f"The partition_key_to_vars_fn arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator to define partitioned dbt assets.",
-            stacklevel=4,
-        )
-
-    if runtime_metadata_fn is not None:
-        deprecation_warning(
-            f"The runtime_metadata_fn arg of {public_fn_name}",
-            "0.21",
-            "Use the @dbt_assets decorator if you need to customize runtime metadata.",
-            stacklevel=4,
-        )
-
     if node_info_to_asset_key != default_asset_key_fn:
         deprecation_warning(
             f"The node_info_to_asset_key_fn arg of {public_fn_name}",
@@ -1009,10 +1001,8 @@ def _raise_warnings_for_deprecated_args(
         deprecation_warning(
             f"The node_info_to_group_fn arg of {public_fn_name}",
             "0.21",
-            (
-                "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
-                " groups or provide a custom DagsterDbtTranslator that overrides get_group_name."
-            ),
+            "Instead, configure dagster groups on a dbt resource's meta field or assign dbt"
+            " groups or provide a custom DagsterDbtTranslator that overrides get_group_name.",
             stacklevel=4,
         )
 

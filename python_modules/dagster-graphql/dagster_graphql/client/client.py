@@ -4,10 +4,9 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import validate_tags
-from dagster._utils.backcompat import experimental_class_warning
 from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
@@ -31,6 +30,7 @@ from .utils import (
 )
 
 
+@experimental
 class DagsterGraphQLClient:
     """Official Dagster Python Client for GraphQL.
 
@@ -48,12 +48,16 @@ class DagsterGraphQLClient:
     Args:
         hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
             `dagster.YOUR_ORG_HERE`.
-        port_number (Optional[int], optional): Optional port number to connect to on the host.
+        port_number (Optional[int]): Port number to connect to on the host.
             Defaults to None.
         transport (Optional[Transport], optional): A custom transport to use to connect to the
             GraphQL API with (e.g. for custom auth). Defaults to None.
         use_https (bool, optional): Whether to use https in the URL connection string for the
             GraphQL API. Defaults to False.
+        timeout (int): Number of seconds before requests should time out. Defaults to 60.
+        headers (Optional[Dict[str, str]]): Additional headers to include in the request. To use
+            this client in Dagster Cloud, set the "Dagster-Cloud-Api-Token" header to a user token
+            generated in the Dagster Cloud UI.
 
     Raises:
         :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
@@ -65,9 +69,9 @@ class DagsterGraphQLClient:
         port_number: Optional[int] = None,
         transport: Optional[Transport] = None,
         use_https: bool = False,
+        timeout: int = 300,
+        headers: Optional[Dict[str, str]] = None,
     ):
-        experimental_class_warning(self.__class__.__name__)
-
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
         self._use_https = check.bool_param(use_https, "use_https")
@@ -82,7 +86,9 @@ class DagsterGraphQLClient:
             transport,
             "transport",
             Transport,
-            default=RequestsHTTPTransport(url=self._url, use_json=True),
+            default=RequestsHTTPTransport(
+                url=self._url, use_json=True, timeout=timeout, headers=headers
+            ),
         )
         try:
             self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
@@ -135,10 +141,8 @@ class DagsterGraphQLClient:
         # The following invariant will never fail when a job is executed
         check.invariant(
             (mode is not None and run_config is not None) or preset is not None,
-            (
-                "Either a mode and run_config or a preset must be specified in order to "
-                f"submit the pipeline {pipeline_name} for execution"
-            ),
+            "Either a mode and run_config or a preset must be specified in order to "
+            f"submit the pipeline {pipeline_name} for execution",
         )
         tags = validate_tags(tags)
 
@@ -149,10 +153,8 @@ class DagsterGraphQLClient:
             if len(job_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
-                    (
-                        f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
-                        f" `{pipeline_name}` exist"
-                    ),
+                    f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name"
+                    f" `{pipeline_name}` exist",
                 )
             elif len(job_info_lst) == 1:
                 job_info = job_info_lst[0]
@@ -182,9 +184,9 @@ class DagsterGraphQLClient:
                 **variables["executionParams"],
                 "runConfigData": run_config,
                 "mode": mode,
-                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
-                if tags
-                else {},
+                "executionMetadata": (
+                    {"tags": [{"key": k, "value": v} for k, v in tags.items()]} if tags else {}
+                ),
             }
 
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)

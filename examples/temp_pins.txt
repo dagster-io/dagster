@@ -10,3 +10,4 @@
 # and verify that these example projects work. We use this file to
 # temporarily introduce pins for these tests until the next version of
 # Dagster is published to PyPI.
+responses==0.23.1

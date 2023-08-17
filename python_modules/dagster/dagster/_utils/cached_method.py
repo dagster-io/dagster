@@ -104,11 +104,9 @@ def _make_key(
     """
     if args:
         check.failed(
-            (
-                "@cached_method does not support non-keyword arguments, because doing so would"
-                " enable functionally identical sets of arguments to correspond to different cache"
-                " keys."
-            ),
+            "@cached_method does not support non-keyword arguments, because doing so would"
+            " enable functionally identical sets of arguments to correspond to different cache"
+            " keys.",
         )
 
     # if no args return a shared value

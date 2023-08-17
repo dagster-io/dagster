@@ -30,8 +30,7 @@ from .utils import (
     sync_execute_get_run_log_data,
 )
 
-STEP_FAILURE_EVENTS_QUERY = (
-    """
+STEP_FAILURE_EVENTS_QUERY = """
 query pipelineRunEvents($runId: ID!) {
   logsForRun(runId: $runId) {
     __typename
@@ -70,9 +69,7 @@ query pipelineRunEvents($runId: ID!) {
     }
   }
 }
-"""
-    + METADATA_ENTRY_FRAGMENT
-)
+""" + METADATA_ENTRY_FRAGMENT
 
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):

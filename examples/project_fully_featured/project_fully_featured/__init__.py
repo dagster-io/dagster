@@ -19,7 +19,7 @@ deployment_name = os.environ.get("DAGSTER_DEPLOYMENT", "local")
 
 all_sensors = [activity_analytics_assets_sensor, recommender_assets_sensor]
 if deployment_name in ["prod", "staging"]:
-    all_sensors.append(make_slack_on_failure_sensor(base_url="my_dagit_url"))
+    all_sensors.append(make_slack_on_failure_sensor(base_url="my_webserver_url"))
 
 defs = Definitions(
     assets=all_assets,

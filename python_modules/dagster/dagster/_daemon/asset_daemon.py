@@ -3,8 +3,8 @@ from typing import Optional
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_reconciliation_sensor import reconcile
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -102,7 +102,7 @@ class AssetDaemon(IntervalDaemon):
             else AssetDaemonCursor.empty()
         )
 
-        run_requests, new_cursor, evaluations = reconcile(
+        run_requests, new_cursor, evaluations = AssetDaemonContext(
             asset_graph=asset_graph,
             target_asset_keys=target_asset_keys,
             instance=instance,
@@ -113,7 +113,8 @@ class AssetDaemon(IntervalDaemon):
             },
             observe_run_tags={AUTO_OBSERVE_TAG: "true"},
             auto_observe=True,
-        )
+            respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+        ).evaluate()
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
 

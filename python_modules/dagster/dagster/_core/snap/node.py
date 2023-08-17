@@ -372,13 +372,13 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
         output_def_snaps=list(map(build_output_def_snap, graph_def.output_defs)),
         description=graph_def.description,
         tags=graph_def.tags,
-        config_field_snap=snap_from_field(
-            "config", graph_def.config_mapping.config_schema.as_field()
-        )
-        if graph_def.config_mapping
-        and graph_def.config_mapping.config_schema
-        and graph_def.config_mapping.config_schema.as_field()
-        else None,
+        config_field_snap=(
+            snap_from_field("config", graph_def.config_mapping.config_schema.as_field())
+            if graph_def.config_mapping
+            and graph_def.config_mapping.config_schema
+            and graph_def.config_mapping.config_schema.as_field()
+            else None
+        ),
         dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
         input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
         output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
@@ -394,9 +394,11 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
         description=op_def.description,
         tags=op_def.tags,
         required_resource_keys=sorted(list(op_def.required_resource_keys)),
-        config_field_snap=snap_from_field("config", op_def.config_field)  # type: ignore  # (possible none)
-        if op_def.has_config_field
-        else None,
+        config_field_snap=(
+            snap_from_field("config", op_def.config_field)  # type: ignore  # (possible none)
+            if op_def.has_config_field
+            else None
+        ),
     )
 
 

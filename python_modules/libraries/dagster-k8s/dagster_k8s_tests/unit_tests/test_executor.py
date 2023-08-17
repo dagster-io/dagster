@@ -2,7 +2,7 @@ import json
 from unittest import mock
 
 import pytest
-from dagster import job, op
+from dagster import job, op, repository
 from dagster._config import process_config, resolve_to_config_type
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import create_execution_plan
@@ -11,9 +11,17 @@ from dagster._core.execution.context_creation_job import create_context_free_log
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
+from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.test_utils import (
+    create_run_for_test,
+    environ,
+    in_process_test_workspace,
+    instance_for_test,
+)
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteStepArgs
+from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
@@ -45,6 +53,11 @@ OTHER_RESOURCE_TAGS = {
 VOLUME_MOUNTS_TAGS = [{"name": "volume1", "mount_path": "foo/bar", "sub_path": "file.txt"}]
 
 OTHER_VOLUME_MOUNTS_TAGS = [{"name": "volume2", "mount_path": "baz/quux", "sub_path": "voom.txt"}]
+
+THIRD_RESOURCES_TAGS = {
+    "limits": {"cpu": "5000m", "memory": "2560Mi"},
+    "requests": {"cpu": "2500m", "memory": "1280Mi"},
+}
 
 
 @job(
@@ -111,6 +124,11 @@ def bar_with_images():
         return 1
 
     foo()
+
+
+@repository
+def bar_repo():
+    return [bar]
 
 
 @pytest.fixture
@@ -394,7 +412,7 @@ def test_executor_init_container_context(
 @pytest.fixture
 def k8s_instance(kubeconfig_file):
     default_config = {
-        "service_account_name": "dagit-admin",
+        "service_account_name": "webserver-admin",
         "instance_config_map": "dagster-instance",
         "postgres_password_secret": "dagster-postgresql-secret",
         "dagster_home": "/opt/dagster/dagster_home",
@@ -426,24 +444,40 @@ def test_step_handler(kubeconfig_file, k8s_instance):
         k8s_client_batch_api=mock_k8s_client_batch_api,
     )
 
-    run = create_run_for_test(
-        k8s_instance,
-        job_name="bar",
-        job_code_origin=reconstructable(bar).get_python_origin(),
-    )
-    list(
-        handler.launch_step(
-            _step_handler_context(
-                job_def=reconstructable(bar),
-                dagster_run=run,
-                instance=k8s_instance,
-                executor=_get_executor(
-                    k8s_instance,
-                    reconstructable(bar),
-                ),
+    recon_job = reconstructable(bar)
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__, attribute="bar_repo")
+
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_code_location(workspace.code_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name="bar_repo",
+                code_location=location,
             )
-        )
-    )
+            fake_external_job = external_job_from_recon_job(
+                recon_job,
+                op_selection=None,
+                repository_handle=repo_handle,
+            )
+            run = create_run_for_test(
+                k8s_instance,
+                job_name="bar",
+                external_job_origin=fake_external_job.get_external_origin(),
+                job_code_origin=recon_job.get_python_origin(),
+            )
+            list(
+                handler.launch_step(
+                    _step_handler_context(
+                        job_def=reconstructable(bar),
+                        dagster_run=run,
+                        instance=k8s_instance,
+                        executor=_get_executor(
+                            k8s_instance,
+                            reconstructable(bar),
+                        ),
+                    )
+                )
+            )
 
     # Check that user defined k8s config was passed down to the k8s job.
     mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -451,6 +485,12 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     method_name, _args, kwargs = mock_method_calls[0]
     assert method_name == "create_namespaced_job"
     assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
+
+    # appropriate labels applied
+    labels = kwargs["body"].spec.template.metadata.labels
+    assert labels["dagster/code-location"] == "in_process"
+    assert labels["dagster/job"] == "bar"
+    assert labels["dagster/run-id"] == run.run_id
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
@@ -610,11 +650,18 @@ def test_step_raw_k8s_config_inheritance(
     )
 
     # Verifies that raw k8s config for step pods is pulled from the container context and
-    # dagster-k8s/config tags on the op, but *not* from tags on the job
+    # executor-level config and dagster-k8s/config tags on the op, but *not* from tags on the job
     executor = _get_executor(
         k8s_run_launcher_instance,
         reconstructable(bar_with_tags_in_job_and_op),
-        {},
+        {
+            "step_k8s_config": {  # injected into every step
+                "container_config": {
+                    "working_dir": "MY_WORKING_DIR",  # set on every step
+                    "resources": THIRD_RESOURCES_TAGS,  # overridden at the op level, so ignored
+                }
+            }
+        },
     )
 
     run = create_run_for_test(
@@ -637,4 +684,5 @@ def test_step_raw_k8s_config_inheritance(
     raw_k8s_config = container_context.get_run_user_defined_k8s_config()
 
     assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
+    assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
     assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS

@@ -28,7 +28,7 @@ from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeVar
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, public
+from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
@@ -38,11 +38,10 @@ from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
-from dagster._utils.backcompat import (
-    canonicalize_backcompat_args,
-    deprecation_warning,
-)
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import (
+    normalize_renamed_param,
+)
 
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -70,7 +69,7 @@ T_PartitionsDefinition = TypeVar(
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 
-@deprecated
+@deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
 class Partition(Generic[T_cov]):
     """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
@@ -228,10 +227,13 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
     def subset_with_all_partitions(
         self,
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset[T_str]":
         return self.subset_with_partition_keys(
-            self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+            self.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
         )
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset[T_str]":
@@ -310,12 +312,12 @@ def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> No
     counts: Dict[str, int] = defaultdict(lambda: 0)
     for partition_key in partition_keys:
         counts[partition_key] += 1
-        found_duplicates = [key for key in counts.keys() if counts[key] > 1]
-        if found_duplicates:
-            raise DagsterInvalidDefinitionError(
-                "Partition keys must be unique. Duplicate instances of partition keys:"
-                f" {found_duplicates}."
-            )
+    found_duplicates = [key for key in counts.keys() if counts[key] > 1]
+    if found_duplicates:
+        raise DagsterInvalidDefinitionError(
+            "Partition keys must be unique. Duplicate instances of partition keys:"
+            f" {found_duplicates}."
+        )
 
 
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
@@ -403,6 +405,11 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
         return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
 
 
+@deprecated_param(
+    param="partition_fn",
+    breaking_version="2.0",
+    additional_warn_text="Provide partition definition name instead.",
+)
 class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
@@ -456,11 +463,6 @@ class DynamicPartitionsDefinition(
     ):
         partition_fn = check.opt_callable_param(partition_fn, "partition_fn")
         name = check.opt_str_param(name, "name")
-
-        if partition_fn:
-            deprecation_warning(
-                "partition_fn", "2.0.0", "Provide partition definition name instead."
-            )
 
         if partition_fn is None and name is None:
             raise DagsterInvalidDefinitionError(
@@ -574,6 +576,16 @@ class DynamicPartitionsDefinition(
         return DeleteDynamicPartitionsRequest(validated_name, partition_keys)
 
 
+@deprecated_param(
+    param="run_config_for_partition_fn",
+    breaking_version="2.0",
+    additional_warn_text="Use `run_config_for_partition_key_fn` instead.",
+)
+@deprecated_param(
+    param="tags_for_partition_fn",
+    breaking_version="2.0",
+    additional_warn_text="Use `tags_for_partition_key_fn` instead.",
+)
 class PartitionedConfig(Generic[T_PartitionsDefinition]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
     partitions, and each partition corresponds to run configuration for the job.
@@ -596,23 +608,13 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
 
         check.invariant(
             xor(run_config_for_partition_fn, run_config_for_partition_key_fn),
-            (
-                "Must provide exactly one of run_config_for_partition_fn or"
-                " run_config_for_partition_key_fn"
-            ),
+            "Must provide exactly one of run_config_for_partition_fn or"
+            " run_config_for_partition_key_fn",
         )
         check.invariant(
             not (tags_for_partition_fn and tags_for_partition_key_fn),
             "Cannot provide both of tags_for_partition_fn or tags_for_partition_key_fn",
         )
-        if run_config_for_partition_fn:
-            deprecation_warning(
-                "run_config_for_partition_fn", "2.0", "Use run_config_for_partition_key_fn instead"
-            )
-        if tags_for_partition_fn:
-            deprecation_warning(
-                "tags_for_partition_fn", "2.0", "Use tags_for_partition_key_fn instead"
-            )
 
         self._run_config_for_partition_fn = check.opt_callable_param(
             run_config_for_partition_fn, "run_config_for_partition_fn"
@@ -632,11 +634,13 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
     def partitions_def(
         self,
     ) -> T_PartitionsDefinition:
-        """T_PartitionsDefinition: The partitions definition associated with this PartitionedConfig.
-        """
+        """T_PartitionsDefinition: The partitions definition associated with this PartitionedConfig."""
         return self._partitions
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `run_config_for_partition_key_fn` instead.",
+    )
     @public
     @property
     def run_config_for_partition_fn(
@@ -657,7 +661,9 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         and returns a dictionary representing the config to attach to runs for that partition.
         """
 
-    @deprecated
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `tags_for_partition_key_fn` instead."
+    )
     @public
     @property
     def tags_for_partition_fn(self) -> Optional[Callable[[Partition], Mapping[str, str]]]:
@@ -757,10 +763,8 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         if isinstance(config, PartitionedConfig):
             check.invariant(
                 config.partitions_def == partitions_def,
-                (
-                    "Can't supply a PartitionedConfig for 'config' with a different "
-                    "PartitionsDefinition than supplied for 'partitions_def'."
-                ),
+                "Can't supply a PartitionedConfig for 'config' with a different "
+                "PartitionsDefinition than supplied for 'partitions_def'.",
             )
             return config
         else:
@@ -780,6 +784,11 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             return self._decorated_fn(*args, **kwargs)
 
 
+@deprecated_param(
+    param="tags_for_partition_fn",
+    breaking_version="2.0",
+    additional_warn_text="Use tags_for_partition_key_fn instead.",
+)
 def static_partitioned_config(
     partition_keys: Sequence[str],
     tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
@@ -800,7 +809,7 @@ def static_partitioned_config(
     Args:
         partition_keys (Sequence[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
-        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): (deprecated) A function that
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition key and returns a dictionary of tags to attach to runs for that
             partition.
         tags_for_partition_key_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
@@ -812,12 +821,11 @@ def static_partitioned_config(
     """
     check.sequence_param(partition_keys, "partition_keys", str)
 
-    tags_for_partition_key_fn = canonicalize_backcompat_args(
+    tags_for_partition_key_fn = normalize_renamed_param(
         tags_for_partition_key_fn,
         "tags_for_partition_key_fn",
         tags_for_partition_fn,
         "tags_for_partition_fn",
-        "2.0",
     )
 
     def inner(
@@ -833,6 +841,45 @@ def static_partitioned_config(
     return inner
 
 
+def partitioned_config(
+    partitions_def: PartitionsDefinition,
+    tags_for_partition_key_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
+    """Creates a partitioned config for a job given a PartitionsDefinition.
+
+    The partitions_def provides the set of partitions, which may change over time
+        (for example, when using a DynamicPartitionsDefinition).
+
+    The decorated function takes in a partition key and returns a valid run config for a particular
+    target job.
+
+    Args:
+        partitions_def: (Optional[DynamicPartitionsDefinition]): PartitionsDefinition for the job
+        tags_for_partition_key_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
+
+    Returns:
+        PartitionedConfig
+    """
+    check.opt_callable_param(tags_for_partition_key_fn, "tags_for_partition_key_fn")
+
+    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
+        return PartitionedConfig(
+            partitions_def=partitions_def,
+            run_config_for_partition_key_fn=fn,
+            decorated_fn=fn,
+            tags_for_partition_key_fn=tags_for_partition_key_fn,
+        )
+
+    return inner
+
+
+@deprecated_param(
+    param="tags_for_partition_fn",
+    breaking_version="2.0",
+    additional_warn_text="Use tags_for_partition_key_fn instead.",
+)
 def dynamic_partitioned_config(
     partition_fn: Callable[[Optional[datetime]], Sequence[str]],
     tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
@@ -860,12 +907,11 @@ def dynamic_partitioned_config(
     """
     check.callable_param(partition_fn, "partition_fn")
 
-    tags_for_partition_key_fn = canonicalize_backcompat_args(
+    tags_for_partition_key_fn = normalize_renamed_param(
         tags_for_partition_key_fn,
         "tags_for_partition_key_fn",
         tags_for_partition_fn,
         "tags_for_partition_fn",
-        "2.0",
     )
 
     def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:

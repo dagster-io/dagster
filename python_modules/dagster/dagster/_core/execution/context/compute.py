@@ -19,6 +19,7 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
+    DataVersion,
     extract_data_provenance_from_entry,
 )
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -49,8 +50,7 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):
-    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext.
-    """
+    """Base class for op context implemented by OpExecutionContext and DagstermillExecutionContext."""
 
     @abstractmethod
     def has_tag(self, key: str) -> bool:
@@ -235,7 +235,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def op(self) -> Node:
-        """Solid: The current op object.
+        """Node: The object representing the invoked op within the graph.
 
         :meta private:
 
@@ -263,11 +263,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
-    @deprecated
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The range of partition keys for the current run. (DEPRECATED: Use `partition_key_range` instead).
+        """The range of partition keys for the current run.
 
         If run is for a single partition key, return a `PartitionKeyRange` with the same start and
         end. Raises an error if the current run is not a partitioned run.
@@ -317,6 +317,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             Optional[str]: The value of the tag, if present.
         """
         return self._step_execution_context.get_tag(key)
+
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for the current run."""
+        return self._step_execution_context.run_tags
 
     def has_events(self) -> bool:
         return bool(self._events)
@@ -425,8 +430,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def retry_number(self) -> int:
-        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
-        """
+        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc."""
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self):
@@ -434,13 +438,19 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def get_mapping_key(self) -> Optional[str]:
-        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
-        """
+        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None."""
         return self._step_execution_context.step.get_mapping_key()
 
     #############################################################################################
     # asset related methods
     #############################################################################################
+
+    @public
+    @property
+    def has_assets_def(self) -> bool:
+        """If there is a backing AssetsDefinition for what is currently executing."""
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        return assets_def is not None
 
     @public
     @property
@@ -465,8 +475,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
-        """Get the output names that correspond to the current selection of assets this execution is expected to materialize.
-        """
+        """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
         # map selected asset keys to the output names they correspond to
         selected_asset_keys = self.selected_asset_keys
         selected_outputs: Set[str] = set()
@@ -496,6 +505,15 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             check.failed(f"Output '{output_name}' has no asset")
         else:
             return asset_output_info.key
+
+    @public
+    def output_for_asset_key(self, asset_key: AssetKey) -> str:
+        """Return the output name for the corresponding asset key."""
+        node_output_handle = self.job_def.asset_layer.node_output_handle_for_asset(asset_key)
+        if node_output_handle is None:
+            check.failed(f"Asset key '{asset_key}' has no output")
+        else:
+            return node_output_handle.output_name
 
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
@@ -535,8 +553,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one.
-        """
+        """Return the PartitionKeyRange for the corresponding input. Errors if there is more or less than one."""
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
@@ -622,6 +639,17 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return (
             None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
         )
+
+    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+        """Set the data version for an asset being materialized by the currently executing step.
+        This is useful for external execution situations where it is not possible to return
+        an `Output`.
+
+        Args:
+            asset_key (AssetKey): Key of the asset for which to set the data version.
+            data_version (DataVersion): The data version to set.
+        """
+        self._step_execution_context.set_data_version(asset_key, data_version)
 
 
 # actually forking the object type for assets is tricky for users in the cases of:

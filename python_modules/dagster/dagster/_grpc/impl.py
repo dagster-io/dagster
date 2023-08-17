@@ -70,10 +70,10 @@ class StartRunInSubprocessSuccessful:
 
 
 def _report_run_failed_if_not_finished(
-    instance: DagsterInstance, pipeline_run_id: str
+    instance: DagsterInstance, run_id: str
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(instance, "instance", DagsterInstance)
-    dagster_run = instance.get_run_by_id(pipeline_run_id)
+    dagster_run = instance.get_run_by_id(run_id)
     if dagster_run and (not dagster_run.is_finished):
         yield instance.report_run_failed(dagster_run)
 
@@ -86,7 +86,7 @@ def core_execute_run(
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_job, "recon_job", ReconstructableJob)
-    check.inst_param(dagster_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if inject_env_vars:
@@ -120,7 +120,7 @@ def core_execute_run(
         recon_job.get_definition()
     except Exception:
         yield instance.report_engine_event(
-            "Could not load pipeline definition.",
+            "Could not load job definition.",
             dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
@@ -130,7 +130,7 @@ def core_execute_run(
     # Reload the run to verify that its status didn't change while the pipeline was loaded
     dagster_run = check.not_none(
         instance.get_run_by_id(dagster_run.run_id),
-        f"Pipeline run with id '{dagster_run.run_id}' was deleted after the run worker started.",
+        f"Job run with id '{dagster_run.run_id}' was deleted after the run worker started.",
     )
 
     try:
@@ -146,10 +146,8 @@ def core_execute_run(
         raise
     except Exception:
         yield instance.report_engine_event(
-            (
-                "An exception was thrown during execution that is likely a framework error, "
-                "rather than an error in user code."
-            ),
+            "An exception was thrown during execution that is likely a framework error, "
+            "rather than an error in user code.",
             dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
@@ -164,9 +162,11 @@ def _instance_from_ref_for_dynamic_partitions(
     # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
     # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
 
-    with DagsterInstance.from_ref(instance_ref) if (
-        instance_ref and (_partitions_def_contains_dynamic_partitions_def(partitions_def))
-    ) else nullcontext() as instance:
+    with (
+        DagsterInstance.from_ref(instance_ref)
+        if (instance_ref and (_partitions_def_contains_dynamic_partitions_def(partitions_def)))
+        else nullcontext()
+    ) as instance:
         yield instance
 
 
@@ -317,8 +317,9 @@ def get_external_schedule_execution(
         ) as schedule_context:
             with user_code_error_boundary(
                 ScheduleExecutionError,
-                lambda: "Error occurred during the execution function for schedule {schedule_name}".format(
-                    schedule_name=schedule_def.name
+                lambda: (
+                    "Error occurred during the execution function for schedule {schedule_name}"
+                    .format(schedule_name=schedule_def.name)
                 ),
             ):
                 return schedule_def.evaluate_tick(schedule_context)
@@ -362,8 +363,9 @@ def get_external_sensor_execution(
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,
-                lambda: "Error occurred during the execution of evaluation_fn for sensor {sensor_name}".format(
-                    sensor_name=sensor_def.name
+                lambda: (
+                    "Error occurred during the execution of evaluation_fn for sensor {sensor_name}"
+                    .format(sensor_name=sensor_def.name)
                 ),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
@@ -413,7 +415,10 @@ def get_partition_config(
         with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: f"Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}",
+                lambda: (
+                    "Error occurred during the evaluation of the `run_config_for_partition`"
+                    f" function for partition set {partition_set_name}"
+                ),
             ):
                 partitions_def.validate_partition_key(
                     partition_key, dynamic_partitions_store=instance
@@ -439,7 +444,10 @@ def get_partition_names(
 
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: f"Error occurred during the execution of the partition generation function for partitioned config on job '{job_def.name}'",
+            lambda: (
+                "Error occurred during the execution of the partition generation function for"
+                f" partitioned config on job '{job_def.name}'"
+            ),
         ):
             return ExternalPartitionNamesData(partition_names=partitions_def.get_partition_keys())
     except Exception:
@@ -467,7 +475,10 @@ def get_partition_tags(
         with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
+                lambda: (
+                    "Error occurred during the evaluation of the `tags_for_partition` function for"
+                    f" partitioned config on job '{job_def.name}'"
+                ),
             ):
                 partitions_def.validate_partition_key(
                     partition_name, dynamic_partitions_store=instance
@@ -528,7 +539,10 @@ def get_partition_set_execution_param_data(
         with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: f"Error occurred during the partition generation for partitioned config on job '{job_def.name}'",
+                lambda: (
+                    "Error occurred during the partition generation for partitioned config on job"
+                    f" '{job_def.name}'"
+                ),
             ):
                 all_partition_keys = partitions_def.get_partition_keys(
                     dynamic_partitions_store=instance
@@ -540,7 +554,10 @@ def get_partition_set_execution_param_data(
 
                 def _error_message_fn(partition_name: str):
                     return (
-                        lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in partitioned config on job '{job_def.name}'"
+                        lambda: (
+                            "Error occurred during the partition config and tag generation for"
+                            f" '{partition_name}' in partitioned config on job '{job_def.name}'"
+                        )
                     )
 
                 with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):

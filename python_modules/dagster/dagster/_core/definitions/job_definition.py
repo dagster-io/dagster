@@ -22,7 +22,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, experimental_param, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -63,7 +63,6 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
-from dagster._utils.backcompat import deprecation_warning, experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
@@ -90,7 +89,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.host_representation.job_index import JobIndex
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
@@ -98,6 +97,7 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
+@experimental_param(param="version_strategy")
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -184,8 +184,6 @@ class JobDefinition(IHasInternalInit):
         self.version_strategy = check.opt_inst_param(
             version_strategy, "version_strategy", VersionStrategy
         )
-        if self.version_strategy is not None:
-            experimental_class_warning("VersionStrategy")
 
         _subset_selection_data = check.opt_inst_param(
             _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
@@ -337,8 +335,7 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_executor(self) -> bool:
-        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to.
-        """
+        """Returns True if this job has explicitly specified an executor, and False if the executor was inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._executor_def is not None
 
     @public
@@ -382,8 +379,7 @@ class JobDefinition(IHasInternalInit):
     @public
     @property
     def has_specified_loggers(self) -> bool:
-        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to.
-        """
+        """Returns true if the job explicitly set loggers, and False if loggers were inherited through defaults or the :py:class:`Definitions` object the job was provided to."""
         return self._loggers is not None
 
     @property
@@ -645,10 +641,8 @@ class JobDefinition(IHasInternalInit):
 
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
 
         partition_key = check.opt_str_param(partition_key, "partition_key")
@@ -743,10 +737,8 @@ class JobDefinition(IHasInternalInit):
     ) -> Self:
         check.invariant(
             not (op_selection and asset_selection),
-            (
-                "op_selection and asset_selection cannot both be provided as args to"
-                " execute_in_process"
-            ),
+            "op_selection and asset_selection cannot both be provided as args to"
+            " execute_in_process",
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
@@ -836,6 +828,10 @@ class JobDefinition(IHasInternalInit):
             ) from exc
 
     @public
+    @deprecated(
+        breaking_version="2.0.0",
+        additional_warn_text="Directly instantiate `RunRequest(partition_key=...)` instead.",
+    )
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -844,6 +840,7 @@ class JobDefinition(IHasInternalInit):
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> RunRequest:
         """Creates a RunRequest object for a run that processes the given partition.
 
@@ -858,18 +855,17 @@ class JobDefinition(IHasInternalInit):
             run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
                 a :py:class:`PartitionedConfig`, this value will override replace the config
                 provided by it.
-            current_time (Optional[datetime): Used to determine which time-partitions exist.
+            current_time (Optional[datetime]): Used to determine which time-partitions exist.
                 Defaults to now.
+            dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
+                object that is responsible for fetching dynamic partitions. Required when the
+                partitions definition is a DynamicPartitionsDefinition with a name defined. Users
+                can pass the DagsterInstance fetched via `context.instance` to this argument.
+
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        deprecation_warning(
-            "JobDefinition.run_request_for_partition",
-            "2.0.0",
-            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
-        )
-
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -885,7 +881,11 @@ class JobDefinition(IHasInternalInit):
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(partition_key, current_time=current_time)
+        self.partitions_def.validate_partition_key(
+            partition_key,
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
 
         run_config = (
             run_config
@@ -1038,10 +1038,8 @@ def default_job_io_manager(init_context: "InitResourceContext"):
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager
@@ -1080,10 +1078,8 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                (
-                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
-                    " must specify an IOManagerDefinition"
-                ),
+                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                " must specify an IOManagerDefinition",
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
                 return resources.io_manager

@@ -1,4 +1,4 @@
-from dagster import job, schedule
+from dagster import asset, job, op, schedule
 
 # start_marker_priority
 
@@ -19,3 +19,17 @@ def less_important_schedule(_):
 
 
 # end_marker_priority
+
+
+# start_global_concurrency
+@op(tags={"dagster/concurrency_key": "redshift"})
+def my_redshift_op():
+    ...
+
+
+@asset(op_tags={"dagster/concurrency_key": "redshift"})
+def my_redshift_table():
+    ...
+
+
+# end_global_concurrency

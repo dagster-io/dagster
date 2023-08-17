@@ -15,6 +15,7 @@ def twilio_resource_option_fixture(request):
         return TwilioResource.configure_at_launch()
 
 
+@pytest.mark.integration
 def test_twilio_resource(twilio_resource_option) -> None:
     account_sid = os.environ.get("TWILIO_TEST_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_TEST_AUTH_TOKEN")

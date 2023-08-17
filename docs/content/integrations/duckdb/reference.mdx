@@ -21,7 +21,7 @@ This reference page provides information for working with [`dagster-duckdb`](/\_
 
 Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the DuckDB I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
 
-```python file=/integrations/duckdb/downstream_columns.py
+```python file=/integrations/duckdb/reference/downstream_columns.py
 import pandas as pd
 
 from dagster import AssetIn, asset
@@ -63,7 +63,7 @@ In the following sections, we describe how the I/O manager constructs these quer
 
 To store static partitioned assets in DuckDB, specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
-```python file=/integrations/duckdb/static_partition.py startafter=start_example endbefore=end_example
+```python file=/integrations/duckdb/reference/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
 from dagster import StaticPartitionsDefinition, asset
@@ -120,7 +120,7 @@ SELECT *
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
-```python file=/integrations/duckdb/time_partition.py startafter=start_example endbefore=end_example
+```python file=/integrations/duckdb/reference/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
 from dagster import DailyPartitionsDefinition, asset
@@ -171,7 +171,7 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 
 The DuckDB I/O manager can also store data partitioned on multiple dimensions. To do this, specify the column for each partition as a dictionary of `partition_expr` metadata:
 
-```python file=/integrations/duckdb/multi_partition.py startafter=start_example endbefore=end_example
+```python file=/integrations/duckdb/reference/multi_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
 from dagster import (
@@ -240,7 +240,7 @@ If you want to store assets in different schemas, you can specify the schema as 
 - **For `SourceAsset`**, use the `key` parameter. The schema should be the second-to-last value in the parameter. In the following example, this would be `daffodil`.
 - **For Software-defined Assets**, use the `key_prefix` parameter. This value will be prepended to the asset name to create the full asset key. In the following example, this would be `iris`.
 
-```python file=/integrations/duckdb/schema.py startafter=start_asset_key endbefore=end_asset_key
+```python file=/integrations/duckdb/reference/schema.py startafter=start_asset_key endbefore=end_asset_key
 import pandas as pd
 
 from dagster import SourceAsset, asset
@@ -278,7 +278,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 You may have assets that you don't want to store in DuckDB. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the <PyObject object="asset" decorator /> decorator:
 
-```python file=/integrations/duckdb/multiple_io_managers.py startafter=start_example endbefore=end_example
+```python file=/integrations/duckdb/reference/multiple_io_managers.py startafter=start_example endbefore=end_example
 import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_duckdb_pandas import DuckDBPandasIOManager
@@ -344,7 +344,7 @@ pip install dagster-duckdb-pyspark
 
 Then you can use the `DuckDBPySparkIOManager` in your <PyObject object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](/integrations/duckdb/using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster).
 
-```python file=/integrations/duckdb/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
+```python file=/integrations/duckdb/reference/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 
 from dagster import Definitions
@@ -365,7 +365,7 @@ The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either c
 <TabGroup>
 <TabItem name="With the spark_resource">
 
-```python file=/integrations/duckdb/pyspark_with_spark_resource.py
+```python file=/integrations/duckdb/reference/pyspark_with_spark_resource.py
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
@@ -417,7 +417,7 @@ defs = Definitions(
 </TabItem>
 <TabItem name="With your own SparkSession">
 
-```python file=/integrations/duckdb/pyspark_with_spark_session.py startafter=start endbefore=end
+```python file=/integrations/duckdb/reference/pyspark_with_spark_session.py startafter=start endbefore=end
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import (
@@ -481,7 +481,7 @@ pip install dagster-duckdb-polars
 
 Then you can use the `DuckDBPolarsIOManager` in your <PyObject object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](/integrations/duckdb/using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](/integrations/duckdb/using-duckdb-with-dagster).
 
-```python file=/integrations/duckdb/polars_configuration.py startafter=start_configuration endbefore=end_configuration
+```python file=/integrations/duckdb/reference/polars_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_duckdb_polars import DuckDBPolarsIOManager
 
 from dagster import Definitions
@@ -508,7 +508,7 @@ If you work with several DataFrame libraries and want a single I/O manager to ha
 
 To do this, inherit from the <PyObject module="dagster_duckdb" object="DuckDBIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
 
-```python file=/integrations/duckdb/multiple_dataframe_types.py startafter=start_example endbefore=end_example
+```python file=/integrations/duckdb/reference/multiple_dataframe_types.py startafter=start_example endbefore=end_example
 from typing import Optional, Type
 
 import pandas as pd
@@ -559,7 +559,7 @@ defs = Definitions(
 
 In addition to the DuckDB I/O manager, Dagster also provides a DuckDB [resource](/concepts/resources) for executing custom SQL queries.
 
-```python file=/integrations/duckdb/resource.py startafter=start endbefore=end
+```python file=/integrations/duckdb/reference/resource.py startafter=start endbefore=end
 import pandas as pd
 from dagster_duckdb import DuckDBResource
 

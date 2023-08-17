@@ -557,12 +557,10 @@ def test_job_run_dagster_run():
     class PipelineRun(
         namedtuple(
             "_PipelineRun",
-            (
-                "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-                "step_keys_to_execute status tags root_run_id parent_run_id "
-                "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-                "pipeline_code_origin"
-            ),
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin",
         )
     ):
         pass

@@ -64,8 +64,7 @@ def normalize_path(path: str) -> str:
 
 
 def download_file(url: str, path: str):
-    """Download a file from a URL to a local path. If relative path, will be resolved relative to `DATA_ROOT`.
-    """
+    """Download a file from a URL to a local path. If relative path, will be resolved relative to `DATA_ROOT`."""
     path = normalize_path(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:

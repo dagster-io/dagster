@@ -237,15 +237,23 @@ def build_integration_suite_steps(
 
 
 def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
-    return [
+    cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-        + GCP_CREDS_LOCAL_FILE,
-        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+    ]
+
+    # If integration tests are disabled, we won't have any gcp credentials to download.
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        cmds += [
+            r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+            + GCP_CREDS_LOCAL_FILE,
+            "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+        ]
+
+    cmds += [
         "pushd python_modules/libraries/dagster-celery",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
@@ -258,3 +266,5 @@ def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
         ),
         "popd",
     ]
+
+    return cmds

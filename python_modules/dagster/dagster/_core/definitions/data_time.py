@@ -26,6 +26,7 @@ from dagster._core.definitions.data_version import (
     get_input_event_pointer_tag,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -237,9 +238,11 @@ class CachingDataTimeResolver:
                     (
                         parent_record.asset_materialization.tags
                         if parent_record.asset_materialization
-                        else parent_record.event_log_entry.asset_observation.tags
-                        if parent_record.event_log_entry.asset_observation
-                        else None
+                        else (
+                            parent_record.event_log_entry.asset_observation.tags
+                            if parent_record.event_log_entry.asset_observation
+                            else None
+                        )
                     )
                     or {}
                 ),
@@ -374,6 +377,8 @@ class CachingDataTimeResolver:
 
         data_time = current_time
         for parent_key in self.asset_graph.get_parents(asset_key):
+            if parent_key not in self.asset_graph.materializable_asset_keys:
+                continue
             parent_data_time = self._get_in_progress_data_time_in_run(
                 run_id=run_id, asset_key=parent_key, current_time=current_time
             )
@@ -497,11 +502,11 @@ class CachingDataTimeResolver:
 
         return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
 
-    def get_current_minutes_late(
+    def get_minutes_overdue(
         self,
         asset_key: AssetKey,
         evaluation_time: datetime.datetime,
-    ) -> Optional[float]:
+    ) -> Optional[FreshnessMinutes]:
         freshness_policy = self.asset_graph.freshness_policies_by_key.get(asset_key)
         if freshness_policy is None:
             raise DagsterInvariantViolationError(

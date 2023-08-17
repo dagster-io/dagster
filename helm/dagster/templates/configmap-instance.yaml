@@ -97,6 +97,7 @@ data:
       max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
       {{- end }}
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
+      free_slots_after_run_end_seconds: {{ $runMonitoring.freeSlotsAfterRunEndSeconds }}
     {{- end }}
 
     {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runRetries.enabled) }}

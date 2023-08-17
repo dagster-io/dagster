@@ -505,8 +505,7 @@ def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
 ) -> Iterator[WorkspaceProcessContext]:
-    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
-    """
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     from dagster._daemon.controller import create_daemon_grpc_server_registry
 
     configure_loggers()
@@ -654,8 +653,7 @@ class SynchronousThreadPoolExecutor:
 
 
 class BlockingThreadPoolExecutor(ThreadPoolExecutor):
-    """Utility class for testing thread timing by allowing for manual unblocking of the submitted threaded work.
-    """
+    """Utility class for testing thread timing by allowing for manual unblocking of the submitted threaded work."""
 
     def __init__(self) -> None:
         self._proceed = Event()

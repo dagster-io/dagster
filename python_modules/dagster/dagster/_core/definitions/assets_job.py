@@ -61,9 +61,9 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    assets_by_partitions_def: Dict[
-        Optional[PartitionsDefinition], List[AssetsDefinition]
-    ] = defaultdict(list)
+    assets_by_partitions_def: Dict[Optional[PartitionsDefinition], List[AssetsDefinition]] = (
+        defaultdict(list)
+    )
     for assets_def in assets:
         assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
@@ -352,9 +352,9 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
-    first_asset_with_partitions_def: Union[
-        AssetsDefinition, SourceAsset
-    ] = assets_with_partitions_defs[0]
+    first_asset_with_partitions_def: Union[AssetsDefinition, SourceAsset] = (
+        assets_with_partitions_defs[0]
+    )
     for asset in assets_with_partitions_defs:
         if asset.partitions_def != first_asset_with_partitions_def.partitions_def:
             first_asset_key = _key_for_asset(asset).to_string()
@@ -537,8 +537,7 @@ def _ensure_resources_dont_conflict(
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> None:
-    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict.
-    """
+    """Ensures that resources between assets, source assets, and provided resource dictionary do not conflict."""
     resource_defs_from_assets = {}
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]
     for asset in all_assets:

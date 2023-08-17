@@ -43,7 +43,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     """MySQL-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``dagster-webserver`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
 
@@ -91,7 +91,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        # When running in dagit, hold 1 open connection
+        # When running in dagster-webserver, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
             self.mysql_url,
@@ -157,18 +157,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         super(MySQLRunStorage, self).mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
-
-    @property
-    def supports_bucket_queries(self) -> bool:
-        if not super().supports_bucket_queries:
-            return False
-
-        if not self._mysql_version:
-            return False
-
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
-            MINIMUM_MYSQL_BUCKET_VERSION
-        )
 
     @property
     def supports_intersect(self) -> bool:

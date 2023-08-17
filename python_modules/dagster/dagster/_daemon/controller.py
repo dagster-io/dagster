@@ -347,9 +347,11 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         return EventLogConsumerDaemon()
     elif daemon_type == AssetDaemon.daemon_type():
         return AssetDaemon(
-            interval_seconds=instance.auto_materialize_minimum_interval_seconds
-            if instance.auto_materialize_minimum_interval_seconds is not None
-            else DEFAULT_DAEMON_INTERVAL_SECONDS
+            interval_seconds=(
+                instance.auto_materialize_minimum_interval_seconds
+                if instance.auto_materialize_minimum_interval_seconds is not None
+                else DEFAULT_DAEMON_INTERVAL_SECONDS
+            )
         )
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
@@ -379,8 +381,7 @@ def all_daemons_live(
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
-    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
-    """
+    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors."""
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),

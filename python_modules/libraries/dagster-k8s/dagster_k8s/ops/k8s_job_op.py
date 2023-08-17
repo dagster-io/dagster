@@ -198,17 +198,17 @@ def execute_k8s_job(
     """
     run_container_context = K8sContainerContext.create_for_run(
         context.dagster_run,
-        context.instance.run_launcher
-        if isinstance(context.instance.run_launcher, K8sRunLauncher)
-        else None,
+        (
+            context.instance.run_launcher
+            if isinstance(context.instance.run_launcher, K8sRunLauncher)
+            else None
+        ),
         include_run_tags=False,
     )
 
     container_config = container_config.copy() if container_config else {}
     if command:
         container_config["command"] = command
-
-    container_name = container_config.get("name", "dagster")
 
     op_container_context = K8sContainerContext(
         image_pull_policy=image_pull_policy,
@@ -261,6 +261,16 @@ def execute_k8s_job(
     if retry_number > 0:
         job_name = f"{job_name}-{retry_number}"
 
+    labels = {
+        "dagster/job": context.dagster_run.job_name,
+        "dagster/op": context.op.name,
+        "dagster/run-id": context.dagster_run.run_id,
+    }
+    if context.dagster_run.external_job_origin:
+        labels["dagster/code-location"] = (
+            context.dagster_run.external_job_origin.external_repository_origin.code_location_origin.location_name
+        )
+
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,
         args=args,
@@ -268,11 +278,7 @@ def execute_k8s_job(
         pod_name=job_name,
         component="k8s_job_op",
         user_defined_k8s_config=user_defined_k8s_config,
-        labels={
-            "dagster/job": context.dagster_run.job_name,
-            "dagster/op": context.op.name,
-            "dagster/run-id": context.dagster_run.run_id,
-        },
+        labels=labels,
     )
 
     if load_incluster_config:
@@ -300,40 +306,49 @@ def execute_k8s_job(
         start_time=start_time,
     )
 
-    pods = api_client.wait_for_job_to_have_pods(
-        job_name,
-        namespace,
-        wait_timeout=timeout,
-        start_time=start_time,
-    )
+    restart_policy = user_defined_k8s_config.pod_spec_config.get("restart_policy", "Never")
 
-    pod_names = [p.metadata.name for p in pods]
+    if restart_policy == "Never":
+        container_name = container_config.get("name", "dagster")
 
-    if not pod_names:
-        raise Exception("No pod names in job after it started")
+        pods = api_client.wait_for_job_to_have_pods(
+            job_name,
+            namespace,
+            wait_timeout=timeout,
+            start_time=start_time,
+        )
 
-    pod_to_watch = pod_names[0]
-    watch = kubernetes.watch.Watch()  # consider moving in to api_client
+        pod_names = [p.metadata.name for p in pods]
 
-    api_client.wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
+        if not pod_names:
+            raise Exception("No pod names in job after it started")
 
-    log_stream = watch.stream(
-        api_client.core_api.read_namespaced_pod_log,
-        name=pod_to_watch,
-        namespace=namespace,
-        container=container_name,
-    )
+        pod_to_watch = pod_names[0]
+        watch = kubernetes.watch.Watch()  # consider moving in to api_client
 
-    while True:
-        if timeout and time.time() - start_time > timeout:
-            watch.stop()
-            raise Exception("Timed out waiting for pod to finish")
+        api_client.wait_for_pod(
+            pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
+        )
 
-        try:
-            log_entry = next(log_stream)
-            print(log_entry)  # noqa: T201
-        except StopIteration:
-            break
+        log_stream = watch.stream(
+            api_client.core_api.read_namespaced_pod_log,
+            name=pod_to_watch,
+            namespace=namespace,
+            container=container_name,
+        )
+
+        while True:
+            if timeout and time.time() - start_time > timeout:
+                watch.stop()
+                raise Exception("Timed out waiting for pod to finish")
+
+            try:
+                log_entry = next(log_stream)
+                print(log_entry)  # noqa: T201
+            except StopIteration:
+                break
+    else:
+        context.log.info("Pod logs are disabled, because restart_policy is not Never")
 
     if job_spec_config and job_spec_config.get("parallelism"):
         num_pods_to_wait_for = job_spec_config["parallelism"]

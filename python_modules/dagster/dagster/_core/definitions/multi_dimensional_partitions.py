@@ -1,7 +1,7 @@
 import hashlib
 import itertools
 from datetime import datetime
-from functools import reduce
+from functools import lru_cache, reduce
 from typing import (
     Dict,
     Iterable,
@@ -16,6 +16,8 @@ from typing import (
     Union,
     cast,
 )
+
+import pendulum
 
 import dagster._check as check
 from dagster._annotations import public
@@ -271,6 +273,25 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 return False
         return True
 
+    # store results for repeated calls with the same current_time
+    @lru_cache(maxsize=1)
+    def _get_partition_keys(
+        self, current_time: datetime, dynamic_partitions_store: Optional[DynamicPartitionsStore]
+    ) -> Sequence[MultiPartitionKey]:
+        partition_key_sequences = [
+            partition_dim.partitions_def.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            for partition_dim in self._partitions_defs
+        ]
+
+        return [
+            MultiPartitionKey(
+                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
+            )
+            for partition_key_tuple in itertools.product(*partition_key_sequences)
+        ]
+
     @public
     def get_partition_keys(
         self,
@@ -291,19 +312,9 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         Returns:
             Sequence[MultiPartitionKey]
         """
-        partition_key_sequences = [
-            partition_dim.partitions_def.get_partition_keys(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-            for partition_dim in self._partitions_defs
-        ]
-
-        return [
-            MultiPartitionKey(
-                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
-            )
-            for partition_key_tuple in itertools.product(*partition_key_sequences)
-        ]
+        return self._get_partition_keys(
+            current_time or pendulum.now("UTC"), dynamic_partitions_store
+        )
 
     def filter_valid_partition_keys(
         self, partition_keys: Set[str], dynamic_partitions_store: DynamicPartitionsStore
@@ -368,10 +379,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         partition_key_strs = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)
         check.invariant(
             len(partition_key_strs) == len(self.partitions_defs),
-            (
-                f"Expected {len(self.partitions_defs)} partition keys in partition key string"
-                f" {partition_key_str}, but got {len(partition_key_strs)}"
-            ),
+            f"Expected {len(self.partitions_defs)} partition keys in partition key string"
+            f" {partition_key_str}, but got {len(partition_key_strs)}",
         )
 
         return MultiPartitionKey(
@@ -458,10 +467,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
         check.invariant(
             len(matching_dimensions) == 1,
-            (
-                f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
-                f" {[dim.name for dim in self.partitions_defs]}"
-            ),
+            f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
+            f" {[dim.name for dim in self.partitions_defs]}",
         )
 
         partition_sequences = [

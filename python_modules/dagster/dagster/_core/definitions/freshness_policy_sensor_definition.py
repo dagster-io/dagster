@@ -126,9 +126,9 @@ class FreshnessPolicySensorContext(
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             freshness_policy=check.inst_param(freshness_policy, "FreshnessPolicy", FreshnessPolicy),
             minutes_overdue=float(minutes_overdue) if minutes_overdue is not None else None,
-            previous_minutes_overdue=float(previous_minutes_overdue)
-            if previous_minutes_overdue is not None
-            else None,
+            previous_minutes_overdue=(
+                float(previous_minutes_overdue) if previous_minutes_overdue is not None else None
+            ),
             instance=check.inst_param(instance, "instance", DagsterInstance),
             resources=resources or ScopedResourcesBuilder.build_empty(),
         )
@@ -262,10 +262,11 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_overdue value for this asset
-                minutes_late_by_key[asset_key] = data_time_resolver.get_current_minutes_late(
+                result = data_time_resolver.get_minutes_overdue(
                     evaluation_time=evaluation_time,
                     asset_key=asset_key,
                 )
+                minutes_late_by_key[asset_key] = result.overdue_minutes if result else None
 
                 resource_args_populated = validate_and_get_resource_dict(
                     context.resources, name, resource_arg_names

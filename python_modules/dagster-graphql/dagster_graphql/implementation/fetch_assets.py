@@ -429,10 +429,8 @@ def build_partition_statuses(
         type(materialized_partitions_subset)
         == type(failed_partitions_subset)
         == type(in_progress_partitions_subset),
-        (
-            "Expected materialized_partitions_subset, failed_partitions_subset, and"
-            " in_progress_partitions_subset to be of the same type"
-        ),
+        "Expected materialized_partitions_subset, failed_partitions_subset, and"
+        " in_progress_partitions_subset to be of the same type",
     )
 
     if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
@@ -529,12 +527,10 @@ def get_2d_run_length_encoded_partitions(
     for partition_key in cast(
         Sequence[MultiPartitionKey], failed_partitions_subset.get_partition_keys()
     ):
-        dim2_failed_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ] = dim2_failed_partition_subset_by_dim1[
-            partition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys(
-            [partition_key.keys_by_dimension[secondary_dim.name]]
+        dim2_failed_partition_subset_by_dim1[partition_key.keys_by_dimension[primary_dim.name]] = (
+            dim2_failed_partition_subset_by_dim1[
+                partition_key.keys_by_dimension[primary_dim.name]
+            ].with_partition_keys([partition_key.keys_by_dimension[secondary_dim.name]])
         )
 
     dim2_in_progress_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
@@ -631,11 +627,10 @@ def get_freshness_info(
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
-
+    result = data_time_resolver.get_minutes_overdue(asset_key, evaluation_time=current_time)
     return GrapheneAssetFreshnessInfo(
-        currentMinutesLate=data_time_resolver.get_current_minutes_late(
-            asset_key, evaluation_time=current_time
-        ),
+        currentLagMinutes=result.lag_minutes if result else None,
+        currentMinutesLate=result.overdue_minutes if result else None,
         latestMaterializationMinutesLate=None,
     )
 

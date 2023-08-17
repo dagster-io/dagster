@@ -16,10 +16,10 @@ line-length = 100
 preview = true
 
 # Black will refuse to run if it's not this version.
-required-version = "22.12.0"
+required-version = "23.7.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target-version = ['py38', 'py39', 'py310', 'py311']
+target-versions = ['py38', 'py39', 'py310', 'py311']
 
 # ########################
 # ##### PYRIGHT
@@ -53,7 +53,7 @@ exclude = [
   "**/.tox",
   ".git",
   "**/.venv*",
-  "**/build",
+  "**/build"
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -118,10 +118,12 @@ filterwarnings = [
 
 [tool.ruff]
 
+target-version = "py38"
+
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
-  "*/snapshots/*",
+  "*/snapshots/*"
 ]
 
 ignore = [

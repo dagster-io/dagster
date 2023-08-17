@@ -182,22 +182,22 @@ def get_assets_latest_info(
     asset_records = instance.get_asset_records(asset_record_keys_needed)
 
     latest_materialization_by_asset = {
-        asset_record.asset_entry.asset_key: GrapheneMaterializationEvent(
-            event=asset_record.asset_entry.last_materialization
+        asset_record.asset_entry.asset_key: (
+            GrapheneMaterializationEvent(event=asset_record.asset_entry.last_materialization)
+            if asset_record.asset_entry.last_materialization
+            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            else None
         )
-        if asset_record.asset_entry.last_materialization
-        and asset_record.asset_entry.asset_key in step_keys_by_asset
-        else None
         for asset_record in asset_records
     }
 
-    latest_run_ids_by_asset: Dict[
-        AssetKey, str
-    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
-        for asset_record in asset_records
-        if asset_record.asset_entry.last_run_id
-    }
+    latest_run_ids_by_asset: Dict[AssetKey, str] = (
+        {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
+            asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
+            for asset_record in asset_records
+            if asset_record.asset_entry.last_run_id
+        }
+    )
 
     run_records_by_run_id = {}
     in_progress_records = []
@@ -220,12 +220,14 @@ def get_assets_latest_info(
             latest_materialization_by_asset.get(asset_key),
             list(unstarted_run_ids_by_asset.get(asset_key, [])),
             list(in_progress_run_ids_by_asset.get(asset_key, [])),
-            GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
-            # Dagit error occurs if a run is terminated at the same time that this endpoint is called
-            # so we check to make sure the run ID exists in the run records
-            if asset_key in latest_run_ids_by_asset
-            and latest_run_ids_by_asset[asset_key] in run_records_by_run_id
-            else None,
+            (
+                GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
+                # Dagster UI error occurs if a run is terminated at the same time that this endpoint is
+                # called so we check to make sure the run ID exists in the run records.
+                if asset_key in latest_run_ids_by_asset
+                and latest_run_ids_by_asset[asset_key] in run_records_by_run_id
+                else None
+            ),
         )
         for asset_key in step_keys_by_asset.keys()
     ]
@@ -292,38 +294,6 @@ def _get_in_progress_runs_for_assets(
 
 def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
     return graphene_info.context.instance.get_runs_count(filters)
-
-
-def get_run_groups(
-    graphene_info: "ResolveInfo",
-    filters: Optional[RunsFilter] = None,
-    cursor: Optional[str] = None,
-    limit: Optional[int] = None,
-) -> Sequence["GrapheneRunGroup"]:
-    from ..schema.pipelines.pipeline import GrapheneRun
-    from ..schema.runs import GrapheneRunGroup
-
-    check.opt_inst_param(filters, "filters", RunsFilter)
-    check.opt_str_param(cursor, "cursor")
-    check.opt_int_param(limit, "limit")
-
-    instance = graphene_info.context.instance
-    run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
-    run_ids = {run.run_id for run_group in run_groups.values() for run in run_group.get("runs", [])}
-    records_by_ids = {
-        record.dagster_run.run_id: record
-        for record in instance.get_run_records(RunsFilter(run_ids=list(run_ids)))
-    }
-
-    for root_run_id in run_groups:
-        run_groups[root_run_id]["runs"] = [
-            GrapheneRun(records_by_ids[run.run_id]) for run in run_groups[root_run_id]["runs"]
-        ]
-
-    return [
-        GrapheneRunGroup(root_run_id=root_run_id, runs=run_group["runs"])
-        for root_run_id, run_group in run_groups.items()
-    ]
 
 
 def validate_pipeline_config(

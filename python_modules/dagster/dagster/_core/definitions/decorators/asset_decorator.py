@@ -1,4 +1,3 @@
-import warnings
 from inspect import Parameter
 from typing import (
     AbstractSet,
@@ -16,10 +15,12 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import deprecated_param, experimental_param
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
 from dagster._core.definitions.resource_annotation import (
@@ -28,10 +29,8 @@ from dagster._core.definitions.resource_annotation import (
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.backcompat import (
-    ExperimentalWarning,
-    deprecation_warning,
-    experimental_arg_warning,
+from dagster._utils.warnings import (
+    disable_dagster_warnings,
 )
 
 from ..asset_in import AssetIn
@@ -87,6 +86,13 @@ def asset(
     ...
 
 
+@experimental_param(param="resource_defs")
+@experimental_param(param="io_manager_def")
+@experimental_param(param="auto_materialize_policy")
+@experimental_param(param="backfill_policy")
+@deprecated_param(
+    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+)
 def asset(
     compute_fn: Optional[Callable] = None,
     *,
@@ -230,23 +236,9 @@ def asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
             not (io_manager_key and io_manager_def),
-            (
-                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
-                " provide one or the other. "
-            ),
+            "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
+            " provide one or the other. ",
         )
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "asset")
-
-        if io_manager_def is not None:
-            experimental_arg_warning("io_manager_def", "asset")
-
-        if auto_materialize_policy is not None:
-            experimental_arg_warning("auto_materialize_policy", "asset")
-
-        if backfill_policy is not None:
-            experimental_arg_warning("backfill_policy", "asset")
-
         return create_asset()(fn)
 
     return inner
@@ -331,9 +323,7 @@ class _Asset:
             if not self.key
             else self.key
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
 
             bare_required_resource_keys = set(self.required_resource_keys)
@@ -362,10 +352,8 @@ class _Asset:
 
             check.param_invariant(
                 len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
-                (
-                    "Cannot specify resource requirements in both @asset decorator and as arguments"
-                    " to the decorated function"
-                ),
+                "Cannot specify resource requirements in both @asset decorator and as arguments"
+                " to the decorated function",
             )
 
             io_manager_key = cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
@@ -401,9 +389,11 @@ class _Asset:
             # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
             if self.partitions_def is None:
                 check.param_invariant(
-                    self.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
-                    if self.backfill_policy
-                    else True,
+                    (
+                        self.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
+                        if self.backfill_policy
+                        else True
+                    ),
                     "backfill_policy",
                     "Non partitioned asset can only have single run backfill policy",
                 )
@@ -425,12 +415,14 @@ class _Asset:
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=wrapped_resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
-            freshness_policies_by_key={out_asset_key: self.freshness_policy}
-            if self.freshness_policy
-            else None,
-            auto_materialize_policies_by_key={out_asset_key: self.auto_materialize_policy}
-            if self.auto_materialize_policy
-            else None,
+            freshness_policies_by_key=(
+                {out_asset_key: self.freshness_policy} if self.freshness_policy else None
+            ),
+            auto_materialize_policies_by_key=(
+                {out_asset_key: self.auto_materialize_policy}
+                if self.auto_materialize_policy
+                else None
+            ),
             backfill_policy=self.backfill_policy,
             asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
@@ -440,6 +432,10 @@ class _Asset:
         )
 
 
+@experimental_param(param="resource_defs")
+@deprecated_param(
+    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+)
 def multi_asset(
     *,
     outs: Mapping[str, AssetOut],
@@ -531,22 +527,20 @@ def multi_asset(
                     "asset1": AssetOut(),
                     "asset2": AssetOut(),
                 },
-                deps={"asset0"},
+                deps=["asset0"],
             )
             def my_function():
                 asset0_value = load(path="asset0")
                 asset1_result, asset2_result = do_some_transformation(asset0_value)
                 write(asset1_result, path="asset1")
                 write(asset2_result, path="asset2")
+                return None, None
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     upstream_asset_deps = _type_check_deps_and_non_argument_deps(
         deps=deps, non_argument_deps=non_argument_deps
     )
-
-    if resource_defs is not None:
-        experimental_arg_warning("resource_defs", "multi_asset")
 
     asset_deps = check.opt_mapping_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
@@ -559,7 +553,7 @@ def multi_asset(
     )
 
     _config_schema = check.opt_mapping_param(
-        config_schema,
+        config_schema,  # type: ignore
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
@@ -576,10 +570,8 @@ def multi_asset(
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
             len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
-            (
-                "Cannot specify resource requirements in both @multi_asset decorator and as"
-                " arguments to the decorated function"
-            ),
+            "Cannot specify resource requirements in both @multi_asset decorator and as"
+            " arguments to the decorated function",
         )
 
         # validate that the asset_deps make sense
@@ -587,26 +579,20 @@ def multi_asset(
         for out_name, asset_keys in asset_deps.items():
             check.invariant(
                 out_name in outs,
-                (
-                    f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for"
-                    f" multi-asset {op_name}. Must be one of the outs for this multi-asset"
-                    f" {list(outs.keys())[:20]}."
-                ),
+                f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for"
+                f" multi-asset {op_name}. Must be one of the outs for this multi-asset"
+                f" {list(outs.keys())[:20]}.",
             )
             invalid_asset_deps = asset_keys.difference(valid_asset_deps)
             check.invariant(
                 not invalid_asset_deps,
-                (
-                    f"Invalid asset dependencies: {invalid_asset_deps} specified in"
-                    f" `internal_asset_deps` argument for multi-asset '{op_name}' on key"
-                    f" '{out_name}'. Each specified asset key must be associated with an input to"
-                    " the asset or produced by this asset. Valid keys:"
-                    f" {list(valid_asset_deps)[:20]}"
-                ),
+                f"Invalid asset dependencies: {invalid_asset_deps} specified in"
+                f" `internal_asset_deps` argument for multi-asset '{op_name}' on key"
+                f" '{out_name}'. Each specified asset key must be associated with an input to"
+                " the asset or produced by this asset. Valid keys:"
+                f" {list(valid_asset_deps)[:20]}",
             )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
-
+        with disable_dagster_warnings():
             op_required_resource_keys = required_resource_keys - arg_resource_keys
 
             op = _Op(
@@ -640,10 +626,8 @@ def multi_asset(
         if group_name:
             check.invariant(
                 not group_names_by_key,
-                (
-                    "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts"
-                    " supplied to this multi_asset have a group_name defined."
-                ),
+                "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts"
+                " supplied to this multi_asset have a group_name defined.",
             )
             group_names_by_key = {
                 asset_key: group_name for asset_key in keys_by_output_name.values()
@@ -766,7 +750,9 @@ def build_asset_ins(
 
 
 @overload
-def graph_asset(compose_fn: Callable) -> AssetsDefinition:
+def graph_asset(
+    compose_fn: Callable,
+) -> AssetsDefinition:
     ...
 
 
@@ -774,15 +760,17 @@ def graph_asset(compose_fn: Callable) -> AssetsDefinition:
 def graph_asset(
     *,
     name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
     description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[MetadataUserInput] = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -791,11 +779,12 @@ def graph_asset(
     compose_fn: Optional[Callable] = None,
     *,
     name: Optional[str] = None,
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    ins: Optional[Mapping[str, AssetIn]] = None,
     description: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[MetadataUserInput] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
@@ -811,16 +800,32 @@ def graph_asset(
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function. The asset's name must be a valid name in Dagster (ie only contains
             letters, numbers, and underscores) and may not contain Python reserved keywords.
+        description (Optional[str]):
+            A human-readable description of the asset.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
+            about the input.
+        config (Optional[Union[ConfigMapping], Mapping[str, Any]):
+            Describes how the graph underlying the asset is configured at runtime.
+
+            If a :py:class:`ConfigMapping` object is provided, then the graph takes on the config
+            schema of this object. The mapping will be applied at runtime to generate the config for
+            the graph's constituent nodes.
+
+            If a dictionary is provided, then it will be used as the default run config for the
+            graph. This means it must conform to the config schema of the underlying nodes. Note
+            that the values provided will be viewable and editable in the Dagster UI, so be careful
+            with secrets. its constituent nodes.
+
+            If no value is provided, then the config schema for the graph is the default (derived
+            from the underlying nodes).
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
             the decorated function. Each item in key_prefix must be a valid name in Dagster (ie only
             contains letters, numbers, and underscores) and may not contain Python reserved keywords.
-        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
-            about the input.
-        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
-            compose the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the asset.
         metadata (Optional[MetadataUserInput]): Dictionary of metadata to be associated with
             the asset.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
@@ -844,91 +849,57 @@ def graph_asset(
             def slack_files_table():
                 return store_files(fetch_files_from_slack())
     """
-    if compose_fn is not None:
-        return _GraphBackedAsset()(compose_fn)
-
-    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        return _GraphBackedAsset(
-            name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
-            key_prefix=key_prefix,
-            ins=ins,
+    if compose_fn is None:
+        return lambda fn: graph_asset(  # type: ignore  # (decorator pattern)
+            fn,
+            name=name,
             description=description,
-            partitions_def=partitions_def,
+            ins=ins,
+            config=config,
+            key_prefix=key_prefix,
             group_name=group_name,
+            partitions_def=partitions_def,
             metadata=metadata,
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
-        )(fn)
-
-    return inner
-
-
-class _GraphBackedAsset:
-    def __init__(
-        self,
-        name: Optional[str] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        ins: Optional[Mapping[str, AssetIn]] = None,
-        description: Optional[str] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
-        metadata: Optional[MetadataUserInput] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    ):
-        self.name = name
-
-        if isinstance(key_prefix, str):
-            key_prefix = [key_prefix]
-        self.key_prefix = key_prefix
-        self.ins = ins or {}
-        self.description = description
-        self.partitions_def = partitions_def
-        self.group_name = group_name
-        self.metadata = metadata
-        self.freshness_policy = freshness_policy
-        self.auto_materialize_policy = auto_materialize_policy
-        self.backfill_policy = backfill_policy
-        self.resource_defs = resource_defs
-
-    def __call__(self, fn: Callable) -> AssetsDefinition:
-        asset_name = self.name or fn.__name__
-        asset_ins = build_asset_ins(fn, self.ins or {}, set())
-        out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+        )
+    else:
+        key_prefix = [key_prefix] if isinstance(key_prefix, str) else key_prefix
+        ins = ins or {}
+        asset_name = name or compose_fn.__name__
+        asset_ins = build_asset_ins(compose_fn, ins or {}, set())
+        out_asset_key = AssetKey(list(filter(None, [*(key_prefix or []), asset_name])))
 
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
         partition_mappings = {
             input_name: asset_in.partition_mapping
-            for input_name, asset_in in self.ins.items()
+            for input_name, asset_in in ins.items()
             if asset_in.partition_mapping
         }
-
-        op_graph = graph(name=out_asset_key.to_python_identifier(), description=self.description)(
-            fn
-        )
+        op_graph = graph(
+            name=out_asset_key.to_python_identifier(), description=description, config=config
+        )(compose_fn)
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
-            partitions_def=self.partitions_def,
+            partitions_def=partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
-            group_name=self.group_name,
-            metadata_by_output_name={"result": self.metadata} if self.metadata else None,
-            freshness_policies_by_output_name={"result": self.freshness_policy}
-            if self.freshness_policy
-            else None,
-            auto_materialize_policies_by_output_name={"result": self.auto_materialize_policy}
-            if self.auto_materialize_policy
-            else None,
-            backfill_policy=self.backfill_policy,
-            descriptions_by_output_name={"result": self.description} if self.description else None,
-            resource_defs=self.resource_defs,
+            group_name=group_name,
+            metadata_by_output_name={"result": metadata} if metadata else None,
+            freshness_policies_by_output_name=(
+                {"result": freshness_policy} if freshness_policy else None
+            ),
+            auto_materialize_policies_by_output_name=(
+                {"result": auto_materialize_policy} if auto_materialize_policy else None
+            ),
+            backfill_policy=backfill_policy,
+            descriptions_by_output_name={"result": description} if description else None,
+            resource_defs=resource_defs,
         )
 
 
@@ -1088,7 +1059,6 @@ def _type_check_deps_and_non_argument_deps(
         upstream_asset_deps = deps
 
     if non_argument_deps is not None:
-        deprecation_warning("non_argument_deps", "2.0.0", "use parameter deps instead")
         # this set -> list conversion is a side effect of the type changing from
         # Union[Set[AssetKey], Set[str]] to Sequence[Union[AssetsDefinition, CoercibleToAssetKey, SourceAsset]]
         check.set_param(non_argument_deps, "non_argument_deps", of_type=(AssetKey, str))
@@ -1100,8 +1070,7 @@ def _type_check_deps_and_non_argument_deps(
 def _make_asset_keys(
     deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
 ) -> Optional[Set[AssetKey]]:
-    """Convert all items to AssetKey in a set. By putting all of the AssetKeys in a set, it will also deduplicate them.
-    """
+    """Convert all items to AssetKey in a set. By putting all of the AssetKeys in a set, it will also deduplicate them."""
     if deps is None:
         return deps
 

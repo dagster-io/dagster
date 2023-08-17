@@ -62,7 +62,7 @@ def test_launch_run_with_unloadable_job_grpc():
                 event_records,
                 [
                     ("ENGINE_EVENT", "Started process for run"),
-                    ("ENGINE_EVENT", "Could not load pipeline definition"),
+                    ("ENGINE_EVENT", "Could not load job definition"),
                     (
                         "PIPELINE_FAILURE",
                         "This run has been marked as failed from outside the execution context",

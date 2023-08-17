@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
+import fsspec
 import pytest
 from dagster import (
     AllPartitionMapping,
@@ -20,6 +21,8 @@ from dagster import (
     InitResourceContext,
     InputContext,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     OpExecutionContext,
     OutputContext,
     StaticPartitionsDefinition,
@@ -52,6 +55,16 @@ class DummyIOManager(UPathIOManager):
 
     def load_from_path(self, context: InputContext, path: UPath) -> str:
         return str(path)
+
+
+class PickleIOManager(UPathIOManager):
+    def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+        with path.open("wb") as file:
+            pickle.dump(obj, file)
+
+    def load_from_path(self, context: InputContext, path: UPath) -> List:
+        with path.open("rb") as file:
+            return pickle.load(file)
 
 
 @pytest.fixture
@@ -214,6 +227,60 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
         resource_defs={"io_manager": dummy_io_manager},
     )
     result = my_job.execute_in_process(partition_key="A")
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert set(downstream_asset_data.keys()) == {"A", "B"}
+
+
+def test_upath_io_manager_load_multiple_inputs(dummy_io_manager: DummyIOManager):
+    upstream_partitions_def = MultiPartitionsDefinition(
+        {
+            "a": StaticPartitionsDefinition(["a", "b"]),
+            "1": StaticPartitionsDefinition(["1"]),
+        }
+    )
+
+    @asset(partitions_def=upstream_partitions_def)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset
+    def downstream_asset(upstream_asset):
+        return upstream_asset
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream_asset, downstream_asset],
+        resource_defs={"io_manager": dummy_io_manager},
+    )
+    result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    assert set(downstream_asset_data.keys()) == {"1|a", "1|b"}
+
+
+def test_upath_io_manager_multiple_partitions_from_non_partitioned_run(tmp_path: Path):
+    my_io_manager = PickleIOManager(UPath(tmp_path))
+
+    upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
+
+    @asset(partitions_def=upstream_partitions_def, io_manager_def=my_io_manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset(
+        ins={"upstream_asset": AssetIn(partition_mapping=AllPartitionMapping())},
+        io_manager_def=my_io_manager,
+    )
+    def downstream_asset(upstream_asset: Dict[str, str]) -> Dict[str, str]:
+        return upstream_asset
+
+    for partition_key in ["A", "B"]:
+        materialize(
+            [upstream_asset],
+            partition_key=partition_key,
+        )
+
+    result = materialize([upstream_asset.to_source_asset(), downstream_asset])
+
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
 
@@ -460,20 +527,17 @@ class AsyncJSONIOManager(ConfigurableIOManager, UPathIOManager):
         The returned `fsspec` FileSystem will have async IO methods.
         https://filesystem-spec.readthedocs.io/en/latest/async.html.
         """
-        if isinstance(path, Path) and not isinstance(path, UPath):
-            try:
-                from morefs.asyn_local import AsyncLocalFileSystem  # type: ignore
+        import morefs.asyn_local
 
-                return AsyncLocalFileSystem()
-            except ImportError as e:
-                raise RuntimeError(
-                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
-                    " filesystem"
-                ) from e
-        elif isinstance(path, UPath):
-            kwargs = path._kwargs.copy()  # noqa
-            kwargs["asynchronous"] = True
-            return path._default_accessor(path._url, **kwargs)._fs  # noqa
+        if isinstance(path, UPath):
+            so = path.fs.storage_options.copy()
+            cls = type(path.fs)
+            if cls is fsspec.implementations.local.LocalFileSystem:
+                cls = morefs.asyn_local.AsyncLocalFileSystem
+            so["asynchronous"] = True
+            return cls(**so)
+        elif isinstance(path, Path):
+            return morefs.asyn_local.AsyncLocalFileSystem()
         else:
             raise DagsterInvariantViolationError(
                 f"Path type {type(path)} is not supported by the UPathIOManager"

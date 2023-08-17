@@ -54,14 +54,13 @@ class OutputContext:
     :py:func:`dagster.build_output_context`.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import IOManager, OutputContext
+            from dagster import IOManager, OutputContext
 
-        class MyIOManager(IOManager):
-            def handle_output(self, context: OutputContext, obj):
-                ...
-
+            class MyIOManager(IOManager):
+                def handle_output(self, context: OutputContext, obj):
+                    ...
     """
 
     _step_key: Optional[str]
@@ -552,10 +551,8 @@ class OutputContext:
         if version is not None:
             check.invariant(
                 self.mapping_key is None,
-                (
-                    f"Mapping key and version both provided for output '{name}' of step"
-                    f" '{step_key}'. Dynamic mapping is not supported when using versioning."
-                ),
+                f"Mapping key and version both provided for output '{name}' of step"
+                f" '{step_key}'. Dynamic mapping is not supported when using versioning.",
             )
             identifier = ["versioned_outputs", version, step_key, name]
         else:
@@ -607,13 +604,13 @@ class OutputContext:
             event (Union[AssetMaterialization, AssetObservation]): The event to log.
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster import IOManager, AssetMaterialization
+                from dagster import IOManager, AssetMaterialization
 
-            class MyIOManager(IOManager):
-                def handle_output(self, context, obj):
-                    context.log_event(AssetMaterialization("foo"))
+                class MyIOManager(IOManager):
+                    def handle_output(self, context, obj):
+                        context.log_event(AssetMaterialization("foo"))
         """
         from dagster._core.events import DagsterEvent
 
@@ -675,13 +672,13 @@ class OutputContext:
             metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
 
         Examples:
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster import IOManager
+                from dagster import IOManager
 
-            class MyIOManager(IOManager):
-                def handle_output(self, context, obj):
-                    context.add_output_metadata({"foo": "bar"})
+                class MyIOManager(IOManager):
+                    def handle_output(self, context, obj):
+                        context.add_output_metadata({"foo": "bar"})
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
@@ -761,11 +758,9 @@ def get_output_context(
     if step_context:
         check.invariant(
             not resources,
-            (
-                "Expected either resources or step context to be set, but "
-                "received both. If step context is provided, resources for IO manager will be "
-                "retrieved off of that."
-            ),
+            "Expected either resources or step context to be set, but "
+            "received both. If step context is provided, resources for IO manager will be "
+            "retrieved off of that.",
         )
         resources = build_resources_for_manager(io_manager_key, step_context)
 

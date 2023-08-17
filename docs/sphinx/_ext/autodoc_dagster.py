@@ -197,7 +197,11 @@ class DagsterClassDocumenter(ClassDocumenter):
         filtered_members = [
             m
             for m in unfiltered_members
-            if (m[0] in self.object.__dict__ and is_public(self.object, m[0]) or is_public(m[1]))
+            if (
+                m[0] in self.object.__dict__
+                and is_public(self.object.__dict__[m[0]])
+                or is_public(m[1])
+            )
         ]
         for member in filtered_members:
             if member[0] != "__init__" and not member[1].__doc__:

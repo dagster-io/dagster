@@ -130,7 +130,7 @@ def code_server_cli():
     "--startup-timeout",
     type=click.INT,
     required=False,
-    default=180,
+    default=0,
     help="How long to wait for code to load or reload before timing out. Defaults to no timeout.",
     envvar="DAGSTER_CODE_SERVER_STARTUP_TIMEOUT",
 )

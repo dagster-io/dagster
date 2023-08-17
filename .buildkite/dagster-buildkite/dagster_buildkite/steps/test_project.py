@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional, Set
 
 from ..images.versions import (
@@ -42,11 +43,9 @@ def build_test_project_steps() -> List[GroupStep]:
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
                 'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
-                (
-                    "/scriptdir/aws.pex s3 cp"
-                    " s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json"
-                    " $${GOOGLE_APPLICATION_CREDENTIALS}"
-                ),
+                "/scriptdir/aws.pex s3 cp"
+                " s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json"
+                " $${GOOGLE_APPLICATION_CREDENTIALS}",
                 "export"
                 " BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-base:py"
                 + version
@@ -96,8 +95,11 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
 
 
 def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    build_test_project_for.add(version)
-    return [_test_project_step_key(version)]
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        build_test_project_for.add(version)
+        return [_test_project_step_key(version)]
+    else:
+        return []
 
 
 def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:

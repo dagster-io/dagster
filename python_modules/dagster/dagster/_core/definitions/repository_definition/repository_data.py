@@ -201,8 +201,7 @@ class RepositoryData(ABC):
 
 
 class CachingRepositoryData(RepositoryData):
-    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator.
-    """
+    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
     _all_jobs: Optional[Sequence[JobDefinition]]
     _all_pipelines: Optional[Sequence[JobDefinition]]

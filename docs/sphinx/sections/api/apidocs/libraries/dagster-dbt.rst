@@ -8,9 +8,17 @@ data assets that depend on specific dbt models, or to define the computation req
 the sources that your dbt models depend on.
 
 Related documentation pages: `dbt </integrations/dbt>`_ and
-`dbt Cloud <integrations/dbt-cloud>`_.
+`dbt Cloud </integrations/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
+
+***********
+dagster-dbt
+***********
+
+.. click:: dagster_dbt.cli.app:project_app_typer_click_object
+    :prog: dagster-dbt project scaffold
+    :nested:
 
 ********
 dbt Core
@@ -46,8 +54,7 @@ Resources (dbt Core)
 CLI Resource
 ------------
 
-.. autoconfigurable:: DbtCliResource
-    :annotation: ResourceDefinition
+.. autoclass:: DbtCliResource
 
 .. autoclass:: DbtCliInvocation
 

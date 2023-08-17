@@ -196,17 +196,21 @@ class UPathIOManager(MemoizableIOManager):
             ]
             return "/".join(ordered_dimension_keys)
 
-        formatted_partition_keys = [
-            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
-            for pk in context.asset_partition_keys
-        ]
+        formatted_partition_keys = {
+            partition_key: (
+                _formatted_multipartitioned_path(partition_key)
+                if isinstance(partition_key, MultiPartitionKey)
+                else partition_key
+            )
+            for partition_key in context.asset_partition_keys
+        }
 
         asset_path = self._get_path_without_extension(context)
         return {
-            partition: self._with_extension(
+            partition_key: self._with_extension(
                 self.get_path_for_partition(context, asset_path, partition)
             )
-            for partition in formatted_partition_keys
+            for partition_key, partition in formatted_partition_keys.items()
         }
 
     def _get_multipartition_backcompat_paths(
@@ -255,7 +259,11 @@ class UPathIOManager(MemoizableIOManager):
         return obj
 
     def _load_partition_from_path(
-        self, context: InputContext, path: "UPath", backcompat_path: Optional["UPath"] = None
+        self,
+        context: InputContext,
+        partition_key: str,
+        path: "UPath",
+        backcompat_path: Optional["UPath"] = None,
     ) -> Any:
         """1. Try to load the partition from the normal path.
         2. If it was not found, try to load it from the backcompat path.
@@ -263,13 +271,14 @@ class UPathIOManager(MemoizableIOManager):
         Otherwise, raise an error.
 
         Args:
+            context (InputContext): IOManager Input context
+            partition_key (str): the partition key corresponding to the partition being loaded
             path (UPath): The path to the partition.
             backcompat_path (Optional[UPath]): The path to the partition in the backcompat location.
 
         Returns:
             Any: The object loaded from the partition.
         """
-        partition_key = context.partition_key
         allow_missing_partitions = (
             context.metadata.get("allow_missing_partitions", False)
             if context.metadata is not None
@@ -315,7 +324,10 @@ class UPathIOManager(MemoizableIOManager):
         if not inspect.iscoroutinefunction(self.load_from_path):
             for partition_key in context.asset_partition_keys:
                 obj = self._load_partition_from_path(
-                    context, paths[partition_key], backcompat_paths.get(partition_key)
+                    context,
+                    partition_key,
+                    paths[partition_key],
+                    backcompat_paths.get(partition_key),
                 )
                 if obj is not None:  # in case some partitions were skipped
                     objs[partition_key] = obj
@@ -332,7 +344,10 @@ class UPathIOManager(MemoizableIOManager):
                     tasks.append(
                         loop.create_task(
                             self._load_partition_from_path(
-                                context, paths[partition_key], backcompat_paths.get(partition_key)
+                                context,
+                                partition_key,
+                                paths[partition_key],
+                                backcompat_paths.get(partition_key),
                             )
                         )
                     )
@@ -414,10 +429,8 @@ class UPathIOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                (
-                    "Output had Nothing type or 'None' annotation, but handle_output received"
-                    f" value that was not None and was of type {type(obj)}."
-                ),
+                "Output had Nothing type or 'None' annotation, but handle_output received"
+                f" value that was not None and was of type {type(obj)}.",
             )
             return None
 

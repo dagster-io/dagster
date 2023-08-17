@@ -55,8 +55,7 @@ class StepRunRef(
 
 
 class StepLauncher(ABC):
-    """A StepLauncher is responsible for executing steps, either in-process or in an external process.
-    """
+    """A StepLauncher is responsible for executing steps, either in-process or in an external process."""
 
     @abstractmethod
     def launch_step(self, step_context):

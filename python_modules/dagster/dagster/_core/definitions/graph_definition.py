@@ -83,9 +83,7 @@ def _check_node_defs_arg(
                 """You have passed a lambda or function {func} into {name} that is
                 not a node. You have likely forgetten to annotate this function with
                 the @op or @graph decorators.'
-                """.format(
-                    name=graph_name, func=node_def.__name__
-                )
+                """.format(name=graph_name, func=node_def.__name__)
             )
         else:
             raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")
@@ -122,9 +120,9 @@ def create_adjacency_lists(
 
 
 class GraphDefinition(NodeDefinition):
-    """Defines a Dagster graph.
+    """Defines a Dagster op graph.
 
-    A graph is made up of
+    An op graph is made up of
 
     - Nodes, which can either be an op (the functional unit of computation), or another graph.
     - Dependencies, which determine how the values produced by nodes as outputs flow from

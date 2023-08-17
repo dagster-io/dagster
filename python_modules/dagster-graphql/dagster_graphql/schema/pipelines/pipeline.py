@@ -27,7 +27,7 @@ from ...implementation.fetch_pipelines import get_job_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
-from ...implementation.loader import BatchRunLoader, RepositoryScopedBatchLoader
+from ...implementation.loader import BatchRunLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import (
@@ -376,6 +376,7 @@ class GrapheneRun(graphene.ObjectType):
     hasReExecutePermission = graphene.NonNull(graphene.Boolean)
     hasTerminatePermission = graphene.NonNull(graphene.Boolean)
     hasDeletePermission = graphene.NonNull(graphene.Boolean)
+    hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -583,6 +584,14 @@ class GrapheneRun(graphene.ObjectType):
         run_record = self._get_run_record(graphene_info.context.instance)
         return datetime_as_float(run_record.update_timestamp)
 
+    def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
+        instance = graphene_info.context.instance
+        if not instance.event_log_storage.supports_global_concurrency_limits:
+            return False
+
+        active_run_ids = instance.event_log_storage.get_concurrency_run_ids()
+        return self.runId in active_run_ids
+
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
@@ -731,7 +740,9 @@ class GrapheneIPipelineSnapshotMixin:
             runs_filter = RunsFilter(
                 job_name=pipeline.name,
                 tags={
-                    REPOSITORY_LABEL_TAG: pipeline.get_external_origin().external_repository_origin.get_label()
+                    REPOSITORY_LABEL_TAG: (
+                        pipeline.get_external_origin().external_repository_origin.get_label()
+                    )
                 },
             )
         else:
@@ -853,16 +864,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(
-        self, external_job: ExternalJob, batch_loader: Optional[RepositoryScopedBatchLoader] = None
-    ):
+    def __init__(self, external_job: ExternalJob):
         super().__init__()
         self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
-        # optional run loader, provided by a parent GrapheneRepository object that instantiates
-        # multiple pipelines
-        self._batch_loader = check.opt_inst_param(
-            batch_loader, "batch_loader", RepositoryScopedBatchLoader
-        )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_job.get_external_origin_id()
@@ -896,17 +900,6 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             location,
         )
 
-    def resolve_runs(
-        self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
-    ) -> Sequence[GrapheneRun]:
-        # override the implementation to use the batch run loader
-        if not cursor and limit and self._batch_loader:
-            records = self._batch_loader.get_run_records_for_job(self._external_job.name, limit)
-            return [GrapheneRun(record) for record in records]
-
-        # otherwise, fall back to the default implementation
-        return super().resolve_runs(graphene_info, cursor=cursor, limit=limit)
-
 
 class GrapheneJob(GraphenePipeline):
     class Meta:
@@ -914,14 +907,9 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
     # doesn't inherit from base class
-    def __init__(self, external_job, batch_loader=None):
+    def __init__(self, external_job):
         super().__init__()
         self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
-        # optional run loader, provided by a parent GrapheneRepository object that instantiates
-        # multiple pipelines
-        self._batch_loader = check.opt_inst_param(
-            batch_loader, "batch_loader", RepositoryScopedBatchLoader
-        )
 
 
 class GrapheneGraph(graphene.ObjectType):

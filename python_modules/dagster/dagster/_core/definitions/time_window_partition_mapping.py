@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
@@ -13,12 +13,10 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.backcompat import (
-    experimental_arg_warning,
-)
 
 
 @whitelist_for_serdes
+@experimental_param(param="allow_nonexistent_upstream_partitions")
 class TimeWindowPartitionMapping(
     PartitionMapping,
     NamedTuple(
@@ -96,11 +94,6 @@ class TimeWindowPartitionMapping(
         end_offset: int = 0,
         allow_nonexistent_upstream_partitions: bool = False,
     ):
-        if allow_nonexistent_upstream_partitions:
-            experimental_arg_warning(
-                "allow_nonexistent_upstream_partitions", "TimeWindowPartitionMapping.__init__"
-            )
-
         return super(TimeWindowPartitionMapping, cls).__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),

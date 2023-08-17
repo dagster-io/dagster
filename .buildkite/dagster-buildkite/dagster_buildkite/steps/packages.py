@@ -144,8 +144,8 @@ deploy_docker_example_extra_cmds = [
     *network_buildkite_container("docker_example_network"),
     *connect_sibling_docker_container(
         "docker_example_network",
-        "docker_example_dagit",
-        "DEPLOY_DOCKER_DAGIT_HOST",
+        "docker_example_webserver",
+        "DEPLOY_DOCKER_WEBSERVER_HOST",
     ),
     "popd",
 ]
@@ -228,11 +228,15 @@ def k8s_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-gcp_extra_cmds = [
-    r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-    + GCP_CREDS_LOCAL_FILE,
-    "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-]
+gcp_extra_cmds = (
+    [
+        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+        + GCP_CREDS_LOCAL_FILE,
+        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+    ]
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS")
+    else []
+)
 
 
 postgres_extra_cmds = [
@@ -440,9 +444,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "dbt_13X_legacy",
             "dbt_14X_legacy",
             "dbt_15X_legacy",
+            "dbt_16X_legacy",
             "dbt_13X",
             "dbt_14X",
             "dbt_15X",
+            "dbt_16X",
         ],
     ),
     PackageSpec(

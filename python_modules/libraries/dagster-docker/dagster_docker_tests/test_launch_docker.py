@@ -24,6 +24,7 @@ from dagster_test.test_project import (
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
+@pytest.mark.integration
 def test_launch_docker_no_network(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {"env_vars": aws_env}
@@ -100,6 +101,7 @@ def test_launch_docker_no_network(aws_env):
                     container.remove(force=True)
 
 
+@pytest.mark.integration
 def test_launch_docker_image_on_job_config(aws_env):
     # Docker image name to use for launch specified as part of the job origin
     # rather than in the run launcher instance config
@@ -172,6 +174,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
         )
 
 
+@pytest.mark.integration
 def test_terminate_launched_docker_run(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -240,6 +243,7 @@ def test_terminate_launched_docker_run(aws_env):
             )
 
 
+@pytest.mark.integration
 def test_launch_docker_invalid_image(aws_env):
     docker_image = "_invalid_format_image"
     launcher_config = {
@@ -290,6 +294,7 @@ def test_launch_docker_invalid_image(aws_env):
                 instance.launch_run(run.run_id, workspace)
 
 
+@pytest.mark.integration
 def test_launch_docker_image_on_instance_config(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -301,6 +306,7 @@ def test_launch_docker_image_on_instance_config(aws_env):
     _test_launch(docker_image, launcher_config)
 
 
+@pytest.mark.integration
 def test_launch_docker_image_multiple_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -314,6 +320,7 @@ def test_launch_docker_image_multiple_networks(aws_env):
     _test_launch(docker_image, launcher_config)
 
 
+@pytest.mark.integration
 def test_launch_docker_config_on_container_context(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {}
@@ -333,6 +340,7 @@ def test_launch_docker_config_on_container_context(aws_env):
     )
 
 
+@pytest.mark.integration
 def test_cant_combine_network_and_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -356,6 +364,7 @@ def test_cant_combine_network_and_networks(aws_env):
             print(instance.run_launcher)  # noqa: T201
 
 
+@pytest.mark.integration
 def test_terminate(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {

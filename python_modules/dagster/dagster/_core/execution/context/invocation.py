@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from typing import (
     AbstractSet,
     Any,
@@ -86,25 +87,22 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._op_config = op_config
         self._mapping_key = mapping_key
 
-        self._instance_provided = (
-            check.opt_inst_param(instance, "instance", DagsterInstance) is not None
-        )
+        self._exit_stack = ExitStack()
+
         # Construct ephemeral instance if missing
-        self._instance_cm = ephemeral_instance_if_missing(instance)
-        # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
-        # so ignore lint error
-        self._instance = self._instance_cm.__enter__()
+        self._instance = self._exit_stack.enter_context(ephemeral_instance_if_missing(instance))
 
         self._resources_config = resources_config
         # Open resource context manager
         self._resources_contain_cm = False
         self._resource_defs = wrap_resources_for_execution(resources_dict)
-        self._resources_cm = build_resources(
-            resources=self._resource_defs,
-            instance=instance,
-            resource_config=resources_config,
+        self._resources = self._exit_stack.enter_context(
+            build_resources(
+                resources=self._resource_defs,
+                instance=instance,
+                resource_config=resources_config,
+            )
         )
-        self._resources = self._resources_cm.__enter__()
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
         self._log = initialize_console_manager(None)
@@ -126,14 +124,10 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self
 
     def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)
-        self._instance_cm.__exit__(*exc)
+        self._exit_stack.close()
 
     def __del__(self):
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)
-        if not self._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)
+        self._exit_stack.close()
 
     @property
     def op_config(self) -> Any:
@@ -149,7 +143,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
                 "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_solid_context(...) as context:`"
+                "open a context manager: `with build_op_context(...) as context:`"
             )
         return self._resources
 
@@ -209,6 +203,10 @@ class UnboundOpExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
+    def op(self) -> JobDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("op", "property"))
+
+    @property
     def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
@@ -258,43 +256,78 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def bind(
         self,
-        op_def_or_invocation: Union[OpDefinition, PendingNodeInvocation[OpDefinition]],
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
     ) -> "BoundOpExecutionContext":
-        op_def = (
-            op_def_or_invocation
-            if isinstance(op_def_or_invocation, OpDefinition)
-            else op_def_or_invocation.node_def
-        )
-
-        _validate_resource_requirements(self._resource_defs, op_def)
-
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
-        op_config = resolve_bound_config(self.op_config, op_def)
+        if resources_from_args:
+            if self._resource_defs:
+                raise DagsterInvalidInvocationError(
+                    "Cannot provide resources in both context and kwargs"
+                )
+            resource_defs = wrap_resources_for_execution(resources_from_args)
+            # add new resources context to the stack to be cleared on exit
+            resources = self._exit_stack.enter_context(
+                build_resources(resource_defs, self.instance)
+            )
+        elif assets_def and assets_def.resource_defs:
+            for key in sorted(list(assets_def.resource_defs.keys())):
+                if key in self._resource_defs:
+                    raise DagsterInvalidInvocationError(
+                        f"Error when invoking {assets_def!s} resource '{key}' "
+                        "provided on both the definition and invocation context. Please "
+                        "provide on only one or the other."
+                    )
+            resource_defs = wrap_resources_for_execution(
+                {**self._resource_defs, **assets_def.resource_defs}
+            )
+            # add new resources context to the stack to be cleared on exit
+            resources = self._exit_stack.enter_context(
+                build_resources(resource_defs, self.instance, self._resources_config)
+            )
+        else:
+            resources = self.resources
+            resource_defs = self._resource_defs
+
+        _validate_resource_requirements(resource_defs, op_def)
+
+        if self.op_config and config_from_args:
+            raise DagsterInvalidInvocationError("Cannot provide config in both context and kwargs")
+        op_config = resolve_bound_config(config_from_args or self.op_config, op_def)
 
         return BoundOpExecutionContext(
             op_def=op_def,
             op_config=op_config,
-            resources=self.resources,
+            resources=resources,
             resources_config=self._resources_config,
             instance=self.instance,
             log_manager=self.log,
             pdb=self.pdb,
-            tags=op_def_or_invocation.tags
-            if isinstance(op_def_or_invocation, PendingNodeInvocation)
-            else None,
-            hook_defs=op_def_or_invocation.hook_defs
-            if isinstance(op_def_or_invocation, PendingNodeInvocation)
-            else None,
-            alias=op_def_or_invocation.given_alias
-            if isinstance(op_def_or_invocation, PendingNodeInvocation)
-            else None,
+            tags=(
+                pending_invocation.tags
+                if isinstance(pending_invocation, PendingNodeInvocation)
+                else None
+            ),
+            hook_defs=(
+                pending_invocation.hook_defs
+                if isinstance(pending_invocation, PendingNodeInvocation)
+                else None
+            ),
+            alias=(
+                pending_invocation.given_alias
+                if isinstance(pending_invocation, PendingNodeInvocation)
+                else None
+            ),
             user_events=self._user_events,
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
             partition_key=self._partition_key,
             partition_key_range=self._partition_key_range,
-            assets_def=self._assets_def,
+            assets_def=assets_def,
         )
 
     def get_events(self) -> Sequence[UserEvent]:
@@ -341,37 +374,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def get_mapping_key(self) -> Optional[str]:
         return self._mapping_key
-
-    def replace_resources(self, resources_dict: Mapping[str, Any]) -> "UnboundOpExecutionContext":
-        """Replace the resources of this context.
-
-        This method is intended to be used by the Dagster framework, and should not be called by user code.
-
-        Args:
-            resources (Mapping[str, Any]): The resources to add to the context.
-        """
-        return UnboundOpExecutionContext(
-            op_config=self._op_config,
-            resources_dict=resources_dict,
-            resources_config=self._resources_config,
-            instance=self._instance,
-            partition_key=self._partition_key,
-            partition_key_range=self._partition_key_range,
-            mapping_key=self._mapping_key,
-            assets_def=self._assets_def,
-        )
-
-    def replace_config(self, config: Mapping[str, Any]) -> "UnboundOpExecutionContext":
-        return UnboundOpExecutionContext(
-            op_config=config,
-            resources_dict=self._resource_defs,
-            resources_config=self._resources_config,
-            instance=self._instance,
-            partition_key=self._partition_key,
-            partition_key_range=self._partition_key_range,
-            mapping_key=self._mapping_key,
-            assets_def=self._assets_def,
-        )
 
 
 def _validate_resource_requirements(
@@ -520,6 +522,10 @@ class BoundOpExecutionContext(OpExecutionContext):
     @property
     def op_def(self) -> OpDefinition:
         return self._op_def
+
+    @property
+    def has_assets_def(self) -> bool:
+        return self._assets_def is not None
 
     @property
     def assets_def(self) -> AssetsDefinition:

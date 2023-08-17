@@ -6,11 +6,12 @@ from dagster import AssetKey, asset
 from dagster_dbt import get_asset_key_for_model, get_asset_keys_by_output_name_for_source
 from dagster_dbt.asset_decorator import dbt_assets
 
-manifest_path = Path(__file__).parent.joinpath(
-    "dbt_projects", "test_dagster_metadata", "manifest.json"
+manifest_path = (
+    Path(__file__)
+    .joinpath("..", "dbt_projects", "test_dagster_metadata", "manifest.json")
+    .resolve()
 )
-with open(manifest_path, "r") as f:
-    manifest = json.load(f)
+manifest = json.loads(manifest_path.read_bytes())
 
 
 @dbt_assets(manifest=manifest)

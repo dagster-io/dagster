@@ -31,6 +31,7 @@
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test
+-e python_modules/dagster-external
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
@@ -102,7 +103,6 @@ wordcloud  # (quickstart-*)
 # -e examples/quickstart_etl  # (analyzed but not installed)
 # -e examples/quickstart_gcp  # (analyzed but not installed)
 # -e examples/quickstart_snowflake  # (analyzed but not installed)
--e examples/tutorial_dbt_dagster
 -e examples/tutorial_notebook_assets
 -e examples/with_airflow
 -e examples/with_great_expectations

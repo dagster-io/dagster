@@ -436,9 +436,11 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_response = serialize_value(
                 ListRepositoriesResponse(
                     loaded_repositories.loadable_repository_symbols,
-                    executable_path=self._loadable_target_origin.executable_path
-                    if self._loadable_target_origin
-                    else None,
+                    executable_path=(
+                        self._loadable_target_origin.executable_path
+                        if self._loadable_target_origin
+                        else None
+                    ),
                     repository_code_pointer_dict=loaded_repositories.code_pointers_by_repo_name,
                     entry_point=self._entry_point,
                     container_image=self._container_image,
@@ -1192,10 +1194,8 @@ class GrpcServerProcess:
         check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            (
-                "max_workers must be greater than 1 or set to None if heartbeat is True. "
-                "If set to None, the server will use the gRPC default."
-            ),
+            "max_workers must be greater than 1 or set to None if heartbeat is True. "
+            "If set to None, the server will use the gRPC default.",
         )
 
         if seven.IS_WINDOWS or force_port:

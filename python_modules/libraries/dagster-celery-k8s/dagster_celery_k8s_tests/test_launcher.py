@@ -110,7 +110,7 @@ def test_get_validated_celery_k8s_executor_config():
                     "job_namespace": {"env": "TEST_PIPELINE_RUN_NAMESPACE"},
                     "broker": {"env": "TEST_CELERY_BROKER"},
                     "backend": {"env": "TEST_CELERY_BACKEND"},
-                    "include": ["dagster", "dagit"],
+                    "include": ["dagster", "dagster-webserver"],
                     "config_source": {
                         "task_annotations": """{'*': {'on_failure': my_on_failure}}"""
                     },
@@ -139,7 +139,7 @@ def test_get_validated_celery_k8s_executor_config():
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
             "job_namespace": "my-namespace",
-            "include": ["dagster", "dagit"],
+            "include": ["dagster", "dagster-webserver"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
@@ -219,7 +219,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
                         "job_namespace": {"env": "TEST_PIPELINE_RUN_NAMESPACE"},
                         "broker": {"env": "TEST_CELERY_BROKER"},
                         "backend": {"env": "TEST_CELERY_BACKEND"},
-                        "include": ["dagster", "dagit"],
+                        "include": ["dagster", "dagster-webserver"],
                         "config_source": {
                             "task_annotations": """{'*': {'on_failure': my_on_failure}}"""
                         },
@@ -249,7 +249,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "job_namespace": "my-namespace",
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
-            "include": ["dagster", "dagit"],
+            "include": ["dagster", "dagster-webserver"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
@@ -377,6 +377,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
             labels = kwargs["body"].spec.template.metadata.labels
             assert labels["foo_label_key"] == "bar_label_value"
+            assert labels["dagster/code-location"] == "in_process"
+            assert labels["dagster/job"] == "fake_job"
+            assert labels["dagster/run-id"] == run.run_id
 
             args = container.args
             assert (

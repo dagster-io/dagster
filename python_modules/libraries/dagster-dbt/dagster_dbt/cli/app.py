@@ -23,12 +23,13 @@ app = typer.Typer(
     help="CLI tools for working with Dagster and dbt.",
     add_completion=False,
 )
-project_app = typer.Typer(no_args_is_help=True)
-app.add_typer(
-    project_app,
+project_app = typer.Typer(
     name="project",
+    no_args_is_help=True,
     help="Commands to initialize a new Dagster project with an existing dbt project.",
+    add_completion=False,
 )
+app.add_typer(project_app)
 
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
@@ -73,6 +74,7 @@ def copy_scaffold(
     project_name: str,
     dagster_project_dir: Path,
     dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
 ) -> None:
     shutil.copytree(src=STARTER_PROJECT_PATH, dst=dagster_project_dir)
     dagster_project_dir.joinpath("__init__.py").unlink()
@@ -89,10 +91,13 @@ def copy_scaffold(
         for target in profile["outputs"].values()
     ]
 
+    if use_dbt_project_package_data_dir:
+        dbt_project_dir = dagster_project_dir.joinpath("dbt-project")
+
     dbt_project_dir_relative_path = Path(
         os.path.relpath(
             dbt_project_dir,
-            start=dagster_project_dir.joinpath(project_name),
+            start=dagster_project_dir.joinpath(project_name, "definitions.py"),
         )
     )
     dbt_project_dir_relative_path_parts = [
@@ -109,7 +114,7 @@ def copy_scaffold(
         if path.suffix == ".jinja":
             relative_path = path.relative_to(Path.cwd())
             destination_path = os.fspath(relative_path.parent.joinpath(relative_path.stem))
-            template_path = os.fspath(path.relative_to(dagster_project_dir))
+            template_path = path.relative_to(dagster_project_dir).as_posix()
 
             env.get_template(template_path).stream(
                 dbt_project_dir_relative_path_parts=dbt_project_dir_relative_path_parts,
@@ -118,6 +123,7 @@ def copy_scaffold(
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
                 project_name=project_name,
+                use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
             ).dump(destination_path)
 
             path.unlink()
@@ -142,10 +148,12 @@ def project_scaffold_command(
         typer.Option(
             default=...,
             callback=validate_dbt_project_dir,
-            is_eager=True,
+            show_default=False,
             help=(
-                "The path of your dbt project directory. By default, we use the current"
-                " working directory."
+                "The path of your dbt project directory. This path must contain a dbt_project.yml"
+                " file. By default, this command will assume that the current working directory"
+                " contains a dbt project, but you can set a different directory by setting this"
+                " option."
             ),
             exists=True,
             file_okay=False,
@@ -154,6 +162,15 @@ def project_scaffold_command(
             resolve_path=True,
         ),
     ] = Path.cwd(),
+    use_dbt_project_package_data_dir: Annotated[
+        bool,
+        typer.Option(
+            default=...,
+            help="Controls whether the dbt project package data directory is used.",
+            is_flag=True,
+            hidden=True,
+        ),
+    ] = False,
 ) -> None:
     """This command will initialize a new Dagster project and create directories and files that
     load assets from an existing dbt project.
@@ -173,23 +190,23 @@ def project_scaffold_command(
         project_name=project_name,
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
+        use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
     console.print(
-        (
-            "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
-            " the following commands:"
-        ),
+        "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
+        " the following commands:",
         Syntax(
             code="\n".join(
                 [
-                    f"cd '{dbt_project_dir}' \\",
-                    "  && dbt parse --target-path target \\",
-                    f"  && cd '{dagster_project_dir}' \\",
-                    "  && dagster dev",
+                    f"cd '{dagster_project_dir}' \\",
+                    "  && (DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev)",
                 ]
             ),
             lexer="bash",
             padding=1,
         ),
     )
+
+
+project_app_typer_click_object = typer.main.get_command(project_app)

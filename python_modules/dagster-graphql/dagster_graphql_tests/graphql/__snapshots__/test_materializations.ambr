@@ -2,8 +2,6 @@
   list([
     'RunStartingEvent',
     'RunStartEvent',
-    'StepWorkerStartingEvent',
-    'StepWorkerStartedEvent',
     'ResourceInitStartedEvent',
     'ResourceInitSuccessEvent',
     'LogsCapturedEvent',

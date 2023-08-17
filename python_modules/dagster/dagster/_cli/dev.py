@@ -9,6 +9,7 @@ from typing import Optional
 import click
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
@@ -18,6 +19,7 @@ from .utils import get_possibly_temporary_instance_for_cli
 from .workspace.cli_target import (
     ClickArgValue,
     get_workspace_load_target,
+    grpc_server_target_click_options,
     python_file_option,
     python_module_option,
     working_directory_option,
@@ -35,6 +37,7 @@ def dev_command_options(f):
         python_file_option(allow_multiple=True),
         python_module_option(allow_multiple=True),
         working_directory_option(),
+        *grpc_server_target_click_options(hidden=True),
     )
 
 
@@ -70,6 +73,9 @@ def dev_command_options(f):
     "-h",
     help="Host to use for the Dagster webserver.",
     required=False,
+)
+@deprecated(
+    breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
 def dev_command(
     code_server_log_level: str,
@@ -131,6 +137,18 @@ def dev_command(
 
         if kwargs.get("working_directory"):
             args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
+
+        if kwargs.get("grpc_port"):
+            args.extend(["--grpc-port", str(kwargs["grpc_port"])])
+
+        if kwargs.get("grpc_host"):
+            args.extend(["--grpc-host", str(kwargs["grpc_host"])])
+
+        if kwargs.get("grpc_socket"):
+            args.extend(["--grpc-socket", str(kwargs["grpc_socket"])])
+
+        if kwargs.get("use_ssl"):
+            args.extend(["--use-ssl"])
 
         webserver_process = open_ipc_subprocess(
             [sys.executable, "-m", "dagster_webserver"]

@@ -507,7 +507,7 @@ def test_my_simple_asset():
     assert result == [1, 2, 3]
 ```
 
-If you have an asset with upstream dependencies:
+If you have an asset with managed-loading upstream dependencies:
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_more_complex_asset endbefore=end_more_complex_asset
 @asset

@@ -111,9 +111,9 @@ class AssetGraphSubset:
             else:
                 subset = self.get_partitions_subset(asset_key)
                 check.invariant(asset_key not in self.non_partitioned_asset_keys)
-                result_partition_subsets_by_asset_key[
-                    asset_key
-                ] = subset | other.get_partitions_subset(asset_key)
+                result_partition_subsets_by_asset_key[asset_key] = (
+                    subset | other.get_partitions_subset(asset_key)
+                )
 
         return AssetGraphSubset(
             self.asset_graph,
@@ -162,9 +162,11 @@ class AssetGraphSubset:
 
         return AssetGraphSubset(
             partitions_subsets_by_asset_key={
-                asset_key: cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-                .empty_subset()
-                .with_partition_keys(partition_keys)
+                asset_key: (
+                    cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
+                    .empty_subset()
+                    .with_partition_keys(partition_keys)
+                )
                 for asset_key, partition_keys in partitions_by_asset_key.items()
             },
             non_partitioned_asset_keys=non_partitioned_asset_keys,

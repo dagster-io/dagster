@@ -126,7 +126,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         b = 1
         c = b + 1
         out_values = {"a": a, "b": b, "c": c}
-        outputs_to_return = context.selected_output_names if allow_subset else "abc"
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "abc"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 
@@ -160,7 +160,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         e = (c + 1) if c else None
         f = (d + e) if d and e else None
         out_values = {"d": d, "e": e, "f": f}
-        outputs_to_return = context.selected_output_names if allow_subset else "def"
+        outputs_to_return = sorted(context.selected_output_names) if allow_subset else "def"
         for output_name in outputs_to_return:
             yield Output(out_values[output_name], output_name)
 

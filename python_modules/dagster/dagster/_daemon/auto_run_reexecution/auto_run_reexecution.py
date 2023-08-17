@@ -100,10 +100,8 @@ def retry_run(
 
     if not code_location.has_repository(repo_name):
         instance.report_engine_event(
-            (
-                f"Could not find repository {repo_name} in location {code_location.name}, unable to"
-                " retry the run. It was likely renamed or deleted."
-            ),
+            f"Could not find repository {repo_name} in location {code_location.name}, unable to"
+            " retry the run. It was likely renamed or deleted.",
             failed_run,
         )
         return
@@ -112,10 +110,8 @@ def retry_run(
 
     if not external_repo.has_external_job(failed_run.job_name):
         instance.report_engine_event(
-            (
-                f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
-                " to retry the run. It was likely renamed or deleted."
-            ),
+            f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
+            " to retry the run. It was likely renamed or deleted.",
             failed_run,
         )
         return
@@ -126,9 +122,9 @@ def retry_run(
             repository_name=repo_name,
             job_name=failed_run.job_name,
             op_selection=failed_run.op_selection,
-            asset_selection=None
-            if failed_run.asset_selection is None
-            else list(failed_run.asset_selection),
+            asset_selection=(
+                None if failed_run.asset_selection is None else list(failed_run.asset_selection)
+            ),
         )
     )
 

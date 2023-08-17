@@ -25,7 +25,7 @@ def test_failure_hook_on_op_instance(mock_api_call):
         pass_op.alias("solid_with_hook").with_hooks(hook_defs={slack_on_failure("#foo")})()
         fail_op.alias("fail_op_without_hook")()
         fail_op.with_hooks(
-            hook_defs={slack_on_failure(channel="#foo", dagit_base_url="localhost:3000")}
+            hook_defs={slack_on_failure(channel="#foo", webserver_base_url="localhost:3000")}
         )()
 
     result = job_def.execute_in_process(
