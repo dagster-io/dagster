@@ -1,3 +1,4 @@
+import atexit
 import json
 import socket
 import sys
@@ -32,6 +33,10 @@ def init_dagster_external() -> "ExternalExecutionContext":
     data = _read_input(params)
     output_stream = _get_output_stream(params)
 
+    # Sockets can hang without this.
+    if output_stream is not sys.stdout:
+        atexit.register(_close_stream, output_stream)
+
     context = ExternalExecutionContext(data, output_stream)
     ExternalExecutionContext.set(context)
     return context
@@ -53,7 +58,7 @@ def _read_input(params: ExternalExecutionParams) -> ExternalExecutionContextData
         assert params.host, "host must be set when input_mode is `socket`"
         assert params.port, "port must be set when input_mode is `socket`"
         with socket.create_connection((params.host, params.port)) as sock:
-            sock.makefile("w").write(f"{SocketServerControlMessage.get_context}\n")
+            sock.makefile("w").write(f"{SocketServerControlMessage.get_context.value}\n")
             return json.loads(sock.makefile("r").readline())
     else:
         raise Exception(f"Invalid input mode: {params.input_mode}")
@@ -73,10 +78,14 @@ def _get_output_stream(params: ExternalExecutionParams) -> TextIO:
         assert params.port, "port must be set when output_mode is `socket`"
         sock = socket.create_connection((params.host, params.port))
         stream = sock.makefile("w")
-        stream.write(f"{SocketServerControlMessage.initiate_client_stream}\n")
+        stream.write(f"{SocketServerControlMessage.initiate_client_stream.value}\n")
         return stream
     else:
         raise Exception(f"Invalid output mode: {params.output_mode}")
+
+
+def _close_stream(stream) -> None:
+    stream.close()
 
 
 class ExternalExecutionContext:

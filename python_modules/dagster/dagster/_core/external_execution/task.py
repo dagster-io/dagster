@@ -294,7 +294,7 @@ class ExternalExecutionTask:
     # Only used in socket mode
     def _shutdown_socket_server(self, sockaddr: SocketAddress) -> None:
         with socket.create_connection(sockaddr) as sock:
-            sock.makefile("w").write(f"{SocketServerControlMessage.shutdown}\n")
+            sock.makefile("w").write(f"{SocketServerControlMessage.shutdown.value}\n")
 
     # ########################
     # ##### HANDLE NOTIFICATIONS
