@@ -57,6 +57,11 @@ single_lazy_asset_with_freshness_policy = [
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
     )
 ]
+vee = [
+    asset_def("A"),
+    asset_def("B"),
+    asset_def("C", ["A", "B"]),
+]
 lopsided_vee = [
     asset_def("root1"),
     asset_def("root2"),
@@ -530,5 +535,25 @@ auto_materialize_policy_scenarios = {
             run(["unpartitioned1"]),
         ],
         expected_run_requests=[run_request(["unpartitioned2"])],
+    ),
+    "test_wait_for_all_parents_updated": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            vee,
+            AutoMaterializePolicy.eager().with_rules(
+                AutoMaterializeRule.skip_on_not_all_parents_updated(),
+            ),
+        ),
+        cursor_from=AssetReconciliationScenario(
+            assets=with_auto_materialize_policy(
+                vee,
+                AutoMaterializePolicy.eager().with_rules(
+                    AutoMaterializeRule.skip_on_not_all_parents_updated(),
+                ),
+            ),
+            unevaluated_runs=[run(["A", "B", "C"]), run(["A"])],
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["B"])],
+        expected_run_requests=[run_request(["C"])],
     ),
 }
