@@ -152,6 +152,7 @@ class AssetDaemonContext:
                 AutoMaterializeRule.materialize_on_missing(),
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
             }
             if not bool(self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
                 rules.add(AutoMaterializeRule.materialize_on_parent_updated())

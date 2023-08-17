@@ -35,8 +35,11 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
 
         # determine if this namedtuple was serialized with the old format (booleans for rules)
         if any(backcompat_key in unpacked_dict for backcompat_key in backcompat_map):
-            # all old policies had this rule by default
-            rules = {AutoMaterializeRule.skip_on_parent_outdated()}
+            # all old policies had these rules by default
+            rules = {
+                AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
+            }
             for backcompat_key, rule in backcompat_map.items():
                 if unpacked_dict.get(backcompat_key):
                     rules.add(rule)
@@ -160,6 +163,7 @@ class AutoMaterializePolicy(
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
@@ -183,6 +187,7 @@ class AutoMaterializePolicy(
             rules={
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
                 AutoMaterializeRule.skip_on_parent_outdated(),
+                AutoMaterializeRule.skip_on_parent_missing(),
             },
             max_materializations_per_minute=check.opt_int_param(
                 max_materializations_per_minute, "max_materializations_per_minute"
