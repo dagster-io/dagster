@@ -3,7 +3,7 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pytest
 from dagster import (
@@ -49,6 +49,12 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
 def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
+
+
+def test_dbt_cli_project_dir_path() -> None:
+    dbt = DbtCliResource(project_dir=Path(TEST_PROJECT_DIR))  # type: ignore
 
     assert dbt.cli(["run"], manifest=manifest).is_successful()
 
@@ -129,13 +135,14 @@ def test_dbt_profile_configuration() -> None:
     assert dbt_cli_invocation.is_successful()
 
 
-def test_dbt_profile_dir_configuration() -> None:
-    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR, profiles_dir=TEST_PROJECT_DIR)
+@pytest.mark.parametrize("profiles_dir", [TEST_PROJECT_DIR, Path(TEST_PROJECT_DIR)])
+def test_dbt_profile_dir_configuration(profiles_dir: Union[str, Path]) -> None:
+    dbt = DbtCliResource(
+        project_dir=TEST_PROJECT_DIR,
+        profiles_dir=profiles_dir,  # type: ignore
+    )
 
-    dbt_cli_invocation = dbt.cli(["parse"], manifest=manifest).wait()
-
-    assert dbt_cli_invocation.process.args == ["dbt", "parse"]
-    assert dbt_cli_invocation.is_successful()
+    assert dbt.cli(["parse"], manifest=manifest).is_successful()
 
     dbt = DbtCliResource(
         project_dir=TEST_PROJECT_DIR, profiles_dir=f"{TEST_PROJECT_DIR}/nonexistent"
