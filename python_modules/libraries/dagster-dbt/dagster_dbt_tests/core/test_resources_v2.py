@@ -1,3 +1,4 @@
+import atexit
 import json
 import shutil
 from pathlib import Path
@@ -52,6 +53,29 @@ def test_dbt_cli_failure() -> None:
 
     assert not dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 2
+
+
+def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+    dbt_cli_invocation_1 = dbt.cli(["run"], manifest=manifest)
+
+    assert dbt_cli_invocation_1.process.returncode is None
+
+    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+
+    assert "Terminating the execution of dbt command." in caplog.text
+    assert not dbt_cli_invocation_1.is_successful()
+    assert dbt_cli_invocation_1.process.returncode < 0
+
+    caplog.clear()
+
+    dbt_cli_invocation_2 = dbt.cli(["run"], manifest=manifest).wait()
+
+    atexit._run_exitfuncs()  # ruff: noqa: SLF001
+
+    assert "Terminating the execution of dbt command." not in caplog.text
+    assert dbt_cli_invocation_2.is_successful()
+    assert dbt_cli_invocation_2.process.returncode == 0
 
 
 def test_dbt_cli_get_artifact() -> None:
