@@ -32,7 +32,6 @@ from starlette.responses import (
     guess_type,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
-from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
 from .graphql import GraphQLServer
@@ -233,12 +232,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 return Response(content=content, media_type=guess_type(file_path)[0])
 
         def _next_static_file(path, file_path):
-            return Route(
-                path,
-                lambda _: next_file_response(file_path),
-                name="next_static"
-            )
-    
+            return Route(path, lambda _: next_file_response(file_path), name="next_static")
 
         def _static_file(path, file_path):
             return Route(
