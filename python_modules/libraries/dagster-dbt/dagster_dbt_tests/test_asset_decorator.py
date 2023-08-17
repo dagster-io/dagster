@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import AbstractSet, Any, Mapping, Optional
 
@@ -17,6 +18,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_dbt import DbtCliResource
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_manifest import DbtManifestParam
 
 manifest_path = Path(__file__).joinpath("..", "sample_manifest.json").resolve()
 manifest = json.loads(manifest_path.read_bytes())
@@ -39,8 +41,8 @@ def test_materialize(test_project_dir):
     ).success
 
 
-@pytest.mark.parametrize("manifest", [manifest, manifest_path])
-def test_manifest_argument(manifest):
+@pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
+def test_manifest_argument(manifest: DbtManifestParam):
     @dbt_assets(manifest=manifest)
     def my_dbt_assets():
         ...

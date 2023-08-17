@@ -15,6 +15,7 @@ from typing import (
     Mapping,
     Optional,
     Union,
+    cast,
 )
 
 import dateutil.parser
@@ -32,11 +33,12 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
-from pydantic import Field
+from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
 from ..dagster_dbt_translator import DagsterDbtTranslator
+from ..dbt_manifest import DbtManifestParam, validate_manifest
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
@@ -74,13 +76,13 @@ class DbtCliEventMessage:
     @public
     def to_default_asset_events(
         self,
-        manifest: Mapping[str, Any],
+        manifest: DbtManifestParam,
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
     ) -> Iterator[Union[Output, AssetObservation]]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
-            manifest (Mapping[str, Any]): The dbt manifest blob.
+            manifest (Union[Mapping[str, Any], str, Path]): The dbt manifest blob.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
 
@@ -95,6 +97,8 @@ class DbtCliEventMessage:
         event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
+
+        manifest = validate_manifest(manifest)
 
         unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
@@ -437,6 +441,13 @@ class DbtCliResource(ConfigurableResource):
         ),
     )
 
+    @validator("project_dir", "profiles_dir", pre=True)
+    def convert_path_to_str(cls, v: Any) -> Any:
+        if v and isinstance(v, Path):
+            return os.fspath(v)
+
+        return v
+
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> str:
         """Get a unique target path for the dbt CLI invocation.
 
@@ -459,7 +470,7 @@ class DbtCliResource(ConfigurableResource):
         args: List[str],
         *,
         raise_on_error: bool = True,
-        manifest: Optional[Mapping[str, Any]] = None,
+        manifest: Optional[DbtManifestParam] = None,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[OpExecutionContext] = None,
     ) -> DbtCliInvocation:
@@ -468,9 +479,9 @@ class DbtCliResource(ConfigurableResource):
         Args:
             args (List[str]): The dbt CLI command to execute.
             raise_on_error (bool): Whether to raise an exception if the dbt CLI command fails.
-            manifest (Optional[Mapping[str, Any]]): The dbt manifest blob. If an execution context
-                from within `@dbt_assets` is provided to the context argument, then the manifest
-                provided to `@dbt_assets` will be used.
+            manifest (Optional[Union[Mapping[str, Any], str, Path]]): The dbt manifest blob. If an
+                execution context from within `@dbt_assets` is provided to the context argument,
+                then the manifest provided to `@dbt_assets` will be used.
             dagster_dbt_translator (Optional[DagsterDbtTranslator]): The translator to link dbt
                 nodes to Dagster assets. If an execution context from within `@dbt_assets` is
                 provided to the context argument, then the dagster_dbt_translator provided to
@@ -525,13 +536,14 @@ class DbtCliResource(ConfigurableResource):
                 select=context.op.tags.get("dagster-dbt/select"),
                 exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
+        elif manifest is None:
+            check.failed(
+                "Must provide a value for the manifest argument if not executing as part of"
+                " @dbt_assets"
+            )
         else:
             selection_args: List[str] = []
-            if manifest is None:
-                check.failed(
-                    "Must provide a value for the manifest argument if not executing as part of"
-                    " @dbt_assets"
-                )
+            manifest = validate_manifest(manifest)
             dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
         # TODO: verify that args does not have any selection flags if the context and manifest
@@ -550,7 +562,7 @@ class DbtCliResource(ConfigurableResource):
         return DbtCliInvocation.run(
             args=args,
             env=env,
-            manifest=manifest,
+            manifest=cast(Mapping[str, Any], manifest),
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
             target_path=project_dir.joinpath(target_path),
