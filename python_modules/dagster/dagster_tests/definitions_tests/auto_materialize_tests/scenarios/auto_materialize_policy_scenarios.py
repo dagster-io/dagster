@@ -13,6 +13,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentOutdatedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -172,10 +173,7 @@ auto_materialize_policy_scenarios = {
         AssetReconciliationScenario(
             assets=with_auto_materialize_policy(
                 hourly_to_daily_partitions,
-                AutoMaterializePolicy(
-                    on_missing=True,
-                    for_freshness=True,
-                    on_new_parent_data=True,
+                AutoMaterializePolicy.eager(
                     max_materializations_per_minute=48,
                 ),
             ),
@@ -212,11 +210,10 @@ auto_materialize_policy_scenarios = {
         AssetReconciliationScenario(
             assets=with_auto_materialize_policy(
                 hourly_to_daily_partitions,
-                AutoMaterializePolicy(
-                    on_missing=True,
-                    for_freshness=True,
-                    on_new_parent_data=False,
+                AutoMaterializePolicy.eager(
                     max_materializations_per_minute=48,
+                ).without_rules(
+                    AutoMaterializeRule.materialize_on_parent_updated(),
                 ),
             ),
             unevaluated_runs=[],
@@ -255,11 +252,8 @@ auto_materialize_policy_scenarios = {
     "auto_materialize_policy_max_materializations_exceeded": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
-            AutoMaterializePolicy(
-                on_missing=True,
-                on_new_parent_data=True,
-                for_freshness=False,
-                max_materializations_per_minute=1,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=1).without_rules(
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
             ),
         ),
         unevaluated_runs=[],
@@ -290,11 +284,8 @@ auto_materialize_policy_scenarios = {
     "auto_materialize_policy_max_materializations_not_exceeded": AssetReconciliationScenario(
         assets=with_auto_materialize_policy(
             hourly_to_daily_partitions,
-            AutoMaterializePolicy(
-                on_missing=True,
-                on_new_parent_data=True,
-                for_freshness=False,
-                max_materializations_per_minute=5,
+            AutoMaterializePolicy.eager(max_materializations_per_minute=5).without_rules(
+                AutoMaterializeRule.materialize_on_required_for_freshness()
             ),
         ),
         unevaluated_runs=[],
