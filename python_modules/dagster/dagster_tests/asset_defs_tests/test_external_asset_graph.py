@@ -259,10 +259,7 @@ def test_auto_materialize_policy():
 
     assert asset_graph.get_auto_materialize_policy(
         AssetKey("downstream_of_partitioned_source")
-    ) == AutoMaterializePolicy(
-        on_missing=True,
-        for_freshness=True,
-        on_new_parent_data=True,
+    ) == AutoMaterializePolicy.eager(
         max_materializations_per_minute=75,
     )
 
