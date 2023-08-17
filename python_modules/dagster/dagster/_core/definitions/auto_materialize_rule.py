@@ -145,6 +145,10 @@ class AutoMaterializeRule(ABC):
         """Skip materializing an asset partition if one of its parents is outdated."""
         return SkipOnParentMissingRule()
 
+    @staticmethod
+    def skip_on_not_all_parents_updated() -> "SkipOnNotAllParentsUpdatedRule":
+        return SkipOnNotAllParentsUpdatedRule()
+
     def __eq__(self, other) -> bool:
         # override the default NamedTuple __eq__ method to factor in types
         return type(self) == type(other) and super().__eq__(other)
@@ -328,6 +332,54 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 conditions[
                     ParentOutdatedAutoMaterializeCondition(
                         waiting_on_asset_keys=frozenset(missing_parent_asset_keys)
+                    )
+                ].update({candidate})
+        return conditions
+
+
+@whitelist_for_serdes
+class SkipOnNotAllParentsUpdatedRule(
+    AutoMaterializeRule, NamedTuple("_SkipOnNotAllParentsUpdatedRule", [])
+):
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    def evaluate_for_asset(
+        self,
+        context: RuleEvaluationContext,
+    ) -> RuleEvaluationResult:
+        conditions = defaultdict(set)
+        for candidate in context.candidates:
+            non_updated_parents = set()
+            # find the root cause of why this asset partition's parents are outdated (if any)
+            parent_partitions = context.asset_graph.get_parents_partitions(
+                context.instance_queryer,
+                context.instance_queryer.evaluation_time,
+                context.asset_key,
+                candidate.partition_key,
+            ).parent_partitions
+
+            updated_parent_partitions = (
+                context.instance_queryer.get_updated_parent_asset_partitions(
+                    candidate,
+                    parent_partitions,
+                    context.daemon_context.respect_materialization_data_versions,
+                )
+                | set().union(
+                    *[
+                        context.will_materialize_mapping.get(parent, set())
+                        for parent in context.asset_graph.get_parents(context.asset_key)
+                    ]
+                )
+            )
+            non_updated_parent_keys = {
+                parent.asset_key for parent in parent_partitions - updated_parent_partitions
+            }
+            if non_updated_parent_keys:
+                conditions[
+                    ParentOutdatedAutoMaterializeCondition(
+                        waiting_on_asset_keys=frozenset(non_updated_parents)
                     )
                 ].update({candidate})
         return conditions
