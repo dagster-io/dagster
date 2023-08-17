@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._annotations import deprecated
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
@@ -168,8 +169,14 @@ class GCSPickleIOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
-# GCSPickleIOManager used to be named ConfigurablePickledObjectGCSIOManager, keep this symbol around for backcompat
-ConfigurablePickledObjectGCSIOManager = GCSPickleIOManager
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use GCSPickleIOManager instead.",
+)
+class ConfigurablePickledObjectGCSIOManager(GCSPickleIOManager):
+    """Renamed to GCSPickleIOManager. See GCSPickleIOManager for documentation."""
+
+    pass
 
 
 @dagster_maintained_io_manager
