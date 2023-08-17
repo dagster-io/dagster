@@ -5,8 +5,6 @@ import {
   Colors,
   NonIdealState,
   Spinner,
-  Tab,
-  Tabs,
   Tag,
   ErrorBoundary,
 } from '@dagster-io/ui-components';
@@ -37,20 +35,21 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
+import {AssetFeatureContext} from './AssetFeatureContext';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
-import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
+import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
-import {AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
@@ -62,26 +61,9 @@ interface Props {
   assetKey: AssetKey;
 }
 
-export interface AssetViewParams {
-  view?:
-    | 'events'
-    | 'definition'
-    | 'lineage'
-    | 'overview'
-    | 'plots'
-    | 'partitions'
-    | 'auto-materialize-history';
-
-  lineageScope?: AssetLineageScope;
-  lineageDepth?: number;
-  partition?: string;
-  time?: string;
-  asOf?: string;
-  evaluation?: string;
-}
-
-export const AssetView: React.FC<Props> = ({assetKey}) => {
+export const AssetView = ({assetKey}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const {tabBuilder, renderFeatureView} = React.useContext(AssetFeatureContext);
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} = useAssetViewAssetDefinition(
@@ -126,6 +108,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     useQueryRefreshAtInterval(definitionQueryResult, FIFTEEN_SECONDS),
     liveDataRefreshState,
   );
+
+  const tabList = React.useMemo(() => tabBuilder({definition, params}), [
+    definition,
+    params,
+    tabBuilder,
+  ]);
 
   const renderDefinitionTab = () => {
     if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
@@ -225,6 +213,29 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     );
   };
 
+  const renderContent = () => {
+    switch (selectedTab) {
+      case 'definition':
+        return renderDefinitionTab();
+      case 'lineage':
+        return renderLineageTab();
+      case 'partitions':
+        return renderPartitionsTab();
+      case 'events':
+        return renderEventsTab();
+      case 'plots':
+        return renderPlotsTab();
+      case 'auto-materialize-history':
+        return renderAutomaterializeHistoryTab();
+      default:
+        return renderFeatureView({
+          selectedTab,
+          assetKey,
+          definition,
+        });
+    }
+  };
+
   return (
     <Box
       flex={{direction: 'column', grow: 1}}
@@ -241,41 +252,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         }
         tabs={
           <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-            <Tabs size="large" selectedTabId={selectedTab}>
-              {definition?.partitionDefinition && (
-                <Tab
-                  id="partitions"
-                  title="Partitions"
-                  onClick={() => setParams({...params, view: 'partitions'})}
-                />
-              )}
-              <Tab
-                id="events"
-                title="Events"
-                onClick={() => setParams({...params, view: 'events', partition: undefined})}
-              />
-              <Tab id="plots" title="Plots" onClick={() => setParams({...params, view: 'plots'})} />
-              <Tab
-                id="definition"
-                title="Definition"
-                onClick={() => setParams({...params, view: 'definition'})}
-                disabled={!definition}
-              />
-              <Tab
-                id="lineage"
-                title="Lineage"
-                onClick={() => setParams({...params, view: 'lineage'})}
-                disabled={!definition}
-              />
-              {definition?.autoMaterializePolicy ? (
-                <Tab
-                  id="auto-materialize-history"
-                  title="Auto-materialize history"
-                  onClick={() => setParams({...params, view: 'auto-materialize-history'})}
-                  disabled={!definition}
-                />
-              ) : null}
-            </Tabs>
+            <AssetTabs selectedTab={selectedTab} tabs={tabList} />
             {refreshState && (
               <Box padding={{bottom: 8}}>
                 <QueryRefreshCountdown refreshState={refreshState} />
@@ -300,21 +277,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         <HistoricalViewAlert asOf={params.asOf} hasDefinition={!!definition} />
       )}
       <ErrorBoundary region="page" resetErrorOnChange={[assetKey, params]}>
-        {selectedTab === 'definition' ? (
-          renderDefinitionTab()
-        ) : selectedTab === 'lineage' ? (
-          renderLineageTab()
-        ) : selectedTab === 'partitions' ? (
-          renderPartitionsTab()
-        ) : selectedTab === 'events' ? (
-          renderEventsTab()
-        ) : selectedTab === 'plots' ? (
-          renderPlotsTab()
-        ) : selectedTab === 'auto-materialize-history' ? (
-          renderAutomaterializeHistoryTab()
-        ) : (
-          <span />
-        )}
+        {renderContent()}
       </ErrorBoundary>
     </Box>
   );

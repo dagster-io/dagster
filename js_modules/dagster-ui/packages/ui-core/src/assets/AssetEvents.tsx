@@ -21,11 +21,10 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
 import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';
-import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
-import {AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
