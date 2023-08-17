@@ -68,10 +68,7 @@ partitioned_source = SourceAsset(
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     deps=[partitioned_source],
-    auto_materialize_policy=AutoMaterializePolicy(
-        on_missing=True,
-        for_freshness=True,
-        on_new_parent_data=True,
+    auto_materialize_policy=AutoMaterializePolicy.eager(
         max_materializations_per_minute=75,
     ),
 )

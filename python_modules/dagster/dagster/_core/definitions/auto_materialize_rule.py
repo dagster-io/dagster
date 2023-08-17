@@ -74,32 +74,55 @@ class RuleEvaluationContext(NamedTuple):
         )
 
 
+RuleEvaluationResult = Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]
+
+
 class AutoMaterializeRule(ABC):
+    """An AutoMaterializeRule defines a bit of logic which helps determine if a materialization
+    should be kicked off for a given asset partition.
+
+    Each rule can have one of two decision types, `MATERIALIZE` (indicating that an asset partition
+    should be materialized) or `SKIP` (indicating that the asset partition should not be
+    materialized).
+
+    Materialize rules are evaluated first, and skip rules operate over the set of candidates that
+    are produced by the materialize rules. Other than that, there is no ordering between rules.
+    """
+
+    @abstractproperty
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        """The decision type of the rule (either `MATERIALIZE` or `SKIP`)."""
+        ...
+
+    @abstractmethod
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResult:
+        """The core evaluation function for the rule. This function takes in a context object and
+        returns a mapping from evaluated rules to the set of asset partitions that the rule applies
+        to.
+        """
+        ...
+
     @staticmethod
     def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
+        """Materialize an asset partition if it is required to satisfy a freshness policy."""
         return MaterializeOnRequiredForFreshnessRule()
 
     @staticmethod
     def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
+        """Materialize an asset partition if one of its parents has been updated more recently
+        than it has.
+        """
         return MaterializeOnParentUpdatedRule()
 
     @staticmethod
     def materialize_on_missing() -> "MaterializeOnMissingRule":
+        """Materialize an asset partition if it has never been materialized before."""
         return MaterializeOnMissingRule()
 
     @staticmethod
     def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
+        """Skip materializing an asset partition if one of its parents is outdated."""
         return SkipOnParentOutdatedRule()
-
-    @abstractproperty
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        ...
-
-    @abstractmethod
-    def evaluate(
-        self, context: RuleEvaluationContext
-    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
-        ...
 
     def __eq__(self, other) -> bool:
         # override the default NamedTuple __eq__ method to factor in types
@@ -118,9 +141,7 @@ class MaterializeOnRequiredForFreshnessRule(
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
-    def evaluate(
-        self, context: RuleEvaluationContext
-    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResult:
         freshness_conditions = freshness_conditions_for_asset_key(
             asset_key=context.asset_key,
             data_time_resolver=context.data_time_resolver,
@@ -140,9 +161,7 @@ class MaterializeOnParentUpdatedRule(
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
-    def evaluate(
-        self, context: RuleEvaluationContext
-    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResult:
         """Returns a mapping from ParentMaterializedAutoMaterializeCondition to the set of asset
         partitions that the condition applies to.
         """
@@ -208,10 +227,10 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
-    def evaluate(
+    def evaluate_for_asset(
         self,
         context: RuleEvaluationContext,
-    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+    ) -> RuleEvaluationResult:
         """Returns a mapping from MissingAutoMaterializeCondition to the set of asset
         partitions that the condition applies to.
         """
@@ -240,10 +259,10 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
 
-    def evaluate(
+    def evaluate_for_asset(
         self,
         context: RuleEvaluationContext,
-    ) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+    ) -> RuleEvaluationResult:
         conditions = defaultdict(set)
         for candidate in context.candidates:
             unreconciled_ancestors = set()

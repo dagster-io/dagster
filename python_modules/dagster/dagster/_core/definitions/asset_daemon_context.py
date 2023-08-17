@@ -342,15 +342,10 @@ class AssetDaemonContext:
             daemon_context=self,
         )
 
-        print(asset_key)
-        print(auto_materialize_policy)
         for materialize_rule in auto_materialize_policy.materialize_rules:
-            print("....")
-            print(materialize_rule)
-            for condition, asset_partitions in materialize_rule.evaluate(
+            for condition, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
             ).items():
-                print(condition, asset_partitions)
                 conditions[condition].update(asset_partitions)
                 candidates.update(asset_partitions)
 
@@ -379,7 +374,7 @@ class AssetDaemonContext:
         skip_context = materialize_context._replace(candidates=candidates)
 
         for skip_rule in auto_materialize_policy.skip_rules:
-            for condition, asset_partitions in skip_rule.evaluate(skip_context).items():
+            for condition, asset_partitions in skip_rule.evaluate_for_asset(skip_context).items():
                 conditions[condition].update(asset_partitions)
                 candidates.difference_update(asset_partitions)
 

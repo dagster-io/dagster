@@ -201,7 +201,6 @@ class AutoMaterializePolicy(
         """Constructs a copy of this policy with the specified rules added."""
         return self._replace(rules=self.rules.union(set(rules_to_add)))
 
-    @public
     @property
     def policy_type(self) -> AutoMaterializePolicyType:
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
