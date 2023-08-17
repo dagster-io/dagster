@@ -11,6 +11,7 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._annotations import deprecated
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
@@ -149,11 +150,14 @@ class S3PickleIOManager(ConfigurableIOManager):
         return self.inner_io_manager().handle_output(context, obj)
 
 
-# S3PickleIOManager used to be named ConfigurablePickledObjectS3IOManager, keep this symbol around for backcompat
-ConfigurablePickledObjectS3IOManager = S3PickleIOManager
-ConfigurablePickledObjectS3IOManager.__doc__ = """
-Renamed to S3PickleIOManager - please use S3PickleIOManager instead, or see S3PickleIOManager for documentation.
-"""
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use S3PickleIOManager instead.",
+)
+class ConfigurablePickledObjectS3IOManager(S3PickleIOManager):
+    """Renamed to S3PickleIOManager. See S3PickleIOManager for documentation."""
+
+    pass
 
 
 @dagster_maintained_io_manager
