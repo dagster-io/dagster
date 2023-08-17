@@ -33,7 +33,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
 from dbt.contracts.results import NodeStatus
 from dbt.node_types import NodeType
-from pydantic import Field
+from pydantic import Field, validator
 from typing_extensions import Literal
 
 from ..asset_utils import get_manifest_and_translator_from_dbt_assets, output_name_fn
@@ -440,6 +440,13 @@ class DbtCliResource(ConfigurableResource):
             " information."
         ),
     )
+
+    @validator("project_dir", "profiles_dir", pre=True)
+    def convert_path_to_str(cls, v: Any) -> Any:
+        if v and isinstance(v, Path):
+            return os.fspath(v)
+
+        return v
 
     def _get_unique_target_path(self, *, context: Optional[OpExecutionContext]) -> str:
         """Get a unique target path for the dbt CLI invocation.
