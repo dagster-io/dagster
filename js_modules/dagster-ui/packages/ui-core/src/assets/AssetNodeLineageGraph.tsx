@@ -14,13 +14,10 @@ import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
-import {AssetViewParams} from './AssetView';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
-
-export type AssetLineageScope = 'neighbors' | 'upstream' | 'downstream';
 
 export const AssetNodeLineageGraph: React.FC<{
   assetKey: AssetKeyInput;

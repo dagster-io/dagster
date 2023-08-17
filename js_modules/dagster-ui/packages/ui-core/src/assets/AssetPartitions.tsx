@@ -24,9 +24,8 @@ import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPart
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {AssetPartitionStatusCheckboxes} from './AssetPartitionStatusCheckboxes';
-import {AssetViewParams} from './AssetView';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
-import {AssetKey} from './types';
+import {AssetViewParams, AssetKey} from './types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {
   usePartitionHealthData,

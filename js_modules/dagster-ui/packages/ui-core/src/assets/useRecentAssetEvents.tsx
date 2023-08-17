@@ -5,8 +5,7 @@ import * as React from 'react';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetViewParams} from './AssetView';
-import {AssetKey} from './types';
+import {AssetViewParams, AssetKey} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 
 /**

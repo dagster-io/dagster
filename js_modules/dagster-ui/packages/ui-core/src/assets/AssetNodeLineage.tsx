@@ -14,9 +14,9 @@ import {GraphData, LiveData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
-import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
-import {AssetViewParams} from './AssetView';
+import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {AssetLineageScope, AssetViewParams} from './types';
 
 export const AssetNodeLineage: React.FC<{
   params: AssetViewParams;
