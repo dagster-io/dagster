@@ -49,8 +49,6 @@ Other
 GCS
 ---
 
-.. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
-
 GCS Resource
 ^^^^^^^^^^^^^
 
@@ -74,6 +72,9 @@ File Manager (Experimental)
 .. autoconfigurable:: GCSFileManagerResource
   :annotation: ResourceDefinition
 
+GCS Compute Log Manager
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: dagster_gcp.gcs.GCSComputeLogManager
 
 Dataproc
 --------

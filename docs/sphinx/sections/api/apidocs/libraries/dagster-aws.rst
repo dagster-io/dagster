@@ -8,13 +8,13 @@ Utilities for interfacing with AWS with Dagster.
 S3
 --
 
-.. autoclass:: dagster_aws.s3.S3ComputeLogManager
-
 .. autoconfigurable:: dagster_aws.s3.S3Resource
   :annotation: ResourceDefinition
 
 .. autoconfigurable:: dagster_aws.s3.S3PickleIOManager
   :annotation: IOManagerDefinition
+
+.. autoclass:: dagster_aws.s3.S3ComputeLogManager
 
 .. autodata:: dagster_aws.s3.S3Coordinate
   :annotation: DagsterType
