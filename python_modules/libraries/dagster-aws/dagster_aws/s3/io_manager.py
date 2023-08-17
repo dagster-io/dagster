@@ -114,7 +114,7 @@ class S3PickleIOManager(ConfigurableIOManager):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": ConfigurablePickledObjectS3IOManager(
+                "io_manager": S3PickleIOManager(
                     s3_resource=S3Resource(),
                     s3_bucket="my-cool-bucket",
                     s3_prefix="my-cool-prefix",
@@ -151,6 +151,9 @@ class S3PickleIOManager(ConfigurableIOManager):
 
 # S3PickleIOManager used to be named ConfigurablePickledObjectS3IOManager, keep this symbol around for backcompat
 ConfigurablePickledObjectS3IOManager = S3PickleIOManager
+ConfigurablePickledObjectS3IOManager.__doc__ = """
+Renamed to S3PickleIOManager - please use S3PickleIOManager instead, or see S3PickleIOManager for documentation.
+"""
 
 
 @dagster_maintained_io_manager
