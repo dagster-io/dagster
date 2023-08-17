@@ -29,7 +29,7 @@ export default function VersionDropdown() {
             <>
               <div>
                 <Menu.Button className="group rounded-full px-2 lg:px-4 lg:py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
-                  <span className="flex w-full justify-between items-center">
+                  <span className="flex w-full justify-between items-center gap-x-2">
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0 text-gable-green dark:text-gray-300 text-xs lg:text-sm truncate space-x-1">
                         <span>

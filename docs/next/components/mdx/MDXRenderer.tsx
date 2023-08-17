@@ -106,15 +106,15 @@ const BreadcrumbNav = ({asPath}) => {
 
   return (
     breadcrumbItems.length > 1 && (
-      <nav className="flex flex-nowrap lg:px-4 py-2" aria-label="Breadcrumb">
-        <ol className="md:inline-flex space-x-1 lg:space-x-3">
+      <nav className="flex py-2" aria-label="Breadcrumb">
+        <ol className="inline-flex">
           {breadcrumbItems.map((item, index) => {
             return (
               <li key={item.path || item.title}>
-                <div className="flex flex-nowrap items-center">
+                <div className="flex items-center">
                   {index > 0 && (
                     <svg
-                      className="w-3 h-3 text-gray-400 flex-shrink-0"
+                      className="w-3 h-3 text-gray-400 flex-shrink-0 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 20 20"
@@ -124,15 +124,12 @@ const BreadcrumbNav = ({asPath}) => {
                   )}
                   <a
                     href={item.path}
-                    className={cx(
-                      'ml-1 lg:ml-2 text-xs lg:text-sm lg:font-normal text-gable-green truncate',
-                      {
-                        // Map nav hierarchy to levels for docs search
-                        'DocSearch-lvl0': index === 0,
-                        'DocSearch-lvl1': index === 1,
-                        'DocSearch-lvl2': index === 2,
-                      },
-                    )}
+                    className={cx('mr-1 lg:mr-2 text-sm lg:font-normal text-gable-green truncate', {
+                      // Map nav hierarchy to levels for docs search
+                      'DocSearch-lvl0': index === 0,
+                      'DocSearch-lvl1': index === 1,
+                      'DocSearch-lvl2': index === 2,
+                    })}
                   >
                     {item.title}
                   </a>
@@ -226,13 +223,11 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
         style={{marginLeft: 'auto', marginRight: 'auto'}}
       >
         <div className="flex justify-between px-4 mb-4">
-          <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full">
-            <div className="flex">
+          <div className="flex justify-start flex-col lg:flex-row lg:px-4 w-full lg:items-center">
+            <div className="flex pr-4">
               <VersionDropdown />
             </div>
-            <div className="flex">
-              <BreadcrumbNav asPath={asPath} />
-            </div>
+            <BreadcrumbNav asPath={asPath} />
           </div>
         </div>
         <div className="flex flex-col">
@@ -284,6 +279,9 @@ export function UnversionedMDXRenderer({
         }}
       />
       <div className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4" tabIndex={0}>
+        <div className="pl-4 sm:pl-6 lg:pl-8 ">
+          <BreadcrumbNav asPath={null} />
+        </div>
         <div
           className="flex flex-row pb-8 max-w-7xl"
           style={{marginLeft: 'auto', marginRight: 'auto'}}
