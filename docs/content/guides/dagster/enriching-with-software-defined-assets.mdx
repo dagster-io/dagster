@@ -12,7 +12,7 @@ Before we jump in, here's a quick refresher:
 - An **asset** is a persistent object in storage, such as a table, machine learning (ML) model, or file.
 - An [**op**](/concepts/ops-jobs-graphs/ops) is the core unit of computation in Dagster. For example, an op might accept tabular data as its input and produce transformed tabular data as its output.
 - A [**graph**](/concepts/ops-jobs-graphs/graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
-- A [**software-defined asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
+- A [**Software-defined Asset**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
 
 **Software-defined assets aren't a replacement for Dagster's core computational concepts** - ops are, in fact, the core unit of computation that occurs **within an asset**. Think of them as a top layer that links ops, graphs, and jobs to the long-lived objects they interact with.
 
@@ -47,7 +47,7 @@ Using Software-defined Assets enables you to directly operate them in the UI. On
 
 Software-defined assets provide sizeable improvements when it comes to code ergonomics:
 
-- **You'll usually write less code**. Specifying the inputs to a software-defined asset defines the assets it depends on. This means you don't need to use <PyObject object="graph" decorator /> and <PyObject object="job" decorator /> to wire dependencies between ops.
+- **You'll usually write less code**. Specifying the inputs to a Software-defined Asset defines the assets it depends on. This means you don't need to use <PyObject object="graph" decorator /> and <PyObject object="job" decorator /> to wire dependencies between ops.
 
   This approach improves scalability by reducing the number of times an asset's name appears in your codebase by half. Refer to the [I/O manager-based example](#materialize-two-interdependent-tables-without-an-io-manager) below to see this in action.
 
@@ -149,7 +149,7 @@ Still not sure? Check out these examples to see what's a good fit and what isn't
 
 Let's say you've written jobs that you want to enrich using Software-defined Assets. Assuming assets are known and being updated, what would upgrading look like?
 
-Generally, every op output in a job that corresponds to a long-lived object in storage should have a software-defined asset. The following examples demonstrate some realistic Dagster jobs, both with and without Software-defined Assets:
+Generally, every op output in a job that corresponds to a long-lived object in storage should have a Software-defined Asset. The following examples demonstrate some realistic Dagster jobs, both with and without Software-defined Assets:
 
 - [A job that materializes two interdependent tables](#materialize-two-interdependent-tables)
 - [A job that materializes two interdependent tables without an I/O manager](#materialize-two-interdependent-tables-without-an-io-manager)
@@ -176,7 +176,7 @@ Generally, every op output in a job that corresponds to a long-lived object in s
 
 This example is a vanilla, op-based job that follows the idiomatic practice of delegating all I/O to I/O managers and input managers.
 
-The goal of each op in the job is to produce an asset. However, because the job doesn't use the software-defined asset APIs, Dagster is unaware of this:
+The goal of each op in the job is to produce an asset. However, because the job doesn't use the Software-defined Asset APIs, Dagster is unaware of this:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/vanilla_io_manager.py
 from pandas import DataFrame
@@ -386,7 +386,7 @@ defs = Definitions(
 
 Here's an equivalent job using Software-defined Assets.
 
-**Note:** Because some ops don't correspond to assets, this job uses <PyObject object="op" decorator /> and <PyObject object="graph" decorator /> APIs and <PyObject object="AssetsDefinition" method="from_graph" /> to wrap a graph in a software-defined asset:
+**Note:** Because some ops don't correspond to assets, this job uses <PyObject object="op" decorator /> and <PyObject object="graph" decorator /> APIs and <PyObject object="AssetsDefinition" method="from_graph" /> to wrap a graph in a Software-defined Asset:
 
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_graph.py
 from pandas import DataFrame
@@ -451,12 +451,12 @@ Still not sure how Software-defined Assets fit into your current Dagster usage? 
 
 | Without Software-defined Assets                                                                           | With Software-defined Assets                                                                                                |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every software-defined asset includes a graph or an op                                                                      |
-| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every software-defined asset includes a graph or an op                                                                      |
+| An [op](/concepts/ops-jobs-graphs/ops) is the basic unit of computation                                   | Every Software-defined Asset includes a graph or an op                                                                      |
+| A [graph](/concepts/ops-jobs-graphs/graphs) is a composite unit of computation that connects multiple ops | Every Software-defined Asset includes a graph or an op                                                                      |
 | Ops can have multiple outputs                                                                             | Multiple assets can be produced by a single op when defined using the <PyObject object="multi_asset" decorator /> decorator |
 | Ops can use [config](/concepts/ops-jobs-graphs/ops#op-configuration)                                      | Assets can use [config](/concepts/assets/software-defined-assets)                                                           |
 | Ops can access <PyObject object="OpExecutionContext" />                                                   | Assets can access <PyObject object="OpExecutionContext" />                                                                  |
-| Ops can require [resources](/concepts/resources)                                                          | Software-defined assets can require [resources](/concepts/resources)                                                        |
+| Ops can require [resources](/concepts/resources)                                                          | Software-defined Assets can require [resources](/concepts/resources)                                                        |
 | Ops can be tested by directly invoking them                                                               | Assets can be tested by directly invoking them                                                                              |
 
 </TabItem>
