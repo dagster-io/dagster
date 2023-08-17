@@ -110,6 +110,7 @@ from dagster._config.source import (
     IntSource as IntSource,
     StringSource as StringSource,
 )
+from dagster._core.definitions import AssetCheckResult as AssetCheckResult
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
@@ -263,6 +264,7 @@ from dagster._core.definitions.partition import (
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
+    partitioned_config as partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange

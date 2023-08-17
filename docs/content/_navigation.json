@@ -794,6 +794,11 @@
         ]
       },
       {
+        "title": "Version migration",
+        "path": "/migration",
+        "isUnversioned": true
+      },
+      {
         "title": "Migrating to Dagster",
         "children": [
           {
@@ -1185,11 +1190,6 @@
       {
         "title": "Changelog",
         "path": "/changelog",
-        "isUnversioned": true
-      },
-      {
-        "title": "Migration guides",
-        "path": "/migration",
         "isUnversioned": true
       }
     ]

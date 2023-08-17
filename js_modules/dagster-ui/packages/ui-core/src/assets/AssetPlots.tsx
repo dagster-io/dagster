@@ -2,9 +2,8 @@ import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui-comp
 import * as React from 'react';
 
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
-import {AssetViewParams} from './AssetView';
 import {useGroupedEvents} from './groupByPartition';
-import {AssetKey} from './types';
+import {AssetViewParams, AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 
 interface Props {

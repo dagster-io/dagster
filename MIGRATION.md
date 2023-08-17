@@ -1,4 +1,4 @@
-# Introduction
+# Version migration
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 

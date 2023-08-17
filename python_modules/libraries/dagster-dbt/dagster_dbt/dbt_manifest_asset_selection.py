@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Mapping, Optional
+from typing import AbstractSet, Optional
 
 from dagster import (
     AssetKey,
@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 
 from .asset_utils import is_non_asset_node
 from .dagster_dbt_translator import DagsterDbtTranslator
+from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
@@ -40,13 +41,13 @@ class DbtManifestAssetSelection(AssetSelection):
 
     def __init__(
         self,
-        manifest: Mapping[str, Any],
+        manifest: DbtManifestParam,
         select: str = "fqn:*",
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         exclude: Optional[str] = None,
     ) -> None:
-        self.manifest = check.dict_param(manifest, "manifest", key_type=str)
+        self.manifest = validate_manifest(manifest)
         self.select = check.str_param(select, "select")
         self.exclude = check.opt_str_param(exclude, "exclude", default="")
         self.dagster_dbt_translator = check.opt_inst_param(

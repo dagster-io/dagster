@@ -8,12 +8,12 @@ import {AssetKeyInput} from '../../graphql/types';
 import {AssetPartitionListProps} from '../AssetPartitionList';
 import {AssetPartitionStatus} from '../AssetPartitionStatus';
 import {AssetPartitions} from '../AssetPartitions';
-import {AssetViewParams} from '../AssetView';
 import {
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
+import {AssetViewParams} from '../types';
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions

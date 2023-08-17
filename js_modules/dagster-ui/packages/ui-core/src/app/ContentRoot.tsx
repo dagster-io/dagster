@@ -2,6 +2,8 @@ import {MainContent, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
+import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = React.lazy(() => import('../overview/OverviewRoot'));
 const FallthroughRoot = React.lazy(() => import('./FallthroughRoot'));
@@ -38,7 +40,9 @@ export const ContentRoot = React.memo(() => {
           </Route>
           <Route path="/assets(/?.*)">
             <React.Suspense fallback={<div />}>
-              <AssetsCatalogRoot />
+              <AssetFeatureProvider>
+                <AssetsCatalogRoot />
+              </AssetFeatureProvider>
             </React.Suspense>
           </Route>
           <Route path="/runs" exact>

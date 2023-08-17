@@ -3,7 +3,6 @@ import React from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {AssetPartitions} from '../AssetPartitions';
-import {AssetViewParams} from '../AssetView';
 import {
   MultiDimensionStaticPartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
@@ -11,6 +10,7 @@ import {
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
+import {AssetViewParams} from '../types';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetPartitions};

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -9,12 +8,9 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Union,
-    cast,
 )
 
 import dagster._check as check
-import orjson
 from dagster import (
     AssetKey,
     AssetOut,
@@ -31,6 +27,7 @@ from .asset_utils import (
     get_deps,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
@@ -41,7 +38,7 @@ from .utils import (
 
 def dbt_assets(
     *,
-    manifest: Union[Mapping[str, Any], Path],
+    manifest: DbtManifestParam,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
     io_manager_key: Optional[str] = None,
@@ -54,7 +51,7 @@ def dbt_assets(
     ``yield from`` on the event stream returned by :py:meth:`~dagster_dbt.DbtCliInvocation.stream`.
 
     Args:
-        manifest (Union[Mapping[str, Any], Path]): The contents of a manifest.json file
+        manifest (Union[Mapping[str, Any], str, Path]): The contents of a manifest.json file
             or the path to a manifest.json file. A manifest.json contains a representation of a
             dbt project (models, tests, macros, etc). We use this representation to create
             corresponding Dagster assets.
@@ -219,9 +216,7 @@ def dbt_assets(
             " DagsterDbtTranslator."
         ),
     )
-    check.inst_param(manifest, "manifest", (Path, dict))
-    if isinstance(manifest, Path):
-        manifest = cast(Mapping[str, Any], orjson.loads(manifest.read_bytes()))
+    manifest = validate_manifest(manifest)
 
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest

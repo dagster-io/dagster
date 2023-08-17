@@ -1,10 +1,9 @@
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Mapping, Optional, Sequence, Union
 
 from dagster_external.protocol import ExternalExecutionExtras, ExternalExecutionIOMode
 from pydantic import Field
 
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.external_execution.task import (
     ExternalExecutionTask,
@@ -53,17 +52,15 @@ class ExternalExecutionResource(ConfigurableResource):
         command: Union[str, Sequence[str]],
         context: OpExecutionContext,
         extras: Optional[ExternalExecutionExtras] = None,
+        env: Optional[Mapping[str, str]] = None,
     ) -> None:
-        return_code = ExternalExecutionTask(
+        ExternalExecutionTask(
             command=command,
             context=context,
             extras=extras,
-            env=self.env,
+            env={**(self.env or {}), **(env or {})},
             input_mode=self.input_mode,
             output_mode=self.output_mode,
             input_path=self.input_path,
             output_path=self.output_path,
         ).run()
-
-        if return_code:
-            raise Failure(description="External execution process failed.")

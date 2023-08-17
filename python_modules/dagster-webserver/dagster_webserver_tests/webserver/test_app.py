@@ -14,7 +14,6 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.version import __version__ as dagster_webserver_version
-from dagster_webserver.webserver import ROOT_ADDRESS_STATIC_RESOURCES
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -68,7 +67,16 @@ def test_dagster_webserver_info(path: str, test_client: TestClient):
 def test_static_resources(test_client: TestClient):
     # make sure we did not fallback to the index html
     # for static resources at /
-    for address in ROOT_ADDRESS_STATIC_RESOURCES:
+    for address in [
+        "/manifest.json",
+        "/favicon.ico",
+        "/favicon.png",
+        "/favicon.svg",
+        "/favicon-run-pending.svg",
+        "/favicon-run-failed.svg",
+        "/favicon-run-success.svg",
+        "/robots.txt",
+    ]:
         response = test_client.get(address)
         assert response.status_code == 200, response.text
         assert response.headers["content-type"] != "text/html"
