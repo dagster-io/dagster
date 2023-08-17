@@ -72,7 +72,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         }
 
     def make_csp_header(self, nonce: str) -> str:
-        csp_conf_path = self.relative_path("webapp/build/csp-header.conf")
+        csp_conf_path = self.relative_path("webapp/build/csp-header.txt")
         try:
             with open(csp_conf_path, encoding="utf8") as f:
                 csp_template = f.read()
