@@ -13,7 +13,7 @@ S3
 .. autoconfigurable:: dagster_aws.s3.S3Resource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: dagster_aws.s3.ConfigurablePickledObjectS3IOManager
+.. autoconfigurable:: dagster_aws.s3.S3PickleIOManager
   :annotation: IOManagerDefinition
 
 .. autodata:: dagster_aws.s3.S3Coordinate
@@ -98,6 +98,9 @@ Resources which surface SecretsManager secrets for use in Dagster resources and 
 
 Legacy
 --------
+
+.. autoconfigurable:: dagster_aws.s3.ConfigurablePickledObjectS3IOManager
+  :annotation: IOManagerDefinition
 
 .. autoconfigurable:: dagster_aws.s3.s3_resource
   :annotation: ResourceDefinition

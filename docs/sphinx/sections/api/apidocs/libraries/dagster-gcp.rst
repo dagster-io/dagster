@@ -61,7 +61,7 @@ GCS Resource
 GCS I/O Manager
 ^^^^^^^^^^^^^^^^^^
 
-.. autoconfigurable:: ConfigurablePickledObjectGCSIOManager
+.. autoconfigurable:: GCSPickleIOManager
   :annotation: IOManagerDefinition
 
 
@@ -92,6 +92,9 @@ Dataproc Ops
 
 Legacy
 ------
+
+.. autoconfigurable:: ConfigurablePickledObjectGCSIOManager
+  :annotation: IOManagerDefinition
 
 .. autoconfigurable:: bigquery_resource
   :annotation: ResourceDefinition

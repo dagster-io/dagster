@@ -22,7 +22,7 @@ Resources
 I/O Manager
 ^^^^^^^^^^^
 
-.. autoconfigurable::  dagster_azure.adls2.ConfigurablePickledObjectADLS2IOManager
+.. autoconfigurable::  dagster_azure.adls2.ADLS2PickleIOManager
   :annotation: IOManagerDefinition
 
 
@@ -39,6 +39,8 @@ File Manager (Experimental)
 
 Legacy
 ^^^^^^^
+.. autoconfigurable::  dagster_azure.adls2.ConfigurablePickledObjectADLS2IOManager
+  :annotation: IOManagerDefinition
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_resource
   :annotation: ResourceDefinition
