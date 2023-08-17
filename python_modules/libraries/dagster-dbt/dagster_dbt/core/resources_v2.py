@@ -379,6 +379,7 @@ class DbtCliResource(ConfigurableResource):
             invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
             configuration.
         profiles_dir (Optional[str]): The path to the directory containing your dbt `profiles.yml`.
+            By default, the current working directory is used, which is the dbt project directory.
             See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
             information.
         profile (Optional[str]): The profile from your dbt `profiles.yml` to use for execution. See
@@ -389,15 +390,47 @@ class DbtCliResource(ConfigurableResource):
             information.
 
     Examples:
+        Creating a dbt resource with only a reference to ``project_dir``:
+
+        .. code-block:: python
+
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+
+        Creating a dbt resource with a custom ``profiles_dir``:
+
         .. code-block:: python
 
             from dagster_dbt import DbtCliResource
 
             dbt = DbtCliResource(
                 project_dir="/path/to/dbt/project",
-                global_config_flags=["--no-use-colors"],
+                profiles_dir="/path/to/dbt/project/profiles",
+            )
+
+        Creating a dbt resource with a custom ``profile`` and ``target``:
+
+        .. code-block:: python
+
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(
+                project_dir="/path/to/dbt/project",
+                profiles_dir="/path/to/dbt/project/profiles",
                 profile="jaffle_shop",
                 target="dev",
+            )
+
+        Creating a dbt resource with global configs, e.g. disabling colored logs with ``--no-use-color``:
+
+        .. code-block:: python
+
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(
+                project_dir="/path/to/dbt/project",
+                global_config_flags=["--no-use-color"],
             )
     """
 
@@ -419,9 +452,10 @@ class DbtCliResource(ConfigurableResource):
     profiles_dir: Optional[str] = Field(
         default=None,
         description=(
-            "The path to the directory containing your dbt `profiles.yml`. See"
-            " https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more"
-            " information."
+            "The path to the directory containing your dbt `profiles.yml`. By default, the current"
+            " working directory is used, which is the dbt project directory."
+            " See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for "
+            " more information."
         ),
     )
     profile: Optional[str] = Field(
