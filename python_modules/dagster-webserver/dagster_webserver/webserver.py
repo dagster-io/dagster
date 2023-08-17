@@ -227,14 +227,9 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     def next_static_file_routes(self) -> List[Route]:
         def next_file_response(file_path):
             with open(file_path, encoding="utf8") as f:
-                content = f.read()
-                try:
-                    content = content.replace(
-                        "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
-                    )
-                except:
-                    # Ignore files that are byte content (eg. mp4 files)
-                    pass
+                content = f.read().replace(
+                    "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
+                )
                 return Response(content=content, media_type=guess_type(file_path)[0])
 
         def _next_static_file(path, file_path):
@@ -242,7 +237,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 path,
                 lambda _: next_file_response(file_path),
             )
-        
+
         def _file(path, file_path):
             return Route(
                 path,
