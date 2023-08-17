@@ -1,5 +1,5 @@
 dev_webapp:
-	REACT_APP_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn start
+	NEXT_PUBLIC_BACKEND_ORIGIN="http://127.0.0.1:3333" yarn start
 
 generate-graphql:
 	yarn workspace @dagster-io/ui-core generate-graphql

@@ -4,7 +4,7 @@
       "@dagster-io/ui-core/*": ["../ui-core/src/*"],
       "@dagster-io/ui-components": ["../ui-components/src"]
     },
-    "module": "es2022",
+    "module": "esnext",
     "target": "es2022",
     "allowJs": true,
     "skipLibCheck": true,
@@ -22,7 +22,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "incremental": true
   },
-  "include": ["src"]
+  "include": ["src", "next.config.js"],
+  "exclude": ["node_modules"]
 }
