@@ -27,6 +27,7 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
+from dagster._core.definitions.asset_check_execution import AssetCheckExecution
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -104,6 +105,7 @@ class DagsterEventType(str, Enum):
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
+    ASSET_CHECK_EXECUTION = "ASSET_CHECK_EXECUTION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
@@ -168,6 +170,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_SKIPPED,
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
+    DagsterEventType.ASSET_CHECK_EXECUTION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.OBJECT_STORE_OPERATION,
     DagsterEventType.HANDLED_OUTPUT,
@@ -279,6 +282,8 @@ def _validate_event_specific_data(
         check.inst_param(
             event_specific_data, "event_specific_data", AssetMaterializationPlannedData
         )
+    elif event_type == DagsterEventType.ASSET_CHECK_EXECUTION:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckExecutionData)
 
     return event_specific_data
 
@@ -1485,6 +1490,22 @@ class StepExpectationResultData(
             expectation_result=check.inst_param(
                 expectation_result, "expectation_result", ExpectationResult
             ),
+        )
+
+
+@whitelist_for_serdes
+class AssetCheckExecutionData(
+    NamedTuple(
+        "_AssetCheckExecutionData",
+        [
+            ("execution", AssetCheckExecution),
+        ],
+    )
+):
+    def __new__(cls, execution: AssetCheckExecution):
+        return super(AssetCheckExecutionData, cls).__new__(
+            cls,
+            execution=check.inst_param(execution, "execution", AssetCheckExecution),
         )
 
 
