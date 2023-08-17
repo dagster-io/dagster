@@ -1,5 +1,6 @@
 import atexit
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import List, Optional
@@ -22,6 +23,7 @@ from dagster_dbt.core.resources_v2 import (
     DbtCliEventMessage,
     DbtCliResource,
 )
+from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
 from ..conftest import TEST_PROJECT_DIR
@@ -42,6 +44,13 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     assert dbt_cli_invocation.process.args == ["dbt", *global_config_flags, command]
     assert dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 0
+
+
+@pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
+def test_dbt_cli_manifest_argument(manifest: DbtManifestParam) -> None:
+    dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
+
+    assert dbt.cli(["run"], manifest=manifest).is_successful()
 
 
 def test_dbt_cli_failure() -> None:
