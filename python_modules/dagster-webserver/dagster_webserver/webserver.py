@@ -253,6 +253,18 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 else:
                     routes.append(_static_file(relative_path, full_path))
 
+        # No build directory, this happens in a test environment. Don't fail loudly since we already have other tests that will fail loudly if
+        # there is in fact no build
+        if len(routes) == 0:
+            # These are tested by an internal test without building the app.
+            return [
+                Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
+                Route(
+                    "/vendor/graphql-playground/index.css",
+                    lambda _: FileResponse(path="/vendor/graphql-playground/index.css"),
+                ),
+            ]
+
         return routes
 
     @deprecated(
