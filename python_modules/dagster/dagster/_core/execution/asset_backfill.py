@@ -526,7 +526,13 @@ def _submit_runs_and_update_backfill_in_chunks(
     run_requests = asset_backfill_iteration_result.run_requests
     submitted_partitions = previous_asset_backfill_data.requested_subset
 
-    backfill_data_with_submitted_runs = None
+    # Initially, the only requested partitions are the partitions requested during the last
+    # backfill iteration
+    backfill_data_with_submitted_runs = (
+        asset_backfill_iteration_result.backfill_data.replace_requested_subset(submitted_partitions)
+    )
+
+    mid_iteration_cancel_requested = False
 
     # Iterate through runs to request, submitting runs in chunks.
     # In between each chunk, check that the backfill is still marked as 'requested',
@@ -540,6 +546,7 @@ def _submit_runs_and_update_backfill_in_chunks(
         # Refetch, in case the backfill was requested for cancellation in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
         if backfill.status != BulkActionStatus.REQUESTED:
+            mid_iteration_cancel_requested = True
             break
 
         # Submit runs in the chunk
@@ -578,6 +585,12 @@ def _submit_runs_and_update_backfill_in_chunks(
             backfill_data_with_submitted_runs, dynamic_partitions_store=instance
         )
         instance.update_backfill(updated_backfill)
+
+    if not mid_iteration_cancel_requested:
+        check.invariant(
+            submitted_partitions == asset_backfill_iteration_result.backfill_data.requested_subset,
+            "Did not submit run requests for all expected partitions",
+        )
 
     yield backfill_data_with_submitted_runs
 
