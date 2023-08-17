@@ -177,6 +177,20 @@ def test_dbt_with_partial_parse() -> None:
     )
 
 
+def test_dbt_cli_debug_execution() -> None:
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["--debug", "run"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=TEST_PROJECT_DIR),
+        },
+    )
+    assert result.success
+
+
 def test_dbt_cli_subsetted_execution() -> None:
     dbt_select = " ".join(
         [
@@ -185,11 +199,8 @@ def test_dbt_cli_subsetted_execution() -> None:
         ]
     )
 
-    @dbt_assets(
-        manifest=manifest,
-        select=dbt_select,
-    )
-    def my_dbt_assets(context, dbt: DbtCliResource):
+    @dbt_assets(manifest=manifest, select=dbt_select)
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
 
         assert dbt_cli_invocation.process.args == ["dbt", "run", "--select", dbt_select]
@@ -212,7 +223,7 @@ def test_dbt_cli_asset_selection() -> None:
     ]
 
     @dbt_assets(manifest=manifest)
-    def my_dbt_assets(context, dbt: DbtCliResource):
+    def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["run"], context=context).wait()
 
         dbt_cli_args: List[str] = list(dbt_cli_invocation.process.args)  # type: ignore
@@ -242,7 +253,7 @@ def test_dbt_cli_asset_selection() -> None:
 @pytest.mark.parametrize("exclude", [None, "fqn:dagster_dbt_test_project.subdir.least_caloric"])
 def test_dbt_cli_default_selection(exclude: Optional[str]) -> None:
     @dbt_assets(manifest=manifest, exclude=exclude)
-    def my_dbt_assets(context):
+    def my_dbt_assets(context: OpExecutionContext):
         dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
         dbt_cli_invocation = dbt.cli(["run"], context=context)
 
@@ -322,13 +333,19 @@ def test_dbt_cli_op_execution() -> None:
     ],
 )
 def test_no_default_asset_events_emitted(data: dict) -> None:
-    asset_events = DbtCliEventMessage(raw_event={"data": data}).to_default_asset_events(manifest={})
+    asset_events = DbtCliEventMessage(
+        raw_event={
+            "info": {"level": "info"},
+            "data": data,
+        }
+    ).to_default_asset_events(manifest={})
 
     assert list(asset_events) == []
 
 
 def test_to_default_asset_output_events() -> None:
     raw_event = {
+        "info": {"level": "info"},
         "data": {
             "node_info": {
                 "unique_id": "a.b.c",
@@ -337,7 +354,7 @@ def test_to_default_asset_output_events() -> None:
                 "node_started_at": "2024-01-01T00:00:00Z",
                 "node_finished_at": "2024-01-01T00:01:00Z",
             }
-        }
+        },
     }
     asset_events = list(
         DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest={})
@@ -375,6 +392,7 @@ def test_to_default_asset_observation_events() -> None:
         },
     }
     raw_event = {
+        "info": {"level": "info"},
         "data": {
             "node_info": {
                 "unique_id": "a.b.c",
@@ -382,7 +400,7 @@ def test_to_default_asset_observation_events() -> None:
                 "node_status": "success",
                 "node_finished_at": "2024-01-01T00:00:00Z",
             }
-        }
+        },
     }
     asset_events = list(
         DbtCliEventMessage(raw_event=raw_event).to_default_asset_events(manifest=manifest)

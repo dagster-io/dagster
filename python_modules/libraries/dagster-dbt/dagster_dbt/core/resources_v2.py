@@ -89,6 +89,9 @@ class DbtCliEventMessage:
                 - AssetMaterializations for refables (e.g. models, seeds, snapshots.)
                 - AssetObservations for test results.
         """
+        if self.raw_event["info"]["level"] == "debug":
+            return
+
         event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
