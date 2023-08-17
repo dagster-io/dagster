@@ -257,7 +257,7 @@ export function UnversionedMDXRenderer({
   const {query} = useRouter();
   const {editMode} = query;
 
-  const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink} = data;
+  const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink, asPath} = data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -280,7 +280,7 @@ export function UnversionedMDXRenderer({
       />
       <div className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4" tabIndex={0}>
         <div className="pl-4 sm:pl-6 lg:pl-8 ">
-          <BreadcrumbNav asPath={null} />
+          <BreadcrumbNav asPath={asPath} />
         </div>
         <div
           className="flex flex-row pb-8 max-w-7xl"

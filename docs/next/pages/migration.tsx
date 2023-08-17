@@ -119,6 +119,7 @@ export const getStaticProps: GetStaticProps = async () => {
           frontMatter: data,
           tableOfContents,
           githubLink,
+          asPath: '/migration',
         },
       },
       revalidate: 10, // In seconds
