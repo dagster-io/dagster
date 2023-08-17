@@ -1,3 +1,4 @@
+import atexit
 import os
 import shutil
 import subprocess
@@ -186,6 +187,19 @@ class DbtCliInvocation:
             env=env,
             cwd=project_dir,
         )
+
+        # Add handler to terminate child process if running.
+        # See https://stackoverflow.com/a/18258391 for more details.
+        def cleanup_dbt_subprocess(process: subprocess.Popen) -> None:
+            if process.returncode is None:
+                logger.info(
+                    "The main process is being terminated, but the dbt command has not yet"
+                    " completed. Terminating the execution of dbt command."
+                )
+                process.terminate()
+                process.wait()
+
+        atexit.register(cleanup_dbt_subprocess, process)
 
         return cls(
             process=process,
