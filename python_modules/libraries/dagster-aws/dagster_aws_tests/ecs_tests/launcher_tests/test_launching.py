@@ -986,7 +986,7 @@ def test_launch_run_with_container_context(
 
     assert (
         container_definition["repositoryCredentials"]["credentialsParameter"]
-        == container_context_config["ecs"]["repository_credentials"]
+        == container_context_config["ecs"]["run_resources"]["repository_credentials"]
     )
 
     sidecar_container = task_definition["containerDefinitions"][1]
