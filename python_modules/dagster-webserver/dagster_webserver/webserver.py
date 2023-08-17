@@ -226,7 +226,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
     def next_static_file_routes(self) -> List[Route]:
         def next_file_response(file_path):
-            with open(file_path, mode="rb") as f:
+            with open(file_path, encoding="utf8") as f:
                 content = f.read()
                 try:
                     content = content.replace(
@@ -241,7 +241,12 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             return Route(
                 path,
                 lambda _: next_file_response(file_path),
-                name="next",
+            )
+        
+        def _file(path, file_path):
+            return Route(
+                path,
+                lambda _: FileResponse(path=file_path),
             )
 
         routes = []
@@ -249,18 +254,12 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         for subdir, _, files in walk(base_dir):
             for file in files:
                 full_path = path.join(subdir, file)
-                relative_path = full_path[len(base_dir) :].lstrip(path.sep)
+                relative_path = "/" + full_path[len(base_dir) :].lstrip(path.sep)
                 # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
                 if file.endswith(".js") or file.endswith(".js.map"):
-                    routes.append(_next_static_file("/" + relative_path, full_path))
+                    routes.append(_next_static_file(relative_path, full_path))
                 else:
-                    routes.append(
-                        Route(
-                            "/" + relative_path,
-                            lambda _: FileResponse(path=full_path),
-                            name="static",
-                        )
-                    )
+                    routes.append(_file(relative_path, full_path))
 
         return routes
 
