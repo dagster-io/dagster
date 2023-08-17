@@ -28,7 +28,6 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions import AssetCheckResult
 from dagster._core.definitions.asset_check_execution import (
     AssetCheckExecution,
     AssetCheckExecutionStatus,
@@ -43,6 +42,7 @@ from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
     db_case,
@@ -2516,10 +2516,10 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_latest_asset_check_execution(
         self, asset_key: AssetKey, check_name: str
-    ) -> Optional[AssetCheckExecution]:
+    ) -> Optional[AssetCheckExecutionRecord]:
         with self.index_connection() as conn:
             row = conn.execute(
-                db_select([AssetChecksTable.c.check_execution])
+                db_select([AssetChecksTable.c.id, AssetChecksTable.c.check_execution])
                 .where(
                     db.and_(
                         AssetChecksTable.c.asset_key == asset_key.to_string(),
@@ -2530,8 +2530,40 @@ class SqlEventLogStorage(EventLogStorage):
                 .limit(1)
             ).first()
             if row:
-                return deserialize_value(cast(str, row[0]), AssetCheckExecution)
+                return AssetCheckExecutionRecord(
+                    row["id"],
+                    deserialize_value(cast(str, row["check_execution"]), AssetCheckExecution),
+                )
             return None
+
+    def get_asset_check_executions(
+        self,
+        asset_key: AssetKey,
+        check_name: str,
+        limit: int,
+        before_cursor: Optional[int] = None,
+        materialize_event_storage_id: Optional[int] = None,
+    ):
+        with self.index_connection() as conn:
+            query = (
+                db_select([AssetChecksTable.c.check_execution])
+                .where(
+                    db.and_(
+                        AssetChecksTable.c.asset_key == asset_key.to_string(),
+                        AssetChecksTable.c.check_name == check_name,
+                    )
+                )
+                .order_by(AssetChecksTable.c.id.desc())
+                .limit(limit)
+            )
+            if before_cursor is not None:
+                query = query.where(AssetChecksTable.c.id < before_cursor)
+            if materialize_event_storage_id:
+                query = query.where(
+                    AssetChecksTable.c.materialization_storage_id == materialize_event_storage_id
+                )
+            rows = conn.execute(query).fetchall()
+            return [deserialize_value(row[0], AssetCheckExecution) for row in rows]
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

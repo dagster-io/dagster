@@ -5,13 +5,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
-from tracemalloc import start
 from typing import List, Optional, Sequence, Tuple, cast
-from dagster._core.definitions.asset_check_execution import (
-    AssetCheckExecution,
-    AssetCheckExecutionStatus,
-)
-from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 import mock
 import pendulum
@@ -41,6 +35,11 @@ from dagster import (
 )
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.asset_check_execution import (
+    AssetCheckExecution,
+    AssetCheckExecutionStatus,
+)
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
@@ -3905,44 +3904,130 @@ class TestEventLogStorage:
 
             assert all(f.done() for f in futures)
 
-    def test_asset_checks(self, storage):
+    def test_asset_checks_multiple_checks(self, storage):
         if self.can_wipe():
             storage.wipe()
 
         run_id = make_new_run_id()
 
-        planned_execution = AssetCheckExecution.planned(
-            asset_key=AssetKey("a"),
-            check_name="some_check",
-            run_id=run_id,
-        )
-
-        storage.store_asset_check_execution_planned(planned_execution)
-
-        assert (
-            storage.get_latest_asset_check_execution(
-                AssetKey("a"),
-                "some_check",
-            ).check_status
-            == AssetCheckExecutionStatus.PLANNED
-        )
-
-        storage.update_asset_check_execution(
-            planned_execution.with_result(
-                AssetCheckResult(
-                    asset_key=AssetKey("a"),
-                    check_name="some_check",
-                    success=True,
-                ),
-                start_timestamp=datetime.datetime.now().timestamp() - 100,
-                end_timestamp=datetime.datetime.now().timestamp(),
+        planned_executions = [
+            AssetCheckExecution.planned(
+                asset_key=AssetKey("a"),
+                check_name=f"check_{i}",
+                run_id=run_id,
             )
-        )
+            for i in range(3)
+        ]
 
+        for execution in planned_executions:
+            storage.store_asset_check_execution_planned(execution)
+
+        for execution in planned_executions:
+            assert (
+                storage.get_latest_asset_check_execution(
+                    execution.asset_key, execution.check_name
+                ).asset_check_execution.check_status
+                == AssetCheckExecutionStatus.PLANNED
+            )
+
+        for execution in planned_executions:
+            storage.update_asset_check_execution(
+                execution.with_result(
+                    AssetCheckResult(
+                        execution.asset_key,
+                        execution.check_name,
+                        success=False,
+                    ),
+                    start_timestamp=datetime.datetime.now().timestamp() - 100,
+                    end_timestamp=datetime.datetime.now().timestamp(),
+                )
+            )
+
+        for execution in planned_executions:
+            assert (
+                storage.get_latest_asset_check_execution(
+                    execution.asset_key, execution.check_name
+                ).asset_check_execution.check_status
+                == AssetCheckExecutionStatus.RESULT_FAILURE
+            )
+
+    def test_asset_checks_multiple_assets(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id = make_new_run_id()
+
+        planned_executions = [
+            AssetCheckExecution.planned(
+                asset_key=AssetKey(f"asset_{i}"),
+                check_name="my_check",
+                run_id=run_id,
+            )
+            for i in range(3)
+        ]
+
+        for execution in planned_executions:
+            storage.store_asset_check_execution_planned(execution)
+
+        for execution in planned_executions:
+            assert (
+                storage.get_latest_asset_check_execution(
+                    execution.asset_key, execution.check_name
+                ).asset_check_execution.check_status
+                == AssetCheckExecutionStatus.PLANNED
+            )
+
+        for execution in planned_executions:
+            storage.update_asset_check_execution(
+                execution.with_result(
+                    AssetCheckResult(
+                        execution.asset_key,
+                        execution.check_name,
+                        success=False,
+                    ),
+                    start_timestamp=datetime.datetime.now().timestamp() - 100,
+                    end_timestamp=datetime.datetime.now().timestamp(),
+                )
+            )
+
+        for execution in planned_executions:
+            assert (
+                storage.get_latest_asset_check_execution(
+                    execution.asset_key, execution.check_name
+                ).asset_check_execution.check_status
+                == AssetCheckExecutionStatus.RESULT_FAILURE
+            )
+
+    def test_asset_checks_multiple_check_runs(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        run_ids = [make_new_run_id() for _ in range(3)]
+        for run_id in run_ids:
+            execution = AssetCheckExecution.planned(
+                asset_key=AssetKey("a"),
+                check_name="my_check",
+                run_id=run_id,
+            )
+            storage.store_asset_check_execution_planned(execution)
+            storage.update_asset_check_execution(
+                execution.with_result(
+                    AssetCheckResult(
+                        AssetKey("a"),
+                        "my_check",
+                        success=True,
+                    ),
+                    start_timestamp=datetime.datetime.now().timestamp() - 100,
+                    end_timestamp=datetime.datetime.now().timestamp(),
+                )
+            )
+
+        execution = storage.get_latest_asset_check_execution(AssetKey("a"), "my_check")
         assert (
-            storage.get_latest_asset_check_execution(
-                AssetKey("a"),
-                "some_check",
-            ).check_status
-            == AssetCheckExecutionStatus.RESULT_SUCCESS
+            execution.asset_check_execution.check_status == AssetCheckExecutionStatus.RESULT_SUCCESS
         )
+        assert execution.asset_check_execution.run_id == run_ids[-1]
+
+        executions = storage.get_asset_check_executions(AssetKey("a"), "my_check", limit=10)
+        assert len(executions) == 3
+        assert [e.run_id for e in executions] == run_ids[::-1]
