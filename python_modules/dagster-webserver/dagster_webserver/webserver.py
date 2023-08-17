@@ -223,7 +223,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 "make rebuild_ui" in the project root.
                 """)
 
-    def static_file_routes(self) -> List[Route]:
+    def build_static_routes(self) -> List[Route]:
         def next_file_response(file_path):
             with open(file_path, encoding="utf8") as f:
                 content = f.read().replace(
@@ -254,9 +254,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     routes.append(_static_file(relative_path, full_path))
 
         return routes
-
-    def build_static_routes(self):
-        return self.static_file_routes()
 
     @deprecated(
         breaking_version="2.0",
