@@ -2,6 +2,7 @@ from dagster import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._check import CheckError
+from dagster._serdes import deserialize_value, serialize_value
 import pytest
 
 
@@ -67,6 +68,39 @@ def test_with_rules():
     )
 
 
-def test_serialized_auto_materialize_backcompat():
-    serialized_amp = ""
-    assert deserialize_json_to_dagster_namedtuple(serialized_amp) == AutoMaterializePolicy.eager()
+@pytest.mark.parametrize(
+    "serialized_amp, expected_amp",
+    [
+        (
+            (
+                '{"__class__": "AutoMaterializePolicy", "for_freshness": true,'
+                ' "max_materializations_per_minute": 1, "on_missing": true, "on_new_parent_data":'
+                ' true, "time_window_partition_scope_minutes": 1e-06}'
+            ),
+            AutoMaterializePolicy.eager(),
+        ),
+        (
+            (
+                '{"__class__": "AutoMaterializePolicy", "for_freshness": true,'
+                ' "max_materializations_per_minute": 1, "on_missing": false, "on_new_parent_data":'
+                ' false, "time_window_partition_scope_minutes": 1e-06}'
+            ),
+            AutoMaterializePolicy.lazy(),
+        ),
+        (
+            (
+                '{"__class__": "AutoMaterializePolicy", "for_freshness": true,'
+                ' "max_materializations_per_minute": 15, "on_missing": false, "on_new_parent_data":'
+                ' true, "time_window_partition_scope_minutes": 1e-06}'
+            ),
+            AutoMaterializePolicy.eager(max_materializations_per_minute=15).without_rules(
+                AutoMaterializeRule.materialize_on_missing()
+            ),
+        ),
+    ],
+)
+def test_serialized_auto_materialize_backcompat(
+    serialized_amp: str, expected_amp: AutoMaterializePolicy
+):
+    assert deserialize_value(serialized_amp) == expected_amp
+    assert deserialize_value(serialize_value(expected_amp)) == expected_amp

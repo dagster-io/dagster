@@ -27,15 +27,21 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
     ) -> Dict[str, UnpackedValue]:
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
-        rules = check.is_list(unpacked_dict.get("rules", []), AutoMaterializeRule)
-        # handle backcompat for policies serialized with a set of booleans
-        for field, rule in [
-            ("on_missing", AutoMaterializeRule.materialize_on_missing()),
-            ("on_new_parent_data", AutoMaterializeRule.materialize_on_parent_updated()),
-            ("for_freshness", AutoMaterializeRule.materialize_on_required_for_freshness()),
-        ]:
-            if unpacked_dict.get(field):
-                rules.append(rule)
+        backcompat_map = {
+            "on_missing": AutoMaterializeRule.materialize_on_missing(),
+            "on_new_parent_data": AutoMaterializeRule.materialize_on_parent_updated(),
+            "for_freshness": AutoMaterializeRule.materialize_on_required_for_freshness(),
+        }
+
+        # determine if this namedtuple was serialized with the old format (booleans for rules)
+        if any(backcompat_key in unpacked_dict for backcompat_key in backcompat_map):
+            # all old policies had this rule by default
+            rules = {AutoMaterializeRule.skip_on_parent_outdated()}
+            for backcompat_key, rule in backcompat_map.items():
+                if unpacked_dict.get(backcompat_key):
+                    rules.add(rule)
+            unpacked_dict["rules"] = frozenset(rules)
+
         return unpacked_dict
 
 
@@ -45,7 +51,10 @@ class AutoMaterializePolicyType(Enum):
 
 
 @experimental
-@whitelist_for_serdes(old_fields={"time_window_partition_scope_minutes": 1e-6})
+@whitelist_for_serdes(
+    old_fields={"time_window_partition_scope_minutes": 1e-6},
+    serializer=AutoMaterializePolicySerializer,
+)
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
