@@ -224,7 +224,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 "make rebuild_ui" in the project root.
                 """)
 
-    def next_static_file_routes(self) -> List[Route]:
+    def static_file_routes(self) -> List[Route]:
         def next_file_response(file_path):
             with open(file_path, encoding="utf8") as f:
                 content = f.read().replace(
@@ -236,12 +236,15 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             return Route(
                 path,
                 lambda _: next_file_response(file_path),
+                name="next_static"
             )
+    
 
-        def _file(path, file_path):
+        def _static_file(path, file_path):
             return Route(
                 path,
                 lambda _: FileResponse(path=file_path),
+                name="root_static",
             )
 
         routes = []
@@ -254,24 +257,12 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 if file.endswith(".js") or file.endswith(".js.map"):
                     routes.append(_next_static_file(relative_path, full_path))
                 else:
-                    routes.append(_file(relative_path, full_path))
+                    routes.append(_static_file(relative_path, full_path))
 
         return routes
 
     def build_static_routes(self):
-        return [
-            # static resources addressed at /vendor/
-            Mount(
-                "/vendor",
-                StaticFiles(
-                    directory=self.relative_path("webapp/build/vendor"),
-                    check_dir=False,
-                ),
-                name="vendor",
-            ),
-            # specific static resources addressed at /
-            *self.next_static_file_routes(),
-        ]
+        return self.static_file_routes()
 
     @deprecated(
         breaking_version="2.0",

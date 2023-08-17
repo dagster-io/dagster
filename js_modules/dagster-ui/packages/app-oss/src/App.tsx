@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === 'development') {
 const config = {
   apolloLinks,
   basePath: pathPrefix,
-  origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
+  origin: process.env.NEXT_PUBLIC_BACKEND_ORIGIN || document.location.origin,
   telemetryEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
 };
