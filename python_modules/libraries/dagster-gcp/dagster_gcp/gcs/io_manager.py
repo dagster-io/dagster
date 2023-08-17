@@ -80,7 +80,7 @@ class PickledObjectGCSIOManager(UPathIOManager):
         )
 
 
-class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
+class GCSPickleIOManager(ConfigurableIOManager):
     """Persistent IO manager using GCS for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -103,7 +103,7 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import asset, Definitions
-        from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+        from dagster_gcp.gcs import GCSPickleIOManager, GCSResource
 
         @asset
         def asset1():
@@ -117,7 +117,7 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                "io_manager": GCSPickleIOManager(
                     gcs_bucket="my-cool-bucket",
                     gcs_prefix="my-cool-prefix"
                 ),
@@ -131,11 +131,11 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import job
-        from dagster_gcp.gcs import ConfigurablePickledObjectGCSIOManager, GCSResource
+        from dagster_gcp.gcs import GCSPickleIOManager, GCSResource
 
         @job(
             resource_defs={
-                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                "io_manager": GCSPickleIOManager(
                     gcs=GCSResource(project="my-cool-project")
                     gcs_bucket="my-cool-bucket",
                     gcs_prefix="my-cool-prefix"
@@ -168,9 +168,13 @@ class ConfigurablePickledObjectGCSIOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
+# GCSPickleIOManager used to be named ConfigurablePickledObjectGCSIOManager, keep this symbol around for backcompat
+ConfigurablePickledObjectGCSIOManager = GCSPickleIOManager
+
+
 @dagster_maintained_io_manager
 @io_manager(
-    config_schema=ConfigurablePickledObjectGCSIOManager.to_config_schema(),
+    config_schema=GCSPickleIOManager.to_config_schema(),
     required_resource_keys={"gcs"},
 )
 def gcs_pickle_io_manager(init_context):
