@@ -11,7 +11,6 @@
     "@blueprintjs/select": "^4.9.12",
     "@dagster-io/ui-components": "workspace:*",
     "@dagster-io/ui-core": "workspace:*",
-    "@graphql-tools/load-files": "^7.0.0",
     "@rive-app/react-canvas": "^3.0.34",
     "@types/styled-components": "^5.1.26",
     "eslint-config-next": "^13.4.12",

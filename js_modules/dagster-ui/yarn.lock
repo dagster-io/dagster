@@ -2278,7 +2278,6 @@ __metadata:
     "@dagster-io/react-scripts": ^5.0.6
     "@dagster-io/ui-components": "workspace:*"
     "@dagster-io/ui-core": "workspace:*"
-    "@graphql-tools/load-files": ^7.0.0
     "@rive-app/react-canvas": ^3.0.34
     "@types/jest": ^27.4.0
     "@types/node": ^16.11.20
@@ -2522,7 +2521,6 @@ __metadata:
     "@graphql-codegen/near-operation-file-preset": ^2.5.0
     "@graphql-codegen/typescript-operations": ^2.5.12
     "@graphql-eslint/eslint-plugin": ^3.18.0
-    "@graphql-tools/load-files": ^7.0.0
     "@graphql-tools/mock": ^8.5.0
     "@graphql-tools/schema": ^8.3.1
     "@mdx-js/react": ^1.6.22
@@ -3545,19 +3543,6 @@ __metadata:
   peerDependencies:
     graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
   checksum: e6571fb10bdf29c4e5aabdc9c87d32be0d1e493a701886fc9c24efee2e0cef0df898a9a48c449f0465a89da816e9f2cf7a51e9476fbe8b7d0aefd3c18e934234
-  languageName: node
-  linkType: hard
-
-"@graphql-tools/load-files@npm:^7.0.0":
-  version: 7.0.0
-  resolution: "@graphql-tools/load-files@npm:7.0.0"
-  dependencies:
-    globby: 11.1.0
-    tslib: ^2.4.0
-    unixify: 1.0.0
-  peerDependencies:
-    graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-  checksum: 1240d7caa8092198667f65f7dd18eed09ea748d63804bda0b226c9db5484a20de9a24eaee3a86d24147b2220f4a08d2596a92dd88244c8f7dfc8536e8beb9697
   languageName: node
   linkType: hard
 
@@ -14917,7 +14902,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globby@npm:11.1.0, globby@npm:^11.0.1, globby@npm:^11.0.2, globby@npm:^11.0.3, globby@npm:^11.0.4, globby@npm:^11.1.0":
+"globby@npm:^11.0.1, globby@npm:^11.0.2, globby@npm:^11.0.3, globby@npm:^11.0.4, globby@npm:^11.1.0":
   version: 11.1.0
   resolution: "globby@npm:11.1.0"
   dependencies:
@@ -25716,7 +25701,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unixify@npm:1.0.0, unixify@npm:^1.0.0":
+"unixify@npm:^1.0.0":
   version: 1.0.0
   resolution: "unixify@npm:1.0.0"
   dependencies:

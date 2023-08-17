@@ -31,7 +31,6 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
-    "@graphql-tools/load-files": "^7.0.0",
     "@tanstack/react-virtual": "3.0.0-beta.18",
     "@testing-library/react-hooks": "^7.0.2",
     "@vx/shape": "^0.0.192",
