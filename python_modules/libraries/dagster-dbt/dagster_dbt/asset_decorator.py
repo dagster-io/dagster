@@ -206,6 +206,30 @@ def dbt_assets(
                     dbt_build_args += ["--full-refresh"]
 
                 yield from dbt.cli(dbt_build_args, context=context).stream()
+
+        Creating partions for dbt assets:
+
+        .. code-block:: python
+            import json
+
+            from dagster import OpExecutionContext, DailyPartitionsDefinition
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+            daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"), partitions_def=daily_partitions)
+            def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                first, last = context.asset_partitions_time_window_for_output(
+                    list(context.selected_output_names)[0]
+                )
+
+                context.log.info("Partitioning dbt assets from {} to {}".format(first, last))
+                dbt_vars = {"min_date": first.isoformat(), "max_date": last.isoformat()}
+                dbt_args = ["build", "--vars", json.dumps(dbt_vars)]
+
+                yield from dbt.cli(dbt_args, context=context).stream()
+
     """
     check.inst_param(
         dagster_dbt_translator,
