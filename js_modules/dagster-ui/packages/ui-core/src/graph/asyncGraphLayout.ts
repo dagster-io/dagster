@@ -1,7 +1,6 @@
 import memoize from 'lodash/memoize';
 import React from 'react';
 
-import {AppContext} from '../app/AppContext';
 import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
@@ -21,19 +20,16 @@ const _opLayoutCacheKey = (ops: ILayoutOp[], opts: LayoutOpGraphOptions) => {
 
 export const getFullOpLayout = memoize(layoutOpGraph, _opLayoutCacheKey);
 
-const asyncGetFullOpLayout = asyncMemoize(
-  (ops: ILayoutOp[], opts: LayoutOpGraphOptions, staticPathRoot?: string) => {
-    return new Promise<OpGraphLayout>((resolve) => {
-      const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-      worker.addEventListener('message', (event) => {
-        resolve(event.data);
-        worker.terminate();
-      });
-      worker.postMessage({type: 'layoutOpGraph', ops, opts, staticPathRoot});
+const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraphOptions) => {
+  return new Promise<OpGraphLayout>((resolve) => {
+    const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+    worker.addEventListener('message', (event) => {
+      resolve(event.data);
+      worker.terminate();
     });
-  },
-  _opLayoutCacheKey,
-);
+    worker.postMessage({type: 'layoutOpGraph', ops, opts});
+  });
+}, _opLayoutCacheKey);
 
 // Asset Graph
 
@@ -46,14 +42,14 @@ const _assetLayoutCacheKey = (graphData: GraphData) => {
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
 const asyncGetFullAssetLayout = asyncMemoize(
-  (graphData: GraphData, opts: LayoutAssetGraphOptions, staticPathRoot?: string) => {
+  (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
       worker.addEventListener('message', (event) => {
         resolve(event.data);
         worker.terminate();
       });
-      worker.postMessage({type: 'layoutAssetGraph', opts, graphData, staticPathRoot});
+      worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
   },
   _assetLayoutCacheKey,
@@ -102,15 +98,13 @@ const initialState: State = {
 
 export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {staticPathRoot} = React.useContext(AppContext);
-
   const cacheKey = _opLayoutCacheKey(ops, {parentOp});
   const runAsync = ops.length >= ASYNC_LAYOUT_SOLID_COUNT;
 
   React.useEffect(() => {
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
-      const layout = await asyncGetFullOpLayout(ops, {parentOp}, staticPathRoot);
+      const layout = await asyncGetFullOpLayout(ops, {parentOp});
       dispatch({
         type: 'layout',
         payload: {layout, cacheKey},
@@ -123,7 +117,7 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, ops, parentOp, runAsync, staticPathRoot]);
+  }, [cacheKey, ops, parentOp, runAsync]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
@@ -134,7 +128,6 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
 
 export function useAssetLayout(graphData: GraphData) {
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {staticPathRoot} = React.useContext(AppContext);
   const flags = useFeatureFlags();
 
   const cacheKey = _assetLayoutCacheKey(graphData);
@@ -146,7 +139,7 @@ export function useAssetLayout(graphData: GraphData) {
 
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
-      const layout = await asyncGetFullAssetLayout(graphData, opts, staticPathRoot);
+      const layout = await asyncGetFullAssetLayout(graphData, opts);
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
 
@@ -156,7 +149,7 @@ export function useAssetLayout(graphData: GraphData) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, staticPathRoot, flags]);
+  }, [cacheKey, graphData, runAsync, flags]);
 
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,

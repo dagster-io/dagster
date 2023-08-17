@@ -1,5 +1,8 @@
 /* eslint-disable no-restricted-globals */
 
+import {layoutAssetGraph} from '../asset-graph/layout';
+import {layoutOpGraph} from '../graph/layout';
+
 /**
  * NOTE: Please avoid adding React as a transitive dependency to this file, as it can break
  * the development workflow. https://github.com/pmmmwh/react-refresh-webpack-plugin/issues/24
@@ -12,28 +15,15 @@
 self.addEventListener('message', (event) => {
   const {data} = event;
 
-  // Before we attempt any imports, manually set the Webpack public path to the static path root.
-  // This allows us to import paths when a path-prefix value has been set.
-  if (data.staticPathRoot) {
-    // @ts-expect-error -- Cannot add annotation to magic webpack var
-    __webpack_public_path__ = data.staticPathRoot;
-  }
-
   switch (data.type) {
     case 'layoutOpGraph': {
-      import('../graph/layout').then(({layoutOpGraph}) => {
-        const {ops, opts} = data;
-        self.postMessage(layoutOpGraph(ops, opts));
-      });
+      const {ops, opts} = data;
+      self.postMessage(layoutOpGraph(ops, opts));
       break;
     }
     case 'layoutAssetGraph': {
-      import('../asset-graph/layout').then(({layoutAssetGraph}) => {
-        const {graphData, opts} = data;
-        self.postMessage(layoutAssetGraph(graphData, opts));
-      });
+      const {graphData, opts} = data;
+      self.postMessage(layoutAssetGraph(graphData, opts));
     }
   }
 });
-
-export {};
