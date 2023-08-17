@@ -27,7 +27,10 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_evalaution import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -56,9 +59,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
-    from dagster._core.storage.event_log.base import (
-        EventLogRecord,
-    )
+
 
 EventSpecificData = Union[
     StepOutputData,
@@ -286,6 +287,10 @@ def _validate_event_specific_data(
         check.inst_param(
             event_specific_data, "event_specific_data", AssetMaterializationPlannedData
         )
+    elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluationPlanned)
+    elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluation)
 
     return event_specific_data
 
@@ -1493,62 +1498,6 @@ class StepExpectationResultData(
                 expectation_result, "expectation_result", ExpectationResult
             ),
         )
-
-
-@whitelist_for_serdes
-class AssetCheckEvaluationPlannedData(
-    NamedTuple(
-        "_AssetCheckEvaluationPlannedData",
-        [
-            ("asset_key", AssetKey),
-            ("check_name", str),
-        ],
-    )
-):
-    def __new__(cls, asset_key: AssetKey, check_name: str):
-        return super(AssetCheckEvaluationPlannedData, cls).__new__(
-            cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            check_name=check.str_param(check_name, "check_name"),
-        )
-
-
-@whitelist_for_serdes
-class AssetCheckEvaluationData(
-    NamedTuple(
-        "_AssetCheckEvaluationData",
-        [
-            ("result", AssetCheckResult),
-            ("target_materialization_record", Optional["EventLogRecord"]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        result: AssetCheckResult,
-        target_materialization_record: Optional["EventLogRecord"] = None,
-    ):
-        from dagster._core.storage.event_log.base import (
-            EventLogRecord,
-        )
-
-        return super(AssetCheckEvaluationData, cls).__new__(
-            cls,
-            result=check.inst_param(result, "result", AssetCheckResult),
-            target_materialization_record=check.opt_inst_param(
-                target_materialization_record,
-                "target_materialization_record",
-                EventLogRecord,
-            ),
-        )
-
-    @property
-    def asset_key(self) -> AssetKey:
-        return self.result.asset_key
-
-    @property
-    def check_name(self) -> str:
-        return self.result.check_name
 
 
 @whitelist_for_serdes(
