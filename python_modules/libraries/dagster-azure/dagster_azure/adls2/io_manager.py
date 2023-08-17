@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._annotations import deprecated
 from dagster._config.pythonic_config import ConfigurableIOManager
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
@@ -200,8 +201,14 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
-# ADLS2PickleIOManager used to be named ConfigurablePickledObjectADLS2IOManager, keep this symbol around for backcompat
-ConfigurablePickledObjectADLS2IOManager = ADLS2PickleIOManager
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use GCSPickleIOManager instead.",
+)
+class ConfigurablePickledObjectADLS2IOManager(ADLS2PickleIOManager):
+    """Renamed to ADLS2PickleIOManager. See ADLS2PickleIOManager for documentation."""
+
+    pass
 
 
 @dagster_maintained_io_manager
