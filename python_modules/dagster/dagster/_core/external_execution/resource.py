@@ -1,23 +1,14 @@
-from typing import Dict, Mapping, Optional, Sequence, Union
+from abc import ABC, abstractmethod
+from typing import Optional
 
 from dagster_external.protocol import ExternalExecutionExtras, ExternalExecutionIOMode
 from pydantic import Field
 
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.external_execution.task import (
-    ExternalExecutionTask,
-)
 
 
-class SubprocessExecutionResource(ConfigurableResource):
-    env: Optional[Dict[str, str]] = Field(
-        default=None,
-        description="An optional dict of environment variables to pass to the subprocess.",
-    )
-    cwd: Optional[str] = Field(
-        default=None, description="Working directory in which to launch the subprocess command."
-    )
+class ExternalExecutionResource(ConfigurableResource, ABC):
     input_mode: ExternalExecutionIOMode = Field(default="stdio")
     output_mode: ExternalExecutionIOMode = Field(default="stdio")
     input_path: Optional[str] = Field(
@@ -47,20 +38,11 @@ class SubprocessExecutionResource(ConfigurableResource):
         """,
     )
 
+    @abstractmethod
     def run(
         self,
-        command: Union[str, Sequence[str]],
+        *,
         context: OpExecutionContext,
         extras: Optional[ExternalExecutionExtras] = None,
-        env: Optional[Mapping[str, str]] = None,
     ) -> None:
-        ExternalExecutionTask(
-            command=command,
-            context=context,
-            extras=extras,
-            env={**(self.env or {}), **(env or {})},
-            input_mode=self.input_mode,
-            output_mode=self.output_mode,
-            input_path=self.input_path,
-            output_path=self.output_path,
-        ).run()
+        ...
