@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from dagster._annotations import deprecated
 from dagster._config.pythonic_config import ConfigurableIOManager
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
@@ -105,7 +106,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
 
-class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
+class ADLS2PickleIOManager(ConfigurableIOManager):
     """Persistent IO manager using Azure Data Lake Storage Gen2 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -129,7 +130,7 @@ class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import Definitions, asset
-        from dagster_azure.adls2 import ConfigurablePickledObjectADLS2IOManager, adls2_resource
+        from dagster_azure.adls2 import ADLS2PickleIOManager, adls2_resource
 
         @asset
         def asset1():
@@ -143,7 +144,7 @@ class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
         defs = Definitions(
             assets=[asset1, asset2],
             resources={
-                "io_manager": ConfigurablePickledObjectADLS2IOManager(
+                "io_manager": ADLS2PickleIOManager(
                     adls2_file_system="my-cool-fs",
                     adls2_prefix="my-cool-prefix"
                 ),
@@ -157,11 +158,11 @@ class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import job
-        from dagster_azure.adls2 import ConfigurablePickledObjectADLS2IOManager, adls2_resource
+        from dagster_azure.adls2 import ADLS2PickleIOManager, adls2_resource
 
         @job(
             resource_defs={
-                "io_manager": ConfigurablePickledObjectADLS2IOManager(
+                "io_manager": ADLS2PickleIOManager(
                     adls2_file_system="my-cool-fs",
                     adls2_prefix="my-cool-prefix"
                 ),
@@ -200,9 +201,19 @@ class ConfigurablePickledObjectADLS2IOManager(ConfigurableIOManager):
         self._internal_io_manager.handle_output(context, obj)
 
 
+@deprecated(
+    breaking_version="2.0",
+    additional_warn_text="Please use GCSPickleIOManager instead.",
+)
+class ConfigurablePickledObjectADLS2IOManager(ADLS2PickleIOManager):
+    """Renamed to ADLS2PickleIOManager. See ADLS2PickleIOManager for documentation."""
+
+    pass
+
+
 @dagster_maintained_io_manager
 @io_manager(
-    config_schema=ConfigurablePickledObjectADLS2IOManager.to_config_schema(),
+    config_schema=ADLS2PickleIOManager.to_config_schema(),
     required_resource_keys={"adls2"},
 )
 def adls2_pickle_io_manager(init_context):
