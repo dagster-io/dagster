@@ -100,7 +100,7 @@
           }
         ]
       },
-      
+
       {
         "title": "Schedules & Sensors",
         "children": [
@@ -794,7 +794,7 @@
       {
         "title": "Version migration",
         "path": "/migration",
-        "isUnversioned": true
+        "isNotDynamic": true
       },
       {
         "title": "Migrating to Dagster",
@@ -1155,7 +1155,7 @@
   {
     "title": "About",
     "icon": "About",
-    "isUnversioned": true,
+    "isNotDynamic": true,
     "children": [
       {
         "title": "Community",
@@ -1188,7 +1188,7 @@
       {
         "title": "Changelog",
         "path": "/changelog",
-        "isUnversioned": true
+        "isNotDynamic": true
       }
     ]
   }
