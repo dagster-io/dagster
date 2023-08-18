@@ -631,11 +631,15 @@ class RunConfig:
     def __init__(
         self,
         ops: Optional[Dict[str, Any]] = None,
+        assets: Optional[Dict[str, Any]] = None,
         resources: Optional[Dict[str, Any]] = None,
         loggers: Optional[Dict[str, Any]] = None,
         execution: Optional[Dict[str, Any]] = None,
     ):
         self.ops = check.opt_dict_param(ops, "ops")
+        # merge ops and assets config together, since they use the same "ops" key in the config_dict
+        self.ops.update(check.opt_dict_param(assets, "assets"))
+
         self.resources = check.opt_dict_param(resources, "resources")
         self.loggers = check.opt_dict_param(loggers, "loggers")
         self.execution = check.opt_dict_param(execution, "execution")
