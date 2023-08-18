@@ -20,6 +20,7 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
@@ -122,6 +123,7 @@ def build_caching_repository_data_from_list(
     assets_defs: List[AssetsDefinition] = []
     asset_keys: Set[AssetKey] = set()
     source_assets: List[SourceAsset] = []
+    asset_checks_defs: List[AssetChecksDefinition] = []
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
@@ -184,15 +186,18 @@ def build_caching_repository_data_from_list(
             assets_defs.append(definition)
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
+        elif isinstance(definition, AssetChecksDefinition):
+            asset_checks_defs.append(definition)
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
-    if assets_defs or source_assets:
+    if assets_defs or source_assets or asset_checks_defs:
         for job_def in get_base_asset_jobs(
             assets=assets_defs,
             source_assets=source_assets,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
+            asset_checks=asset_checks_defs,
         ):
             jobs[job_def.name] = job_def
 
@@ -217,7 +222,9 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, jobs, target
             )
 
-    asset_graph = AssetGraph.from_assets([*assets_defs, *source_assets])
+    asset_graph = AssetGraph.from_assets(
+        [*assets_defs, *source_assets], asset_checks=asset_checks_defs
+    )
 
     if unresolved_partitioned_asset_schedules:
         for (

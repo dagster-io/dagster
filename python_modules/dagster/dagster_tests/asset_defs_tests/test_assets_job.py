@@ -1976,6 +1976,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         source_assets=[],
         executor_def=None,
         resource_defs={},
+        asset_checks=[],
     )
     assert len(jobs) == 3
     assert {job_def.name for job_def in jobs} == {

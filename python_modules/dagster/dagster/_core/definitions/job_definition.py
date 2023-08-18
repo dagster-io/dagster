@@ -790,6 +790,7 @@ class JobDefinition(IHasInternalInit):
             asset_selection=asset_selection,
             asset_selection_data=asset_selection_data,
             config=self.config_mapping or self.partitioned_config,
+            asset_checks=self.asset_layer.asset_checks_defs,
         )
         return new_job
 

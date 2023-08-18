@@ -6,6 +6,16 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 
 
 @experimental
+class AssetCheckHandle(NamedTuple):
+    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
+    check name uniquely identifies an asset check within a deployment.
+    """
+
+    asset_key: PublicAttr[AssetKey]
+    name: PublicAttr[str]
+
+
+@experimental
 class AssetCheckSpec(
     NamedTuple(
         "_AssetCheckSpec",
@@ -47,3 +57,7 @@ class AssetCheckSpec(
         allowed in a Python identifier.
         """
         return f"{self.asset_key.to_python_identifier()}_{self.name}"
+
+    @property
+    def handle(self) -> AssetCheckHandle:
+        return AssetCheckHandle(self.asset_key, self.name)
