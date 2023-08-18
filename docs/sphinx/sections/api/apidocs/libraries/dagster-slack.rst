@@ -41,15 +41,15 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 .. autodata:: SlackResource
    :annotation: ResourceDefinition
 
+.. autofunction:: make_slack_on_run_failure_sensor
+
+.. autofunction:: make_slack_on_freshness_policy_status_change_sensor
+
 .. autodata:: slack_on_failure
   :annotation: HookDefinition
 
 .. autodata:: slack_on_success
   :annotation: HookDefinition
-
-.. autofunction:: make_slack_on_run_failure_sensor
-
-.. autofunction:: make_slack_on_freshness_policy_status_change_sensor
 
 
 Legacy

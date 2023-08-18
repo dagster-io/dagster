@@ -20,6 +20,10 @@ first need to start up a Datahub Instance. `Datahub Quickstart Guide
 .. autoconfigurable:: DatahubKafkaEmitterResource
   :annotation: ResourceDefinition
 
+
+Legacy
+======
+
 .. autoconfigurable:: datahub_rest_emitter
   :annotation: ResourceDefinition
 
