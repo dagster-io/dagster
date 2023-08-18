@@ -83,8 +83,23 @@ def default_grpc_timeout() -> int:
     if env_set:
         return int(env_set)
 
-    # default 60 seconds
     return 60
+
+
+def default_schedule_grpc_timeout() -> int:
+    env_set = os.getenv("DAGSTER_SCHEDULE_GRPC_TIMEOUT_SECONDS")
+    if env_set:
+        return int(env_set)
+
+    return default_grpc_timeout()
+
+
+def default_sensor_grpc_timeout() -> int:
+    env_set = os.getenv("DAGSTER_SENSOR_GRPC_TIMEOUT_SECONDS")
+    if env_set:
+        return int(env_set)
+
+    return default_grpc_timeout()
 
 
 def default_grpc_server_shutdown_grace_period():
@@ -96,4 +111,6 @@ def default_grpc_server_shutdown_grace_period():
     if env_set:
         return int(env_set)
 
-    return default_grpc_timeout()
+    return max(
+        default_grpc_timeout(), default_schedule_grpc_timeout(), default_sensor_grpc_timeout()
+    )
