@@ -6,21 +6,6 @@ export const LATEST_VERSION = ALL_VERSIONS[ALL_VERSIONS.length - 1];
 export function getOlderVersions() {
   // exclude latest version which will be the current site. sort by version desc
   return MAP_VERSION_TO_LINK.slice(0, -1).sort((a, b) => (a.version < b.version ? 1 : -1));
-<<<<<<< HEAD
-}
-
-// only hide version notice in production
-export let showVersionNotice = true;
-if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
-  // We use NEXT_PUBLIC_VERCEL_ENV to tell whether it's in production or not
-  // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
-  // * Vercel previews have NODE_ENV === "production"
-  showVersionNotice = false;
-} else if (process.env.NODE_ENV === 'production') {
-  // for testing
-  showVersionNotice = false;
-=======
->>>>>>> 6dc1a92f2b ([docs-no-version] 1/ version dropdown points to static link)
 }
 
 // only hide version notice in production
