@@ -34,7 +34,7 @@ See the subsections below for details.
 
 ### React components
 
-The set of React components available to our MDX files is defined in `next/components/mdx/MDXComponents.tsx`. Note that the various other compenents defined in `next/components` _are not available to MDX_; if you want to use a component in MDX, it must be exported from `MDXComponents.tsx`.
+The set of React components available to our MDX files is defined in `next/components/mdx/MDXComponents.tsx`. Note that the various other components defined in `next/components` _are not available to MDX_; if you want to use a component in MDX, it must be exported from `MDXComponents.tsx`.
 
 MDX doesn't support imports, so components aren't imported into the MDX file in which they are used. Instead, the full set of `MDXComponents` components is injected into the build environment when the MDX is rendered to HTML (this happens in `next/pages/[...page].js`).
 
@@ -99,7 +99,7 @@ The build is a two-step process. First, `sphinx-build` builds JSON (written to `
 
 The most convenient way to build the API docs is to run `make apidoc-build` (from `dagster/docs`). This will execute the Sphinx build step using the `sphinx` tox environment (see `tox.ini`) and then run `scripts/pack_json.py` (only if the sphinx build executed with no warnings/errors). Note that it is important to use `tox` to run Sphinx rather than your normal dev environment-- that's because our Sphinx configuration requires a different set of packages than are installed by `scripts/install_dev_python_modules.py`.
 
-If you are making changes to the API docs, you can use `make apidoc-watch-build` together with `make dev`. `apidoc-watch-build` uses the file watcher `watchmedo` (should be installed in your dev env from `watchdog`) to re-run `make apidoc-build` everytime either RST source or the sphinx configuration file changes. If it completes successfully, the updated API doc JSON will be picked up by the NextJS file watcher for `make dev` and trigger live reload of the docs site. This is very useful for experimenting with sphinx options and extensions.
+If you are making changes to the API docs, you can use `make apidoc-watch-build` together with `make dev`. `apidoc-watch-build` uses the file watcher `watchmedo` (should be installed in your dev env from `watchdog`) to re-run `make apidoc-build` every time either RST source or the sphinx configuration file changes. If it completes successfully, the updated API doc JSON will be picked up by the NextJS file watcher for `make dev` and trigger live reload of the docs site. This is very useful for experimenting with sphinx options and extensions.
 
 ### Mocking runtime dependencies
 
@@ -127,7 +127,7 @@ All non-remotely-sourced images should be stored in `next/public/images`. This d
 
 ### Screenshots
 
-Most of the site's images are screenshots of Dagit. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagit-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagit-screenshot/README.md` for details.
+Most of the site's images are screenshots of Dagster's webserver. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagit-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagit-screenshot/README.md` for details.
 
 ## Navigation schema
 

@@ -207,9 +207,18 @@ def dbt_assets(
 
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
-        Creating partions for dbt assets:
+        Creating partitions for dbt assets:
+
+        :any:`dbt_assets` produces multiple assets, but the :any:`asset_partitions_time_window_for_output`
+        method expects a single output. Since all dbt assets have the same
+        partition definition, we can provide the first dbt asset to the method
+        in order to retrieve the first and last partition window.
+
+        We pass these as variables to the dbt CLI which can be read as jinja
+        macro variables.
 
         .. code-block:: python
+
             import json
 
             from dagster import OpExecutionContext, DailyPartitionsDefinition
@@ -229,6 +238,20 @@ def dbt_assets(
                 dbt_args = ["build", "--vars", json.dumps(dbt_vars)]
 
                 yield from dbt.cli(dbt_args, context=context).stream()
+
+
+        In your dbt model, you use the `min_date` and `max_date` variables:
+
+        .. code-block::
+
+            {{ config(materialized='incremental') }}
+
+            select * from {{ ref('my_model') }}
+
+            {% if is_incremental() %}
+            where order_date >= '{{ var('min_date') }}' and order_date <= '{{ var('max_date') }}'
+            {% endif %}
+
 
     """
     check.inst_param(
