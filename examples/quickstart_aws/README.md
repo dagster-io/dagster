@@ -58,7 +58,7 @@ To connect to AWS, you'll need to set up your credentials in Dagster.
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we use [`S3PickleIOManager`](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.S3PickleIOManager) to write outputs to S3 and read inputs from it and [`S3Resource`](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.S3Resource) to interact with S3 instance inside an asset.
+In this example, we use [`ConfigurablePickledObjectS3IOManager`](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.ConfigurablePickledObjectS3IOManager) to write outputs to S3 and read inputs from it and [`S3Resource`](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.S3Resource) to interact with S3 instance inside an asset.
 
 The configurations of the S3 connection are defined in [`quickstart_aws/repository.py`](./quickstart_aws/repository.py), which requires the following environment variables:
 - `AWS_ACCESS_KEY_ID`
