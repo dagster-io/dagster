@@ -136,6 +136,7 @@ def test_pools(postgres_airflow_db: str):
             "test_pool",
             slots=1,
             description="Limit to 1 run",
+            include_deferred=True,  # type: ignore
         )
 
         airflow_db = make_persistent_airflow_db_resource(uri=postgres_airflow_db)
