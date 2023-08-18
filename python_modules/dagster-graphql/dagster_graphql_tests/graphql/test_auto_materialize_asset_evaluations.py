@@ -3,7 +3,7 @@ from datetime import datetime
 import dagster._check as check
 from dagster import AssetKey
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.auto_materialize_condition import (
+from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,

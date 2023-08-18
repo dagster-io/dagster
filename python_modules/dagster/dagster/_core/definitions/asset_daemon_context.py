@@ -8,6 +8,7 @@ from typing import (
     Dict,
     FrozenSet,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -31,14 +32,12 @@ from dagster._utils.cached_method import cached_method
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
 from .asset_daemon_cursor import AssetDaemonCursor
-from .asset_graph import AssetGraph, sort_key_for_asset_partition
-from .auto_materialize_condition import (
-    AutoMaterializeAssetEvaluation,
-    AutoMaterializeCondition,
-    MaxMaterializationsExceededAutoMaterializeCondition,
-)
+from .asset_graph import AssetGraph
 from .auto_materialize_rule import (
+    AutoMaterializeAssetEvaluation,
     AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    DiscardOnMaxMaterializationsExceededRule,
     RuleEvaluationContext,
 )
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -49,7 +48,7 @@ from .partition import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+    from dagster._core.instance import DagsterInstance
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
@@ -282,28 +281,14 @@ class AssetDaemonContext:
         ) = self._get_asset_partitions_with_newly_updated_parents_by_key_and_new_latest_storage_id()
         return updated_parent_mapping.get(asset_key, set())
 
-    def get_max_materializations_exceeded_conditions_for_key(
-        self, asset_key: AssetKey, candidates: AbstractSet[AssetKeyPartitionKey], limit: int
-    ) -> Mapping[
-        MaxMaterializationsExceededAutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]
-    ]:
-        # the set of asset partitions which exceed the limit
-        rate_limited_asset_partitions = set(
-            sorted(candidates, key=lambda x: sort_key_for_asset_partition(self.asset_graph, x))[
-                limit:
-            ]
-        )
-        return {
-            MaxMaterializationsExceededAutoMaterializeCondition(): rate_limited_asset_partitions
-        }
-
-    def get_auto_materialize_conditions_for_asset(
+    def evaluate_asset(
         self,
         asset_key: AssetKey,
         will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Tuple[
-        Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]],
+        AutoMaterializeAssetEvaluation,
+        AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
     ]:
         """Evaluates the auto materialize policy of a given asset key.
@@ -321,15 +306,20 @@ class AssetDaemonContext:
             - A mapping of AutoMaterializeCondition to the set of AssetKeyPartitionKeys that the
                 condition applies to.
             - The set of AssetKeyPartitionKeys that should be materialized.
+            - The set of AssetKeyPartitionKeys that should be discarded.
         """
         auto_materialize_policy = check.not_none(
             self.get_implicit_auto_materialize_policy(asset_key)
         )
 
-        # a mapping from AutoMaterializeCondition to the asset partitions that it applies to
-        conditions: Dict[AutoMaterializeCondition, Set[AssetKeyPartitionKey]] = defaultdict(set)
-        # a set of asset partitions that should be materialized
-        candidates: Set[AssetKeyPartitionKey] = set()
+        # the results of evaluating individual rules
+        all_results: List[
+            Tuple[AutoMaterializeRuleEvaluation, AbstractSet[AssetKeyPartitionKey]]
+        ] = []
+        # a set of asset partitions that should be materialized, skipped, or discarded
+        to_materialize: Set[AssetKeyPartitionKey] = set()
+        to_skip: Set[AssetKeyPartitionKey] = set()
+        to_discard: Set[AssetKeyPartitionKey] = set()
 
         materialize_context = RuleEvaluationContext(
             asset_key=asset_key,
@@ -343,15 +333,22 @@ class AssetDaemonContext:
         )
 
         for materialize_rule in auto_materialize_policy.materialize_rules:
-            for condition, asset_partitions in materialize_rule.evaluate_for_asset(
+            for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
-            ).items():
-                conditions[condition].update(asset_partitions)
-                candidates.update(asset_partitions)
+            ):
+                all_results.append(
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            rule=materialize_rule, evaluation_data=evaluation_data
+                        ),
+                        asset_partitions,
+                    )
+                )
+                to_materialize.update(asset_partitions)
 
         # These should be conditions, but aren't currently, so we just manually strip out things
         # from our materialization set
-        for candidate in list(candidates):
+        for candidate in list(to_materialize):
             if (
                 # must not be part of an active asset backfill
                 candidate in self.instance_queryer.get_active_backfill_target_asset_graph_subset()
@@ -366,61 +363,86 @@ class AssetDaemonContext:
                 )
                 > 0
             ):
-                candidates.remove(candidate)
-                for condition, asset_partitions in conditions.items():
-                    if candidate in asset_partitions:
-                        conditions[condition].remove(candidate)
+                to_materialize.remove(candidate)
+                for rule_evaluation_data, asset_partitions in all_results:
+                    all_results.remove((rule_evaluation_data, asset_partitions))
+                    all_results.append((rule_evaluation_data, asset_partitions - {candidate}))
 
-        skip_context = materialize_context._replace(candidates=candidates)
+        skip_context = materialize_context._replace(candidates=to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
-            for condition, asset_partitions in skip_rule.evaluate_for_asset(skip_context).items():
-                conditions[condition].update(asset_partitions)
-                candidates.difference_update(asset_partitions)
+            for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
+                all_results.append(
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            rule=skip_rule, evaluation_data=evaluation_data
+                        ),
+                        asset_partitions,
+                    )
+                )
+                to_skip.update(asset_partitions)
+        to_materialize.difference_update(to_skip)
 
-        # MaxMaterializationsExceededAutoMaterializeCondition
+        # this is treated separately from other rules, for now
         if auto_materialize_policy.max_materializations_per_minute is not None:
-            for (
-                condition,
-                asset_partitions,
-            ) in self.get_max_materializations_exceeded_conditions_for_key(
-                asset_key, candidates, auto_materialize_policy.max_materializations_per_minute
-            ).items():
-                conditions[condition].update(asset_partitions)
-                candidates.difference_update(asset_partitions)
+            rule = DiscardOnMaxMaterializationsExceededRule(
+                limit=auto_materialize_policy.max_materializations_per_minute
+            )
+            for evaluation_data, asset_partitions in rule.evaluate_for_asset(
+                skip_context._replace(candidates=to_materialize)
+            ):
+                all_results.append(
+                    (
+                        AutoMaterializeRuleEvaluation(rule=rule, evaluation_data=evaluation_data),
+                        asset_partitions,
+                    )
+                )
+                to_discard.update(asset_partitions)
+        to_materialize.difference_update(to_discard)
+        to_skip.difference_update(to_discard)
 
-        return conditions, candidates
+        return (
+            AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
+                asset_key=asset_key,
+                asset_graph=self.asset_graph,
+                asset_partitions_by_rule_evaluation=all_results,
+                num_requested=len(to_materialize),
+                num_skipped=len(to_skip),
+                num_discarded=len(to_discard),
+                dynamic_partitions_store=self.instance_queryer,
+            ),
+            to_materialize,
+            to_discard,
+        )
 
-    def get_auto_materialize_conditions(
+    def get_auto_materialize_asset_evaluations(
         self,
     ) -> Tuple[
-        Mapping[AssetKey, Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]],
+        Mapping[AssetKey, AutoMaterializeAssetEvaluation],
+        AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
     ]:
         """Returns a mapping from AutoMaterializeCondition to the set of asset partitions that it
         applies to for each asset key, as well as a set of all asset partitions that should be
         materialized this tick.
         """
-        condition_mapping: Dict[
-            AssetKey, Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]
-        ] = defaultdict()
+        evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
             set
         )
+        to_discard: Set[AssetKeyPartitionKey] = set()
         expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
         visited_multi_asset_keys = set()
         for asset_key in itertools.chain(*self.asset_graph.toposort_asset_keys()):
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.target_asset_keys or asset_key in visited_multi_asset_keys:
                 continue
-            (
-                conditions_for_key,
-                to_materialize,
-            ) = self.get_auto_materialize_conditions_for_asset(
+            (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
                 asset_key, will_materialize_mapping, expected_data_time_mapping
             )
-            condition_mapping[asset_key] = conditions_for_key
-            will_materialize_mapping[asset_key] = to_materialize
+            evaluations_by_key[asset_key] = evaluation
+            will_materialize_mapping[asset_key] = to_materialize_for_asset
+            to_discard.update(to_discard_for_asset)
             expected_data_time = get_expected_data_time_for_asset_key(
                 self.asset_graph,
                 asset_key,
@@ -428,24 +450,24 @@ class AssetDaemonContext:
                 expected_data_time_mapping=expected_data_time_mapping,
                 data_time_resolver=self.data_time_resolver,
                 current_time=self.instance_queryer.evaluation_time,
-                will_materialize=bool(to_materialize),
+                will_materialize=bool(to_materialize_for_asset),
             )
             expected_data_time_mapping[asset_key] = expected_data_time
             # if we need to materialize any partitions of a non-subsettable multi-asset, just copy
-            # over conditions to any required neighbor key
-            if to_materialize:
+            # over evaluation to any required neighbor key
+            if to_materialize_for_asset:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
-                    condition_mapping[neighbor_key] = {
-                        condition: {ap._replace(asset_key=neighbor_key) for ap in asset_partitions}
-                        for condition, asset_partitions in conditions_for_key.items()
-                    }
+                    evaluations_by_key[neighbor_key] = evaluation
                     will_materialize_mapping[neighbor_key] = {
-                        ap._replace(asset_key=neighbor_key) for ap in to_materialize
+                        ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
+                    to_discard.update(
+                        {ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset}
+                    )
                     expected_data_time_mapping[neighbor_key] = expected_data_time
                     visited_multi_asset_keys.add(neighbor_key)
 
-        return condition_mapping, set().union(*will_materialize_mapping.values())
+        return evaluations_by_key, set().union(*will_materialize_mapping.values()), to_discard
 
     def evaluate(
         self,
@@ -462,14 +484,7 @@ class AssetDaemonContext:
             else []
         )
 
-        condition_mapping, to_materialize = self.get_auto_materialize_conditions()
-
-        # here, we reorganize / flatten this into a mapping from asset partition to conditions
-        conditions_by_asset_partition = defaultdict(set)
-        for conditions_for_key in condition_mapping.values():
-            for condition, asset_partitions in conditions_for_key.items():
-                for asset_partition in asset_partitions:
-                    conditions_by_asset_partition[asset_partition].add(condition)
+        evaluations, to_materialize, to_discard = self.get_auto_materialize_asset_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -489,7 +504,8 @@ class AssetDaemonContext:
             run_requests,
             self.cursor.with_updates(
                 latest_storage_id=self.get_new_latest_storage_id(),
-                conditions_by_asset_partition=conditions_by_asset_partition,
+                to_materialize=to_materialize,
+                to_discard=to_discard,
                 asset_graph=self.asset_graph,
                 newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
                 newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
@@ -501,11 +517,13 @@ class AssetDaemonContext:
                 ],
                 observe_request_timestamp=observe_request_timestamp,
             ),
-            build_auto_materialize_asset_evaluations(
-                asset_graph=self.asset_graph,
-                conditions_by_asset_partition=conditions_by_asset_partition,
-                dynamic_partitions_store=self.instance_queryer,
-            ),
+            # only record evaluations where something happened
+            [
+                evaluation
+                for evaluation in evaluations.values()
+                if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
+                > 0
+            ],
         )
 
 
@@ -705,31 +723,6 @@ def _build_run_request_for_partition_key_range(
         ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
     }
     return RunRequest(asset_selection=asset_keys, tags=tags)
-
-
-def build_auto_materialize_asset_evaluations(
-    asset_graph: AssetGraph,
-    conditions_by_asset_partition: Mapping[
-        AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]
-    ],
-    dynamic_partitions_store: "DynamicPartitionsStore",
-) -> Sequence[AutoMaterializeAssetEvaluation]:
-    """Bundles up the conditions into AutoMaterializeAssetEvaluations."""
-    conditions_by_asset_key: Dict[
-        AssetKey, Dict[AssetKeyPartitionKey, AbstractSet[AutoMaterializeCondition]]
-    ] = defaultdict(dict)
-
-    # split into sub-dictionaries that hold only the conditions specific to each asset
-    for asset_partition, conditions in conditions_by_asset_partition.items():
-        conditions_by_asset_key[asset_partition.asset_key][asset_partition] = conditions
-
-    return [
-        AutoMaterializeAssetEvaluation.from_conditions(
-            asset_graph, asset_key, conditions, dynamic_partitions_store
-        )
-        for asset_key, conditions in conditions_by_asset_key.items()
-        if conditions
-    ]
 
 
 def get_auto_observe_run_requests(

@@ -6,7 +6,6 @@ import os
 import random
 import sys
 from typing import (
-    AbstractSet,
     Iterable,
     List,
     Mapping,
@@ -44,11 +43,15 @@ from dagster import (
 )
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.auto_materialize_condition import AutoMaterializeCondition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeAssetEvaluation,
+    AutoMaterializeRuleEvaluation,
+)
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
@@ -76,6 +79,41 @@ class RunSpec(NamedTuple):
     is_observation: bool = False
 
 
+class AssetEvaluationSpec(NamedTuple):
+    asset_key: str
+    rule_evaluations: Sequence[Tuple[AutoMaterializeRuleEvaluation, Optional[Iterable[str]]]]
+    num_requested: int = 0
+    num_skipped: int = 0
+    num_discarded: int = 0
+
+    def to_evaluation(
+        self, asset_graph: AssetGraph, instance: DagsterInstance
+    ) -> AutoMaterializeAssetEvaluation:
+        asset_key = AssetKey.from_coercible(self.asset_key)
+        return AutoMaterializeAssetEvaluation.from_rule_evaluation_results(
+            asset_graph=asset_graph,
+            asset_key=asset_key,
+            asset_partitions_by_rule_evaluation=[
+                (
+                    rule_evaluation,
+                    (
+                        {
+                            AssetKeyPartitionKey(asset_key, partition_key)
+                            for partition_key in partition_keys
+                        }
+                        if partition_keys
+                        else set()
+                    ),
+                )
+                for rule_evaluation, partition_keys in self.rule_evaluations
+            ],
+            num_requested=self.num_requested,
+            num_skipped=self.num_skipped,
+            num_discarded=self.num_discarded,
+            dynamic_partitions_store=instance,
+        )
+
+
 class AssetReconciliationScenario(NamedTuple):
     unevaluated_runs: Sequence[RunSpec]
     assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]
@@ -89,13 +127,9 @@ class AssetReconciliationScenario(NamedTuple):
     event_log_entries: Optional[Sequence[EventLogEntry]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
     code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
-    expected_conditions: Optional[
-        Mapping[
-            Union[CoercibleToAssetKey, Tuple[CoercibleToAssetKey, str]],
-            AbstractSet[AutoMaterializeCondition],
-        ]
-    ] = None
+    expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None
     requires_respect_materialization_data_versions: bool = False
+    expected_conditions: Optional[str] = None
 
     def _get_code_location_origin(
         self, scenario_name, location_name=None

@@ -1,10 +1,9 @@
 from collections import defaultdict
-from typing import Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple
 
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.auto_materialize_condition import (
-    AutoMaterializeCondition,
+from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
@@ -16,6 +15,7 @@ from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
+from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
 from dagster_graphql.schema.errors import GrapheneError
 
 from .asset_key import GrapheneAssetKey

@@ -2,7 +2,6 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy,
-    AutoMaterializePolicyType,
 )
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
 
@@ -18,9 +17,46 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
     class Meta:
         name = "AutoMaterializeRule"
 
+from dagster_graphql.schema.auto_materialize_asset_evaluations import (
+    GrapheneAutoMaterializeDecisionType,
+)
+
+from .util import non_null_list
+
+
+class GrapheneAutoMaterializeRule(graphene.Interface):
+    decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
+
+    class Meta:
+        name = "AutoMaterializeRule"
+
+
+class GrapheneMaterializeOnMissingRule(graphene.ObjectType):
+    class Meta:
+        name = "MaterializeOnMissingAutoMaterializeRule"
+        interfaces = (GrapheneAutoMaterializeRule,)
+
+
+class GrapheneMaterializeOnParentUpdatedRule(graphene.ObjectType):
+    class Meta:
+        name = "MaterializeOnParentUpdatedAutoMaterializeRule"
+        interfaces = (GrapheneAutoMaterializeRule,)
+
+
+class GrapheneMaterializeOnRequiredForFreshnessRule(graphene.ObjectType):
+    class Meta:
+        name = "MaterializeOnRequiredForFreshnessAutoMaterializeRule"
+        interfaces = (GrapheneAutoMaterializeRule,)
+
+
+class GrapheneSkipOnParentOutdatedRule(graphene.ObjectType):
+    class Meta:
+        name = "SkipOnParentOutdatedAutoMaterializeRule"
+        interfaces = (GrapheneAutoMaterializeRule,)
+
 
 class GrapheneAutoMaterializePolicy(graphene.ObjectType):
-    policyType = graphene.NonNull(graphene.Enum.from_enum(AutoMaterializePolicyType))
+    rules = non_null_list(GrapheneAutoMaterializeRule)
     maxMaterializationsPerMinute = graphene.Int()
     rules = non_null_list(GrapheneAutoMaterializeRule)
 

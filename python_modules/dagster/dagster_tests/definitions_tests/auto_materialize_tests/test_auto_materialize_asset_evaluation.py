@@ -1,6 +1,6 @@
 from dagster import AssetKey, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_condition import (
+from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
     MissingAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,

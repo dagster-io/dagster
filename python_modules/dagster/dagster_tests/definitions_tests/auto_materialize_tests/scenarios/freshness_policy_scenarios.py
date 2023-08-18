@@ -5,12 +5,6 @@ from dagster import (
     DailyPartitionsDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.auto_materialize_condition import (
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
-    ParentMaterializedAutoMaterializeCondition,
-)
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -223,12 +217,12 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         # now that it's been awhile since that run failed, give it another attempt
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-        expected_conditions={
+        expected_conditions="""{
             "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset4": {FreshnessAutoMaterializeCondition()},
-        },
+        }""",
     ),
     "freshness_root_failure": AssetReconciliationScenario(
         assets=diamond_freshness,
@@ -342,7 +336,7 @@ freshness_policy_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5"])
         ],
-        expected_conditions={
+        expected_conditions="""{
             "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
@@ -353,17 +347,17 @@ freshness_policy_scenarios = {
                     will_update_asset_keys=frozenset([AssetKey("asset1")]),
                 )
             },
-        },
+        }""",
     ),
     "freshness_subsettable_multi_asset_on_top": AssetReconciliationScenario(
         assets=subsettable_multi_asset_on_top,
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
-        expected_conditions={
+        expected_conditions="""{
             "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
             "asset5": {FreshnessAutoMaterializeCondition()},
-        },
+        }""",
     ),
     "freshness_complex_subsettable": AssetReconciliationScenario(
         assets=subsettable_multi_asset_complex,

@@ -5,7 +5,7 @@ import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.auto_materialize_condition import (
+from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
     MissingAutoMaterializeCondition,
 )

@@ -8,10 +8,10 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.definitions.asset_daemon_context import build_auto_materialize_asset_evaluations
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_condition import AutoMaterializeAssetEvaluation
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeAssetEvaluation,
+)
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
@@ -60,19 +60,13 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
             key=repr,
         )
 
-    if scenario.expected_conditions is not None:
-        reasons = {
-            (
-                AssetKeyPartitionKey(AssetKey.from_coercible(key[0]), key[1])
-                if isinstance(key, tuple)
-                else AssetKeyPartitionKey(AssetKey.from_coercible(key))
-            ): rs
-            for key, rs in (scenario.expected_conditions or {}).items()
-        }
+    if scenario.expected_evaluations is not None:
+        asset_graph = AssetGraph.from_assets(scenario.assets)
         assert _sorted_evaluations(
-            build_auto_materialize_asset_evaluations(
-                AssetGraph.from_assets(scenario.assets), reasons, dynamic_partitions_store=instance
-            )
+            [
+                evaluation_spec.to_evaluation(asset_graph, instance)
+                for evaluation_spec in scenario.expected_evaluations
+            ]
         ) == _sorted_evaluations(evaluations)
 
     assert len(run_requests) == len(scenario.expected_run_requests), evaluations
