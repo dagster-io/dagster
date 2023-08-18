@@ -302,5 +302,9 @@
   {
     "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.6/getting-started",
     "version": "1.4.6"
+  },
+  {
+    "url": "https://legacy-versioned-docs.dagster.dagster-docs.io/1.4.7/getting-started",
+    "version": "1.4.7"
   }
 ]
