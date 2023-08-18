@@ -576,6 +576,52 @@ def my_downstream_asset(my_dbt_model):
     return my_dbt_model.where(foo="bar")
 ```
 
+## Building incremental models using Dagster Partitions
+
+You can define a Dagster <PyObject module="dagster" object="PartitionDefinition"> alongside dbt in order to build incremental models.
+
+Partitioned assets will be able to access the <PyObject module="dagster" object="TimeWindow">'s start and end dates, and these can be passed to dbt's CLI as variables which can be used to filter incremental models.
+
+Because the `@dbt_asset` decorator produces multiple assets, but all assets operate on the same partition, we can provide the first asset to the <PyObject module="dagster" object="asset_partitions_time_window_for_output"> method in order to get the current start and end partitions.
+
+```python
+import json
+from pathlib import Path
+
+from dagster import DailyPartitionDefinition, OpExecutionContext
+from dagster_dbt import DbtCliResource, dbt_assets
+
+
+@dbt_assets(
+    manifest=Path("target", "manifest.json"),
+    partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
+)
+def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+    time_window = context.asset_partitions_time_window_for_output(
+        list(context.selected_output_names)[0]
+    )
+
+    dbt_vars = {
+        "min_date": time_window.start.isoformat(),
+        "max_date": time_window.end.isoformat()
+    }
+    dbt_build_args = ["build", "--vars", json.dumps(dbt_vars)]
+
+    yield from dbt.cli(dbt_build_args, context=context).stream()
+```
+
+With the variables defined, we can now reference `min_date` and `max_date` in our SQL and configure the model as incremental:
+
+```sql
+{{ config(materialized='incremental') }}
+
+select * from {{ ref('my_model') }}
+
+{% if is_incremental() %}
+where order_date >= '{{ var('min_date') }}' and order_date <= '{{ var('max_date') }}'
+{% endif %}
+```
+
 ---
 
 ## Related

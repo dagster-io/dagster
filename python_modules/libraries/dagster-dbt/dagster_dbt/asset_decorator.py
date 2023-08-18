@@ -207,51 +207,34 @@ def dbt_assets(
 
                 yield from dbt.cli(dbt_build_args, context=context).stream()
 
-        Creating partitions for dbt assets:
+        Defining Dagster :py:class:`~dagster.PartitionDefinition` alongside dbt:
 
-        :any:`dbt_assets` produces multiple assets, but the :any:`asset_partitions_time_window_for_output`
-        method expects a single output. Since all dbt assets have the same
-        partition definition, we can provide the first dbt asset to the method
-        in order to retrieve the first and last partition window.
-
-        We pass these as variables to the dbt CLI which can be read as jinja
-        macro variables.
 
         .. code-block:: python
 
             import json
+            from pathlib import Path
 
-            from dagster import OpExecutionContext, DailyPartitionsDefinition
+            from dagster import DailyPartitionDefinition, OpExecutionContext
             from dagster_dbt import DbtCliResource, dbt_assets
 
-            daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
-
-            @dbt_assets(manifest=Path("target", "manifest.json"), partitions_def=daily_partitions)
+            @dbt_assets(
+                manifest=Path("target", "manifest.json"),
+                partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
+            )
             def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
-                first, last = context.asset_partitions_time_window_for_output(
+                time_window = context.asset_partitions_time_window_for_output(
                     list(context.selected_output_names)[0]
                 )
 
-                context.log.info("Partitioning dbt assets from {} to {}".format(first, last))
-                dbt_vars = {"min_date": first.isoformat(), "max_date": last.isoformat()}
-                dbt_args = ["build", "--vars", json.dumps(dbt_vars)]
+                dbt_vars = {
+                    "min_date": time_window.start.isoformat(),
+                    "max_date": time_window.end.isoformat()
+                }
+                dbt_build_args = ["build", "--vars", json.dumps(dbt_vars)]
 
-                yield from dbt.cli(dbt_args, context=context).stream()
-
-
-        In your dbt model, you use the `min_date` and `max_date` variables:
-
-        .. code-block::
-
-            {{ config(materialized='incremental') }}
-
-            select * from {{ ref('my_model') }}
-
-            {% if is_incremental() %}
-            where order_date >= '{{ var('min_date') }}' and order_date <= '{{ var('max_date') }}'
-            {% endif %}
-
+                yield from dbt.cli(dbt_build_args, context=context).stream()
 
     """
     check.inst_param(
