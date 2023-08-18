@@ -416,10 +416,10 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
-        const known = (KNOWN_TAGS as any)[coerceToStandardLabel(tag.label)];
+        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
         const text = known?.content || tag.label;
         const color = known?.color || generateColorForLabel(tag.label);
-        const textcolor = known?.reversed ? Colors.Gray900 : Colors.White;
+        const textcolor = 'reversed' in known ? Colors.Gray900 : Colors.White;
         return (
           <Box
             key={tag.label}
@@ -433,18 +433,18 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
-            {known?.icon && (
+            {'icon' in known && (
               <OpTagIconWrapper
                 role="img"
                 $size={16}
-                $img={known?.icon}
-                $color={reduceColor ? (known?.reversed ? Colors.Gray900 : color) : textcolor}
+                $img={known.icon.src}
+                $color={reduceColor ? ('reversed' in known ? Colors.Gray900 : color) : textcolor}
                 //$color={reduceColor ? color : textcolor}
                 $rotation={null}
                 aria-label={tag.label}
               />
             )}
-            {known?.icon && reduceText ? undefined : text}
+            {'icon' in known && reduceText ? undefined : text}
           </Box>
         );
       })}
