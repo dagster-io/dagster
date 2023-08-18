@@ -85,3 +85,15 @@ def default_grpc_timeout() -> int:
 
     # default 60 seconds
     return 60
+
+
+def default_grpc_server_shutdown_grace_period():
+    # Time to wait for calls to finish before shutting down the server
+    # Defaults to the same as default_grpc_timeout() unless
+    # DAGSTER_GRPC_SHUTDOWN_GRACE_PERIOD is set
+
+    env_set = os.getenv("DAGSTER_GRPC_SHUTDOWN_GRACE_PERIOD")
+    if env_set:
+        return int(env_set)
+
+    return default_grpc_timeout()

@@ -692,6 +692,7 @@ def grpc_command(
         socket=socket,
         host=host,
         max_workers=max_workers,
+        logger=logger,
     )
 
     code_desc = " "
