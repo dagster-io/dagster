@@ -14,7 +14,10 @@ Related guides:
 .. autoconfigurable:: DuckDBPandasIOManager
   :annotation: IOManagerDefinition
 
+.. autoclass:: DuckDBPandasTypeHandler
+
+Legacy
+=======
+
 .. autoconfigurable:: duckdb_pandas_io_manager
   :annotation: IOManagerDefinition
-
-.. autoclass:: DuckDBPandasTypeHandler

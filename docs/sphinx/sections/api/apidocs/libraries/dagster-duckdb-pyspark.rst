@@ -14,7 +14,10 @@ Related guides:
 .. autoconfigurable:: DuckDBPySparkIOManager
   :annotation: IOManagerDefinition
 
+.. autoclass:: DuckDBPySparkTypeHandler
+
+Legacy
+=======
+
 .. autoconfigurable:: duckdb_pyspark_io_manager
   :annotation: IOManagerDefinition
-
-.. autoclass:: DuckDBPySparkTypeHandler

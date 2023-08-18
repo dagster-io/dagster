@@ -40,14 +40,9 @@ Built-in IO Managers
 .. autodata:: FilesystemIOManager
   :annotation: IOManagerDefinition
 
-.. autodata:: fs_io_manager
-  :annotation: IOManagerDefinition
-
 .. autodata:: InMemoryIOManager
   :annotation: IOManagerDefinition
 
-.. autodata:: mem_io_manager
-  :annotation: IOManagerDefinition
 
 The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers.
 
@@ -64,3 +59,13 @@ Input managers load inputs from either upstream outputs or from provided default
 .. autoclass:: InputManager
 
 .. autoclass:: InputManagerDefinition
+
+
+Legacy
+------
+
+.. autodata:: fs_io_manager
+  :annotation: IOManagerDefinition
+
+.. autodata:: mem_io_manager
+  :annotation: IOManagerDefinition
