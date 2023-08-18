@@ -178,7 +178,7 @@ def most_frequent_words(
 
 To see the effect of this change, reload your code location in the Dagster UI and materialize your assets. When you click on an asset, you’ll see the `path` metadata pointing to the `data` directory on your computer.
 
-This is a short example of the value of I/O managers. With I/O managers, you can save your assets to places like AWS S3, Google Cloud Storage, or Azure Blob Storage. For example, to store your assets in AWS S3, all you need to do is replace `FilesystemIOManager` in `__init__.py` with Dagster-provided `ConfigurablePickledObjectS3IOManager`.
+This is a short example of the value of I/O managers. With I/O managers, you can save your assets to places like AWS S3, Google Cloud Storage, or Azure Blob Storage. For example, to store your assets in AWS S3, all you need to do is replace `FilesystemIOManager` in `__init__.py` with Dagster-provided `S3PickleIOManager`.
 
 In addition to file storage systems, I/O managers can connect to any service from which data can be read or written, such as databases.
 

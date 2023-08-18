@@ -127,7 +127,7 @@ By default, materializing an asset named `my_asset` will pickle it to a local fi
 To apply an I/O manager to a set of assets, you can use <PyObject object="Definitions" />:
 
 ```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, asset
 
@@ -145,14 +145,14 @@ def downstream_asset(upstream_asset):
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "io_manager": ConfigurablePickledObjectS3IOManager(
+        "io_manager": S3PickleIOManager(
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
     },
 )
 ```
 
-This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
+This example also constructs an <PyObject module="dagster_aws.s3" object="S3Resource" /> because the <PyObject module="dagster_aws.s3" object="S3PickleIOManager" /> depends on the S3 resource. For more information on how these resource-resource dependencies are modeled, refer to the [resources](/concepts/resources#resources-which-depend-on-other-resources) documentation.
 
 When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and stored in an object on S3. When `downstream_asset` is materialized, the value of `upstream_asset` will be read from S3 and depickled, and `[1, 2, 3, 4]` will be pickled and stored in a different object on S3.
 
@@ -161,7 +161,7 @@ When `upstream_asset` is materialized, the value `[1, 2, 3]` will be pickled and
 Different assets can have different I/O managers:
 
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, FilesystemIOManager, asset
 
@@ -179,7 +179,7 @@ def downstream_asset(upstream_asset):
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
     resources={
-        "s3_io_manager": ConfigurablePickledObjectS3IOManager(
+        "s3_io_manager": S3PickleIOManager(
             s3_resource=S3Resource(), s3_bucket="my-bucket"
         ),
         "fs_io_manager": FilesystemIOManager(),
@@ -210,7 +210,7 @@ The same assets can be bound to different resources and I/O managers in differen
 ```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
 import os
 
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, FilesystemIOManager, asset
 
@@ -227,9 +227,7 @@ def downstream_asset(upstream_asset):
 
 resources_by_env = {
     "prod": {
-        "io_manager": ConfigurablePickledObjectS3IOManager(
-            s3_resource=S3Resource(), s3_bucket="my-bucket"
-        )
+        "io_manager": S3PickleIOManager(s3_resource=S3Resource(), s3_bucket="my-bucket")
     },
     "local": {"io_manager": FilesystemIOManager()},
 }
@@ -308,10 +306,10 @@ def my_job():
 
 Not all the outputs in a job should necessarily be stored the same way. Maybe some of the outputs should live on the filesystem so they can be inspected, and others can be transiently stored in memory.
 
-To select the I/O manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting I/O managers in your job. In this example, the output of `op_1` will go to `FilesystemIOManager` and the output of `op_2` will go to `ConfigurablePickledObjectS3IOManager`.
+To select the I/O manager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting I/O managers in your job. In this example, the output of `op_1` will go to `FilesystemIOManager` and the output of `op_2` will go to `S3PickleIOManager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import FilesystemIOManager, Out, job, op
 
@@ -329,9 +327,7 @@ def op_2(a):
 @job(
     resource_defs={
         "fs": FilesystemIOManager(),
-        "s3_io": ConfigurablePickledObjectS3IOManager(
-            s3_resource=S3Resource(), s3_bucket="test-bucket"
-        ),
+        "s3_io": S3PickleIOManager(s3_resource=S3Resource(), s3_bucket="test-bucket"),
     }
 )
 def my_job():
@@ -823,7 +819,7 @@ Additionally, if the handled output is part of a software-defined asset, these m
 | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | <PyObject module="dagster" object="FilesystemIOManager" />                                 | Default I/O manager. Stores outputs as pickle files on the local file system. |                                                                                                                        |
 | <PyObject module="dagster" object="InMemoryIOManager" />                                   | Stores outputs in memory. Primarily useful for unit testing.                  |                                                                                                                        |
-| <PyObject module="dagster_aws.s3" object="ConfigurablePickledObjectS3IOManager" />         | Stores outputs as pickle files in Amazon Web Services S3.                     |                                                                                                                        |
+| <PyObject module="dagster_aws.s3" object="S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |                                                                                                                        |
 | <PyObject module="dagster_azure.adls2" object="ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |                                                                                                                        |
 | <PyObject module="dagster_gcp.gcs" object="ConfigurablePickledObjectGCSIOManager" />       | Stores outputs as pickle files in Google Cloud Platform GCS.                  |                                                                                                                        |
 | <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            | [Tutorial](/integrations/bigquery/using-bigquery-with-dagster), [Reference Guide](/integrations/bigquery/reference)    |
