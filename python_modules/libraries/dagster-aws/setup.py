@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "boto3",
-        "dagster==1.4.6",
+        "dagster==1.4.7",
         "packaging",
         "requests",
     ],
