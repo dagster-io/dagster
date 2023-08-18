@@ -1,5 +1,18 @@
 # Changelog
 
+# 1.4.7 / 0.20.7 (libraries)
+
+### Experimental
+- Added a `respect_materialization_data_versions` option to auto materialization. It can enabled in `dagster.yaml` with
+
+  ```yaml
+  auto_materialize:
+      respect_materialization_data_versions: True
+  ```
+
+  This flag may be changed or removed in the near future.
+
+
 # 1.4.6 / 0.20.6 (libraries)
 
 ### New
