@@ -2,17 +2,14 @@ import {useRouter} from 'next/router';
 import {useState, useEffect} from 'react';
 
 import ALL_VERSIONS from '../.versioned_content/_versions.json';
+import MAP_VERSION_TO_LINK from '../.versioned_content/_versions_with_static_links.json';
 
 export const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
+export const defaultVersion = latestVersion; // always point the default version to master
 
-export let defaultVersion = latestVersion;
-if (process.env.NEXT_PUBLIC_VERCEL_ENV !== 'production') {
-  // We use NEXT_PUBLIC_VERCEL_ENV to default Vercel previews to master because
-  // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
-  // * Vercel previews have NODE_ENV === "production"
-  defaultVersion = 'master';
-} else if (process.env.NODE_ENV !== 'production') {
-  defaultVersion = 'master';
+export function getOlderVersions() {
+  // exclude latest version which will be the current site. sort by version desc
+  return MAP_VERSION_TO_LINK.slice(0, -1).sort((a, b) => (a.version < b.version ? 1 : -1));
 }
 
 export function normalizeVersionPath(

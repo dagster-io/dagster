@@ -2,7 +2,7 @@ import {Menu, Transition} from '@headlessui/react';
 import React from 'react';
 
 import Icons from '../components/Icons';
-import {useVersion} from '../util/useVersion';
+import {useVersion, getOlderVersions} from '../util/useVersion';
 
 import Link from './Link';
 
@@ -19,8 +19,9 @@ function getLibraryVersionText(coreVersion) {
 }
 
 export default function VersionDropdown() {
-  const {latestVersion, version: currentVersion, versions, asPath} = useVersion();
+  const {latestVersion, version: currentVersion} = useVersion();
   const libraryVersionText = getLibraryVersionText(currentVersion);
+  const olderVersions = getOlderVersions();
   return (
     <div className="z-20 relative inline-flex text-left w-full">
       <div className="relative block text-left w-full">
@@ -85,22 +86,23 @@ export default function VersionDropdown() {
                   </div>
 
                   <div className="py-1">
-                    {versions.map((version) => {
+                    {olderVersions.map((item) => {
+                      const version = item.version;
+                      const url = item.url;
                       const libraryVersionText = getLibraryVersionText(version);
                       return (
-                        <Link key={version} href={asPath} version={version}>
-                          <Menu.Item>
-                            {({active}) => (
-                              <a
-                                className={`${
-                                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                                } flex cursor-pointer justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
-                              >
-                                {version} {libraryVersionText}
-                              </a>
-                            )}
-                          </Menu.Item>
-                        </Link>
+                        <Menu.Item key={version}>
+                          {({active}) => (
+                            <a
+                              href={url}
+                              className={`${
+                                active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                              } flex cursor-pointer justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
+                            >
+                              {version} {libraryVersionText}
+                            </a>
+                          )}
+                        </Menu.Item>
                       );
                     })}
                   </div>
