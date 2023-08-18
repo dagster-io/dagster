@@ -19,7 +19,7 @@ function getLibraryVersionText(coreVersion) {
 }
 
 export default function VersionDropdown() {
-  const {latestVersion, version: currentVersion, versions, asPath} = useVersion();
+  const {version: currentVersion, versions, asPath} = useVersion();
   const libraryVersionText = getLibraryVersionText(currentVersion);
   return (
     <div className="z-20 relative inline-flex text-left w-full">

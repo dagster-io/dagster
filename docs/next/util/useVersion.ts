@@ -3,8 +3,9 @@ import {useState, useEffect} from 'react';
 
 import ALL_VERSIONS from '../.versioned_content/_versions.json';
 
-export const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
-
+// sort release versions by latest first
+const SORTED_ALL_VERSIONS = ALL_VERSIONS.reverse();
+export const latestVersion = SORTED_ALL_VERSIONS[0];
 export const defaultVersion = latestVersion;
 // if (process.env.NEXT_PUBLIC_VERCEL_ENV !== 'production') {
 //   // We use NEXT_PUBLIC_VERCEL_ENV to default Vercel previews to master because
@@ -45,14 +46,11 @@ export function normalizeVersionPath(
     asPathWithoutAnchor = asPath.substring(0, asPath.indexOf('#'));
   }
 
-  // sort release versions by latest first
-  const sortedVersions = ALL_VERSIONS.reverse();
-
   return {
     asPath,
     asPathWithoutAnchor,
     version: detectedVersion,
-    versions: sortedVersions,
+    versions: SORTED_ALL_VERSIONS,
     defaultVersion,
     latestVersion,
   };
@@ -60,10 +58,10 @@ export function normalizeVersionPath(
 
 export function versionFromPage(page: string | string[]) {
   if (Array.isArray(page)) {
-    return normalizeVersionPath('/' + page.join('/'), ALL_VERSIONS);
+    return normalizeVersionPath('/' + page.join('/'), SORTED_ALL_VERSIONS);
   }
 
-  return normalizeVersionPath(page, ALL_VERSIONS);
+  return normalizeVersionPath(page, SORTED_ALL_VERSIONS);
 }
 
 export const useVersion = () => {
@@ -76,5 +74,5 @@ export const useVersion = () => {
       setAsPath(router.asPath);
     }
   }, [router]);
-  return normalizeVersionPath(asPath, ALL_VERSIONS);
+  return normalizeVersionPath(asPath, SORTED_ALL_VERSIONS);
 };
