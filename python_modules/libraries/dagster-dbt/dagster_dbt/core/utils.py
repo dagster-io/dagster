@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import subprocess
 from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Union
@@ -172,6 +173,7 @@ def execute_cli_stream(
     json_log_format: bool = True,
     capture_logs: bool = True,
     debug: bool = False,
+    capture_logs_level: int = logging.INFO,
 ) -> Iterator[DbtCliEvent]:
     """Executes a command on the dbt CLI in a subprocess."""
     command_list = _create_command_list(
@@ -197,7 +199,8 @@ def execute_cli_stream(
 
         yield event
         if capture_logs:
-            log.log(event.log_level, event.message)
+            if event.log_level and event.log_level >= capture_logs_level:
+                log.log(event.log_level, event.message)
 
 
 def execute_cli(
@@ -212,6 +215,7 @@ def execute_cli(
     json_log_format: bool = True,
     capture_logs: bool = True,
     debug: bool = False,
+    capture_logs_level: int = logging.INFO,
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
     check.str_param(executable, "executable")
@@ -249,7 +253,8 @@ def execute_cli(
             parsed_json_lines.append(event.parsed_json_line)
 
         if capture_logs:
-            log.log(event.log_level, event.message)
+            if event.log_level and event.log_level >= capture_logs_level:
+                log.log(event.log_level, event.message)
 
     run_results = (
         parse_run_results(flags_dict["project-dir"], target_path)
