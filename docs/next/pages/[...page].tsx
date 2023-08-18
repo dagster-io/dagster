@@ -1,6 +1,6 @@
 import {promises as fs} from 'fs';
 import path from 'path';
-import {latestAllDynamicPaths} from 'util/useNavigation';
+import {latestAllDynamicPaths} from 'util/navigation';
 
 import FeedbackModal from 'components/FeedbackModal';
 import {Shimmer} from 'components/Shimmer';

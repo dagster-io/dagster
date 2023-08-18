@@ -4,6 +4,7 @@
 
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
+import {LATEST_VERSION} from 'util/version';
 
 import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
@@ -13,7 +14,6 @@ import NextLink from 'next/link';
 import React, {ReactElement, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
-import {useVersion} from '../../util/useVersion';
 import Icons from '../Icons';
 import Link from '../Link';
 
@@ -282,8 +282,7 @@ const Warning = ({children}) => {
 };
 
 const CodeReferenceLink = ({filePath, isInline, children}) => {
-  const {version} = useVersion();
-  const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
+  const url = `https://github.com/dagster-io/dagster/tree/${LATEST_VERSION}/${filePath}`;
 
   if (isInline) {
     return <a href={url}>{children}</a>;

@@ -2,7 +2,7 @@ import {Menu, Transition} from '@headlessui/react';
 import React from 'react';
 
 import Icons from '../components/Icons';
-import {useVersion, getOlderVersions} from '../util/useVersion';
+import {LATEST_VERSION, SHOW_VERSION_NOTICE, getOlderVersions} from '../util/version';
 
 import Link from './Link';
 
@@ -19,8 +19,7 @@ function getLibraryVersionText(coreVersion) {
 }
 
 export default function VersionDropdown() {
-  const {latestVersion, version: currentVersion} = useVersion();
-  const libraryVersionText = getLibraryVersionText(currentVersion);
+  const libraryVersionText = getLibraryVersionText(LATEST_VERSION);
   const olderVersions = getOlderVersions();
   return (
     <div className="z-20 relative inline-flex text-left w-full">
@@ -34,9 +33,10 @@ export default function VersionDropdown() {
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0 text-gable-green dark:text-gray-300 text-xs lg:text-sm truncate space-x-1">
                         <span>
-                          {currentVersion} {libraryVersionText}
+                          {LATEST_VERSION} {libraryVersionText}
                         </span>
-                        {currentVersion === latestVersion ? (
+                        {/* When show version notice, do not show the "latest" tag to avoid confusion */}
+                        {!SHOW_VERSION_NOTICE ? (
                           <span className="bg-lavender rounded-full px-2 py-1">latest</span>
                         ) : null}
                       </span>
@@ -73,7 +73,7 @@ export default function VersionDropdown() {
                     <p className="text-sm leading-5">
                       You&apos;re currently viewing the docs for Dagster{' '}
                       <span className="text-sm font-medium leading-5 text-gray-900">
-                        {currentVersion}
+                        {LATEST_VERSION}
                       </span>
                       . Select a different version below. Note that prior to 1.0, all Dagster
                       packages shared the same version. After 1.0, we adopted separate version
