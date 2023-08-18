@@ -742,7 +742,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         assert container_definition["mountPoints"] == mount_points
 
         assert (
-            container_definition["repositoryCredentials"]["credentialsParameter"]
+            task_definition["repositoryCredentials"]["credentialsParameter"]
             == repository_credentials
         )
 
@@ -985,7 +985,7 @@ def test_launch_run_with_container_context(
     assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
 
     assert (
-        container_definition["repositoryCredentials"]["credentialsParameter"]
+        task_definition["repositoryCredentials"]["credentialsParameter"]
         == container_context_config["ecs"]["run_resources"]["repository_credentials"]
     )
 
