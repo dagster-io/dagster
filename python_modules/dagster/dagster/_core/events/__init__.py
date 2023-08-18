@@ -27,6 +27,10 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
 from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -55,6 +59,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
+
 
 EventSpecificData = Union[
     StepOutputData,
@@ -105,6 +110,8 @@ class DagsterEventType(str, Enum):
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
+    ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
+    ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -169,6 +176,7 @@ STEP_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.STEP_EXPECTATION_RESULT,
+    DagsterEventType.ASSET_CHECK_EVALUATION,
     DagsterEventType.OBJECT_STORE_OPERATION,
     DagsterEventType.HANDLED_OUTPUT,
     DagsterEventType.LOADED_INPUT,
@@ -279,6 +287,10 @@ def _validate_event_specific_data(
         check.inst_param(
             event_specific_data, "event_specific_data", AssetMaterializationPlannedData
         )
+    elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluationPlanned)
+    elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+        check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluation)
 
     return event_specific_data
 
