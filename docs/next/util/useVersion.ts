@@ -12,6 +12,18 @@ export function getOlderVersions() {
   return MAP_VERSION_TO_LINK.slice(0, -1).sort((a, b) => (a.version < b.version ? 1 : -1));
 }
 
+// only hide version notice in production
+export let showVersionNotice = true;
+if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
+  // We use NEXT_PUBLIC_VERCEL_ENV to tell whether it's in production or not
+  // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
+  // * Vercel previews have NODE_ENV === "production"
+  showVersionNotice = false;
+} else if (process.env.NODE_ENV === 'production') {
+  // for testing
+  showVersionNotice = false;
+}
+
 export function normalizeVersionPath(
   asPath: string,
   versions?: string[],
@@ -54,14 +66,6 @@ export function normalizeVersionPath(
     defaultVersion,
     latestVersion,
   };
-}
-
-export function versionFromPage(page: string | string[]) {
-  if (Array.isArray(page)) {
-    return normalizeVersionPath('/' + page.join('/'), ALL_VERSIONS);
-  }
-
-  return normalizeVersionPath(page, ALL_VERSIONS);
 }
 
 export const useVersion = () => {
