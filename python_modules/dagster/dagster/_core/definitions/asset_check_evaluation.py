@@ -15,6 +15,8 @@ class AssetCheckEvaluationPlanned(
         ],
     )
 ):
+    """Metadata for the event when an asset check is launched."""
+
     def __new__(cls, asset_key: AssetKey, check_name: str):
         return super(AssetCheckEvaluationPlanned, cls).__new__(
             cls,
@@ -24,9 +26,9 @@ class AssetCheckEvaluationPlanned(
 
 
 @whitelist_for_serdes
-class AssetCheckEvaluationTargetMaterialization(
+class AssetCheckEvaluationTargetMaterializationData(
     NamedTuple(
-        "_AssetCheckEvaluationTargetMaterialization",
+        "_AssetCheckEvaluationTargetMaterializationData",
         [
             ("storage_id", int),
             ("run_id", str),
@@ -34,8 +36,10 @@ class AssetCheckEvaluationTargetMaterialization(
         ],
     )
 ):
+    """A pointer to the latest materialization at execution time of an asset check."""
+
     def __new__(cls, storage_id: int, run_id: str, timestamp: float):
-        return super(AssetCheckEvaluationTargetMaterialization, cls).__new__(
+        return super(AssetCheckEvaluationTargetMaterializationData, cls).__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
             run_id=check.str_param(run_id, "run_id"),
@@ -52,17 +56,37 @@ class AssetCheckEvaluation(
             ("check_name", str),
             ("success", bool),
             ("metadata", Mapping[str, MetadataValue]),
-            ("target_materialization", Optional[AssetCheckEvaluationTargetMaterialization]),
+            (
+                "target_materialization_data",
+                Optional[AssetCheckEvaluationTargetMaterializationData],
+            ),
         ],
     )
 ):
+    """Represents the outcome of a evaluating an asset check.
+
+    Attributes:
+        asset_key (AssetKey):
+            The asset key that was checked.
+        check_name (str):
+            The name of the check.
+        success (bool):
+            The pass/fail result of the check.
+        metadata (Dict[str, MetadataValue]):
+            Arbitrary user-provided metadata about the asset.  Keys are displayed string labels, and
+            values are one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a MetadataValue static method.
+        target_materialization_data (Optional[AssetCheckEvaluationTargetMaterializationData]):
+            The latest materialization at execution time of the check.
+    """
+
     def __new__(
         cls,
         asset_key: AssetKey,
         check_name: str,
         success: bool,
         metadata: Mapping[str, MetadataValue],
-        target_materialization: Optional[AssetCheckEvaluationTargetMaterialization] = None,
+        target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
     ):
         return super(AssetCheckEvaluation, cls).__new__(
             cls,
@@ -70,9 +94,9 @@ class AssetCheckEvaluation(
             check_name=check.str_param(check_name, "check_name"),
             success=check.bool_param(success, "success"),
             metadata=check.dict_param(metadata, "metadata", key_type=str),
-            target_materialization=check.opt_inst_param(
-                target_materialization,
-                "target_materialization",
-                AssetCheckEvaluationTargetMaterialization,
+            target_materialization_data=check.opt_inst_param(
+                target_materialization_data,
+                "target_materialization_data",
+                AssetCheckEvaluationTargetMaterializationData,
             ),
         )
