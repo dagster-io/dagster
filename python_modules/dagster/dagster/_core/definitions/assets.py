@@ -37,7 +37,11 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import (
@@ -848,7 +852,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if key == asset_key:
                 return output_name
 
-        check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
+        raise DagsterInvariantViolationError(
+            f"Asset key {key.to_user_string()} not found in AssetsDefinition"
+        )
 
     def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
         """If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
