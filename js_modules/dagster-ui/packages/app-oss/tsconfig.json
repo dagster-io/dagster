@@ -26,6 +26,6 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": true
   },
-  "include": ["src", "next.config.js"],
-  "exclude": ["node_modules"]
+  "include": ["src", "custom-next-env.d.ts"],
+  "exclude": ["node_modules", "next-env.d.ts"]
 }

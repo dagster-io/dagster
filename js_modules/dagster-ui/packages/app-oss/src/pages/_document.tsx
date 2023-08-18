@@ -17,12 +17,14 @@ export default function Document() {
         {/* Not sure if we need the following script */}
         <script
           id="webpack-nonce-setter"
+          nonce="NONCE-PLACEHOLDER"
           dangerouslySetInnerHTML={{__html: `__webpack_nonce__ = 'NONCE-PLACEHOLDER';`}}
         />
         {isDev ? <meta httpEquiv="Content-Security-Policy" content={getSecurityPolicy()} /> : null}
         <script
           type="application/json"
           id="initialization-data"
+          nonce="NONCE-PLACEHOLDER"
           dangerouslySetInnerHTML={{
             __html: `
     {

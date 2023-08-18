@@ -1,3 +1,7 @@
+/* eslint-disable import/no-default-export */
+
+/// <reference types="next" />
+
 declare module '@vx/gradient';
 declare module '@vx/group';
 declare module '@vx/network';
@@ -26,20 +30,12 @@ interface Navigator extends NavigatorClipboard {}
 
 declare module '*.json' {
   const value: any;
-  // eslint-disable-next-line import/no-default-export
   export default value;
 }
 
 declare module '*.mp4' {
   const src: string;
-  // eslint-disable-next-line import/no-default-export
   export default src;
-}
-
-declare module '*.svg' {
-  const content: any;
-  // eslint-disable-next-line import/no-default-export
-  export default content;
 }
 
 declare module 'worker-loader!*' {
@@ -47,7 +43,6 @@ declare module 'worker-loader!*' {
     constructor();
   }
 
-  // eslint-disable-next-line import/no-default-export
   export default WebpackWorker;
 }
 

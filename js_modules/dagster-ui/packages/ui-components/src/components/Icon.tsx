@@ -310,19 +310,6 @@ export const Icons = {
   zoom_out,
 } as const;
 
-// TODO: Find more elegant solution
-const copy: any = Icons;
-Object.keys(copy).forEach((key) => {
-  let img = copy[key];
-  if (typeof img === 'object' && 'default' in img) {
-    // in Dagster UI but not in Storybook due to webpack config differences
-    img = (img as {default: any}).default;
-  } else if (img.src) {
-    img = img.src;
-  }
-  copy[key] = img;
-});
-
 const SVGS_WITH_COLORS = new Set([(slack as any).src]);
 
 export type IconName = keyof typeof Icons;
@@ -342,11 +329,7 @@ interface Props {
 
 export const Icon = React.memo((props: Props) => {
   const {name, size = 16, style} = props;
-  let img = Icons[name] || '';
-  if (typeof img === 'object' && 'default' in img) {
-    // in Dagster UI but not in Storybook due to webpack config differences
-    img = (img as {default: any}).default;
-  }
+  const img = Icons[name].src || '';
   const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
   return (
     <IconWrapper
