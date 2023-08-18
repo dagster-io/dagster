@@ -1,7 +1,6 @@
 /* eslint-disable import/no-default-export */
 
 /// <reference types="next" />
-/// <reference types="next/image-types/global" />
 
 declare module '@vx/gradient';
 declare module '@vx/group';
