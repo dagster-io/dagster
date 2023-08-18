@@ -508,7 +508,7 @@ class DbtCliResource(ConfigurableResource):
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[OpExecutionContext] = None,
     ) -> DbtCliInvocation:
-        """Execute a dbt command.
+        """Create a subprocess to execute a dbt CLI command.
 
         Args:
             args (List[str]): The dbt CLI command to execute.
@@ -527,14 +527,86 @@ class DbtCliResource(ConfigurableResource):
                 dbt CLI command.
 
         Examples:
+            Streaming Dagster events for dbt asset materializations and observations:
+
             .. code-block:: python
 
                 from pathlib import Path
+
+                from dagster import OpExecutionContext
                 from dagster_dbt import DbtCliResource, dbt_assets
 
+
                 @dbt_assets(manifest=Path("target", "manifest.json"))
-                def my_dbt_assets(context, dbt: DbtCliResource):
+                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
+
+            Retrieving a dbt artifact after streaming the Dagster events:
+
+            .. code-block:: python
+
+                from pathlib import Path
+
+                from dagster import OpExecutionContext
+                from dagster_dbt import DbtCliResource, dbt_assets
+
+
+                @dbt_assets(manifest=Path("target", "manifest.json"))
+                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                    dbt_run_invocation = dbt.cli(["run"], context=context)
+
+                    yield from dbt_run_invocation.stream()
+
+                    # Retrieve the `run_results.json` dbt artifact as a dictionary:
+                    run_results_json = dbt_run_invocation.get_artifact("run_results.json")
+
+                    # Retrieve the `run_results.json` dbt artifact as a file path:
+                    run_results_path = dbt_run_invocation.target_path.joinpath("run_results.json")
+
+            Customizing the asset materialization metadata when streaming the Dagster events:
+
+            .. code-block:: python
+
+                from pathlib import Path
+
+                from dagster import OpExecutionContext
+                from dagster_dbt import DbtCliResource, dbt_assets
+
+
+                @dbt_assets(manifest=Path("target", "manifest.json"))
+                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                    dbt_cli_invocation = dbt.cli(["run"], context=context)
+
+                    for dbt_event in dbt_cli_invocation.stream_raw_events():
+                        for dagster_event in dbt_event.to_default_asset_events(manifest=dbt_cli_invocation.manifest):
+                            if isinstance(dagster_event, Output):
+                                context.add_output_metadata(
+                                    metadata={
+                                        "my_custom_metadata": "my_custom_metadata_value",
+                                    },
+                                    output_name=dagster_event.output_name,
+                                )
+
+                            yield dagster_event
+
+            Suppressing exceptions from a dbt CLI command when a non-zero exit code is returned:
+
+            .. code-block:: python
+
+                from pathlib import Path
+
+                from dagster import OpExecutionContext
+                from dagster_dbt import DbtCliResource, dbt_assets
+
+
+                @dbt_assets(manifest=Path("target", "manifest.json"))
+                def my_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+                    dbt_run_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
+
+                    if dbt_run_invocation.is_successful():
+                        yield from dbt_run_invocation.stream()
+                    else:
+                        ...
         """
         target_path = self._get_unique_target_path(context=context)
         env = {
