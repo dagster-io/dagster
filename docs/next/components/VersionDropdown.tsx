@@ -35,9 +35,6 @@ export default function VersionDropdown() {
                         <span>
                           {currentVersion} {libraryVersionText}
                         </span>
-                        {currentVersion === latestVersion ? (
-                          <span className="bg-lavender rounded-full px-2 py-1">latest</span>
-                        ) : null}
                       </span>
                     </span>
                     {/* Heroicon name: selector */}

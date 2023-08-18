@@ -32,9 +32,10 @@ export type MDXData = {
 export const VersionNotice = () => {
   const {asPath, version, defaultVersion} = useVersion();
 
-  if (version === defaultVersion) {
-    return null;
-  }
+  // NOTE: versions in this branch should all be outdated
+  // if (version === defaultVersion) {
+  //   return null;
+  // }
 
   return (
     <div className="bg-yellow-100 mb-10 mt-6 mx-4 shadow sm:rounded-lg">
