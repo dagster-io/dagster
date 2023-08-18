@@ -12,7 +12,7 @@ import visit from 'unist-util-visit';
 
 import masterNavigation from '../../content/_navigation.json';
 import {getItems, getIds} from '../components/mdx/SidebarNavigation';
-import {flatten} from '../util/useNavigation';
+import {flatten} from '../util/navigation';
 
 // remark
 

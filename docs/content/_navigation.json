@@ -782,7 +782,7 @@
           },
           {
             "title": "Migrating to graphs, jobs, ops",
-            "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+            "path": "https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.7/guides/dagster/graph_job_op",
             "isExternalLink": true
           },
           {

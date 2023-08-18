@@ -1,4 +1,4 @@
-import masterNavigation from '../../content/_navigation.json';
+import navigation from '../../content/_navigation.json';
 
 type NavEntry = {
   title: string;
@@ -32,13 +32,9 @@ export function flatten(yx: any, parentKey = '') {
   }, []);
 }
 
-export const useNavigation = () => {
-  return masterNavigation;
-};
-
 export const latestAllPaths = () => {
   // include path like /changelog which doesn't go through the markdoc renderer
-  return flatten(masterNavigation)
+  return flatten(navigation)
     .filter((n: {path: any}) => n.path)
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
@@ -52,7 +48,7 @@ export const latestAllPaths = () => {
 
 export const latestAllDynamicPaths = () => {
   // only include paths that will be dynamically generated
-  return flatten(masterNavigation)
+  return flatten(navigation)
     .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isNotDynamic)
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
@@ -64,6 +60,4 @@ export const latestAllDynamicPaths = () => {
     });
 };
 
-export const navigations = {
-  masterNavigation,
-};
+export default navigation;
