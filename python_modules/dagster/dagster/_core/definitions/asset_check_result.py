@@ -14,9 +14,9 @@ class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",
         [
-            ("asset_key", PublicAttr[AssetKey]),
-            ("check_name", PublicAttr[str]),
             ("success", PublicAttr[bool]),
+            ("asset_key", PublicAttr[Optional[AssetKey]]),
+            ("check_name", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
         ],
     )
@@ -24,9 +24,9 @@ class AssetCheckResult(
     """The result of an asset check.
 
     Attributes:
-        asset_key (AssetKey):
+        asset_key (Optional[AssetKey]):
             The asset key that was checked.
-        check_name (str):
+        check_name (Optional[str]):
             The name of the check.
         success (bool):
             The pass/fail result of the check.
@@ -38,9 +38,10 @@ class AssetCheckResult(
 
     def __new__(
         cls,
-        asset_key: AssetKey,
-        check_name: str,
+        *,
         success: bool,
+        asset_key: Optional[AssetKey] = None,
+        check_name: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         normalized_metadata = normalize_metadata(
@@ -48,8 +49,8 @@ class AssetCheckResult(
         )
         return super().__new__(
             cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            check_name=check.str_param(check_name, "check_name"),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
+            check_name=check.opt_str_param(check_name, "check_name"),
             success=check.bool_param(success, "success"),
             metadata=normalized_metadata,
         )
