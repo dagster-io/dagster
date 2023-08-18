@@ -18,6 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -394,6 +395,9 @@ class AssetLayer:
         partition_mappings_by_asset_dep: Optional[
             Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
         ] = None,
+        node_output_handles_by_asset_check: Optional[
+            Mapping[Tuple[AssetKey, str], NodeOutputHandle]
+        ] = None,
     ):
         from dagster._core.definitions import SourceAsset
 
@@ -435,6 +439,8 @@ class AssetLayer:
         for asset_key, node_handles in self._dependency_node_handles_by_asset_key.items():
             for node_handle in node_handles:
                 self._assets_defs_by_node_handle[node_handle] = self._assets_defs_by_key[asset_key]
+
+        self._node_output_handles_by_asset_check = node_output_handles_by_asset_check or {}
 
         self._io_manager_keys_by_asset_key = check.opt_mapping_param(
             io_manager_keys_by_asset_key,
@@ -486,6 +492,8 @@ class AssetLayer:
             dep_node_handles_by_asset_key,
             dep_node_output_handles_by_asset_key,
         ) = asset_key_to_dep_node_handles(graph_def, assets_defs_by_node_handle)
+
+        node_output_handles_by_asset_check: Mapping[Tuple[AssetKey, str], NodeOutputHandle] = {}
 
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             for key in assets_def.keys:
@@ -552,6 +560,17 @@ class AssetLayer:
                     }
                 )
 
+            for output_name, check_spec in assets_def.check_specs_by_output_name.items():
+                inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
+                    output_name, handle=node_handle
+                )
+                node_output_handle = NodeOutputHandle(
+                    check.not_none(inner_node_handle), inner_output_def.name
+                )
+                node_output_handles_by_asset_check[(check_spec.asset_key, check_spec.name)] = (
+                    node_output_handle
+                )
+
         node_output_handles_to_dep_asset_keys = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
             for node_output_handle in node_output_handles:
@@ -567,6 +586,7 @@ class AssetLayer:
             io_manager_keys_by_asset_key=io_manager_by_asset,
             node_output_handles_to_dep_asset_keys=node_output_handles_to_dep_asset_keys,
             partition_mappings_by_asset_dep=partition_mappings_by_asset_dep,
+            node_output_handles_by_asset_check=node_output_handles_by_asset_check,
         )
 
     @property
@@ -624,6 +644,17 @@ class AssetLayer:
 
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self._assets_defs_by_node_handle.get(node_handle)
+
+    def check_specs_for_node(self, node_handle: NodeHandle) -> Sequence[AssetCheckSpec]:
+        assets_def_for_node = self.assets_def_for_node(node_handle)
+        if assets_def_for_node is not None:
+            return list(assets_def_for_node.check_specs)
+        else:
+            return []
+
+    def get_output_name_for_asset_check(self, asset_key: AssetKey, check_name: str) -> str:
+        """Output name in the leaf op."""
+        return self._node_output_handles_by_asset_check[(asset_key, check_name)].output_name
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))

@@ -17,6 +17,8 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import (
+    AssetCheckEvaluation,
+    AssetCheckResult,
     AssetMaterialization,
     AssetObservation,
     DynamicOutput,
@@ -46,6 +48,8 @@ OpOutputUnion: TypeAlias = Union[
     ExpectationResult,
     AssetObservation,
     DagsterEvent,
+    AssetCheckEvaluation,
+    AssetCheckResult,
 ]
 
 
@@ -94,6 +98,8 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
             ExpectationResult,
             AssetObservation,
             DagsterEvent,
+            AssetCheckResult,
+            AssetCheckEvaluation,
         ),
     ):
         raise DagsterInvariantViolationError(

@@ -19,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -103,6 +104,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
+        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -232,6 +234,13 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             backfill_policy, "backfill_policy", BackfillPolicy
         )
 
+        self._check_specs_by_output_name = check.opt_mapping_param(
+            check_specs_by_output_name,
+            "check_specs_by_output_name",
+            key_type=str,
+            value_type=AssetCheckSpec,
+        )
+
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
             check.param_invariant(
@@ -269,6 +278,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]],
         backfill_policy: Optional[BackfillPolicy],
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
+        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -286,6 +296,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policy=backfill_policy,
             descriptions_by_key=descriptions_by_key,
+            check_specs_by_output_name=check_specs_by_output_name,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -623,6 +634,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
+            check_specs_by_output_name={},
         )
 
     @public
@@ -739,6 +751,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return self._keys_by_input_name
 
     @property
+    def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+        return self._check_specs_by_output_name
+
+    @property
     def keys_by_output_name(self) -> Mapping[str, AssetKey]:
         return {
             name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
@@ -787,6 +803,17 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         asset key (if any).
         """
         return self._partition_mappings.get(in_asset_key)
+
+    @public
+    @property
+    def check_specs(self) -> Iterable[AssetCheckSpec]:
+        """Returns the asset check specs defined on this AssetsDefinition, i.e. the checks that can
+        be executed while materializing the assets.
+
+        Returns:
+            Iterable[AssetsCheckSpec]:
+        """
+        return self._check_specs_by_output_name.values()
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
@@ -1214,6 +1241,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             auto_materialize_policies_by_key=self._auto_materialize_policies_by_key,
             backfill_policy=self._backfill_policy,
             descriptions_by_key=self._descriptions_by_key,
+            check_specs_by_output_name=self._check_specs_by_output_name,
         )
 
 

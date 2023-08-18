@@ -1,3 +1,4 @@
+from collections import Counter
 from inspect import Parameter
 from typing import (
     AbstractSet,
@@ -33,6 +34,7 @@ from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
 
+from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
@@ -45,7 +47,7 @@ from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
-from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
+from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel
 
 
 @overload
@@ -82,6 +84,7 @@ def asset(
     code_version: Optional[str] = ...,
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -120,6 +123,7 @@ def asset(
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -188,6 +192,7 @@ def asset(
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
+        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
 
@@ -227,6 +232,7 @@ def asset(
             backfill_policy=backfill_policy,
             retry_policy=retry_policy,
             code_version=code_version,
+            check_specs=check_specs,
             key=key,
         )
 
@@ -270,6 +276,7 @@ class _Asset:
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
         key: Optional[CoercibleToAssetKey] = None,
+        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     ):
         self.name = name
 
@@ -298,6 +305,7 @@ class _Asset:
         self.auto_materialize_policy = auto_materialize_policy
         self.backfill_policy = backfill_policy
         self.code_version = code_version
+        self.check_specs = check_specs
 
         if (name or key_prefix) and key:
             raise DagsterInvalidDefinitionError(
@@ -367,13 +375,33 @@ class _Asset:
                 code_version=self.code_version,
             )
 
+            check_specs_by_output_name = {
+                f"{spec.asset_key.to_python_identifier()}_{spec.name}": spec
+                for spec in self.check_specs or []
+            }
+            if self.check_specs and len(check_specs_by_output_name) != len(self.check_specs):
+                duplicates = {
+                    item: count
+                    for item, count in Counter(
+                        [(spec.asset_key, spec.name) for spec in self.check_specs]
+                    ).items()
+                    if count > 1
+                }
+
+                raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
+
+            check_outs: Mapping[str, Out] = {
+                output_name: Out(dagster_type=None)
+                for output_name in check_specs_by_output_name.keys()
+            }
+
             op_required_resource_keys = decorator_resource_keys - arg_resource_keys
 
             op = _Op(
                 name=out_asset_key.to_python_identifier(),
                 description=self.description,
                 ins=dict(asset_ins.values()),
-                out=out,
+                out={DEFAULT_OUTPUT: out, **check_outs},
                 # Any resource requirements specified as arguments will be identified as
                 # part of the Op definition instantiation
                 required_resource_keys=op_required_resource_keys,
@@ -429,6 +457,7 @@ class _Asset:
             can_subset=False,
             metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
             descriptions_by_key=None,  # not supported for now
+            check_specs_by_output_name=check_specs_by_output_name,
         )
 
 
@@ -672,6 +701,7 @@ def multi_asset(
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
+            check_specs_by_output_name={},
         )
 
     return inner
@@ -1076,13 +1106,19 @@ def _make_asset_keys(
 
     deps_asset_keys: Set[AssetKey] = set()
     for dep in deps:
-        if isinstance(dep, AssetsDefinition):
-            # this will error if the AssetsDefinition is a multi_asset, but we should have caught that
-            # earlier in execution
-            deps_asset_keys.add(dep.key)
-        elif isinstance(dep, SourceAsset):
-            deps_asset_keys.add(dep.key)
-        else:
-            deps_asset_keys.add(AssetKey.from_coercible(dep))
+        deps_asset_keys.add(asset_key_from_coercible_or_definition(dep))
 
     return deps_asset_keys
+
+
+def asset_key_from_coercible_or_definition(
+    arg: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]
+) -> AssetKey:
+    if isinstance(arg, AssetsDefinition):
+        # this will error if the AssetsDefinition is a multi_asset, but we should have caught that
+        # earlier in execution
+        return arg.key
+    elif isinstance(arg, SourceAsset):
+        return arg.key
+    else:
+        return AssetKey.from_coercible(arg)
