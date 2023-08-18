@@ -35,6 +35,7 @@ from .gcs import (
 )
 from .gcs.io_manager import (
     ConfigurablePickledObjectGCSIOManager as ConfigurablePickledObjectGCSIOManager,
+    GCSPickleIOManager as GCSPickleIOManager,
     gcs_pickle_io_manager as gcs_pickle_io_manager,
 )
 from .version import __version__

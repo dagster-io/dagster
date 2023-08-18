@@ -38,7 +38,7 @@ from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_gcp.gcs import FakeConfigurableGCSClient, FakeGCSClient
 from dagster_gcp.gcs.io_manager import (
-    ConfigurablePickledObjectGCSIOManager,
+    GCSPickleIOManager,
     PickledObjectGCSIOManager,
     gcs_pickle_io_manager,
 )
@@ -306,7 +306,7 @@ def test_asset_pythonic_io_manager(gcs_bucket):
         [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
         partition_key="apple",
         resources={
-            "io_manager": ConfigurablePickledObjectGCSIOManager(
+            "io_manager": GCSPickleIOManager(
                 gcs_bucket=gcs_bucket,
                 gcs_prefix="assets",
                 gcs=ResourceDefinition.hardcoded_resource(fake_gcs_client),
@@ -336,7 +336,7 @@ def test_nothing_pythonic_io_manager(gcs_bucket):
         with_resources(
             [asset1, asset2],
             resource_defs={
-                "io_manager": ConfigurablePickledObjectGCSIOManager(
+                "io_manager": GCSPickleIOManager(
                     gcs_bucket=gcs_bucket,
                     gcs_prefix="assets",
                     gcs=ResourceDefinition.hardcoded_resource(FakeConfigurableGCSClient()),
