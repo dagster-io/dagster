@@ -4,6 +4,7 @@
 
 // For example, if you need to update `PyObject`, rename the existing component to `PyObjectLegacy`
 // and update all existing usage of it
+import {LATEST_VERSION} from 'util/version';
 
 import {Tab, Transition} from '@headlessui/react';
 import cx from 'classnames';
