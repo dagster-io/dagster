@@ -8,6 +8,7 @@ from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
 
 from dagster import (
+    DagsterInvariantViolationError,
     InputContext,
     MetadataValue,
     MultiPartitionKey,
@@ -17,6 +18,7 @@ from dagster import (
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 if TYPE_CHECKING:
+    from fsspec.asyn import AsyncFileSystem
     from upath import UPath
 
 
@@ -449,6 +451,31 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
+
+    @staticmethod
+    def get_async_filesystem(path: "Path") -> "AsyncFileSystem":
+        """A helper method, is useful inside an async `load_from_path`.
+        The returned `fsspec` FileSystem will have async IO methods.
+        https://filesystem-spec.readthedocs.io/en/latest/async.html.
+        """
+        if isinstance(path, Path) and not isinstance(path, UPath):
+            try:
+                from morefs.asyn_local import AsyncLocalFileSystem  # type: ignore
+
+                return AsyncLocalFileSystem()
+            except ImportError as e:
+                raise RuntimeError(
+                    "Install 'morefs[asynclocal]' to use `get_async_filesystem` with a local"
+                    " filesystem"
+                ) from e
+        elif isinstance(path, UPath):
+            kwargs = path._kwargs.copy()  # noqa
+            kwargs["asynchronous"] = True
+            return path._default_accessor(path._url, **kwargs)._fs  # noqa
+        else:
+            raise DagsterInvariantViolationError(
+                f"Path type {type(path)} is not supported by the UPathIOManager"
+            )
 
 
 def is_dict_type(type_obj) -> bool:
