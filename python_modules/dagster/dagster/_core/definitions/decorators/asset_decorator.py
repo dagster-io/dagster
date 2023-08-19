@@ -192,7 +192,8 @@ def asset(
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
-        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks.
+        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+            execute in the decorated function after materializing the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
 
@@ -375,21 +376,9 @@ class _Asset:
                 code_version=self.code_version,
             )
 
-            check_specs_by_output_name = {
-                f"{spec.asset_key.to_python_identifier()}_{spec.name}": spec
-                for spec in self.check_specs or []
-            }
-            if self.check_specs and len(check_specs_by_output_name) != len(self.check_specs):
-                duplicates = {
-                    item: count
-                    for item, count in Counter(
-                        [(spec.asset_key, spec.name) for spec in self.check_specs]
-                    ).items()
-                    if count > 1
-                }
-
-                raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
-
+            check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+                self.check_specs
+            )
             check_outs: Mapping[str, Out] = {
                 output_name: Out(dagster_type=None)
                 for output_name in check_specs_by_output_name.keys()
@@ -485,6 +474,7 @@ def multi_asset(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    check_specs: Optional[Sequence[AssetCheckSpec]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -533,6 +523,8 @@ def multi_asset(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
+        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+            execute in the decorated function after materializing the assets.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead. Set of asset keys that are upstream
             dependencies, but do not pass an input to the multi_asset.
 
@@ -594,7 +586,7 @@ def multi_asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(fn, ins or {}, deps=_make_asset_keys(upstream_asset_deps))
-        asset_outs = build_asset_outs(outs)
+        output_tuples_by_asset_key = build_asset_outs(outs)
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
@@ -604,7 +596,7 @@ def multi_asset(
         )
 
         # validate that the asset_deps make sense
-        valid_asset_deps = set(asset_ins.keys()) | set(asset_outs.keys())
+        valid_asset_deps = set(asset_ins.keys()) | set(output_tuples_by_asset_key.keys())
         for out_name, asset_keys in asset_deps.items():
             check.invariant(
                 out_name in outs,
@@ -621,6 +613,25 @@ def multi_asset(
                 " the asset or produced by this asset. Valid keys:"
                 f" {list(valid_asset_deps)[:20]}",
             )
+
+        asset_outs_by_output_name: Mapping[str, Out] = dict(output_tuples_by_asset_key.values())
+
+        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(check_specs)
+        check_outs_by_output_name: Mapping[str, Out] = {
+            output_name: Out(dagster_type=None) for output_name in check_specs_by_output_name.keys()
+        }
+        overlapping_output_names = (
+            asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
+        )
+        check.invariant(
+            len(overlapping_output_names) == 0,
+            f"Check output names overlap with asset output names: {overlapping_output_names}",
+        )
+        combined_outs_by_output_name: Mapping[str, Out] = {
+            **asset_outs_by_output_name,
+            **check_outs_by_output_name,
+        }
+
         with disable_dagster_warnings():
             op_required_resource_keys = required_resource_keys - arg_resource_keys
 
@@ -628,7 +639,7 @@ def multi_asset(
                 name=op_name,
                 description=description,
                 ins=dict(asset_ins.values()),
-                out=dict(asset_outs.values()),
+                out=combined_outs_by_output_name,
                 required_resource_keys=op_required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
@@ -643,7 +654,8 @@ def multi_asset(
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
         keys_by_output_name = {
-            output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
+            output_name: asset_key
+            for asset_key, (output_name, _) in output_tuples_by_asset_key.items()
         }
 
         # source group names from the AssetOuts (if any)
@@ -701,7 +713,7 @@ def multi_asset(
             selected_asset_keys=None,  # no subselection in decorator
             descriptions_by_key=None,  # not supported for now
             metadata_by_key=metadata_by_key,
-            check_specs_by_output_name={},
+            check_specs_by_output_name=check_specs_by_output_name,
         )
 
     return inner
@@ -1122,3 +1134,21 @@ def asset_key_from_coercible_or_definition(
         return arg.key
     else:
         return AssetKey.from_coercible(arg)
+
+
+def _validate_and_assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]],
+) -> Mapping[str, AssetCheckSpec]:
+    check_specs_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
+    if check_specs and len(check_specs_by_output_name) != len(check_specs):
+        duplicates = {
+            item: count
+            for item, count in Counter(
+                [(spec.asset_key, spec.name) for spec in check_specs]
+            ).items()
+            if count > 1
+        }
+
+        raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
+
+    return check_specs_by_output_name

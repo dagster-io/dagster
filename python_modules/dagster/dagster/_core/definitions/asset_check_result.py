@@ -88,8 +88,9 @@ class AssetCheckResult(
         else:
             if len(spec_check_names_by_asset_key) > 1:
                 raise DagsterInvariantViolationError(
-                    "TODO Check result didn't specify an asset key, but there are multiple assets"
-                    " to choose from: {name the assets}"
+                    "AssetCheckResult didn't specify an asset key, but there are multiple assets"
+                    " to choose from:"
+                    f" {[asset_key.to_user_string() for asset_key in spec_check_names_by_asset_key.keys()]}"
                 )
 
             resolved_asset_key = next(iter(spec_check_names_by_asset_key.keys()))
@@ -108,8 +109,9 @@ class AssetCheckResult(
         else:
             if len(spec_check_names_for_asset_key) > 1:
                 raise DagsterInvariantViolationError(
-                    "TODO Check result didn't specify a check name, but there are multiple"
-                    " checks to choose from for the this asset key: {name the checks}"
+                    "AssetCheckResult result didn't specify a check name, but there are multiple"
+                    " checks to choose from for the this asset key:"
+                    f" {spec_check_names_for_asset_key}"
                 )
 
             resolved_check_name = next(iter(spec_check_names_for_asset_key))
