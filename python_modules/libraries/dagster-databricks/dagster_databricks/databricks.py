@@ -1,7 +1,7 @@
 import base64
 import logging
 import time
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Tuple
 
 import dagster
 import dagster._check as check
@@ -209,8 +209,10 @@ class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress.
 
     Attributes:
-        host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net
-        token (str): Databricks token
+        host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net.
+        token (str): Databricks authentication token.
+        poll_interval_sec (float): How often to poll Databricks for run status.
+        max_wait_time_sec (int): How long to wait for a run to complete before failing.
     """
 
     def __init__(
@@ -314,7 +316,9 @@ class DatabricksJobRunner:
         }
         return JobsService(self.client.api_client).submit_run(**config)["run_id"]
 
-    def retrieve_logs_for_run_id(self, log: logging.Logger, databricks_run_id: int):
+    def retrieve_logs_for_run_id(
+        self, log: logging.Logger, databricks_run_id: int
+    ) -> Optional[Tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         api_client = self.client.api_client
 
@@ -341,9 +345,9 @@ class DatabricksJobRunner:
     def wait_for_dbfs_logs(
         self,
         log: logging.Logger,
-        prefix,
-        cluster_id,
-        filename,
+        prefix: str,
+        cluster_id: str,
+        filename: str,
         waiter_delay: int = 10,
         waiter_max_attempts: int = 10,
     ) -> Optional[str]:
