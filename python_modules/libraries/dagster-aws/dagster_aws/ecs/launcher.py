@@ -494,10 +494,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if ephemeral_storage:
             overrides["ephemeralStorage"] = {"sizeInGiB": int(ephemeral_storage)}
 
-        repository_credentials = container_context.run_resources.get("repository_credentials")
-        if repository_credentials:
-            overrides["repositoryCredentials"] = {"credentialsParameter": repository_credentials}
-
         return overrides
 
     def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
@@ -605,9 +601,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     runtime_platform=runtime_platform,
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
-                    repository_credentials=container_context.run_resources.get(
-                        "repository_credentials"
-                    ),
+                    repository_credentials=container_context.repository_credentials,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -629,9 +623,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     additional_sidecars=container_context.run_sidecar_containers,
-                    repository_credentials=container_context.run_resources.get(
-                        "repository_credentials"
-                    ),
+                    repository_credentials=container_context.repository_credentials,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

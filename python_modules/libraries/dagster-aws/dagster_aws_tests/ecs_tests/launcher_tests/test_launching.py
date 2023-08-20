@@ -685,7 +685,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         }
     ]
 
-    repository_credentials = "fake-secret-arn"
+    repository_credentials = {"credentialsParameter": "fake-secret-arn"}
 
     # You can provide a family or a task definition ARN
     with instance_cm(
@@ -742,7 +742,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         assert container_definition["mountPoints"] == mount_points
 
         assert (
-            task_definition["repositoryCredentials"]["credentialsParameter"]
+            container_definition["repositoryCredentials"]
             == repository_credentials
         )
 
@@ -985,7 +985,7 @@ def test_launch_run_with_container_context(
     assert container_definition["mountPoints"] == container_context_config["ecs"]["mount_points"]
 
     assert (
-        task_definition["repositoryCredentials"]["credentialsParameter"]
+        container_definition["repositoryCredentials"]["credentialsParameter"]
         == container_context_config["ecs"]["run_resources"]["repository_credentials"]
     )
 
