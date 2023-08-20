@@ -31,6 +31,8 @@ from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 
+from .resources_bag_of_holding import ResourcesBagOfHolding
+
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition, PartitionsDefinition
     from dagster._core.definitions.op_definition import OpDefinition
@@ -79,10 +81,7 @@ class OutputContext:
     _step_context: Optional["StepExecutionContext"]
     _asset_info: Optional[AssetOutputInfo]
     _warn_on_step_context_use: bool
-    _resources: Optional["Resources"]
-    _resources_cm: Optional[ContextManager["Resources"]]
-    _resources_contain_cm: Optional[bool]
-    _cm_scope_entered: Optional[bool]
+    _resources_bag_of_holding: ResourcesBagOfHolding
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation]]
 
@@ -106,9 +105,6 @@ class OutputContext:
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
     ):
-        from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
-        from dagster._core.execution.build_resources import build_resources
-
         self._step_key = step_key
         self._name = name
         self._job_name = job_name
@@ -129,38 +125,21 @@ class OutputContext:
         else:
             self._partition_key = partition_key
 
-        if isinstance(resources, Resources):
-            self._resources_cm = None
-            self._resources = resources
-        else:
-            self._resources_cm = build_resources(
-                check.opt_mapping_param(resources, "resources", key_type=str)
-            )
-            self._resources = self._resources_cm.__enter__()
-            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
-            self._cm_scope_entered = False
+        self._resources_bag_of_holding = ResourcesBagOfHolding(resources)
 
         self._events = []
         self._user_events = []
         self._user_generated_metadata = {}
 
-    def __enter__(self):
-        if self._resources_cm:
-            self._cm_scope_entered = True
+    def __enter__(self) -> "OutputContext":
+        self._resources_bag_of_holding.call_on_enter()
         return self
 
-    def __exit__(self, *exc):
-        if self._resources_cm:
-            self._resources_cm.__exit__(*exc)
+    def __exit__(self, *exc) -> None:
+        self._resources_bag_of_holding.call_on_exit(*exc)
 
-    def __del__(self):
-        if (
-            hasattr(self, "_resources_cm")
-            and self._resources_cm
-            and self._resources_contain_cm
-            and not self._cm_scope_entered
-        ):
-            self._resources_cm.__exit__(None, None, None)
+    def __del__(self) -> None:
+        self._resources_bag_of_holding.call_on_del()
 
     @public
     @property
@@ -284,19 +263,19 @@ class OutputContext:
         """The resources required by the output manager, specified by the `required_resource_keys`
         parameter.
         """
-        if self._resources is None:
+        if self._resources_bag_of_holding.resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
+        if self._resources_bag_of_holding.context_managerful_resources_used_outside_of_scope:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
                 "resources outside of context manager scope. You can use the following syntax to "
                 "open a context manager: `with build_output_context(...) as context:`"
             )
-        return self._resources
+        return self._resources_bag_of_holding.resources
 
     @property
     def asset_info(self) -> Optional[AssetOutputInfo]:
