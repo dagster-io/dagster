@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional, Union
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import (
-    IContainsGenerator,
     ResourceDefinition,
     Resources,
 )
@@ -108,6 +107,9 @@ class InitResourceContext:
         )
 
 
+from .resources_bag_of_holding import ResourcesBagOfHolding
+
+
 class UnboundInitResourceContext(InitResourceContext):
     """Resource initialization context outputted by ``build_init_resource_context``.
 
@@ -126,7 +128,6 @@ class UnboundInitResourceContext(InitResourceContext):
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.build_resources import (
-            build_resources,
             wrap_resources_for_execution,
         )
         from dagster._core.execution.context_creation_job import initialize_console_manager
@@ -147,33 +148,29 @@ class UnboundInitResourceContext(InitResourceContext):
             check.opt_mapping_param(resources, "resources")
         )
 
-        self._resources_cm = build_resources(self._resource_defs, instance=instance)
-        resources = self._resources_cm.__enter__()
-        self._resources_contain_cm = isinstance(resources, IContainsGenerator)
+        self._resource_bag_of_holding = ResourcesBagOfHolding(self._resource_defs)
 
-        self._cm_scope_entered = False
         super(UnboundInitResourceContext, self).__init__(
             resource_config=resource_config,
-            resources=resources,
+            resources=check.not_none(self._resource_bag_of_holding.resources),
             resource_def=None,
             instance=instance,
             dagster_run=None,
             log_manager=initialize_console_manager(None),
         )
 
-    def __enter__(self):
-        self._cm_scope_entered = True
+    def __enter__(self) -> "UnboundInitResourceContext":
+        self._resource_bag_of_holding.call_on_enter()
         return self
 
-    def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)
+    def __exit__(self, *exc) -> None:
+        self._resource_bag_of_holding.call_on_exit(*exc)
         if self._instance_provided:
             self._instance_cm.__exit__(*exc)
 
-    def __del__(self):
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)
-        if self._instance_provided and not self._cm_scope_entered:
+    def __del__(self) -> None:
+        self._resource_bag_of_holding.call_on_del()
+        if self._instance_provided and not self._resource_bag_of_holding._cm_scope_entered:
             self._instance_cm.__exit__(None, None, None)
 
     @property
@@ -189,13 +186,9 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def resources(self) -> Resources:
         """The resources that are available to the resource that we are initalizing."""
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_init_resource_context(...) as context:`"
-            )
-        return self._resources
+        return self._resource_bag_of_holding.ensure_context_managerful_resources_used_within_scope(
+            "build_init_resource_context"
+        )
 
     @property
     def instance(self) -> Optional[DagsterInstance]:

@@ -2,7 +2,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    ContextManager,
     Iterator,
     List,
     Mapping,
@@ -269,13 +268,9 @@ class OutputContext:
                 "but it was not provided when constructing the OutputContext"
             )
 
-        if self._resources_bag_of_holding.context_managerful_resources_used_outside_of_scope:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_output_context(...) as context:`"
-            )
-        return self._resources_bag_of_holding.resources
+        return self._resources_bag_of_holding.ensure_context_managerful_resources_used_within_scope(
+            "build_output_context"
+        )
 
     @property
     def asset_info(self) -> Optional[AssetOutputInfo]:

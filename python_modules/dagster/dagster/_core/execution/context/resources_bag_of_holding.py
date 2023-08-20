@@ -6,6 +6,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster import DagsterInvariantViolationError
 from dagster._core.definitions.resource_definition import Resources
 
 
@@ -46,3 +47,15 @@ class ResourcesBagOfHolding:
         return bool(
             self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered
         )
+
+    def ensure_context_managerful_resources_used_within_scope(
+        self,
+        fn_name_for_error_msg: str,
+    ) -> Resources:
+        if self.context_managerful_resources_used_outside_of_scope:
+            raise DagsterInvariantViolationError(
+                "At least one provided resource is a generator, but attempting to access "
+                "resources outside of context manager scope. You can use the following syntax to "
+                f"open a context manager: `with {fn_name_for_error_msg}(...) as context:`"
+            )
+        return self._resources
