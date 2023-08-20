@@ -24,7 +24,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWin
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 
-from .resources_bag_of_holding import ResourcesBagOfHolding
+from .dual_state_context import DualStateContextResourcesContainer
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition
@@ -94,21 +94,21 @@ class InputContext:
         self._asset_partitions_subset = asset_partitions_subset
         self._asset_partitions_def = asset_partitions_def
 
-        self._resources_bag_of_holding = ResourcesBagOfHolding(resources)
+        self._resources_container = DualStateContextResourcesContainer(resources)
 
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
         self._instance = instance
 
     def __enter__(self) -> "InputContext":
-        self._resources_bag_of_holding.call_on_enter()
+        self._resources_container.call_on_enter()
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_bag_of_holding.call_on_exit(*exc)
+        self._resources_container.call_on_exit(*exc)
 
     def __del__(self) -> None:
-        self._resources_bag_of_holding.call_on_del()
+        self._resources_container.call_on_del()
 
     @property
     def instance(self) -> DagsterInstance:
@@ -225,13 +225,13 @@ class InputContext:
         input manager. If using the :py:func:`@input_manager` decorator, these resources
         correspond to those requested with the `required_resource_keys` parameter.
         """
-        if self._resources_bag_of_holding.resources is None:
+        if self._resources_container.resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
                 "but it was not provided when constructing the InputContext"
             )
 
-        return self._resources_bag_of_holding.ensure_context_managerful_resources_used_within_scope(
+        return self._resources_container.ensure_context_managerful_resources_used_within_scope(
             "build_input_context"
         )
 

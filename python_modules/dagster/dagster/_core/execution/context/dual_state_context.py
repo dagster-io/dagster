@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from typing import (
     Any,
     Mapping,
@@ -8,9 +9,10 @@ from typing import (
 import dagster._check as check
 from dagster import DagsterInvariantViolationError
 from dagster._core.definitions.resource_definition import Resources
+from dagster._core.instance import DagsterInstance
 
 
-class ResourcesBagOfHolding:
+class DualStateContextResourcesContainer:
     def __init__(self, resources: Optional[Union["Resources", Mapping[str, Any]]] = None):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -59,3 +61,22 @@ class ResourcesBagOfHolding:
                 f"open a context manager: `with {fn_name_for_error_msg}(...) as context:`"
             )
         return self._resources
+
+
+class DualStateContextInstanceContainer:
+    def __init__(self, instance: Optional[DagsterInstance]) -> None:
+        from dagster._core.execution.api import ephemeral_instance_if_missing
+
+        self._exit_stack = ExitStack()
+        # Construct ephemeral instance if missing
+        self._instance = self._exit_stack.enter_context(ephemeral_instance_if_missing(instance))
+
+    def call_on_exit(self, *exc) -> None:
+        self._exit_stack.close()
+
+    def call_on_del(self) -> None:
+        self._exit_stack.close()
+
+    @property
+    def instance(self) -> DagsterInstance:
+        return self._instance

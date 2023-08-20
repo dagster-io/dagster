@@ -30,7 +30,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 
-from .resources_bag_of_holding import ResourcesBagOfHolding
+from .dual_state_context import DualStateContextResourcesContainer
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition, PartitionsDefinition
@@ -80,7 +80,7 @@ class OutputContext:
     _step_context: Optional["StepExecutionContext"]
     _asset_info: Optional[AssetOutputInfo]
     _warn_on_step_context_use: bool
-    _resources_bag_of_holding: ResourcesBagOfHolding
+    _resources_bag_of_holding: DualStateContextResourcesContainer
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation]]
 
@@ -124,7 +124,7 @@ class OutputContext:
         else:
             self._partition_key = partition_key
 
-        self._resources_bag_of_holding = ResourcesBagOfHolding(resources)
+        self._resources_bag_of_holding = DualStateContextResourcesContainer(resources)
 
         self._events = []
         self._user_events = []

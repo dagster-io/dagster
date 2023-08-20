@@ -107,7 +107,10 @@ class InitResourceContext:
         )
 
 
-from .resources_bag_of_holding import ResourcesBagOfHolding
+from .dual_state_context import (
+    DualStateContextInstanceContainer,
+    DualStateContextResourcesContainer,
+)
 
 
 class UnboundInitResourceContext(InitResourceContext):
@@ -148,30 +151,28 @@ class UnboundInitResourceContext(InitResourceContext):
             check.opt_mapping_param(resources, "resources")
         )
 
-        self._resource_bag_of_holding = ResourcesBagOfHolding(self._resource_defs)
-
+        self._resources_container = DualStateContextResourcesContainer(self._resource_defs)
+        self._instance_container = DualStateContextInstanceContainer(instance)
         super(UnboundInitResourceContext, self).__init__(
             resource_config=resource_config,
-            resources=check.not_none(self._resource_bag_of_holding.resources),
+            resources=check.not_none(self._resources_container.resources),
             resource_def=None,
-            instance=instance,
+            instance=self._instance_container.instance,
             dagster_run=None,
             log_manager=initialize_console_manager(None),
         )
 
     def __enter__(self) -> "UnboundInitResourceContext":
-        self._resource_bag_of_holding.call_on_enter()
+        self._resources_container.call_on_enter()
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resource_bag_of_holding.call_on_exit(*exc)
-        if self._instance_provided:
-            self._instance_cm.__exit__(*exc)
+        self._resources_container.call_on_exit()
+        self._instance_container.call_on_exit()
 
     def __del__(self) -> None:
-        self._resource_bag_of_holding.call_on_del()
-        if self._instance_provided and not self._resource_bag_of_holding._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)
+        self._resources_container.call_on_del()
+        self._instance_container.call_on_exit()
 
     @property
     def resource_config(self) -> Any:
@@ -186,7 +187,7 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def resources(self) -> Resources:
         """The resources that are available to the resource that we are initalizing."""
-        return self._resource_bag_of_holding.ensure_context_managerful_resources_used_within_scope(
+        return self._resources_container.ensure_context_managerful_resources_used_within_scope(
             "build_init_resource_context"
         )
 

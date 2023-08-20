@@ -192,7 +192,7 @@ class HookContext:
         return self.solid_output_values
 
 
-from .resources_bag_of_holding import ResourcesBagOfHolding
+from .dual_state_context import DualStateContextResourcesContainer
 
 
 class UnboundHookContext(HookContext):
@@ -216,7 +216,7 @@ class UnboundHookContext(HookContext):
 
             self._op = temp_graph.nodes[0]
 
-        self._resources_bag_of_holding = ResourcesBagOfHolding(resources)
+        self._resources_bag_of_holding = DualStateContextResourcesContainer(resources)
 
         self._run_id = run_id
         self._job_name = job_name
