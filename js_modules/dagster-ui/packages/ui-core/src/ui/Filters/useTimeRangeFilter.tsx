@@ -24,12 +24,11 @@ export type TimeRangeState = [number | null, number | null];
 export function calculateTimeRanges(timezone: string) {
   const targetTimezone = timezone === 'Automatic' ? browserTimezone() : timezone;
   const nowTimestamp = Date.now();
-  const now = Math.floor(nowTimestamp);
   const startOfDay = dayjs(nowTimestamp).tz(targetTimezone).startOf('day');
   const obj = {
     TODAY: {
       label: 'Today',
-      range: [startOfDay.valueOf(), now] as TimeRangeState,
+      range: [startOfDay.valueOf(), null] as TimeRangeState,
     },
     YESTERDAY: {
       label: 'Yesterday',
@@ -42,14 +41,14 @@ export function calculateTimeRanges(timezone: string) {
       label: 'Within last 7 days',
       range: [
         dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'week').valueOf(),
-        now,
+        null,
       ] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
       range: [
         dayjs(nowTimestamp).tz(targetTimezone).subtract(30, 'days').valueOf(),
-        now,
+        null,
       ] as TimeRangeState,
     },
     CUSTOM: {label: 'Custom...', range: [null, null] as TimeRangeState},
