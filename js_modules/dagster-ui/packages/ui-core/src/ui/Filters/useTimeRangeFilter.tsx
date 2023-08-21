@@ -41,14 +41,14 @@ export function calculateTimeRanges(timezone: string) {
     LAST_7_DAYS: {
       label: 'Within last 7 days',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'week').startOf('day').valueOf(),
+        dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'week').valueOf(),
         now,
       ] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
       range: [
-        dayjs(nowTimestamp).tz(targetTimezone).subtract(30, 'days').startOf('day').valueOf(),
+        dayjs(nowTimestamp).tz(targetTimezone).subtract(30, 'days').valueOf(),
         now,
       ] as TimeRangeState,
     },
