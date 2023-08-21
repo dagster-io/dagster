@@ -16,7 +16,7 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.external_execution.resource import (
-    ExternalExecutionResource,
+    SubprocessExecutionResource,
 )
 from dagster._core.instance_for_test import instance_for_test
 from dagster_external.protocol import ExternalExecutionIOMode
@@ -106,13 +106,13 @@ def test_external_execution_asset(input_spec: str, output_spec: str, tmpdir, cap
         context.report_asset_data_version("foo", "alpha")
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
+    def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         extras = {"bar": "baz"}
         with temp_script(script_fn) as script_path:
             cmd = ["python", script_path]
             ext.run(cmd, context, extras)
 
-    resource = ExternalExecutionResource(
+    resource = SubprocessExecutionResource(
         input_mode=input_mode,
         output_mode=output_mode,
         input_path=input_path,
@@ -140,12 +140,12 @@ def test_external_execution_asset_failed():
         raise Exception("foo")
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
+    def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         with temp_script(script_fn) as script_path:
             cmd = ["python", script_path]
             ext.run(cmd, context)
 
-    resource = ExternalExecutionResource(
+    resource = SubprocessExecutionResource(
         input_mode=ExternalExecutionIOMode.stdio,
     )
     with pytest.raises(DagsterExternalExecutionError):
@@ -174,12 +174,12 @@ def test_external_execution_invalid_path(
         pass
 
     @asset
-    def foo(context: AssetExecutionContext, ext: ExternalExecutionResource):
+    def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         with temp_script(script_fn) as script_path:
             cmd = ["python", script_path]
             ext.run(cmd, context)
 
-    resource = ExternalExecutionResource(
+    resource = SubprocessExecutionResource(
         input_mode=ExternalExecutionIOMode(input_mode_name),
         input_path=input_path,
         output_mode=ExternalExecutionIOMode(output_mode_name),
