@@ -363,7 +363,8 @@ class DbtCliInvocation:
             raise DagsterDbtCliRuntimeError(
                 description=(
                     f"The dbt CLI process failed with exit code {self.process.returncode}. Check"
-                    " the compute logs for the full information about the error."
+                    " the Dagster compute logs for the full information about the error, or view"
+                    f" the dbt debug log file: {self.target_path.joinpath('dbt.log')}."
                 )
             )
 
@@ -621,6 +622,9 @@ class DbtCliResource(ConfigurableResource):
             # See https://discourse.getdbt.com/t/multiple-run-results-json-and-manifest-json-files/7555
             # for more information.
             "DBT_TARGET_PATH": target_path,
+            # The DBT_LOG_PATH environment variable is set to the same value as DBT_TARGET_PATH
+            # so that logs for each dbt invocation has separate log files.
+            "DBT_LOG_PATH": target_path,
             # The DBT_PROFILES_DIR environment variable is set to the path containing the dbt
             # profiles.yml file.
             # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
