@@ -1,15 +1,16 @@
 from collections import defaultdict
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Dict, Mapping, Optional, Sequence, Sequence, Tuple
+from collections import defaultdict
 
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 import graphene
 from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
-    MissingAutoMaterializeCondition,
-    ParentMaterializedAutoMaterializeCondition,
-    ParentOutdatedAutoMaterializeCondition,
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    AutoMaterializeRuleEvaluationData,
+    GenericRuleEvaluationData,
 )
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.partition import SerializedPartitionsSubset

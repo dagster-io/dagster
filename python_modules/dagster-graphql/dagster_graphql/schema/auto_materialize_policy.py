@@ -17,6 +17,7 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
     class Meta:
         name = "AutoMaterializeRule"
 
+
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeDecisionType,
 )
@@ -24,35 +25,15 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from .util import non_null_list
 
 
-class GrapheneAutoMaterializeRule(graphene.Interface):
+class GrapheneAutoMaterializeRule(graphene.ObjectType):
     decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
+    description = graphene.String()
 
-    class Meta:
-        name = "AutoMaterializeRule"
-
-
-class GrapheneMaterializeOnMissingRule(graphene.ObjectType):
-    class Meta:
-        name = "MaterializeOnMissingAutoMaterializeRule"
-        interfaces = (GrapheneAutoMaterializeRule,)
-
-
-class GrapheneMaterializeOnParentUpdatedRule(graphene.ObjectType):
-    class Meta:
-        name = "MaterializeOnParentUpdatedAutoMaterializeRule"
-        interfaces = (GrapheneAutoMaterializeRule,)
-
-
-class GrapheneMaterializeOnRequiredForFreshnessRule(graphene.ObjectType):
-    class Meta:
-        name = "MaterializeOnRequiredForFreshnessAutoMaterializeRule"
-        interfaces = (GrapheneAutoMaterializeRule,)
-
-
-class GrapheneSkipOnParentOutdatedRule(graphene.ObjectType):
-    class Meta:
-        name = "SkipOnParentOutdatedAutoMaterializeRule"
-        interfaces = (GrapheneAutoMaterializeRule,)
+    def __init__(self, auto_materialize_rule: AutoMaterializeRule):
+        super().__init__(
+            decisionType=auto_materialize_rule.decision_type,
+            description=auto_materialize_rule.description,
+        )
 
 
 class GrapheneAutoMaterializePolicy(graphene.ObjectType):
