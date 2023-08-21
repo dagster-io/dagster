@@ -44,6 +44,7 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
+from dagster._core.execution.context.dual_state_context import DualStateContextResourcesContainer
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
@@ -170,11 +171,8 @@ class ScheduleEvaluationContext:
         "_log_key",
         "_logger",
         "_repository_name",
-        "_resource_defs",
         "_schedule_name",
-        "_resources_cm",
-        "_resources",
-        "_cm_scope_entered",
+        "_resources_container",
         "_repository_def",
     ]
 
@@ -210,24 +208,25 @@ class ScheduleEvaluationContext:
         self._schedule_name = schedule_name
 
         # Wait to set resources unless they're accessed
-        self._resource_defs = resources
-        self._resources = None
-        self._cm_scope_entered = False
+        self._resources_container = DualStateContextResourcesContainer(resources)
         self._repository_def = check.opt_inst_param(
             repository_def, "repository_def", RepositoryDefinition
         )
 
     def __enter__(self) -> "ScheduleEvaluationContext":
-        self._cm_scope_entered = True
+        self._resources_container.call_on_enter()
         return self
 
     def __exit__(self, *exc) -> None:
-        self._exit_stack.close()
+        self._resources_container.call_on_exit()
         self._logger = None
+
+    def __del__(self) -> None:
+        self._resources_container.call_on_del()
 
     @property
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
-        return self._resource_defs
+        return self._resources_container.resource_defs
 
     @public
     @property
@@ -235,38 +234,7 @@ class ScheduleEvaluationContext:
         """Mapping of resource key to resource definition to be made available
         during schedule execution.
         """
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
-
-        if not self._resources:
-            # Early exit if no resources are defined. This skips unnecessary initialization
-            # entirely. This allows users to run user code servers in cases where they
-            # do not have access to the instance if they use a subset of features do
-            # that do not require instance access. In this case, if they do not use
-            # resources on schedules they do not require the instance, so we do not
-            # instantiate it
-            #
-            # Tracking at https://github.com/dagster-io/dagster/issues/14345
-            if not self._resource_defs:
-                self._resources = ScopedResourcesBuilder.build_empty()
-                return self._resources
-
-            instance = self.instance if self._instance or self._instance_ref else None
-
-            resources_cm = build_resources(resources=self._resource_defs, instance=instance)
-            self._resources = self._exit_stack.enter_context(resources_cm)
-
-            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
-                self._exit_stack.close()
-                raise DagsterInvariantViolationError(
-                    "At least one provided resource is a generator, but attempting to access"
-                    " resources outside of context manager scope. You can use the following syntax"
-                    " to open a context manager: `with build_sensor_context(...) as context:`"
-                )
-
-        return self._resources
+        return self._resources_container.get_resources("build_schedule_context")
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "ScheduleEvaluationContext":
         """Merge the specified resources into this context.
@@ -276,7 +244,8 @@ class ScheduleEvaluationContext:
             resources_dict (Mapping[str, Any]): The resources to replace in the context.
         """
         check.invariant(
-            self._resources is None, "Cannot merge resources in context that has been initialized."
+            not self._resources_container.has_been_accessed,
+            "Cannot merge resources in context that has been initialized.",
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -286,7 +255,7 @@ class ScheduleEvaluationContext:
             repository_name=self._repository_name,
             schedule_name=self._schedule_name,
             resources={
-                **(self._resource_defs or {}),
+                **(self.resource_defs or {}),
                 **wrap_resources_for_execution(resources_dict),
             },
             repository_def=self._repository_def,

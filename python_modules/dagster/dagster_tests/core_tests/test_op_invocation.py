@@ -1037,9 +1037,12 @@ def test_build_context_with_resources_config(context_builder):
         DagsterInvalidConfigError,
         match='Received unexpected config entry "bad_resource" at the root.',
     ):
-        context_builder(
-            resources={"my_resource": my_resource},
-            resources_config={"bad_resource": {"config": "foo"}},
+        # behavior change to deferred config eval
+        my_op(
+            context_builder(
+                resources={"my_resource": my_resource},
+                resources_config={"bad_resource": {"config": "foo"}},
+            )
         )
 
 
