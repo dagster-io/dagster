@@ -4,12 +4,16 @@ from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy,
     AutoMaterializePolicyType,
 )
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
 
 from .util import non_null_list
+
+GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
 
 
 class GrapheneAutoMaterializeRule(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
+    decisionType = GrapheneAutoMaterializeDecisionType
 
     class Meta:
         name = "AutoMaterializeRule"
@@ -29,7 +33,7 @@ class GrapheneAutoMaterializePolicy(graphene.ObjectType):
         )
         super().__init__(
             rules=[
-                GrapheneAutoMaterializeRule(rule.description)
+                GrapheneAutoMaterializeRule(rule.description, rule.decision_type)
                 for rule in auto_materialize_policy.rules
             ],
             policyType=auto_materialize_policy.policy_type,

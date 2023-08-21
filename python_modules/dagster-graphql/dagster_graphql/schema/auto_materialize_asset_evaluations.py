@@ -95,6 +95,7 @@ def create_graphene_auto_materialize_rule_evaluations(
     partitions_def: Optional[PartitionsDefinition],
 ) -> Sequence[GrapheneAutoMaterializeRuleEvaluation]:
     rule_mapping = defaultdict(list)
+    # handle converting from old condition format to new rule format
     for condition_tuple in partition_subsets_by_condition:
         condition, subset = condition_tuple
         if isinstance(
@@ -115,7 +116,9 @@ def create_graphene_auto_materialize_rule_evaluations(
 
     return [
         GrapheneAutoMaterializeRuleEvaluation(
-            rule=GrapheneAutoMaterializeRule(description=rule.description),
+            rule=GrapheneAutoMaterializeRule(
+                description=rule.description, decision_type=rule.decision_type
+            ),
             evaluationData=[
                 create_graphene_auto_materialize_condition(tup, partitions_def) for tup in tups
             ],
