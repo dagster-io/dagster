@@ -25,6 +25,7 @@ interface Props {
   rightOfSearchBar?: React.ReactNode;
   showStatusWarningIcon?: boolean;
   getNavLinks?: (navItems: AppNavLinkType[]) => React.ReactNode;
+  allowGlobalReload?: boolean;
 }
 
 export const AppTopNav: React.FC<Props> = ({
@@ -32,6 +33,7 @@ export const AppTopNav: React.FC<Props> = ({
   rightOfSearchBar,
   searchPlaceholder,
   getNavLinks,
+  allowGlobalReload = false,
 }) => {
   const history = useHistory();
 
@@ -137,18 +139,20 @@ export const AppTopNav: React.FC<Props> = ({
         {rightOfSearchBar}
       </Box>
       <Box flex={{direction: 'row', alignItems: 'center'}}>
-        <ShortcutHandler
-          onShortcut={() => {
-            if (!reloading) {
-              tryReload();
-            }
-          }}
-          shortcutLabel={`⌥R - ${reloading ? 'Reloading' : 'Reload all code locations'}`}
-          // On OSX Alt + R creates ®, not sure about windows, so checking 'r' for windows
-          shortcutFilter={(e) => e.altKey && (e.key === '®' || e.key === 'r')}
-        >
-          <div style={{width: '0px', height: '30px'}} />
-        </ShortcutHandler>
+        {allowGlobalReload ? (
+          <ShortcutHandler
+            onShortcut={() => {
+              if (!reloading) {
+                tryReload();
+              }
+            }}
+            shortcutLabel={`⌥R - ${reloading ? 'Reloading' : 'Reload all code locations'}`}
+            // On OSX Alt + R creates ®, not sure about windows, so checking 'r' for windows
+            shortcutFilter={(e) => e.altKey && (e.key === '®' || e.key === 'r')}
+          >
+            <div style={{width: '0px', height: '30px'}} />
+          </ShortcutHandler>
+        ) : null}
         <SearchDialog searchPlaceholder={searchPlaceholder} />
         {children}
       </Box>
