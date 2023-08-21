@@ -55,7 +55,7 @@ export const layoutAssetGraph = (
           marginy: MARGIN,
           nodesep: -10,
           edgesep: 10,
-          ranksep: 30,
+          ranksep: 60,
         }
       : {
           rankdir: 'TB',
