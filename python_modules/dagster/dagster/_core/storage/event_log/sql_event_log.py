@@ -38,8 +38,14 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import RunShardedEventsCursor
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
+from dagster._core.event_api import RunShardedEventsCursor, RunStatusEventRecordsFilter
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    MARKER_EVENTS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.asset_check_execution_record import (
@@ -74,6 +80,7 @@ from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
+    AssetRecordsFilter,
     EventLogConnection,
     EventLogCursor,
     EventLogRecord,
@@ -897,6 +904,16 @@ class SqlEventLogStorage(EventLogStorage):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
+        return self._get_event_records(
+            event_records_filter=event_records_filter, limit=limit, ascending=ascending
+        )
+
+    def _get_event_records(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -976,6 +993,96 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def supports_intersect(self) -> bool:
         return True
+
+    def get_materialization_records(
+        self,
+        asset_key: Optional[AssetKey] = None,
+        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        event_records_filter = (
+            asset_records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+            )
+            if asset_records_filter
+            else EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+            )
+        )
+        return self._get_event_records(
+            event_records_filter=event_records_filter,
+            limit=limit,
+            ascending=ascending,
+        )
+
+    def get_observation_records(
+        self,
+        asset_key: Optional[AssetKey] = None,
+        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        event_records_filter = (
+            asset_records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=asset_key,
+            )
+            if asset_records_filter
+            else EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=asset_key,
+            )
+        )
+        return self._get_event_records(
+            event_records_filter=event_records_filter,
+            limit=limit,
+            ascending=ascending,
+        )
+
+    def get_planned_materialization_records(
+        self,
+        asset_key: Optional[AssetKey] = None,
+        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        event_records_filter = (
+            asset_records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+            )
+            if asset_records_filter
+            else EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=asset_key,
+            )
+        )
+        return self._get_event_records(
+            event_records_filter=event_records_filter,
+            limit=limit,
+            ascending=ascending,
+        )
+
+    def get_run_status_event_records(
+        self,
+        event_type: DagsterEventType,
+        filters: Optional[RunStatusEventRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
+            check.failed(f"Expected one of {expected}, received {event_type.value}")
+
+        events_filter = (
+            filters.to_event_records_filter(event_type)
+            if filters
+            else EventRecordsFilter(event_type)
+        )
+        return self._get_event_records(events_filter, limit=limit, ascending=ascending)
 
     def get_logs_for_all_runs_by_log_id(
         self,

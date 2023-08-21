@@ -16,7 +16,13 @@ from typing import (
 import dagster._check as check
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
-from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
+from dagster._core.event_api import (
+    AssetRecordsFilter,
+    EventHandlerFn,
+    EventLogRecord,
+    EventRecordsFilter,
+    RunStatusEventRecordsFilter,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.stats import (
     RunStepKeyStatsSnapshot,
@@ -508,4 +514,44 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         is set and include_planned is True, the returned Sequence will include executions that are planned
         but do not have a target materialization yet (since we don't set the target until the check is executed).
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_materialization_records(
+        self,
+        asset_key: Optional[AssetKey] = None,
+        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_observation_records(
+        self,
+        asset_key: Optional[AssetKey] = None,
+        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_planned_materialization_records(
+        self,
+        asset_key: Optional[AssetKey] = None,
+        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_run_status_event_records(
+        self,
+        event_type: DagsterEventType,
+        filters: Optional[RunStatusEventRecordsFilter],
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
         raise NotImplementedError()

@@ -146,3 +146,143 @@ class EventRecordsFilter(
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )
+
+
+@whitelist_for_serdes
+class AssetRecordsFilter(
+    NamedTuple(
+        "_AssetRecordsFilter",
+        [
+            ("asset_partitions", Optional[Sequence[str]]),
+            ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
+            ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
+            ("after_timestamp", Optional[float]),
+            ("before_timestamp", Optional[float]),
+            ("storage_ids", Optional[Sequence[int]]),
+            ("tags", Optional[Mapping[str, Union[str, Sequence[str]]]]),
+        ],
+    )
+):
+    """Defines a set of filter fields for fetching a set of asset event records.
+
+    Args:
+        asset_partitions (Optional[List[str]]): Filter parameter such that only asset
+            events with a partition value matching one of the provided values.  Only
+            valid when the `asset_key` parameter is provided.
+        after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
+            records with storage_id greater than the provided value are returned. Using a
+            run-sharded events cursor will result in a significant performance gain when run against
+            a SqliteEventLogStorage implementation (which is run-sharded)
+        before_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that
+            records with storage_id less than the provided value are returned. Using a run-sharded
+            events cursor will result in a significant performance gain when run against
+            a SqliteEventLogStorage implementation (which is run-sharded)
+        after_timestamp (Optional[float]): Filter parameter such that only event records for
+            events with timestamp greater than the provided value are returned.
+        before_timestamp (Optional[float]): Filter parameter such that only event records for
+            events with timestamp less than the provided value are returned.
+    """
+
+    def __new__(
+        cls,
+        asset_partitions: Optional[Sequence[str]] = None,
+        after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        after_timestamp: Optional[float] = None,
+        before_timestamp: Optional[float] = None,
+        storage_ids: Optional[Sequence[int]] = None,
+        tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
+    ):
+        check.opt_sequence_param(asset_partitions, "asset_partitions", of_type=str)
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
+        return super(AssetRecordsFilter, cls).__new__(
+            cls,
+            asset_partitions=asset_partitions,
+            after_cursor=check.opt_inst_param(
+                after_cursor, "after_cursor", (int, RunShardedEventsCursor)
+            ),
+            before_cursor=check.opt_inst_param(
+                before_cursor, "before_cursor", (int, RunShardedEventsCursor)
+            ),
+            after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
+            before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
+            storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str),
+        )
+
+    def to_event_records_filter(
+        self, event_type: DagsterEventType, asset_key: Optional[AssetKey] = None
+    ) -> EventRecordsFilter:
+        return EventRecordsFilter(
+            event_type=event_type,
+            asset_key=asset_key,
+            asset_partitions=self.asset_partitions,
+            after_cursor=self.after_cursor,
+            before_cursor=self.before_cursor,
+            after_timestamp=self.after_timestamp,
+            before_timestamp=self.before_timestamp,
+            storage_ids=self.storage_ids,
+            tags=self.tags,
+        )
+
+
+@whitelist_for_serdes
+class RunStatusEventRecordsFilter(
+    NamedTuple(
+        "_RunStatusEventRecordsFilter",
+        [
+            ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
+            ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
+            ("after_timestamp", Optional[float]),
+            ("before_timestamp", Optional[float]),
+            ("storage_ids", Optional[Sequence[int]]),
+        ],
+    )
+):
+    """Defines a set of filter fields for fetching a set of asset event records.
+
+    Args:
+        after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
+            records with storage_id greater than the provided value are returned. Using a
+            run-sharded events cursor will result in a significant performance gain when run against
+            the sqlite storage implementation (which is run-sharded).
+        before_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that
+            records with storage_id less than the provided value are returned. Using a run-sharded
+            events cursor will result in a significant performance gain when run against the sqlite
+            storage implementation (which is run-sharded).
+        after_timestamp (Optional[float]): Filter parameter such that only event records for
+            events with timestamp greater than the provided value are returned.
+        before_timestamp (Optional[float]): Filter parameter such that only event records for
+            events with timestamp less than the provided value are returned.
+    """
+
+    def __new__(
+        cls,
+        after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
+        after_timestamp: Optional[float] = None,
+        before_timestamp: Optional[float] = None,
+        storage_ids: Optional[Sequence[int]] = None,
+    ):
+        return super(RunStatusEventRecordsFilter, cls).__new__(
+            cls,
+            after_cursor=check.opt_inst_param(
+                after_cursor, "after_cursor", (int, RunShardedEventsCursor)
+            ),
+            before_cursor=check.opt_inst_param(
+                before_cursor, "before_cursor", (int, RunShardedEventsCursor)
+            ),
+            after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
+            before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
+            storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+        )
+
+    def to_event_records_filter(self, event_type: DagsterEventType) -> EventRecordsFilter:
+        return EventRecordsFilter(
+            event_type=event_type,
+            after_cursor=self.after_cursor,
+            before_cursor=self.before_cursor,
+            after_timestamp=self.after_timestamp,
+            before_timestamp=self.before_timestamp,
+            storage_ids=self.storage_ids,
+        )
