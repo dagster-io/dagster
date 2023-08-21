@@ -149,9 +149,9 @@ AssetCheckExecutionsTable = db.Table(
     db.Column("asset_key", db.Text),
     db.Column("check_name", db.Text),
     db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
-    db.Column("run_id", db.Text),
-    db.Column("execution_status", db.Text),  # Planned, Success, or Failure
-    db.Column("event_record", db.Text),
+    db.Column("run_id", db.String(255)),
+    db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
+    db.Column("asset_check_evaluation_event_record", db.Text),
     db.Column("event_timestamp", db.DateTime),
     db.Column(
         "materialization_storage_id",
