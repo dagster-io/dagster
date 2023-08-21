@@ -57,6 +57,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 
 from .compute import OpExecutionContext
+from .dual_state_context import DualStateContextResourcesContainer
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -64,9 +65,6 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     return (
         f"The {prop_name} {method_name} is not set on the context when a solid is directly invoked."
     )
-
-
-from .dual_state_context import DualStateContextResourcesContainer
 
 
 class UnboundOpExecutionContext(OpExecutionContext):
