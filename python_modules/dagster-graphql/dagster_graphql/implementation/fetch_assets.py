@@ -591,7 +591,7 @@ def get_2d_run_length_encoded_partitions(
                 if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
                     time_windows = cast(
                         TimeWindowPartitionsDefinition, primary_partitions_def
-                    ).time_windows_for_partition_keys(list(set([start_key, end_key])))
+                    ).time_windows_for_partition_keys(frozenset([start_key, end_key]))
                     start_time = time_windows[0].start.timestamp()
                     end_time = time_windows[-1].end.timestamp()
                 else:
