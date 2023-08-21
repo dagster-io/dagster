@@ -1,6 +1,5 @@
 import functools
 import logging
-from contextlib import ExitStack
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -111,6 +110,9 @@ class RunStatusSensorCursor(
         return deserialize_value(json_str, RunStatusSensorCursor)
 
 
+from dagster._core.execution.context.dual_state_context import DualStateContextResourcesContainer
+
+
 class RunStatusSensorContext:
     """The ``context`` object available to a decorated function of ``run_status_sensor``."""
 
@@ -126,10 +128,8 @@ class RunStatusSensorContext:
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
         logger: Optional[logging.Logger] = None,
         partition_key: Optional[str] = None,
-        _resources: Optional[Resources] = None,
-        _cm_scope_entered: bool = False,
+        _resources_container: Optional["DualStateContextResourcesContainer"] = None,
     ) -> None:
-        self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
@@ -137,10 +137,10 @@ class RunStatusSensorContext:
         self._logger: Optional[logging.Logger] = logger or (context.log if context else None)
         self._partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        # Wait to set resources unless they're accessed
-        self._resource_defs = resource_defs
-        self._resources = _resources
-        self._cm_scope_entered = _cm_scope_entered
+        if _resources_container:
+            self._resources_container = _resources_container
+        else:
+            self._resources_container = DualStateContextResourcesContainer(resource_defs)
 
     def for_run_failure(self) -> "RunFailureSensorContext":
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
@@ -151,53 +151,17 @@ class RunStatusSensorContext:
             instance=self._instance,
             logger=self._logger,
             partition_key=self._partition_key,
-            resource_defs=self._resource_defs,
-            _resources=self._resources,
-            _cm_scope_entered=self._cm_scope_entered,
+            resource_defs=self.resource_defs,
+            _resources_container=self._resources_container,
         )
 
     @property
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
-        return self._resource_defs
+        return self._resources_container.resource_defs
 
     @property
     def resources(self) -> Resources:
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
-
-        if not self._resources:
-            """
-            This is similar to what we do in e.g. the op context - we set up a resource
-            building context manager, and immediately enter it. This is so that in cases
-            where a user is not using any context-manager based resources, they don't
-            need to enter this SensorEvaluationContext themselves.
-
-            For example:
-
-            my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
-
-            will work ok, but for a CM resource we must do
-
-            with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
-                my_sensor(context)
-            """
-
-            instance = self.instance if self._instance else None
-
-            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
-            self._resources = self._exit_stack.enter_context(resources_cm)
-
-            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
-                self._exit_stack.close()
-                raise DagsterInvariantViolationError(
-                    "At least one provided resource is a generator, but attempting to access"
-                    " resources outside of context manager scope. You can use the following syntax"
-                    " to open a context manager: `with build_schedule_context(...) as context:`"
-                )
-
-        return self._resources
+        return self._resources_container.get_resources("build_run_status_sensor_context")
 
     @public
     @property
@@ -239,11 +203,15 @@ class RunStatusSensorContext:
         return self._partition_key
 
     def __enter__(self) -> "RunStatusSensorContext":
-        self._cm_scope_entered = True
+        self._resources_container.call_on_enter()
         return self
 
     def __exit__(self, *exc) -> None:
-        self._exit_stack.close()
+        self._resources_container.call_on_exit()
+        self._logger = None
+
+    def __del__(self) -> None:
+        self._resources_container.call_on_del()
         self._logger = None
 
 
