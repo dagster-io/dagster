@@ -120,7 +120,11 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
 
     commands = [
         "pip install check-manifest",
-        *(f"check-manifest {library}" for library in published_packages),
+        *(
+            f"check-manifest {library}"
+            for library in published_packages
+            if not library.endswith("CONTRIBUTING.md")  # ignore md file in dir
+        ),
     ]
 
     return [
