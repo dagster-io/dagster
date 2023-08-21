@@ -202,14 +202,12 @@ export function SetFilterActiveState({
               </Box>
             }
           >
-            <FilterTagHighlightedText>{`${
-              arr.length
-            } ${name.toLowerCase()}s`}</FilterTagHighlightedText>
+            <FilterTagHighlightedText>{`(${arr.length})`}</FilterTagHighlightedText>
           </Popover>
         </Box>
       );
     }
-  }, [arr, getStringValue, isAnyOf, name, renderLabel]);
+  }, [arr, getStringValue, isAnyOf, renderLabel]);
 
   if (arr.length === 0) {
     return null;
