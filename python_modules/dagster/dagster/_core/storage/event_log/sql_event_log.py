@@ -39,8 +39,18 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import RunShardedEventsCursor
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
+from dagster._core.event_api import (
+    EventRecordsResult,
+    RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter,
+)
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    MARKER_EVENTS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.asset_check_execution_record import (
@@ -75,6 +85,7 @@ from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
     AssetRecord,
+    AssetRecordsFilter,
     EventLogConnection,
     EventLogCursor,
     EventLogRecord,
@@ -899,6 +910,16 @@ class SqlEventLogStorage(EventLogStorage):
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
+        return self._get_event_records(
+            event_records_filter=event_records_filter, limit=limit, ascending=ascending
+        )
+
+    def _get_event_records(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -978,6 +999,145 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def supports_intersect(self) -> bool:
         return True
+
+    def _get_event_records_result(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: int,
+        cursor: Optional[str],
+        ascending: bool,
+    ):
+        records = self._get_event_records(
+            event_records_filter=event_records_filter,
+            limit=limit,
+            ascending=ascending,
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
+
+    def get_materialization_records(
+        self,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            if isinstance(records_filter, AssetKey):
+                event_records_filter = EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=records_filter,
+                    before_cursor=before_cursor,
+                    after_cursor=after_cursor,
+                )
+            else:
+                event_records_filter = EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    before_cursor=before_cursor,
+                    after_cursor=after_cursor,
+                )
+
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def get_observation_records(
+        self,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            if isinstance(records_filter, AssetKey):
+                event_records_filter = EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    asset_key=records_filter,
+                    before_cursor=before_cursor,
+                    after_cursor=after_cursor,
+                )
+            else:
+                event_records_filter = EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    before_cursor=before_cursor,
+                    after_cursor=after_cursor,
+                )
+
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def get_planned_materialization_records(
+        self,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        if isinstance(records_filter, AssetRecordsFilter):
+            event_records_filter = records_filter.to_event_records_filter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                cursor=cursor,
+                ascending=ascending,
+            )
+        else:
+            before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+            if isinstance(records_filter, AssetKey):
+                event_records_filter = EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=records_filter,
+                    before_cursor=before_cursor,
+                    after_cursor=after_cursor,
+                )
+            else:
+                event_records_filter = EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    before_cursor=before_cursor,
+                    after_cursor=after_cursor,
+                )
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
+
+    def get_run_status_change_records(
+        self,
+        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        event_type = (
+            records_filter
+            if isinstance(records_filter, DagsterEventType)
+            else records_filter.event_type
+        )
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
+            check.failed(f"Expected one of {expected}, received {event_type.value}")
+
+        before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+        event_records_filter = (
+            records_filter.to_event_records_filter(cursor, ascending)
+            if isinstance(records_filter, RunStatusChangeRecordsFilter)
+            else EventRecordsFilter(
+                event_type, before_cursor=before_cursor, after_cursor=after_cursor
+            )
+        )
+        return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_logs_for_all_runs_by_log_id(
         self,

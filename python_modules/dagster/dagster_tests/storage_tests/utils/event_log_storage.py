@@ -47,6 +47,7 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.event_api import EventLogCursor, EventRecordsResult
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     AssetMaterializationPlannedData,
@@ -1014,6 +1015,7 @@ class TestEventLogStorage:
 
             assert asset_key in set(storage.all_asset_keys())
 
+            # legacy API
             records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -1024,6 +1026,14 @@ class TestEventLogStorage:
             record = records[0]
             assert isinstance(record, EventLogRecord)
             assert record.event_log_entry.dagster_event.asset_key == asset_key
+
+            # new API
+            result = storage.get_materialization_records(asset_key)
+            assert isinstance(result, EventRecordsResult)
+            assert len(result.records) == 1
+            record = result.records[0]
+            assert record.event_log_entry.dagster_event.asset_key == asset_key
+            assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
     def test_asset_materialization_null_key_fails(self):
         with pytest.raises(check.CheckError):
@@ -1361,6 +1371,71 @@ class TestEventLogStorage:
                     limit=2,
                 )
             ] == [record.storage_id for record in all_success_events[:2][::-1]]
+
+            assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
+                DagsterEventType.RUN_SUCCESS
+            }
+
+    def test_get_run_status_change_events(self, storage, instance):
+        asset_key = AssetKey(["path", "to", "asset_one"])
+
+        @op
+        def materialize_one(_):
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                metadata={
+                    "text": "hello",
+                    "json": {"hello": "world"},
+                    "one_float": 1.0,
+                    "one_int": 1,
+                },
+            )
+            yield Output(1)
+
+        def _ops():
+            materialize_one()
+
+        def _store_run_events(run_id):
+            events, _ = _synthesize_events(_ops, run_id=run_id)
+            for event in events:
+                storage.store_event(event)
+
+        # store events for three runs
+        [run_id_1, run_id_2, run_id_3] = [
+            make_new_run_id(),
+            make_new_run_id(),
+            make_new_run_id(),
+        ]
+
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _store_run_events(run_id_1)
+            _store_run_events(run_id_2)
+            _store_run_events(run_id_3)
+
+            all_success_events = storage.get_run_status_change_records(
+                DagsterEventType.RUN_SUCCESS
+            ).records
+            assert len(all_success_events) == 3
+            assert all_success_events[0].storage_id > all_success_events[2].storage_id
+            assert (
+                len(
+                    storage.get_run_status_change_records(
+                        DagsterEventType.RUN_SUCCESS,
+                        cursor=str(
+                            EventLogCursor.from_storage_id(all_success_events[1].storage_id)
+                        ),
+                    ).records
+                )
+                == 1
+            )
+            assert [
+                i.storage_id
+                for i in storage.get_run_status_change_records(
+                    DagsterEventType.RUN_SUCCESS,
+                    ascending=True,
+                    limit=2,
+                ).records
+            ] == [record.storage_id for record in all_success_events[::-1][:2]]
 
             assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
                 DagsterEventType.RUN_SUCCESS
@@ -2688,6 +2763,7 @@ class TestEventLogStorage:
             for event in events_one:
                 storage.store_event(event)
 
+            # legacy API
             records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_OBSERVATION,
@@ -2696,6 +2772,49 @@ class TestEventLogStorage:
             )
 
             assert len(records) == 1
+
+            # new API
+            result = storage.get_observation_records(a)
+            assert isinstance(result, EventRecordsResult)
+            assert len(result.records) == 1
+            record = result.records[0]
+            assert record.event_log_entry.dagster_event.asset_key == a
+            assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
+
+    def test_get_planned_materialization(self, storage, test_run_id):
+        a = AssetKey(["key_a"])
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetMaterializationPlannedData(a, "foo"),
+                ),
+            )
+        )
+
+        # legacy API
+        records = storage.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                asset_key=a,
+            )
+        )
+        assert len(records) == 1
+
+        # new API
+        result = storage.get_planned_materialization_records(a)
+        assert isinstance(result, EventRecordsResult)
+        assert len(result.records) == 1
+        record = result.records[0]
+        assert record.event_log_entry.dagster_event.asset_key == a
+        assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
     def test_asset_key_exists_on_observation(self, storage, instance):
         key = AssetKey("hello")
