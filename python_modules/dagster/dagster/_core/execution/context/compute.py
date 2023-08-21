@@ -467,10 +467,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         """Get the set of AssetKeys this execution is expected to materialize."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
-        if assets_def is None:
+        if not self.has_assets_def:
             return set()
-        return assets_def.keys
+        return self.assets_def.keys
 
     @public
     @property
