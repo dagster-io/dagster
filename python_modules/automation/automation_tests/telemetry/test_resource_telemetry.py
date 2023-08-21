@@ -24,7 +24,11 @@ def test_resource_telemetry():
 
     libraries_dir = file_relative_path(__file__, "../../../libraries")
 
-    libraries = [library.name.replace("-", "_") for library in os.scandir(libraries_dir)]
+    libraries = [
+        library.name.replace("-", "_")
+        for library in os.scandir(libraries_dir)
+        if not library.name.endswith("CONTRIBUTING.md")
+    ]
     libraries.append("dagster")
 
     # dagster-ge is out of date and is not installed in the dev environment
