@@ -137,6 +137,38 @@ PendingStepsTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
+AssetCheckExecutionsTable = db.Table(
+    "asset_check_executions",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("asset_key", db.Text),
+    db.Column("check_name", db.Text),
+    db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
+    db.Column("run_id", db.Text),
+    db.Column("execution_status", db.Text),  # Planned, Success, or Failure
+    db.Column("event_record", db.Text),
+    db.Column("event_timestamp", db.DateTime),
+    db.Column(
+        "materialization_storage_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+db.Index(
+    "idx_asset_check_executions_unique",
+    AssetCheckExecutionsTable.c.asset_key,
+    AssetCheckExecutionsTable.c.check_name,
+    AssetCheckExecutionsTable.c.run_id,
+    AssetCheckExecutionsTable.c.partition,
+    unique=True,
+)
+
 db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
