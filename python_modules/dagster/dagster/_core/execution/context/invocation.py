@@ -32,7 +32,6 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import (
-    IContainsGenerator,
     ResourceDefinition,
     Resources,
     ScopedResourcesBuilder,
@@ -67,6 +66,9 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
+from .dual_state_context import DualStateContextResourcesContainer
+
+
 class UnboundOpExecutionContext(OpExecutionContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
@@ -95,17 +97,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._instance = self._exit_stack.enter_context(ephemeral_instance_if_missing(instance))
 
         self._resources_config = resources_config
-        # Open resource context manager
-        self._resources_contain_cm = False
-        self._resource_defs = wrap_resources_for_execution(resources_dict)
-        self._resources = self._exit_stack.enter_context(
-            build_resources(
-                resources=self._resource_defs,
-                instance=instance,
-                resource_config=resources_config,
-            )
-        )
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        self._resources_container = DualStateContextResourcesContainer(resources_dict)
 
         self._log = initialize_console_manager(None)
         self._pdb: Optional[ForkedPdb] = None
@@ -121,14 +113,16 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
         self._assets_def = check.opt_inst_param(assets_def, "assets_def", AssetsDefinition)
 
-    def __enter__(self):
-        self._cm_scope_entered = True
+    def __enter__(self) -> "UnboundOpExecutionContext":
+        self._resources_container.call_on_enter()
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc) -> None:
+        self._resources_container.call_on_exit()
         self._exit_stack.close()
 
-    def __del__(self):
+    def __del__(self) -> None:
+        self._resources_container.call_on_del()
         self._exit_stack.close()
 
     @property
@@ -136,18 +130,16 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self._op_config
 
     @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self._resources_container.resource_defs
+
+    @property
     def resource_keys(self) -> AbstractSet[str]:
-        return self._resource_defs.keys()
+        return self.resource_defs.keys()
 
     @property
     def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_op_context(...) as context:`"
-            )
-        return self._resources
+        return self._resources_container.get_resources("build_op_context")
 
     @property
     def dagster_run(self) -> DagsterRun:
@@ -282,7 +274,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
                 assets_def,
                 self.resources,
                 op_config,
-                self._resource_defs,
+                self.resource_defs,
             )
             return
 
@@ -290,7 +282,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             Tuple[Mapping[str, ResourceDefinition], Optional[Mapping[str, Any]]]
         ):
             if resources_from_args:
-                if self._resource_defs:
+                if self.resource_defs:
                     raise DagsterInvalidInvocationError(
                         "Cannot provide resources in both context and kwargs"
                     )
@@ -299,14 +291,14 @@ class UnboundOpExecutionContext(OpExecutionContext):
                 check.invariant(resources_on_assets_def)
                 assert assets_def  # for typing
                 for key in sorted(list(assets_def.resource_defs.keys())):
-                    if key in self._resource_defs:
+                    if key in self.resource_defs:
                         raise DagsterInvalidInvocationError(
                             f"Error when invoking {assets_def!s} resource '{key}' "
                             "provided on both the definition and invocation context. Please "
                             "provide on only one or the other."
                         )
                 resources = wrap_resources_for_execution(
-                    {**self._resource_defs, **assets_def.resource_defs}
+                    {**self.resource_defs, **assets_def.resource_defs}
                 )
                 return resources, self._resources_config
 
