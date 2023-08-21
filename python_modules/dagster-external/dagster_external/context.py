@@ -2,6 +2,7 @@ import atexit
 import json
 import socket
 import sys
+import warnings
 from typing import Any, ClassVar, Mapping, Optional, Sequence, TextIO
 
 from typing_extensions import Self
@@ -28,16 +29,32 @@ from .util import (
 )
 
 
-def init_dagster_external() -> "ExternalExecutionContext":
+def is_dagster_orchestration_active() -> bool:
     params = get_external_execution_params()
-    data = _read_input(params)
-    output_stream = _get_output_stream(params)
+    return params.is_orchestration_active
 
-    # Sockets can hang without this.
-    if output_stream is not sys.stdout:
-        atexit.register(_close_stream, output_stream)
 
-    context = ExternalExecutionContext(data, output_stream)
+def init_dagster_external() -> "ExternalExecutionContext":
+    if ExternalExecutionContext.is_initialized():
+        return ExternalExecutionContext.get()
+    params = get_external_execution_params()
+    if params.is_orchestration_active:
+        data = _read_input(params)
+        output_stream = _get_output_stream(params)
+
+        # Sockets can hang without this.
+        if output_stream is not sys.stdout:
+            atexit.register(_close_stream, output_stream)
+
+        context = ExternalExecutionContext(data, output_stream)
+    else:
+        from unittest.mock import MagicMock
+
+        warnings.warn(
+            "This process was not launched by a Dagster orchestration process. All calls to the"
+            " `dagster-external` are no-ops."
+        )
+        context = MagicMock()
     ExternalExecutionContext.set(context)
     return context
 
@@ -90,6 +107,10 @@ def _close_stream(stream) -> None:
 
 class ExternalExecutionContext:
     _instance: ClassVar[Optional[Self]] = None
+
+    @classmethod
+    def is_initialized(cls) -> bool:
+        return cls._instance is not None
 
     @classmethod
     def set(cls, context: Self) -> None:
