@@ -193,7 +193,13 @@ dagsterWebserver:
     enabled: false
 
 ####################################################################################################
-# Compute Log Manager: Configuration for the compute log manager
+# Compute Log Manager: Configuration for the compute log manager.
+#
+# By default, NoOpComputeLogManager is set as a compute log manager. As a result, stdout and stderr
+# logs will be unavailable in the Dagster UI. To change this behavior, choose a compute log
+# manager with a storage backend to capture and persist stdout and stderr logs.
+#
+# See https://docs.dagster.io/deployment/dagster-instance#compute-log-storage for more information.
 ####################################################################################################
 computeLogManager:
   # Type can be one of [
