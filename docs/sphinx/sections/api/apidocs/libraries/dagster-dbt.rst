@@ -38,6 +38,8 @@ Assets (dbt Core)
 
 .. autoclass:: DagsterDbtTranslator
 
+.. autoclass:: DbtManifestAssetSelection
+
 .. autofunction:: build_dbt_asset_selection
 
 .. autofunction:: build_schedule_from_dbt_selection
