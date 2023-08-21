@@ -281,7 +281,7 @@ const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : applyingEmptyDefault ? (
-            <LargeDAGNotice nodeType="asset" />
+            <LargeDAGNotice nodeType="asset" anchorLeft={fetchOptionFilters ? '300px' : '40px'} />
           ) : Object.keys(assetGraphData.nodes).length === 0 ? (
             <EntirelyFilteredDAGNotice nodeType="asset" />
           ) : undefined}
