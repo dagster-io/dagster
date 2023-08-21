@@ -215,7 +215,7 @@ class ExternalExecutionContext:
         return self._data["run_id"]
 
     @property
-    def job_name(self) -> str:
+    def job_name(self) -> Optional[str]:
         return self._data["job_name"]
 
     @property
