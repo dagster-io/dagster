@@ -19,6 +19,7 @@ from typing_extensions import get_args
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
+    AssetCheckResult,
     AssetMaterialization,
     DynamicOutput,
     ExpectationResult,
@@ -216,6 +217,8 @@ def validate_and_coerce_op_result_to_iterator(
             "value. Check out the docs on logging events here: "
             "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
+    elif isinstance(result, AssetCheckResult):
+        yield result
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: Unexpectedly returned output of type"

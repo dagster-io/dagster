@@ -79,6 +79,7 @@ EventSpecificData = Union[
     "ComputeLogsCaptureData",
     "AssetObservationData",
     "AssetMaterializationPlannedData",
+    "AssetCheckEvaluation",
 ]
 
 
@@ -954,6 +955,16 @@ class DagsterEvent(
             event_type=DagsterEventType.ASSET_OBSERVATION,
             step_context=step_context,
             event_specific_data=AssetObservationData(observation),
+        )
+
+    @staticmethod
+    def asset_check_evaluation(
+        step_context: IStepContext, asset_check_evaluation: AssetCheckEvaluation
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ASSET_CHECK_EVALUATION,
+            step_context=step_context,
+            event_specific_data=asset_check_evaluation,
         )
 
     @staticmethod
