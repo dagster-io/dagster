@@ -1,8 +1,21 @@
 import pytest
-from dagster import AutoMaterializePolicy
+from dagster import AutoMaterializePolicy, AssetKey
 from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    DiscardOnMaxMaterializationsExceededRule,
+    GenericRuleEvaluationData,
+    ParentUpdatedRuleEvaluationData,
+    WaitingOnParentRuleEvaluationData,
+    ParentMaterializedAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
+    DownstreamFreshnessAutoMaterializeCondition,
+    FreshnessAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+    MaxMaterializationsExceededAutoMaterializeCondition,
+)
 from dagster._serdes import deserialize_value, serialize_value
 
 
@@ -104,3 +117,66 @@ def test_serialized_auto_materialize_backcompat(
 ):
     assert deserialize_value(serialized_amp) == expected_amp
     assert deserialize_value(serialize_value(expected_amp)) == expected_amp
+
+
+@pytest.mark.parametrize(
+    "serialized_condition, expected_rule_evaluation",
+    [
+        (
+            None,
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.materialize_on_missing(),
+                evaluation_data=None,
+            ),
+        ),
+        (
+            None,
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                evaluation_data=ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset([AssetKey("foo"), AssetKey("bar")]),
+                    will_update_keys=frozenset([AssetKey("foo2"), AssetKey("bar2")]),
+                ),
+            ),
+        ),
+        (
+            None,
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
+                evaluation_data=GenericRuleEvaluationData(
+                    "required for this asset's freshness policy"
+                ),
+            ),
+        ),
+        (
+            None,
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
+                evaluation_data=GenericRuleEvaluationData(
+                    "required for downstream asset's freshness policy"
+                ),
+            ),
+        ),
+        (
+            None,
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                evaluation_data=WaitingOnParentRuleEvaluationData(
+                    waiting_on_keys=frozenset({AssetKey("foo"), AssetKey("bar")})
+                ),
+            ),
+        ),
+        (
+            None,
+            AutoMaterializeRuleEvaluation(
+                rule=DiscardOnMaxMaterializationsExceededRule(limit=1),
+                evaluation_data=None,
+            ),
+        ),
+    ],
+)
+def test_serialized_auto_materialize_condition_backcompat(
+    serialized_condition: str, expected_rule_evaluation: AutoMaterializeRuleEvaluation
+):
+    assert deserialize_value(serialized_condition) == expected_rule_evaluation
+    assert deserialize_value(serialize_value(expected_rule_evaluation)) == expected_rule_evaluation

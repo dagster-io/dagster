@@ -7,16 +7,17 @@ import graphene
 from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
-    AutoMaterializeRule,
-    AutoMaterializeRuleEvaluation,
-    AutoMaterializeRuleEvaluationData,
-    GenericRuleEvaluationData,
+    DownstreamFreshnessAutoMaterializeCondition,
+    FreshnessAutoMaterializeCondition,
+    MaxMaterializationsExceededAutoMaterializeCondition,
+    MissingAutoMaterializeCondition,
+    ParentMaterializedAutoMaterializeCondition,
+    ParentOutdatedAutoMaterializeCondition,
 )
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
-from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
 from dagster_graphql.schema.errors import GrapheneError
 
 from .asset_key import GrapheneAssetKey
