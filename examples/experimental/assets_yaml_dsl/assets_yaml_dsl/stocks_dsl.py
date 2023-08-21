@@ -1,9 +1,8 @@
 import os
 from typing import Any, Dict, List, NamedTuple
-from dagster._core.types.dagster_type import Nothing
 
 import yaml
-from dagster._core.definitions.events import Output
+from dagster._core.types.dagster_type import Nothing
 
 try:
     from yaml import CLoader as Loader
