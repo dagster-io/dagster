@@ -572,6 +572,21 @@ compute_logs:
 ---
 
 </TabItem>
+<TabItem name="NoOpComputeLogManager">
+
+#### NoOpComputeLogManager
+
+The <PyObject module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" /> does not store `stdout` and `stderr` logs for any step.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_noop endbefore=end_marker_compute_log_storage_noop
+compute_logs:
+  module: dagster.core.storage.noop_compute_log_manager
+  class: NoOpComputeLogManager
+```
+
+---
+
+</TabItem>
 <TabItem name="AzureBlobComputeLogManager">
 
 #### AzureBlobComputeLogManager

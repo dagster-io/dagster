@@ -227,6 +227,14 @@ compute_logs:
 
 # end_marker_compute_log_storage_local
 
+# start_marker_compute_log_storage_noop
+
+compute_logs:
+  module: dagster.core.storage.noop_compute_log_manager
+  class: NoOpComputeLogManager
+
+# end_marker_compute_log_storage_noop
+
 # start_marker_compute_log_storage_blob
 # there are multiple ways to configure the AzureBlobComputeLogManager
 
