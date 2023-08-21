@@ -196,7 +196,7 @@ load_assets_from_dbt_manifest(
 ```
 
 - [dagster-dbt] The arguments for `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now must be specified using keyword arguments.
-- [dagster-dbt] When using the new `DbtCliResource` with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, stdout logs from the dbt process will now appear in the compute logs instead of the event logs.
+- [dagster-dbt] When using the new `DbtCliResource` with `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, stdout logs from the dbt process will now appear in the compute logs instead of the event logs. To view these compute logs, you should ensure that your Dagster instance has [compute log storage configured](https://docs.dagster.io/deployment/dagster-instance#compute-log-storage).
 
 ## Migrating to 1.3.0
 
