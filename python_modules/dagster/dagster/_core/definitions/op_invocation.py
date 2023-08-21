@@ -192,7 +192,7 @@ def direct_invocation_result(
     resources_by_param_name = extracted.resources_by_param_name
     config_input = extracted.config_arg
 
-    bound_context = (context or build_op_context()).bind(
+    with (context or build_op_context()).bind_and_scope(
         op_def=op_def,
         pending_invocation=pending_invocation,
         assets_def=assets_def,
@@ -202,22 +202,21 @@ def direct_invocation_result(
             if isinstance(config_input, Config)
             else config_input
         ),
-    )
+    ) as bound_context:
+        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
 
-    input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
+        result = invoke_compute_fn(
+            fn=compute_fn.decorated_fn,
+            context=bound_context,
+            kwargs=input_dict,
+            context_arg_provided=compute_fn.has_context_arg(),
+            config_arg_cls=(
+                compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
+            ),
+            resource_args=resource_arg_mapping,
+        )
 
-    result = invoke_compute_fn(
-        fn=compute_fn.decorated_fn,
-        context=bound_context,
-        kwargs=input_dict,
-        context_arg_provided=compute_fn.has_context_arg(),
-        config_arg_cls=(
-            compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
-        ),
-        resource_args=resource_arg_mapping,
-    )
-
-    return _type_check_output_wrapper(op_def, result, bound_context)
+        return _type_check_output_wrapper(op_def, result, bound_context)
 
 
 def _resolve_inputs(
