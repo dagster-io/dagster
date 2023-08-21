@@ -64,7 +64,9 @@ export function spanTextToSelectionsOrError(
       if (allStartIdx === -1 || allEndIdx === -1) {
         return new Error(`Could not find partitions for provided range: ${start}...${end}`);
       }
-      result.selectedKeys.push(...allPartitionKeys.slice(allStartIdx, allEndIdx + 1));
+      result.selectedKeys = result.selectedKeys.concat(
+        allPartitionKeys.slice(allStartIdx, allEndIdx + 1),
+      );
       result.selectedRanges.push({
         start: {idx: allStartIdx, key: allPartitionKeys[allStartIdx]!},
         end: {idx: allEndIdx, key: allPartitionKeys[allEndIdx]!},
@@ -74,7 +76,7 @@ export function spanTextToSelectionsOrError(
 
       let start = -1;
       const close = (end: number) => {
-        result.selectedKeys.push(...allPartitionKeys.slice(start, end + 1));
+        result.selectedKeys = result.selectedKeys.concat(allPartitionKeys.slice(start, end + 1));
         result.selectedRanges.push({
           start: {idx: start, key: allPartitionKeys[start]!},
           end: {idx: end, key: allPartitionKeys[end]!},

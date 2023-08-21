@@ -41,6 +41,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
     return {
       dimensions: [],
       stateForKey: () => [AssetPartitionStatus.MISSING],
+      stateForKeyIdx: () => [AssetPartitionStatus.MISSING],
       rangesForSingleDimension: () => [],
     };
   }
@@ -71,6 +72,8 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
     })),
     stateForKey: (dimensionKeys: string[]) =>
       uniq(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
+    stateForKeyIdx: (dimensionKeyIdxs: number[]) =>
+      uniq(assetHealth.map((health) => health.stateForKeyIdx(dimensionKeyIdxs))),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
         dimensions[dimensionIdx]!.partitionKeys,
@@ -198,32 +201,41 @@ export function partitionDefinitionsEqual(
   );
 }
 
-export function explodePartitionKeysInSelection(
+export function explodePartitionKeysInSelectionMatching(
   selections: PartitionDimensionSelection[],
-  stateForKey: (dimensionKeys: string[]) => AssetPartitionStatus[],
+  shouldIncludeKey: (dimensionIdxs: number[]) => boolean,
 ) {
   if (selections.length === 0) {
     return [];
   }
+
+  const results: string[] = [];
+
   if (selections.length === 1) {
-    return selections[0]!.selectedKeys.map((key) => {
-      return {
-        partitionKey: key,
-        state: stateForKey([key]),
-      };
-    });
-  }
-  if (selections.length === 2) {
-    const all: {partitionKey: string; state: AssetPartitionStatus[]}[] = [];
-    for (const key of selections[0]!.selectedKeys) {
-      for (const subkey of selections[1]!.selectedKeys) {
-        all.push({
-          partitionKey: `${key}|${subkey}`,
-          state: stateForKey([key, subkey]),
-        });
+    for (const range of selections[0]!.selectedRanges) {
+      for (let idx = range.start.idx; idx <= range.end.idx; idx++) {
+        if (shouldIncludeKey([idx])) {
+          results.push(selections[0]!.dimension.partitionKeys[idx]!);
+        }
       }
     }
-    return all;
+    return results;
+  }
+  if (selections.length === 2) {
+    for (const range1 of selections[0]!.selectedRanges) {
+      for (let idx1 = range1.start.idx; idx1 <= range1.end.idx; idx1++) {
+        for (const range2 of selections[1]!.selectedRanges) {
+          for (let idx2 = range2.start.idx; idx2 <= range2.end.idx; idx2++) {
+            if (shouldIncludeKey([idx1, idx2])) {
+              const key1 = selections[0]?.dimension.partitionKeys[idx1];
+              const key2 = selections[1]?.dimension.partitionKeys[idx2];
+              results.push(`${key1}|${key2}`);
+            }
+          }
+        }
+      }
+    }
+    return results;
   }
 
   throw new Error('Unsupported >2 partitions defined');

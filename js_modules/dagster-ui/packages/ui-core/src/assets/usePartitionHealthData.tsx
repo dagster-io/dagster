@@ -1,5 +1,6 @@
 import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
+import keyBy from 'lodash/keyBy';
 import React from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -35,6 +36,7 @@ export interface PartitionHealthData {
   dimensions: PartitionHealthDimension[];
 
   stateForKey: (dimensionKeys: string[]) => AssetPartitionStatus;
+  stateForKeyIdx: (dimenstionIdxs: number[]) => AssetPartitionStatus;
 
   ranges: Range[];
   isRangeDataInverted: boolean;
@@ -48,6 +50,7 @@ export interface PartitionHealthDataMerged {
   dimensions: PartitionHealthDimension[];
 
   stateForKey: (dimensionKeys: string[]) => AssetPartitionStatus[];
+  stateForKeyIdx: (dimenstionIdxs: number[]) => AssetPartitionStatus[];
 
   rangesForSingleDimension: (
     dimensionIdx: number,
@@ -96,13 +99,8 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 
   const dimensions = isRangeDataInverted ? [__dims[1]!, __dims[0]!] : __dims;
   const ranges = addKeyIndexesToMaterializedRanges(dimensions, assetPartitionStatuses);
-  const stateForKey = (dimensionKeys: string[]): AssetPartitionStatus => {
-    return stateForKeyWithRangeOrdering(
-      isRangeDataInverted ? dimensionKeys.reverse() : dimensionKeys,
-    );
-  };
 
-  const stateForKeyWithRangeOrdering = (dimensionKeys: string[]): AssetPartitionStatus => {
+  const stateForKey = (dimensionKeys: string[]): AssetPartitionStatus => {
     if (dimensionKeys.length !== dimensions.length) {
       warnUnlessTest('[stateForKey] called with incorrect number of dimensions');
       return AssetPartitionStatus.MISSING;
@@ -111,8 +109,25 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       warnUnlessTest('[stateForKey] called with zero dimension keys');
       return AssetPartitionStatus.MISSING;
     }
+    return stateForKeyIdx(
+      dimensionKeys.map((key, idx) => dimensions[idx]!.partitionKeys.indexOf(key)),
+    );
+  };
 
-    const dIndexes = dimensionKeys.map((key, idx) => dimensions[idx]!.partitionKeys.indexOf(key));
+  const stateForKeyIdx = (dIndexes: number[]): AssetPartitionStatus => {
+    return stateForKeyIdxWithRangeOrdering(isRangeDataInverted ? dIndexes.reverse() : dIndexes);
+  };
+
+  const stateForKeyIdxWithRangeOrdering = (dIndexes: number[]): AssetPartitionStatus => {
+    if (dIndexes.length !== dimensions.length) {
+      warnUnlessTest('[stateForKey] called with incorrect number of dimensions');
+      return AssetPartitionStatus.MISSING;
+    }
+    if (dIndexes.length === 0) {
+      warnUnlessTest('[stateForKey] called with zero dimension keys');
+      return AssetPartitionStatus.MISSING;
+    }
+
     const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0]! && r.end.idx >= dIndexes[0]!);
 
     if (!d0Range) {
@@ -195,6 +210,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys, type: d.type})),
 
     stateForKey,
+    stateForKeyIdx,
 
     ranges,
     rangesForSingleDimension,
@@ -319,6 +335,12 @@ export function keyCountInRanges(ranges: Range[] | PartitionDimensionSelectionRa
   return count;
 }
 
+export function keyCountInSelections(selections: PartitionDimensionSelection[]) {
+  return selections
+    .map((s) => keyCountInRanges(s.selectedRanges))
+    .reduce((a, b) => (a ? a * b : b), 0);
+}
+
 // Take the health data of an asset and the user's selection on each
 // dimension, and return the number of keys of each state within that
 // set of the partition keys.
@@ -335,10 +357,7 @@ export function keyCountByStateInSelection(
   // Make sure that the provided selections are in the same order as the /underlying/
   // range data, which may be reversed if the time series is the second axis.
   const selections = assetHealth?.isRangeDataInverted ? [..._selections].reverse() : _selections;
-
-  const total = selections
-    .map((s) => keyCountInRanges(s.selectedRanges))
-    .reduce((a, b) => (a ? a * b : b), 0);
+  const total = keyCountInSelections(selections);
 
   const rangesInSelection = rangesClippedToSelection(
     assetHealth?.ranges || [],
@@ -520,6 +539,41 @@ export function usePartitionHealthData(
     (k) => !result.some((r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === cacheKey),
   );
 
+  // Fetching partition health ranges can take a while -- if the "Background" refresh
+  // style is enabled, fill our `result` state with whatever we can from the Apollo
+  // cache. This is especially helpful if you're navigating between assets in the UI.
+  React.useEffect(() => {
+    if (cacheClearStrategy === 'immediate') {
+      return;
+    }
+    setResult((result) => {
+      const resultByKey = keyBy(result, (r) => JSON.stringify(r.assetKey));
+      return JSON.parse(assetKeyJSON)
+        .map((assetKeyJSON: string) => {
+          const assetKey = JSON.parse(assetKeyJSON);
+          const hookCached = resultByKey[assetKeyJSON];
+          if (hookCached) {
+            return hookCached;
+          }
+          const clientCached = client.cache.readQuery<
+            PartitionHealthQuery,
+            PartitionHealthQueryVariables
+          >({
+            query: PARTITION_HEALTH_QUERY,
+            variables: {assetKey: {path: assetKey.path}},
+          });
+          if (clientCached) {
+            return {...buildPartitionHealthData(clientCached, assetKey), fetchedAt: 0};
+          }
+          return null;
+        })
+        .filter(Boolean);
+    });
+  }, [assetKeyJSON, cacheClearStrategy, client.cache]);
+
+  // Refresh state health ranges, one asset key at a time. This kicks off one
+  // request and then missingKeyJSON updates when that is complete, kicking
+  // off the next query.
   React.useMemo(() => {
     if (!missingKeyJSON) {
       return;
