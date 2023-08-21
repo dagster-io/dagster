@@ -10,7 +10,7 @@ If you are running on AWS ECS or another container-based orchestration system, y
 A minimal skeleton `Dockerfile` that will run the webserver is shown below:
 
 ```dockerfile file=/deploying/docker/Dockerfile
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
 
@@ -92,7 +92,7 @@ This service must have access to your `dagster.yaml` and `workspace.yaml` files,
 For example, your user code container might have the following Dockerfile:
 
 ```dockerfile file=/deploying/docker/Dockerfile_user_code
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 # Checkout and install dagster libraries needed to run the gRPC server by exposing
 # your code location to dagster-webserver and dagster-daemon, and loading the
