@@ -99,7 +99,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
         self._log = initialize_console_manager(None)
         self._pdb: Optional[ForkedPdb] = None
-        self._cm_scope_entered = False
         check.invariant(
             not (partition_key and partition_key_range),
             "Must supply at most one of partition_key or partition_key_range",
