@@ -31,6 +31,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
+from dagster._core.execution.context.dual_state_context import DualStateContextResourcesContainer
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import (
@@ -108,9 +109,6 @@ class RunStatusSensorCursor(
     @staticmethod
     def from_json(json_str: str) -> "RunStatusSensorCursor":
         return deserialize_value(json_str, RunStatusSensorCursor)
-
-
-from dagster._core.execution.context.dual_state_context import DualStateContextResourcesContainer
 
 
 class RunStatusSensorContext:
