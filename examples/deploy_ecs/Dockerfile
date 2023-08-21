@@ -1,5 +1,5 @@
 # Dagster
-FROM python:3.7-slim as dagster
+FROM python:3.10-slim as dagster
 
 RUN apt-get update && apt-get upgrade -yqq
 RUN apt-get install git -y

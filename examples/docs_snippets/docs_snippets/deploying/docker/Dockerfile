@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
 
