@@ -115,6 +115,7 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
         *(
             os.path.relpath(p, GIT_REPO_ROOT)
             for p in glob(f"{GIT_REPO_ROOT}/python_modules/libraries/*")
+            if not p.endswith("CONTRIBUTING.md")
         ),
     ]
 
