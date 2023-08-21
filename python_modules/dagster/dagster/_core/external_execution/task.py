@@ -64,6 +64,7 @@ class ExternalExecutionTask:
         base_env = {
             **os.environ,
             **self.env,
+            DAGSTER_EXTERNAL_ENV_KEYS["is_orchestration_active"]: "1",
             DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: self._input_mode.value,
             DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: self._output_mode.value,
         }
