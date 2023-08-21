@@ -90,42 +90,6 @@ If you make any changes to your dbt project that change the structure of the pro
 
 ---
 
-## Using the DbtCliResource for dbt CLI commands
-
-<Note>
-  Check out{" "}
-  <a href="/integrations/dbt/using-dbt-with-dagster/upstream-assets">
-    part three of the dbt + Dagster tutorial
-  </a>{" "}
-  to see this concept in context.
-</Note>
-
-Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="DbtCliResource" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
-
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="DbtCliResource" /> API docs.
-
-You can configure this resource and add it to your dbt assets by doing the following:
-
-```python startafter=start_dbt_cli_resource endbefore=end_dbt_cli_resource file=/integrations/dbt/dbt.py dedent=4
-import os
-
-from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
-
-from dagster import Definitions
-
-DBT_PROJECT_PATH = "path/to/dbt_project"
-DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
-
-defs = Definitions(
-    assets=load_assets_from_dbt_project(DBT_PROJECT_PATH),
-    resources={
-        "dbt": DbtCliResource(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET),
-    },
-)
-```
-
----
-
 ## Scheduling dbt jobs
 
 Once you have your dbt assets, you can define a job to materialize a selection of these assets on a schedule.
