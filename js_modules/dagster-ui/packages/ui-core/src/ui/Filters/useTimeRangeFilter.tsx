@@ -1,7 +1,8 @@
 import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui-components';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
-// eslint-disable-next-line no-restricted-imports
-import moment from 'moment-timezone';
 import React from 'react';
 import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components';
@@ -12,33 +13,43 @@ import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
 
 export type TimeRangeState = [number | null, number | null];
 
 export function calculateTimeRanges(timezone: string) {
+  const targetTimezone = timezone === 'Automatic' ? browserTimezone() : timezone;
+  const nowTimestamp = Date.now();
+  const now = Math.floor(nowTimestamp);
+  const startOfDay = dayjs(nowTimestamp).tz(targetTimezone).startOf('day');
   const obj = {
     TODAY: {
       label: 'Today',
-      range: [moment().tz(timezone).startOf('day').toDate().valueOf(), null] as TimeRangeState,
+      range: [startOfDay.valueOf(), now] as TimeRangeState,
     },
     YESTERDAY: {
       label: 'Yesterday',
       range: [
-        moment().tz(timezone).subtract(1, 'day').startOf('day').toDate().valueOf(),
-        moment().tz(timezone).subtract(1, 'day').endOf('day').toDate().valueOf(),
+        dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'day').startOf('day').valueOf(),
+        startOfDay.valueOf(),
       ] as TimeRangeState,
     },
     LAST_7_DAYS: {
       label: 'Within last 7 days',
-      range: [moment().tz(timezone).subtract(7, 'days').toDate().valueOf(), null] as TimeRangeState,
+      range: [
+        dayjs(nowTimestamp).tz(targetTimezone).subtract(1, 'week').valueOf(),
+        now,
+      ] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
       range: [
-        moment().tz(timezone).subtract(30, 'days').toDate().valueOf(),
-        null,
+        dayjs(nowTimestamp).tz(targetTimezone).subtract(30, 'days').valueOf(),
+        now,
       ] as TimeRangeState,
     },
     CUSTOM: {label: 'Custom...', range: [null, null] as TimeRangeState},
