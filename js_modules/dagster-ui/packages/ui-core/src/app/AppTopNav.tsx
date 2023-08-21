@@ -5,6 +5,10 @@ import styled from 'styled-components';
 
 import {DeploymentStatusIcon} from '../nav/DeploymentStatusIcon';
 import {VersionNumber} from '../nav/VersionNumber';
+import {
+  reloadFnForWorkspace,
+  useRepositoryLocationReload,
+} from '../nav/useRepositoryLocationReload';
 import {SearchDialog} from '../search/SearchDialog';
 
 import {LayoutContext} from './LayoutProvider';
@@ -21,6 +25,7 @@ interface Props {
   rightOfSearchBar?: React.ReactNode;
   showStatusWarningIcon?: boolean;
   getNavLinks?: (navItems: AppNavLinkType[]) => React.ReactNode;
+  allowGlobalReload?: boolean;
 }
 
 export const AppTopNav: React.FC<Props> = ({
@@ -28,6 +33,7 @@ export const AppTopNav: React.FC<Props> = ({
   rightOfSearchBar,
   searchPlaceholder,
   getNavLinks,
+  allowGlobalReload = false,
 }) => {
   const history = useHistory();
 
@@ -118,6 +124,11 @@ export const AppTopNav: React.FC<Props> = ({
     ];
   };
 
+  const {reloading, tryReload} = useRepositoryLocationReload({
+    scope: 'workspace',
+    reloadFn: reloadFnForWorkspace,
+  });
+
   return (
     <AppTopNavContainer>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -128,6 +139,20 @@ export const AppTopNav: React.FC<Props> = ({
         {rightOfSearchBar}
       </Box>
       <Box flex={{direction: 'row', alignItems: 'center'}}>
+        {allowGlobalReload ? (
+          <ShortcutHandler
+            onShortcut={() => {
+              if (!reloading) {
+                tryReload();
+              }
+            }}
+            shortcutLabel={`⌥R - ${reloading ? 'Reloading' : 'Reload all code locations'}`}
+            // On OSX Alt + R creates ®, not sure about windows, so checking 'r' for windows
+            shortcutFilter={(e) => e.altKey && (e.key === '®' || e.key === 'r')}
+          >
+            <div style={{width: '0px', height: '30px'}} />
+          </ShortcutHandler>
+        ) : null}
         <SearchDialog searchPlaceholder={searchPlaceholder} />
         {children}
       </Box>
