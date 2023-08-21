@@ -18,7 +18,7 @@ branch_labels = None
 depends_on = None
 
 TABLE_NAME = "asset_check_executions"
-INDEX_NAME = "idx_asset_check_executions_unique"
+INDEX_NAME = "idx_asset_check_executions"
 
 
 def upgrade():
@@ -39,9 +39,13 @@ def upgrade():
             db.Column("run_id", db.String(255)),
             db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
             db.Column("asset_check_evaluation_event_record", db.Text),
-            db.Column("event_timestamp", db.DateTime),
+            db.Column("asset_check_evaluation_event_timestamp", db.DateTime),
             db.Column(
-                "materialization_storage_id",
+                "asset_check_evaluation_event_storage_id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+            ),
+            db.Column(
+                "materialization_event_storage_id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
             ),
             db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
@@ -54,10 +58,9 @@ def upgrade():
             [
                 "asset_key",
                 "check_name",
-                "run_id",
+                "materialization_event_storage_id",
                 "partition",
             ],
-            unique=True,
         )
 
 
