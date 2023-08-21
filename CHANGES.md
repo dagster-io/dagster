@@ -67,6 +67,10 @@
 - [dagster-dbt] `DbtCliResource` now supports configuring `profiles_dir`.
 - [dagster-k8s] Allow specifying `restart_policy` on `k8s_job_op` (Thanks @Taadas!).
 - [dagster-snowflake] Added `authenticator` to `SnowflakePandasIOManager`, which allows specifying the authentication mechanism to use (Thanks @pengw0048!).
+- [ui] The Asset > Events page now allows you to filter by event type, making it easy to hide observations.
+- [ui] The Asset > Partitions page checks to see if the selected partition is stale and displays stale causes in the details pane.
+- [ui] Hovering over "Fresh" tags now provides detailed information about why the last materialization meets the asset's freshness policy.
+- [ui] The global asset graph can now be filtered to display a subset of the available asset groups.
 
 ### Bugfixes
 
@@ -78,6 +82,7 @@
 - [dagster-airbyte] Previously, attempting to load assets from an Airbyte instance in which some of the tables had hyphens in their name would result in an error. This has been fixed.
 - [dagster-dbt] Previously, attempting to load assets from a dbt project in which some of the models had hyphens in their name would result in an error. This has been fixed.
 - [dagstermill] Fixed a bug where known state for executing dagstermill ops was not correctly passed in (Thanks @motuzov!).
+- [ui] Pressing the up or down arrow key without a selection in the asset graph no longer causes a page error.
 
 ### Documentation
 
