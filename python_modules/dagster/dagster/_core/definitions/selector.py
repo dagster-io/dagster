@@ -311,6 +311,7 @@ class PartitionSetSelector(
         }
 
 
+@whitelist_for_serdes
 class PartitionRangeSelector(
     NamedTuple(
         "_PartitionRangeSelector",
@@ -340,6 +341,7 @@ class PartitionRangeSelector(
         )
 
 
+@whitelist_for_serdes
 class PartitionsSelector(
     NamedTuple(
         "_PartitionsSelector",
@@ -368,6 +370,7 @@ class PartitionsSelector(
         )
 
 
+@whitelist_for_serdes
 class PartitionsByAssetSelector(
     NamedTuple(
         "PartitionsByAssetSelector",
