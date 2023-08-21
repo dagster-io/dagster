@@ -3,6 +3,7 @@ import re
 import pytest
 from dagster import (
     AssetCheckResult,
+    AssetCheckSeverity,
     AssetCheckSpec,
     AssetKey,
     AssetOut,
@@ -200,6 +201,42 @@ def test_asset_check_fails_downstream_still_executes():
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
     assert not check_eval.success
+
+
+def test_error_severity_skip_downstream():
+    @asset(
+        check_specs=[
+            AssetCheckSpec(
+                "check1", asset_key=AssetKey("asset1"), severity=AssetCheckSeverity.ERROR
+            )
+        ]
+    )
+    def asset1():
+        yield Output(5)
+        yield AssetCheckResult(success=False)
+
+    @asset
+    def asset2(asset1: int):
+        assert asset1 == 5
+
+    result = materialize(assets=[asset1, asset2], raise_on_error=False)
+    assert not result.success
+
+    materialization_events = result.get_asset_materialization_events()
+    assert len(materialization_events) == 1
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+    assert not check_eval.success
+
+    error = result.failure_data_for_node("asset1").error
+    assert error.message.startswith(
+        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        " failed with ERROR severity."
+    )
 
 
 def test_duplicate_checks_same_asset():

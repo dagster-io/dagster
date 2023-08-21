@@ -588,6 +588,10 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def output_name(self) -> str:
         return self.output_def.name
 
+    @property
+    def node_output_handle(self) -> NodeOutputHandle:
+        return NodeOutputHandle(NodeHandle(name=self.node_name, parent=None), self.output_name)
+
 
 class DependencyType(Enum):
     DIRECT = "DIRECT"
@@ -681,14 +685,15 @@ class MultiDependencyDefinition(
             (
                 "dependencies",
                 PublicAttr[Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]],
-            )
+            ),
+            ("dependencies_not_to_load_from", Optional[Sequence[DependencyDefinition]]),
         ],
     ),
     IDependencyDefinition,
 ):
     """Represents a fan-in edge in the DAG of op instances forming a job.
 
-    This object is used only when an input of type ``List[T]`` is assembled by fanning-in multiple
+    This object is used mainly when an input of type ``List[T]`` is assembled by fanning-in multiple
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
@@ -724,11 +729,15 @@ class MultiDependencyDefinition(
     Args:
         dependencies (List[Union[DependencyDefinition, Type[MappedInputPlaceHolder]]]): List of
             upstream dependencies fanned in to this input.
+        dependencies_not_to_load_from (Optional[Sequence[DependencyDefinition]])): A subset of the
+            dependencies, which should be ignored when loading inputs to pass into the compute
+            function of the downstream op.
     """
 
     def __new__(
         cls,
         dependencies: Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
+        dependencies_not_to_load_from: Optional[Sequence[DependencyDefinition]] = None,
     ):
         from .composition import MappedInputPlaceholder
 
@@ -748,7 +757,9 @@ class MultiDependencyDefinition(
             else:
                 check.failed(f"Unexpected dependencies entry {dep}")
 
-        return super(MultiDependencyDefinition, cls).__new__(cls, deps)
+        return super(MultiDependencyDefinition, cls).__new__(
+            cls, deps, dependencies_not_to_load_from
+        )
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
@@ -766,6 +777,11 @@ class MultiDependencyDefinition(
     ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
         """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
+
+    def should_load_from_dependency(self, node: str, output: str) -> bool:
+        return self.dependencies_not_to_load_from is None or not any(
+            dep.node == node and dep.output == output for dep in self.dependencies_not_to_load_from
+        )
 
 
 class DynamicCollectDependencyDefinition(
@@ -837,18 +853,29 @@ def _create_handle_dict(
 class DependencyStructure:
     @staticmethod
     def from_definitions(
-        nodes: Mapping[str, Node], dep_dict: DependencyMapping[str]
+        nodes_by_name: Mapping[str, Node], deps_by_node_name: DependencyMapping[str]
     ) -> "DependencyStructure":
-        return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(nodes, dep_dict))
+        return DependencyStructure(
+            list(deps_by_node_name.keys()),
+            _create_handle_dict(nodes_by_name, deps_by_node_name),
+            deps_by_node_name,
+        )
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
     _node_output_index: Dict[str, DefaultDict[NodeOutput, List[NodeInput]]]
     _dynamic_fan_out_index: Dict[str, NodeOutput]
     _collect_index: Dict[str, Set[NodeOutput]]
+    _deps_by_node_name: DependencyMapping[str]
 
-    def __init__(self, node_names: Sequence[str], input_to_output_map: InputToOutputMap):
+    def __init__(
+        self,
+        node_names: Sequence[str],
+        input_to_output_map: InputToOutputMap,
+        deps_by_node_name: DependencyMapping[str],
+    ):
         self._node_names = node_names
         self._input_to_output_map = input_to_output_map
+        self._deps_by_node_name = deps_by_node_name
 
         # Building up a couple indexes here so that one can look up all the upstream output handles
         # or downstream input handles in O(1). Without this, this can become O(N^2) where N is node
@@ -1020,6 +1047,25 @@ class DependencyStructure:
             f"Cannot call get_direct_dep when dep is not singular, got {dep_type}",
         )
         return cast(NodeOutput, dep)
+
+    def get_dependency_definition(self, node_input: NodeInput) -> Optional[IDependencyDefinition]:
+        return self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
+
+    def get_load_only_node_output_handle(self, node_input: NodeInput) -> Optional[NodeOutputHandle]:
+        """The returned NodeOutputHandle is relative to the graph that holds this dependency
+        structure, not relative to any graphs that that graph is nested inside.
+        """
+        dep_def = self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
+        if (
+            dep_def is not None
+            and isinstance(dep_def, MultiDependencyDefinition)
+            and dep_def.load_only
+        ):
+            return NodeOutputHandle(
+                NodeHandle(dep_def.load_only.node, None), dep_def.load_only.output
+            )
+        else:
+            return None
 
     def has_fan_in_deps(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)

@@ -4,7 +4,7 @@ from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._config import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
 from dagster._core.definitions.asset_checks import (
     AssetChecksDefinition,
     AssetChecksDefinitionInputOutputProps,
@@ -38,6 +38,7 @@ def asset_check(
     compute_kind: Optional[str] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -60,6 +61,7 @@ def asset_check(
         compute_kind (Optional[str]): A string to represent the kind of computation that executes
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
+        severity (AssetCheckSeverity): Severity of the check.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -117,6 +119,7 @@ def asset_check(
             name=resolved_name,
             description=description,
             asset_key=resolved_asset_key,
+            severity=severity,
         )
 
         op_def = _Op(

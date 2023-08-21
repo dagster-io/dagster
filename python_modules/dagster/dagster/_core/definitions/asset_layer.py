@@ -708,6 +708,14 @@ class AssetLayer:
         else:
             return []
 
+    def get_spec_for_asset_check(
+        self, node_handle: NodeHandle, asset_check_handle: AssetCheckHandle
+    ) -> AssetCheckSpec:
+        asset_checks_def_or_assets_def = self._asset_checks_defs_by_node_handle.get(
+            node_handle
+        ) or self._assets_defs_by_node_handle.get(node_handle)
+        return asset_checks_def_or_assets_def.get_spec_for_check_handle(asset_check_handle)
+
     def get_check_names_by_asset_key_for_node_handle(
         self, node_handle: NodeHandle
     ) -> Mapping[AssetKey, AbstractSet[str]]:

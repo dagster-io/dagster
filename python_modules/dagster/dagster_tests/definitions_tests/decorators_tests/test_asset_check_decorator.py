@@ -4,12 +4,14 @@ from typing import NamedTuple
 import pytest
 from dagster import (
     AssetCheckResult,
+    AssetCheckSeverity,
     AssetKey,
     Definitions,
     ExecuteInProcessResult,
     IOManager,
     MetadataValue,
     ResourceParam,
+    SourceAsset,
     asset,
     asset_check,
     define_asset_job,
@@ -167,6 +169,111 @@ def test_asset_check_separate_op_downstream_still_executes():
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "asset1_check"
     assert not check_eval.success
+
+
+def test_error_severity_skip_downstream():
+    @asset
+    def asset1():
+        ...
+
+    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    def check1(context):
+        return AssetCheckResult(success=False)
+
+    @asset(deps=[asset1])
+    def asset2():
+        ...
+
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
+    )
+    assert not result.success
+
+    materialization_events = result.get_asset_materialization_events()
+    assert len(materialization_events) == 1
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+    assert not check_eval.success
+
+    error = result.failure_data_for_node("asset1_check1").error
+    assert error.message.startswith(
+        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        " failed with ERROR severity."
+    )
+
+
+def test_error_severity_with_source_asset_fail():
+    asset1 = SourceAsset("asset1")
+
+    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    def check1(context):
+        return AssetCheckResult(success=False)
+
+    @asset(deps=[asset1])
+    def asset2():
+        ...
+
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2], asset_checks=[check1], raise_on_error=False
+    )
+    assert not result.success
+
+    materialization_events = result.get_asset_materialization_events()
+    assert len(materialization_events) == 0
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+    assert not check_eval.success
+
+    error = result.failure_data_for_node("asset1_check1").error
+    assert error.message.startswith(
+        "dagster._core.errors.DagsterAssetCheckFailedError: Check 'check1' for asset 'asset1'"
+        " failed with ERROR severity."
+    )
+
+
+def test_error_severity_with_source_asset_success():
+    asset1 = SourceAsset("asset1", io_manager_key="asset1_io_manager")
+
+    @asset_check(asset=asset1, severity=AssetCheckSeverity.ERROR)
+    def check1(context):
+        return AssetCheckResult(success=True)
+
+    @asset
+    def asset2(asset1):
+        assert asset1 == 5
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            return 5
+
+        def handle_output(self, context, obj):
+            raise NotImplementedError()
+
+    result = execute_assets_and_checks(
+        assets=[asset1, asset2],
+        asset_checks=[check1],
+        raise_on_error=False,
+        resources={"asset1_io_manager": MyIOManager()},
+    )
+    assert result.success
+
+    materialization_events = result.get_asset_materialization_events()
+    assert len(materialization_events) == 1
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+    assert check_eval.success
 
 
 def test_definitions_conflicting_checks():

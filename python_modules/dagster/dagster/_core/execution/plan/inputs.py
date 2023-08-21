@@ -671,6 +671,7 @@ class FromMultipleSources(
         "_FromMultipleSources",
         [
             ("sources", Sequence[StepInputSource]),
+            ("source_to_load_from", Optional[StepInputSource]),
             # deprecated, preserved for back-compat
             ("node_handle", NodeHandle),
             ("input_name", str),
@@ -678,11 +679,15 @@ class FromMultipleSources(
     ),
     StepInputSource,
 ):
-    """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
+    """This step input fans-in multiple sources in to a single input. The input will receive a list,
+    unless the source_to_load_from property is specified, in which case it will receive the value
+    from loading that source.
+    """
 
     def __new__(
         cls,
         sources: Sequence[StepInputSource],
+        source_to_load_from: Optional[StepInputSource],
         # deprecated, preserved for back-compat
         node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
@@ -696,6 +701,9 @@ class FromMultipleSources(
         return super().__new__(
             cls,
             sources=sources,
+            source_to_load_from=check.opt_inst_param(
+                source_to_load_from, "source_to_load_from", StepInputSource
+            ),
             # add placeholder values for back-compat
             node_handle=check.opt_inst_param(
                 node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
@@ -726,8 +734,6 @@ class FromMultipleSources(
     ) -> Iterator[object]:
         from dagster._core.events import DagsterEvent
 
-        values = []
-
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
         source_handles_to_skip = list(
             filter(
@@ -736,20 +742,25 @@ class FromMultipleSources(
             )
         )
 
-        for inner_source in self.sources:
-            if (
-                isinstance(inner_source, FromStepOutput)
-                and inner_source.step_output_handle in source_handles_to_skip
-            ):
-                continue
+        if self.source_to_load_from is not None:
+            yield from self.source_to_load_from.load_input_object(step_context, input_def)
+        else:
+            values = []
 
-            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
-                if isinstance(event_or_input_value, DagsterEvent):
-                    yield event_or_input_value
-                else:
-                    values.append(event_or_input_value)
+            for inner_source in self.sources:
+                if (
+                    isinstance(inner_source, FromStepOutput)
+                    and inner_source.step_output_handle in source_handles_to_skip
+                ):
+                    continue
 
-        yield values
+                for event_or_input_value in inner_source.load_input_object(step_context, input_def):
+                    if isinstance(event_or_input_value, DagsterEvent):
+                        yield event_or_input_value
+                    else:
+                        values.append(event_or_input_value)
+
+            yield values
 
     def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
         resource_keys: Set[str] = set()
