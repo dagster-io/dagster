@@ -280,7 +280,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
                 op_def,
                 pending_invocation,
                 assets_def,
-                self._resources,
+                self.resources,
                 op_config,
                 self._resource_defs,
             )
