@@ -38,7 +38,7 @@ const appCache = createAppCache();
 export default function AppPage() {
   return (
     <AppProvider appCache={appCache} config={config}>
-      <AppTopNav searchPlaceholder="Search…">
+      <AppTopNav searchPlaceholder="Search…" allowGlobalReload>
         <UserSettingsButton />
       </AppTopNav>
       <App>
