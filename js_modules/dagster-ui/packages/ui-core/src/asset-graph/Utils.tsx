@@ -1,4 +1,4 @@
-import {pathVerticalDiagonal, pathHorizontalStep} from '@vx/shape';
+import {pathVerticalDiagonal, pathHorizontalDiagonal} from '@vx/shape';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
 import {Maybe, RunStatus, StaleCauseCategory, StaleStatus} from '../graphql/types';
@@ -118,8 +118,7 @@ export const graphHasCycles = (graphData: GraphData) => {
 };
 
 export const buildSVGPath = featureEnabled(FeatureFlag.flagHorizontalDAGs)
-  ? pathHorizontalStep({
-      percent: 0.5,
+  ? pathHorizontalDiagonal({
       source: (s: any) => s.source,
       target: (s: any) => s.target,
       x: (s: any) => s.x,
