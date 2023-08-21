@@ -30,12 +30,14 @@ from .event_log.base import (
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
+    EventRecordsResult,
 )
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
+    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeEventFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -449,6 +451,50 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         # annotation is wrong.
         return self._storage.event_log_storage.get_event_records(
             event_records_filter, limit, ascending  # type: ignore
+        )
+
+    def get_materialization_records(
+        self,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.get_materialization_records(
+            filters, limit, cursor, ascending
+        )
+
+    def get_observation_records(
+        self,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.get_observation_records(
+            filters, limit, cursor, ascending
+        )
+
+    def get_planned_materialization_records(
+        self,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.get_planned_materialization_records(
+            filters, limit, cursor, ascending
+        )
+
+    def get_run_status_change_event_records(
+        self,
+        filters: Union["DagsterEventType", "RunStatusChangeEventFilter"],
+        limit: int = 10000,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.get_run_status_change_event_records(
+            filters, limit, cursor, ascending
         )
 
     def get_asset_records(

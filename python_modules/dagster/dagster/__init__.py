@@ -410,9 +410,12 @@ from dagster._core.errors import (
     raise_execution_interrupts as raise_execution_interrupts,
 )
 from dagster._core.event_api import (
+    AssetRecordsFilter as AssetRecordsFilter,
     EventLogRecord as EventLogRecord,
     EventRecordsFilter as EventRecordsFilter,
+    EventRecordsResult as EventRecordsResult,
     RunShardedEventsCursor as RunShardedEventsCursor,
+    RunStatusChangeEventFilter as RunStatusChangeEventFilter,
 )
 from dagster._core.events import (
     DagsterEvent as DagsterEvent,
