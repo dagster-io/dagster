@@ -160,6 +160,10 @@ Compute log manager
 
 .. autoclass:: LocalComputeLogManager
 
+.. currentmodule:: dagster._core.storage.noop_compute_log_manager
+
+.. autoclass:: NoOpComputeLogManager
+
 See also: :py:class:`dagster_aws.S3ComputeLogManager`.
 
 ----
