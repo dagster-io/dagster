@@ -16,6 +16,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.materialize import materialize
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.external_execution.resource import (
     SubprocessExecutionResource,
 )
@@ -146,11 +147,24 @@ def test_external_execution_asset_failed():
             cmd = ["python", script_path]
             ext.run(cmd, context)
 
-    resource = SubprocessExecutionResource(
-        input_mode=ExternalExecutionIOMode.stdio,
-    )
     with pytest.raises(DagsterExternalExecutionError):
-        materialize([foo], resources={"ext": resource})
+        materialize([foo], resources={"ext": SubprocessExecutionResource()})
+
+
+def test_external_execution_asset_invocation():
+    def script_fn():
+        from dagster_external import init_dagster_external
+
+        context = init_dagster_external()
+        context.log("hello world")
+
+    @asset
+    def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
+        with temp_script(script_fn) as script_path:
+            cmd = ["python", script_path]
+            ext.run(cmd, context)
+
+    foo(context=build_asset_context(), ext=SubprocessExecutionResource())
 
 
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"

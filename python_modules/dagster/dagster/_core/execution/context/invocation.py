@@ -535,6 +535,10 @@ class BoundOpExecutionContext(OpExecutionContext):
             )
         return self._assets_def
 
+    @property
+    def has_partition_key(self) -> bool:
+        return self._partition_key is not None
+
     def has_tag(self, key: str) -> bool:
         return key in self._tags
 

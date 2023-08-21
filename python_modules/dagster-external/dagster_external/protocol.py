@@ -62,7 +62,7 @@ class ExternalExecutionContextData(TypedDict):
     partition_key_range: Optional["ExternalPartitionKeyRange"]
     partition_time_window: Optional["ExternalTimeWindow"]
     run_id: str
-    job_name: str
+    job_name: Optional[str]
     retry_number: int
     extras: Mapping[str, Any]
 
