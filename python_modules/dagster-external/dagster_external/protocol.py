@@ -15,6 +15,7 @@ DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME: Final = "dagster_external_input"
 DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME: Final = "dagster_external_output"
 
 DAGSTER_EXTERNAL_ENV_KEYS: Final = {
+    "is_orchestration_active": "DAGSTER_EXTERNAL_IS_ORCHESTRATION_ACTIVE",
     "input_mode": "DAGSTER_EXTERNAL_INPUT_MODE",
     "output_mode": "DAGSTER_EXTERNAL_OUTPUT_MODE",
     "input": "DAGSTER_EXTERNAL_INPUT",

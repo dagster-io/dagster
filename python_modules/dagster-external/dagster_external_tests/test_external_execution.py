@@ -1,5 +1,6 @@
 import inspect
 import re
+import subprocess
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
@@ -187,3 +188,31 @@ def test_external_execution_invalid_path(
     )
     with pytest.raises(CheckError, match=r"directory \S+ does not currently exist"):
         materialize([foo], resources={"ext": resource})
+
+
+def test_external_execution_no_orchestration():
+    def script_fn():
+        from dagster_external import (
+            ExternalExecutionContext,
+            init_dagster_external,
+            is_dagster_orchestration_active,
+        )
+
+        assert not is_dagster_orchestration_active()
+
+        init_dagster_external()
+        context = ExternalExecutionContext.get()
+        context.log("hello world")
+        context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
+        context.report_asset_data_version("foo", "alpha")
+
+    with temp_script(script_fn) as script_path:
+        cmd = ["python", script_path]
+        stdout, stderr = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ).communicate()
+        assert re.search(
+            r"This process was not launched by a Dagster orchestration process. All calls to the"
+            r" `dagster-external` are no-ops.",
+            stderr.decode(),
+        )

@@ -13,6 +13,7 @@ from dagster_external.protocol import (
 
 
 def get_external_execution_params() -> "ExternalExecutionParams":
+    is_orchestration_active = bool(os.getenv("DAGSTER_EXTERNAL_IS_ORCHESTRATION_ACTIVE"))
     raw_input_mode = os.getenv(
         DAGSTER_EXTERNAL_ENV_KEYS["input_mode"], DAGSTER_EXTERNAL_DEFAULT_INPUT_MODE
     )
@@ -20,6 +21,7 @@ def get_external_execution_params() -> "ExternalExecutionParams":
         DAGSTER_EXTERNAL_ENV_KEYS["output_mode"], DAGSTER_EXTERNAL_DEFAULT_OUTPUT_MODE
     )
     return ExternalExecutionParams(
+        is_orchestration_active=is_orchestration_active,
         input_mode=ExternalExecutionIOMode[raw_input_mode],
         output_mode=ExternalExecutionIOMode[raw_output_mode],
         input_path=os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["input"]),
@@ -31,6 +33,7 @@ def get_external_execution_params() -> "ExternalExecutionParams":
 
 @dataclass
 class ExternalExecutionParams:
+    is_orchestration_active: bool
     input_mode: str
     output_mode: str
     input_path: Optional[str]
