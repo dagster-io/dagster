@@ -163,10 +163,12 @@ describe('<RunFilterInput  />', () => {
     await userEvent.click(getByText('Created date'));
     await userEvent.click(getByText('Today'));
 
+    const todayRange = calculateTimeRanges('UTC').timeRanges.TODAY.range;
+
     expect(onChange).toHaveBeenCalledWith([
       {
         token: 'created_date_after',
-        value: '' + calculateTimeRanges('UTC').timeRanges.TODAY.range[0]! / 1000,
+        value: '' + todayRange[0]! / 1000,
       },
     ]);
   });
