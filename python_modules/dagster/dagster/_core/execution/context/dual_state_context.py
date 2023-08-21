@@ -1,9 +1,8 @@
 from contextlib import ExitStack
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
 from dagster._core.definitions.scoped_resources_builder import IContainsGenerator, Resources
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
 from dagster._core.instance import DagsterInstance
 
 
@@ -22,20 +21,30 @@ class DualStateContextResourcesContainer:
 
     def __init__(
         self,
-        resources_dict: Mapping[str, Any],
+        resources_dict_or_resources_obj: Optional[Union[Mapping[str, Any], Resources]],
         resources_config: Optional[Mapping[str, Any]] = None,
     ):
         self._cm_scope_entered = False
         self._exit_stack = ExitStack()
-        self.resource_defs = wrap_resources_for_execution(resources_dict)
-        self._resources = self._exit_stack.enter_context(
-            build_resources(resources=self.resource_defs, resource_config=resources_config)
-        )
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+
+        if isinstance(resources_dict_or_resources_obj, Resources):
+            self.resource_defs = {}
+            self._resources = resources_dict_or_resources_obj
+            self._resources_contain_cm = False
+        else:
+            from dagster._core.execution.build_resources import (
+                build_resources,
+                wrap_resources_for_execution,
+            )
+
+            self.resource_defs = wrap_resources_for_execution(resources_dict_or_resources_obj)
+            self._resources = self._exit_stack.enter_context(
+                build_resources(self.resource_defs, resource_config=resources_config)
+            )
+            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
     def call_on_enter(self) -> None:
         self._cm_scope_entered = True
-        pass
 
     def call_on_exit(self) -> None:
         self._exit_stack.close()
