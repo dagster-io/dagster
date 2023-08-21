@@ -44,6 +44,7 @@ def test_dbt_cli(global_config_flags: List[str], command: str) -> None:
     assert dbt_cli_invocation.process.args == ["dbt", *global_config_flags, command]
     assert dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 0
+    assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
 
 @pytest.mark.parametrize("manifest", [manifest, manifest_path, os.fspath(manifest_path)])
@@ -61,15 +62,17 @@ def test_dbt_cli_project_dir_path() -> None:
 
 def test_dbt_cli_failure() -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
-    dbt_cli_invocation = dbt.cli(["run", "--profiles-dir", "nonexistent"], manifest=manifest)
+    dbt_cli_invocation = dbt.cli(["run", "--selector", "nonexistent"], manifest=manifest)
 
     with pytest.raises(DagsterDbtCliRuntimeError):
         dbt_cli_invocation.wait()
 
     assert not dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 2
+    assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
 
+# as
 def test_dbt_cli_subprocess_cleanup(caplog: pytest.LogCaptureFixture) -> None:
     dbt = DbtCliResource(project_dir=TEST_PROJECT_DIR)
     dbt_cli_invocation_1 = dbt.cli(["run"], manifest=manifest)
