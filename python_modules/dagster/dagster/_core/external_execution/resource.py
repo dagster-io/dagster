@@ -10,7 +10,7 @@ from dagster._core.external_execution.task import (
 )
 
 
-class ExternalExecutionResource(ConfigurableResource):
+class SubprocessExecutionResource(ConfigurableResource):
     env: Optional[Dict[str, str]] = Field(
         default=None,
         description="An optional dict of environment variables to pass to the subprocess.",
