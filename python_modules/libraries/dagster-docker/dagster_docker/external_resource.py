@@ -6,7 +6,7 @@ from typing import Mapping, Optional, Sequence, Union
 import docker
 from dagster import OpExecutionContext
 from dagster._core.external_execution.resource import (
-    ExternalExecutionResource,
+    SubprocessExecutionResource,
 )
 from dagster._core.external_execution.task import ExternalExecutionTask
 from dagster_external.protocol import (
@@ -110,7 +110,7 @@ class DockerExecutionTask(ExternalExecutionTask):
                 container.stop()
 
 
-class DockerExecutionResource(ExternalExecutionResource):
+class DockerExecutionResource(SubprocessExecutionResource):
     def run(
         self,
         image: str,
