@@ -4,6 +4,7 @@ from typing import Any, Mapping, Optional
 from dagster._core.definitions.scoped_resources_builder import IContainsGenerator, Resources
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
+from dagster._core.instance import DagsterInstance
 
 
 class DualStateContextResourcesContainer:
@@ -50,3 +51,17 @@ class DualStateContextResourcesContainer:
                 f"open a context manager: `with {fn_name_for_err_msg}(...) as context:`"
             )
         return self._resources
+
+
+class DualStateInstanceContainer:
+    def __init__(self, instance: Optional[DagsterInstance]):
+        from dagster._core.execution.api import ephemeral_instance_if_missing
+
+        self._exit_stack = ExitStack()
+        self.instance = self._exit_stack.enter_context(ephemeral_instance_if_missing(instance))
+
+    def call_on_exit(self) -> None:
+        self._exit_stack.close()
+
+    def call_on_del(self) -> None:
+        self._exit_stack.close()

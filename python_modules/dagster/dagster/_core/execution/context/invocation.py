@@ -1,4 +1,4 @@
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from typing import (
     AbstractSet,
     Any,
@@ -57,7 +57,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
 
 from .compute import OpExecutionContext
-from .dual_state_context import DualStateContextResourcesContainer
+from .dual_state_context import DualStateContextResourcesContainer, DualStateInstanceContainer
 from .system import StepExecutionContext, TypeCheckContext
 
 
@@ -83,16 +83,12 @@ class UnboundOpExecutionContext(OpExecutionContext):
         mapping_key: Optional[str],
         assets_def: Optional[AssetsDefinition],
     ):
-        from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._op_config = op_config
         self._mapping_key = mapping_key
 
-        self._exit_stack = ExitStack()
-
-        # Construct ephemeral instance if missing
-        self._instance = self._exit_stack.enter_context(ephemeral_instance_if_missing(instance))
+        self._instance_container = DualStateInstanceContainer(instance)
 
         self._resources_config = resources_config
         self._resources_container = DualStateContextResourcesContainer(
@@ -118,11 +114,11 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def __exit__(self, *exc) -> None:
         self._resources_container.call_on_exit()
-        self._exit_stack.close()
+        self._instance_container.call_on_exit()
 
     def __del__(self) -> None:
         self._resources_container.call_on_del()
-        self._exit_stack.close()
+        self._instance_container.call_on_del()
 
     @property
     def op_config(self) -> Any:
@@ -146,7 +142,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     @property
     def instance(self) -> DagsterInstance:
-        return self._instance
+        return self._instance_container.instance
 
     @property
     def pdb(self) -> ForkedPdb:
