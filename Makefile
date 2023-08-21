@@ -91,4 +91,4 @@ check_manifest:
 	check-manifest python_modules/dagster
 	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
-	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
+	ls python_modules/libraries | grep -v CONTRIBUTING.md | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
