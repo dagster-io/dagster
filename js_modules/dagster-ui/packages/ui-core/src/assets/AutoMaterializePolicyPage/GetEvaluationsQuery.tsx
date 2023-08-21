@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import { gql } from '@apollo/client';
 
 export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
@@ -24,30 +24,24 @@ export const GET_EVALUATIONS_QUERY = gql`
     numDiscarded
     timestamp
     runIds
-    conditions {
+    ruleEvaluations {
       ...AutoMateralizeWithConditionFragment
     }
   }
 
-  fragment AutoMateralizeWithConditionFragment on AutoMaterializeConditionWithDecisionType {
-    decisionType
-    partitionKeysOrError {
-      ... on PartitionKeys {
-        partitionKeys
-      }
+  fragment AutoMateralizeWithConditionFragment on AutoMaterializeRuleEvaluation {
+    rule {
+        description
     }
-    ... on ParentOutdatedAutoMaterializeCondition {
-      waitingOnAssetKeys {
-        path
-      }
-    }
-    ... on ParentMaterializedAutoMaterializeCondition {
-      updatedAssetKeys {
-        path
-      }
-      willUpdateAssetKeys {
-        path
-      }
+    evaluationData {
+        partitionKeysOrError {
+            ... on PartitionKeys {
+                partitionKeys
+            }
+            ... on Error {
+                message
+            }
+        }
     }
   }
 `;

@@ -30,10 +30,11 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 numRequested
                 numSkipped
                 numDiscarded
-                conditions {
-                    __typename
-                    ... on AutoMaterializeConditionWithDecisionType {
-                        decisionType
+                ruleEvaluations {
+                    rule {
+                        description
+                    }
+                    evaluationData {
                         partitionKeysOrError {
                             ... on PartitionKeys {
                                 partitionKeys
@@ -41,19 +42,6 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                             ... on Error {
                                 message
                             }
-                        }
-                    }
-                    ... on ParentOutdatedAutoMaterializeCondition {
-                        waitingOnAssetKeys {
-                            path
-                        }
-                    }
-                    ... on ParentMaterializedAutoMaterializeCondition {
-                        updatedAssetKeys {
-                            path
-                        }
-                        willUpdateAssetKeys {
-                            path
                         }
                     }
                 }

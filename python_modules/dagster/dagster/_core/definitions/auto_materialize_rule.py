@@ -9,6 +9,7 @@ from typing import (
     Optional,
 )
 
+from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
@@ -22,7 +23,6 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from .asset_graph import AssetGraph
 from .auto_materialize_condition import (
     AutoMaterializeCondition,
-    AutoMaterializeDecisionType,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
@@ -94,6 +94,13 @@ class AutoMaterializeRule(ABC):
         """The decision type of the rule (either `MATERIALIZE` or `SKIP`)."""
         ...
 
+    @abstractproperty
+    def description(self) -> str:
+        """A human-readable description of this rule. As a basic guideline, this string should
+        complete the sentence: 'Indicates an asset should be (materialize/skipped) when ____'.
+        """
+        ...
+
     @abstractmethod
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResult:
         """The core evaluation function for the rule. This function takes in a context object and
@@ -141,6 +148,10 @@ class MaterializeOnRequiredForFreshnessRule(
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
+    @property
+    def description(self) -> str:
+        return "required to meet this or downstream asset's freshness policy"
+
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResult:
         freshness_conditions = freshness_conditions_for_asset_key(
             asset_key=context.asset_key,
@@ -160,6 +171,10 @@ class MaterializeOnParentUpdatedRule(
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
+
+    @property
+    def description(self) -> str:
+        return "upstream data has changed since latest materialization"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResult:
         """Returns a mapping from ParentMaterializedAutoMaterializeCondition to the set of asset
@@ -227,6 +242,10 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.MATERIALIZE
 
+    @property
+    def description(self) -> str:
+        return "materialization is missing"
+
     def evaluate_for_asset(
         self,
         context: RuleEvaluationContext,
@@ -258,6 +277,10 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        return "waiting on upstream data"
 
     def evaluate_for_asset(
         self,
