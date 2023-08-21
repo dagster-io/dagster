@@ -105,14 +105,9 @@ else:
 # start_cloud_usage
 from gql.transport.requests import RequestsHTTPTransport
 
-url = "https://yourorg.dagster.cloud/prod"
+url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
 user_token = (  # a User Token generated from the Cloud Settings page in Dagster Cloud.
     "your_token_here"
 )
-client = DagsterGraphQLClient(
-    url,
-    transport=RequestsHTTPTransport(
-        url=url + "/graphql", headers={"Dagster-Cloud-Api-Token": user_token}
-    ),
-)
+client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
 # end_cloud_usage
