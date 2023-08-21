@@ -610,17 +610,18 @@ def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(dbt_build_args, context=context).stream()
 ```
 
-With the variables defined, we can now reference `min_date` and `max_date` in our SQL and configure the model as incremental:
+With the variables defined, we can now reference `min_date` and `max_date` in our SQL and configure the dbt model as incremental. Here, we define an incremental run to operate on rows with `order_date` that is between our `min_date` and `max_date`.
 
 ```sql
+-- Configure the model as incremental
 {{ config(materialized='incremental') }}
 
 select * from {{ ref('my_model') }}
 
+-- Use the Dagster partition variables to filter rows on an incremental run
 {% if is_incremental() %}
 where order_date >= '{{ var('min_date') }}' and order_date <= '{{ var('max_date') }}'
 {% endif %}
-```
 
 ---
 
