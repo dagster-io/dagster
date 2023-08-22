@@ -18,6 +18,9 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
     decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
     description = graphene.String()
 
+    class Meta:
+        name = "AutoMaterializeRule"
+
     def __init__(self, auto_materialize_rule: AutoMaterializeRule):
         super().__init__(
             decisionType=auto_materialize_rule.decision_type,
