@@ -5,7 +5,6 @@ from dagster import AssetExecutionContext, Config, Definitions, asset
 from dagster._core.external_execution.subprocess import (
     SubprocessExecutionResource,
 )
-from dagster_external.protocol import ExternalExecutionIOMode
 from pydantic import Field
 
 # Add package container to path
@@ -58,8 +57,6 @@ def number_sum(context: AssetExecutionContext, ext: SubprocessExecutionResource)
 
 
 ext = SubprocessExecutionResource(
-    input_mode=ExternalExecutionIOMode.stdio,
-    output_mode=ExternalExecutionIOMode.stdio,
     env=get_env(),
 )
 

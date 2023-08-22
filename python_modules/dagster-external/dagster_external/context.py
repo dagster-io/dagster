@@ -1,22 +1,20 @@
 import atexit
 import json
-import socket
-import sys
+import os
 import warnings
 from typing import Any, ClassVar, Mapping, Optional, Sequence, TextIO
 
 from typing_extensions import Self
 
-from dagster_external.params import ExternalExecutionParams, get_external_execution_params
+from dagster_external.params import get_external_execution_params
 
 from .protocol import (
+    DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalDataProvenance,
     ExternalExecutionContextData,
-    ExternalExecutionIOMode,
     ExternalPartitionKeyRange,
     ExternalTimeWindow,
     Notification,
-    SocketServerControlMessage,
 )
 from .util import (
     assert_defined_asset_property,
@@ -30,75 +28,38 @@ from .util import (
 
 
 def is_dagster_orchestration_active() -> bool:
-    params = get_external_execution_params()
-    return params.is_orchestration_active
+    return bool(os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["is_orchestration_active"]))
 
 
 def init_dagster_external() -> "ExternalExecutionContext":
     if ExternalExecutionContext.is_initialized():
         return ExternalExecutionContext.get()
-    params = get_external_execution_params()
-    if params.is_orchestration_active:
-        data = _read_input(params)
-        output_stream = _get_output_stream(params)
 
-        # Sockets can hang without this.
-        if output_stream is not sys.stdout:
-            atexit.register(_close_stream, output_stream)
-
+    if is_dagster_orchestration_active():
+        params = get_external_execution_params()
+        data = _read_input(params.input_path)
+        output_stream = _get_output_stream(params.output_path)
+        atexit.register(_close_stream, output_stream)
         context = ExternalExecutionContext(data, output_stream)
     else:
         from unittest.mock import MagicMock
 
         warnings.warn(
             "This process was not launched by a Dagster orchestration process. All calls to the"
-            " `dagster-external` are no-ops."
+            " `dagster-external` context are no-ops."
         )
         context = MagicMock()
     ExternalExecutionContext.set(context)
     return context
 
 
-def _read_input(params: ExternalExecutionParams) -> ExternalExecutionContextData:
-    if params.input_mode == ExternalExecutionIOMode.stdio:
-        with sys.stdin as f:
-            return json.load(f)
-    elif params.input_mode == ExternalExecutionIOMode.file:
-        assert params.input_path, "input_path must be set when input_mode is `file`"
-        with open(params.input_path, "r") as f:
-            return json.load(f)
-    elif params.input_mode == ExternalExecutionIOMode.fifo:
-        assert params.input_path, "input_path must be set when input_mode is `fifo`"
-        with open(params.input_path, "r") as f:
-            return json.load(f)
-    elif params.input_mode == ExternalExecutionIOMode.socket:
-        assert params.host, "host must be set when input_mode is `socket`"
-        assert params.port, "port must be set when input_mode is `socket`"
-        with socket.create_connection((params.host, params.port)) as sock:
-            sock.makefile("w").write(f"{SocketServerControlMessage.get_context.value}\n")
-            return json.loads(sock.makefile("r").readline())
-    else:
-        raise Exception(f"Invalid input mode: {params.input_mode}")
+def _read_input(path: str) -> ExternalExecutionContextData:
+    with open(path, "r") as f:
+        return json.load(f)
 
 
-def _get_output_stream(params: ExternalExecutionParams) -> TextIO:
-    if params.output_mode == ExternalExecutionIOMode.stdio:
-        return sys.stdout
-    elif params.output_mode == ExternalExecutionIOMode.file:
-        assert params.output_path, "output_path must be set when output_mode is `file`"
-        return open(params.output_path, "a")
-    elif params.output_mode == ExternalExecutionIOMode.fifo:
-        assert params.output_path, "output_path must be set when output_mode is `fifo`"
-        return open(params.output_path, "w")
-    elif params.output_mode == ExternalExecutionIOMode.socket:
-        assert params.host, "host must be set when output_mode is `socket`"
-        assert params.port, "port must be set when output_mode is `socket`"
-        sock = socket.create_connection((params.host, params.port))
-        stream = sock.makefile("w")
-        stream.write(f"{SocketServerControlMessage.initiate_client_stream.value}\n")
-        return stream
-    else:
-        raise Exception(f"Invalid output mode: {params.output_mode}")
+def _get_output_stream(path: str) -> TextIO:
+    return open(path, "a")
 
 
 def _close_stream(stream) -> None:
