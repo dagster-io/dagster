@@ -1,10 +1,10 @@
 import os
 from typing import Any, Dict, List
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._utils import file_relative_path
 
 import yaml
 from dagster import AssetsDefinition
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._utils import file_relative_path
 
 try:
     from yaml import CLoader as Loader
