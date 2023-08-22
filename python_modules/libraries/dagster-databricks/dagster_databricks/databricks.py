@@ -1,7 +1,7 @@
 import base64
 import logging
 import time
-from typing import Any, Mapping, Optional, Tuple
+from typing import IO, Any, Mapping, Optional, Tuple
 
 import dagster
 import dagster._check as check
@@ -10,6 +10,7 @@ import requests.exceptions
 from dagster._annotations import public
 from databricks_api import DatabricksAPI
 from databricks_cli.sdk import ApiClient, ClusterService, DbfsService, JobsService
+from typing_extensions import Final
 
 import dagster_databricks
 
@@ -21,7 +22,7 @@ from .types import (
 from .version import __version__
 
 # wait at most 24 hours by default for run execution
-DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
+DEFAULT_RUN_MAX_WAIT_TIME_SEC: Final = 24 * 60 * 60
 
 
 class DatabricksError(Exception):
@@ -105,7 +106,7 @@ class DatabricksClient:
         return data
 
     def put_file(
-        self, file_obj, dbfs_path: str, overwrite: bool = False, block_size: int = 1024**2
+        self, file_obj: IO, dbfs_path: str, overwrite: bool = False, block_size: int = 1024**2
     ) -> None:
         """Upload an arbitrary large file to DBFS.
 

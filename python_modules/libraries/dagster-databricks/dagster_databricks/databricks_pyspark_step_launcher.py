@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 import zlib
-from typing import Iterator, Sequence, cast
+from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, cast
 
 from dagster import (
     Bool,
@@ -17,7 +17,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry
@@ -28,6 +28,7 @@ from dagster._core.execution.plan.external_step import (
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
+from dagster._core.log_manager import DagsterLogManager
 from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
@@ -188,29 +189,31 @@ def databricks_pyspark_step_launcher(
 class DatabricksPySparkStepLauncher(StepLauncher):
     def __init__(
         self,
-        run_config,
-        permissions,
-        databricks_host,
-        databricks_token,
-        secrets_to_env_variables,
-        staging_prefix,
-        wait_for_logs,
-        max_completion_wait_time_seconds,
-        env_variables=None,
-        storage=None,
-        poll_interval_sec=5,
-        local_pipeline_package_path=None,
-        local_dagster_job_package_path=None,
-        verbose_logs=True,
-        add_dagster_env_variables=True,
+        run_config: Mapping[str, Any],
+        permissions: Mapping[str, Any],
+        databricks_host: str,
+        databricks_token: str,
+        secrets_to_env_variables: Sequence[Mapping[str, Any]],
+        staging_prefix: str,
+        wait_for_logs: bool,
+        max_completion_wait_time_seconds: int,
+        env_variables: Optional[Mapping[str, str]] = None,
+        storage: Optional[Mapping[str, Any]] = None,
+        poll_interval_sec: int = 5,
+        local_pipeline_package_path: Optional[str] = None,
+        local_dagster_job_package_path: Optional[str] = None,
+        verbose_logs: bool = True,
+        add_dagster_env_variables: bool = True,
     ):
-        self.run_config = check.dict_param(run_config, "run_config")
-        self.permissions = check.dict_param(permissions, "permissions")
+        self.run_config = check.mapping_param(run_config, "run_config")
+        self.permissions = check.mapping_param(permissions, "permissions")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
         self.databricks_token = check.str_param(databricks_token, "databricks_token")
-        self.secrets = check.list_param(secrets_to_env_variables, "secrets_to_env_variables", dict)
-        self.env_variables = check.opt_dict_param(env_variables, "env_variables")
-        self.storage = check.opt_dict_param(storage, "storage")
+        self.secrets = check.sequence_param(
+            secrets_to_env_variables, "secrets_to_env_variables", dict
+        )
+        self.env_variables = check.opt_mapping_param(env_variables, "env_variables")
+        self.storage = check.opt_mapping_param(storage, "storage")
         check.invariant(
             local_dagster_job_package_path is not None or local_pipeline_package_path is not None,
             "Missing config: need to provide either 'local_dagster_job_package_path' or"
@@ -271,7 +274,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             if self.wait_for_logs:
                 self._log_logs_from_cluster(log, databricks_run_id)
 
-    def log_compute_logs(self, log, run_id, step_key):
+    def log_compute_logs(self, log: DagsterLogManager, run_id: str, step_key: str) -> None:
         try:
             stdout = self.databricks_runner.client.read_file(
                 self._dbfs_path(run_id, step_key, "stdout")
@@ -374,7 +377,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
         return []
 
-    def _grant_permissions(self, log, databricks_run_id, request_retries=3):
+    def _grant_permissions(
+        self, log: DagsterLogManager, databricks_run_id: int, request_retries: int = 3
+    ) -> None:
         api_client = self.databricks_runner.client.client.client
 
         # Retrieve run info
@@ -403,7 +408,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # Update job permissions
         if "job_permissions" in self.permissions:
             job_permissions = self._format_permissions(self.permissions["job_permissions"])
-            job_id = run_info["job_id"]
+            job_id = run_info["job_id"]  # type: ignore  # (??)
             log.debug(f"Updating job permissions with following json: {job_permissions}")
             response = api_client.perform_query(
                 method="PATCH", path=f"/permissions/jobs/{job_id}", data=job_permissions
@@ -426,7 +431,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             )
             log.info(f"Successfully updated cluster permissions | Response: {response}")
 
-    def _format_permissions(self, input_permissions):
+    def _format_permissions(
+        self, input_permissions: Mapping[str, Sequence[Mapping[str, str]]]
+    ) -> Mapping[str, Sequence[Mapping[str, str]]]:
         permissions = {"access_control_list": []}
         for permission_level, accessors in input_permissions.items():
             for accessor in accessors:
@@ -435,7 +442,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 )
         return permissions
 
-    def _get_databricks_task(self, run_id, step_key):
+    def _get_databricks_task(self, run_id: str, step_key: str) -> Mapping[str, Any]:
         """Construct the 'task' parameter to  be submitted to the Databricks API.
 
         This will create a 'spark_python_task' dict where `python_file` is a path on DBFS
@@ -452,7 +459,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         ]
         return {"spark_python_task": {"python_file": python_file, "parameters": parameters}}
 
-    def _upload_artifacts(self, log, step_run_ref, run_id, step_key):
+    def _upload_artifacts(
+        self, log: DagsterLogManager, step_run_ref: StepRunRef, run_id: str, step_key: str
+    ) -> None:
         """Upload the step run ref and pyspark code to DBFS to run as a job."""
         log.info("Uploading main file to DBFS")
         main_local_path = self._main_file_local_path()
@@ -493,7 +502,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             overwrite=True,
         )
 
-    def get_dagster_env_variables(self):
+    def get_dagster_env_variables(self) -> Dict[str, str]:
         out = {}
         if self.add_dagster_env_variables:
             for var in DAGSTER_SYSTEM_ENV_VARS:
@@ -501,7 +510,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     out.update({var: os.getenv(var)})
         return out
 
-    def create_remote_config(self):
+    def create_remote_config(self) -> "DatabricksConfig":
         env_variables = self.get_dagster_env_variables()
         env_variables.update(self.env_variables)
         databricks_config = DatabricksConfig(
@@ -511,7 +520,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         )
         return databricks_config
 
-    def _log_logs_from_cluster(self, log, run_id):
+    def _log_logs_from_cluster(self, log: DagsterLogManager, run_id: int) -> None:
         logs = self.databricks_runner.retrieve_logs_for_run_id(log, run_id)
         if logs is None:
             return
@@ -521,17 +530,17 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         if stdout:
             log.info(stdout)
 
-    def _main_file_name(self):
+    def _main_file_name(self) -> str:
         return os.path.basename(self._main_file_local_path())
 
-    def _main_file_local_path(self):
+    def _main_file_local_path(self) -> str:
         return databricks_step_main.__file__
 
     def _sanitize_step_key(self, step_key: str) -> str:
         # step_keys of dynamic steps contain brackets, which are invalid characters
         return step_key.replace("[", "__").replace("]", "__")
 
-    def _dbfs_path(self, run_id, step_key, filename):
+    def _dbfs_path(self, run_id: str, step_key: str, filename: str) -> str:
         path = "/".join(
             [
                 self.staging_prefix,
@@ -542,7 +551,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         )
         return f"dbfs://{path}"
 
-    def _internal_dbfs_path(self, run_id, step_key, filename):
+    def _internal_dbfs_path(self, run_id: str, step_key: str, filename: str) -> str:
         """Scripts running on Databricks should access DBFS at /dbfs/."""
         path = "/".join(
             [
@@ -571,7 +580,12 @@ class DatabricksConfig:
     We use a separate class to avoid coupling the setup to the format of the `step_run_ref` object.
     """
 
-    def __init__(self, env_variables, storage, secrets):
+    def __init__(
+        self,
+        env_variables: Mapping[str, str],
+        storage: Mapping[str, Any],
+        secrets: Sequence[Mapping[str, Any]],
+    ):
         """Create a new DatabricksConfig object.
 
         `storage` and `secrets` should be of the same shape as the `storage` and
@@ -581,7 +595,7 @@ class DatabricksConfig:
         self.storage = storage
         self.secrets = secrets
 
-    def setup(self, dbutils, sc):
+    def setup(self, dbutils: Any, sc: Any) -> None:
         """Set up storage and environment variables on Databricks.
 
         The `dbutils` and `sc` arguments must be passed in by the 'main' script, as they
@@ -590,14 +604,14 @@ class DatabricksConfig:
         self.setup_storage(dbutils, sc)
         self.setup_environment(dbutils)
 
-    def setup_storage(self, dbutils, sc):
+    def setup_storage(self, dbutils: Any, sc: Any) -> None:
         """Set up storage using either S3 or ADLS2."""
         if "s3" in self.storage:
             self.setup_s3_storage(self.storage["s3"], dbutils, sc)
         elif "adls2" in self.storage:
             self.setup_adls2_storage(self.storage["adls2"], dbutils, sc)
 
-    def setup_s3_storage(self, s3_storage, dbutils, sc):
+    def setup_s3_storage(self, s3_storage: Mapping[str, Any], dbutils: Any, sc: Any) -> None:
         """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them."""
         scope = s3_storage["secret_scope"]
 
@@ -613,7 +627,7 @@ class DatabricksConfig:
         os.environ["AWS_ACCESS_KEY_ID"] = access_key
         os.environ["AWS_SECRET_ACCESS_KEY"] = secret_key
 
-    def setup_adls2_storage(self, adls2_storage, dbutils, sc):
+    def setup_adls2_storage(self, adls2_storage: Mapping[str, Any], dbutils: Any, sc: Any) -> None:
         """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it."""
         storage_account_key = dbutils.secrets.get(
             scope=adls2_storage["secret_scope"], key=adls2_storage["storage_account_key_key"]
@@ -628,7 +642,7 @@ class DatabricksConfig:
             storage_account_key,
         )
 
-    def setup_environment(self, dbutils):
+    def setup_environment(self, dbutils: Any) -> None:
         """Setup any environment variables required by the run.
 
         Extract any secrets in the run config and export them as environment variables.
