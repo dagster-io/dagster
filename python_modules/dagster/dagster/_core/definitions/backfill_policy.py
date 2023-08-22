@@ -3,6 +3,7 @@ from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._serdes import whitelist_for_serdes
 
 
 class BackfillPolicyType(Enum):
@@ -11,6 +12,7 @@ class BackfillPolicyType(Enum):
 
 
 @experimental
+@whitelist_for_serdes
 class BackfillPolicy(
     NamedTuple(
         "_BackfillPolicy",
