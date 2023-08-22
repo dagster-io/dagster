@@ -84,7 +84,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       to: buildAssetViewParams({...params, view: 'lineage'}),
       disabled: !definition,
     },
-    autoMaterialize: {
+    'auto-materialize-history': {
       id: 'auto-materialize-history',
       title: 'Auto-materialize history',
       to: buildAssetViewParams({...params, view: 'auto-materialize-history'}),
@@ -97,6 +97,6 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
 export const buildAssetTabs = (input: AssetTabConfigInput): AssetTabConfig[] => {
   const tabConfigs = buildAssetTabMap(input);
   return DEFAULT_ASSET_TAB_ORDER.map((tabId) => tabConfigs[tabId]).filter(
-    (tab): tab is AssetTabConfig => !!tab,
+    (tab): tab is AssetTabConfig => !!tab && !tab.hidden,
   );
 };
