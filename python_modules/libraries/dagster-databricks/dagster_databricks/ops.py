@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster import (
     In,
@@ -110,10 +110,13 @@ def create_databricks_run_now_op(
         databricks: DatabricksClient = getattr(context.resources, databricks_resource_key)
         jobs_service = JobsService(databricks.api_client)
 
-        run_id: int = jobs_service.run_now(
-            job_id=databricks_job_id,
-            **(databricks_job_configuration or {}),
-        )["run_id"]
+        run_id = cast(
+            int,
+            jobs_service.run_now(
+                job_id=databricks_job_id,
+                **(databricks_job_configuration or {}),
+            )["run_id"],
+        )
 
         get_run_response: dict = jobs_service.get_run(run_id=run_id)
 

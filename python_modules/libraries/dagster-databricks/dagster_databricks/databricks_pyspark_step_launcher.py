@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 import zlib
+from typing import Iterator, Sequence, cast
 
 from dagster import (
     Bool,
@@ -18,6 +19,10 @@ from dagster import (
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import raise_execution_interrupts
+from dagster._core.events import DagsterEvent
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
@@ -161,7 +166,9 @@ DAGSTER_SYSTEM_ENV_VARS = {
         ),
     }
 )
-def databricks_pyspark_step_launcher(context):
+def databricks_pyspark_step_launcher(
+    context: InitResourceContext,
+) -> "DatabricksPySparkStepLauncher":
     """Resource for running ops as a Databricks Job.
 
     When this resource is used, the op will be executed in Databricks using the 'Run Submit'
@@ -233,7 +240,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             add_dagster_env_variables, "add_dagster_env_variables"
         )
 
-    def launch_step(self, step_context):
+    def launch_step(self, step_context: StepExecutionContext) -> Iterator[DagsterEvent]:
         step_run_ref = step_context_to_step_run_ref(
             step_context, self.local_dagster_job_package_path
         )
@@ -290,7 +297,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 f" {step_key}. Check the databricks console for more info."
             )
 
-    def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
+    def step_events_iterator(
+        self, step_context: StepExecutionContext, step_key: str, databricks_run_id: int
+    ) -> Iterator[DagsterEvent]:
         """The launched Databricks job writes all event records to a specific dbfs file. This iterator
         regularly reads the contents of the file, adds any events that have not yet been seen to
         the instance, and yields any DagsterEvents.
@@ -330,19 +339,24 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         # write each event from the DataBricks instance to the local instance
                         step_context.instance.handle_new_event(event)
                         if event.is_dagster_event:
-                            yield event.dagster_event
+                            yield event.get_dagster_event()
                     processed_events = len(all_events)
 
         step_context.log.info(f"Databricks run {databricks_run_id} completed.")
 
-    def get_step_events(self, run_id: str, step_key: str, retry_number: int):
+    def get_step_events(
+        self, run_id: str, step_key: str, retry_number: int
+    ) -> Sequence[EventLogEntry]:
         path = self._dbfs_path(run_id, step_key, f"{retry_number}_{PICKLED_EVENTS_FILE_NAME}")
 
-        def _get_step_records():
+        def _get_step_records() -> Sequence[EventLogEntry]:
             serialized_records = self.databricks_runner.client.read_file(path)
             if not serialized_records:
                 return []
-            return deserialize_value(pickle.loads(gzip.decompress(serialized_records)))
+            return cast(
+                Sequence[EventLogEntry],
+                deserialize_value(pickle.loads(gzip.decompress(serialized_records))),
+            )
 
         try:
             # reading from dbfs while it writes can be flaky
