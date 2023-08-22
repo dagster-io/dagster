@@ -34,5 +34,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pipes_tests*"]),
+    package_data={"dagster_pipes": ["json_schema/*.json"]},
     zip_safe=False,
 )

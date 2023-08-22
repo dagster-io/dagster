@@ -354,6 +354,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/automation"),
+    PackageSpec("python_modules/dagster-ext", other_tox_envs=["jsonschema"]),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
