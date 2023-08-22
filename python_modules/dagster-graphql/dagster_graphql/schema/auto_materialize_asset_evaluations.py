@@ -190,8 +190,6 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         record: AutoMaterializeAssetEvaluationRecord,
         partitions_def: Optional[PartitionsDefinition],
     ):
-        print("----------")
-        print(record)
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,

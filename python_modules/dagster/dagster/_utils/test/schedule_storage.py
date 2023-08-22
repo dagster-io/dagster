@@ -9,7 +9,6 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
-    MissingAutoMaterializeCondition,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import SerializedPartitionsSubset
