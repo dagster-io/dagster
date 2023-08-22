@@ -118,7 +118,10 @@ def test_asset_with_single_run_backfill_policy():
         )
     ]
 
-    deserialize_value(serialize_value(external_asset_nodes[0]), ExternalAssetNode)
+    assert (
+        deserialize_value(serialize_value(external_asset_nodes[0]), ExternalAssetNode)
+        == external_asset_nodes[0]
+    )
 
 
 def test_asset_with_multi_run_backfill_policy():
