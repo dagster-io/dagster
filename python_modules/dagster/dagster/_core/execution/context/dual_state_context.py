@@ -57,7 +57,9 @@ class DualStateContextResourcesContainer:
     def has_been_accessed(self) -> bool:
         return self._resources is not None
 
-    def get_resources(self, fn_name_for_err_msg: str) -> Resources:
+    def get_resources(
+        self, fn_name_for_err_msg: str, instance: Optional["DagsterInstance"]
+    ) -> Resources:
         if self._resources:
             return self._resources
 
@@ -76,7 +78,9 @@ class DualStateContextResourcesContainer:
         from dagster._core.execution.build_resources import build_resources
 
         self._resources = self._exit_stack.enter_context(
-            build_resources(self.resource_defs, resource_config=self._resources_config)
+            build_resources(
+                self.resource_defs, resource_config=self._resources_config, instance=instance
+            )
         )
         resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 

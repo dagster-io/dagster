@@ -234,7 +234,8 @@ class ScheduleEvaluationContext:
         """Mapping of resource key to resource definition to be made available
         during schedule execution.
         """
-        return self._resources_container.get_resources("build_schedule_context")
+        instance = self.instance if self._instance or self._instance_ref else None
+        return self._resources_container.get_resources("build_schedule_context", instance=instance)
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "ScheduleEvaluationContext":
         """Merge the specified resources into this context.
