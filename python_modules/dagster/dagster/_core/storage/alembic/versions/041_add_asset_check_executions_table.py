@@ -19,6 +19,7 @@ depends_on = None
 
 TABLE_NAME = "asset_check_executions"
 INDEX_NAME = "idx_asset_check_executions"
+UNIQUE_INDEX_NAME = "idx_asset_check_executions_unique"
 
 
 def upgrade():
@@ -38,10 +39,10 @@ def upgrade():
             ),  # Currently unused. Planned for future partition support
             db.Column("run_id", db.String(255)),
             db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
-            db.Column("asset_check_evaluation_event_record", db.Text),
-            db.Column("asset_check_evaluation_event_timestamp", db.DateTime),
+            db.Column("evaluation_event", db.Text),
+            db.Column("evaluation_event_timestamp", db.DateTime),
             db.Column(
-                "asset_check_evaluation_event_storage_id",
+                "evaluation_event_storage_id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
             ),
             db.Column(
@@ -61,11 +62,29 @@ def upgrade():
                 "materialization_event_storage_id",
                 "partition",
             ],
+            mysql_length={"asset_key": 64, "partition": 64, "check_name": 64},
+        )
+
+    if not has_index(TABLE_NAME, UNIQUE_INDEX_NAME):
+        op.create_index(
+            UNIQUE_INDEX_NAME,
+            TABLE_NAME,
+            [
+                "asset_key",
+                "check_name",
+                "run_id",
+                "partition",
+            ],
+            unique=True,
+            mysql_length={"asset_key": 64, "partition": 64, "check_name": 64},
         )
 
 
 def downgrade():
     if has_table(TABLE_NAME):
+        if has_index(TABLE_NAME, UNIQUE_INDEX_NAME):
+            op.drop_index(UNIQUE_INDEX_NAME, TABLE_NAME)
+
         if has_index(TABLE_NAME, INDEX_NAME):
             op.drop_index(INDEX_NAME, TABLE_NAME)
 

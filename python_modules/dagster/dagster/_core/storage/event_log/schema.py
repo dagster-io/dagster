@@ -151,10 +151,10 @@ AssetCheckExecutionsTable = db.Table(
     db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
     db.Column("run_id", db.String(255)),
     db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
-    db.Column("asset_check_evaluation_event_record", db.Text),
-    db.Column("asset_check_evaluation_event_timestamp", db.DateTime),
+    db.Column("evaluation_event", db.Text),
+    db.Column("evaluation_event_timestamp", db.DateTime),
     db.Column(
-        "asset_check_evaluation_event_storage_id",
+        "evaluation_event_storage_id",
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
     ),
     db.Column(
@@ -170,6 +170,21 @@ db.Index(
     AssetCheckExecutionsTable.c.check_name,
     AssetCheckExecutionsTable.c.materialization_event_storage_id,
     AssetCheckExecutionsTable.c.partition,
+    mysql_length={
+        "asset_key": 64,
+        "partition": 64,
+        "check_name": 64,
+    },
+)
+
+db.Index(
+    "idx_asset_check_executions_unique",
+    AssetCheckExecutionsTable.c.asset_key,
+    AssetCheckExecutionsTable.c.check_name,
+    AssetCheckExecutionsTable.c.run_id,
+    AssetCheckExecutionsTable.c.partition,
+    unique=True,
+    mysql_length={"asset_key": 64, "partition": 64, "check_name": 64},
 )
 
 db.Index(
