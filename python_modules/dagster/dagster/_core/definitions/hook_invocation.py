@@ -23,7 +23,8 @@ def hook_invocation_result(
     # Validate that all required resources are provided in the context
 
     ensure_requirements_satisfied(
-        hook_context._resource_defs, list(hook_def.get_resource_requirements())  # noqa: SLF001
+        hook_context._resources_container.resource_defs,  # noqa: SLF001
+        list(hook_def.get_resource_requirements()),
     )
 
     bound_context = BoundHookContext(
