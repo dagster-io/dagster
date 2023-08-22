@@ -131,7 +131,7 @@ def create_graphene_auto_materialize_rule_evaluation(
         subset = serialized_partition_subset.deserialize(partitions_def)
         partition_keys_or_error = GraphenePartitionKeys(partitionKeys=subset.get_partition_keys())
 
-    return GrapheneAutoMaterializeRuleEvaluationData(
+    return GrapheneAutoMaterializeRuleEvaluation(
         partitionKeysOrError=partition_keys_or_error, evaluationData=rule_evaluation_data
     )
 
