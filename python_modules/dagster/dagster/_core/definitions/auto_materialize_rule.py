@@ -63,9 +63,9 @@ class AutoMaterializeRuleEvaluationData(ABC):
 
 
 @whitelist_for_serdes
-class GenericRuleEvaluationData(
+class TextRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
-    NamedTuple("_GenericRuleEvaluationData", [("description", str)]),
+    NamedTuple("_TextRuleEvaluationData", [("text", str)]),
 ):
     ...
 
@@ -75,18 +75,21 @@ class ParentUpdatedRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
         "_ParentUpdatedRuleEvaluation",
-        [("updated_keys", FrozenSet[AssetKey]), ("will_update_keys", FrozenSet[AssetKey])],
+        [
+            ("updated_asset_keys", FrozenSet[AssetKey]),
+            ("will_update_asset_keys", FrozenSet[AssetKey]),
+        ],
     ),
 ):
     ...
 
 
 @whitelist_for_serdes
-class WaitingOnParentRuleEvaluationData(
+class WaitingOnAssetsRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
         "_WaitingOnParentRuleEvaluation",
-        [("waiting_on_keys", FrozenSet[AssetKey])],
+        [("waiting_on_asset_keys", FrozenSet[AssetKey])],
     ),
 ):
     ...
@@ -294,8 +297,8 @@ class MaterializeOnParentUpdatedRule(
             if updated_parents or will_update_parents:
                 conditions[
                     ParentUpdatedRuleEvaluationData(
-                        updated_keys=frozenset(updated_parents),
-                        will_update_keys=frozenset(will_update_parents),
+                        updated_asset_keys=frozenset(updated_parents),
+                        will_update_asset_keys=frozenset(will_update_parents),
                     )
                 ].add(asset_partition)
         if conditions:
@@ -349,7 +352,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return "waiting on upstream data"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        asset_partitions_by_waiting_on_keys = defaultdict(set)
+        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
             unreconciled_ancestors = set()
             # find the root cause of why this asset partition's parents are outdated (if any)
@@ -370,13 +373,13 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                         )
                     )
             if unreconciled_ancestors:
-                asset_partitions_by_waiting_on_keys[frozenset(unreconciled_ancestors)].update(
+                asset_partitions_by_waiting_on_asset_keys[frozenset(unreconciled_ancestors)].update(
                     {candidate}
                 )
-        if asset_partitions_by_waiting_on_keys:
+        if asset_partitions_by_waiting_on_asset_keys:
             return [
-                (WaitingOnParentRuleEvaluationData(waiting_on_keys=k), v)
-                for k, v in asset_partitions_by_waiting_on_keys.items()
+                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
+                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
             ]
         return []
 
@@ -503,32 +506,36 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
                 evaluation_data=None,
             )
         elif self.klass == ParentMaterializedAutoMaterializeCondition:
-            updated_keys = unpacked_dict.get("updated_asset_keys")
-            if isinstance(updated_keys, set):
-                updated_keys = cast(FrozenSet[AssetKey], frozenset(updated_keys))
+            updated_asset_keys = unpacked_dict.get("updated_asset_keys")
+            if isinstance(updated_asset_keys, set):
+                updated_asset_keys = cast(FrozenSet[AssetKey], frozenset(updated_asset_keys))
             else:
-                updated_keys = frozenset()
-            will_update_keys = unpacked_dict.get("will_update_asset_keys")
-            if isinstance(will_update_keys, set):
-                will_update_keys = cast(FrozenSet[AssetKey], frozenset(will_update_keys))
+                updated_asset_keys = frozenset()
+            will_update_asset_keys = unpacked_dict.get("will_update_asset_keys")
+            if isinstance(will_update_asset_keys, set):
+                will_update_asset_keys = cast(
+                    FrozenSet[AssetKey], frozenset(will_update_asset_keys)
+                )
             else:
-                will_update_keys = frozenset()
+                will_update_asset_keys = frozenset()
             return AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_parent_updated(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
-                    updated_keys=updated_keys,
-                    will_update_keys=will_update_keys,
+                    updated_asset_keys=updated_asset_keys,
+                    will_update_asset_keys=will_update_asset_keys,
                 ),
             )
         elif self.klass == ParentOutdatedAutoMaterializeCondition:
-            waiting_on_keys = unpacked_dict.get("waiting_on_asset_keys")
-            if isinstance(waiting_on_keys, set):
-                waiting_on_keys = cast(FrozenSet[AssetKey], frozenset(waiting_on_keys))
+            waiting_on_asset_keys = unpacked_dict.get("waiting_on_asset_keys")
+            if isinstance(waiting_on_asset_keys, set):
+                waiting_on_asset_keys = cast(FrozenSet[AssetKey], frozenset(waiting_on_asset_keys))
             else:
-                waiting_on_keys = frozenset()
+                waiting_on_asset_keys = frozenset()
             return AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.skip_on_parent_outdated(),
-                evaluation_data=WaitingOnParentRuleEvaluationData(waiting_on_keys=waiting_on_keys),
+                evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                    waiting_on_asset_keys=waiting_on_asset_keys
+                ),
             )
         elif self.klass == MaxMaterializationsExceededAutoMaterializeCondition:
             return AutoMaterializeRuleEvaluation(

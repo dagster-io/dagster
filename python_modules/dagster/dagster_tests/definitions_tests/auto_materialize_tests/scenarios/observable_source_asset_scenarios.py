@@ -220,8 +220,8 @@ observable_source_asset_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             rule=AutoMaterializeRule.materialize_on_parent_updated(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_keys=frozenset([AssetKey("source_asset")]),
-                                will_update_keys=frozenset(),
+                                updated_asset_keys=frozenset([AssetKey("source_asset")]),
+                                will_update_asset_keys=frozenset(),
                             ),
                         ),
                         {"b"},

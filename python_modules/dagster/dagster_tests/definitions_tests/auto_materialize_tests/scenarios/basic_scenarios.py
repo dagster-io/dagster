@@ -93,7 +93,8 @@ basic_scenarios = {
                 "asset2",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset(), will_update_keys=frozenset([AssetKey("asset1")])
+                    updated_asset_keys=frozenset(),
+                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
                 ),
             ),
         ],
@@ -125,8 +126,8 @@ basic_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated(),
                             ParentUpdatedRuleEvaluationData(
-                                updated_keys=frozenset([AssetKey("asset1")]),
-                                will_update_keys=frozenset(),
+                                updated_asset_keys=frozenset([AssetKey("asset1")]),
+                                will_update_asset_keys=frozenset(),
                             ),
                         ),
                         None,
@@ -154,8 +155,8 @@ basic_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated(),
                             ParentUpdatedRuleEvaluationData(
-                                updated_keys=frozenset([AssetKey("asset1")]),
-                                will_update_keys=frozenset(),
+                                updated_asset_keys=frozenset([AssetKey("asset1")]),
+                                will_update_asset_keys=frozenset(),
                             ),
                         ),
                         None,
@@ -176,8 +177,8 @@ basic_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated(),
                             ParentUpdatedRuleEvaluationData(
-                                updated_keys=frozenset([AssetKey("asset1")]),
-                                will_update_keys=frozenset(),
+                                updated_asset_keys=frozenset([AssetKey("asset1")]),
+                                will_update_asset_keys=frozenset(),
                             ),
                         ),
                         None,
@@ -204,7 +205,8 @@ basic_scenarios = {
                 "asset2",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset([AssetKey("asset1")]), will_update_keys=frozenset()
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
                 ),
             ),
         ],
@@ -238,8 +240,8 @@ basic_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated(),
                             ParentUpdatedRuleEvaluationData(
-                                updated_keys=frozenset([AssetKey("parent1")]),
-                                will_update_keys=frozenset([AssetKey("parent2")]),
+                                updated_asset_keys=frozenset([AssetKey("parent1")]),
+                                will_update_asset_keys=frozenset([AssetKey("parent2")]),
                             ),
                         ),
                         None,
@@ -262,8 +264,8 @@ basic_scenarios = {
                 "child",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset([AssetKey("parent1")]),
-                    will_update_keys=frozenset(),
+                    updated_asset_keys=frozenset([AssetKey("parent1")]),
+                    will_update_asset_keys=frozenset(),
                 ),
             ),
         ],
@@ -291,24 +293,24 @@ basic_scenarios = {
                 "asset2",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset([AssetKey("asset1")]),
-                    will_update_keys=frozenset(),
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
                 ),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset3",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset([AssetKey("asset1")]),
-                    will_update_keys=frozenset(),
+                    updated_asset_keys=frozenset([AssetKey("asset1")]),
+                    will_update_asset_keys=frozenset(),
                 ),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset4",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset(),
-                    will_update_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")]),
+                    updated_asset_keys=frozenset(),
+                    will_update_asset_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")]),
                 ),
             ),
         ],

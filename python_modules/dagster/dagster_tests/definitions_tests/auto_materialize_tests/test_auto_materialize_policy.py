@@ -7,7 +7,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
     ParentUpdatedRuleEvaluationData,
-    WaitingOnParentRuleEvaluationData,
+    WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._serdes import deserialize_value, serialize_value
 
@@ -134,7 +134,7 @@ def test_serialized_auto_materialize_backcompat(
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_parent_updated(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset(), will_update_keys=frozenset()
+                    updated_asset_keys=frozenset(), will_update_asset_keys=frozenset()
                 ),
             ),
         ),
@@ -150,8 +150,8 @@ def test_serialized_auto_materialize_backcompat(
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_parent_updated(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset([AssetKey("foo"), AssetKey("bar")]),
-                    will_update_keys=frozenset([AssetKey("foo2"), AssetKey("bar2")]),
+                    updated_asset_keys=frozenset([AssetKey("foo"), AssetKey("bar")]),
+                    will_update_asset_keys=frozenset([AssetKey("foo2"), AssetKey("bar2")]),
                 ),
             ),
         ),
@@ -182,8 +182,8 @@ def test_serialized_auto_materialize_backcompat(
             ),
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.skip_on_parent_outdated(),
-                evaluation_data=WaitingOnParentRuleEvaluationData(
-                    waiting_on_keys=frozenset(),
+                evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                    waiting_on_asset_keys=frozenset(),
                 ),
             ),
         ),
@@ -196,8 +196,8 @@ def test_serialized_auto_materialize_backcompat(
             ),
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.skip_on_parent_outdated(),
-                evaluation_data=WaitingOnParentRuleEvaluationData(
-                    waiting_on_keys=frozenset({AssetKey("foo"), AssetKey("bar")})
+                evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                    waiting_on_asset_keys=frozenset({AssetKey("foo"), AssetKey("bar")})
                 ),
             ),
         ),

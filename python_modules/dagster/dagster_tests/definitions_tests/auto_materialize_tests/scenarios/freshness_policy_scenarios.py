@@ -7,8 +7,8 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
-    GenericRuleEvaluationData,
     ParentUpdatedRuleEvaluationData,
+    TextRuleEvaluationData,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -228,22 +228,22 @@ freshness_policy_scenarios = {
             AssetEvaluationSpec.from_single_rule(
                 "asset1",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset2",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset3",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset4",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by this asset's policy"),
+                TextRuleEvaluationData("Required by this asset's policy"),
             ),
         ],
     ),
@@ -363,29 +363,30 @@ freshness_policy_scenarios = {
             AssetEvaluationSpec.from_single_rule(
                 "asset1",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset2",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset3",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset4",
                 AutoMaterializeRule.materialize_on_parent_updated(),
                 ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset(), will_update_keys=frozenset([AssetKey("asset1")])
+                    updated_asset_keys=frozenset(),
+                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
                 ),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset5",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by this asset's policy"),
+                TextRuleEvaluationData("Required by this asset's policy"),
             ),
         ],
     ),
@@ -398,12 +399,12 @@ freshness_policy_scenarios = {
             AssetEvaluationSpec.from_single_rule(
                 "asset2",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by downstream asset's policy"),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
             ),
             AssetEvaluationSpec.from_single_rule(
                 "asset5",
                 AutoMaterializeRule.materialize_on_required_for_freshness(),
-                GenericRuleEvaluationData("Required by this asset's policy"),
+                TextRuleEvaluationData("Required by this asset's policy"),
             ),
         ],
     ),

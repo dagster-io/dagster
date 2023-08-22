@@ -21,7 +21,7 @@ from .asset_graph import AssetGraph
 if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
 
-    from .auto_materialize_rule import GenericRuleEvaluationData, RuleEvaluationResults
+    from .auto_materialize_rule import RuleEvaluationResults, TextRuleEvaluationData
 
 
 def get_execution_period_for_policy(
@@ -65,11 +65,11 @@ def get_execution_period_and_evaluation_data_for_policies(
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[pendulum.Period], Optional["GenericRuleEvaluationData"]]:
+) -> Tuple[Optional[pendulum.Period], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    from .auto_materialize_rule import GenericRuleEvaluationData
+    from .auto_materialize_rule import TextRuleEvaluationData
 
     merged_period = None
     contains_local = False
@@ -100,11 +100,11 @@ def get_execution_period_and_evaluation_data_for_policies(
     if not contains_local and not contains_downstream:
         evaluation_data = None
     elif not contains_local:
-        evaluation_data = GenericRuleEvaluationData("Required by downstream asset's policy")
+        evaluation_data = TextRuleEvaluationData("Required by downstream asset's policy")
     elif not contains_downstream:
-        evaluation_data = GenericRuleEvaluationData("Required by this asset's policy")
+        evaluation_data = TextRuleEvaluationData("Required by this asset's policy")
     else:
-        evaluation_data = GenericRuleEvaluationData(
+        evaluation_data = TextRuleEvaluationData(
             "Required by this asset's policy and downstream asset's policy"
         )
 
