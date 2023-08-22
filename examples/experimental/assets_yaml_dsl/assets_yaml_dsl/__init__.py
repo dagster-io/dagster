@@ -1,5 +1,5 @@
 from dagster import Definitions
-from dagster._core.external_execution.resource import SubprocessExecutionResource
+from dagster._core.external_execution.subprocess import SubprocessExecutionResource
 
 from .assets_dsl import get_asset_dsl_example_defs
 from .stocks_dsl import get_stocks_dsl_example_defs
