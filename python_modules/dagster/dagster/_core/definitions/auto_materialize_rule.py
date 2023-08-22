@@ -13,6 +13,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    cast,
 )
 
 import dagster._check as check
@@ -474,7 +475,12 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
 
 class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
     """This handles backcompat for the old AutoMaterializeCondition objects, turning them into the
-    proper AutoMaterializeRuleEvaluation objects.
+    proper AutoMaterializeRuleEvaluation objects. This is necessary because old
+    AutoMaterializeAssetEvaluation objects will have serialized AutoMaterializeCondition objects,
+    and we need to be able to deserialize them.
+
+    In theory, as these serialized objects happen to be purged periodically, we can remove this
+    backcompat logic at some point in the future.
     """
 
     def unpack(
@@ -497,17 +503,32 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
                 evaluation_data=None,
             )
         elif self.klass == ParentMaterializedAutoMaterializeCondition:
+            updated_keys = unpacked_dict.get("updated_asset_keys")
+            if isinstance(updated_keys, set):
+                updated_keys = cast(FrozenSet[AssetKey], frozenset(updated_keys))
+            else:
+                updated_keys = frozenset()
+            will_update_keys = unpacked_dict.get("will_update_asset_keys")
+            if isinstance(will_update_keys, set):
+                will_update_keys = cast(FrozenSet[AssetKey], frozenset(will_update_keys))
+            else:
+                will_update_keys = frozenset()
             return AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_parent_updated(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
-                    updated_keys=frozenset(),
-                    will_update_keys=frozenset(),
+                    updated_keys=updated_keys,
+                    will_update_keys=will_update_keys,
                 ),
             )
         elif self.klass == ParentOutdatedAutoMaterializeCondition:
+            waiting_on_keys = unpacked_dict.get("waiting_on_asset_keys")
+            if isinstance(waiting_on_keys, set):
+                waiting_on_keys = cast(FrozenSet[AssetKey], frozenset(waiting_on_keys))
+            else:
+                waiting_on_keys = frozenset()
             return AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.skip_on_parent_outdated(),
-                evaluation_data=WaitingOnParentRuleEvaluationData(waiting_on_keys=frozenset()),
+                evaluation_data=WaitingOnParentRuleEvaluationData(waiting_on_keys=waiting_on_keys),
             )
         elif self.klass == MaxMaterializationsExceededAutoMaterializeCondition:
             return AutoMaterializeRuleEvaluation(

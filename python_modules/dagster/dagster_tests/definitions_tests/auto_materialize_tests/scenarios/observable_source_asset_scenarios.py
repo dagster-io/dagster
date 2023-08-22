@@ -1,9 +1,16 @@
 import datetime
 
 from dagster import PartitionKeyRange
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    ParentUpdatedRuleEvaluationData,
+)
+from dagster._core.definitions.events import AssetKey
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from ..base_scenario import (
+    AssetEvaluationSpec,
     AssetReconciliationScenario,
     asset_def,
     observable_source_asset_def,
@@ -205,21 +212,36 @@ observable_source_asset_scenarios = {
         expected_run_requests=[
             run_request(["asset1"], partition_key="b"),
         ],
-        expected_conditions="""{
-            ("asset1", "b"): {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset({AssetKey("source_asset")}),
-                    will_update_asset_keys=frozenset(),
-                ),
-                MissingAutoMaterializeCondition(),
-            },
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                asset_key="asset1",
+                rule_evaluations=[
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                            evaluation_data=ParentUpdatedRuleEvaluationData(
+                                updated_keys=frozenset([AssetKey("source_asset")]),
+                                will_update_keys=frozenset(),
+                            ),
+                        ),
+                        {"b"},
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            rule=AutoMaterializeRule.materialize_on_missing(), evaluation_data=None
+                        ),
+                        {"b"},
+                    ),
+                ],
+                num_requested=1,
+            )
+        ],
     ),
     "partitioned_downstream_of_changing_observable_source_empty": AssetReconciliationScenario(
         assets=partitioned_downstream_of_changing_observable_source,
         unevaluated_runs=[],
         expected_run_requests=[],
-        expected_conditions="{}",
+        expected_evaluations=[],
     ),
     "partitioned_downstream_of_unchanging_observable_source": AssetReconciliationScenario(
         assets=partitioned_downstream_of_unchanging_observable_source,

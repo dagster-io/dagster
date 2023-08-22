@@ -1,5 +1,12 @@
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    ParentUpdatedRuleEvaluationData,
+)
+from dagster._core.definitions.events import AssetKey
 
 from ..base_scenario import (
+    AssetEvaluationSpec,
     AssetReconciliationScenario,
     asset_def,
     multi_asset_def,
@@ -68,21 +75,28 @@ basic_scenarios = {
         assets=one_asset,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"])],
-        expected_conditions='{"asset1": {MissingAutoMaterializeCondition()}}',
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset1", AutoMaterializeRule.materialize_on_missing()
+            )
+        ],
     ),
     "two_assets_in_sequence_never_materialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
-        expected_conditions="""{
-            "asset1": {MissingAutoMaterializeCondition()},
-            "asset2": {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset(),
-                    will_update_asset_keys=frozenset([AssetKey("asset1")]),
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset1", AutoMaterializeRule.materialize_on_missing()
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset2",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset(), will_update_keys=frozenset([AssetKey("asset1")])
                 ),
-            },
-        }""",
+            ),
+        ],
     ),
     "one_asset_already_launched": AssetReconciliationScenario(
         assets=one_asset,
@@ -97,36 +111,81 @@ basic_scenarios = {
         assets=two_assets_in_sequence,
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
-        expected_conditions="""{
-            "asset2": {
-                MissingAutoMaterializeCondition(),
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("asset1")]),
-                    will_update_asset_keys=frozenset(),
-                ),
-            },
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                "asset2",
+                [
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing(), None
+                        ),
+                        None,
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            ParentUpdatedRuleEvaluationData(
+                                updated_keys=frozenset([AssetKey("asset1")]),
+                                will_update_keys=frozenset(),
+                            ),
+                        ),
+                        None,
+                    ),
+                ],
+                num_requested=1,
+            )
+        ],
     ),
     "parent_materialized_launch_two_children": AssetReconciliationScenario(
         assets=two_assets_depend_on_one,
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
-        expected_conditions="""{
-            "asset2": {
-                MissingAutoMaterializeCondition(),
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("asset1")]),
-                    will_update_asset_keys=frozenset(),
-                ),
-            },
-            "asset3": {
-                MissingAutoMaterializeCondition(),
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("asset1")]),
-                    will_update_asset_keys=frozenset(),
-                ),
-            },
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec(
+                "asset2",
+                [
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing(), None
+                        ),
+                        None,
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            ParentUpdatedRuleEvaluationData(
+                                updated_keys=frozenset([AssetKey("asset1")]),
+                                will_update_keys=frozenset(),
+                            ),
+                        ),
+                        None,
+                    ),
+                ],
+                num_requested=1,
+            ),
+            AssetEvaluationSpec(
+                "asset3",
+                [
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing(), None
+                        ),
+                        None,
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            ParentUpdatedRuleEvaluationData(
+                                updated_keys=frozenset([AssetKey("asset1")]),
+                                will_update_keys=frozenset(),
+                            ),
+                        ),
+                        None,
+                    ),
+                ],
+                num_requested=1,
+            ),
+        ],
     ),
     "parent_materialized_with_source_asset_launch_child": AssetReconciliationScenario(
         assets=two_assets_one_source,
@@ -140,14 +199,15 @@ basic_scenarios = {
         ),
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
-        expected_conditions="""{
-            "asset2": {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("asset1")]),
-                    will_update_asset_keys=frozenset(),
-                )
-            }
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset2",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset([AssetKey("asset1")]), will_update_keys=frozenset()
+                ),
+            ),
+        ],
     ),
     "parent_rematerialized": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
@@ -161,16 +221,33 @@ basic_scenarios = {
         assets=one_asset_depends_on_two,
         unevaluated_runs=[single_asset_run(asset_key="parent1")],
         expected_run_requests=[run_request(asset_keys=["parent2", "child"])],
-        expected_conditions="""{
-            "parent2": {MissingAutoMaterializeCondition()},
-            "child": {
-                MissingAutoMaterializeCondition(),
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("parent1")]),
-                    will_update_asset_keys=frozenset([AssetKey("parent2")]),
-                ),
-            },
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "parent2", AutoMaterializeRule.materialize_on_missing()
+            ),
+            AssetEvaluationSpec(
+                "child",
+                [
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_missing(), None
+                        ),
+                        None,
+                    ),
+                    (
+                        AutoMaterializeRuleEvaluation(
+                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            ParentUpdatedRuleEvaluationData(
+                                updated_keys=frozenset([AssetKey("parent1")]),
+                                will_update_keys=frozenset([AssetKey("parent2")]),
+                            ),
+                        ),
+                        None,
+                    ),
+                ],
+                num_requested=1,
+            ),
+        ],
     ),
     "one_parent_materialized_others_materialized_before": AssetReconciliationScenario(
         assets=one_asset_depends_on_two,
@@ -180,14 +257,16 @@ basic_scenarios = {
             unevaluated_runs=[run(["parent1", "parent2", "child"])],
         ),
         expected_run_requests=[run_request(asset_keys=["child"])],
-        expected_conditions="""{
-            "child": {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("parent1")]),
-                    will_update_asset_keys=frozenset(),
-                )
-            }
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "child",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset([AssetKey("parent1")]),
+                    will_update_keys=frozenset(),
+                ),
+            ),
+        ],
     ),
     "diamond_never_materialized": AssetReconciliationScenario(
         assets=diamond,
@@ -207,26 +286,32 @@ basic_scenarios = {
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4"])],
         ),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3", "asset4"])],
-        expected_conditions="""{
-            "asset2": {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("asset1")]),
-                    will_update_asset_keys=frozenset(),
-                )
-            },
-            "asset3": {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset([AssetKey("asset1")]),
-                    will_update_asset_keys=frozenset(),
-                )
-            },
-            "asset4": {
-                ParentMaterializedAutoMaterializeCondition(
-                    updated_asset_keys=frozenset(),
-                    will_update_asset_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")]),
-                )
-            },
-        }""",
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset2",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset([AssetKey("asset1")]),
+                    will_update_keys=frozenset(),
+                ),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset3",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset([AssetKey("asset1")]),
+                    will_update_keys=frozenset(),
+                ),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset4",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset(),
+                    will_update_keys=frozenset([AssetKey("asset2"), AssetKey("asset3")]),
+                ),
+            ),
+        ],
     ),
     "diamond_root_and_one_in_middle_rematerialized": AssetReconciliationScenario(
         assets=diamond,

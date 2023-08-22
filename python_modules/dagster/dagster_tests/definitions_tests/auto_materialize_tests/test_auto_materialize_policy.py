@@ -1,20 +1,13 @@
 import pytest
-from dagster import AutoMaterializePolicy, AssetKey
+from dagster import AssetKey, AutoMaterializePolicy
 from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
     DiscardOnMaxMaterializationsExceededRule,
-    GenericRuleEvaluationData,
     ParentUpdatedRuleEvaluationData,
     WaitingOnParentRuleEvaluationData,
-    ParentMaterializedAutoMaterializeCondition,
-    ParentOutdatedAutoMaterializeCondition,
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
-    MissingAutoMaterializeCondition,
-    MaxMaterializationsExceededAutoMaterializeCondition,
 )
 from dagster._serdes import deserialize_value, serialize_value
 
@@ -123,14 +116,37 @@ def test_serialized_auto_materialize_backcompat(
     "serialized_condition, expected_rule_evaluation",
     [
         (
-            None,
+            (
+                '{"__class__": "MissingAutoMaterializeCondition", "decision_type": {"__enum__":'
+                ' "AutoMaterializeDecisionType.MATERIALIZE"}}'
+            ),
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_missing(),
                 evaluation_data=None,
             ),
         ),
         (
-            None,
+            (
+                '{"__class__": "ParentMaterializedAutoMaterializeCondition", "decision_type":'
+                ' {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "updated_asset_keys":'
+                ' null, "will_update_asset_keys": null}'
+            ),
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                evaluation_data=ParentUpdatedRuleEvaluationData(
+                    updated_keys=frozenset(), will_update_keys=frozenset()
+                ),
+            ),
+        ),
+        (
+            (
+                '{"__class__": "ParentMaterializedAutoMaterializeCondition", "decision_type":'
+                ' {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "updated_asset_keys":'
+                ' {"__set__": [{"__class__": "AssetKey", "path": ["bar"]}, {"__class__":'
+                ' "AssetKey", "path": ["foo"]}]}, "will_update_asset_keys": {"__set__":'
+                ' [{"__class__": "AssetKey", "path": ["bar2"]}, {"__class__": "AssetKey", "path":'
+                ' ["foo2"]}]}}'
+            ),
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_parent_updated(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
@@ -140,25 +156,44 @@ def test_serialized_auto_materialize_backcompat(
             ),
         ),
         (
-            None,
+            (
+                '{"__class__": "FreshnessAutoMaterializeCondition", "decision_type": {"__enum__":'
+                ' "AutoMaterializeDecisionType.MATERIALIZE"}}'
+            ),
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
-                evaluation_data=GenericRuleEvaluationData(
-                    "required for this asset's freshness policy"
+                evaluation_data=None,
+            ),
+        ),
+        (
+            (
+                '{"__class__": "DownstreamFreshnessAutoMaterializeCondition", "decision_type":'
+                ' {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}}'
+            ),
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
+                evaluation_data=None,
+            ),
+        ),
+        (
+            (
+                '{"__class__": "ParentOutdatedAutoMaterializeCondition", "decision_type":'
+                ' {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "waiting_on_asset_keys": null}'
+            ),
+            AutoMaterializeRuleEvaluation(
+                rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                evaluation_data=WaitingOnParentRuleEvaluationData(
+                    waiting_on_keys=frozenset(),
                 ),
             ),
         ),
         (
-            None,
-            AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
-                evaluation_data=GenericRuleEvaluationData(
-                    "required for downstream asset's freshness policy"
-                ),
+            (
+                '{"__class__": "ParentOutdatedAutoMaterializeCondition", "decision_type":'
+                ' {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "waiting_on_asset_keys":'
+                ' {"__set__": [{"__class__": "AssetKey", "path": ["bar"]}, {"__class__":'
+                ' "AssetKey", "path": ["foo"]}]}}'
             ),
-        ),
-        (
-            None,
             AutoMaterializeRuleEvaluation(
                 rule=AutoMaterializeRule.skip_on_parent_outdated(),
                 evaluation_data=WaitingOnParentRuleEvaluationData(
@@ -167,7 +202,10 @@ def test_serialized_auto_materialize_backcompat(
             ),
         ),
         (
-            None,
+            (
+                '{"__class__": "MaxMaterializationsExceededAutoMaterializeCondition",'
+                ' "decision_type": {"__enum__": "AutoMaterializeDecisionType.DISCARD"}}'
+            ),
             AutoMaterializeRuleEvaluation(
                 rule=DiscardOnMaxMaterializationsExceededRule(limit=1),
                 evaluation_data=None,

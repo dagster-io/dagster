@@ -48,7 +48,10 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
+    AutoMaterializeDecisionType,
+    AutoMaterializeRule,
     AutoMaterializeRuleEvaluation,
+    AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -85,6 +88,22 @@ class AssetEvaluationSpec(NamedTuple):
     num_requested: int = 0
     num_skipped: int = 0
     num_discarded: int = 0
+
+    @staticmethod
+    def from_single_rule(
+        asset_key: str,
+        rule: AutoMaterializeRule,
+        evaluation_data: Optional[AutoMaterializeRuleEvaluationData] = None,
+    ) -> "AssetEvaluationSpec":
+        return AssetEvaluationSpec(
+            asset_key=asset_key,
+            rule_evaluations=[
+                (AutoMaterializeRuleEvaluation(rule=rule, evaluation_data=evaluation_data), None)
+            ],
+            num_requested=1 if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE else 0,
+            num_skipped=1 if rule.decision_type == AutoMaterializeDecisionType.SKIP else 0,
+            num_discarded=1 if rule.decision_type == AutoMaterializeDecisionType.DISCARD else 0,
+        )
 
     def to_evaluation(
         self, asset_graph: AssetGraph, instance: DagsterInstance
@@ -129,7 +148,6 @@ class AssetReconciliationScenario(NamedTuple):
     code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
     expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None
     requires_respect_materialization_data_versions: bool = False
-    expected_conditions: Optional[str] = None
 
     def _get_code_location_origin(
         self, scenario_name, location_name=None
