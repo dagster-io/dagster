@@ -170,7 +170,10 @@ def _step_output_error_checked_user_event_sequence(
                     for dependent_key in step_local_dependent_keys:
                         output_name = assets_def.get_output_name_for_asset_key(dependent_key)
                         # Need to skip self-dependent assets (possible with partitions)
-                        if step_context.has_seen_output(output_name):
+                        self_dep = dependent_key in asset_layer.upstream_assets_for_asset(
+                            asset_info.key
+                        )
+                        if not self_dep and step_context.has_seen_output(output_name):
                             raise DagsterInvariantViolationError(
                                 f'Asset "{dependent_key.to_user_string()}" was yielded before its'
                                 f' dependency "{asset_info.key.to_user_string()}".Multiassets'
