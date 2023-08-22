@@ -8,6 +8,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    FrozenSet,
     Iterable,
     List,
     Mapping,
@@ -317,9 +318,10 @@ class TimeWindowPartitionsDefinition(
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         return self._time_window_for_partition_key(partition_key=partition_key)
 
+    @functools.lru_cache(maxsize=5)
     def time_windows_for_partition_keys(
         self,
-        partition_keys: Sequence[str],
+        partition_keys: FrozenSet[str],
         validate: bool = True,
     ) -> Sequence[TimeWindow]:
         if len(partition_keys) == 0:
@@ -521,6 +523,7 @@ class TimeWindowPartitionsDefinition(
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
 
+    @functools.lru_cache(maxsize=100)
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
         result: List[str] = []
         for partition_time_window in self._iterate_time_windows(time_window.start):
@@ -1488,7 +1491,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         """
         result_windows = [*initial_windows]
         time_windows = self._partitions_def.time_windows_for_partition_keys(
-            list(partition_keys), validate=validate
+            frozenset(partition_keys), validate=validate
         )
         num_added_partitions = 0
         for window in sorted(time_windows):
