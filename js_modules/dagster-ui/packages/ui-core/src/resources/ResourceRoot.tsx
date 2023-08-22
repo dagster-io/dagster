@@ -322,7 +322,10 @@ const ResourceConfig: React.FC<{
                     <td>{remapName(field.configTypeKey)}</td>
                     <td>
                       <Box flex={{direction: 'row', gap: 16}}>
-                        <Tooltip content={<>Default: {defaultValue}</>} canShow={!isDefault}>
+                        <Tooltip
+                          content={<>Default: {defaultValue}</>}
+                          canShow={!isDefault && !!defaultValue}
+                        >
                           {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
                         </Tooltip>
                         {isDefault && <Tag>Default</Tag>}
