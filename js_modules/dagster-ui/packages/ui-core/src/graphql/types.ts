@@ -345,7 +345,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
   numDiscarded: Scalars['Int'];
   numRequested: Scalars['Int'];
   numSkipped: Scalars['Int'];
-  ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
+  rulesWithRuleEvaluations: Array<AutoMaterializeRuleWithRuleEvaluations>;
   runIds: Array<Scalars['String']>;
   timestamp: Scalars['Float'];
 };
@@ -379,14 +379,19 @@ export type AutoMaterializeRule = {
 
 export type AutoMaterializeRuleEvaluation = {
   __typename: 'AutoMaterializeRuleEvaluation';
-  evaluationData: Array<AutoMaterializeRuleEvaluationData>;
-  rule: Maybe<AutoMaterializeRule>;
+  evaluationData: Maybe<AutoMaterializeRuleEvaluationData>;
+  partitionKeysOrError: Maybe<PartitionKeysOrError>;
 };
 
-export type AutoMaterializeRuleEvaluationData = {
-  __typename: 'AutoMaterializeRuleEvaluationData';
-  metadata: Array<MetadataEntry>;
-  partitionKeysOrError: Maybe<PartitionKeysOrError>;
+export type AutoMaterializeRuleEvaluationData =
+  | ParentMaterializedRuleEvaluationData
+  | TextRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData;
+
+export type AutoMaterializeRuleWithRuleEvaluations = {
+  __typename: 'AutoMaterializeRuleWithRuleEvaluations';
+  rule: Maybe<AutoMaterializeRule>;
+  ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
 };
 
 export type BackfillNotFoundError = Error & {
@@ -2136,6 +2141,12 @@ export type OutputMapping = {
   __typename: 'OutputMapping';
   definition: OutputDefinition;
   mappedOutput: Output;
+};
+
+export type ParentMaterializedRuleEvaluationData = {
+  __typename: 'ParentMaterializedRuleEvaluationData';
+  updatedAssetKeys: Maybe<Array<AssetKey>>;
+  willUpdateAssetKeys: Maybe<Array<AssetKey>>;
 };
 
 export type Partition = {
@@ -3994,6 +4005,11 @@ export type TextMetadataEntry = MetadataEntry & {
   text: Scalars['String'];
 };
 
+export type TextRuleEvaluationData = {
+  __typename: 'TextRuleEvaluationData';
+  text: Maybe<Scalars['String']>;
+};
+
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']>;
@@ -4055,6 +4071,11 @@ export type UsedSolid = {
   __typename: 'UsedSolid';
   definition: ISolidDefinition;
   invocations: Array<NodeInvocationSite>;
+};
+
+export type WaitingOnKeysRuleEvaluationData = {
+  __typename: 'WaitingOnKeysRuleEvaluationData';
+  waitingOnAssetKeys: Maybe<Array<AssetKey>>;
 };
 
 export type Workspace = {
@@ -4759,8 +4780,10 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2522,
     numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 6444,
-    ruleEvaluations:
-      overrides && overrides.hasOwnProperty('ruleEvaluations') ? overrides.ruleEvaluations! : [],
+    rulesWithRuleEvaluations:
+      overrides && overrides.hasOwnProperty('rulesWithRuleEvaluations')
+        ? overrides.rulesWithRuleEvaluations!
+        : [],
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 0.19,
   };
@@ -4826,31 +4849,38 @@ export const buildAutoMaterializeRuleEvaluation = (
   return {
     __typename: 'AutoMaterializeRuleEvaluation',
     evaluationData:
-      overrides && overrides.hasOwnProperty('evaluationData') ? overrides.evaluationData! : [],
-    rule:
-      overrides && overrides.hasOwnProperty('rule')
-        ? overrides.rule!
-        : relationshipsToOmit.has('AutoMaterializeRule')
-        ? ({} as AutoMaterializeRule)
-        : buildAutoMaterializeRule({}, relationshipsToOmit),
-  };
-};
-
-export const buildAutoMaterializeRuleEvaluationData = (
-  overrides?: Partial<AutoMaterializeRuleEvaluationData>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'AutoMaterializeRuleEvaluationData'} & AutoMaterializeRuleEvaluationData => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AutoMaterializeRuleEvaluationData');
-  return {
-    __typename: 'AutoMaterializeRuleEvaluationData',
-    metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : [],
+      overrides && overrides.hasOwnProperty('evaluationData')
+        ? overrides.evaluationData!
+        : relationshipsToOmit.has('ParentMaterializedRuleEvaluationData')
+        ? ({} as ParentMaterializedRuleEvaluationData)
+        : buildParentMaterializedRuleEvaluationData({}, relationshipsToOmit),
     partitionKeysOrError:
       overrides && overrides.hasOwnProperty('partitionKeysOrError')
         ? overrides.partitionKeysOrError!
         : relationshipsToOmit.has('PartitionKeys')
         ? ({} as PartitionKeys)
         : buildPartitionKeys({}, relationshipsToOmit),
+  };
+};
+
+export const buildAutoMaterializeRuleWithRuleEvaluations = (
+  overrides?: Partial<AutoMaterializeRuleWithRuleEvaluations>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AutoMaterializeRuleWithRuleEvaluations';
+} & AutoMaterializeRuleWithRuleEvaluations => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutoMaterializeRuleWithRuleEvaluations');
+  return {
+    __typename: 'AutoMaterializeRuleWithRuleEvaluations',
+    rule:
+      overrides && overrides.hasOwnProperty('rule')
+        ? overrides.rule!
+        : relationshipsToOmit.has('AutoMaterializeRule')
+        ? ({} as AutoMaterializeRule)
+        : buildAutoMaterializeRule({}, relationshipsToOmit),
+    ruleEvaluations:
+      overrides && overrides.hasOwnProperty('ruleEvaluations') ? overrides.ruleEvaluations! : [],
   };
 };
 
@@ -8179,6 +8209,23 @@ export const buildOutputMapping = (
         : relationshipsToOmit.has('Output')
         ? ({} as Output)
         : buildOutput({}, relationshipsToOmit),
+  };
+};
+
+export const buildParentMaterializedRuleEvaluationData = (
+  overrides?: Partial<ParentMaterializedRuleEvaluationData>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ParentMaterializedRuleEvaluationData'} & ParentMaterializedRuleEvaluationData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ParentMaterializedRuleEvaluationData');
+  return {
+    __typename: 'ParentMaterializedRuleEvaluationData',
+    updatedAssetKeys:
+      overrides && overrides.hasOwnProperty('updatedAssetKeys') ? overrides.updatedAssetKeys! : [],
+    willUpdateAssetKeys:
+      overrides && overrides.hasOwnProperty('willUpdateAssetKeys')
+        ? overrides.willUpdateAssetKeys!
+        : [],
   };
 };
 
@@ -11755,6 +11802,18 @@ export const buildTextMetadataEntry = (
   };
 };
 
+export const buildTextRuleEvaluationData = (
+  overrides?: Partial<TextRuleEvaluationData>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TextRuleEvaluationData'} & TextRuleEvaluationData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TextRuleEvaluationData');
+  return {
+    __typename: 'TextRuleEvaluationData',
+    text: overrides && overrides.hasOwnProperty('text') ? overrides.text! : 'est',
+  };
+};
+
 export const buildTickEvaluation = (
   overrides?: Partial<TickEvaluation>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11905,6 +11964,21 @@ export const buildUsedSolid = (
         ? ({} as ISolidDefinition)
         : buildISolidDefinition({}, relationshipsToOmit),
     invocations: overrides && overrides.hasOwnProperty('invocations') ? overrides.invocations! : [],
+  };
+};
+
+export const buildWaitingOnKeysRuleEvaluationData = (
+  overrides?: Partial<WaitingOnKeysRuleEvaluationData>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'WaitingOnKeysRuleEvaluationData'} & WaitingOnKeysRuleEvaluationData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('WaitingOnKeysRuleEvaluationData');
+  return {
+    __typename: 'WaitingOnKeysRuleEvaluationData',
+    waitingOnAssetKeys:
+      overrides && overrides.hasOwnProperty('waitingOnAssetKeys')
+        ? overrides.waitingOnAssetKeys!
+        : [],
   };
 };
 

@@ -3081,19 +3081,19 @@ type AutoMaterializeAssetEvaluationRecord {
   numRequested: Int!
   numSkipped: Int!
   numDiscarded: Int!
-  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
   timestamp: Float!
   runIds: [String!]!
 }
 
-type AutoMaterializeRuleEvaluation {
+type AutoMaterializeRuleWithRuleEvaluations {
   rule: AutoMaterializeRule
-  evaluationData: [AutoMaterializeRuleEvaluationData!]!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
 }
 
-type AutoMaterializeRuleEvaluationData {
+type AutoMaterializeRuleEvaluation {
   partitionKeysOrError: PartitionKeysOrError
-  metadata: [MetadataEntry!]!
+  evaluationData: AutoMaterializeRuleEvaluationData
 }
 
 union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
@@ -3104,6 +3104,24 @@ type PartitionKeys {
 
 type PartitionSubsetDeserializationError implements Error {
   message: String!
+}
+
+union AutoMaterializeRuleEvaluationData =
+    TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
+}
+
+type ParentMaterializedRuleEvaluationData {
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
+}
+
+type WaitingOnKeysRuleEvaluationData {
+  waitingOnAssetKeys: [AssetKey!]
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {

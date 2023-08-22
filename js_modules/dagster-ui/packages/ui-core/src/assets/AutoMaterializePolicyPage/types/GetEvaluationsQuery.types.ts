@@ -24,11 +24,11 @@ export type GetEvaluationsQuery = {
           numDiscarded: number;
           timestamp: number;
           runIds: Array<string>;
-          ruleEvaluations: Array<{
-            __typename: 'AutoMaterializeRuleEvaluation';
+          rulesWithRuleEvaluations: Array<{
+            __typename: 'AutoMaterializeRuleWithRuleEvaluations';
             rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
-            evaluationData: Array<{
-              __typename: 'AutoMaterializeRuleEvaluationData';
+            ruleEvaluations: Array<{
+              __typename: 'AutoMaterializeRuleEvaluation';
               partitionKeysOrError:
                 | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
                 | {__typename: 'PartitionSubsetDeserializationError'; message: string}
@@ -49,11 +49,11 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
   numDiscarded: number;
   timestamp: number;
   runIds: Array<string>;
-  ruleEvaluations: Array<{
-    __typename: 'AutoMaterializeRuleEvaluation';
+  rulesWithRuleEvaluations: Array<{
+    __typename: 'AutoMaterializeRuleWithRuleEvaluations';
     rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
-    evaluationData: Array<{
-      __typename: 'AutoMaterializeRuleEvaluationData';
+    ruleEvaluations: Array<{
+      __typename: 'AutoMaterializeRuleEvaluation';
       partitionKeysOrError:
         | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
         | {__typename: 'PartitionSubsetDeserializationError'; message: string}
@@ -63,10 +63,10 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
 };
 
 export type AutoMateralizeWithConditionFragment = {
-  __typename: 'AutoMaterializeRuleEvaluation';
+  __typename: 'AutoMaterializeRuleWithRuleEvaluations';
   rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
-  evaluationData: Array<{
-    __typename: 'AutoMaterializeRuleEvaluationData';
+  ruleEvaluations: Array<{
+    __typename: 'AutoMaterializeRuleEvaluation';
     partitionKeysOrError:
       | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
       | {__typename: 'PartitionSubsetDeserializationError'; message: string}

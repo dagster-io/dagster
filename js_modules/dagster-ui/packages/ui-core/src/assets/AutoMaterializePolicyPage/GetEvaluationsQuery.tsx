@@ -24,16 +24,16 @@ export const GET_EVALUATIONS_QUERY = gql`
     numDiscarded
     timestamp
     runIds
-    ruleEvaluations {
+    rulesWithRuleEvaluations {
       ...AutoMateralizeWithConditionFragment
     }
   }
 
-  fragment AutoMateralizeWithConditionFragment on AutoMaterializeRuleEvaluation {
+  fragment AutoMateralizeWithConditionFragment on AutoMaterializeRuleWithRuleEvaluations {
     rule {
         description
     }
-    evaluationData {
+    ruleEvaluations {
         partitionKeysOrError {
             ... on PartitionKeys {
                 partitionKeys
