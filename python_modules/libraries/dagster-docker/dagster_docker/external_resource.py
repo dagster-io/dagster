@@ -1,138 +1,158 @@
 import os
-import tempfile
-from contextlib import ExitStack
-from typing import Mapping, Optional, Sequence, Union
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from threading import Event
+from typing import ContextManager, Iterator, Mapping, Optional, Sequence, Union
 
 import docker
 from dagster import OpExecutionContext
 from dagster._core.external_execution.resource import (
-    SubprocessExecutionResource,
+    ExternalExecutionResource,
 )
-from dagster._core.external_execution.task import ExternalExecutionTask
+from dagster._core.external_execution.task import (
+    ExternalExecutionTask,
+    ExternalTaskIOParams,
+    ExternalTaskParams,
+    SocketAddress,
+)
 from dagster_external.protocol import (
     DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalExecutionExtras,
-    ExternalExecutionIOMode,
 )
+from dagster_external.util import DagsterExternalError
 
 
-class DockerExecutionTask(ExternalExecutionTask):
-    def run(
+@dataclass
+class DockerTaskParams(ExternalTaskParams):
+    image: str
+    command: Union[str, Sequence[str]]
+    registry: Optional[Mapping[str, str]] = None
+    volumes: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+    env: Mapping[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class DockerTaskIOParams(ExternalTaskIOParams):
+    ports: Mapping[int, int] = field(default_factory=dict)
+    volumes: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+
+
+class DockerExecutionTask(ExternalExecutionTask[DockerTaskParams, DockerTaskIOParams]):
+    def _launch(
         self,
-        image: str,
-        volumes: Optional[Mapping[str, Mapping[str, str]]] = None,
-        registry=None,
+        base_env: Mapping[str, str],
+        params: DockerTaskParams,
+        input_params: DockerTaskIOParams,
+        output_params: DockerTaskIOParams,
     ) -> None:
-        base_env = {
-            **os.environ,
-            **self.env,
-            DAGSTER_EXTERNAL_ENV_KEYS["is_orchestration_active"]: "1",
-            DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: self._input_mode.value,
-            DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: self._output_mode.value,
-        }
-
-        with ExitStack() as stack:
-            # this tempdir dependency should be more explicit - passed in to dependent entities
-            self._tempdir = stack.enter_context(tempfile.TemporaryDirectory())
-            stdin_fd, input_env_vars = stack.enter_context(self._input_context_manager())
-            stdout_fd, output_env_vars = stack.enter_context(self._output_context_manager())
-
-            # assert in a compatible mode (more checks likely required)
-            assert stdin_fd is None and stdout_fd is None
-
-            # file IPC - need an easy way to have path not be the same on both sides
-            ipc_volume_mounts = {}
-            if self._input_mode == ExternalExecutionIOMode.file:
-                # not great to have to fish this out of env vars
-                input_file_path = input_env_vars[DAGSTER_EXTERNAL_ENV_KEYS["input"]]
-                input_file_dir = os.path.dirname(input_file_path)
-                ipc_volume_mounts[input_file_dir] = {
-                    "bind": input_file_dir,
-                    "mode": "rw",
-                }
-            if self._output_mode == ExternalExecutionIOMode.file:
-                output_file_path = output_env_vars[DAGSTER_EXTERNAL_ENV_KEYS["output"]]
-                output_file_dir = os.path.dirname(output_file_path)
-                ipc_volume_mounts[output_file_dir] = {
-                    "bind": output_file_dir,
-                    "mode": "rw",
-                }
-
-            # socket IPC - have to override to handle asymmetry
-            ipc_ports = {}
-            env_overrides = {}
-            if ExternalExecutionIOMode.socket in (self._input_mode, self._output_mode):
-                _host, port = stack.enter_context(self._socket_server_context_manager())
-                ipc_ports = {port: port}
-                # assumes previous value was "localhost", not overriding input/output env vars directly since Mappings
-                env_overrides[DAGSTER_EXTERNAL_ENV_KEYS["host"]] = "host.docker.internal"
-
-            client = docker.client.from_env()
-            if registry:
-                client.login(
-                    registry=registry["url"],
-                    username=registry["username"],
-                    password=registry["password"],
-                )
-
-            # will need to deal with when its necessary to pull the image before starting the container
-            # client.images.pull(image)
-
-            container = client.containers.create(
-                image=image,
-                command=self._command,
-                detach=True,
-                environment={
-                    **base_env,
-                    **input_env_vars,
-                    **output_env_vars,
-                    **env_overrides,
-                },
-                volumes={
-                    **ipc_volume_mounts,
-                    **(volumes or {}),
-                    # other volumes...
-                },
-                ports={
-                    **ipc_ports,
-                    # other ports...
-                },
+        client = docker.client.from_env()
+        if params.registry:
+            client.login(
+                registry=params.registry["url"],
+                username=params.registry["username"],
+                password=params.registry["password"],
             )
 
-            result = container.start()
-            try:
-                for line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
-                    # log mirroring
-                    print(line)  # noqa: T201
+        # will need to deal with when its necessary to pull the image before starting the container
+        # client.images.pull(image)
 
-                result = container.wait()
-                return result["StatusCode"]
-            finally:
-                container.stop()
+        container = client.containers.create(
+            image=params.image,
+            command=params.command,
+            detach=True,
+            environment={**base_env, **params.env, **input_params.env, **output_params.env},
+            volumes={
+                **params.volumes,
+                **input_params.volumes,
+                **output_params.volumes,
+            },
+            ports={
+                **input_params.ports,
+                **output_params.ports,
+            },
+        )
+
+        result = container.start()
+        try:
+            for line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
+                print(line)  # noqa: T201
+
+            result = container.wait()
+            if result["StatusCode"] != 0:
+                raise DagsterExternalError(f"Container exited with non-zero status code: {result}")
+        finally:
+            container.stop()
+
+    # ########################
+    # ##### IO CONTEXT MANAGERS
+    # ########################
+
+    def _input_context_manager(
+        self, tempdir: str, sockaddr: SocketAddress
+    ) -> ContextManager[DockerTaskIOParams]:
+        return self._file_input(tempdir)
+
+    @contextmanager
+    def _file_input(self, tempdir: str) -> Iterator[DockerTaskIOParams]:
+        path = self._prepare_io_path(self._input_path, "input", tempdir)
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
+        try:
+            self._write_input(path)
+            path_dir = os.path.dirname(path)
+            volumes = {path_dir: {"bind": path_dir, "mode": "rw"}}
+            yield DockerTaskIOParams(env=env, volumes=volumes)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
+    def _output_context_manager(
+        self, tempdir: str, params: DockerTaskParams
+    ) -> ContextManager[DockerTaskIOParams]:
+        return self._file_output(tempdir)
+
+    @contextmanager
+    def _file_output(self, tempdir: str) -> Iterator[DockerTaskIOParams]:
+        path = self._prepare_io_path(self._output_path, "output", tempdir)
+        env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
+        output_file_dir = os.path.dirname(path)
+        volume_mounts = {output_file_dir: {"bind": output_file_dir, "mode": "rw"}}
+        is_task_complete = Event()
+        thread = None
+        try:
+            open(path, "w").close()  # create file
+            thread = self._start_output_thread(path, is_task_complete)
+            yield DockerTaskIOParams(env=env, volumes=volume_mounts)
+        finally:
+            is_task_complete.set()
+            if thread:
+                thread.join()
+            if os.path.exists(path):
+                os.remove(path)
 
 
-class DockerExecutionResource(SubprocessExecutionResource):
+class DockerExecutionResource(ExternalExecutionResource):
     def run(
         self,
+        context: OpExecutionContext,
         image: str,
         command: Union[str, Sequence[str]],
-        context: OpExecutionContext,
+        *,
         extras: ExternalExecutionExtras,
         env: Optional[Mapping[str, str]] = None,
         volumes: Optional[Mapping[str, Mapping[str, str]]] = None,
-        registry=None,
+        registry: Optional[Mapping[str, str]] = None,
     ) -> None:
-        DockerExecutionTask(
+        params = DockerTaskParams(
+            image=image,
             command=command,
+            registry=registry,
+            volumes=volumes or {},
+            env=env or {},
+        )
+
+        DockerExecutionTask(
             context=context,
             extras=extras,
-            env={**(self.env or {}), **(env or {})},
-            input_mode=self.input_mode,
-            output_mode=self.output_mode,
             input_path=self.input_path,
             output_path=self.output_path,
-        ).run(  # passing here since overriding Task __init__ seems rough
-            image,
-            volumes,
-            registry,
-        )
+        ).run(params)
