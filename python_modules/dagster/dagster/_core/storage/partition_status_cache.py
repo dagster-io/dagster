@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Sequence, Se
 
 from dagster import (
     AssetKey,
-    DagsterEventType,
+    AssetRecordsFilter,
     DagsterInstance,
     DagsterRunStatus,
     EventLogRecord,
-    EventRecordsFilter,
     _check as check,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -412,20 +411,12 @@ def _get_updated_status_cache(
         if stored_cache_value.earliest_in_progress_materialization_event_id
         else stored_cache_value.latest_storage_id
     )
-    unevaluated_planned_event_records = instance.get_event_records(
-        event_records_filter=EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-            asset_key=asset_key,
-            after_cursor=cursor,
-        )
+    unevaluated_planned_event_records = instance.get_planned_materialization_records(
+        AssetRecordsFilter(asset_key=asset_key, after_cursor=cursor)
     )
     unevaluated_materialization_event_records = (
-        instance.get_event_records(
-            event_records_filter=EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                after_cursor=cursor,
-            )
+        instance.get_materialization_records(
+            AssetRecordsFilter(asset_key=asset_key, after_cursor=cursor)
         )
         if cursor < (latest_materialization_storage_id or 0)
         else []
@@ -517,11 +508,8 @@ def _get_fresh_asset_status_cache_value(
         if partitions_def
         else None
     ):
-        planned_event_records = instance.get_event_records(
-            event_records_filter=EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=asset_key,
-            ),
+        planned_event_records = instance.get_planned_materialization_records(
+            asset_key,
             limit=1,
         )
 

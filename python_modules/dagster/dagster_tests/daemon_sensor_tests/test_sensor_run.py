@@ -58,7 +58,6 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     TickStatus,
 )
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -1724,9 +1723,9 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
         )
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            ).records
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
 
@@ -1825,9 +1824,7 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
         )
         planned_asset_keys = [
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_planned_materialization_records()
         ]
         assert len(planned_asset_keys) == 3
         assert set(planned_asset_keys) == {AssetKey("asset_a"), AssetKey("asset_b")}
@@ -1865,9 +1862,7 @@ def test_partitioned_asset_selection_sensor(executor, instance, workspace_contex
 
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_planned_materialization_records()
         }
         assert planned_asset_keys == {AssetKey("hourly_asset_3")}
 

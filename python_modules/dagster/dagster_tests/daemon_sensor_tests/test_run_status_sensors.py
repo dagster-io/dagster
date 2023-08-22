@@ -18,7 +18,6 @@ from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import TickStatus
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
@@ -634,8 +633,8 @@ def test_run_failure_sensor_empty_run_records(
                 )
                 runs = instance.get_runs()
                 assert len(runs) == 0
-                failure_events = instance.get_event_records(
-                    EventRecordsFilter(event_type=DagsterEventType.PIPELINE_FAILURE)
+                failure_events = instance.get_run_status_event_records(
+                    DagsterEventType.PIPELINE_FAILURE
                 )
                 assert len(failure_events) == 1
                 freeze_datetime = freeze_datetime.add(seconds=60)

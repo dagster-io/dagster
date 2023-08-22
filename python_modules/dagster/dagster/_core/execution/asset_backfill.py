@@ -42,8 +42,7 @@ from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.host_representation import (
     ExternalExecutionPlan,
     ExternalJob,
@@ -934,12 +933,11 @@ def get_asset_backfill_iteration_materialized_partitions(
     """
     recently_materialized_asset_partitions = AssetGraphSubset(asset_graph)
     for asset_key in asset_backfill_data.target_subset.asset_keys:
-        records = instance_queryer.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        records = instance_queryer.instance.get_materialization_records(
+            AssetRecordsFilter(
                 asset_key=asset_key,
                 after_cursor=asset_backfill_data.latest_storage_id,
-            )
+            ),
         )
         records_in_backfill = [
             record
@@ -1003,11 +1001,7 @@ def execute_asset_backfill_iteration_inner(
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
         initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
-
-        next_latest_storage_id = instance_queryer.get_latest_storage_id_for_event_type(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION
-        )
-
+        next_latest_storage_id = instance_queryer.get_latest_materialization_storage_id()
         updated_materialized_subset = AssetGraphSubset(asset_graph)
         failed_and_downstream_subset = AssetGraphSubset(asset_graph)
     else:

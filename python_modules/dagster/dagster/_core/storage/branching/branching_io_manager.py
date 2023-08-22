@@ -3,8 +3,7 @@ from typing import Any, Optional
 from dagster import InputContext, OutputContext
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager
@@ -19,9 +18,8 @@ def latest_materialization_log_entry(
     instance: DagsterInstance, asset_key: AssetKey, partition_key: Optional[str] = None
 ) -> Optional[EventLogEntry]:
     event_records = [
-        *instance.get_event_records(
-            event_records_filter=EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        *instance.get_materialization_records(
+            AssetRecordsFilter(
                 asset_key=asset_key,
                 asset_partitions=[partition_key] if partition_key else None,
             ),

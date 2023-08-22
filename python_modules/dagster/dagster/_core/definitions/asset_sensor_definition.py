@@ -88,8 +88,7 @@ class AssetSensorDefinition(SensorDefinition):
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.storage.event_log.base import AssetRecordsFilter
 
         resource_arg_names: Set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
@@ -109,23 +108,18 @@ class AssetSensorDefinition(SensorDefinition):
                     except ValueError:
                         after_cursor = None
 
-                event_records = context.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=self._asset_key,
-                        after_cursor=after_cursor,
-                    ),
-                    ascending=False,
+                materialization_records = context.instance.get_materialization_records(
+                    AssetRecordsFilter(asset_key=self._asset_key, after_cursor=after_cursor),
                     limit=1,
                 )
 
-                if not event_records:
+                if not materialization_records:
                     yield SkipReason(
                         f"No new materialization events found for asset key {self._asset_key}"
                     )
                     return
 
-                event_record = event_records[0]
+                materialization_record = materialization_records[0]
 
                 (
                     context_param_name,
@@ -142,7 +136,7 @@ class AssetSensorDefinition(SensorDefinition):
                 if context_param_name:
                     args[context_param_name] = context
                 if event_log_entry_param_name:
-                    args[event_log_entry_param_name] = event_record.event_log_entry
+                    args[event_log_entry_param_name] = materialization_record.event_log_entry
 
                 result = materialization_fn(**args)
                 if inspect.isgenerator(result) or isinstance(result, list):
@@ -150,7 +144,7 @@ class AssetSensorDefinition(SensorDefinition):
                         yield item
                 elif isinstance(result, (SkipReason, RunRequest)):
                     yield result
-                context.update_cursor(str(event_record.storage_id))
+                context.update_cursor(str(materialization_record.storage_id))
 
             return _fn
 

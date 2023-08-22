@@ -11,8 +11,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    DagsterEventType,
-    EventRecordsFilter,
+    AssetRecordsFilter,
     Output,
     job,
     op,
@@ -289,12 +288,8 @@ def test_add_asset_event_tags_table(backcompat_conn_string):
 
             assert (
                 len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar"},
-                        )
+                    instance.get_materialization_records(
+                        AssetRecordsFilter(asset_key=AssetKey("a"), tags={"dagster/foo": "bar"}),
                     )
                 )
                 == 1
@@ -305,12 +300,10 @@ def test_add_asset_event_tags_table(backcompat_conn_string):
                 instance._event_storage._mysql_version = "8.0.30"
                 assert (
                     len(
-                        instance.get_event_records(
-                            EventRecordsFilter(
-                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                                asset_key=AssetKey("a"),
-                                tags={"dagster/foo": "bar"},
-                            )
+                        instance.get_materialization_records(
+                            AssetRecordsFilter(
+                                asset_key=AssetKey("a"), tags={"dagster/foo": "bar"}
+                            ),
                         )
                     )
                     == 1

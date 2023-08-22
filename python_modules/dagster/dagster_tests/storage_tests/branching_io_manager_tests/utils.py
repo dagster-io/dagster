@@ -11,8 +11,7 @@ from dagster import (
     OutputContext,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.event_api import EventLogRecord, EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import EventLogRecord
 
 
 class DefinitionsRunner:
@@ -64,11 +63,8 @@ class DefinitionsRunner:
         self, asset_key: CoercibleToAssetKey
     ) -> List[EventLogRecord]:
         return [
-            *self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey.from_coercible(asset_key),
-                )
+            *self.instance.get_materialization_records(
+                AssetKey.from_coercible(asset_key),
             )
         ]
 

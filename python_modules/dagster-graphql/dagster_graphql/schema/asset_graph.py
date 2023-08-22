@@ -14,8 +14,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.external_data import (
@@ -484,12 +483,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             instance=graphene_info.context.instance, asset_graph=asset_graph
         )
         data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
-        event_records = instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        event_records = instance.get_materialization_records(
+            AssetRecordsFilter(
+                asset_key=asset_key,
                 before_timestamp=int(timestampMillis) / 1000.0 + 1,
                 after_timestamp=int(timestampMillis) / 1000.0 - 1,
-                asset_key=asset_key,
             ),
             limit=1,
         )
@@ -867,11 +865,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         partition: str,
     ) -> Optional[GrapheneRun]:
         event_records = list(
-            graphene_info.context.instance.event_log_storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=self._external_asset_node.asset_key,
-                    asset_partitions=[partition],
+            graphene_info.context.instance.event_log_storage.get_planned_materialization_records(
+                AssetRecordsFilter(
+                    asset_key=self._external_asset_node.asset_key, asset_partitions=[partition]
                 ),
                 limit=1,
             )

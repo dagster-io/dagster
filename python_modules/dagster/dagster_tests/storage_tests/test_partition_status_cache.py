@@ -7,7 +7,6 @@ from dagster import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     EventLogEntry,
-    EventRecordsFilter,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -54,15 +53,7 @@ def test_get_cached_status_unpartitioned():
         assert (
             cached_status.latest_storage_id
             == next(
-                iter(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            asset_key=AssetKey("asset1"),
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        ),
-                        limit=1,
-                    )
-                )
+                iter(instance.get_materialization_records(AssetKey("asset1"), limit=1))
             ).storage_id
         )
         assert cached_status.partitions_def_id is None

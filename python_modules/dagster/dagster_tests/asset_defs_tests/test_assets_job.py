@@ -49,7 +49,6 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import ignore_warning, instance_for_test
 from dagster._utils import safe_tempfile_path
 from dagster._utils.warnings import (
@@ -1397,9 +1396,10 @@ def test_asset_selection_reconstructable():
             assert len([event for event in events if event.is_job_success]) == 1
 
             materialization_planned = list(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-                )
+                instance.get_records_for_run(
+                    run.run_id,
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                ).records
             )
             assert len(materialization_planned) == 1
 
@@ -2366,9 +2366,10 @@ def test_subset_does_not_respect_context():
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                result.run_id,
+                of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            ).records
         }
 
     # should only plan on creating keys start, c, final
@@ -2494,9 +2495,10 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                result.run_id,
+                of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            ).records
         }
 
     expected_asset_keys = set(

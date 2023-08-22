@@ -184,7 +184,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         observable source assets, this will be an AssetObservation, otherwise it will be an
         AssetMaterialization.
         """
-        from dagster._core.event_api import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
         # in the simple case, just use the asset record
         if (
@@ -197,38 +197,37 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 return None
             return asset_record.asset_entry.last_materialization_record
 
-        records = self.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=self._event_type_for_key(asset_partition.asset_key),
-                asset_key=asset_partition.asset_key,
-                asset_partitions=(
-                    [asset_partition.partition_key] if asset_partition.partition_key else None
+        if self.asset_graph.is_source(asset_partition.asset_key):
+            records = self.instance.get_observation_records(
+                AssetRecordsFilter(
+                    asset_key=asset_partition.asset_key,
+                    asset_partitions=(
+                        [asset_partition.partition_key] if asset_partition.partition_key else None
+                    ),
+                    before_cursor=before_cursor,
                 ),
-                before_cursor=before_cursor,
-            ),
-            ascending=False,
-            limit=1,
-        )
+                ascending=False,
+                limit=1,
+            )
+        else:
+            records = self.instance.get_materialization_records(
+                AssetRecordsFilter(
+                    asset_key=asset_partition.asset_key,
+                    asset_partitions=(
+                        [asset_partition.partition_key] if asset_partition.partition_key else None
+                    ),
+                    before_cursor=before_cursor,
+                ),
+                ascending=False,
+                limit=1,
+            )
         return next(iter(records), None)
 
     @cached_method
-    def get_latest_storage_id_for_event_type(
-        self, *, event_type: DagsterEventType
-    ) -> Optional[int]:
-        """Returns the latest storage id across all events of the given event_type.
-
-        Args:
-            event_type (DagsterEventType): The event type to query for.
-        """
-        from dagster._core.event_api import EventRecordsFilter
-
+    def get_latest_materialization_storage_id(self) -> Optional[int]:
+        """Returns the latest materialization storage id."""
         latest_record = next(
-            iter(
-                self.instance.get_event_records(
-                    event_records_filter=EventRecordsFilter(event_type=event_type),
-                    limit=1,
-                )
-            ),
+            iter(self.instance.get_materialization_records(limit=1)),
             None,
         )
         if latest_record is not None:
@@ -356,14 +355,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         after_cursor: Optional[int],
         data_version: Optional[DataVersion],
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.event_api import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
-        for record in self.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_OBSERVATION,
-                asset_key=asset_key,
-                after_cursor=after_cursor,
-            ),
+        for record in self.instance.get_observation_records(
+            AssetRecordsFilter(asset_key=asset_key, after_cursor=after_cursor),
             ascending=True,
         ):
             record_version = extract_data_version_from_entry(record.event_log_entry)

@@ -26,7 +26,6 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
-from dagster._core.event_api import EventRecordsFilter
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -197,16 +196,11 @@ def _get_record(instance):
         instance=instance,
     )
     assert result.success
-    return next(
-        iter(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("unpartitioned_asset"),
-                ),
-                ascending=False,
-                limit=1,
-            )
+    return list(
+        instance.get_materialization_records(
+            AssetKey("unpartitioned_asset"),
+            ascending=False,
+            limit=1,
         )
     )
 

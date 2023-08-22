@@ -31,6 +31,7 @@ from dagster._core.errors import (
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
+from dagster._core.event_api import RunStatusEventRecordsFilter
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -548,7 +549,6 @@ class RunStatusSensorDefinition(SensorDefinition):
             RepositorySelector,
         )
         from dagster._core.event_api import RunShardedEventsCursor
-        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
         check.inst_param(run_status, "run_status", DagsterRunStatus)
@@ -612,8 +612,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             # * or, the cursor isn't in valid format (backcompt)
             if context.cursor is None or not RunStatusSensorCursor.is_valid(context.cursor):
                 most_recent_event_records = list(
-                    context.instance.get_event_records(
-                        EventRecordsFilter(event_type=event_type), ascending=False, limit=1
+                    context.instance.get_run_status_event_records(
+                        event_type, ascending=False, limit=1
                     )
                 )
                 most_recent_event_id = (
@@ -637,13 +637,13 @@ class RunStatusSensorDefinition(SensorDefinition):
             # * when the daemon is down, bc we persist the cursor info, we can go back to where we
             #   left and backfill alerts for the qualified events (up to 5 at a time) during the downtime
             # Note: this is a cross-run query which requires extra handling in sqlite, see details in SqliteEventLogStorage.
-            event_records = context.instance.get_event_records(
-                EventRecordsFilter(
+            event_records = context.instance.get_run_status_event_records(
+                RunStatusEventRecordsFilter(
+                    event_type,
                     after_cursor=RunShardedEventsCursor(
                         id=record_id,
                         run_updated_after=cast(datetime, pendulum.parse(update_timestamp)),
                     ),
-                    event_type=event_type,
                 ),
                 ascending=True,
                 limit=5,

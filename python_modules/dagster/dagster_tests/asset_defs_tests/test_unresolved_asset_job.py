@@ -6,9 +6,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AssetSelection,
-    DagsterEventType,
     DailyPartitionsDefinition,
-    EventRecordsFilter,
     HourlyPartitionsDefinition,
     IOManager,
     Out,
@@ -376,9 +374,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_planned_materialization_records()
         }
 
     expected_asset_keys = set(
