@@ -996,20 +996,24 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_materialization_records(
         self,
-        asset_key: Optional[AssetKey] = None,
-        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        filters: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         event_records_filter = (
-            asset_records_filter.to_event_records_filter(
+            filters.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
             )
-            if asset_records_filter
-            else EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
+            if isinstance(filters, AssetRecordsFilter)
+            else (
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    asset_key=filters,
+                )
+                if isinstance(filters, AssetKey)
+                else EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                )
             )
         )
         return self._get_event_records(
@@ -1020,20 +1024,24 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_observation_records(
         self,
-        asset_key: Optional[AssetKey] = None,
-        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        filters: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         event_records_filter = (
-            asset_records_filter.to_event_records_filter(
+            filters.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_OBSERVATION,
-                asset_key=asset_key,
             )
-            if asset_records_filter
-            else EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_OBSERVATION,
-                asset_key=asset_key,
+            if isinstance(filters, AssetRecordsFilter)
+            else (
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    asset_key=filters,
+                )
+                if isinstance(filters, AssetKey)
+                else EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                )
             )
         )
         return self._get_event_records(
@@ -1044,20 +1052,24 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_planned_materialization_records(
         self,
-        asset_key: Optional[AssetKey] = None,
-        asset_records_filter: Optional[AssetRecordsFilter] = None,
+        filters: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         event_records_filter = (
-            asset_records_filter.to_event_records_filter(
+            filters.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=asset_key,
             )
-            if asset_records_filter
-            else EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=asset_key,
+            if isinstance(filters, AssetRecordsFilter)
+            else (
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=filters,
+                )
+                if isinstance(filters, AssetKey)
+                else EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                )
             )
         )
         return self._get_event_records(
@@ -1068,18 +1080,18 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_run_status_event_records(
         self,
-        event_type: DagsterEventType,
-        filters: Optional[RunStatusEventRecordsFilter] = None,
+        filters: Union[DagsterEventType, RunStatusEventRecordsFilter],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
+        event_type = filters if isinstance(filters, DagsterEventType) else filters.event_type
         if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
             check.failed(f"Expected one of {expected}, received {event_type.value}")
 
         events_filter = (
-            filters.to_event_records_filter(event_type)
-            if filters
+            filters.to_event_records_filter()
+            if isinstance(filters, RunStatusEventRecordsFilter)
             else EventRecordsFilter(event_type)
         )
         return self._get_event_records(events_filter, limit=limit, ascending=ascending)

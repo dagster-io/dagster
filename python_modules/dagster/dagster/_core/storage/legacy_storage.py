@@ -38,7 +38,7 @@ from .schedules.base import ScheduleStorage
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.event_api import AssetRecordsFilter, RunStatusEventRecordsFilter
-    from dagster._core.events import DagsterEvent
+    from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
@@ -452,46 +452,40 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_materialization_records(
         self,
-        asset_key: Optional["AssetKey"] = None,
-        asset_records_filter: Optional["AssetRecordsFilter"] = None,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         return self._storage.event_log_storage.get_materialization_records(
-            asset_key, asset_records_filter, limit, ascending
+            filters, limit, ascending
         )
 
     def get_observation_records(
         self,
-        asset_key: Optional["AssetKey"] = None,
-        asset_records_filter: Optional["AssetRecordsFilter"] = None,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
-        return self._storage.event_log_storage.get_observation_records(
-            asset_key, asset_records_filter, limit, ascending
-        )
+        return self._storage.event_log_storage.get_observation_records(filters, limit, ascending)
 
     def get_planned_materialization_records(
         self,
-        asset_key: Optional["AssetKey"] = None,
-        asset_records_filter: Optional["AssetRecordsFilter"] = None,
+        filters: Optional[Union[AssetKey, "AssetRecordsFilter"]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         return self._storage.event_log_storage.get_planned_materialization_records(
-            asset_key, asset_records_filter, limit, ascending
+            filters, limit, ascending
         )
 
     def get_run_status_event_records(
         self,
-        event_type: DagsterEventType,
-        filters: Optional["RunStatusEventRecordsFilter"],
+        filters: Union["DagsterEventType", "RunStatusEventRecordsFilter"],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         return self._storage.event_log_storage.get_run_status_event_records(
-            event_type, filters, limit, ascending
+            filters, limit, ascending
         )
 
     def get_asset_records(

@@ -153,6 +153,7 @@ class AssetRecordsFilter(
     NamedTuple(
         "_AssetRecordsFilter",
         [
+            ("asset_key", Optional[AssetKey]),
             ("asset_partitions", Optional[Sequence[str]]),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
@@ -185,6 +186,7 @@ class AssetRecordsFilter(
 
     def __new__(
         cls,
+        asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[Sequence[str]] = None,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
@@ -197,6 +199,7 @@ class AssetRecordsFilter(
         tags = check.opt_mapping_param(tags, "tags", key_type=str)
         return super(AssetRecordsFilter, cls).__new__(
             cls,
+            asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=asset_partitions,
             after_cursor=check.opt_inst_param(
                 after_cursor, "after_cursor", (int, RunShardedEventsCursor)
@@ -210,12 +213,10 @@ class AssetRecordsFilter(
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
         )
 
-    def to_event_records_filter(
-        self, event_type: DagsterEventType, asset_key: Optional[AssetKey] = None
-    ) -> EventRecordsFilter:
+    def to_event_records_filter(self, event_type: DagsterEventType) -> EventRecordsFilter:
         return EventRecordsFilter(
             event_type=event_type,
-            asset_key=asset_key,
+            asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
             after_cursor=self.after_cursor,
             before_cursor=self.before_cursor,
@@ -231,6 +232,7 @@ class RunStatusEventRecordsFilter(
     NamedTuple(
         "_RunStatusEventRecordsFilter",
         [
+            ("event_type", DagsterEventType),
             ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
             ("after_timestamp", Optional[float]),
@@ -258,6 +260,7 @@ class RunStatusEventRecordsFilter(
 
     def __new__(
         cls,
+        event_type: DagsterEventType,
         after_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         before_cursor: Optional[Union[int, RunShardedEventsCursor]] = None,
         after_timestamp: Optional[float] = None,
@@ -266,6 +269,7 @@ class RunStatusEventRecordsFilter(
     ):
         return super(RunStatusEventRecordsFilter, cls).__new__(
             cls,
+            event_type=check.inst_param(event_type, "event_type", DagsterEventType),
             after_cursor=check.opt_inst_param(
                 after_cursor, "after_cursor", (int, RunShardedEventsCursor)
             ),
@@ -277,9 +281,9 @@ class RunStatusEventRecordsFilter(
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
         )
 
-    def to_event_records_filter(self, event_type: DagsterEventType) -> EventRecordsFilter:
+    def to_event_records_filter(self) -> EventRecordsFilter:
         return EventRecordsFilter(
-            event_type=event_type,
+            event_type=self.event_type,
             after_cursor=self.after_cursor,
             before_cursor=self.before_cursor,
             after_timestamp=self.after_timestamp,
