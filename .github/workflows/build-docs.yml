@@ -17,26 +17,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Deploy to Vercel Previews on pull request or push to master branch
       - name: Get branch preview subdomain
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: |
           BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
 
       - name: Get PR fetch depth
-        if: ${{ github.event.pull_request }}
+        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
-        if: ${{ github.event.pull_request }}
+        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files
-        if: ${{ github.event.pull_request }}
+        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: |
           echo "Base ref is $GITHUB_BASE_SHA"
           echo "Head ref is $GITHUB_HEAD_SHA"
@@ -56,7 +57,7 @@ jobs:
 
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
