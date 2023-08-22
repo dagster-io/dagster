@@ -24,26 +24,6 @@ def scope_load_assets_from_dbt_manifest():
     # end_load_assets_from_dbt_manifest
 
 
-def scope_dbt_cli_resource_config():
-    # start_dbt_cli_resource
-    import os
-
-    from dagster_dbt import DbtCliResource, load_assets_from_dbt_project
-
-    from dagster import Definitions
-
-    DBT_PROJECT_PATH = "path/to/dbt_project"
-    DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
-
-    defs = Definitions(
-        assets=load_assets_from_dbt_project(DBT_PROJECT_PATH),
-        resources={
-            "dbt": DbtCliResource(project_dir=DBT_PROJECT_PATH, target=DBT_TARGET),
-        },
-    )
-    # end_dbt_cli_resource
-
-
 def scope_schedule_assets_dbt_only(manifest):
     # start_schedule_assets_dbt_only
     from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
