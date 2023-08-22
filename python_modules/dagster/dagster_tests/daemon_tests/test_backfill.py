@@ -648,7 +648,10 @@ def test_unloadable_backfill(instance, workspace_context):
     assert backfill.status == BulkActionStatus.FAILED
     assert isinstance(backfill.error, SerializableErrorInfo)
 
-def test_unloadable_backfill_retry(instance, workspace_context, unloadable_location_workspace_context):
+
+def test_unloadable_backfill_retry(
+    instance, workspace_context, unloadable_location_workspace_context
+):
     asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
 
     partition_keys = partitions_a.get_partition_keys()
@@ -668,21 +671,33 @@ def test_unloadable_backfill_retry(instance, workspace_context, unloadable_locat
     )
     assert instance.get_runs_count() == 0
 
-    with environ({"RETRY_CODE_LOCATION_ERROR": "1"}):
+    with environ({"DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR": "1"}):
         # backfill can't start, but doesn't error
-        list(execute_backfill_iteration(unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
         assert instance.get_runs_count() == 0
         backfill = instance.get_backfill("retry_backfill")
         assert backfill.status == BulkActionStatus.REQUESTED
 
         # retries, still not loadable
-        list(execute_backfill_iteration(unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
         assert instance.get_runs_count() == 0
         backfill = instance.get_backfill("retry_backfill")
         assert backfill.status == BulkActionStatus.REQUESTED
 
         # continues once the code location is loadable again
-        list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
         assert instance.get_runs_count() == 1
 
 
