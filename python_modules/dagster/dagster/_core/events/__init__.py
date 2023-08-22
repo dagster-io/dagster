@@ -242,6 +242,11 @@ ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
 }
 
+ASSET_CHECK_EVENTS = {
+    DagsterEventType.ASSET_CHECK_EVALUATION,
+    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+}
+
 
 def _assert_type(
     method: str,

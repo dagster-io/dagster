@@ -18,6 +18,11 @@ from typing import (
     Union,
     cast,
 )
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
+from dagster._core.storage.asset_check_record import AssetCheckStatus
 
 import pendulum
 import sqlalchemy as db
@@ -35,7 +40,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.event_api import RunShardedEventsCursor
-from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
@@ -74,6 +79,7 @@ from .base import (
 )
 from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import (
+    AssetCheckExecutionsTable,
     AssetEventTagsTable,
     AssetKeyTable,
     ConcurrencySlotsTable,
@@ -400,6 +406,9 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
             self.store_asset_event_tags(event, event_id)
+
+        if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
+            self.store_asset_check_event(event, event_id)
 
     def get_records_for_run(
         self,
@@ -2459,6 +2468,58 @@ class SqlEventLogStorage(EventLogStorage):
 
             # return the concurrency keys for the freed slots
             return [cast(str, row[1]) for row in rows]
+
+    def store_asset_check_event(self, event: EventLogEntry, event_id: int) -> None:
+        check.inst_param(event, "event", EventLogEntry)
+        check.int_param(event_id, "event_id")
+
+        if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
+            self._store_asset_check_evaluation_planned(event, event_id)
+        if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+            self._update_asset_check_evaluation(event, event_id)
+
+    def _store_asset_check_evaluation_planned(self, event: EventLogEntry, event_id: int) -> None:
+        planned = cast(
+            AssetCheckEvaluationPlanned, check.not_none(event.dagster_event).event_specific_data
+        )
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetCheckExecutionsTable.insert().values(
+                    asset_key=planned.asset_key.to_string(),
+                    check_name=planned.check_name,
+                    run_id=event.run_id,
+                    status=AssetCheckStatus.PLANNED,
+                )
+            )
+
+    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: int) -> None:
+        evaluation = cast(
+            AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
+        )
+        with self.index_connection() as conn:
+            conn.execute(
+                AssetCheckExecutionsTable.update()
+                .where(
+                    db.and_(
+                        AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
+                        AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
+                        AssetCheckExecutionsTable.c.run_id == event.run_id,
+                    )
+                )
+                .values(
+                    execution_status=(
+                        AssetCheckStatus.SUCCESS if evaluation.success else AssetCheckStatus.FAILURE
+                    ),
+                    asset_check_evaluation_event_record=serialize_value(event),
+                    asset_check_evaluation_event_timestamp=event.timestamp,
+                    asset_check_evaluation_event_storage_id=event_id,
+                    materialization_event_storage_id=(
+                        evaluation.target_materialization_data.storage_id
+                        if evaluation.target_materialization_data
+                        else None
+                    ),
+                )
+            )
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
