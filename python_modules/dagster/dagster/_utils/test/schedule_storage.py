@@ -701,7 +701,7 @@ class TestScheduleStorage:
                         (
                             AutoMaterializeRuleEvaluation(
                                 rule=AutoMaterializeRule.materialize_on_missing(),
-                                evaluationData=None,
+                                evaluation_data=None,
                             ),
                             None,
                         )

@@ -67,32 +67,32 @@ class TextRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple("_TextRuleEvaluationData", [("text", str)]),
 ):
-    ...
+    pass
 
 
 @whitelist_for_serdes
 class ParentUpdatedRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
-        "_ParentUpdatedRuleEvaluation",
+        "_ParentUpdatedRuleEvaluationData",
         [
             ("updated_asset_keys", FrozenSet[AssetKey]),
             ("will_update_asset_keys", FrozenSet[AssetKey]),
         ],
     ),
 ):
-    ...
+    pass
 
 
 @whitelist_for_serdes
 class WaitingOnAssetsRuleEvaluationData(
     AutoMaterializeRuleEvaluationData,
     NamedTuple(
-        "_WaitingOnParentRuleEvaluation",
+        "_WaitingOnParentRuleEvaluationData",
         [("waiting_on_asset_keys", FrozenSet[AssetKey])],
     ),
 ):
-    ...
+    pass
 
 
 @whitelist_for_serdes
@@ -392,6 +392,10 @@ class DiscardOnMaxMaterializationsExceededRule(
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.DISCARD
+
+    @property
+    def description(self) -> str:
+        return f"exceeds {self.limit} materialization(s) per minute"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         # the set of asset partitions which exceed the limit
