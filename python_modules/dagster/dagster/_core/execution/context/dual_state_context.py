@@ -7,6 +7,7 @@ from dagster._core.definitions.scoped_resources_builder import (
     ScopedResourcesBuilder,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster import _check as check
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -45,6 +46,9 @@ class DualStateContextResourcesContainer:
             self._resources = None
             self.resource_defs = wrap_resources_for_execution(resources_dict_or_resources_obj)
 
+        if not self.resource_defs:
+            self._resources = ScopedResourcesBuilder.build_empty()
+
     def call_on_enter(self) -> None:
         self._cm_scope_entered = True
 
@@ -57,7 +61,14 @@ class DualStateContextResourcesContainer:
     def has_been_accessed(self) -> bool:
         return self._resources is not None
 
-    def get_resources(
+    def has_resources(self) -> bool:
+        return bool(self._resources)
+
+    def get_resources(self) -> Resources:
+        assert self.has_resources
+        return check.not_none(self._resources)
+
+    def make_resources(
         self, fn_name_for_err_msg: str, instance: Optional["DagsterInstance"] = None
     ) -> Resources:
         if self._resources:

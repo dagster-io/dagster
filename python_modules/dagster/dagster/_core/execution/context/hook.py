@@ -267,7 +267,7 @@ class UnboundHookContext(HookContext):
 
     @property
     def resources(self) -> "Resources":
-        return self._resources_container.get_resources("build_hook_context")
+        return self._resources_container.make_resources("build_hook_context")
 
     @property
     def solid_config(self) -> Any:

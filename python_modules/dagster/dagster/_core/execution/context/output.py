@@ -269,7 +269,7 @@ class OutputContext:
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return self._resources_container.get_resources("build_output_context")
+        return self._resources_container.make_resources("build_output_context")
 
     @property
     def asset_info(self) -> Optional[AssetOutputInfo]:
