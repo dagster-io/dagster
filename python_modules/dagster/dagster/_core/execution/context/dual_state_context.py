@@ -58,7 +58,7 @@ class DualStateContextResourcesContainer:
         return self._resources is not None
 
     def get_resources(
-        self, fn_name_for_err_msg: str, instance: Optional["DagsterInstance"]
+        self, fn_name_for_err_msg: str, instance: Optional["DagsterInstance"] = None
     ) -> Resources:
         if self._resources:
             return self._resources
