@@ -38,7 +38,7 @@ from dagster._core.host_representation.external_data import (
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
-from dagster._serdes.serdes import deserialize_value
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
@@ -117,6 +117,8 @@ def test_asset_with_single_run_backfill_policy():
             backfill_policy=BackfillPolicy.single_run(),
         )
     ]
+
+    deserialize_value(serialize_value(external_asset_nodes[0]), ExternalAssetNode)
 
 
 def test_asset_with_multi_run_backfill_policy():
