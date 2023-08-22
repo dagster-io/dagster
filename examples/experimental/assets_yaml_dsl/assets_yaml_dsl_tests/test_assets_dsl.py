@@ -1,9 +1,11 @@
 from typing import List
 
 import yaml
-from assets_yaml_dsl.assets_dsl import SomeSqlClient, from_asset_entries
+from assets_yaml_dsl.assets_dsl import from_asset_entries
 from dagster import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.execution.context.invocation import build_asset_context
+from dagster._core.external_execution.resource import SubprocessExecutionResource
 
 
 def assets_defs_from_yaml(yaml_string) -> List[AssetsDefinition]:
@@ -67,9 +69,7 @@ assets:
     assert assets_defs
     assert len(assets_defs) == 1
     assets_def = assets_defs[0]
-    sql_client = SomeSqlClient()
-    assets_def(sql_client=sql_client)
-    assert sql_client.queries == ["SELECT * from asset_one"]
+    assets_def(context=build_asset_context(), subprocess_resource=SubprocessExecutionResource())
 
 
 def test_basic_group() -> None:
