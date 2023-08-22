@@ -60,7 +60,7 @@ export function useDidLaunchEvent(cb: () => void, delay = 1500) {
   }, [cb, delay]);
 }
 
-export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
+export type LaunchBehavior = 'open' | 'toast';
 
 export async function handleLaunchResult(
   pipelineName: string,
@@ -76,12 +76,9 @@ export async function handleLaunchResult(
   if (result.__typename === 'LaunchRunSuccess') {
     const pathname = `/runs/${result.run.id}`;
     const search = options.preserveQuerystring ? history.location.search : '';
-    const openInNewTab = () => window.open(history.createHref({pathname, search}), '_blank');
     const openInSameTab = () => history.push({pathname, search});
 
-    if (options.behavior === 'open-in-new-tab') {
-      openInNewTab();
-    } else if (options.behavior === 'open') {
+    if (options.behavior === 'open') {
       openInSameTab();
     } else {
       await showSharedToaster({
@@ -93,7 +90,7 @@ export async function handleLaunchResult(
         ),
         action: {
           text: 'View',
-          onClick: () => openInNewTab(),
+          href: history.createHref({pathname, search}),
         },
       });
     }
