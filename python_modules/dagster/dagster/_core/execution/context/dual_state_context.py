@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 from dagster._core.definitions.scoped_resources_builder import IContainsGenerator, Resources
 from dagster._core.errors import DagsterInvariantViolationError
@@ -19,11 +19,17 @@ class DualStateContextResourcesContainer:
     point of pain, rather than blithely spreading it throughout the codebase.
     """
 
-    def __init__(self, resources_dict: Mapping[str, Any]):
+    def __init__(
+        self,
+        resources_dict: Mapping[str, Any],
+        resources_config: Optional[Mapping[str, Any]] = None,
+    ):
         self._cm_scope_entered = False
         self._exit_stack = ExitStack()
         self.resource_defs = wrap_resources_for_execution(resources_dict)
-        self._resources = self._exit_stack.enter_context(build_resources(self.resource_defs))
+        self._resources = self._exit_stack.enter_context(
+            build_resources(resources=self.resource_defs, resource_config=resources_config)
+        )
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
     def call_on_enter(self) -> None:

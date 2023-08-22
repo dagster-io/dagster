@@ -95,7 +95,9 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._instance = self._exit_stack.enter_context(ephemeral_instance_if_missing(instance))
 
         self._resources_config = resources_config
-        self._resources_container = DualStateContextResourcesContainer(resources_dict)
+        self._resources_container = DualStateContextResourcesContainer(
+            resources_dict, resources_config
+        )
 
         self._log = initialize_console_manager(None)
         self._pdb: Optional[ForkedPdb] = None
