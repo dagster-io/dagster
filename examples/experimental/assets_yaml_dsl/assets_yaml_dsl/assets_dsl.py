@@ -2,7 +2,9 @@ import os
 from typing import Any, Dict, List
 
 import yaml
-from dagster import AssetsDefinition, ResourceParam
+from dagster import AssetsDefinition
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._utils import file_relative_path
 
 try:
     from yaml import CLoader as Loader
@@ -10,20 +12,13 @@ except ImportError:
     from yaml import Loader
 
 from dagster import AssetKey, asset
+from dagster._core.external_execution.resource import SubprocessExecutionResource
 
 
 def load_yaml(relative_path) -> Dict[str, Any]:
     path = os.path.join(os.path.dirname(__file__), relative_path)
     with open(path, "r", encoding="utf8") as ff:
         return yaml.load(ff, Loader=Loader)
-
-
-class SomeSqlClient:
-    def __init__(self) -> None:
-        self.queries = []
-
-    def query(self, query_str: str) -> None:
-        self.queries.append(query_str)
 
 
 def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
@@ -41,9 +36,15 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
         sql = asset_entry["sql"]  # this is required
 
         @asset(key=asset_key, deps=deps, description=description, group_name=group_name)
-        def _assets_def(sql_client: ResourceParam[SomeSqlClient]) -> None:
+        def _assets_def(
+            context: AssetExecutionContext, subprocess_resource: SubprocessExecutionResource
+        ) -> None:
             # instead of querying a dummy client, do your real data processing here
-            sql_client.query(sql)
+
+            subprocess_resource.run(
+                command=["python", file_relative_path(__file__, "sql_script.py"), sql],
+                context=context,
+            )
 
         assets_defs.append(_assets_def)
 
