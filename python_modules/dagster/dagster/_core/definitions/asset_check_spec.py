@@ -41,3 +41,9 @@ class AssetCheckSpec(
             asset_key=AssetKey.from_coercible(asset_key),
             description=check.opt_str_param(description, "description"),
         )
+
+    def get_python_identifier(self) -> str:
+        """Returns a string uniquely identifying the asset check, that uses only the characters
+        allowed in a Python identifier.
+        """
+        return f"{self.asset_key.to_python_identifier()}_{self.name}"
