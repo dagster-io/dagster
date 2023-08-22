@@ -1,6 +1,6 @@
 import pickle
 import tempfile
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Set, Type, Union, cast
 
 import dagster._check as check
 from dagster import (
@@ -72,7 +72,7 @@ def define_dagstermill_asset(
     notebook_path: str,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,

@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Mapping,
     Optional,
     Sequence,
@@ -63,7 +64,7 @@ def asset(
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = ...,
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = ...,
     metadata: Optional[Mapping[str, Any]] = ...,
     description: Optional[str] = ...,
     config_schema: Optional[UserConfigSchema] = None,
@@ -102,7 +103,7 @@ def asset(
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
@@ -459,7 +460,7 @@ def multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -1057,7 +1058,7 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tu
 
 
 def _type_check_deps_and_non_argument_deps(
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]],
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
 ):
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
@@ -1072,7 +1073,7 @@ def _type_check_deps_and_non_argument_deps(
         )
 
     upstream_asset_deps: Optional[
-        Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
+        Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]
     ] = None
     if deps is not None:
         for dep in deps:
@@ -1110,7 +1111,7 @@ def _type_check_deps_and_non_argument_deps(
 
 
 def _make_asset_keys(
-    deps: Optional[Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
+    deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]]
 ) -> Optional[Set[AssetKey]]:
     """Convert all items to AssetKey in a set. By putting all of the AssetKeys in a set, it will also deduplicate them."""
     if deps is None:
