@@ -22,6 +22,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._utils.merger import merge_dicts
 
+from .asset_checks import AssetChecksDefinition
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
 from .config import ConfigMapping
@@ -58,6 +59,7 @@ def is_base_asset_job_name(name: str) -> bool:
 def get_base_asset_jobs(
     assets: Sequence[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
+    asset_checks: Sequence[AssetChecksDefinition],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
@@ -78,6 +80,7 @@ def get_base_asset_jobs(
             build_assets_job(
                 name=ASSET_BASE_JOB_PREFIX,
                 assets=assets,
+                asset_checks=asset_checks,
                 source_assets=source_assets,
                 executor_def=executor_def,
                 resource_defs=resource_defs,
@@ -99,6 +102,7 @@ def get_base_asset_jobs(
                     f"{ASSET_BASE_JOB_PREFIX}_{i}",
                     assets=[*assets_with_partitions, *unpartitioned_assets],
                     source_assets=[*source_assets, *assets],
+                    asset_checks=asset_checks,
                     resource_defs=resource_defs,
                     executor_def=executor_def,
                     # Only explicitly set partitions_def for observable-only jobs since it can't be
@@ -113,6 +117,7 @@ def build_assets_job(
     name: str,
     assets: Sequence[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
+    asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
@@ -164,6 +169,9 @@ def build_assets_job(
     source_assets = check.opt_sequence_param(
         source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
     )
+    asset_checks = check.opt_sequence_param(
+        asset_checks, "asset_checks", of_type=AssetChecksDefinition
+    )
     check.opt_str_param(description, "description")
     check.opt_inst_param(_asset_selection_data, "_asset_selection_data", AssetSelectionData)
 
@@ -183,17 +191,24 @@ def build_assets_job(
             resolved_source_assets.append(asset)
 
     resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
-    deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
+    deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
+        assets, asset_checks, resolved_asset_deps
+    )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
         assets = _attempt_resolve_cycles(assets, resolved_source_assets)
         resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
 
-        deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
+        deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle = build_node_deps(
+            assets, asset_checks, resolved_asset_deps
+        )
 
-    if len(assets) > 0:
-        node_defs = [asset.node_def for asset in assets]
+    if len(assets) > 0 or len(asset_checks) > 0:
+        node_defs = [
+            *(asset.node_def for asset in assets),
+            *(asset_check.node_def for asset_check in asset_checks),
+        ]
     else:
         node_defs = list(filter(None, [asset.node_def for asset in [*source_assets]]))
 
@@ -208,7 +223,11 @@ def build_assets_job(
     )
 
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
+        graph,
+        assets_defs_by_node_handle,
+        asset_checks_defs_by_node_handle,
+        resolved_source_assets,
+        resolved_asset_deps,
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
@@ -296,7 +315,9 @@ def build_source_asset_observation_job(
     # Keeping this for now (copied from `build_assets_job` though it's probably not needed
     assets: Sequence[AssetsDefinition] = []
     resolved_asset_deps = ResolvedAssetDependencies(assets, source_assets)
-    deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
+    deps, assets_defs_by_node_handle, checks_defs_by_node_handle = build_node_deps(
+        assets, [], resolved_asset_deps
+    )
     node_defs = list(filter(None, [asset.node_def for asset in [*source_assets]]))
 
     graph = GraphDefinition(
@@ -310,7 +331,11 @@ def build_source_asset_observation_job(
     )
 
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph, assets_defs_by_node_handle, source_assets, resolved_asset_deps
+        graph,
+        assets_defs_by_node_handle,
+        checks_defs_by_node_handle,
+        source_assets,
+        resolved_asset_deps,
     )
 
     all_resource_defs = get_all_resource_defs(assets, source_assets, resource_defs)
@@ -377,8 +402,13 @@ def _key_for_asset(asset: Union[AssetsDefinition, SourceAsset]) -> AssetKey:
 
 def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
+    asset_checks_defs: Sequence[AssetChecksDefinition],
     resolved_asset_deps: ResolvedAssetDependencies,
-) -> Tuple[DependencyMapping[NodeInvocation], Mapping[NodeHandle, AssetsDefinition],]:
+) -> Tuple[
+    DependencyMapping[NodeInvocation],
+    Mapping[NodeHandle, AssetsDefinition],
+    Mapping[NodeHandle, AssetChecksDefinition],
+]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
 
@@ -428,7 +458,24 @@ def build_node_deps(
                     upstream_node_alias, upstream_output_name
                 )
 
-    return deps, assets_defs_by_node_handle
+    # put asset checks downstream of the assets they're checking
+    asset_checks_defs_by_node_handle: Dict[NodeHandle, AssetChecksDefinition] = {}
+    for asset_checks_def in asset_checks_defs:
+        node_def_name = asset_checks_def.node_def.name
+        node_key = NodeInvocation(node_def_name)
+        deps[node_key] = {}
+        asset_checks_defs_by_node_handle[NodeHandle(node_def_name, parent=None)] = asset_checks_def
+
+        for input_name, asset_key in asset_checks_def.asset_keys_by_input_name.items():
+            if asset_key in node_alias_and_output_by_asset_key:
+                upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
+                    asset_key
+                ]
+                deps[node_key][input_name] = DependencyDefinition(
+                    upstream_node_alias, upstream_output_name
+                )
+
+    return deps, assets_defs_by_node_handle, asset_checks_defs_by_node_handle
 
 
 def _has_cycles(

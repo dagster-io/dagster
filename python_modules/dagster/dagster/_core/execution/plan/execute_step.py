@@ -89,7 +89,7 @@ def _asset_check_results_to_outputs_and_evaluations(
             asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
 
             output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                asset_check_evaluation.asset_key, asset_check_evaluation.check_name
+                asset_check_evaluation.asset_check_handle
             )
             output = Output(value=None, output_name=output_name)
 

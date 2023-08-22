@@ -1,6 +1,7 @@
 from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle
 from dagster._core.definitions.events import AssetKey, MetadataValue
 from dagster._serdes import whitelist_for_serdes
 
@@ -100,3 +101,7 @@ class AssetCheckEvaluation(
                 AssetCheckEvaluationTargetMaterializationData,
             ),
         )
+
+    @property
+    def asset_check_handle(self) -> AssetCheckHandle:
+        return AssetCheckHandle(self.asset_key, self.check_name)
