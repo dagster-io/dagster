@@ -20,6 +20,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
+    TimeWindowPartitionMapping,
     build_asset_context,
     define_asset_job,
     fs_io_manager,
@@ -1448,7 +1449,7 @@ def test_graph_backed_asset_reused():
 
 
 def test_self_dependency():
-    from dagster import PartitionKeyRange, TimeWindowPartitionMapping
+    from dagster import PartitionKeyRange
 
     @asset(
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
@@ -1482,6 +1483,34 @@ def test_self_dependency():
     resources = {"io_manager": MyIOManager()}
     materialize([a], partition_key="2020-01-01", resources=resources)
     materialize([a], partition_key="2020-01-02", resources=resources)
+
+
+def test_multi_asset_self_dependency():
+    @multi_asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2023-08-01"),
+        outs={"a": AssetOut(), "b": AssetOut()},
+        ins={
+            "a": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            ),
+            "b": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            ),
+        },
+    )
+    def foo(context, a, b):
+        return (Output(None), Output(None))
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert context.asset_partition_key == "2023-08-21", context.asset_partition_key
+
+        def load_input(self, context):
+            assert context.asset_partition_key == "2023-08-20", context.asset_partition_key
+
+    assert materialize(
+        [foo], partition_key="2023-08-21", resources={"io_manager": MyIOManager()}
+    ).success
 
 
 def test_context_assets_def():
