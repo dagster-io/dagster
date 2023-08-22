@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from datetime import datetime
 from enum import Enum
 from typing import (
@@ -627,7 +628,16 @@ def execute_asset_backfill_iteration(
             if unloadable_locations
             else ""
         )
-        raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
+        if os.environ.get("DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR"):
+            logger.error(
+                f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
+                " partition in the asset graph. The backfill will resume once it is available"
+                f" again.\n{ex}. {unloadable_locations_error}"
+            )
+            yield None
+            return
+        else:
+            raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
 
     backfill_start_time = utc_datetime_from_timestamp(backfill.backfill_timestamp)
 
