@@ -336,6 +336,7 @@ class AssetReconciliationScenario(NamedTuple):
                 cursor=cursor,
                 auto_observe=True,
                 respect_materialization_data_versions=respect_materialization_data_versions,
+                logger=logging.getLogger("dagster.amp"),
             ).evaluate()
 
         for run_request in run_requests:
