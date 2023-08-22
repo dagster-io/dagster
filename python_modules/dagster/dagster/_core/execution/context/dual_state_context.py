@@ -1,13 +1,13 @@
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 
+from dagster import _check as check
 from dagster._core.definitions.scoped_resources_builder import (
     IContainsGenerator,
     Resources,
     ScopedResourcesBuilder,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster import _check as check
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
