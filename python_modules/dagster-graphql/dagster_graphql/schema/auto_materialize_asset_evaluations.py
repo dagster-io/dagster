@@ -10,6 +10,7 @@ from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeRuleEvaluationData,
     ParentUpdatedRuleEvaluationData,
     TextRuleEvaluationData,
+    WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
@@ -135,14 +136,14 @@ def create_graphene_auto_materialize_rule_evaluation(
             updatedAssetKeys=rule_evaluation_data.updated_asset_keys,
             willUpdateAssetKeys=rule_evaluation_data.will_update_asset_keys,
         )
-    elif isinstance(rule_evaluation_data, GrapheneWaitingOnKeysRuleEvaluationData):
+    elif isinstance(rule_evaluation_data, WaitingOnAssetsRuleEvaluationData):
         rule_evaluation_data = GrapheneWaitingOnKeysRuleEvaluationData(
             waitingOnAssetKeys=rule_evaluation_data.waiting_on_asset_keys
         )
-    else:
+    elif rule_evaluation_data is not None:
         check.failed(f"Unexpected rule evaluation data type {type(rule_evaluation_data)}")
 
-    return GrapheneAutoMaterializeRuleEvaluationData(
+    return GrapheneAutoMaterializeRuleEvaluation(
         partitionKeysOrError=partition_keys_or_error, evaluationData=rule_evaluation_data
     )
 
@@ -189,6 +190,8 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
         record: AutoMaterializeAssetEvaluationRecord,
         partitions_def: Optional[PartitionsDefinition],
     ):
+        print("----------")
+        print(record)
         super().__init__(
             id=record.id,
             evaluationId=record.evaluation_id,

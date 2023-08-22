@@ -245,8 +245,8 @@ class MaterializeOnParentUpdatedRule(
         return "upstream data has changed since latest materialization"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        """Returns a mapping from ParentMaterializedAutoMaterializeCondition to the set of asset
-        partitions that the condition applies to.
+        """Evaluates the set of asset partitions of this asset whose parents have been updated,
+        or will update on this tick.
         """
         conditions = defaultdict(set)
         has_parents_that_will_update = set()
@@ -265,7 +265,7 @@ class MaterializeOnParentUpdatedRule(
                 has_parents_that_will_update.add(asset_partition)
 
         # next, for each asset partition of this asset which has newly-updated parents, or
-        # has a parent that will update, create a ParentMaterializedAutoMaterializeCondition
+        # has a parent that will update, create a ParentUpdatedRuleEvaluationData
         has_or_will_update = (
             context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
                 context.asset_key
@@ -317,8 +317,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         return "materialization is missing"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
-        """Returns a mapping from MissingAutoMaterializeCondition to the set of asset
-        partitions that the condition applies to.
+        """Evaluates the set of asset partitions for this asset which are missing and were not
+        previously discarded. Currently only applies to root asset partitions and asset partitions
+        with updated parents.
         """
         missing_asset_partitions = (
             context.daemon_context.get_never_handled_root_asset_partitions_for_key(

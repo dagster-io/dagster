@@ -303,8 +303,8 @@ class AssetDaemonContext:
                 will contain the expected data times of all upstream assets.
 
         Returns:
-            - A mapping of AutoMaterializeCondition to the set of AssetKeyPartitionKeys that the
-                condition applies to.
+            - An AutoMaterializeAssetEvaluation object representing serializable information about
+                this evaluation.
             - The set of AssetKeyPartitionKeys that should be materialized.
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
@@ -422,9 +422,8 @@ class AssetDaemonContext:
         AbstractSet[AssetKeyPartitionKey],
         AbstractSet[AssetKeyPartitionKey],
     ]:
-        """Returns a mapping from AutoMaterializeCondition to the set of asset partitions that it
-        applies to for each asset key, as well as a set of all asset partitions that should be
-        materialized this tick.
+        """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, as
+        well as a set of all asset partitions that should be materialized this tick.
         """
         evaluations_by_key: Dict[AssetKey, AutoMaterializeAssetEvaluation] = {}
         will_materialize_mapping: Dict[AssetKey, AbstractSet[AssetKeyPartitionKey]] = defaultdict(
