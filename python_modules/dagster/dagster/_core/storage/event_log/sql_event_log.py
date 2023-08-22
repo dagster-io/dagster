@@ -18,11 +18,6 @@ from typing import (
     Union,
     cast,
 )
-from dagster._core.definitions.asset_check_evaluation import (
-    AssetCheckEvaluation,
-    AssetCheckEvaluationPlanned,
-)
-from dagster._core.storage.asset_check_record import AssetCheckStatus
 
 import pendulum
 import sqlalchemy as db
@@ -33,6 +28,10 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
@@ -43,6 +42,10 @@ from dagster._core.event_api import RunShardedEventsCursor
 from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionStatus,
+)
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
     db_case,
@@ -2469,16 +2472,18 @@ class SqlEventLogStorage(EventLogStorage):
             # return the concurrency keys for the freed slots
             return [cast(str, row[1]) for row in rows]
 
-    def store_asset_check_event(self, event: EventLogEntry, event_id: int) -> None:
+    def store_asset_check_event(self, event: EventLogEntry, event_id: Optional[int]) -> None:
         check.inst_param(event, "event", EventLogEntry)
-        check.int_param(event_id, "event_id")
+        check.opt_int_param(event_id, "event_id")
 
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
             self._store_asset_check_evaluation_planned(event, event_id)
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
             self._update_asset_check_evaluation(event, event_id)
 
-    def _store_asset_check_evaluation_planned(self, event: EventLogEntry, event_id: int) -> None:
+    def _store_asset_check_evaluation_planned(
+        self, event: EventLogEntry, event_id: Optional[int]
+    ) -> None:
         planned = cast(
             AssetCheckEvaluationPlanned, check.not_none(event.dagster_event).event_specific_data
         )
@@ -2488,11 +2493,11 @@ class SqlEventLogStorage(EventLogStorage):
                     asset_key=planned.asset_key.to_string(),
                     check_name=planned.check_name,
                     run_id=event.run_id,
-                    status=AssetCheckStatus.PLANNED,
+                    execution_status=AssetCheckExecutionStatus.PLANNED.value,
                 )
             )
 
-    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: int) -> None:
+    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: Optional[int]) -> None:
         evaluation = cast(
             AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
         )
@@ -2500,6 +2505,7 @@ class SqlEventLogStorage(EventLogStorage):
             conn.execute(
                 AssetCheckExecutionsTable.update()
                 .where(
+                    # (asset_key, check_name, run_id) uniquely identifies the row created for the planned event
                     db.and_(
                         AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
                         AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
@@ -2508,11 +2514,13 @@ class SqlEventLogStorage(EventLogStorage):
                 )
                 .values(
                     execution_status=(
-                        AssetCheckStatus.SUCCESS if evaluation.success else AssetCheckStatus.FAILURE
+                        AssetCheckExecutionStatus.SUCCESS.value
+                        if evaluation.success
+                        else AssetCheckExecutionStatus.FAILURE.value
                     ),
-                    asset_check_evaluation_event_record=serialize_value(event),
-                    asset_check_evaluation_event_timestamp=event.timestamp,
-                    asset_check_evaluation_event_storage_id=event_id,
+                    evaluation_event=serialize_value(event),
+                    evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                    evaluation_event_storage_id=event_id,
                     materialization_event_storage_id=(
                         evaluation.target_materialization_data.storage_id
                         if evaluation.target_materialization_data
@@ -2520,6 +2528,75 @@ class SqlEventLogStorage(EventLogStorage):
                     ),
                 )
             )
+
+    def get_asset_check_executions(
+        self,
+        asset_key: AssetKey,
+        check_name: str,
+        limit: int,
+        cursor: Optional[int] = None,
+        materialization_event_storage_id: Optional[int] = None,
+        include_planned: bool = True,
+    ) -> Sequence[AssetCheckExecutionRecord]:
+        with self.index_connection() as conn:
+            query = (
+                db_select(
+                    [
+                        AssetCheckExecutionsTable.c.id,
+                        AssetCheckExecutionsTable.c.run_id,
+                        AssetCheckExecutionsTable.c.execution_status,
+                        AssetCheckExecutionsTable.c.evaluation_event,
+                        AssetCheckExecutionsTable.c.create_timestamp,
+                    ]
+                )
+                .where(
+                    db.and_(
+                        AssetCheckExecutionsTable.c.asset_key == asset_key.to_string(),
+                        AssetCheckExecutionsTable.c.check_name == check_name,
+                    )
+                )
+                .order_by(AssetCheckExecutionsTable.c.id.desc())
+            ).limit(limit)
+
+            if cursor:
+                query = query.where(AssetCheckExecutionsTable.c.id < cursor)
+            if not include_planned:
+                query = query.where(
+                    AssetCheckExecutionsTable.c.execution_status
+                    != AssetCheckExecutionStatus.PLANNED.value
+                )
+            if materialization_event_storage_id:
+                if include_planned:
+                    # rows in PLANNED status are not associated with a materialization event yet
+                    query = query.where(
+                        db.or_(
+                            AssetCheckExecutionsTable.c.materialization_event_storage_id
+                            == materialization_event_storage_id,
+                            AssetCheckExecutionsTable.c.execution_status
+                            == AssetCheckExecutionStatus.PLANNED.value,
+                        )
+                    )
+                else:
+                    query = query.where(
+                        AssetCheckExecutionsTable.c.materialization_event_storage_id
+                        == materialization_event_storage_id
+                    )
+
+            rows = conn.execute(query)
+            return [
+                AssetCheckExecutionRecord(
+                    id=row["id"],
+                    run_id=row["run_id"],
+                    status=AssetCheckExecutionStatus(row["execution_status"]),
+                    evaluation_event=(
+                        deserialize_value(row["evaluation_event"], EventLogEntry)
+                        if row["evaluation_event"]
+                        else None
+                    ),
+                    create_timestamp=datetime_as_float(row["create_timestamp"]),
+                )
+                for row in rows
+            ]
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

@@ -25,7 +25,7 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_EVENTS
+from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
@@ -259,6 +259,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
             self.store_asset_event_tags(event, event_id)
+
+        if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
+            self.store_asset_check_event(event, None)
 
     def get_event_records(
         self,
