@@ -109,6 +109,7 @@ class ExternalRepositoryData(
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
+            ("external_asset_check_specs", Optional[Sequence["ExternalAssetCheckSpec"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
@@ -124,6 +125,7 @@ class ExternalRepositoryData(
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
+        external_asset_check_specs: Optional[Sequence["ExternalAssetCheckSpec"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
@@ -156,6 +158,11 @@ class ExternalRepositoryData(
             ),
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
+            ),
+            external_asset_check_specs=check.opt_nullable_sequence_param(
+                external_asset_check_specs,
+                "external_asset_check_specs",
+                of_type=ExternalAssetCheckSpec,
             ),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             utilized_env_vars=check.opt_nullable_mapping_param(
@@ -1069,6 +1076,33 @@ class ExternalResourceData(
         )
 
 
+@whitelist_for_serdes
+class ExternalAssetCheckSpec(
+    NamedTuple(
+        "_ExternalAssetCheckSpec",
+        [
+            ("name", str),
+            ("asset_key", AssetKey),
+            ("description", Optional[str]),
+        ],
+    )
+):
+    """Serializable data associated with an asset check."""
+
+    def __new__(
+        cls,
+        name: str,
+        asset_key: AssetKey,
+        description: Optional[str] = None,
+    ):
+        return super(ExternalAssetCheckSpec, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            description=check.opt_str_param(description, "description"),
+        )
+
+
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
@@ -1334,6 +1368,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
+        external_asset_check_specs=external_asset_check_specs_from_defs(jobs),
         metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
@@ -1343,6 +1378,23 @@ def external_repository_data_from_def(
             for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
         },
     )
+
+
+def external_asset_check_specs_from_defs(
+    job_defs: Sequence[JobDefinition],
+) -> Sequence[ExternalAssetCheckSpec]:
+    check_specs = []
+    for job_def in job_defs:
+        asset_layer = job_def.asset_layer
+        for asset_check_def in asset_layer.asset_checks_defs:
+            check_specs.extend(asset_check_def.specs)
+
+    return [
+        ExternalAssetCheckSpec(
+            asset_key=spec.asset_key, name=spec.name, description=spec.description
+        )
+        for spec in check_specs
+    ]
 
 
 def external_asset_graph_from_defs(

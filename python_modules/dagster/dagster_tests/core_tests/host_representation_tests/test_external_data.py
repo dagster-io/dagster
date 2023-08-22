@@ -1,4 +1,5 @@
 from datetime import datetime
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 
 import pendulum
 import pytest
@@ -1187,3 +1188,28 @@ def test_external_time_window_valid_partition_key():
             datetime.strptime("2023-03-11-15:00", "%Y-%m-%d-%H:%M"), tz="UTC"
         ).timestamp()
     )
+
+
+def test_asset_check():
+    @asset(description="hullo", check_specs=[AssetCheckSpec(asset_key="asset2", name="my_check")])
+    def asset1():
+        return 1
+
+    assets_job = build_assets_job("assets_job", [asset1])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[],
+            op_name="asset1",
+            graph_name=None,
+            op_names=["asset1"],
+            op_description="hullo",
+            node_definition_name="asset1",
+            job_names=["assets_job"],
+            output_name="result",
+            group_name=DEFAULT_GROUP_NAME,
+        )
+    ]

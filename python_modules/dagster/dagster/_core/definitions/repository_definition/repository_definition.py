@@ -15,6 +15,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
 from dagster._core.definitions.assets_job import (
     ASSET_BASE_JOB_PREFIX,
@@ -192,6 +193,9 @@ class RepositoryDefinition:
             List[JobDefinition]: All jobs in the repository.
         """
         return self._repository_data.get_all_jobs()
+
+    def get_all_asset_check_specs(self) -> Sequence[AssetCheckSpec]:
+        return self._repository_data.get_all_asset_check_specs()
 
     @public
     @property

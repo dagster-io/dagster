@@ -12,6 +12,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from dagster import AssetCheckSpec
 
 import dagster._check as check
 from dagster._annotations import public
@@ -105,6 +106,15 @@ class RepositoryData(ABC):
         if match is None:
             raise DagsterInvariantViolationError(f"Could not find job {job_name} in repository")
         return match
+
+    @abstractmethod
+    @public
+    def get_all_asset_check_specs(self) -> Sequence[AssetCheckSpec]:
+        """Return all asset check specs in the repository.
+
+        Returns:
+            Sequence[AssetCheckSpec]: All asset check specs in the repository.
+        """
 
     @public
     def get_schedule_names(self) -> Sequence[str]:
