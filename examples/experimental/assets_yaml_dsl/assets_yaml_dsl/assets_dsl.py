@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, List
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._utils import file_relative_path
 
 import yaml
 from dagster import AssetsDefinition
@@ -39,7 +40,11 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
             context: AssetExecutionContext, subprocess_resource: SubprocessExecutionResource
         ) -> None:
             # instead of querying a dummy client, do your real data processing here
-            subprocess_resource.run(command="python sql_script.py {sql}", context=context)
+
+            subprocess_resource.run(
+                command=["python", file_relative_path(__file__, "sql_script.py"), sql],
+                context=context,
+            )
 
         assets_defs.append(_assets_def)
 
