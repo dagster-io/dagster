@@ -58,14 +58,12 @@ class DualStateContextResourcesContainer:
     def call_on_del(self) -> None:
         self._exit_stack.close()
 
+    @property
     def has_been_accessed(self) -> bool:
-        return self._resources is not None
-
-    def has_resources(self) -> bool:
         return bool(self._resources)
 
-    def get_resources(self) -> Resources:
-        assert self.has_resources
+    def get_already_accessed_resources(self) -> Resources:
+        check.invariant(self.has_been_accessed)
         return check.not_none(self._resources)
 
     def make_resources(

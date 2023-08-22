@@ -234,8 +234,8 @@ class ScheduleEvaluationContext:
         """Mapping of resource key to resource definition to be made available
         during schedule execution.
         """
-        if self._resources_container.has_resources:
-            return self._resources_container.get_resources()
+        if self._resources_container.has_been_accessed:
+            return self._resources_container.get_already_accessed_resources()
 
         instance = self.instance if self._instance or self._instance_ref else None
         return self._resources_container.make_resources("build_schedule_context", instance=instance)
