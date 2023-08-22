@@ -169,7 +169,7 @@ class AssetRecordsFilter(
     Args:
         asset_key (Optional[AssetKey]): Asset key for which to get asset event entries / records.
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
-            events with a partition value matching one of the provided values.  Only
+            events with a partition value matching one of the provided values are returned.  Only
             valid when the `asset_key` parameter is provided.
         after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
             records with storage_id greater than the provided value are returned. Using a
