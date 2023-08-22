@@ -48,7 +48,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
         run_id, jwt_header, expected_email = (
             "foo",
             "foo.eyJlbWFpbCI6ICJoZWxsb0BlbGVtZW50bC5jb20ifQ==.bar",
-            "hello@dagsterlabs.com",
+            "hello@elementl.com",
         )
         MockRequest = namedtuple("MockRequest", ["headers"])
         workspace._source = MockRequest(  # noqa: SLF001
