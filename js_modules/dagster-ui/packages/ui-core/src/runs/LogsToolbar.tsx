@@ -79,7 +79,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     initialComputeLogType,
     setInitialComputeLogType,
   ] = useStateWithStorage(INITIAL_COMPUTE_LOG_TYPE, (value: any) =>
-    typeof value === 'string' ? (value as LogType) : LogType.stdout,
+    typeof value === 'string' ? (value as LogType) : LogType.stderr,
   );
 
   const setComputeLogType = React.useCallback(

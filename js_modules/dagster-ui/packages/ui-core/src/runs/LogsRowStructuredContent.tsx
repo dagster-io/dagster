@@ -53,7 +53,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
         const currentQuery = qs.parse(location.search);
         const updatedQuery = {
           ...currentQuery,
-          logType: 'stdout',
+          logType: 'stderr',
           logs: `query:${node.stepKey}`,
           selection: node.stepKey,
         };
@@ -215,7 +215,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent message={node.message} />;
     case 'LogsCapturedEvent':
       const currentQuery = qs.parse(location.search, {ignoreQueryPrefix: true});
-      const updatedQuery = {...currentQuery, logType: 'stdout', logFileKey: node.stepKey};
+      const updatedQuery = {...currentQuery, logType: 'stderr', logFileKey: node.stepKey};
       const rawLogsUrl = `${location.pathname}?${qs.stringify(updatedQuery)}`;
       const rawLogsLink = (
         <Link to={rawLogsUrl} style={{color: 'inherit'}}>
