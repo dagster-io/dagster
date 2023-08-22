@@ -6,11 +6,11 @@ import {AssetKey} from '../types';
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {ConditionType, ConditionsWithPartitions} from './Conditions';
 import {EvaluationOrEmpty} from './types';
-import {AutoMateralizeWithConditionFragment} from './types/GetEvaluationsQuery.types';
+import {RuleWithEvaluationsFragment} from './types/GetEvaluationsQuery.types';
 
 const isRequestCondition = (
-  condition: AutoMateralizeWithConditionFragment,
-): condition is AutoMateralizeWithConditionFragment => {
+  condition: RuleWithEvaluationsFragment,
+): condition is RuleWithEvaluationsFragment => {
   switch (condition.__typename) {
     case 'MissingAutoMaterializeCondition':
     case 'DownstreamFreshnessAutoMaterializeCondition':
@@ -22,7 +22,7 @@ const isRequestCondition = (
   }
 };
 
-const extractRequestedPartitionKeys = (conditions: AutoMateralizeWithConditionFragment[]) => {
+const extractRequestedPartitionKeys = (conditions: RuleWithEvaluationsFragment[]) => {
   let requested: string[] = [];
   let skippedOrDiscarded: string[] = [];
 

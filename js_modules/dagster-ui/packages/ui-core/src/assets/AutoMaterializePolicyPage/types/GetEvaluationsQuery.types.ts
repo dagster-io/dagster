@@ -29,6 +29,21 @@ export type GetEvaluationsQuery = {
             rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
             ruleEvaluations: Array<{
               __typename: 'AutoMaterializeRuleEvaluation';
+              evaluationData:
+                | {
+                    __typename: 'ParentMaterializedRuleEvaluationData';
+                    updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+                    willUpdateAssetKeys: Array<{
+                      __typename: 'AssetKey';
+                      path: Array<string>;
+                    }> | null;
+                  }
+                | {__typename: 'TextRuleEvaluationData'; text: string | null}
+                | {
+                    __typename: 'WaitingOnKeysRuleEvaluationData';
+                    waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+                  }
+                | null;
               partitionKeysOrError:
                 | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
                 | {__typename: 'PartitionSubsetDeserializationError'; message: string}
@@ -54,6 +69,18 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
     rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
     ruleEvaluations: Array<{
       __typename: 'AutoMaterializeRuleEvaluation';
+      evaluationData:
+        | {
+            __typename: 'ParentMaterializedRuleEvaluationData';
+            updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+            willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          }
+        | {__typename: 'TextRuleEvaluationData'; text: string | null}
+        | {
+            __typename: 'WaitingOnKeysRuleEvaluationData';
+            waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          }
+        | null;
       partitionKeysOrError:
         | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
         | {__typename: 'PartitionSubsetDeserializationError'; message: string}
@@ -62,11 +89,23 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
   }>;
 };
 
-export type AutoMateralizeWithConditionFragment = {
+export type RuleWithEvaluationsFragment = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
   rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
   ruleEvaluations: Array<{
     __typename: 'AutoMaterializeRuleEvaluation';
+    evaluationData:
+      | {
+          __typename: 'ParentMaterializedRuleEvaluationData';
+          updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+        }
+      | {__typename: 'TextRuleEvaluationData'; text: string | null}
+      | {
+          __typename: 'WaitingOnKeysRuleEvaluationData';
+          waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+        }
+      | null;
     partitionKeysOrError:
       | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
       | {__typename: 'PartitionSubsetDeserializationError'; message: string}

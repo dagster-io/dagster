@@ -9,9 +9,9 @@ import {ParentUpdatedLink} from './ParentUpdatedLink';
 import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
 import {WaitingOnPartitionAssetKeysLink} from './WaitingOnPartitionAssetKeysLink';
-import {AutoMateralizeWithConditionFragment} from './types/GetEvaluationsQuery.types';
+import {RuleWithEvaluationsFragment} from './types/GetEvaluationsQuery.types';
 
-export type ConditionType = AutoMateralizeWithConditionFragment['__typename'];
+export type ConditionType = RuleWithEvaluationsFragment['__typename'];
 
 interface ConditionProps {
   text: React.ReactNode;
