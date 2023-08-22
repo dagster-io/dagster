@@ -189,6 +189,30 @@ def test_multi_asset_deps_via_mixed_types():
     assert res.success
 
 
+def test_multi_asset_deps_with_set():
+    @multi_asset(
+        outs={
+            "asset_1": AssetOut(),
+            "asset_2": AssetOut(),
+        }
+    )
+    def a_multi_asset():
+        return None, None
+
+    @asset(deps=set(["asset_1", "asset_2"]))
+    def depends_on_both_sub_assets():
+        return None
+
+    assert len(depends_on_both_sub_assets.input_names) == 2
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+
+    res = materialize(
+        [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
+    )
+    assert res.success
+
+
 def test_multi_asset_deps_via_assets_definition_fails():
     @multi_asset(
         outs={
