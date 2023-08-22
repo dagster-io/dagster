@@ -996,21 +996,21 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_materialization_records(
         self,
-        filters: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         event_records_filter = (
-            filters.to_event_records_filter(
+            records_filter.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
             )
-            if isinstance(filters, AssetRecordsFilter)
+            if isinstance(records_filter, AssetRecordsFilter)
             else (
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=filters,
+                    asset_key=records_filter,
                 )
-                if isinstance(filters, AssetKey)
+                if isinstance(records_filter, AssetKey)
                 else EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION,
                 )
@@ -1024,21 +1024,21 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_observation_records(
         self,
-        filters: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         event_records_filter = (
-            filters.to_event_records_filter(
+            records_filter.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_OBSERVATION,
             )
-            if isinstance(filters, AssetRecordsFilter)
+            if isinstance(records_filter, AssetRecordsFilter)
             else (
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_OBSERVATION,
-                    asset_key=filters,
+                    asset_key=records_filter,
                 )
-                if isinstance(filters, AssetKey)
+                if isinstance(records_filter, AssetKey)
                 else EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_OBSERVATION,
                 )
@@ -1052,21 +1052,21 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_planned_materialization_records(
         self,
-        filters: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
+        records_filter: Optional[Union[AssetKey, AssetRecordsFilter]] = None,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
         event_records_filter = (
-            filters.to_event_records_filter(
+            records_filter.to_event_records_filter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
             )
-            if isinstance(filters, AssetRecordsFilter)
+            if isinstance(records_filter, AssetRecordsFilter)
             else (
                 EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                    asset_key=filters,
+                    asset_key=records_filter,
                 )
-                if isinstance(filters, AssetKey)
+                if isinstance(records_filter, AssetKey)
                 else EventRecordsFilter(
                     event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                 )
@@ -1080,18 +1080,22 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_run_status_event_records(
         self,
-        filters: Union[DagsterEventType, RunStatusEventRecordsFilter],
+        records_filter: Union[DagsterEventType, RunStatusEventRecordsFilter],
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence[EventLogRecord]:
-        event_type = filters if isinstance(filters, DagsterEventType) else filters.event_type
+        event_type = (
+            records_filter
+            if isinstance(records_filter, DagsterEventType)
+            else records_filter.event_type
+        )
         if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
             check.failed(f"Expected one of {expected}, received {event_type.value}")
 
         events_filter = (
-            filters.to_event_records_filter()
-            if isinstance(filters, RunStatusEventRecordsFilter)
+            records_filter.to_event_records_filter()
+            if isinstance(records_filter, RunStatusEventRecordsFilter)
             else EventRecordsFilter(event_type)
         )
         return self._get_event_records(events_filter, limit=limit, ascending=ascending)

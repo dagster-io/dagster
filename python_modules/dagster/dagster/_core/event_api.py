@@ -153,20 +153,21 @@ class AssetRecordsFilter(
     NamedTuple(
         "_AssetRecordsFilter",
         [
-            ("asset_key", Optional[AssetKey]),
-            ("asset_partitions", Optional[Sequence[str]]),
-            ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
-            ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
-            ("after_timestamp", Optional[float]),
-            ("before_timestamp", Optional[float]),
+            ("asset_key", PublicAttr[Optional[AssetKey]]),
+            ("asset_partitions", PublicAttr[Optional[Sequence[str]]]),
+            ("after_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
+            ("before_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
+            ("after_timestamp", PublicAttr[Optional[float]]),
+            ("before_timestamp", PublicAttr[Optional[float]]),
             ("storage_ids", Optional[Sequence[int]]),
-            ("tags", Optional[Mapping[str, Union[str, Sequence[str]]]]),
+            ("tags", PublicAttr[Optional[Mapping[str, Union[str, Sequence[str]]]]]),
         ],
     )
 ):
     """Defines a set of filter fields for fetching a set of asset event records.
 
     Args:
+        asset_key (Optional[AssetKey]): Asset key for which to get asset event entries / records.
         asset_partitions (Optional[List[str]]): Filter parameter such that only asset
             events with a partition value matching one of the provided values.  Only
             valid when the `asset_key` parameter is provided.
@@ -182,6 +183,10 @@ class AssetRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
+        storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
+            the given storage ids are returned.
+        tags (Optional[Mapping[str, Union[str, Sequence[str]]]]): Filter parameter such that only
+            events with the given event tags are returned
     """
 
     def __new__(
@@ -195,12 +200,12 @@ class AssetRecordsFilter(
         storage_ids: Optional[Sequence[int]] = None,
         tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ):
-        check.opt_sequence_param(asset_partitions, "asset_partitions", of_type=str)
-        tags = check.opt_mapping_param(tags, "tags", key_type=str)
         return super(AssetRecordsFilter, cls).__new__(
             cls,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
-            asset_partitions=asset_partitions,
+            asset_partitions=check.opt_nullable_sequence_param(
+                asset_partitions, "asset_partitions", of_type=str
+            ),
             after_cursor=check.opt_inst_param(
                 after_cursor, "after_cursor", (int, RunShardedEventsCursor)
             ),
@@ -210,7 +215,7 @@ class AssetRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str),
         )
 
     def to_event_records_filter(self, event_type: DagsterEventType) -> EventRecordsFilter:
@@ -232,11 +237,11 @@ class RunStatusEventRecordsFilter(
     NamedTuple(
         "_RunStatusEventRecordsFilter",
         [
-            ("event_type", DagsterEventType),
-            ("after_cursor", Optional[Union[int, RunShardedEventsCursor]]),
-            ("before_cursor", Optional[Union[int, RunShardedEventsCursor]]),
-            ("after_timestamp", Optional[float]),
-            ("before_timestamp", Optional[float]),
+            ("event_type", PublicAttr[DagsterEventType]),
+            ("after_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
+            ("before_cursor", PublicAttr[Optional[Union[int, RunShardedEventsCursor]]]),
+            ("after_timestamp", PublicAttr[Optional[float]]),
+            ("before_timestamp", PublicAttr[Optional[float]]),
             ("storage_ids", Optional[Sequence[int]]),
         ],
     )
@@ -244,6 +249,7 @@ class RunStatusEventRecordsFilter(
     """Defines a set of filter fields for fetching a set of asset event records.
 
     Args:
+        event_type (DagsterEventType): Filter argument for dagster event type
         after_cursor (Optional[Union[int, RunShardedEventsCursor]]): Filter parameter such that only
             records with storage_id greater than the provided value are returned. Using a
             run-sharded events cursor will result in a significant performance gain when run against
@@ -256,6 +262,8 @@ class RunStatusEventRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
+        storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
+            the given storage ids are returned.
     """
 
     def __new__(
