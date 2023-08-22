@@ -17,10 +17,10 @@ from typing import (
     Union,
 )
 
-from dagster_external.protocol import (
-    DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME,
-    DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME,
-    DAGSTER_EXTERNAL_ENV_KEYS,
+from dagster_externals import (
+    DAGSTER_EXTERNALS_DEFAULT_INPUT_FILENAME,
+    DAGSTER_EXTERNALS_DEFAULT_OUTPUT_FILENAME,
+    DAGSTER_EXTERNALS_ENV_KEYS,
     ExternalExecutionExtras,
 )
 from typing_extensions import Literal, TypeAlias, TypeVar
@@ -74,7 +74,7 @@ class ExternalExecutionTask(Generic[T_TaskParams, T_TaskIOParams]):
     def get_base_env(self) -> Mapping[str, str]:
         return {
             **os.environ,
-            DAGSTER_EXTERNAL_ENV_KEYS["is_orchestration_active"]: "1",
+            DAGSTER_EXTERNALS_ENV_KEYS["is_orchestration_active"]: "1",
         }
 
     # ########################
@@ -167,9 +167,9 @@ class ExternalExecutionTask(Generic[T_TaskParams, T_TaskIOParams]):
     ) -> str:
         if path is None:
             if target == "input":
-                filename = DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME
+                filename = DAGSTER_EXTERNALS_DEFAULT_INPUT_FILENAME
             else:  # output
-                filename = DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME
+                filename = DAGSTER_EXTERNALS_DEFAULT_OUTPUT_FILENAME
             assert tempdir is not None, "Must define tempdir when path is None"
             return os.path.join(tempdir, filename)
         else:
