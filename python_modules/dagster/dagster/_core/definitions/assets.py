@@ -29,6 +29,12 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
+from dagster._core.definitions.resource_requirement import (
+    RequiresResources,
+    ResourceAddable,
+    ResourceRequirement,
+    merge_resource_defs,
+)
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -49,12 +55,6 @@ from .partition_mapping import (
     infer_partition_mapping,
 )
 from .resource_definition import ResourceDefinition
-from .resource_requirement import (
-    ResourceAddable,
-    ResourceRequirement,
-    ensure_requirements_satisfied,
-    get_resource_key_conflicts,
-)
 from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_group_name
 
@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
 
 
-class AssetsDefinition(ResourceAddable, IHasInternalInit):
+class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 
     AssetsDefinitions are typically not instantiated directly, but rather produced using the
@@ -1191,37 +1191,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return hashlib.md5((json.dumps(sorted(self.keys))).encode("utf-8")).hexdigest()
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
-        from dagster._core.execution.resources_init import get_transitive_required_resource_keys
-
-        overlapping_keys = get_resource_key_conflicts(self.resource_defs, resource_defs)
-        if overlapping_keys:
-            overlapping_keys_str = ", ".join(sorted(list(overlapping_keys)))
-            raise DagsterInvalidInvocationError(
-                f"{self} has conflicting resource "
-                "definitions with provided resources for the following keys: "
-                f"{overlapping_keys_str}. Either remove the existing "
-                "resources from the asset or change the resource keys so that "
-                "they don't overlap."
-            )
-
-        merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
-
-        # Ensure top-level resource requirements are met - except for
-        # io_manager, since that is a default it can be resolved later.
-        ensure_requirements_satisfied(merged_resource_defs, list(self.get_resource_requirements()))
-
-        # Get all transitive resource dependencies from other resources.
-        relevant_keys = get_transitive_required_resource_keys(
-            self.required_resource_keys, merged_resource_defs
-        )
-        relevant_resource_defs = {
-            key: resource_def
-            for key, resource_def in merged_resource_defs.items()
-            if key in relevant_keys
-        }
-
         attributes_dict = self.get_attributes_dict()
-        attributes_dict["resource_defs"] = relevant_resource_defs
+        attributes_dict["resource_defs"] = merge_resource_defs(
+            old_resource_defs=self.resource_defs,
+            resource_defs_to_merge_in=resource_defs,
+            requires_resources=self,
+        )
         return self.__class__(**attributes_dict)
 
     def get_attributes_dict(self) -> Dict[str, Any]:

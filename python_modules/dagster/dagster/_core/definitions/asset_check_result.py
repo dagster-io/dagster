@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional, Set
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
@@ -68,19 +67,21 @@ class AssetCheckResult(
     def to_asset_check_evaluation(
         self, step_context: "StepExecutionContext"
     ) -> AssetCheckEvaluation:
-        specs = step_context.job_def.asset_layer.check_specs_for_node(step_context.node_handle)
+        spec_check_names_by_asset_key = (
+            step_context.job_def.asset_layer.get_check_names_by_asset_key_for_node_handle(
+                step_context.node_handle
+            )
+        )
 
-        spec_check_names_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
-        for spec in specs:
-            spec_check_names_by_asset_key[spec.asset_key].add(spec.name)
+        asset_keys_with_specs = spec_check_names_by_asset_key.keys()
 
         if self.asset_key is not None:
-            if self.asset_key not in spec_check_names_by_asset_key.keys():
+            if self.asset_key not in asset_keys_with_specs:
                 raise DagsterInvariantViolationError(
                     "Received unexpected AssetCheckResult. It targets asset"
                     f" '{self.asset_key.to_user_string()}' which is not targeted by any of the"
                     " checks currently being evaluated. Targeted assets:"
-                    f" {[asset_key.to_user_string() for asset_key in spec_check_names_by_asset_key.keys()]}."
+                    f" {[asset_key.to_user_string() for asset_key in asset_keys_with_specs]}."
                 )
 
             resolved_asset_key = self.asset_key
@@ -93,28 +94,28 @@ class AssetCheckResult(
                     f" {[asset_key.to_user_string() for asset_key in spec_check_names_by_asset_key.keys()]}"
                 )
 
-            resolved_asset_key = next(iter(spec_check_names_by_asset_key.keys()))
+            resolved_asset_key = next(iter(asset_keys_with_specs))
 
-        spec_check_names_for_asset_key = spec_check_names_by_asset_key[resolved_asset_key]
+        check_names_with_specs = spec_check_names_by_asset_key[resolved_asset_key]
         if self.check_name is not None:
-            if self.check_name not in spec_check_names_for_asset_key:
+            if self.check_name not in check_names_with_specs:
                 raise DagsterInvariantViolationError(
                     "Received unexpected AssetCheckResult. No checks currently being evaluated"
                     f" target asset '{resolved_asset_key.to_user_string()}' and have name"
                     f" '{self.check_name}'. Checks being evaluated for this asset:"
-                    f" {spec_check_names_for_asset_key}"
+                    f" {check_names_with_specs}"
                 )
 
             resolved_check_name = self.check_name
         else:
-            if len(spec_check_names_for_asset_key) > 1:
+            if len(check_names_with_specs) > 1:
                 raise DagsterInvariantViolationError(
                     "AssetCheckResult result didn't specify a check name, but there are multiple"
                     " checks to choose from for the this asset key:"
-                    f" {spec_check_names_for_asset_key}"
+                    f" {check_names_with_specs}"
                 )
 
-            resolved_check_name = next(iter(spec_check_names_for_asset_key))
+            resolved_check_name = next(iter(check_names_with_specs))
 
         return AssetCheckEvaluation(
             check_name=resolved_check_name,

@@ -33,6 +33,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._utils.cached_method import cached_method
 
+from .asset_checks import AssetChecksDefinition
 from .assets import AssetsDefinition
 from .backfill_policy import BackfillPolicy
 from .events import AssetKey, AssetKeyPartitionKey
@@ -146,7 +147,8 @@ class AssetGraph:
 
     @staticmethod
     def from_assets(
-        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
+        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+        asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
     ) -> "InternalAssetGraph":
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
@@ -198,6 +200,7 @@ class AssetGraph:
             backfill_policies_by_key=backfill_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             assets=assets_defs,
+            asset_checks=asset_checks or [],
             source_assets=source_assets,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
@@ -680,6 +683,7 @@ class InternalAssetGraph(AssetGraph):
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
+        asset_checks: Sequence[AssetChecksDefinition],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
         auto_observe_interval_minutes_by_key: Mapping[AssetKey, Optional[float]],
@@ -700,6 +704,7 @@ class InternalAssetGraph(AssetGraph):
         )
         self._assets = assets
         self._source_assets = source_assets
+        self._asset_checks = asset_checks
 
     @property
     def assets(self) -> Sequence[AssetsDefinition]:
@@ -708,6 +713,10 @@ class InternalAssetGraph(AssetGraph):
     @property
     def source_assets(self) -> Sequence[SourceAsset]:
         return self._source_assets
+
+    @property
+    def asset_checks(self) -> Sequence[AssetChecksDefinition]:
+        return self._asset_checks
 
 
 def sort_key_for_asset_partition(

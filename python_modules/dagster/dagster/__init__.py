@@ -130,6 +130,9 @@ from dagster._core.definitions.data_version import (
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
 )
+from dagster._core.definitions.decorators.asset_check_decorator import (
+    asset_check as asset_check,
+)
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
     graph_asset as graph_asset,
