@@ -1,20 +1,27 @@
+import json
 import os
-from contextlib import contextmanager
+import socket
+import socketserver
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
 from subprocess import Popen
 from threading import Event, Thread
 from typing import ContextManager, Iterator, Mapping, Optional, Sequence, Union
 
 from dagster_external.protocol import (
+    DAGSTER_EXTERNAL_DEFAULT_HOST,
+    DAGSTER_EXTERNAL_DEFAULT_PORT,
     DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalExecutionExtras,
     ExternalExecutionIOMode,
+    SocketServerControlMessage,
 )
 from pydantic import Field
 
 import dagster._check as check
 from dagster._core.errors import DagsterExternalExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.external_execution.context import build_external_execution_context
 from dagster._core.external_execution.resource import ExternalExecutionResource
 from dagster._core.external_execution.task import (
     ExternalExecutionTask,
@@ -28,6 +35,10 @@ from dagster._core.external_execution.task import (
 class SubprocessTaskParams(ExternalTaskParams):
     command: Sequence[str]
     cwd: Optional[str] = None
+    input_mode: ExternalExecutionIOMode = ExternalExecutionIOMode.stdio
+    output_mode: ExternalExecutionIOMode = ExternalExecutionIOMode.stdio
+    socket_server_host: Optional[str] = None
+    socket_server_port: Optional[int] = None
     env: Mapping[str, str] = field(default_factory=dict)
 
 
@@ -36,9 +47,7 @@ class SubprocessTaskIOParams(ExternalTaskIOParams):
     stdio_fd: Optional[int] = None
 
 
-class ExternalExecutionSubprocessTask(
-    ExternalExecutionTask[SubprocessTaskParams, SubprocessTaskIOParams]
-):
+class SubprocessExecutionTask(ExternalExecutionTask[SubprocessTaskParams, SubprocessTaskIOParams]):
     def _launch(
         self,
         base_env: Mapping[str, str],
@@ -46,38 +55,54 @@ class ExternalExecutionSubprocessTask(
         input_params: SubprocessTaskIOParams,
         output_params: SubprocessTaskIOParams,
     ) -> None:
-        process = Popen(
-            params.command,
-            cwd=params.cwd,
-            stdin=input_params.stdio_fd,
-            stdout=output_params.stdio_fd,
-            env={**base_env, **params.env, **input_params.env, **output_params.env},
+        socket_server_context = (
+            self._socket_server_context_manager(params)
+            if ExternalExecutionIOMode.socket in (params.input_mode, params.output_mode)
+            else nullcontext()
         )
-        process.wait()
-
-        if process.returncode != 0:
-            raise DagsterExternalExecutionError(
-                f"External execution process failed with code {process.returncode}"
+        io_mode_env = {
+            DAGSTER_EXTERNAL_ENV_KEYS["input_mode"]: params.input_mode.value,
+            DAGSTER_EXTERNAL_ENV_KEYS["output_mode"]: params.output_mode.value,
+        }
+        with socket_server_context:
+            process = Popen(
+                params.command,
+                cwd=params.cwd,
+                stdin=input_params.stdio_fd,
+                stdout=output_params.stdio_fd,
+                env={
+                    **base_env,
+                    **io_mode_env,
+                    **params.env,
+                    **input_params.env,
+                    **output_params.env,
+                },
             )
+            process.wait()
+
+            if process.returncode != 0:
+                raise DagsterExternalExecutionError(
+                    f"External execution process failed with code {process.returncode}"
+                )
 
     # ########################
     # ##### IO CONTEXT MANAGERS
     # ########################
 
     def _input_context_manager(
-        self, tempdir: str, sockaddr: SocketAddress
+        self, tempdir: str, params: SubprocessTaskParams
     ) -> ContextManager[SubprocessTaskIOParams]:
-        if self._input_mode == ExternalExecutionIOMode.stdio:
+        if params.input_mode == ExternalExecutionIOMode.stdio:
             return self._stdio_input()
-        elif self._input_mode == ExternalExecutionIOMode.file:
+        elif params.input_mode == ExternalExecutionIOMode.file:
             return self._file_input(tempdir)
-        elif self._input_mode == ExternalExecutionIOMode.fifo:
+        elif params.input_mode == ExternalExecutionIOMode.fifo:
             return self._fifo_input(tempdir)
-        elif self._input_mode == ExternalExecutionIOMode.socket:
-            assert sockaddr is not None, "`sockaddr` must be set when output_mode is `socket`"
+        elif params.input_mode == ExternalExecutionIOMode.socket:
+            sockaddr = self._sockaddr_from_params(params)
             return self._socket_input(sockaddr)
         else:
-            check.failed(f"Unsupported input mode: {self._input_mode}")
+            check.failed(f"Unsupported input mode: {params.input_mode}")
 
     @contextmanager
     def _stdio_input(self) -> Iterator[SubprocessTaskIOParams]:
@@ -123,19 +148,19 @@ class ExternalExecutionSubprocessTask(
         yield SubprocessTaskIOParams(env=env)
 
     def _output_context_manager(
-        self, tempdir: str, sockaddr: Optional[SocketAddress]
+        self, tempdir: str, params: SubprocessTaskParams
     ) -> ContextManager[SubprocessTaskIOParams]:
-        if self._output_mode == ExternalExecutionIOMode.stdio:
+        if params.output_mode == ExternalExecutionIOMode.stdio:
             return self._stdio_output()
-        elif self._output_mode == ExternalExecutionIOMode.file:
+        elif params.output_mode == ExternalExecutionIOMode.file:
             return self._file_output(tempdir)
-        elif self._output_mode == ExternalExecutionIOMode.fifo:
+        elif params.output_mode == ExternalExecutionIOMode.fifo:
             return self._fifo_output(tempdir)
-        elif self._output_mode == ExternalExecutionIOMode.socket:
-            assert sockaddr is not None, "`sockaddr` must be set when output_mode is `socket`"
+        elif params.output_mode == ExternalExecutionIOMode.socket:
+            sockaddr = self._sockaddr_from_params(params)
             return self.socket_output(sockaddr)
         else:
-            check.failed(f"Unsupported output mode: {self._output_mode}")
+            check.failed(f"Unsupported output mode: {params.output_mode}")
 
     @contextmanager
     def _stdio_output(self) -> Iterator[SubprocessTaskIOParams]:
@@ -207,16 +232,80 @@ class ExternalExecutionSubprocessTask(
         yield SubprocessTaskIOParams(env=env)
 
     # ########################
-    # ##### IO ROUTINES
+    # ##### SOCKET SERVER
     # ########################
 
-    def _start_output_thread(self, path_or_fd: Union[str, int], is_task_complete: Event) -> Thread:
-        thread = Thread(target=self._read_output, args=(path_or_fd, is_task_complete), daemon=True)
+    @contextmanager
+    def _socket_server_context_manager(
+        self, params: SubprocessTaskParams
+    ) -> Iterator[SocketAddress]:
+        sockaddr = self._sockaddr_from_params(params)
+        thread = None
+        try:
+            thread = self._start_socket_server_thread(sockaddr)
+            yield sockaddr
+        finally:
+            if thread:
+                self._shutdown_socket_server(sockaddr)
+                thread.join()
+
+    def _start_socket_server_thread(self, sockaddr: SocketAddress) -> Thread:
+        is_server_started = Event()
+        thread = Thread(
+            target=self._start_socket_server, args=(sockaddr, is_server_started), daemon=True
+        )
         thread.start()
+        is_server_started.wait()
         return thread
+
+    # Only used in socket mode
+    def _start_socket_server(self, sockaddr: SocketAddress, is_server_started: Event) -> None:
+        context = build_external_execution_context(self._context, self._extras)
+        handle_notification = self.handle_notification
+
+        class Handler(socketserver.StreamRequestHandler):
+            def handle(self):
+                data = self.rfile.readline().strip().decode("utf-8")
+                if data == SocketServerControlMessage.shutdown:
+                    self.server.shutdown()
+                elif data == SocketServerControlMessage.get_context:
+                    response_data = f"{json.dumps(context)}\n".encode("utf-8")
+                    self.wfile.write(response_data)
+                elif data == SocketServerControlMessage.initiate_client_stream:
+                    self.notification_stream_loop()
+                else:
+                    raise Exception(f"Unrecognized control message: {data}")
+
+            def notification_stream_loop(self):
+                while True:
+                    data = self.rfile.readline().strip().decode("utf-8")
+                    notification = json.loads(data)
+                    handle_notification(notification)
+
+        # It is essential to set `allow_reuse_address` to True here, otherwise `socket.bind` seems
+        # to nondeterministically block when running multiple tests using the same address in
+        # succession.
+        class Server(socketserver.ThreadingTCPServer):
+            allow_reuse_address = True
+
+        with Server(sockaddr, Handler) as server:
+            is_server_started.set()
+            server.serve_forever()
+
+    # Only used in socket mode
+    def _shutdown_socket_server(self, sockaddr: SocketAddress) -> None:
+        with socket.create_connection(sockaddr) as sock:
+            sock.makefile("w").write(f"{SocketServerControlMessage.shutdown.value}\n")
+
+    def _sockaddr_from_params(self, params: SubprocessTaskParams) -> SocketAddress:
+        host = params.socket_server_host or DAGSTER_EXTERNAL_DEFAULT_HOST
+        port = params.socket_server_port or DAGSTER_EXTERNAL_DEFAULT_PORT
+        return (host, port)
 
 
 class SubprocessExecutionResource(ExternalExecutionResource):
+    input_mode: ExternalExecutionIOMode = Field(default="stdio")
+    output_mode: ExternalExecutionIOMode = Field(default="stdio")
     cwd: Optional[str] = Field(
         default=None, description="Working directory in which to launch the subprocess command."
     )
@@ -238,12 +327,12 @@ class SubprocessExecutionResource(ExternalExecutionResource):
             command=command,
             env={**(env or {}), **(self.env or {})},
             cwd=(cwd or self.cwd),
-        )
-        ExternalExecutionSubprocessTask(
-            context=context,
-            extras=extras,
             input_mode=self.input_mode,
             output_mode=self.output_mode,
+        )
+        SubprocessExecutionTask(
+            context=context,
+            extras=extras,
             input_path=self.input_path,
             output_path=self.output_path,
         ).run(params)

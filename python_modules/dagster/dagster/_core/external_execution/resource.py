@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from dagster_external.protocol import ExternalExecutionExtras, ExternalExecutionIOMode
+from dagster_external.protocol import ExternalExecutionExtras
 from pydantic import Field
 
 from dagster._config.pythonic_config import ConfigurableResource
@@ -9,8 +9,6 @@ from dagster._core.execution.context.compute import OpExecutionContext
 
 
 class ExternalExecutionResource(ConfigurableResource, ABC):
-    input_mode: ExternalExecutionIOMode = Field(default="stdio")
-    output_mode: ExternalExecutionIOMode = Field(default="stdio")
     input_path: Optional[str] = Field(
         default=None,
         description="""

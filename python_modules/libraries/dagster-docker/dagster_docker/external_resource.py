@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from threading import Event
 from typing import ContextManager, Iterator, Mapping, Optional, Sequence, Union
 
-import dagster._check as check
 import docker
 from dagster import OpExecutionContext
 from dagster._core.external_execution.resource import (
@@ -19,7 +18,6 @@ from dagster._core.external_execution.task import (
 from dagster_external.protocol import (
     DAGSTER_EXTERNAL_ENV_KEYS,
     ExternalExecutionExtras,
-    ExternalExecutionIOMode,
 )
 from dagster_external.util import DagsterExternalError
 
@@ -92,12 +90,7 @@ class DockerExecutionTask(ExternalExecutionTask[DockerTaskParams, DockerTaskIOPa
     def _input_context_manager(
         self, tempdir: str, sockaddr: SocketAddress
     ) -> ContextManager[DockerTaskIOParams]:
-        if self._input_mode == ExternalExecutionIOMode.file:
-            return self._file_input(tempdir)
-        elif self._input_mode == ExternalExecutionIOMode.socket:
-            return self._socket_input_or_output(sockaddr)
-        else:
-            check.failed(f"Unsupported input mode: {self._input_mode}")
+        return self._file_input(tempdir)
 
     @contextmanager
     def _file_input(self, tempdir: str) -> Iterator[DockerTaskIOParams]:
@@ -113,14 +106,9 @@ class DockerExecutionTask(ExternalExecutionTask[DockerTaskParams, DockerTaskIOPa
                 os.remove(path)
 
     def _output_context_manager(
-        self, tempdir: str, sockaddr: SocketAddress
+        self, tempdir: str, params: DockerTaskParams
     ) -> ContextManager[DockerTaskIOParams]:
-        if self._output_mode == ExternalExecutionIOMode.file:
-            return self._file_output(tempdir)
-        elif self._output_mode == ExternalExecutionIOMode.socket:
-            return self._socket_input_or_output(sockaddr)
-        else:
-            check.failed(f"Unsupported output mode: {self._output_mode}")
+        return self._file_output(tempdir)
 
     @contextmanager
     def _file_output(self, tempdir: str) -> Iterator[DockerTaskIOParams]:
@@ -140,16 +128,6 @@ class DockerExecutionTask(ExternalExecutionTask[DockerTaskParams, DockerTaskIOPa
                 thread.join()
             if os.path.exists(path):
                 os.remove(path)
-
-    @contextmanager
-    def _socket_input_or_output(self, sockaddr: SocketAddress) -> Iterator[DockerTaskIOParams]:
-        _, port = sockaddr
-        ipc_ports = {port: port}
-        env = {
-            DAGSTER_EXTERNAL_ENV_KEYS["host"]: "host.docker.internal",
-            DAGSTER_EXTERNAL_ENV_KEYS["port"]: port,
-        }
-        yield DockerTaskIOParams(env=env, ports=ipc_ports)
 
 
 class DockerExecutionResource(ExternalExecutionResource):
@@ -175,8 +153,6 @@ class DockerExecutionResource(ExternalExecutionResource):
         DockerExecutionTask(
             context=context,
             extras=extras,
-            input_mode=self.input_mode,
-            output_mode=self.output_mode,
             input_path=self.input_path,
             output_path=self.output_path,
         ).run(params)

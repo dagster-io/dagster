@@ -1,7 +1,5 @@
-import itertools
 import os
 
-import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster_docker.external_resource import DockerExecutionResource
 from dagster_test.test_project import (
@@ -12,17 +10,7 @@ from dagster_test.test_project import (
 )
 
 
-@pytest.mark.parametrize(
-    ["input_spec", "output_spec"],
-    [
-        *(
-            itertools.product(("file", "socket"), ("file", "socket"))
-            if not IS_BUILDKITE
-            else (("file", "file"),)
-        )
-    ],
-)
-def test_basic(input_spec, output_spec):
+def test_basic():
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -65,12 +53,7 @@ def test_basic(input_spec, output_spec):
 
     result = materialize(
         [number_x],
-        resources={
-            "docker_resource": DockerExecutionResource(
-                input_mode=input_spec,
-                output_mode=output_spec,
-            ),
-        },
+        resources={"docker_resource": DockerExecutionResource()},
         raise_on_error=False,
     )
     assert result.success
