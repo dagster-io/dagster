@@ -10,6 +10,20 @@ export type GetEvaluationsQueryVariables = Types.Exact<{
 
 export type GetEvaluationsQuery = {
   __typename: 'Query';
+  assetNodeOrError:
+    | {
+        __typename: 'AssetNode';
+        id: string;
+        autoMaterializePolicy: {
+          __typename: 'AutoMaterializePolicy';
+          rules: Array<{
+            __typename: 'AutoMaterializeRule';
+            description: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+          }>;
+        } | null;
+      }
+    | {__typename: 'AssetNotFoundError'};
   autoMaterializeAssetEvaluationsOrError:
     | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | {
@@ -26,7 +40,11 @@ export type GetEvaluationsQuery = {
           runIds: Array<string>;
           rulesWithRuleEvaluations: Array<{
             __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-            rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
+            rule: {
+              __typename: 'AutoMaterializeRule';
+              description: string;
+              decisionType: Types.AutoMaterializeDecisionType;
+            };
             ruleEvaluations: Array<{
               __typename: 'AutoMaterializeRuleEvaluation';
               evaluationData:
@@ -66,7 +84,11 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
   runIds: Array<string>;
   rulesWithRuleEvaluations: Array<{
     __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-    rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
+    rule: {
+      __typename: 'AutoMaterializeRule';
+      description: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+    };
     ruleEvaluations: Array<{
       __typename: 'AutoMaterializeRuleEvaluation';
       evaluationData:
@@ -91,7 +113,11 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
 
 export type RuleWithEvaluationsFragment = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-  rule: {__typename: 'AutoMaterializeRule'; description: string} | null;
+  rule: {
+    __typename: 'AutoMaterializeRule';
+    description: string;
+    decisionType: Types.AutoMaterializeDecisionType;
+  };
   ruleEvaluations: Array<{
     __typename: 'AutoMaterializeRuleEvaluation';
     evaluationData:

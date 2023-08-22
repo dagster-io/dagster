@@ -13,7 +13,7 @@ GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDec
 
 class GrapheneAutoMaterializeRule(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
-    decisionType = GrapheneAutoMaterializeDecisionType
+    decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
 
     class Meta:
         name = "AutoMaterializeRule"

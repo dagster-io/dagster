@@ -114,7 +114,6 @@ export const AssetAutomaterializePolicyPage = ({
               // Use the evaluation ID of the current evaluation object, if any. Otherwise
               // fall back to the evaluation ID from the query parameter, if any.
               selectedEvaluationId={selectedEvaluation?.evaluationId || selectedEvaluationId}
-              maxMaterializationsPerMinute={maxMaterializationsPerMinute}
             />
           </Box>
         </Box>

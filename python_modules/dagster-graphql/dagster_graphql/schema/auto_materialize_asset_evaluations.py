@@ -87,11 +87,21 @@ class GrapheneAutoMaterializeRuleEvaluation(graphene.ObjectType):
 
 
 class GrapheneAutoMaterializeRuleWithRuleEvaluations(graphene.ObjectType):
-    rule = graphene.Field(GrapheneAutoMaterializeRule)
+    rule = graphene.NonNull(GrapheneAutoMaterializeRule)
     ruleEvaluations = non_null_list(GrapheneAutoMaterializeRuleEvaluation)
 
     class Meta:
         name = "AutoMaterializeRuleWithRuleEvaluations"
+
+    def __init__(
+        self,
+        rule: GrapheneAutoMaterializeRule,
+        ruleEvaluations,
+    ):
+        super().__init__(
+            rule=rule,
+            ruleEvaluations=ruleEvaluations,
+        )
 
 
 def create_graphene_auto_materialize_rule_evaluation(
@@ -185,7 +195,7 @@ def create_graphene_auto_materialize_rules_with_rule_evaluations(
     return [
         GrapheneAutoMaterializeRuleWithRuleEvaluations(
             rule=GrapheneAutoMaterializeRule(
-                description=rule.description, decision_type=rule.decision_type
+                description=rule.description, decisionType=rule.decision_type
             ),
             ruleEvaluations=[
                 create_graphene_auto_materialize_rule_evaluation(tup, partitions_def)
@@ -220,7 +230,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             numRequested=record.evaluation.num_requested,
             numSkipped=record.evaluation.num_skipped,
             numDiscarded=record.evaluation.num_discarded,
-            ruleEvaluations=create_graphene_auto_materialize_rules_with_rule_evaluations(
+            rulesWithRuleEvaluations=create_graphene_auto_materialize_rules_with_rule_evaluations(
                 record.evaluation.partition_subsets_by_condition, partitions_def
             ),
             timestamp=record.timestamp,

@@ -2,6 +2,19 @@ import {gql} from '@apollo/client';
 
 export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetNodeOrError(assetKey: $assetKey) {
+      __typename
+      ... on AssetNode {
+        id
+        autoMaterializePolicy {
+          rules {
+            description
+            decisionType
+          }
+        }
+      }
+    }
+
     autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
       ... on AutoMaterializeAssetEvaluationRecords {
         currentEvaluationId
@@ -32,6 +45,7 @@ export const GET_EVALUATIONS_QUERY = gql`
   fragment RuleWithEvaluationsFragment on AutoMaterializeRuleWithRuleEvaluations {
     rule {
       description
+      decisionType
     }
     ruleEvaluations {
       evaluationData {

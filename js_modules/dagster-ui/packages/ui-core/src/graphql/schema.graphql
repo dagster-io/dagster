@@ -725,6 +725,13 @@ enum AutoMaterializePolicyType {
 
 type AutoMaterializeRule {
   description: String!
+  decisionType: AutoMaterializeDecisionType!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
 }
 
 union AssetPartitionStatuses =
@@ -3087,7 +3094,7 @@ type AutoMaterializeAssetEvaluationRecord {
 }
 
 type AutoMaterializeRuleWithRuleEvaluations {
-  rule: AutoMaterializeRule
+  rule: AutoMaterializeRule!
   ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
 }
 

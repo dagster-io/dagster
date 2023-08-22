@@ -3,28 +3,57 @@ import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui-components'
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
+import {AutoMaterializeDecisionType} from '../../graphql/types';
 import {AssetKey} from '../types';
 
-import {AutomaterializeMiddlePanelNoPartitions} from './AutomaterializeMiddlePanelNoPartitions';
-import {AutomaterializeMiddlePanelWithPartitions} from './AutomaterializeMiddlePanelWithPartitions';
+import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
+import {AutomaterializeRunTag} from './AutomaterializeRunTag';
+import {RuleEvaluationOutcomes} from './Conditions';
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {EvaluationOrEmpty} from './types';
-import {GetEvaluationsQuery, GetEvaluationsQueryVariables} from './types/GetEvaluationsQuery.types';
+import {
+  GetEvaluationsQuery,
+  GetEvaluationsQueryVariables,
+  RuleWithEvaluationsFragment,
+} from './types/GetEvaluationsQuery.types';
 
 interface Props {
   assetKey: AssetKey;
   assetHasDefinedPartitions: boolean;
-  maxMaterializationsPerMinute: number;
   selectedEvaluationId: number | undefined;
 }
 
+const EMPTY: EvaluationOrEmpty = {
+  __typename: 'no_conditions_met',
+  evaluationId: 0,
+  amount: 0,
+  endTimestamp: 0,
+  startTimestamp: 0,
+};
+
+const extractRequestedPartitionKeys = (rulesWithEvaluations: RuleWithEvaluationsFragment[]) => {
+  let requested: string[] = [];
+  let skippedOrDiscarded: string[] = [];
+
+  rulesWithEvaluations.forEach(({rule, ruleEvaluations}) => {
+    const partitionKeys = ruleEvaluations.flatMap((e) =>
+      e.partitionKeysOrError?.__typename === 'PartitionKeys'
+        ? e.partitionKeysOrError.partitionKeys
+        : [],
+    );
+    if (rule.decisionType === AutoMaterializeDecisionType.MATERIALIZE) {
+      requested = requested.concat(partitionKeys);
+    } else {
+      skippedOrDiscarded = skippedOrDiscarded.concat(partitionKeys);
+    }
+  });
+
+  const skippedOrDiscardedSet = new Set(skippedOrDiscarded);
+  return new Set(requested.filter((partitionKey) => !skippedOrDiscardedSet.has(partitionKey)));
+};
+
 export const AutomaterializeMiddlePanel = (props: Props) => {
-  const {
-    assetKey,
-    assetHasDefinedPartitions,
-    maxMaterializationsPerMinute,
-    selectedEvaluationId,
-  } = props;
+  const {assetKey, assetHasDefinedPartitions, selectedEvaluationId} = props;
 
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
@@ -82,35 +111,56 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     );
   }
 
+  const rules =
+    (data?.assetNodeOrError.__typename === 'AssetNode' &&
+      data.assetNodeOrError.autoMaterializePolicy?.rules) ||
+    [];
+
   const evaluations = data?.autoMaterializeAssetEvaluationsOrError?.records || [];
-  const findSelectedEvaluation = (): EvaluationOrEmpty => {
-    const found = evaluations.find(
-      (evaluation) => evaluation.evaluationId === selectedEvaluationId,
-    );
+  const selectedEvaluation =
+    evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId) || EMPTY;
 
-    if (found) {
-      return found;
+  const runIds =
+    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
+      ? selectedEvaluation.runIds
+      : [];
+  const rulesWithRuleEvaluations =
+    selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
+      ? selectedEvaluation.rulesWithRuleEvaluations
+      : [];
+
+  const headerRight = () => {
+    if (runIds.length === 0) {
+      return null;
     }
-
-    return {
-      __typename: 'no_conditions_met',
-      evaluationId: 0,
-      amount: 0,
-      endTimestamp: 0,
-      startTimestamp: 0,
-    };
+    if (assetHasDefinedPartitions) {
+      return (
+        <AutomaterializeRequestedPartitionsLink
+          runIds={runIds}
+          partitionKeys={Array.from(extractRequestedPartitionKeys(rulesWithRuleEvaluations))}
+          intent="success"
+        />
+      );
+    }
+    return <AutomaterializeRunTag runId={runIds[0]!} />;
   };
 
-  const selectedEvaluation = findSelectedEvaluation();
-
-  if (assetHasDefinedPartitions) {
-    return (
-      <AutomaterializeMiddlePanelWithPartitions
-        selectedEvaluation={selectedEvaluation}
-        maxMaterializationsPerMinute={maxMaterializationsPerMinute}
+  return (
+    <Box flex={{direction: 'column', grow: 1}}>
+      <Box
+        style={{flex: '0 0 48px'}}
+        padding={{horizontal: 16}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        flex={{alignItems: 'center', justifyContent: 'space-between'}}
+      >
+        <Subheading>Result</Subheading>
+        <div>{headerRight()}</div>
+      </Box>
+      <RuleEvaluationOutcomes
+        rules={rules}
+        ruleEvaluations={rulesWithRuleEvaluations}
+        assetHasDefinedPartitions={assetHasDefinedPartitions}
       />
-    );
-  }
-
-  return <AutomaterializeMiddlePanelNoPartitions selectedEvaluation={selectedEvaluation} />;
+    </Box>
+  );
 };

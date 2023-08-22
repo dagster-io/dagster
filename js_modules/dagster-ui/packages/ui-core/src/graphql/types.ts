@@ -360,6 +360,12 @@ export type AutoMaterializeAssetEvaluationRecordsOrError =
   | AutoMaterializeAssetEvaluationNeedsMigrationError
   | AutoMaterializeAssetEvaluationRecords;
 
+export enum AutoMaterializeDecisionType {
+  DISCARD = 'DISCARD',
+  MATERIALIZE = 'MATERIALIZE',
+  SKIP = 'SKIP',
+}
+
 export type AutoMaterializePolicy = {
   __typename: 'AutoMaterializePolicy';
   maxMaterializationsPerMinute: Maybe<Scalars['Int']>;
@@ -374,6 +380,7 @@ export enum AutoMaterializePolicyType {
 
 export type AutoMaterializeRule = {
   __typename: 'AutoMaterializeRule';
+  decisionType: AutoMaterializeDecisionType;
   description: Scalars['String'];
 };
 
@@ -390,7 +397,7 @@ export type AutoMaterializeRuleEvaluationData =
 
 export type AutoMaterializeRuleWithRuleEvaluations = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
-  rule: Maybe<AutoMaterializeRule>;
+  rule: AutoMaterializeRule;
   ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
 };
 
@@ -4835,6 +4842,10 @@ export const buildAutoMaterializeRule = (
   relationshipsToOmit.add('AutoMaterializeRule');
   return {
     __typename: 'AutoMaterializeRule',
+    decisionType:
+      overrides && overrides.hasOwnProperty('decisionType')
+        ? overrides.decisionType!
+        : AutoMaterializeDecisionType.DISCARD,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
   };
