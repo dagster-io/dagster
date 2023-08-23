@@ -148,10 +148,12 @@ const RightElementForEvaluations = ({
     case 'WaitingOnKeysRuleEvaluationData':
       return <WaitingOnAssetKeysLink assetKeys={first.waitingOnAssetKeys || []} />;
     case 'TextRuleEvaluationData':
-      return first.text;
+      return <span>{first.text}</span>;
     default:
       assertUnreachable(first);
   }
+
+  return <span />;
 };
 
 const partitionKeysOf = (e: AutoMaterializeRuleEvaluation) =>
@@ -167,7 +169,7 @@ const RightElementForPartitionedEvaluations = ({
   intent?: React.ComponentProps<typeof Tag>['intent'];
 }) => {
   const evaluationsWithData = evaluations.filter((e) => !!e.evaluationData);
-  const first = evaluationsWithData[0];
+  const first = evaluationsWithData[0]?.evaluationData;
   if (!first) {
     const partitionKeys = evaluations.flatMap(partitionKeysOf);
     return partitionKeys.length ? (
@@ -177,7 +179,7 @@ const RightElementForPartitionedEvaluations = ({
     );
   }
 
-  const typename = first.evaluationData!.__typename;
+  const typename = first.__typename;
   switch (typename) {
     case 'ParentMaterializedRuleEvaluationData':
       const updatedAssetKeys = Object.fromEntries(
@@ -220,7 +222,7 @@ const RightElementForPartitionedEvaluations = ({
       );
       return <WaitingOnAssetKeysPartitionLink assetKeysByPartition={assetKeysByPartition} />;
     case 'TextRuleEvaluationData':
-      return first.evaluationData?.text;
+      return <span>{first.text}</span>;
     default:
       assertUnreachable(typename);
   }

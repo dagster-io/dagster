@@ -118,6 +118,7 @@ export type SidebarAssetFragment = {
   } | null;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
     rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
   } | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
@@ -15676,6 +15677,7 @@ export type SidebarAssetQuery = {
         } | null;
         autoMaterializePolicy: {
           __typename: 'AutoMaterializePolicy';
+          policyType: Types.AutoMaterializePolicyType;
           rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
         } | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
