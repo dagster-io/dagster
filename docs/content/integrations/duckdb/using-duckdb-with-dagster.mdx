@@ -7,15 +7,20 @@ description: Store your Dagster assets in DuckDB
 
 This tutorial focuses on creating and interacting with DuckDB tables using Dagster's [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets).
 
-The `dagster-duckdb` library provides two ways to interact with DuckDB tables. The [resource](/concepts/resources) allows you to directly run SQL queries against tables within an asset's compute function. The [I/O manager](/concepts/io-management/io-managers) transfers the responsibility of storing and loading DataFrames as DuckDB tables to Dagster.
+The `dagster-duckdb` library provides two ways to interact with DuckDB tables:
+- [Resource](/concepts/resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject module="dagster_duckdb" object="DuckDBResource" />.
+- [I/O manager](/concepts/io-management/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as DuckdB tables to Dagster. Available I/O managers: <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />, <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />.
 
-This tutorial is divided in two parts. Both parts will create the same assets, but how the data is stored in DuckDB will differ. In [Part 1](#part-1-using-the-duckdb-resource) you will:
+This tutorial is divided into two sections to demonstrate the differences between the DuckDB resource and the DuckDB I/O manager. Each section will create the same assets, but the first section will use the DuckDB resource to store data in DuckDB, whereas the second section will use the DuckDB I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. See [When to use I/O managers](/concepts/io-management/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources.
+
+In [Option 1](#option-1-using-the-duckdb-resource) you will:
 
 - Set up and configure the DuckDB resource.
 - Use the DuckDB resource to execute a SQL query to create a table.
 - Use the DuckDB resource to execute a SQL query to interact with the table.
 
-In [Part 2](#part-2-using-the-duckdb-io-manager) you will:
+
+In [Option 2](#option-2-using-the-duckdb-io-manager) you will:
 
 - Set up and configure the DuckDB I/O manager.
 - Use Pandas to create a DataFrame, then delegate responsibility creating a table to the DuckDB I/O manager.
