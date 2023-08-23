@@ -2,6 +2,46 @@
 
 # 1.4.7 / 0.20.7 (libraries)
 
+### New
+
+- A new `@partitioned_config` decorator has been added for defined configuration for partitioned jobs. Thanks @danielgafni!
+- [dagster-aws] The `ConfigurablePickledObjectS3IOManager` has been renamed `S3PickleIOManager` for simplicity. The `ConfigurablePickledObjecS3IOManager` will continue to be available but is considered deprecated in favor of `S3PickleIOManager`. There is no change in the functionality of the I/O manager.
+- [dagster-azure] The `ConfigurablePickledObjectADLS2IOManager` has been renamed `ADLS2PickleIOManager` for simplicity. The `ConfigurablePickledObjectADLS2IOManager` will continue to be available but is considered deprecated in favor of `ADLS2PickleIOManager`. There is no change in the functionality of the I/O manager.
+- [dagster-dbt] When an exception is raised when invoking a dbt command using `DbtCliResource`, the exception message now includes a link to the `dbt.log` produced. This log file can be inspected for debugging.
+- [dagster-gcp] The `ConfigurablePickledObjectGCSIOManager` has been renamed `GCSPickleIOManager` for simplicity. The `ConfigurablePickledObjecGCSIOManager` will continue to be available but is considered deprecated in favor of `GCSPickleIOManager`. There is no change in the functionality of the I/O manager.
+
+### Bugfixes
+
+- Fixed a bug that caused a `DagsterInvariantViolationError` when executing a multi-asset where both assets have self-dependencies on earlier partitions.
+- Fixed an asset backfill issue where some runs continue to be submitted after a backfill is requested for cancellation.
+- [dagster-dbt] Fixed an issue where using the `--debug` flag raised an exception in the Dagster framework.
+- [ui] “Launched run” and “Launched backfill” toasts in the Dagster UI behave the same way. To open in a new tab, hold the cmd/ctrl key when clicking “View”
+- [ui] When opening step compute logs, the view defaults to `stderr` which aligns with Python’s logging defaults.
+- [ui] When viewing a global asset graph with more than 100 assets, the “choose a subset to display” prompt is correctly aligned to the query input.
+
+
+### Community Contributions
+
+- Fix for loading assets with a `BackfillPolicy`, thanks @ruizh22!
+
+### Experimental
+
+- [dagster-graphql] The Dagster GraphQL Python client now includes a default timeout of 300 seconds for each query, to ensure that GraphQL requests don’t hang and never return a response. If you are running a query that is expected to take longer than 300 seconds, you can set the `timeout` argument when constructing a `DagsterGraphQLClient`.
+- [ui] We are continuing to improve the new horizontal rendering of the asset graph, which you can enable in Settings. This release increases spacing between nodes and improves the traceability of arrows on the graph.
+
+### Documentation
+
+- Several Pythonic resources and I/O managers now have API docs entries.
+- Updated the tutorial’s example project and content to be more explicit about resources.
+- [dagster-dbt] Added API docs examples for `DbtCliResource` and `DbtCliResource.cli(...)`.
+- Some code samples in API docs for `InputContext` and `OutputContext` have been fixed. Thanks @Sergey Mezentsev!
+
+### Dagster Cloud
+
+- When setting up a new organization by importing a dbt project, using GitLab is now supported.
+
+# 1.4.7 / 0.20.7 (libraries)
+
 ### Experimental
 - Added a `respect_materialization_data_versions` option to auto materialization. It can enabled in `dagster.yaml` with
 
