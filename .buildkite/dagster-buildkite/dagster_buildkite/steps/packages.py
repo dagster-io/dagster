@@ -471,7 +471,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "GOOGLE_APPLICATION_CREDENTIALS",
         ],
         pytest_extra_cmds=airflow_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=[
             "default-airflow1",
             "localdb-airflow1",
@@ -493,7 +492,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-celery",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
         unsupported_python_versions=[
             AvailablePythonVersion.V3_11,  # no celery support for 3.11
         ],
@@ -588,7 +586,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "old_kubernetes",
         ],
         pytest_extra_cmds=k8s_extra_cmds,
-        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-mlflow",
