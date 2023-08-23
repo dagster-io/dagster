@@ -27,6 +27,9 @@ from ..base_scenario import (
     single_asset_run,
 )
 from .basic_scenarios import diamond
+from .exotic_partition_mapping_scenarios import (
+    one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+)
 from .freshness_policy_scenarios import (
     daily_to_unpartitioned,
     overlapping_freshness_inf,
@@ -36,9 +39,9 @@ from .partition_scenarios import (
     hourly_to_daily_partitions,
     two_assets_in_sequence_one_partition,
     two_partitions_partitions_def,
-    partitioned_after_non_partitioned,
     unpartitioned_with_one_parent_partitioned,
 )
+
 
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
@@ -50,6 +53,7 @@ def with_auto_materialize_policy(
     for assets_def in assets_defs:
         ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
     return ret
+
 
 lazy_assets_nothing_dep = [
     asset_def("asset1"),
@@ -134,11 +138,22 @@ partitioned_to_unpartitioned_allow_missing_parent = [
     ),
 ]
 
-unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated = with_auto_materialize_policy(
-    unpartitioned_with_one_parent_partitioned,
-    AutoMaterializePolicy.eager().with_rules(
-        AutoMaterializeRule.skip_on_not_all_parents_updated(),
-    ),
+unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated = (
+    with_auto_materialize_policy(
+        unpartitioned_with_one_parent_partitioned,
+        AutoMaterializePolicy.eager().with_rules(
+            AutoMaterializeRule.skip_on_not_all_parents_updated(),
+        ),
+    )
+)
+
+one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated = (
+    with_auto_materialize_policy(
+        one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
+        AutoMaterializePolicy.eager().with_rules(
+            AutoMaterializeRule.skip_on_not_all_parents_updated()
+        ),
+    )
 )
 
 
@@ -717,8 +732,30 @@ auto_materialize_policy_scenarios = {
             current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
             expected_run_requests=[run_request(["asset3"])],
         ),
-        unevaluated_runs=[run(["asset1"], "2020-01-01"), run(["asset1"], "2020-01-02"), run(["asset2"])],
+        unevaluated_runs=[
+            run(["asset1"], "2020-01-01"),
+            run(["asset1"], "2020-01-02"),
+            run(["asset2"]),
+        ],
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
         expected_run_requests=[run_request(["asset3"])],
+    ),
+    "test_wait_for_all_parents_updated_one_upstream_starts_later_than_downstream": AssetReconciliationScenario(
+        assets=one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated,
+        cursor_from=AssetReconciliationScenario(
+            assets=one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated,
+            cursor_from=AssetReconciliationScenario(
+                assets=one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated,
+                unevaluated_runs=[run(["asset2"], partition_key="2023-01-01-00:00")],
+                current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+                expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-00:00")],
+            ),
+            unevaluated_runs=[run(["asset1"], "2023-01-01-03:00")],
+            current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["asset2"], "2023-01-01-03:00")],
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-03:00")],
     ),
 }
