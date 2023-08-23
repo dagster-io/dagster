@@ -40,6 +40,26 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 ---
 
+## Scaffolding a Dagster project from a dbt project
+
+<Note>
+  Check out{" "}
+  <a href="/integrations/dbt/using-dbt-with-dagster/load-dbt-models">
+    part two of the dbt + Dagster tutorial
+  </a>{" "}
+  to see this concept in context.
+</Note>
+
+You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface.
+
+```shell
+dagster-dbt project scaffold --project-name project_dagster --dbt-project-dir path/to/dbt/project
+```
+
+This creates a directory called `project_dagster/` inside the current directory. The `project_dagster/` directory contains a set of files that define a Dagster project that loads the dbt project at the path defined by `--dbt-project-dir`. The path to the dbt project must contain a `dbt_project.yml`.
+
+---
+
 ## Loading dbt models from a dbt project
 
 The `dagster-dbt` library offers two methods of loading dbt models from a project into Dagster:
