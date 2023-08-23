@@ -3,8 +3,10 @@ import * as React from 'react';
 
 import {Box} from '../Box';
 import {Colors} from '../Colors';
-import {IconNames, Icon} from '../Icon';
+import {IconNames as _iconNames, Icon} from '../Icon';
 import {Tooltip} from '../Tooltip';
+
+const IconNames = _iconNames.slice().sort();
 
 // eslint-disable-next-line import/no-default-export
 export default {
