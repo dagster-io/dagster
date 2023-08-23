@@ -778,6 +778,7 @@ def test_enum_complex() -> None:
     class AnOpConfig(Config):
         an_optional_enum: Optional[MyEnum]
         an_enum_list: List[MyEnum]
+        a_defaulted_enum: MyEnum = MyEnum.FOO
 
     executed = {}
 
@@ -785,6 +786,41 @@ def test_enum_complex() -> None:
     def a_struct_config_op(config: AnOpConfig):
         assert config.an_optional_enum is None
         assert config.an_enum_list == [MyEnum.FOO, MyEnum.BAR]
+        assert config.a_defaulted_enum == MyEnum.FOO
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"an_enum_list": ["FOO", "BAR"]}}}}
+    )
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"an_enum_list": ["FOO", "BAZ"]}}}}
+        )
+
+
+def test_enum_complex_use_enum_values() -> None:
+    class MyEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class AnOpConfig(Config, use_enum_values=True):
+        an_optional_enum: Optional[MyEnum]
+        an_enum_list: List[MyEnum]
+        a_defaulted_enum: MyEnum = MyEnum.FOO
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert config.an_optional_enum is None
+        assert config.an_enum_list == ["foo", "bar"]
+        assert config.a_defaulted_enum == "foo"
         executed["yes"] = True
 
     @job
