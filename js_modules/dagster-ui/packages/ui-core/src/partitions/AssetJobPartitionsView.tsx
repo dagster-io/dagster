@@ -6,10 +6,10 @@ import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
   mergedAssetHealth,
-  explodePartitionKeysInSelection,
+  explodePartitionKeysInSelectionMatching,
   isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
-import {usePartitionHealthData} from '../assets/usePartitionHealthData';
+import {keyCountInSelections, usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -49,12 +49,14 @@ export const AssetJobPartitionsView: React.FC<{
       selectedRanges: [allPartitionsRange(d)],
       dimension: d,
     }));
-    const allKeys = explodePartitionKeysInSelection(selection, merged.stateForKey);
+    const missing = explodePartitionKeysInSelectionMatching(selection, (dIdxs) =>
+      merged.stateForKeyIdx(dIdxs).includes(AssetPartitionStatus.MISSING),
+    );
 
     return {
       merged,
-      total: allKeys.length,
-      missing: allKeys.filter((p) => p.state.includes(AssetPartitionStatus.MISSING)).length,
+      total: keyCountInSelections(selection),
+      missing: missing.length,
     };
   }, [assetHealth]);
 
