@@ -1115,6 +1115,18 @@ def open_server_process(
     if loadable_target_origin:
         subprocess_args += loadable_target_origin.get_cli_args()
 
+    env = {
+        **(env or os.environ),
+    }
+
+    # Unset click environment variables in the current environment
+    # that might conflict with arguments that we're using
+    if port and "DAGSTER_GRPC_SOCKET" in env:
+        del env["DAGSTER_GRPC_SOCKET"]
+
+    if socket and "DAGSTER_GRPC_PORT" in env:
+        del env["DAGSTER_GRPC_PORT"]
+
     server_process = open_ipc_subprocess(subprocess_args, cwd=cwd, env=env)
 
     from dagster._grpc.client import DagsterGrpcClient
