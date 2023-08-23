@@ -8,7 +8,7 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ContextManager, Iterable, Iterator, Optional, Sequence
+from typing import TYPE_CHECKING, Any, ContextManager, Iterator, Optional, Sequence
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -263,12 +263,12 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, None)
 
-    def get_event_records(
+    def _get_event_records(
         self,
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable[EventLogRecord]:
+    ) -> Sequence[EventLogRecord]:
         """Overridden method to enable cross-run event queries in sqlite.
 
         The record id in sqlite does not auto increment cross runs, so instead of fetching events
