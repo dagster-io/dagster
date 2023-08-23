@@ -7,6 +7,7 @@ from dagster._core.definitions.auto_materialize_policy import (
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
     AutoMaterializeRule,
+    DiscardOnMaxMaterializationsExceededRule,
 )
 
 from .util import non_null_list
@@ -15,8 +16,8 @@ GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDec
 
 
 class GrapheneAutoMaterializeRule(graphene.ObjectType):
+    description = graphene.NonNull(graphene.String)
     decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
-    description = graphene.String()
 
     class Meta:
         name = "AutoMaterializeRule"
@@ -40,8 +41,19 @@ class GrapheneAutoMaterializePolicy(graphene.ObjectType):
         auto_materialize_policy = check.inst_param(
             auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
         )
+        # for now, we don't represent the max materializations per minute rule as a proper
+        # rule in the serialized AutoMaterializePolicy object, but do so in the GraphQL layer
+        rules = [GrapheneAutoMaterializeRule(rule) for rule in auto_materialize_policy.rules]
+        if auto_materialize_policy.max_materializations_per_minute:
+            rules.append(
+                GrapheneAutoMaterializeRule(
+                    DiscardOnMaxMaterializationsExceededRule(
+                        limit=auto_materialize_policy.max_materializations_per_minute
+                    )
+                )
+            )
         super().__init__(
-            rules=[GrapheneAutoMaterializeRule(rule) for rule in auto_materialize_policy.rules],
+            rules=rules,
             policyType=auto_materialize_policy.policy_type,
             maxMaterializationsPerMinute=auto_materialize_policy.max_materializations_per_minute,
         )
