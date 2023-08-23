@@ -26,6 +26,7 @@ from dagster import (
     graph_asset,
     graph_multi_asset,
     io_manager,
+    materialize,
     materialize_to_memory,
     op,
     resource,
@@ -1213,3 +1214,29 @@ def test_error_on_asset_key_provided():
         @asset(key="the_asset", name="foo", key_prefix="bar")
         def three():
             ...
+
+
+def test_dynamic_graph_asset_ins():
+    @op(ins={"start_after": In(Nothing)})
+    def start_job():
+        return "x"
+
+    @op
+    def wait_until_job_done(x):
+        return x
+
+    @asset
+    def foo():
+        ...
+
+    all_assets = [foo]
+
+    @graph_asset(
+        ins={asset.key.path[-1]: AssetIn(asset.key) for asset in all_assets},
+    )
+    def some_graph_asset(**kwargs):
+        # block starting job til "all assets" are materialized
+        run_id = start_job([v for v in kwargs.values()])
+        return wait_until_job_done(run_id)
+
+    assert materialize([some_graph_asset, foo]).success
