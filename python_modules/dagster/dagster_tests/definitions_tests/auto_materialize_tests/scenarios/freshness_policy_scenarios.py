@@ -5,16 +5,17 @@ from dagster import (
     DailyPartitionsDefinition,
     SourceAsset,
 )
-from dagster._core.definitions.auto_materialize_condition import (
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
-    ParentMaterializedAutoMaterializeCondition,
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    ParentUpdatedRuleEvaluationData,
+    TextRuleEvaluationData,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from ..base_scenario import (
+    AssetEvaluationSpec,
     AssetReconciliationScenario,
     asset_def,
     multi_asset_def,
@@ -223,12 +224,28 @@ freshness_policy_scenarios = {
         evaluation_delta=datetime.timedelta(minutes=35),
         # now that it's been awhile since that run failed, give it another attempt
         expected_run_requests=[run_request(asset_keys=["asset1", "asset2", "asset3", "asset4"])],
-        expected_conditions={
-            "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset4": {FreshnessAutoMaterializeCondition()},
-        },
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset1",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset2",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset3",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset4",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by this asset's policy"),
+            ),
+        ],
     ),
     "freshness_root_failure": AssetReconciliationScenario(
         assets=diamond_freshness,
@@ -342,28 +359,54 @@ freshness_policy_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["asset1", "asset2", "asset3", "asset4", "asset5"])
         ],
-        expected_conditions={
-            "asset1": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset3": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset5": {FreshnessAutoMaterializeCondition()},
-            "asset4": {
-                ParentMaterializedAutoMaterializeCondition(
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset1",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset2",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset3",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset4",
+                AutoMaterializeRule.materialize_on_parent_updated(),
+                ParentUpdatedRuleEvaluationData(
                     updated_asset_keys=frozenset(),
                     will_update_asset_keys=frozenset([AssetKey("asset1")]),
-                )
-            },
-        },
+                ),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset5",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by this asset's policy"),
+            ),
+        ],
     ),
     "freshness_subsettable_multi_asset_on_top": AssetReconciliationScenario(
         assets=subsettable_multi_asset_on_top,
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
         evaluation_delta=datetime.timedelta(minutes=35),
         expected_run_requests=[run_request(asset_keys=["asset2", "asset5"])],
-        expected_conditions={
-            "asset2": {DownstreamFreshnessAutoMaterializeCondition()},
-            "asset5": {FreshnessAutoMaterializeCondition()},
-        },
+        expected_evaluations=[
+            AssetEvaluationSpec.from_single_rule(
+                "asset2",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by downstream asset's policy"),
+            ),
+            AssetEvaluationSpec.from_single_rule(
+                "asset5",
+                AutoMaterializeRule.materialize_on_required_for_freshness(),
+                TextRuleEvaluationData("Required by this asset's policy"),
+            ),
+        ],
     ),
     "freshness_complex_subsettable": AssetReconciliationScenario(
         assets=subsettable_multi_asset_complex,
