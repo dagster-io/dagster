@@ -433,7 +433,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
-            {'icon' in known && (
+            {known && 'icon' in known && (
               <OpTagIconWrapper
                 role="img"
                 $size={16}
