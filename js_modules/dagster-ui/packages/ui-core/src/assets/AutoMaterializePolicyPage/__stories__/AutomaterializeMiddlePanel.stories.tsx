@@ -34,7 +34,7 @@ export const WithoutPartitions = () => {
   return (
     <MockedProvider
       mocks={[
-        Evaluations.Single(path, true),
+        Evaluations.Single(path, `${TEST_EVALUATION_ID + 1}`),
         buildRunStatusOnlyQuery('abcdef12', RunStatus.STARTED),
       ]}
     >
@@ -53,7 +53,7 @@ export const WithPartitions = () => {
   return (
     <MockedProvider
       mocks={[
-        Evaluations.SinglePartitioned(path, true),
+        Evaluations.SinglePartitioned(path, `${TEST_EVALUATION_ID + 1}`),
         buildRunStatusOnlyQuery('abcdef12', RunStatus.STARTED),
       ]}
     >

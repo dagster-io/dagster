@@ -271,14 +271,12 @@ export const DISCARD_RULE = buildAutoMaterializeRule({
 });
 
 export const Evaluations = {
-  None: (assetKeyPath: string[]) => {
+  None: (assetKeyPath: string[], single?: boolean) => {
     return buildGetEvaluationsQuery({
       variables: {
-        assetKey: {
-          path: assetKeyPath,
-        },
-        cursor: undefined,
-        limit: PAGE_SIZE + 1,
+        assetKey: {path: assetKeyPath},
+        cursor: single ? '2' : undefined,
+        limit: (single ? 1 : PAGE_SIZE) + 1,
       },
       data: {
         assetNodeOrError: buildAssetNode({
@@ -297,7 +295,7 @@ export const Evaluations = {
     return buildGetEvaluationsQuery({
       variables: {
         assetKey: {path: assetKeyPath},
-        cursor: undefined,
+        cursor: single ? '2' : undefined,
         limit: (single ? 1 : PAGE_SIZE) + 1,
       },
       data: {
@@ -314,11 +312,11 @@ export const Evaluations = {
       },
     });
   },
-  Single: (assetKeyPath?: string[], testEvaluationSelected?: boolean) => {
+  Single: (assetKeyPath?: string[], cursor?: string) => {
     return buildGetEvaluationsQuery({
       variables: {
         assetKey: {path: assetKeyPath || ['test']},
-        cursor: testEvaluationSelected ? `${TEST_EVALUATION_ID + 1}` : undefined,
+        cursor,
         limit: 2,
       },
       data: {
@@ -328,17 +326,16 @@ export const Evaluations = {
           }),
         }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          currentEvaluationId: 1000,
           records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_NO_PARTITIONS] : [],
         }),
       },
     });
   },
-  SinglePartitioned: (assetKeyPath: string[], testEvaluationSelected?: boolean) => {
+  SinglePartitioned: (assetKeyPath: string[], cursor?: string) => {
     return buildGetEvaluationsQuery({
       variables: {
         assetKey: {path: assetKeyPath},
-        cursor: testEvaluationSelected ? `${TEST_EVALUATION_ID + 1}` : undefined,
+        cursor,
         limit: 2,
       },
       data: {
@@ -348,7 +345,6 @@ export const Evaluations = {
           }),
         }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          currentEvaluationId: 1000,
           records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_WITH_PARTITIONS] : [],
         }),
       },
@@ -368,7 +364,6 @@ export const Evaluations = {
           }),
         }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          currentEvaluationId: 1000,
           records: buildEvaluationRecordsWithPartitions(),
         }),
       },

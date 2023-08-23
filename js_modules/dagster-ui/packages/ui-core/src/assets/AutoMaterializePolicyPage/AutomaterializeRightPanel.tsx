@@ -34,11 +34,7 @@ interface Props {
 export const AutomaterializeRightPanel = ({assetKey}: Props) => {
   const queryResult = useQuery<GetPolicyInfoQuery, GetPolicyInfoQueryVariables>(
     GET_POLICY_INFO_QUERY,
-    {
-      variables: {
-        assetKey,
-      },
-    },
+    {variables: {assetKey}},
   );
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
