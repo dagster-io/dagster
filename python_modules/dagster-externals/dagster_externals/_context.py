@@ -30,16 +30,30 @@ def is_dagster_orchestration_active() -> bool:
     return bool(os.getenv(DAGSTER_EXTERNALS_ENV_KEYS["is_orchestration_active"]))
 
 
-def init_dagster_externals() -> "ExternalExecutionContext":
+class OutboundNotificationStream:
+    def send_notification(self, notification: Notification) -> None:
+        raise NotImplementedError()
+
+class SynchronousTextIOOutboundNotificationStream(OutboundNotificationStream):
+    def __init__(self, output_stream: TextIO)
+        self._output_stream = output_stream
+
+    def send_notification(self, notification: Notification) -> None:
+        self._output_stream.write(json.dumps(notification) + "\n")
+        self._output_stream.flush()
+
+def init_dagster_externals(outbound_notif_stream: Optional[OutboundNotificationStream] = None) -> "ExternalExecutionContext":
     if ExternalExecutionContext.is_initialized():
         return ExternalExecutionContext.get()
 
     if is_dagster_orchestration_active():
         params = get_external_execution_params()
         data = _read_input(params.input_path)
-        output_stream = _get_output_stream(params.output_path)
-        atexit.register(_close_stream, output_stream)
-        context = ExternalExecutionContext(data, output_stream)
+        if outbound_notif_stream is None:
+            output_stream = _get_output_stream(params.output_path)
+            atexit.register(_close_stream, output_stream)
+            outbound_notif_stream = SynchronousTextIOOutboundNotificationStream(output_stream)
+        context = ExternalExecutionContext(data, outbound_notif_stream)
     else:
         from unittest.mock import MagicMock
 
@@ -85,14 +99,13 @@ class ExternalExecutionContext:
             )
         return cls._instance
 
-    def __init__(self, data: ExternalExecutionContextData, output_stream: TextIO) -> None:
+    def __init__(self, data: ExternalExecutionContextData, outbound_notif_stream: OutboundNotificationStream) -> None:
         self._data = data
-        self._output_stream = output_stream
+        self._outbound_notif_stream = outbound_notif_stream
 
     def _send_notification(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         notification = Notification(method=method, params=params)
-        self._output_stream.write(json.dumps(notification) + "\n")
-        self._output_stream.flush()
+        self._outbound_notif_stream.send_notification(notification)
 
     # ########################
     # ##### PUBLIC API
