@@ -8,8 +8,8 @@ import {AssetKey} from '../types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {AutomaterializeRunTag} from './AutomaterializeRunTag';
-import {RuleEvaluationOutcomes} from './Conditions';
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
+import {RuleEvaluationOutcomes} from './RuleEvaluationOutcomes';
 import {EvaluationOrEmpty} from './types';
 import {
   GetEvaluationsQuery,

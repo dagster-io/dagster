@@ -14,7 +14,7 @@ import {CollapsibleSection} from './CollapsibleSection';
 import {ParentUpdatedLink} from './ParentUpdatedLink';
 import {ParentUpdatedPartitionLink} from './ParentUpdatedPartitionLink';
 import {WaitingOnAssetKeysLink} from './WaitingOnAssetKeysLink';
-import {WaitingOnPartitionAssetKeysLink} from './WaitingOnPartitionAssetKeysLink';
+import {WaitingOnAssetKeysPartitionLink} from './WaitingOnAssetKeysPartitionLink';
 import {RuleWithEvaluationsFragment} from './types/GetEvaluationsQuery.types';
 
 interface RuleEvaluationOutcomeProps {
@@ -46,20 +46,18 @@ const SECTIONS: {
   header: string;
   details: string;
   intent?: React.ComponentProps<typeof Tag>['intent'];
-  showAlways: boolean;
+  partitionedOnly?: boolean;
 }[] = [
   {
     decisionType: AutoMaterializeDecisionType.MATERIALIZE,
     header: 'Materialization conditions met',
     details:
       'These conditions trigger a materialization, unless they are blocked by a skip or discard condition.',
-    showAlways: true,
   },
   {
     decisionType: AutoMaterializeDecisionType.SKIP,
     header: 'Skip conditions met',
     details: 'Skips will materialize in a future evaluation, once the skip condition is resolved.',
-    showAlways: true,
   },
   {
     decisionType: AutoMaterializeDecisionType.DISCARD,
@@ -67,7 +65,7 @@ const SECTIONS: {
     details:
       'Discarded partitions will not be materialized unless new materialization conditions occur. You may want to run a manual backfill to respond to the materialize conditions.',
     intent: 'danger',
-    showAlways: false,
+    partitionedOnly: true,
   },
 ];
 
@@ -83,47 +81,48 @@ export const RuleEvaluationOutcomes = ({
   assetHasDefinedPartitions,
 }: RuleEvaluationOutcomesProps) => {
   const groupedRules = groupBy(rules, (rule) => rule.decisionType);
-  const evaluationsOfRule = (description: string) => {
-    return ruleEvaluations.find((e) => e.rule?.description === description)?.ruleEvaluations || [];
-  };
 
   return (
     <>
-      {SECTIONS.filter((section) => section.showAlways || groupedRules[section.decisionType]).map(
-        (section) => (
-          <CollapsibleSection
-            key={section.decisionType}
-            header={section.header}
-            details={section.details}
-          >
-            <Box flex={{direction: 'column', gap: 8}}>
-              {(groupedRules[section.decisionType] || []).map(({description}) => {
-                const evaluations = evaluationsOfRule(description);
-                return (
-                  <RuleEvaluationOutcome
-                    key={description}
-                    text={description}
-                    met={evaluations.length > 0}
-                    rightElement={
-                      assetHasDefinedPartitions ? (
-                        <RightElementForPartitionedEvaluations
-                          evaluations={evaluations}
-                          intent={section.intent}
-                        />
-                      ) : (
-                        <RightElementForEvaluations
-                          evaluations={evaluations}
-                          intent={section.intent}
-                        />
-                      )
-                    }
-                  />
-                );
-              })}
-            </Box>
-          </CollapsibleSection>
-        ),
-      )}
+      {SECTIONS.filter(
+        (section) =>
+          groupedRules[section.decisionType] &&
+          (assetHasDefinedPartitions || !section.partitionedOnly),
+      ).map((section) => (
+        <CollapsibleSection
+          key={section.decisionType}
+          header={section.header}
+          details={section.details}
+        >
+          <Box flex={{direction: 'column', gap: 8}}>
+            {(groupedRules[section.decisionType] || []).map(({description}) => {
+              const evaluations =
+                ruleEvaluations.find((e) => e.rule?.description === description)?.ruleEvaluations ||
+                [];
+              return (
+                <RuleEvaluationOutcome
+                  key={description}
+                  text={description}
+                  met={evaluations.length > 0}
+                  rightElement={
+                    assetHasDefinedPartitions ? (
+                      <RightElementForPartitionedEvaluations
+                        evaluations={evaluations}
+                        intent={section.intent}
+                      />
+                    ) : (
+                      <RightElementForEvaluations
+                        evaluations={evaluations}
+                        intent={section.intent}
+                      />
+                    )
+                  }
+                />
+              );
+            })}
+          </Box>
+        </CollapsibleSection>
+      ))}
     </>
   );
 };
@@ -134,7 +133,6 @@ const RightElementForEvaluations = ({
   evaluations: AutoMaterializeRuleEvaluation[];
   intent?: React.ComponentProps<typeof Tag>['intent'];
 }) => {
-  console.log(evaluations);
   const first = evaluations.map((e) => e.evaluationData!).find(Boolean);
   if (!first) {
     return <div style={{color: Colors.Gray400}}>&ndash;</div>;
@@ -169,18 +167,17 @@ const RightElementForPartitionedEvaluations = ({
   intent?: React.ComponentProps<typeof Tag>['intent'];
 }) => {
   const evaluationsWithData = evaluations.filter((e) => !!e.evaluationData);
-  const first = evaluations[0];
+  const first = evaluationsWithData[0];
   if (!first) {
-    return (
-      <AutomaterializeRequestedPartitionsLink
-        partitionKeys={evaluations.flatMap(partitionKeysOf)}
-        intent={intent}
-      />
+    const partitionKeys = evaluations.flatMap(partitionKeysOf);
+    return partitionKeys.length ? (
+      <AutomaterializeRequestedPartitionsLink partitionKeys={partitionKeys} intent={intent} />
+    ) : (
+      <div style={{color: Colors.Gray400}}>&ndash;</div>
     );
   }
 
   const typename = first.evaluationData!.__typename;
-
   switch (typename) {
     case 'ParentMaterializedRuleEvaluationData':
       const updatedAssetKeys = Object.fromEntries(
@@ -221,7 +218,7 @@ const RightElementForPartitionedEvaluations = ({
           ]),
         ),
       );
-      return <WaitingOnPartitionAssetKeysLink assetKeysByPartition={assetKeysByPartition} />;
+      return <WaitingOnAssetKeysPartitionLink assetKeysByPartition={assetKeysByPartition} />;
     case 'TextRuleEvaluationData':
       return first.evaluationData?.text;
     default:

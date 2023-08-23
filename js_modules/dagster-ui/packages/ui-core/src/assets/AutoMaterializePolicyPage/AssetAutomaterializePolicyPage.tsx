@@ -75,8 +75,6 @@ export const AssetAutomaterializePolicyPage = ({
     );
   }, [selectedEvaluationId, isFirstPage, evaluationsIncludingEmpty]);
 
-  const [maxMaterializationsPerMinute, setMaxMaterializationsPerMinute] = React.useState(1);
-
   return (
     <AutomaterializePage
       style={{flex: 1, minHeight: 0, color: Colors.Gray700, overflow: 'hidden'}}
@@ -119,10 +117,7 @@ export const AssetAutomaterializePolicyPage = ({
         </Box>
       </Box>
       <Box border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-        <AutomaterializeRightPanel
-          assetKey={assetKey}
-          setMaxMaterializationsPerMinute={setMaxMaterializationsPerMinute}
-        />
+        <AutomaterializeRightPanel assetKey={assetKey} />
       </Box>
     </AutomaterializePage>
   );
