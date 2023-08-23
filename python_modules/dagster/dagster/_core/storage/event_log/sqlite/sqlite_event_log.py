@@ -282,7 +282,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if is_asset_query:
             # asset materializations, observations and materialization planned events
             # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
-            return super(SqliteEventLogStorage, self).get_event_records(
+            return super(SqliteEventLogStorage, self)._get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
