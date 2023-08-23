@@ -3,14 +3,18 @@ import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui-components'
 import * as React from 'react';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
-import {AutoMaterializeDecisionType} from '../../graphql/types';
+import {
+  AutoMaterializeAssetEvaluationRecord,
+  AutoMaterializeDecisionType,
+  AutoMaterializeRule,
+} from '../../graphql/types';
 import {AssetKey} from '../types';
 
 import {AutomaterializeRequestedPartitionsLink} from './AutomaterializeRequestedPartitionsLink';
 import {AutomaterializeRunTag} from './AutomaterializeRunTag';
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {RuleEvaluationOutcomes} from './RuleEvaluationOutcomes';
-import {EvaluationOrEmpty} from './types';
+import {EvaluationOrEmpty, NoConditionsMetEvaluation} from './types';
 import {
   GetEvaluationsQuery,
   GetEvaluationsQueryVariables,
@@ -120,6 +124,24 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
   const selectedEvaluation =
     evaluations.find((evaluation) => evaluation.evaluationId === selectedEvaluationId) || EMPTY;
 
+  return (
+    <AutomaterializeMiddlePanelWithData
+      rules={rules}
+      assetHasDefinedPartitions={assetHasDefinedPartitions}
+      selectedEvaluation={selectedEvaluation}
+    />
+  );
+};
+
+export const AutomaterializeMiddlePanelWithData = ({
+  rules,
+  selectedEvaluation,
+  assetHasDefinedPartitions,
+}: {
+  rules: AutoMaterializeRule[];
+  selectedEvaluation: NoConditionsMetEvaluation | AutoMaterializeAssetEvaluationRecord;
+  assetHasDefinedPartitions: boolean;
+}) => {
   const runIds =
     selectedEvaluation?.__typename === 'AutoMaterializeAssetEvaluationRecord'
       ? selectedEvaluation.runIds
