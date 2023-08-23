@@ -6,7 +6,6 @@ from dagster._core.definitions.auto_materialize_policy import (
 )
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeDecisionType,
-    AutoMaterializeRule,
     AutoMaterializeRuleSnapshot,
     DiscardOnMaxMaterializationsExceededRule,
 )

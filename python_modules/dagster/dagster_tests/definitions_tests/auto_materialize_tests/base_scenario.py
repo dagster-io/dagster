@@ -98,7 +98,12 @@ class AssetEvaluationSpec(NamedTuple):
         return AssetEvaluationSpec(
             asset_key=asset_key,
             rule_evaluations=[
-                (AutoMaterializeRuleEvaluation(rule_snapshot=rule.to_snapshot(), evaluation_data=evaluation_data), None)
+                (
+                    AutoMaterializeRuleEvaluation(
+                        rule_snapshot=rule.to_snapshot(), evaluation_data=evaluation_data
+                    ),
+                    None,
+                )
             ],
             num_requested=1 if rule.decision_type == AutoMaterializeDecisionType.MATERIALIZE else 0,
             num_skipped=1 if rule.decision_type == AutoMaterializeDecisionType.SKIP else 0,

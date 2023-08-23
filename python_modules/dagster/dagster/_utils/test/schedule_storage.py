@@ -800,7 +800,8 @@ class TestScheduleStorage:
         assert res[0].evaluation.partition_subsets_by_condition[0][
             0
         ] == AutoMaterializeRuleEvaluation(
-            rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(), evaluation_data=None
+            rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+            evaluation_data=None,
         )
         assert (
             res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)
