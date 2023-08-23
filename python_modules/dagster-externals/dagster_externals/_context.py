@@ -2,6 +2,7 @@ import atexit
 import json
 import os
 import warnings
+from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Mapping, Optional, Sequence, TextIO
 
 from typing_extensions import Self
@@ -30,12 +31,13 @@ def is_dagster_orchestration_active() -> bool:
     return bool(os.getenv(DAGSTER_EXTERNALS_ENV_KEYS["is_orchestration_active"]))
 
 
-class OutboundNotificationStream:
+class OutboundNotificationStream(ABC):
+    @abstractmethod
     def send_notification(self, notification: Notification) -> None:
-        raise NotImplementedError()
+        ...
 
 class SynchronousTextIOOutboundNotificationStream(OutboundNotificationStream):
-    def __init__(self, output_stream: TextIO)
+    def __init__(self, output_stream: TextIO):
         self._output_stream = output_stream
 
     def send_notification(self, notification: Notification) -> None:
@@ -49,6 +51,7 @@ def init_dagster_externals(outbound_notif_stream: Optional[OutboundNotificationS
     if is_dagster_orchestration_active():
         params = get_external_execution_params()
         data = _read_input(params.input_path)
+        # if not specified we default to streamin to output path passed in params
         if outbound_notif_stream is None:
             output_stream = _get_output_stream(params.output_path)
             atexit.register(_close_stream, output_stream)
