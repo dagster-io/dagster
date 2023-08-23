@@ -5,9 +5,10 @@ import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.auto_materialize_condition import (
+from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
-    MissingAutoMaterializeCondition,
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import SerializedPartitionsSubset
@@ -696,7 +697,15 @@ class TestScheduleStorage:
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    partition_subsets_by_condition=[(MissingAutoMaterializeCondition(), None)],
+                    partition_subsets_by_condition=[
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
+                            None,
+                        )
+                    ],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -766,7 +775,10 @@ class TestScheduleStorage:
                     asset_key=AssetKey("asset_two"),
                     partition_subsets_by_condition=[
                         (
-                            MissingAutoMaterializeCondition(),
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
                             SerializedPartitionsSubset.from_subset(subset, partitions_def, None),
                         )
                     ],
@@ -785,9 +797,11 @@ class TestScheduleStorage:
         assert res[0].evaluation_id == 10
         assert res[0].evaluation.num_requested == 1
 
-        assert (
-            res[0].evaluation.partition_subsets_by_condition[0][0]
-            == MissingAutoMaterializeCondition()
+        assert res[0].evaluation.partition_subsets_by_condition[0][
+            0
+        ] == AutoMaterializeRuleEvaluation(
+            rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+            evaluation_data=None,
         )
         assert (
             res[0].evaluation.partition_subsets_by_condition[0][1].can_deserialize(partitions_def)

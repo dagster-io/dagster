@@ -125,7 +125,7 @@ class AutoMaterializePolicy(
 
     @property
     def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
-        from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
 
         return {
             rule
@@ -135,7 +135,7 @@ class AutoMaterializePolicy(
 
     @property
     def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
-        from dagster._core.definitions.auto_materialize_condition import AutoMaterializeDecisionType
+        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
 
         return {
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP

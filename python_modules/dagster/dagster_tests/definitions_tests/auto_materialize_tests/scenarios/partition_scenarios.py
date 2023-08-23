@@ -5,11 +5,12 @@ from dagster import (
     PartitionKeyRange,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.auto_materialize_condition import (
-    MaxMaterializationsExceededAutoMaterializeCondition,
-    MissingAutoMaterializeCondition,
-)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    DiscardOnMaxMaterializationsExceededRule,
+)
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
 )
@@ -20,6 +21,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from ..base_scenario import (
+    AssetEvaluationSpec,
     AssetReconciliationScenario,
     asset_def,
     run,
@@ -192,16 +194,31 @@ partition_scenarios = {
             expected_run_requests=[
                 run_request(asset_keys=["asset1"], partition_key="2013-01-27"),
             ],
-            expected_conditions={
-                ("asset1", "2013-01-27"): {MissingAutoMaterializeCondition()},
-                **{
-                    ("asset1", f"2013-01-{i:02}"): {
-                        MissingAutoMaterializeCondition(),
-                        MaxMaterializationsExceededAutoMaterializeCondition(),
-                    }
-                    for i in range(27)
-                },
-            },
+            expected_evaluations=[
+                AssetEvaluationSpec(
+                    asset_key="asset1",
+                    rule_evaluations=[
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
+                            {f"2013-01-{i:02}" for i in range(28)},
+                        ),
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=DiscardOnMaxMaterializationsExceededRule(
+                                    limit=1
+                                ).to_snapshot(),
+                                evaluation_data=None,
+                            ),
+                            {f"2013-01-{i:02}" for i in range(27)},
+                        ),
+                    ],
+                    num_requested=1,
+                    num_discarded=27,
+                ),
+            ],
         ),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=27, hour=5),

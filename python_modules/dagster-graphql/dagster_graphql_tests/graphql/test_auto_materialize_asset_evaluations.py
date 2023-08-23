@@ -3,11 +3,12 @@ from datetime import datetime
 import dagster._check as check
 from dagster import AssetKey
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.auto_materialize_condition import (
+from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
-    MissingAutoMaterializeCondition,
-    ParentMaterializedAutoMaterializeCondition,
-    ParentOutdatedAutoMaterializeCondition,
+    AutoMaterializeRule,
+    AutoMaterializeRuleEvaluation,
+    ParentUpdatedRuleEvaluationData,
+    WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._core.definitions.partition import (
     SerializedPartitionsSubset,
@@ -30,17 +31,35 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 numRequested
                 numSkipped
                 numDiscarded
-                ruleEvaluations {
+                rulesWithRuleEvaluations {
                     rule {
-                        description
+                        decisionType
                     }
-                    evaluationData {
+                    ruleEvaluations {
                         partitionKeysOrError {
                             ... on PartitionKeys {
                                 partitionKeys
                             }
                             ... on Error {
                                 message
+                            }
+                        }
+                        evaluationData {
+                            ... on TextRuleEvaluationData {
+                                text
+                            }
+                            ... on ParentMaterializedRuleEvaluationData {
+                                updatedAssetKeys {
+                                    path
+                                }
+                                willUpdateAssetKeys {
+                                    path
+                                }
+                            }
+                            ... on WaitingOnKeysRuleEvaluationData {
+                                waitingOnAssetKeys {
+                                    path
+                                }
                             }
                         }
                     }
@@ -78,7 +97,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
-                    partition_subsets_by_condition=[(MissingAutoMaterializeCondition(), None)],
+                    partition_subsets_by_condition=[
+                        (
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
+                            None,
+                        )
+                    ],
                     num_requested=1,
                     num_skipped=0,
                     num_discarded=0,
@@ -87,8 +114,11 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     asset_key=AssetKey("asset_three"),
                     partition_subsets_by_condition=[
                         (
-                            ParentOutdatedAutoMaterializeCondition(
-                                waiting_on_asset_keys=frozenset([AssetKey("asset_two")])
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
+                                evaluation_data=WaitingOnAssetsRuleEvaluationData(
+                                    waiting_on_asset_keys=frozenset([AssetKey("asset_two")])
+                                ),
                             ),
                             None,
                         )
@@ -101,9 +131,12 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     asset_key=AssetKey("asset_four"),
                     partition_subsets_by_condition=[
                         (
-                            ParentMaterializedAutoMaterializeCondition(
-                                updated_asset_keys=frozenset([AssetKey("asset_two")]),
-                                will_update_asset_keys=frozenset([AssetKey("asset_three")]),
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
+                                evaluation_data=ParentUpdatedRuleEvaluationData(
+                                    updated_asset_keys=frozenset([AssetKey("asset_two")]),
+                                    will_update_asset_keys=frozenset([AssetKey("asset_three")]),
+                                ),
                             ),
                             None,
                         )
@@ -123,7 +156,12 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         assert results.data == {
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
-                    {"numRequested": 0, "numSkipped": 0, "numDiscarded": 0, "conditions": []}
+                    {
+                        "numRequested": 0,
+                        "numSkipped": 0,
+                        "numDiscarded": 0,
+                        "rulesWithRuleEvaluations": [],
+                    }
                 ],
                 "currentEvaluationId": None,
             }
@@ -141,11 +179,15 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         "numRequested": 1,
                         "numSkipped": 0,
                         "numDiscarded": 0,
-                        "conditions": [
+                        "rulesWithRuleEvaluations": [
                             {
-                                "__typename": "MissingAutoMaterializeCondition",
-                                "decisionType": "MATERIALIZE",
-                                "partitionKeysOrError": None,
+                                "rule": {"decisionType": "MATERIALIZE"},
+                                "ruleEvaluations": [
+                                    {
+                                        "evaluationData": None,
+                                        "partitionKeysOrError": None,
+                                    }
+                                ],
                             }
                         ],
                     }
@@ -166,12 +208,17 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         "numRequested": 0,
                         "numSkipped": 1,
                         "numDiscarded": 0,
-                        "conditions": [
+                        "rulesWithRuleEvaluations": [
                             {
-                                "__typename": "ParentOutdatedAutoMaterializeCondition",
-                                "decisionType": "SKIP",
-                                "partitionKeysOrError": None,
-                                "waitingOnAssetKeys": [{"path": ["asset_two"]}],
+                                "rule": {"decisionType": "SKIP"},
+                                "ruleEvaluations": [
+                                    {
+                                        "evaluationData": {
+                                            "waitingOnAssetKeys": [{"path": ["asset_two"]}],
+                                        },
+                                        "partitionKeysOrError": None,
+                                    }
+                                ],
                             }
                         ],
                     }
@@ -192,13 +239,18 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         "numRequested": 1,
                         "numSkipped": 0,
                         "numDiscarded": 0,
-                        "conditions": [
+                        "rulesWithRuleEvaluations": [
                             {
-                                "__typename": "ParentMaterializedAutoMaterializeCondition",
-                                "decisionType": "MATERIALIZE",
-                                "partitionKeysOrError": None,
-                                "updatedAssetKeys": [{"path": ["asset_two"]}],
-                                "willUpdateAssetKeys": [{"path": ["asset_three"]}],
+                                "rule": {"decisionType": "MATERIALIZE"},
+                                "ruleEvaluations": [
+                                    {
+                                        "evaluationData": {
+                                            "updatedAssetKeys": [{"path": ["asset_two"]}],
+                                            "willUpdateAssetKeys": [{"path": ["asset_three"]}],
+                                        },
+                                        "partitionKeysOrError": None,
+                                    }
+                                ],
                             }
                         ],
                     }
@@ -230,7 +282,10 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     asset_key=AssetKey("upstream_static_partitioned_asset"),
                     partition_subsets_by_condition=[
                         (
-                            MissingAutoMaterializeCondition(),
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
                             SerializedPartitionsSubset.from_subset(
                                 static_partitions_def.empty_subset().with_partition_keys(
                                     ["a", "b"]
@@ -268,19 +323,14 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["numDiscarded"]
         ) == 0
         assert (
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["conditions"][0][
-                "__typename"
-            ]
-        ) == "MissingAutoMaterializeCondition"
-        assert (
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["conditions"][0][
-                "decisionType"
-            ]
+            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
+                "rulesWithRuleEvaluations"
+            ][0]["rule"]["decisionType"]
         ) == "MATERIALIZE"
         assert set(
-            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0]["conditions"][0][
-                "partitionKeysOrError"
-            ]["partitionKeys"]
+            results.data["autoMaterializeAssetEvaluationsOrError"]["records"][0][
+                "rulesWithRuleEvaluations"
+            ][0]["ruleEvaluations"][0]["partitionKeysOrError"]["partitionKeys"]
         ) == {"a", "b"}
 
     def _test_get_evaluations_invalid_partitions(self, graphql_context: WorkspaceRequestContext):
@@ -297,7 +347,10 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     asset_key=AssetKey("upstream_static_partitioned_asset"),
                     partition_subsets_by_condition=[
                         (
-                            MissingAutoMaterializeCondition(),
+                            AutoMaterializeRuleEvaluation(
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                                evaluation_data=None,
+                            ),
                             SerializedPartitionsSubset.from_subset(
                                 wrong_partitions_def.empty_subset().with_partition_keys(
                                     ["2023-07-07"]
@@ -330,17 +383,21 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                         "numRequested": 2,
                         "numSkipped": 0,
                         "numDiscarded": 0,
-                        "conditions": [
+                        "rulesWithRuleEvaluations": [
                             {
-                                "__typename": "MissingAutoMaterializeCondition",
-                                "decisionType": "MATERIALIZE",
-                                "partitionKeysOrError": {
-                                    "message": (
-                                        "Partition subset cannot be deserialized. The"
-                                        " PartitionsDefinition may have changed."
-                                    )
-                                },
-                            }
+                                "rule": {"decisionType": "MATERIALIZE"},
+                                "ruleEvaluations": [
+                                    {
+                                        "evaluationData": None,
+                                        "partitionKeysOrError": {
+                                            "message": (
+                                                "Partition subset cannot be deserialized. The"
+                                                " PartitionsDefinition may have changed."
+                                            )
+                                        },
+                                    }
+                                ],
+                            },
                         ],
                     }
                 ],
@@ -369,7 +426,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             {
                 CURSOR_KEY: (
                     AssetDaemonCursor.empty()
-                    .with_updates(0, {}, set(), {}, 42, None, [], 0)  # type: ignore
+                    .with_updates(0, set(), set(), set(), {}, 42, None, [], 0)  # type: ignore
                     .serialize()
                 )
             }

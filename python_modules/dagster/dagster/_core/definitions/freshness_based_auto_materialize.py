@@ -17,15 +17,11 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._utils.schedules import cron_string_iterator
 
 from .asset_graph import AssetGraph
-from .auto_materialize_condition import (
-    AutoMaterializeCondition,
-    AutoMaterializeDecisionType,
-    DownstreamFreshnessAutoMaterializeCondition,
-    FreshnessAutoMaterializeCondition,
-)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
+
+    from .auto_materialize_rule import RuleEvaluationResults, TextRuleEvaluationData
 
 
 def get_execution_period_for_policy(
@@ -64,17 +60,20 @@ def get_execution_period_for_policy(
         )
 
 
-def get_execution_period_and_conditions_for_policies(
+def get_execution_period_and_evaluation_data_for_policies(
     local_policy: Optional[FreshnessPolicy],
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[pendulum.Period], AbstractSet[AutoMaterializeCondition]]:
+) -> Tuple[Optional[pendulum.Period], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
+    from .auto_materialize_rule import TextRuleEvaluationData
+
     merged_period = None
-    conditions = set()
+    contains_local = False
+    contains_downstream = False
     for period, policy in sorted(
         (
             (get_execution_period_for_policy(policy, effective_data_time, current_time), policy)
@@ -94,11 +93,22 @@ def get_execution_period_and_conditions_for_policies(
             break
 
         if policy == local_policy:
-            conditions.add(FreshnessAutoMaterializeCondition())
+            contains_local = True
         else:
-            conditions.add(DownstreamFreshnessAutoMaterializeCondition())
+            contains_downstream = True
 
-    return merged_period, conditions
+    if not contains_local and not contains_downstream:
+        evaluation_data = None
+    elif not contains_local:
+        evaluation_data = TextRuleEvaluationData("Required by downstream asset's policy")
+    elif not contains_downstream:
+        evaluation_data = TextRuleEvaluationData("Required by this asset's policy")
+    else:
+        evaluation_data = TextRuleEvaluationData(
+            "Required by this asset's policy and downstream asset's policy"
+        )
+
+    return merged_period, evaluation_data
 
 
 def get_expected_data_time_for_asset_key(
@@ -147,14 +157,14 @@ def get_expected_data_time_for_asset_key(
         return current_time
 
 
-def freshness_conditions_for_asset_key(
+def freshness_evaluation_results_for_asset_key(
     asset_key: AssetKey,
     data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
     current_time: datetime.datetime,
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]],
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-) -> Mapping[AutoMaterializeCondition, AbstractSet[AssetKeyPartitionKey]]:
+) -> "RuleEvaluationResults":
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
@@ -163,7 +173,7 @@ def freshness_conditions_for_asset_key(
     if not asset_graph.get_downstream_freshness_policies(
         asset_key=asset_key
     ) or asset_graph.is_partitioned(asset_key):
-        return {}
+        return []
 
     # figure out the current contents of this asset
     current_data_time = data_time_resolver.get_current_data_time(asset_key, current_time)
@@ -181,7 +191,7 @@ def freshness_conditions_for_asset_key(
 
     # if executing the asset on this tick would not change its data time, then return
     if current_data_time == expected_data_time:
-        return {}
+        return []
 
     # calculate the data times you would expect after all currently-executing runs
     # were to successfully complete
@@ -199,8 +209,8 @@ def freshness_conditions_for_asset_key(
     # number of constraints
     (
         execution_period,
-        execution_conditions,
-    ) = get_execution_period_and_conditions_for_policies(
+        evaluation_data,
+    ) = get_execution_period_and_evaluation_data_for_policies(
         local_policy=asset_graph.freshness_policies_by_key.get(asset_key),
         policies=asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
@@ -214,11 +224,8 @@ def freshness_conditions_for_asset_key(
         and expected_data_time is not None
         # if this is False, then executing it would still leave the asset overdue
         and expected_data_time >= execution_period.start
-        and all(
-            condition.decision_type == AutoMaterializeDecisionType.MATERIALIZE
-            for condition in execution_conditions
-        )
+        and evaluation_data is not None
     ):
-        return {condition: {asset_partition} for condition in execution_conditions}
+        return [(evaluation_data, {asset_partition})]
     else:
-        return {}
+        return []
