@@ -47,9 +47,9 @@ def test_external_subprocess_asset(input_file_spec: str, output_file_spec: str, 
     output_path = None if output_file_spec == "auto" else str(tmpdir.join("output"))
 
     def script_fn():
-        from dagster_external import ExternalExecutionContext, init_dagster_external
+        from dagster_externals import ExternalExecutionContext, init_dagster_externals
 
-        init_dagster_external()
+        init_dagster_externals()
         context = ExternalExecutionContext.get()
         context.log("hello world")
         context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
@@ -99,9 +99,9 @@ def test_external_execution_asset_failed():
 
 def test_external_execution_asset_invocation():
     def script_fn():
-        from dagster_external import init_dagster_external
+        from dagster_externals import init_dagster_externals
 
-        context = init_dagster_external()
+        context = init_dagster_externals()
         context.log("hello world")
 
     @asset
@@ -146,15 +146,15 @@ def test_external_execution_invalid_path(
 
 def test_external_execution_no_orchestration():
     def script_fn():
-        from dagster_external import (
+        from dagster_externals import (
             ExternalExecutionContext,
-            init_dagster_external,
+            init_dagster_externals,
             is_dagster_orchestration_active,
         )
 
         assert not is_dagster_orchestration_active()
 
-        init_dagster_external()
+        init_dagster_externals()
         context = ExternalExecutionContext.get()
         context.log("hello world")
         context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
@@ -167,6 +167,6 @@ def test_external_execution_no_orchestration():
         ).communicate()
         assert re.search(
             r"This process was not launched by a Dagster orchestration process. All calls to the"
-            r" `dagster-external` context are no-ops.",
+            r" `dagster-externals` context are no-ops.",
             stderr.decode(),
         )

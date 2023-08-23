@@ -6,13 +6,13 @@ ExternalExecutionExtras: TypeAlias = Mapping[str, Any]
 
 # ##### PARAMETERS
 
-DAGSTER_EXTERNAL_DEFAULT_INPUT_FILENAME: Final = "dagster_external_input"
-DAGSTER_EXTERNAL_DEFAULT_OUTPUT_FILENAME: Final = "dagster_external_output"
+DAGSTER_EXTERNALS_DEFAULT_INPUT_FILENAME: Final = "dagster_external_input"
+DAGSTER_EXTERNALS_DEFAULT_OUTPUT_FILENAME: Final = "dagster_external_output"
 
-DAGSTER_EXTERNAL_ENV_KEYS: Final = {
-    "is_orchestration_active": "DAGSTER_EXTERNAL_IS_ORCHESTRATION_ACTIVE",
-    "input": "DAGSTER_EXTERNAL_INPUT",
-    "output": "DAGSTER_EXTERNAL_OUTPUT",
+DAGSTER_EXTERNALS_ENV_KEYS: Final = {
+    "is_orchestration_active": "DAGSTER_EXTERNALS_IS_ORCHESTRATION_ACTIVE",
+    "input": "DAGSTER_EXTERNALS_INPUT",
+    "output": "DAGSTER_EXTERNALS_OUTPUT",
 }
 
 # ##### NOTIFICATION

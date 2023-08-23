@@ -1,7 +1,7 @@
 import json
 from typing import Any, Optional, Sequence, TypeVar
 
-from dagster_external.protocol import ExternalExecutionContextData, ExternalExecutionExtras
+from ._protocol import ExternalExecutionContextData, ExternalExecutionExtras
 
 T = TypeVar("T")
 

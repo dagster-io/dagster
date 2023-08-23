@@ -6,17 +6,16 @@ from typing import Any, ClassVar, Mapping, Optional, Sequence, TextIO
 
 from typing_extensions import Self
 
-from dagster_external.params import get_external_execution_params
-
-from .protocol import (
-    DAGSTER_EXTERNAL_ENV_KEYS,
+from ._params import get_external_execution_params
+from ._protocol import (
+    DAGSTER_EXTERNALS_ENV_KEYS,
     ExternalDataProvenance,
     ExternalExecutionContextData,
     ExternalPartitionKeyRange,
     ExternalTimeWindow,
     Notification,
 )
-from .util import (
+from ._util import (
     assert_defined_asset_property,
     assert_defined_extra,
     assert_defined_partition_property,
@@ -28,10 +27,10 @@ from .util import (
 
 
 def is_dagster_orchestration_active() -> bool:
-    return bool(os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["is_orchestration_active"]))
+    return bool(os.getenv(DAGSTER_EXTERNALS_ENV_KEYS["is_orchestration_active"]))
 
 
-def init_dagster_external() -> "ExternalExecutionContext":
+def init_dagster_externals() -> "ExternalExecutionContext":
     if ExternalExecutionContext.is_initialized():
         return ExternalExecutionContext.get()
 
@@ -46,7 +45,7 @@ def init_dagster_external() -> "ExternalExecutionContext":
 
         warnings.warn(
             "This process was not launched by a Dagster orchestration process. All calls to the"
-            " `dagster-external` context are no-ops."
+            " `dagster-externals` context are no-ops."
         )
         context = MagicMock()
     ExternalExecutionContext.set(context)
@@ -82,7 +81,7 @@ class ExternalExecutionContext:
         if cls._instance is None:
             raise Exception(
                 "ExternalExecutionContext has not been initialized. You must call"
-                " `init_dagster_external()`."
+                " `init_dagster_externals()`."
             )
         return cls._instance
 

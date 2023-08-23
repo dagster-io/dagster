@@ -1,6 +1,6 @@
 from typing import Optional
 
-from dagster_external.protocol import (
+from dagster_externals import (
     ExternalDataProvenance,
     ExternalExecutionContextData,
     ExternalExecutionExtras,

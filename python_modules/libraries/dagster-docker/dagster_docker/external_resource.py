@@ -15,11 +15,11 @@ from dagster._core.external_execution.task import (
     ExternalTaskParams,
     SocketAddress,
 )
-from dagster_external.protocol import (
-    DAGSTER_EXTERNAL_ENV_KEYS,
+from dagster_externals import (
+    DAGSTER_EXTERNALS_ENV_KEYS,
+    DagsterExternalError,
     ExternalExecutionExtras,
 )
-from dagster_external.util import DagsterExternalError
 
 
 @dataclass
@@ -95,7 +95,7 @@ class DockerExecutionTask(ExternalExecutionTask[DockerTaskParams, DockerTaskIOPa
     @contextmanager
     def _file_input(self, tempdir: str) -> Iterator[DockerTaskIOParams]:
         path = self._prepare_io_path(self._input_path, "input", tempdir)
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
+        env = {DAGSTER_EXTERNALS_ENV_KEYS["input"]: path}
         try:
             self._write_input(path)
             path_dir = os.path.dirname(path)
@@ -113,7 +113,7 @@ class DockerExecutionTask(ExternalExecutionTask[DockerTaskParams, DockerTaskIOPa
     @contextmanager
     def _file_output(self, tempdir: str) -> Iterator[DockerTaskIOParams]:
         path = self._prepare_io_path(self._output_path, "output", tempdir)
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
+        env = {DAGSTER_EXTERNALS_ENV_KEYS["output"]: path}
         output_file_dir = os.path.dirname(path)
         volume_mounts = {output_file_dir: {"bind": output_file_dir, "mode": "rw"}}
         is_task_complete = Event()
