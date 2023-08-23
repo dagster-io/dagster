@@ -1209,15 +1209,21 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
                 stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
 
     return AssetLayer(
+        assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},
         asset_deps={},
         dependency_node_handles_by_asset_key={},
-        assets_defs=[],
-        source_asset_defs=source_assets_list,
+        assets_defs_by_key={},
+        source_assets_by_key={
+            source_asset.key: source_asset for source_asset in source_assets_list
+        },
         io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
-        node_output_handles_to_dep_asset_keys={},
+        dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},
+        asset_checks_defs_by_node_handle={},
+        node_output_handles_by_asset_check_handle={},
+        check_names_by_asset_key_by_node_handle={},
     )
 
 
