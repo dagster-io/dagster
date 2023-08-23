@@ -1224,7 +1224,6 @@ def _infer_keys_by_input_names(
     node_def: Union["GraphDefinition", OpDefinition], keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     all_input_names = [input_def.name for input_def in node_def.input_defs]
-
     if keys_by_input_name:
         check.invariant(
             set(keys_by_input_name.keys()) == set(all_input_names),

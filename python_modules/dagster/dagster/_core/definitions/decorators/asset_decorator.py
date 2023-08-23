@@ -43,7 +43,7 @@ from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from ..input import In
+from ..input import GraphIn, In
 from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
@@ -923,8 +923,12 @@ def graph_asset(
             for input_name, asset_in in ins.items()
             if asset_in.partition_mapping
         }
+
         op_graph = graph(
-            name=out_asset_key.to_python_identifier(), description=description, config=config
+            name=out_asset_key.to_python_identifier(),
+            description=description,
+            config=config,
+            ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
         )(compose_fn)
         return AssetsDefinition.from_graph(
             op_graph,
