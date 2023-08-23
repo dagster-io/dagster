@@ -614,6 +614,8 @@ class DbtCliResource(ConfigurableResource):
             **os.environ.copy(),
             # Run dbt with unbuffered output.
             "PYTHONUNBUFFERED": "1",
+            # Disable anonymous usage statistics for performance.
+            "DBT_SEND_ANONYMOUS_USAGE_STATS": "false",
             # The DBT_LOG_FORMAT environment variable must be set to `json`. We use this
             # environment variable to ensure that the dbt CLI outputs structured logs.
             "DBT_LOG_FORMAT": "json",
