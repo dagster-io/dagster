@@ -28,10 +28,10 @@ from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
 from .config import ConfigMapping
 from .dependency import (
+    BlockingAssetChecksDependencyDefinition,
     DependencyDefinition,
     DependencyMapping,
     IDependencyDefinition,
-    MultiDependencyDefinition,
     NodeHandle,
     NodeInvocation,
     NodeOutputHandle,
@@ -481,16 +481,14 @@ def build_node_deps(
                 ]
                 asset_dep_def = DependencyDefinition(upstream_node_alias, upstream_output_name)
                 if blocking_asset_check_output_handles:
-                    deps[node_key][input_name] = MultiDependencyDefinition(
-                        dependencies=asset_check_deps + [asset_dep_def],
-                        dependencies_not_to_load_from=asset_check_deps,
+                    deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
+                        asset_check_dependencies=asset_check_deps, other_dependency=asset_dep_def
                     )
                 else:
                     deps[node_key][input_name] = asset_dep_def
             elif asset_check_deps:
-                deps[node_key][input_name] = MultiDependencyDefinition(
-                    dependencies=asset_check_deps,
-                    dependencies_not_to_load_from=asset_check_deps,
+                deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
+                    asset_check_dependencies=asset_check_deps, other_dependency=None
                 )
 
     # put asset checks downstream of the assets they're checking
@@ -558,12 +556,9 @@ def _has_cycles(
             for dep in downstream_deps.values():
                 if isinstance(dep, DependencyDefinition):
                     node_deps[node_name].add(dep.node)
-                elif isinstance(dep, MultiDependencyDefinition):
-                    for subdep in dep.dependencies:
-                        if isinstance(subdep, DependencyDefinition):
-                            node_deps[node_name].add(subdep.node)
-                        else:
-                            check.failed(f"Unexpected sub-dependency type {type(dep)}.")
+                elif isinstance(dep, BlockingAssetChecksDependencyDefinition):
+                    for subdep in dep.get_node_dependencies():
+                        node_deps[node_name].add(subdep.node)
                 else:
                     check.failed(f"Unexpected dependency type {type(dep)}.")
         # make sure that there is a valid topological sorting of these node dependencies

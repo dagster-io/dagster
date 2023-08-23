@@ -25,8 +25,14 @@ from dagster._core.definitions import (
     NodeOutput,
     OpDefinition,
 )
+from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.dependency import DependencyStructure, MultiDependencyDefinition
+from dagster._core.definitions.dependency import (
+    BlockingAssetChecksDependencyDefinition,
+    DependencyStructure,
+    MultiDependencyDefinition,
+    NodeInput,
+)
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -462,70 +468,32 @@ def get_step_input_source(
         )
 
     if dependency_structure.has_fan_in_deps(input_handle):
-        sources: List[StepInputSource] = []
-        sources_to_load_from: List[StepInputSource] = []
-        deps = dependency_structure.get_fan_in_deps(input_handle)
         dep_def = dependency_structure.get_dependency_definition(input_handle)
-        if not isinstance(dep_def, MultiDependencyDefinition):
-            check.failed("Expected fan-in deps to correspond to a MultiDependencyDefinition")
-        multi_dep_def = cast(MultiDependencyDefinition, dep_def)
-
-        for idx, node_output_or_placeholder in enumerate(deps):
-            if isinstance(node_output_or_placeholder, NodeOutput):
-                step_output_handle = step_output_map[node_output_or_placeholder]
-                if (
-                    isinstance(step_output_handle, UnresolvedStepOutputHandle)
-                    or node_output_or_placeholder.output_def.is_dynamic
-                ):
-                    check.failed(
-                        "Unexpected dynamic output dependency in regular fan in, "
-                        "should have been caught at definition time."
-                    )
-
-                source = FromStepOutput(step_output_handle=step_output_handle, fan_in=True)
-                sources.append(source)
-                node_output_handle = node_output_or_placeholder.node_output_handle
-                if multi_dep_def.should_load_from_dependency(
-                    node_output_handle.node_handle.name, node_output_handle.output_name
-                ):
-                    sources_to_load_from.append(source)
-            else:
-                check.invariant(
-                    node_output_or_placeholder is MappedInputPlaceholder,
-                    "Expected NodeOutput or MappedInputPlaceholder, got"
-                    f" {node_output_or_placeholder}",
-                )
-                if parent_step_inputs is None:
-                    check.failed("unexpected error in composition descent during plan building")
-
-                parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
-                parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
-                parent_input = parent_inputs[parent_name]
-                source = parent_input.source
-                if not isinstance(source, StepInputSource):
-                    check.failed(f"Unexpected parent mapped input source type {source}")
-
-                sources.append(source)
-                sources_to_load_from.append(source)
-
-        if len(sources_to_load_from) == 0:
-            asset_key_for_input = asset_layer.asset_key_for_input(handle, input_handle.input_name)
-            if asset_key_for_input:
-                source_to_load_from = FromSourceAsset(node_handle=handle, input_name=input_name)
-                sources.append(source_to_load_from)
-            else:
-                check.failed("Unexpected: no sources to load from and no asset key to load from")
-        elif len(sources_to_load_from) == 1:
-            if multi_dep_def.dependencies_not_to_load_from:
-                source_to_load_from = next(iter(sources_to_load_from))
-            else:
-                source_to_load_from = None
+        if isinstance(dep_def, MultiDependencyDefinition):
+            return _step_input_source_from_multi_dep_def(
+                dependency_structure=dependency_structure,
+                input_handle=input_handle,
+                step_output_map=step_output_map,
+                parent_step_inputs=parent_step_inputs,
+                node=node,
+                input_name=input_name,
+            )
+        elif isinstance(dep_def, BlockingAssetChecksDependencyDefinition):
+            return _step_input_source_from_blocking_asset_checks_dep_def(
+                dep_def=dep_def,
+                node_handle=handle,
+                dependency_structure=dependency_structure,
+                input_handle=input_handle,
+                step_output_map=step_output_map,
+                parent_step_inputs=parent_step_inputs,
+                input_name=input_name,
+                asset_layer=asset_layer,
+            )
         else:
-            source_to_load_from = None
-            check.invariant(len(sources_to_load_from) == len(sources))
-
-        return FromMultipleSources(sources=sources, source_to_load_from=source_to_load_from)
-
+            check.failed(
+                "Expected fan-in deps to correspond to a MultiDependencyDefinition or"
+                f" BlockingAssetChecksDependencyDefinition, but was {type(dep_def)}"
+            )
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
         node_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
         step_output_handle = step_output_map[node_output_handle]
@@ -578,6 +546,102 @@ def get_step_input_source(
             input_name=input_name,
         )
     )
+
+
+def _step_input_source_from_multi_dep_def(
+    dependency_structure: DependencyStructure,
+    input_handle: NodeInput,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    node: Node,
+    input_name: str,
+) -> FromMultipleSources:
+    sources: List[StepInputSource] = []
+    deps = dependency_structure.get_fan_in_deps(input_handle)
+
+    for idx, handle_or_placeholder in enumerate(deps):
+        if isinstance(handle_or_placeholder, NodeOutput):
+            step_output_handle = step_output_map[handle_or_placeholder]
+            if (
+                isinstance(step_output_handle, UnresolvedStepOutputHandle)
+                or handle_or_placeholder.output_def.is_dynamic
+            ):
+                check.failed(
+                    "Unexpected dynamic output dependency in regular fan in, "
+                    "should have been caught at definition time."
+                )
+
+            sources.append(
+                FromStepOutput(
+                    step_output_handle=step_output_handle,
+                    fan_in=True,
+                )
+            )
+        else:
+            check.invariant(
+                handle_or_placeholder is MappedInputPlaceholder,
+                f"Expected NodeOutput or MappedInputPlaceholder, got {handle_or_placeholder}",
+            )
+            if parent_step_inputs is None:
+                check.failed("unexpected error in composition descent during plan building")
+
+            parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
+            parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
+            parent_input = parent_inputs[parent_name]
+            source = parent_input.source
+            if not isinstance(source, StepInputSource):
+                check.failed(f"Unexpected parent mapped input source type {source}")
+            sources.append(source)
+
+    return FromMultipleSources(sources=sources, source_to_load_from=None)
+
+
+def _step_input_source_from_blocking_asset_checks_dep_def(
+    dep_def: BlockingAssetChecksDependencyDefinition,
+    dependency_structure: DependencyStructure,
+    input_handle: NodeInput,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+    node_handle: NodeHandle,
+    input_name: str,
+    asset_layer: AssetLayer,
+) -> FromMultipleSources:
+    sources: List[StepInputSource] = []
+    source_to_load_from: Optional[StepInputSource] = None
+    deps = dependency_structure.get_fan_in_deps(input_handle)
+
+    for idx, node_output in enumerate(deps):
+        if isinstance(node_output, NodeOutput):
+            step_output_handle = step_output_map[node_output]
+            if (
+                isinstance(step_output_handle, UnresolvedStepOutputHandle)
+                or node_output.output_def.is_dynamic
+            ):
+                check.failed(
+                    "Unexpected dynamic output dependency in regular fan in, "
+                    "should have been caught at definition time."
+                )
+
+            source = FromStepOutput(step_output_handle=step_output_handle, fan_in=True)
+            sources.append(source)
+            if (
+                dep_def.other_dependency is not None
+                and dep_def.other_dependency.node == node_output.node_name
+                and dep_def.other_dependency.output == node_output.output_name
+            ):
+                source_to_load_from = source
+        else:
+            check.invariant(f"Expected NodeOutput, got {node_output}")
+
+    if source_to_load_from is None:
+        asset_key_for_input = asset_layer.asset_key_for_input(node_handle, input_handle.input_name)
+        if asset_key_for_input:
+            source_to_load_from = FromSourceAsset(node_handle=node_handle, input_name=input_name)
+            sources.append(source_to_load_from)
+        else:
+            check.failed("Unexpected: no sources to load from and no asset key to load from")
+
+    return FromMultipleSources(sources=sources, source_to_load_from=source_to_load_from)
 
 
 class ExecutionPlan(

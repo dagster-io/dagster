@@ -588,10 +588,6 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def output_name(self) -> str:
         return self.output_def.name
 
-    @property
-    def node_output_handle(self) -> NodeOutputHandle:
-        return NodeOutputHandle(NodeHandle(name=self.node_name, parent=None), self.output_name)
-
 
 class DependencyType(Enum):
     DIRECT = "DIRECT"
@@ -685,15 +681,14 @@ class MultiDependencyDefinition(
             (
                 "dependencies",
                 PublicAttr[Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]],
-            ),
-            ("dependencies_not_to_load_from", Optional[Sequence[DependencyDefinition]]),
+            )
         ],
     ),
     IDependencyDefinition,
 ):
     """Represents a fan-in edge in the DAG of op instances forming a job.
 
-    This object is used mainly when an input of type ``List[T]`` is assembled by fanning-in multiple
+    This object is used only when an input of type ``List[T]`` is assembled by fanning-in multiple
     upstream outputs of type ``T``.
 
     This object is used at the leaves of a dictionary structure that represents the complete
@@ -729,15 +724,11 @@ class MultiDependencyDefinition(
     Args:
         dependencies (List[Union[DependencyDefinition, Type[MappedInputPlaceHolder]]]): List of
             upstream dependencies fanned in to this input.
-        dependencies_not_to_load_from (Optional[Sequence[DependencyDefinition]])): A subset of the
-            dependencies, which should be ignored when loading inputs to pass into the compute
-            function of the downstream op.
     """
 
     def __new__(
         cls,
         dependencies: Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
-        dependencies_not_to_load_from: Optional[Sequence[DependencyDefinition]] = None,
     ):
         from .composition import MappedInputPlaceholder
 
@@ -757,9 +748,7 @@ class MultiDependencyDefinition(
             else:
                 check.failed(f"Unexpected dependencies entry {dep}")
 
-        return super(MultiDependencyDefinition, cls).__new__(
-            cls, deps, dependencies_not_to_load_from
-        )
+        return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
     @public
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
@@ -778,10 +767,45 @@ class MultiDependencyDefinition(
         """Return the combined list of dependencies contained by this object, inculding of :py:class:`DependencyDefinition` and :py:class:`MappedInputPlaceholder` objects."""
         return self.dependencies
 
-    def should_load_from_dependency(self, node: str, output: str) -> bool:
-        return self.dependencies_not_to_load_from is None or not any(
-            dep.node == node and dep.output == output for dep in self.dependencies_not_to_load_from
-        )
+
+class BlockingAssetChecksDependencyDefinition(
+    IDependencyDefinition,
+    NamedTuple(
+        "_MultiDependencyDefinition",
+        [
+            (
+                "asset_check_dependencies",
+                Sequence[DependencyDefinition],
+            ),
+            ("other_dependency", Optional[DependencyDefinition]),
+        ],
+    ),
+):
+    """An input that depends on a set of outputs that correspond to upstream asset checks, and also
+    optionally depends on a single upstream output that does not correspond to an asset check.
+
+    We model this with a different kind of DependencyDefinition than MultiDependencyDefinition,
+    because we treat the value that's passed to the input parameter differently: we ignore the asset
+    check dependencies and only pass a single value, instead of a fanned-in list.
+    """
+
+    @public
+    def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
+        """Return the list of :py:class:`DependencyDefinition` contained by this object."""
+        if self.other_dependency:
+            return [*self.asset_check_dependencies, self.other_dependency]
+        else:
+            return self.asset_check_dependencies
+
+    @public
+    def is_fan_in(self) -> bool:
+        return False
+
+    @public
+    def get_dependencies_and_mappings(
+        self,
+    ) -> Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]:
+        return self.get_node_dependencies()
 
 
 class DynamicCollectDependencyDefinition(
@@ -817,7 +841,9 @@ def _create_handle_dict(
     for node_name, input_dict in dep_dict.items():
         from_node = node_dict[node_name]
         for input_name, dep_def in input_dict.items():
-            if isinstance(dep_def, MultiDependencyDefinition):
+            if isinstance(
+                dep_def, (MultiDependencyDefinition, BlockingAssetChecksDependencyDefinition)
+            ):
                 handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
@@ -853,12 +879,12 @@ def _create_handle_dict(
 class DependencyStructure:
     @staticmethod
     def from_definitions(
-        nodes_by_name: Mapping[str, Node], deps_by_node_name: DependencyMapping[str]
+        nodes: Mapping[str, Node], dep_dict: DependencyMapping[str]
     ) -> "DependencyStructure":
         return DependencyStructure(
-            list(deps_by_node_name.keys()),
-            _create_handle_dict(nodes_by_name, deps_by_node_name),
-            deps_by_node_name,
+            list(dep_dict.keys()),
+            _create_handle_dict(nodes, dep_dict),
+            dep_dict,
         )
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
@@ -1050,22 +1076,6 @@ class DependencyStructure:
 
     def get_dependency_definition(self, node_input: NodeInput) -> Optional[IDependencyDefinition]:
         return self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
-
-    def get_load_only_node_output_handle(self, node_input: NodeInput) -> Optional[NodeOutputHandle]:
-        """The returned NodeOutputHandle is relative to the graph that holds this dependency
-        structure, not relative to any graphs that that graph is nested inside.
-        """
-        dep_def = self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
-        if (
-            dep_def is not None
-            and isinstance(dep_def, MultiDependencyDefinition)
-            and dep_def.load_only
-        ):
-            return NodeOutputHandle(
-                NodeHandle(dep_def.load_only.node, None), dep_def.load_only.output
-            )
-        else:
-            return None
 
     def has_fan_in_deps(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)
