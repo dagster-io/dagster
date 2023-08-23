@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -7,6 +7,8 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:
+    from dagster._core.events import DagsterEvent
+    from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.plan.state import KnownExecutionState
 
 
@@ -58,7 +60,7 @@ class StepLauncher(ABC):
     """A StepLauncher is responsible for executing steps, either in-process or in an external process."""
 
     @abstractmethod
-    def launch_step(self, step_context):
+    def launch_step(self, step_context: "StepExecutionContext") -> Iterator["DagsterEvent"]:
         """Args:
             step_context (StepExecutionContext): The context that we're executing the step in.
 
