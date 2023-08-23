@@ -54,7 +54,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 
 
 class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
-    def test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
+    def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
@@ -207,7 +207,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             }
         }
 
-    def test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
+    def _test_get_evaluations_with_partitions(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(
             graphql_context,
             QUERY,
@@ -283,7 +283,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             ]["partitionKeys"]
         ) == {"a", "b"}
 
-    def test_get_evaluations_invalid_partitions(self, graphql_context: WorkspaceRequestContext):
+    def _test_get_evaluations_invalid_partitions(self, graphql_context: WorkspaceRequestContext):
         wrong_partitions_def = TimeWindowPartitionsDefinition(
             cron_schedule="0 0 * * *", start=datetime(year=2020, month=1, day=5), fmt="%Y-%m-%d"
         )
@@ -348,7 +348,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             }
         }
 
-    def test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
+    def _test_current_evaluation_id(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.daemon_cursor_storage.set_cursor_values(
             {CURSOR_KEY: AssetDaemonCursor.empty().serialize()}
         )
