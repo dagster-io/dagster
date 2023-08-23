@@ -238,6 +238,9 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     }
     autoMaterializePolicy {
       policyType
+      rules {
+        description
+      }
     }
     partitionDefinition {
       description

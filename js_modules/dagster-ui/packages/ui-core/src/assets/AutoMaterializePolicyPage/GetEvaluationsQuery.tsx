@@ -2,6 +2,19 @@ import {gql} from '@apollo/client';
 
 export const GET_EVALUATIONS_QUERY = gql`
   query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetNodeOrError(assetKey: $assetKey) {
+      __typename
+      ... on AssetNode {
+        id
+        autoMaterializePolicy {
+          rules {
+            description
+            decisionType
+          }
+        }
+      }
+    }
+
     autoMaterializeAssetEvaluationsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
       ... on AutoMaterializeAssetEvaluationRecords {
         currentEvaluationId
@@ -24,29 +37,42 @@ export const GET_EVALUATIONS_QUERY = gql`
     numDiscarded
     timestamp
     runIds
-    conditions {
-      ...AutoMateralizeWithConditionFragment
+    rulesWithRuleEvaluations {
+      ...RuleWithEvaluationsFragment
     }
   }
 
-  fragment AutoMateralizeWithConditionFragment on AutoMaterializeConditionWithDecisionType {
-    decisionType
-    partitionKeysOrError {
-      ... on PartitionKeys {
-        partitionKeys
-      }
+  fragment RuleWithEvaluationsFragment on AutoMaterializeRuleWithRuleEvaluations {
+    rule {
+      description
+      decisionType
     }
-    ... on ParentOutdatedAutoMaterializeCondition {
-      waitingOnAssetKeys {
-        path
+    ruleEvaluations {
+      evaluationData {
+        ... on TextRuleEvaluationData {
+          text
+        }
+        ... on ParentMaterializedRuleEvaluationData {
+          updatedAssetKeys {
+            path
+          }
+          willUpdateAssetKeys {
+            path
+          }
+        }
+        ... on WaitingOnKeysRuleEvaluationData {
+          waitingOnAssetKeys {
+            path
+          }
+        }
       }
-    }
-    ... on ParentMaterializedAutoMaterializeCondition {
-      updatedAssetKeys {
-        path
-      }
-      willUpdateAssetKeys {
-        path
+      partitionKeysOrError {
+        ... on PartitionKeys {
+          partitionKeys
+        }
+        ... on Error {
+          message
+        }
       }
     }
   }

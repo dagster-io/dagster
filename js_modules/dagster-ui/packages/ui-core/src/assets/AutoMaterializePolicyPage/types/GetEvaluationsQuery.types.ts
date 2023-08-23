@@ -10,6 +10,20 @@ export type GetEvaluationsQueryVariables = Types.Exact<{
 
 export type GetEvaluationsQuery = {
   __typename: 'Query';
+  assetNodeOrError:
+    | {
+        __typename: 'AssetNode';
+        id: string;
+        autoMaterializePolicy: {
+          __typename: 'AutoMaterializePolicy';
+          rules: Array<{
+            __typename: 'AutoMaterializeRule';
+            description: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+          }>;
+        } | null;
+      }
+    | {__typename: 'AssetNotFoundError'};
   autoMaterializeAssetEvaluationsOrError:
     | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
     | {
@@ -24,59 +38,36 @@ export type GetEvaluationsQuery = {
           numDiscarded: number;
           timestamp: number;
           runIds: Array<string>;
-          conditions: Array<
-            | {
-                __typename: 'DownstreamFreshnessAutoMaterializeCondition';
-                decisionType: Types.AutoMaterializeDecisionType;
-                partitionKeysOrError:
-                  | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                  | {__typename: 'PartitionSubsetDeserializationError'}
-                  | null;
-              }
-            | {
-                __typename: 'FreshnessAutoMaterializeCondition';
-                decisionType: Types.AutoMaterializeDecisionType;
-                partitionKeysOrError:
-                  | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                  | {__typename: 'PartitionSubsetDeserializationError'}
-                  | null;
-              }
-            | {
-                __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
-                decisionType: Types.AutoMaterializeDecisionType;
-                partitionKeysOrError:
-                  | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                  | {__typename: 'PartitionSubsetDeserializationError'}
-                  | null;
-              }
-            | {
-                __typename: 'MissingAutoMaterializeCondition';
-                decisionType: Types.AutoMaterializeDecisionType;
-                partitionKeysOrError:
-                  | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                  | {__typename: 'PartitionSubsetDeserializationError'}
-                  | null;
-              }
-            | {
-                __typename: 'ParentMaterializedAutoMaterializeCondition';
-                decisionType: Types.AutoMaterializeDecisionType;
-                updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-                willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-                partitionKeysOrError:
-                  | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                  | {__typename: 'PartitionSubsetDeserializationError'}
-                  | null;
-              }
-            | {
-                __typename: 'ParentOutdatedAutoMaterializeCondition';
-                decisionType: Types.AutoMaterializeDecisionType;
-                waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-                partitionKeysOrError:
-                  | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-                  | {__typename: 'PartitionSubsetDeserializationError'}
-                  | null;
-              }
-          >;
+          rulesWithRuleEvaluations: Array<{
+            __typename: 'AutoMaterializeRuleWithRuleEvaluations';
+            rule: {
+              __typename: 'AutoMaterializeRule';
+              description: string;
+              decisionType: Types.AutoMaterializeDecisionType;
+            };
+            ruleEvaluations: Array<{
+              __typename: 'AutoMaterializeRuleEvaluation';
+              evaluationData:
+                | {
+                    __typename: 'ParentMaterializedRuleEvaluationData';
+                    updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+                    willUpdateAssetKeys: Array<{
+                      __typename: 'AssetKey';
+                      path: Array<string>;
+                    }> | null;
+                  }
+                | {__typename: 'TextRuleEvaluationData'; text: string | null}
+                | {
+                    __typename: 'WaitingOnKeysRuleEvaluationData';
+                    waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+                  }
+                | null;
+              partitionKeysOrError:
+                | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
+                | {__typename: 'PartitionSubsetDeserializationError'; message: string}
+                | null;
+            }>;
+          }>;
         }>;
       }
     | null;
@@ -91,122 +82,59 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
   numDiscarded: number;
   timestamp: number;
   runIds: Array<string>;
-  conditions: Array<
-    | {
-        __typename: 'DownstreamFreshnessAutoMaterializeCondition';
-        decisionType: Types.AutoMaterializeDecisionType;
-        partitionKeysOrError:
-          | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-          | {__typename: 'PartitionSubsetDeserializationError'}
-          | null;
-      }
-    | {
-        __typename: 'FreshnessAutoMaterializeCondition';
-        decisionType: Types.AutoMaterializeDecisionType;
-        partitionKeysOrError:
-          | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-          | {__typename: 'PartitionSubsetDeserializationError'}
-          | null;
-      }
-    | {
-        __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
-        decisionType: Types.AutoMaterializeDecisionType;
-        partitionKeysOrError:
-          | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-          | {__typename: 'PartitionSubsetDeserializationError'}
-          | null;
-      }
-    | {
-        __typename: 'MissingAutoMaterializeCondition';
-        decisionType: Types.AutoMaterializeDecisionType;
-        partitionKeysOrError:
-          | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-          | {__typename: 'PartitionSubsetDeserializationError'}
-          | null;
-      }
-    | {
-        __typename: 'ParentMaterializedAutoMaterializeCondition';
-        decisionType: Types.AutoMaterializeDecisionType;
-        updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-        willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-        partitionKeysOrError:
-          | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-          | {__typename: 'PartitionSubsetDeserializationError'}
-          | null;
-      }
-    | {
-        __typename: 'ParentOutdatedAutoMaterializeCondition';
-        decisionType: Types.AutoMaterializeDecisionType;
-        waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-        partitionKeysOrError:
-          | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-          | {__typename: 'PartitionSubsetDeserializationError'}
-          | null;
-      }
-  >;
+  rulesWithRuleEvaluations: Array<{
+    __typename: 'AutoMaterializeRuleWithRuleEvaluations';
+    rule: {
+      __typename: 'AutoMaterializeRule';
+      description: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+    };
+    ruleEvaluations: Array<{
+      __typename: 'AutoMaterializeRuleEvaluation';
+      evaluationData:
+        | {
+            __typename: 'ParentMaterializedRuleEvaluationData';
+            updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+            willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          }
+        | {__typename: 'TextRuleEvaluationData'; text: string | null}
+        | {
+            __typename: 'WaitingOnKeysRuleEvaluationData';
+            waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          }
+        | null;
+      partitionKeysOrError:
+        | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
+        | {__typename: 'PartitionSubsetDeserializationError'; message: string}
+        | null;
+    }>;
+  }>;
 };
 
-export type AutoMateralizeWithConditionFragment_DownstreamFreshnessAutoMaterializeCondition_ = {
-  __typename: 'DownstreamFreshnessAutoMaterializeCondition';
-  decisionType: Types.AutoMaterializeDecisionType;
-  partitionKeysOrError:
-    | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-    | {__typename: 'PartitionSubsetDeserializationError'}
-    | null;
+export type RuleWithEvaluationsFragment = {
+  __typename: 'AutoMaterializeRuleWithRuleEvaluations';
+  rule: {
+    __typename: 'AutoMaterializeRule';
+    description: string;
+    decisionType: Types.AutoMaterializeDecisionType;
+  };
+  ruleEvaluations: Array<{
+    __typename: 'AutoMaterializeRuleEvaluation';
+    evaluationData:
+      | {
+          __typename: 'ParentMaterializedRuleEvaluationData';
+          updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+        }
+      | {__typename: 'TextRuleEvaluationData'; text: string | null}
+      | {
+          __typename: 'WaitingOnKeysRuleEvaluationData';
+          waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+        }
+      | null;
+    partitionKeysOrError:
+      | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
+      | {__typename: 'PartitionSubsetDeserializationError'; message: string}
+      | null;
+  }>;
 };
-
-export type AutoMateralizeWithConditionFragment_FreshnessAutoMaterializeCondition_ = {
-  __typename: 'FreshnessAutoMaterializeCondition';
-  decisionType: Types.AutoMaterializeDecisionType;
-  partitionKeysOrError:
-    | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-    | {__typename: 'PartitionSubsetDeserializationError'}
-    | null;
-};
-
-export type AutoMateralizeWithConditionFragment_MaxMaterializationsExceededAutoMaterializeCondition_ = {
-  __typename: 'MaxMaterializationsExceededAutoMaterializeCondition';
-  decisionType: Types.AutoMaterializeDecisionType;
-  partitionKeysOrError:
-    | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-    | {__typename: 'PartitionSubsetDeserializationError'}
-    | null;
-};
-
-export type AutoMateralizeWithConditionFragment_MissingAutoMaterializeCondition_ = {
-  __typename: 'MissingAutoMaterializeCondition';
-  decisionType: Types.AutoMaterializeDecisionType;
-  partitionKeysOrError:
-    | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-    | {__typename: 'PartitionSubsetDeserializationError'}
-    | null;
-};
-
-export type AutoMateralizeWithConditionFragment_ParentMaterializedAutoMaterializeCondition_ = {
-  __typename: 'ParentMaterializedAutoMaterializeCondition';
-  decisionType: Types.AutoMaterializeDecisionType;
-  updatedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  willUpdateAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  partitionKeysOrError:
-    | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-    | {__typename: 'PartitionSubsetDeserializationError'}
-    | null;
-};
-
-export type AutoMateralizeWithConditionFragment_ParentOutdatedAutoMaterializeCondition_ = {
-  __typename: 'ParentOutdatedAutoMaterializeCondition';
-  decisionType: Types.AutoMaterializeDecisionType;
-  waitingOnAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  partitionKeysOrError:
-    | {__typename: 'PartitionKeys'; partitionKeys: Array<string>}
-    | {__typename: 'PartitionSubsetDeserializationError'}
-    | null;
-};
-
-export type AutoMateralizeWithConditionFragment =
-  | AutoMateralizeWithConditionFragment_DownstreamFreshnessAutoMaterializeCondition_
-  | AutoMateralizeWithConditionFragment_FreshnessAutoMaterializeCondition_
-  | AutoMateralizeWithConditionFragment_MaxMaterializationsExceededAutoMaterializeCondition_
-  | AutoMateralizeWithConditionFragment_MissingAutoMaterializeCondition_
-  | AutoMateralizeWithConditionFragment_ParentMaterializedAutoMaterializeCondition_
-  | AutoMateralizeWithConditionFragment_ParentOutdatedAutoMaterializeCondition_;

@@ -75,8 +75,6 @@ export const AssetAutomaterializePolicyPage = ({
     );
   }, [selectedEvaluationId, isFirstPage, evaluationsIncludingEmpty]);
 
-  const [maxMaterializationsPerMinute, setMaxMaterializationsPerMinute] = React.useState(1);
-
   return (
     <AutomaterializePage
       style={{flex: 1, minHeight: 0, color: Colors.Gray700, overflow: 'hidden'}}
@@ -114,16 +112,12 @@ export const AssetAutomaterializePolicyPage = ({
               // Use the evaluation ID of the current evaluation object, if any. Otherwise
               // fall back to the evaluation ID from the query parameter, if any.
               selectedEvaluationId={selectedEvaluation?.evaluationId || selectedEvaluationId}
-              maxMaterializationsPerMinute={maxMaterializationsPerMinute}
             />
           </Box>
         </Box>
       </Box>
       <Box border={{side: 'left', color: Colors.KeylineGray, width: 1}}>
-        <AutomaterializeRightPanel
-          assetKey={assetKey}
-          setMaxMaterializationsPerMinute={setMaxMaterializationsPerMinute}
-        />
+        <AutomaterializeRightPanel assetKey={assetKey} />
       </Box>
     </AutomaterializePage>
   );

@@ -715,11 +715,23 @@ type FreshnessPolicy {
 type AutoMaterializePolicy {
   policyType: AutoMaterializePolicyType!
   maxMaterializationsPerMinute: Int
+  rules: [AutoMaterializeRule!]!
 }
 
 enum AutoMaterializePolicyType {
   EAGER
   LAZY
+}
+
+type AutoMaterializeRule {
+  description: String!
+  decisionType: AutoMaterializeDecisionType!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
 }
 
 union AssetPartitionStatuses =
@@ -3076,33 +3088,19 @@ type AutoMaterializeAssetEvaluationRecord {
   numRequested: Int!
   numSkipped: Int!
   numDiscarded: Int!
-  conditions: [AutoMaterializeCondition!]!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
   timestamp: Float!
   runIds: [String!]!
 }
 
-union AutoMaterializeCondition =
-    FreshnessAutoMaterializeCondition
-  | DownstreamFreshnessAutoMaterializeCondition
-  | ParentMaterializedAutoMaterializeCondition
-  | MissingAutoMaterializeCondition
-  | ParentOutdatedAutoMaterializeCondition
-  | MaxMaterializationsExceededAutoMaterializeCondition
-
-type FreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
-  partitionKeysOrError: PartitionKeysOrError
+type AutoMaterializeRuleWithRuleEvaluations {
+  rule: AutoMaterializeRule!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
 }
 
-interface AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
+type AutoMaterializeRuleEvaluation {
   partitionKeysOrError: PartitionKeysOrError
-}
-
-enum AutoMaterializeDecisionType {
-  MATERIALIZE
-  SKIP
-  DISCARD
+  evaluationData: AutoMaterializeRuleEvaluationData
 }
 
 union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
@@ -3115,32 +3113,22 @@ type PartitionSubsetDeserializationError implements Error {
   message: String!
 }
 
-type DownstreamFreshnessAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
-  partitionKeysOrError: PartitionKeysOrError
+union AutoMaterializeRuleEvaluationData =
+    TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
 }
 
-type ParentMaterializedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
-  partitionKeysOrError: PartitionKeysOrError
+type ParentMaterializedRuleEvaluationData {
   updatedAssetKeys: [AssetKey!]
   willUpdateAssetKeys: [AssetKey!]
 }
 
-type MissingAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
-  partitionKeysOrError: PartitionKeysOrError
-}
-
-type ParentOutdatedAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
-  partitionKeysOrError: PartitionKeysOrError
+type WaitingOnKeysRuleEvaluationData {
   waitingOnAssetKeys: [AssetKey!]
-}
-
-type MaxMaterializationsExceededAutoMaterializeCondition implements AutoMaterializeConditionWithDecisionType {
-  decisionType: AutoMaterializeDecisionType!
-  partitionKeysOrError: PartitionKeysOrError
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {

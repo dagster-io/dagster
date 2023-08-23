@@ -29,30 +29,16 @@ import {
 
 interface Props {
   assetKey: AssetKey;
-  setMaxMaterializationsPerMinute: (max: number) => void;
 }
 
-export const AutomaterializeRightPanel = ({assetKey, setMaxMaterializationsPerMinute}: Props) => {
+export const AutomaterializeRightPanel = ({assetKey}: Props) => {
   const queryResult = useQuery<GetPolicyInfoQuery, GetPolicyInfoQueryVariables>(
     GET_POLICY_INFO_QUERY,
-    {
-      variables: {
-        assetKey,
-      },
-    },
+    {variables: {assetKey}},
   );
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data, error} = queryResult;
-
-  React.useEffect(() => {
-    if (data?.assetNodeOrError.__typename === 'AssetNode') {
-      const max = data.assetNodeOrError.autoMaterializePolicy?.maxMaterializationsPerMinute;
-      if (typeof max === 'number') {
-        setMaxMaterializationsPerMinute(max);
-      }
-    }
-  }, [data, setMaxMaterializationsPerMinute]);
 
   return (
     <Box
