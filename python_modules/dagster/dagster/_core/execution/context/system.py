@@ -906,7 +906,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         all_dep_keys: List[AssetKey] = []
         for output_key in output_keys:
-            if output_key not in self.job_def.asset_layer._asset_deps:  # noqa: SLF001
+            if output_key not in self.job_def.asset_layer.asset_deps:
                 continue
             dep_keys = self.job_def.asset_layer.upstream_assets_for_asset(output_key)
             for key in dep_keys:
