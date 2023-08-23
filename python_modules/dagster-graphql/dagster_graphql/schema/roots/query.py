@@ -33,6 +33,7 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
+from ...implementation.fetch_asset_checks import fetch_asset_checks
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -40,7 +41,6 @@ from ...implementation.fetch_assets import (
     get_asset_nodes,
     get_assets,
 )
-from ..asset_checks import GrapheneAssetChecksOrError
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
@@ -83,6 +83,7 @@ from ...implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
+from ..asset_checks import GrapheneAssetChecksOrError
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,

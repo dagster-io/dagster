@@ -1,7 +1,7 @@
-from dagster_graphql.schema.util import non_null_list
 import graphene
 
 from dagster_graphql.schema.errors import GrapheneError
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneAssetCheck(graphene.ObjectType):
