@@ -18,19 +18,21 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 ## Relevant APIs
 
-| Name                                                                                           | Description                                                                                                                                         |
-| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`dagster-dbt project scaffold`](/_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                      |
-| <PyObject module="dagster_dbt" object="dbt_assets" decorator />                                | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                 |
-| <PyObject module="dagster_dbt" object="DbtCliResource" />                                      | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                           |
-| <PyObject module="dagster_dbt" object="DbtCliInvocation" />                                    | A class that defines the representation of an invoked dbt command.                                                                                  |
-| <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />                                | A class that can be overridden to customize how Dagster asset metadata is derived from a dbt manifest.                                              |
-| <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" />                           | A class that defines a selection of assets from a dbt manifest and a dbt selection string.                                                          |
-| <PyObject module="dagster_dbt" object="build_dbt_asset_selection" />                           | A helper method that builds a <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" /> from a dbt manifest and dbt selection string.    |
-| <PyObject module="dagster_dbt" object="build_schedule_from_dbt_selection" />                   | A helper method that builds a <PyObject module="dagster" object="ScheduleDefinition" /> from a dbt manifest, dbt selection string, and cron string. |
-| <PyObject module="dagster_dbt" object="get_asset_key_for_model" />                             | A helper method that retrieves the <PyObject module="dagster" object="AssetKey" /> for a dbt model.                                                 |
-| <PyObject module="dagster_dbt" object="get_asset_key_for_source" />                            | A helper method that retrieves the <PyObject module="dagster" object="AssetKey" /> for a dbt source with a singular table.                          |
-| <PyObject module="dagster_dbt" object="get_asset_keys_by_output_name_for_source" />            | A helper method that retrieves the <PyObject module="dagster" object="AssetKey" />'s for a dbt source with multiple tables.                         |
+| Name                                                                                           | Description                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`dagster-dbt project scaffold`](/_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                                                    |
+| <PyObject module="dagster_dbt" object="dbt_assets" decorator />                                | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                                                                               |
+| <PyObject module="dagster_dbt" object="DbtCliResource" />                                      | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                                                         |
+| <PyObject module="dagster_dbt" object="DbtCliInvocation" />                                    | A class that defines the representation of an invoked dbt command.                                                                                                                                                |
+| <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />                                | A class that can be overridden to customize how Dagster asset metadata is derived from a dbt manifest.                                                                                                            |
+| <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" />                           | A class that defines a selection of assets from a dbt manifest and a dbt selection string.                                                                                                                        |
+| <PyObject module="dagster_dbt" object="build_dbt_asset_selection" />                           | A helper method that builds a <PyObject module="dagster_dbt" object="DbtManifestAssetSelection" /> from a dbt manifest and dbt selection string.                                                                  |
+| <PyObject module="dagster_dbt" object="build_schedule_from_dbt_selection" />                   | A helper method that builds a <PyObject module="dagster" object="ScheduleDefinition" /> from a dbt manifest, dbt selection string, and cron string.                                                               |
+| <PyObject module="dagster_dbt" object="get_asset_key_for_model" />                             | A helper method that retrieves the <PyObject module="dagster" object="AssetKey" /> for a dbt model.                                                                                                               |
+| <PyObject module="dagster_dbt" object="get_asset_key_for_source" />                            | A helper method that retrieves the <PyObject module="dagster" object="AssetKey" /> for a dbt source with a singular table.                                                                                        |
+| <PyObject module="dagster_dbt" object="get_asset_keys_by_output_name_for_source" />            | A helper method that retrieves the <PyObject module="dagster" object="AssetKey" />'s for a dbt source with multiple tables.                                                                                       |
+| <PyObject module="dagster_dbt" object="load_assets_from_dbt_manifest" />                       | A convenience function that defines Dagster assets for dbt models with either `dbt build` or `dbt run`. This function uses <PyObject module="dagster_dbt" object="dbt_assets" decorator /> in its implementation. |
+| <PyObject module="dagster_dbt" object="dbt_cli_resource" />                                    | Deprecated in favor of <PyObject module="dagster_dbt" object="DbtCliResource" />.                                                                                                                                 |
 
 ---
 
@@ -62,13 +64,6 @@ This creates a directory called `project_dagster/` inside the current directory.
 
 ## Loading dbt models from a dbt project
 
-The `dagster-dbt` library offers two methods of loading dbt models from a project into Dagster:
-
-- **For smaller dbt projects** where compilation time isn't a concern, we recommend the <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function, or
-- **For larger dbt projects**, we recommend the <PyObject module="dagster_dbt" object="load_assets_from_dbt_manifest" /> function to load from an existing dbt `manifest.json` file
-
-### Loading models using load_assets_from_dbt_project
-
 <Note>
   Check out{" "}
   <a href="/integrations/dbt/using-dbt-with-dagster/load-dbt-models">
@@ -77,36 +72,47 @@ The `dagster-dbt` library offers two methods of loading dbt models from a projec
   to see this concept in context.
 </Note>
 
-For smaller dbt projects where compilation time is not a concern, the simplest way to load your dbt assets into Dagster is the following:
+The `dagster-dbt` library offers <PyObject module="dagster_dbt" object="dbt_assets" decorator /> to define Dagster assets for dbt models. It requires a [dbt manifest](https://docs.getdbt.com/reference/artifacts/manifest-json), or `manifest.json`, to be created from your dbt project to parse your dbt project's representation.
 
-```python startafter=start_load_assets_from_dbt_project endbefore=end_load_assets_from_dbt_project file=/integrations/dbt/dbt.py dedent=4
-from dagster_dbt import load_assets_from_dbt_project
+The manifest can be created in two ways:
 
-dbt_assets = load_assets_from_dbt_project(project_dir="path/to/dbt/project")
+1. **At run time**: A dbt manifest is generated when your Dagster definitions are loaded, or
+2. **At build time**: A dbt manifest is generated before loading your Dagster definitions and is included as part of your Python package.
+
+When deploying your Dagster project to production, **we recommend generating the manifest at build time** to avoid the overhead of recompiling your dbt project every time your Dagster code is executed. A `manifest.json` should be precompiled and included in the Python package for your Dagster code.
+
+In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface, we offer you both ways to load your dbt models:
+
+```python startafter=start_compile_dbt_manifest endbefore=end_compile_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
+import os
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource
+
+dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+
+# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
+# Otherwise, we expect a manifest to be present in the project's target directory.
+if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+    dbt_parse_invocation = dbt.cli(["parse"], manifest={}).wait()
+    dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+else:
+    dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
 ```
 
-The <PyObject module="dagster_dbt" object="load_assets_from_dbt_project" /> function:
+As the comment explains, the code gives you a choice about how to create this dbt manifest. Based on the `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` environment variable, either:
 
-1. Compiles your dbt project,
-2. Parses the metadata that dbt provides, and
-3. Generates a set of software-defined assets that reflect the models in the project. These assets will share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
+1. **At run time**: This code generates the `manifest.json` for you. This is the easiest option during development because you never need to worry about the file being out-of-date with your dbt project, or
+2. **At build time**: This code leaves it up to you to generate the `manifest.json` file on your own, and this code just reads it.
 
-### Loading models using load_assets_from_dbt_manifest
+When developing locally, you can run the following command to generate the manifest at run time for your dbt and Dagster project:
 
-For larger dbt projects, the overhead involved with recompiling the entire project may be a concern. In these cases, you can load dbt models from an existing dbt `manifest.json` file using the <PyObject module="dagster_dbt" object="load_assets_from_dbt_manifest" /> function:
-
-```python startafter=start_load_assets_from_dbt_manifest endbefore=end_load_assets_from_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
-import json
-
-from dagster_dbt import load_assets_from_dbt_manifest
-
-with open("path/to/dbt/manifest.json") as f:
-    manifest_json = json.load(f)
-
-dbt_assets = load_assets_from_dbt_manifest(manifest_json)
+```shell
+DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
 ```
 
-If you make any changes to your dbt project that change the structure of the project (such as changing the dependencies of a model or adding a new one), you'll need to regenerate your manifest file for those changes to be reflected in Dagster.
+In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your project uses the precompiled manifest.
 
 ---
 

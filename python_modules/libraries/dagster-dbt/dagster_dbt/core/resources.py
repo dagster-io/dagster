@@ -506,7 +506,9 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
 @dagster_maintained_resource
 @resource(config_schema=DbtCliClientResource.to_config_schema())
 def dbt_cli_resource(context) -> DbtCliClient:
-    """This resource issues dbt CLI commands against a configured dbt project."""
+    """This resource issues dbt CLI commands against a configured dbt project. It is deprecated
+    in favor of :py:class:`~dagster_dbt.DbtCliResource`.
+    """
     # all config options that are intended to be used as flags for dbt commands
 
     default_flags = {
