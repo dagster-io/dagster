@@ -118,13 +118,13 @@ basic_scenarios = {
                 [
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_missing(), None
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(), None
                         ),
                         None,
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset([AssetKey("asset1")]),
                                 will_update_asset_keys=frozenset(),
@@ -147,13 +147,13 @@ basic_scenarios = {
                 [
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_missing(), None
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(), None
                         ),
                         None,
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset([AssetKey("asset1")]),
                                 will_update_asset_keys=frozenset(),
@@ -169,13 +169,13 @@ basic_scenarios = {
                 [
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_missing(), None
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(), None
                         ),
                         None,
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset([AssetKey("asset1")]),
                                 will_update_asset_keys=frozenset(),
@@ -232,13 +232,13 @@ basic_scenarios = {
                 [
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_missing(), None
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(), None
                         ),
                         None,
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset([AssetKey("parent1")]),
                                 will_update_asset_keys=frozenset([AssetKey("parent2")]),

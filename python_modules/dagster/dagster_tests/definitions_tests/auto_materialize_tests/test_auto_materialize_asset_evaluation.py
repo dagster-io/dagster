@@ -57,14 +57,14 @@ def test_backcompat():
         asset_partitions_by_rule_evaluation=[
             (
                 AutoMaterializeRuleEvaluation(
-                    rule=AutoMaterializeRule.materialize_on_missing(),
+                    rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                     evaluation_data=None,
                 ),
                 {AssetKeyPartitionKey(AssetKey(["my_asset"]), p) for p in ("a", "b")},
             ),
             (
                 AutoMaterializeRuleEvaluation(
-                    rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                    rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                     evaluation_data=ParentUpdatedRuleEvaluationData(
                         updated_asset_keys=frozenset(
                             {AssetKey(["parent1"]), AssetKey(["parent2"])}
@@ -76,7 +76,7 @@ def test_backcompat():
             ),
             (
                 AutoMaterializeRuleEvaluation(
-                    rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                    rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                     evaluation_data=WaitingOnAssetsRuleEvaluationData(
                         waiting_on_asset_keys=frozenset(
                             {AssetKey(["parent1"]), AssetKey(["parent2"])}
@@ -87,7 +87,7 @@ def test_backcompat():
             ),
             (
                 AutoMaterializeRuleEvaluation(
-                    rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                    rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                     evaluation_data=WaitingOnAssetsRuleEvaluationData(
                         waiting_on_asset_keys=frozenset({AssetKey(["parent1"])}),
                     ),

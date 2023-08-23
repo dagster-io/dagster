@@ -218,7 +218,7 @@ observable_source_asset_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                            rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset([AssetKey("source_asset")]),
                                 will_update_asset_keys=frozenset(),
@@ -228,7 +228,8 @@ observable_source_asset_scenarios = {
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            rule=AutoMaterializeRule.materialize_on_missing(), evaluation_data=None
+                            rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
+                            evaluation_data=None,
                         ),
                         {"b"},
                     ),

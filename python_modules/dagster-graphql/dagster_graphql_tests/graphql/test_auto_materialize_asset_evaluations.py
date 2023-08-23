@@ -100,7 +100,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     partition_subsets_by_condition=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=AutoMaterializeRule.materialize_on_missing(),
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                                 evaluation_data=None,
                             ),
                             None,
@@ -115,7 +115,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     partition_subsets_by_condition=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                                 evaluation_data=WaitingOnAssetsRuleEvaluationData(
                                     waiting_on_asset_keys=frozenset([AssetKey("asset_two")])
                                 ),
@@ -132,7 +132,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     partition_subsets_by_condition=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                                 evaluation_data=ParentUpdatedRuleEvaluationData(
                                     updated_asset_keys=frozenset([AssetKey("asset_two")]),
                                     will_update_asset_keys=frozenset([AssetKey("asset_three")]),
@@ -283,7 +283,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     partition_subsets_by_condition=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=AutoMaterializeRule.materialize_on_missing(),
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                                 evaluation_data=None,
                             ),
                             SerializedPartitionsSubset.from_subset(
@@ -348,7 +348,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     partition_subsets_by_condition=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=AutoMaterializeRule.materialize_on_missing(),
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                                 evaluation_data=None,
                             ),
                             SerializedPartitionsSubset.from_subset(

@@ -200,14 +200,16 @@ partition_scenarios = {
                     rule_evaluations=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=AutoMaterializeRule.materialize_on_missing(),
+                                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                                 evaluation_data=None,
                             ),
                             {f"2013-01-{i:02}" for i in range(28)},
                         ),
                         (
                             AutoMaterializeRuleEvaluation(
-                                rule=DiscardOnMaxMaterializationsExceededRule(limit=1),
+                                rule_snapshot=DiscardOnMaxMaterializationsExceededRule(
+                                    limit=1
+                                ).to_snapshot(),
                                 evaluation_data=None,
                             ),
                             {f"2013-01-{i:02}" for i in range(27)},

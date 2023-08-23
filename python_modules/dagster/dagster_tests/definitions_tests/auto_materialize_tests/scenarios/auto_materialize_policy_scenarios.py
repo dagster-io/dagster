@@ -192,7 +192,7 @@ auto_materialize_policy_scenarios = {
                     rule_evaluations=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                AutoMaterializeRule.materialize_on_missing(),
+                                AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                                 evaluation_data=None,
                             ),
                             hourly_partitions_def.get_partition_keys_in_range(
@@ -201,7 +201,7 @@ auto_materialize_policy_scenarios = {
                         ),
                         (
                             AutoMaterializeRuleEvaluation(
-                                DiscardOnMaxMaterializationsExceededRule(limit=48),
+                                DiscardOnMaxMaterializationsExceededRule(limit=48).to_snapshot(),
                                 evaluation_data=None,
                             ),
                             hourly_partitions_def.get_partition_keys_in_range(
@@ -276,7 +276,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_missing(),
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                             evaluation_data=None,
                         ),
                         hourly_partitions_def.get_partition_keys_in_range(
@@ -285,7 +285,7 @@ auto_materialize_policy_scenarios = {
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            DiscardOnMaxMaterializationsExceededRule(limit=1),
+                            DiscardOnMaxMaterializationsExceededRule(limit=1).to_snapshot(),
                             evaluation_data=None,
                         ),
                         hourly_partitions_def.get_partition_keys_in_range(
@@ -320,7 +320,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_missing(),
+                            AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                             evaluation_data=None,
                         ),
                         hourly_partitions_def.get_partition_keys_in_range(
@@ -354,7 +354,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset({AssetKey("asset1")}),
                                 will_update_asset_keys=frozenset(),
@@ -370,7 +370,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset({AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset({AssetKey("asset3")}),
@@ -400,7 +400,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset({AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset(),
@@ -410,7 +410,7 @@ auto_materialize_policy_scenarios = {
                     ),
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.skip_on_parent_outdated(),
+                            AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                             evaluation_data=WaitingOnAssetsRuleEvaluationData(
                                 waiting_on_asset_keys=frozenset({AssetKey("asset3")})
                             ),
@@ -510,7 +510,7 @@ auto_materialize_policy_scenarios = {
                         rule_evaluations=[
                             (
                                 AutoMaterializeRuleEvaluation(
-                                    AutoMaterializeRule.materialize_on_parent_updated(),
+                                    AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                                     evaluation_data=ParentUpdatedRuleEvaluationData(
                                         updated_asset_keys=frozenset(
                                             {AssetKey("C"), AssetKey("root2")}
@@ -523,7 +523,7 @@ auto_materialize_policy_scenarios = {
                             # waiting on A to be materialized (pulling in the new version of root1)
                             (
                                 AutoMaterializeRuleEvaluation(
-                                    AutoMaterializeRule.skip_on_parent_outdated(),
+                                    AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                                     evaluation_data=WaitingOnAssetsRuleEvaluationData(
                                         waiting_on_asset_keys=frozenset({AssetKey("A")})
                                     ),
@@ -543,7 +543,7 @@ auto_materialize_policy_scenarios = {
                     rule_evaluations=[
                         (
                             AutoMaterializeRuleEvaluation(
-                                AutoMaterializeRule.materialize_on_parent_updated(),
+                                AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                                 evaluation_data=ParentUpdatedRuleEvaluationData(
                                     updated_asset_keys=frozenset(
                                         {AssetKey("C"), AssetKey("root2")}
@@ -556,7 +556,7 @@ auto_materialize_policy_scenarios = {
                         # now waiting on B to be materialized (pulling in the new version of root1/A)
                         (
                             AutoMaterializeRuleEvaluation(
-                                AutoMaterializeRule.skip_on_parent_outdated(),
+                                AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                                 evaluation_data=WaitingOnAssetsRuleEvaluationData(
                                     waiting_on_asset_keys=frozenset({AssetKey("B")})
                                 ),
@@ -578,7 +578,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset({AssetKey("B")}),
                                 will_update_asset_keys=frozenset(),
@@ -594,7 +594,7 @@ auto_materialize_policy_scenarios = {
                 rule_evaluations=[
                     (
                         AutoMaterializeRuleEvaluation(
-                            AutoMaterializeRule.materialize_on_parent_updated(),
+                            AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
                                 updated_asset_keys=frozenset({AssetKey("root2")}),
                                 will_update_asset_keys=frozenset({AssetKey("C")}),

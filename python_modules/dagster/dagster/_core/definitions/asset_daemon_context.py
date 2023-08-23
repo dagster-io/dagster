@@ -333,13 +333,14 @@ class AssetDaemonContext:
         )
 
         for materialize_rule in auto_materialize_policy.materialize_rules:
+            rule_snapshot = materialize_rule.to_snapshot()
             for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
             ):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
-                            rule=materialize_rule, evaluation_data=evaluation_data
+                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
                         ),
                         asset_partitions,
                     )
@@ -371,11 +372,12 @@ class AssetDaemonContext:
         skip_context = materialize_context._replace(candidates=to_materialize)
 
         for skip_rule in auto_materialize_policy.skip_rules:
+            rule_snapshot = skip_rule.to_snapshot()
             for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
                 all_results.append(
                     (
                         AutoMaterializeRuleEvaluation(
-                            rule=skip_rule, evaluation_data=evaluation_data
+                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
                         ),
                         asset_partitions,
                     )
@@ -388,12 +390,15 @@ class AssetDaemonContext:
             rule = DiscardOnMaxMaterializationsExceededRule(
                 limit=auto_materialize_policy.max_materializations_per_minute
             )
+            rule_snapshot = rule.to_snapshot()
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
             ):
                 all_results.append(
                     (
-                        AutoMaterializeRuleEvaluation(rule=rule, evaluation_data=evaluation_data),
+                        AutoMaterializeRuleEvaluation(
+                            rule_snapshot=rule_snapshot, evaluation_data=evaluation_data
+                        ),
                         asset_partitions,
                     )
                 )
@@ -456,7 +461,7 @@ class AssetDaemonContext:
             # over evaluation to any required neighbor key
             if to_materialize_for_asset:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
-                    evaluations_by_key[neighbor_key] = evaluation
+                    evaluations_by_key[neighbor_key] = evaluation._replace(asset_key=neighbor_key)
                     will_materialize_mapping[neighbor_key] = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }

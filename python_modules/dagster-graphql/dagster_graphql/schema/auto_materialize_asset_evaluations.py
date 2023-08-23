@@ -156,19 +156,19 @@ def create_graphene_auto_materialize_rules_with_rule_evaluations(
 ) -> Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]:
     rule_mapping = defaultdict(list)
     for rule_evaluation, serialized_partition_subset in partition_subsets_by_condition:
-        rule_mapping[rule_evaluation.rule].append(
+        rule_mapping[rule_evaluation.rule_snapshot].append(
             (rule_evaluation.evaluation_data, serialized_partition_subset)
         )
 
     return [
         GrapheneAutoMaterializeRuleWithRuleEvaluations(
-            rule=GrapheneAutoMaterializeRule(rule),
+            rule=GrapheneAutoMaterializeRule(rule_snapshot),
             ruleEvaluations=[
                 create_graphene_auto_materialize_rule_evaluation(tup, partitions_def)
                 for tup in tups
             ],
         )
-        for rule, tups in rule_mapping.items()
+        for rule_snapshot, tups in rule_mapping.items()
     ]
 
 

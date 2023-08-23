@@ -121,7 +121,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' "AutoMaterializeDecisionType.MATERIALIZE"}}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_missing(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                 evaluation_data=None,
             ),
         ),
@@ -132,7 +132,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' null, "will_update_asset_keys": null}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
                     updated_asset_keys=frozenset(), will_update_asset_keys=frozenset()
                 ),
@@ -148,7 +148,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' ["foo2"]}]}}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
                     updated_asset_keys=frozenset([AssetKey("foo"), AssetKey("bar")]),
                     will_update_asset_keys=frozenset([AssetKey("foo2"), AssetKey("bar2")]),
@@ -161,7 +161,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' "AutoMaterializeDecisionType.MATERIALIZE"}}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_required_for_freshness().to_snapshot(),
                 evaluation_data=None,
             ),
         ),
@@ -171,7 +171,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_required_for_freshness().to_snapshot(),
                 evaluation_data=None,
             ),
         ),
@@ -181,7 +181,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "waiting_on_asset_keys": null}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                 evaluation_data=WaitingOnAssetsRuleEvaluationData(
                     waiting_on_asset_keys=frozenset(),
                 ),
@@ -195,7 +195,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' "AssetKey", "path": ["foo"]}]}}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                 evaluation_data=WaitingOnAssetsRuleEvaluationData(
                     waiting_on_asset_keys=frozenset({AssetKey("foo"), AssetKey("bar")})
                 ),
@@ -207,7 +207,7 @@ def test_serialized_auto_materialize_backcompat(
                 ' "decision_type": {"__enum__": "AutoMaterializeDecisionType.DISCARD"}}'
             ),
             AutoMaterializeRuleEvaluation(
-                rule=DiscardOnMaxMaterializationsExceededRule(limit=1),
+                rule_snapshot=DiscardOnMaxMaterializationsExceededRule(limit=1).to_snapshot(),
                 evaluation_data=None,
             ),
         ),

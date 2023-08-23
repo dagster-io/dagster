@@ -59,7 +59,7 @@ class AutoMaterializeDecisionType(Enum):
 
 
 class AutoMaterializeRuleEvaluationData(ABC):
-    ...
+    pass
 
 
 @whitelist_for_serdes
@@ -96,8 +96,25 @@ class WaitingOnAssetsRuleEvaluationData(
 
 
 @whitelist_for_serdes
+class AutoMaterializeRuleSnapshot(NamedTuple):
+    """A serializable snapshot of an AutoMaterializeRule for historical evaluations."""
+
+    class_name: str
+    description: str
+    decision_type: AutoMaterializeDecisionType
+
+    @staticmethod
+    def from_rule(rule: "AutoMaterializeRule") -> "AutoMaterializeRuleSnapshot":
+        return AutoMaterializeRuleSnapshot(
+            class_name=rule.__class__.__name__,
+            description=rule.description,
+            decision_type=rule.decision_type,
+        )
+
+
+@whitelist_for_serdes
 class AutoMaterializeRuleEvaluation(NamedTuple):
-    rule: "AutoMaterializeRule"
+    rule_snapshot: AutoMaterializeRuleSnapshot
     evaluation_data: Optional[AutoMaterializeRuleEvaluationData]
 
 
@@ -198,6 +215,10 @@ class AutoMaterializeRule(ABC):
     def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
         """Skip materializing an asset partition if one of its parents is outdated."""
         return SkipOnParentOutdatedRule()
+
+    def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
+        """Returns a serializable snapshot of this rule for historical evaluations."""
+        return AutoMaterializeRuleSnapshot.from_rule(self)
 
     def __eq__(self, other) -> bool:
         # override the default NamedTuple __eq__ method to factor in types
@@ -502,12 +523,12 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
             DownstreamFreshnessAutoMaterializeCondition,
         ):
             return AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_required_for_freshness(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_required_for_freshness().to_snapshot(),
                 evaluation_data=None,
             )
         elif self.klass == MissingAutoMaterializeCondition:
             return AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_missing(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_missing().to_snapshot(),
                 evaluation_data=None,
             )
         elif self.klass == ParentMaterializedAutoMaterializeCondition:
@@ -524,7 +545,7 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
             else:
                 will_update_asset_keys = frozenset()
             return AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.materialize_on_parent_updated(),
+                rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                 evaluation_data=ParentUpdatedRuleEvaluationData(
                     updated_asset_keys=updated_asset_keys,
                     will_update_asset_keys=will_update_asset_keys,
@@ -537,14 +558,14 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
             else:
                 waiting_on_asset_keys = frozenset()
             return AutoMaterializeRuleEvaluation(
-                rule=AutoMaterializeRule.skip_on_parent_outdated(),
+                rule_snapshot=AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                 evaluation_data=WaitingOnAssetsRuleEvaluationData(
                     waiting_on_asset_keys=waiting_on_asset_keys
                 ),
             )
         elif self.klass == MaxMaterializationsExceededAutoMaterializeCondition:
             return AutoMaterializeRuleEvaluation(
-                rule=DiscardOnMaxMaterializationsExceededRule(limit=1),
+                rule_snapshot=DiscardOnMaxMaterializationsExceededRule(limit=1).to_snapshot(),
                 evaluation_data=None,
             )
         check.failed(f"Unexpected class {self.klass}")
