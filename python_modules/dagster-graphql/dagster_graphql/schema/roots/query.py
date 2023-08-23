@@ -470,9 +470,8 @@ class GrapheneQuery(graphene.ObjectType):
     )
 
     assetChecksOrError = graphene.Field(
-        GrapheneAssetChecksOrError,
+        graphene.NonNull(GrapheneAssetChecksOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
-        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         description="Retrieve the asset checks for a given asset key.",
     )
 

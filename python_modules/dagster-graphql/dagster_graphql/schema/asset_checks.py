@@ -33,4 +33,4 @@ class GrapheneAssetChecksOrError(graphene.Union):
             GrapheneAssetChecks,
             GrapheneAssetCheckNeedsMigrationError,
         )
-        name = "GrapheneAssetChecksOrError"
+        name = "AssetChecksOrError"

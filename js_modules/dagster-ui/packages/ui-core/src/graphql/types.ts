@@ -114,6 +114,22 @@ export type AssetBackfillData = {
 
 export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
 
+export type AssetCheck = {
+  __typename: 'AssetCheck';
+  description: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+};
+
+export type AssetCheckNeedsMigrationError = Error & {
+  __typename: 'AssetCheckNeedsMigrationError';
+  message: Scalars['String'];
+};
+
+export type AssetChecks = {
+  __typename: 'AssetChecks';
+  checks: Array<AssetCheck>;
+};
+
 export type AssetConnection = {
   __typename: 'AssetConnection';
   nodes: Array<Asset>;
@@ -1179,6 +1195,8 @@ export type GraphSelector = {
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
 };
+
+export type GrapheneAssetChecksOrError = AssetCheckNeedsMigrationError | AssetChecks;
 
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
@@ -2687,6 +2705,7 @@ export type PythonError = Error & {
 export type Query = {
   __typename: 'Query';
   allTopLevelResourceDetailsOrError: ResourcesOrError;
+  assetChecksOrError: GrapheneAssetChecksOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -2736,6 +2755,10 @@ export type Query = {
 
 export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
   repositorySelector: RepositorySelector;
+};
+
+export type QueryAssetChecksOrErrorArgs = {
+  assetKey: AssetKeyInput;
 };
 
 export type QueryAssetNodeDefinitionCollisionsArgs = {
@@ -4297,6 +4320,44 @@ export const buildAssetBackfillData = (
       overrides && overrides.hasOwnProperty('rootAssetTargetedRanges')
         ? overrides.rootAssetTargetedRanges!
         : [],
+  };
+};
+
+export const buildAssetCheck = (
+  overrides?: Partial<AssetCheck>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheck'} & AssetCheck => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheck');
+  return {
+    __typename: 'AssetCheck',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
+  };
+};
+
+export const buildAssetCheckNeedsMigrationError = (
+  overrides?: Partial<AssetCheckNeedsMigrationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNeedsMigrationError'} & AssetCheckNeedsMigrationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNeedsMigrationError');
+  return {
+    __typename: 'AssetCheckNeedsMigrationError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'enim',
+  };
+};
+
+export const buildAssetChecks = (
+  overrides?: Partial<AssetChecks>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetChecks'} & AssetChecks => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetChecks');
+  return {
+    __typename: 'AssetChecks',
+    checks: overrides && overrides.hasOwnProperty('checks') ? overrides.checks! : [],
   };
 };
 
@@ -9303,6 +9364,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    assetChecksOrError:
+      overrides && overrides.hasOwnProperty('assetChecksOrError')
+        ? overrides.assetChecksOrError!
+        : relationshipsToOmit.has('AssetCheckNeedsMigrationError')
+        ? ({} as AssetCheckNeedsMigrationError)
+        : buildAssetCheckNeedsMigrationError({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!

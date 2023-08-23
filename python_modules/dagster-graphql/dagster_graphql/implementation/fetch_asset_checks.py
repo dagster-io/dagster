@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 def fetch_asset_checks(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-):
+) -> GrapheneAssetChecks:
     external_asset_checks = []
     for location in graphene_info.context.code_locations:
         for repository in location.get_repositories().values():
