@@ -55,7 +55,7 @@ export const AssetJobPartitionsView: React.FC<{
 
     return {
       merged,
-      total: keyCountInSelections.length,
+      total: keyCountInSelections(selection),
       missing: missing.length,
     };
   }, [assetHealth]);
