@@ -103,8 +103,6 @@ else:
 # end_shutdown_repo_location_marker
 
 # start_cloud_usage
-from gql.transport.requests import RequestsHTTPTransport
-
 url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
 user_token = (  # a User Token generated from the Cloud Settings page in Dagster Cloud.
     "your_token_here"
