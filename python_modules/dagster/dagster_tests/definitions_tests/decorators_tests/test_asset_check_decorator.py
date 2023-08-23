@@ -5,7 +5,10 @@ import pytest
 from dagster import (
     AssetCheckResult,
     AssetKey,
+    DagsterEventType,
+    DagsterInstance,
     Definitions,
+    EventRecordsFilter,
     ExecuteInProcessResult,
     IOManager,
     MetadataValue,
@@ -18,11 +21,11 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 
 
 def execute_assets_and_checks(
-    assets=None, asset_checks=None, raise_on_error: bool = True, resources=None
+    assets=None, asset_checks=None, raise_on_error: bool = True, resources=None, instance=None
 ) -> ExecuteInProcessResult:
     defs = Definitions(assets=assets, asset_checks=asset_checks, resources=resources)
     job_def = defs.get_implicit_global_asset_job_def()
-    return job_def.execute_in_process(raise_on_error=raise_on_error)
+    return job_def.execute_in_process(raise_on_error=raise_on_error, instance=instance)
 
 
 def test_asset_check_decorator():
@@ -59,7 +62,8 @@ def test_execute_asset_and_check():
             metadata={"foo": "bar"},
         )
 
-    result = execute_assets_and_checks(assets=[asset1], asset_checks=[check1])
+    instance = DagsterInstance.ephemeral()
+    result = execute_assets_and_checks(assets=[asset1], asset_checks=[check1], instance=instance)
     assert result.success
 
     check_evals = result.get_asset_check_evaluations()
@@ -68,6 +72,14 @@ def test_execute_asset_and_check():
     assert check_eval.asset_key == asset1.key
     assert check_eval.check_name == "check1"
     assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
+
+    assert check_eval.target_materialization_data is not None
+    assert check_eval.target_materialization_data.run_id == result.run_id
+    materialization_record = instance.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
+    )[0]
+    assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
+    assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
 
 def test_execute_check_without_asset():
@@ -84,6 +96,43 @@ def test_execute_check_without_asset():
     assert check_eval.asset_key == AssetKey("asset1")
     assert check_eval.check_name == "check1"
     assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
+
+    assert check_eval.target_materialization_data is None
+
+
+def test_execute_check_and_asset_in_separate_run():
+    @asset
+    def asset1():
+        ...
+
+    @asset_check(asset=asset1, description="desc")
+    def check1(context):
+        assert context.asset_key_for_input("asset1") == asset1.key
+        asset_check_spec = context.asset_check_spec
+        return AssetCheckResult(
+            asset_key=asset_check_spec.asset_key,
+            check_name=asset_check_spec.name,
+            success=True,
+            metadata={"foo": "bar"},
+        )
+
+    instance = DagsterInstance.ephemeral()
+    materialize_result = execute_assets_and_checks(assets=[asset1], instance=instance)
+
+    result = execute_assets_and_checks(asset_checks=[check1], instance=instance)
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+
+    assert check_eval.target_materialization_data is not None
+    assert check_eval.target_materialization_data.run_id == materialize_result.run_id
+    materialization_record = instance.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
+    )[0]
+    assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
+    assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
 
 def test_execute_check_and_unrelated_asset():
