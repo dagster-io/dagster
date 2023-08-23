@@ -101,3 +101,11 @@ if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
 else:
     raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
 # end_shutdown_repo_location_marker
+
+# start_cloud_usage
+url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
+user_token = (  # a User Token generated from the Cloud Settings page in Dagster Cloud.
+    "your_token_here"
+)
+client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
+# end_cloud_usage
