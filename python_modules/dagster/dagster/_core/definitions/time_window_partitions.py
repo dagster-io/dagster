@@ -523,7 +523,7 @@ class TimeWindowPartitionsDefinition(
     def end_time_for_partition_key(self, partition_key: str) -> datetime:
         return self.time_window_for_partition_key(partition_key).end
 
-    @functools.lru_cache(maxsize=100)
+    @functools.lru_cache(maxsize=5)
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
         result: List[str] = []
         for partition_time_window in self._iterate_time_windows(time_window.start):
