@@ -483,6 +483,12 @@ class InputAssetVersionInfo:
     # can be none if we are sourcing a materialization from before data versions.
     data_version: Optional["DataVersion"]
 
+    # This is the run_id on the event that the storage_id references
+    run_id: str
+
+    # This is the timestamp on the event that the storage_id references
+    timestamp: float
+
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):
     """Context for the execution of a step. Users should not instantiate this class directly.
@@ -947,7 +953,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     data_version = extract_data_version_from_entry(event.event_log_entry)
             else:
                 data_version = extract_data_version_from_entry(event.event_log_entry)
-            self._input_asset_version_info[key] = InputAssetVersionInfo(storage_id, data_version)
+            self._input_asset_version_info[key] = InputAssetVersionInfo(
+                storage_id, data_version, event.run_id, event.timestamp
+            )
 
     def partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         asset_layer = self.job_def.asset_layer
