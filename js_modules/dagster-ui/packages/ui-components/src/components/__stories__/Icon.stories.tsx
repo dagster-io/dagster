@@ -3,8 +3,10 @@ import * as React from 'react';
 
 import {Box} from '../Box';
 import {Colors} from '../Colors';
-import {IconNames, Icon} from '../Icon';
+import {IconNames as _iconNames, Icon} from '../Icon';
 import {Tooltip} from '../Tooltip';
+
+const IconNames = _iconNames.slice().sort();
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -52,7 +54,7 @@ export const IconColors = () => {
 
   return (
     <Box flex={{gap: 6, wrap: 'wrap'}}>
-      {IconNames.sort().map((name, idx) => (
+      {IconNames.map((name, idx) => (
         <Tooltip content={name} key={name}>
           <Icon name={name} color={colorAtIndex(idx)} size={24} />
         </Tooltip>
