@@ -109,7 +109,7 @@ class ExternalRepositoryData(
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
-            ("external_asset_check_specs", Optional[Sequence["ExternalAssetCheckSpec"]]),
+            ("external_asset_checks", Optional[Sequence["ExternalAssetCheck"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
@@ -125,7 +125,7 @@ class ExternalRepositoryData(
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
-        external_asset_check_specs: Optional[Sequence["ExternalAssetCheckSpec"]] = None,
+        external_asset_checks: Optional[Sequence["ExternalAssetCheck"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
@@ -159,10 +159,10 @@ class ExternalRepositoryData(
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
             ),
-            external_asset_check_specs=check.opt_nullable_sequence_param(
-                external_asset_check_specs,
-                "external_asset_check_specs",
-                of_type=ExternalAssetCheckSpec,
+            external_asset_checks=check.opt_nullable_sequence_param(
+                external_asset_checks,
+                "external_asset_checks",
+                of_type=ExternalAssetCheck,
             ),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             utilized_env_vars=check.opt_nullable_mapping_param(
@@ -1077,9 +1077,9 @@ class ExternalResourceData(
 
 
 @whitelist_for_serdes
-class ExternalAssetCheckSpec(
+class ExternalAssetCheck(
     NamedTuple(
-        "_ExternalAssetCheckSpec",
+        "_ExternalAssetCheck",
         [
             ("name", str),
             ("asset_key", AssetKey),
@@ -1095,7 +1095,7 @@ class ExternalAssetCheckSpec(
         asset_key: AssetKey,
         description: Optional[str] = None,
     ):
-        return super(ExternalAssetCheckSpec, cls).__new__(
+        return super(ExternalAssetCheck, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
@@ -1368,7 +1368,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
-        external_asset_check_specs=external_asset_check_specs_from_defs(jobs),
+        external_asset_checks=external_asset_checks_from_defs(jobs),
         metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
@@ -1380,19 +1380,25 @@ def external_repository_data_from_def(
     )
 
 
-def external_asset_check_specs_from_defs(
+def external_asset_checks_from_defs(
     job_defs: Sequence[JobDefinition],
-) -> Sequence[ExternalAssetCheckSpec]:
+) -> Sequence[ExternalAssetCheck]:
     check_specs = []
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
+
+        # checks defined with @asset_check
         for asset_check_def in asset_layer.asset_checks_defs:
             check_specs.extend(asset_check_def.specs)
 
+        # checks defined on @asset
+        for asset_def in asset_layer.assets_defs_by_key.values():
+            check_specs.extend(asset_def.check_specs)
+
+    check_specs = sorted(check_specs, key=lambda spec: (spec.asset_key, spec.name))
+
     return [
-        ExternalAssetCheckSpec(
-            asset_key=spec.asset_key, name=spec.name, description=spec.description
-        )
+        ExternalAssetCheck(asset_key=spec.asset_key, name=spec.name, description=spec.description)
         for spec in check_specs
     ]
 
