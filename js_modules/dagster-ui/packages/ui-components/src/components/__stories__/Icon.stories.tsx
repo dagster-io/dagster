@@ -52,7 +52,7 @@ export const IconColors = () => {
 
   return (
     <Box flex={{gap: 6, wrap: 'wrap'}}>
-      {IconNames.map((name, idx) => (
+      {IconNames.sort().map((name, idx) => (
         <Tooltip content={name} key={name}>
           <Icon name={name} color={colorAtIndex(idx)} size={24} />
         </Tooltip>

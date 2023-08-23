@@ -13,6 +13,7 @@ import arrow_forward from '../icon-svgs/arrow_forward.svg';
 import arrow_indent from '../icon-svgs/arrow_indent.svg';
 import arrow_upward from '../icon-svgs/arrow_upward.svg';
 import asset from '../icon-svgs/asset.svg';
+import asset_check from '../icon-svgs/asset_check.svg';
 import asset_group from '../icon-svgs/asset_group.svg';
 import asset_non_sda from '../icon-svgs/asset_non_sda.svg';
 import asset_plot from '../icon-svgs/asset_plot.svg';
@@ -51,6 +52,7 @@ import editor_role from '../icon-svgs/editor-role.svg';
 import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
+import execute from '../icon-svgs/execute.svg';
 import expand from '../icon-svgs/expand.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
@@ -155,12 +157,14 @@ export const Icons = {
   auto_materialize_policy,
   auto_observe,
   asset,
+  asset_check,
   asset_plot,
   asset_non_sda,
   asset_group,
   backfill,
   date,
   expectation,
+  execute,
   materialization,
   observation,
   job,
@@ -329,7 +333,11 @@ interface Props {
 
 export const Icon = React.memo((props: Props) => {
   const {name, size = 16, style} = props;
-  const img = Icons[name].src || '';
+
+  // Storybook imports SVGs are string but nextjs imports them as object.
+  // This is a temporary work around until we can get storybook to import them the same way as nextjs
+  const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
+
   const color: string | null = props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.Dark);
   return (
     <IconWrapper
@@ -369,10 +377,10 @@ export const IconWrapper = styled.div<WrapperProps>`
       `
       : `
         background: ${p.$color};
-        mask-size: cover;
+        mask-size: contain;
         mask-image: url(${p.$img});
       `}
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 150ms linear;
 
   ${({$rotation}) => ($rotation ? `transform: rotate(${$rotation});` : null)}
