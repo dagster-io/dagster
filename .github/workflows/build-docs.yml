@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - docs-prod
     paths:
       - docs/**
   pull_request:
@@ -16,29 +17,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Deploy to Vercel Previews on pull request or push to master branch
       - name: Get branch preview subdomain
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: |
           BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
-      - name: Checkout
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/checkout@v3
 
-      - name: 'Get PR fetch depth'
-        if: ${{ github.event.pull_request }}
+      - name: Get PR fetch depth
+        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
 
-      - name: 'Checkout PR branch'
+      - name: Checkout PR branch
         uses: actions/checkout@v3
-        if: ${{ github.event.pull_request }}
+        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files
-        if: ${{ github.event.pull_request }}
+        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: |
           echo "Base ref is $GITHUB_BASE_SHA"
           echo "Head ref is $GITHUB_HEAD_SHA"
@@ -58,7 +57,7 @@ jobs:
 
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -68,13 +67,18 @@ jobs:
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.dagster.dagster-docs.io
 
-      - name: Publish to Vercel
+      # Deploy to Vercel Production on push to docs-prod branch
+      - name: Checkout docs-prod branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
+        uses: actions/checkout@v3
+
+      - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
