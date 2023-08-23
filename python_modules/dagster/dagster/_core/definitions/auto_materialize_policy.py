@@ -1,9 +1,15 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+    UnknownSerdesValue,
+    UnpackContext,
+    UnpackedValue,
+    whitelist_for_serdes,
+)
 
 
 class AutoMaterializePolicyType(Enum):
@@ -11,8 +17,35 @@ class AutoMaterializePolicyType(Enum):
     LAZY = "LAZY"
 
 
+class BackcompatAutoMaterializePolicySerializer(NamedTupleSerializer):
+    def before_unpack(
+        self, context: UnpackContext, unpacked_dict: Dict[str, UnpackedValue]
+    ) -> Dict[str, UnpackedValue]:
+        # see if this was serialized with a newer version of Dagster
+        rules_set = unpacked_dict.get("rules")
+        if isinstance(rules_set, frozenset):
+            # if so, try to convert those class names to the old boolean values
+            unpacked_dict["on_missing"] = False
+            unpacked_dict["on_new_parent_data"] = False
+            unpacked_dict["for_freshness"] = False
+            for rule in rules_set:
+                if not isinstance(rule, UnknownSerdesValue):
+                    continue
+                rule_value = rule.value
+                if not isinstance(rule_value, dict):
+                    continue
+                rule_class = rule_value.get("__class__")
+                if rule_class == "MaterializeOnMissingRule":
+                    unpacked_dict["on_missing"] = True
+                elif rule_class == "MaterializeOnParentUpdatedRule":
+                    unpacked_dict["on_new_parent_data"] = True
+                elif rule_class == "MaterializeOnRequiredForFreshnessRule":
+                    unpacked_dict["for_freshness"] = True
+        return unpacked_dict
+
+
 @experimental
-@whitelist_for_serdes(old_fields={"time_window_partition_scope_minutes": 1e-6})
+@whitelist_for_serdes(serializer=BackcompatAutoMaterializePolicySerializer)
 class AutoMaterializePolicy(
     NamedTuple(
         "_AutoMaterializePolicy",
