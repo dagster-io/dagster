@@ -5,8 +5,8 @@ from subprocess import Popen
 from threading import Event
 from typing import ContextManager, Iterator, Mapping, Optional, Sequence, Union
 
-from dagster_external.protocol import (
-    DAGSTER_EXTERNAL_ENV_KEYS,
+from dagster_externals import (
+    DAGSTER_EXTERNALS_ENV_KEYS,
     ExternalExecutionExtras,
 )
 from pydantic import Field
@@ -74,7 +74,7 @@ class SubprocessExecutionTask(ExternalExecutionTask[SubprocessTaskParams, Subpro
     @contextmanager
     def _file_input(self, tempdir: str) -> Iterator[SubprocessTaskIOParams]:
         path = self._prepare_io_path(self._input_path, "input", tempdir)
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["input"]: path}
+        env = {DAGSTER_EXTERNALS_ENV_KEYS["input"]: path}
         try:
             self._write_input(path)
             yield SubprocessTaskIOParams(env=env)
@@ -90,7 +90,7 @@ class SubprocessExecutionTask(ExternalExecutionTask[SubprocessTaskParams, Subpro
     @contextmanager
     def _file_output(self, tempdir: str) -> Iterator[SubprocessTaskIOParams]:
         path = self._prepare_io_path(self._output_path, "output", tempdir)
-        env = {DAGSTER_EXTERNAL_ENV_KEYS["output"]: path}
+        env = {DAGSTER_EXTERNALS_ENV_KEYS["output"]: path}
         is_task_complete = Event()
         thread = None
         try:

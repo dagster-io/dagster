@@ -1,14 +1,14 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster_external.context import ExternalExecutionContext
-from dagster_external.protocol import (
+from dagster_externals._context import ExternalExecutionContext
+from dagster_externals._protocol import (
     ExternalDataProvenance,
     ExternalExecutionContextData,
     ExternalPartitionKeyRange,
     ExternalTimeWindow,
 )
-from dagster_external.util import DagsterExternalError
+from dagster_externals._util import DagsterExternalError
 
 TEST_EXTERNAL_EXECUTION_CONTEXT_DEFAULTS = ExternalExecutionContextData(
     asset_keys=None,

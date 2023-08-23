@@ -1,6 +1,6 @@
 import sys
 
-from dagster_external import init_dagster_external
+from dagster_externals import init_dagster_externals
 
 
 class SomeSqlClient:
@@ -11,7 +11,7 @@ class SomeSqlClient:
 if __name__ == "__main__":
     sql = sys.argv[1]
 
-    context = init_dagster_external()
+    context = init_dagster_externals()
 
     client = SomeSqlClient()
     client.query(sql)

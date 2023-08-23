@@ -1,10 +1,10 @@
 import os
 
-from dagster_external import init_dagster_external
+from dagster_externals import init_dagster_externals
 
 from .util import compute_data_version, store_asset_value
 
-context = init_dagster_external()
+context = init_dagster_externals()
 storage_root = context.get_extra("storage_root")
 
 value = int(os.environ["NUMBER_Y"])

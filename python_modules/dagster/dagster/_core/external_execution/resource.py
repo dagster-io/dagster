@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from dagster_external.protocol import ExternalExecutionExtras
+from dagster_externals import ExternalExecutionExtras
 from pydantic import Field
 
 from dagster._config.pythonic_config import ConfigurableResource

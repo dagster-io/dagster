@@ -1,14 +1,14 @@
 import os
 from dataclasses import dataclass
 
-from dagster_external.protocol import (
-    DAGSTER_EXTERNAL_ENV_KEYS,
+from ._protocol import (
+    DAGSTER_EXTERNALS_ENV_KEYS,
 )
 
 
 def get_external_execution_params() -> "ExternalExecutionParams":
-    input_path = os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["input"])
-    output_path = os.getenv(DAGSTER_EXTERNAL_ENV_KEYS["output"])
+    input_path = os.getenv(DAGSTER_EXTERNALS_ENV_KEYS["input"])
+    output_path = os.getenv(DAGSTER_EXTERNALS_ENV_KEYS["output"])
     assert input_path, "input_path must be set"
     assert output_path, "output_path must be set"
     return ExternalExecutionParams(
