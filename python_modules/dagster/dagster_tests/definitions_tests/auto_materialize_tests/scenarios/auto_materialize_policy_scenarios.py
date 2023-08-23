@@ -36,7 +36,20 @@ from .partition_scenarios import (
     hourly_to_daily_partitions,
     two_assets_in_sequence_one_partition,
     two_partitions_partitions_def,
+    partitioned_after_non_partitioned,
+    unpartitioned_with_one_parent_partitioned,
 )
+
+def with_auto_materialize_policy(
+    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
+) -> Sequence[AssetsDefinition]:
+    """Note: this should be implemented in core dagster at some point, and this implementation is
+    a lazy hack.
+    """
+    ret = []
+    for assets_def in assets_defs:
+        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
+    return ret
 
 lazy_assets_nothing_dep = [
     asset_def("asset1"),
@@ -121,17 +134,12 @@ partitioned_to_unpartitioned_allow_missing_parent = [
     ),
 ]
 
-
-def with_auto_materialize_policy(
-    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
-) -> Sequence[AssetsDefinition]:
-    """Note: this should be implemented in core dagster at some point, and this implementation is
-    a lazy hack.
-    """
-    ret = []
-    for assets_def in assets_defs:
-        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
-    return ret
+unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated = with_auto_materialize_policy(
+    unpartitioned_with_one_parent_partitioned,
+    AutoMaterializePolicy.eager().with_rules(
+        AutoMaterializeRule.skip_on_not_all_parents_updated(),
+    ),
+)
 
 
 # auto materialization policies
@@ -674,5 +682,43 @@ auto_materialize_policy_scenarios = {
         ),
         unevaluated_runs=[run(["B"])],
         expected_run_requests=[run_request(["C"])],
+    ),
+    "test_wait_for_all_parents_updated2": AssetReconciliationScenario(
+        assets=with_auto_materialize_policy(
+            vee,
+            AutoMaterializePolicy.eager().with_rules(
+                AutoMaterializeRule.skip_on_not_all_parents_updated(),
+            ),
+        ),
+        cursor_from=AssetReconciliationScenario(
+            assets=with_auto_materialize_policy(
+                vee,
+                AutoMaterializePolicy.eager().with_rules(
+                    AutoMaterializeRule.skip_on_not_all_parents_updated(),
+                ),
+            ),
+            unevaluated_runs=[run(["A", "B", "C"])],
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[run(["A"]), run(["B"]), run(["A"])],
+        expected_run_requests=[run_request(["C"])],
+    ),
+    "test_wait_for_all_parents_updated_unpartitioned_with_one_parent_partitioned": AssetReconciliationScenario(
+        assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+        cursor_from=AssetReconciliationScenario(
+            assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+            cursor_from=AssetReconciliationScenario(
+                assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+                unevaluated_runs=[run(["asset2"]), run(["asset1"], partition_key="2020-01-01")],
+                current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+                expected_run_requests=[],
+            ),
+            unevaluated_runs=[run(["asset1"], "2020-01-02")],
+            current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+            expected_run_requests=[run_request(["asset3"])],
+        ),
+        unevaluated_runs=[run(["asset1"], "2020-01-01"), run(["asset1"], "2020-01-02"), run(["asset2"])],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+        expected_run_requests=[run_request(["asset3"])],
     ),
 }

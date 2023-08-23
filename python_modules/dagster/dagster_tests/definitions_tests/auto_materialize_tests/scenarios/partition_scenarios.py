@@ -116,6 +116,14 @@ two_hourly_to_one_daily = [
     ),
 ]
 
+unpartitioned_with_one_parent_partitioned = [
+    asset_def("asset1", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
+    asset_def("asset2"),
+    asset_def(
+        "asset3",
+        ["asset1", "asset2"],
+    ),
+]
 
 partition_scenarios = {
     "one_asset_one_partition_never_materialized": AssetReconciliationScenario(
