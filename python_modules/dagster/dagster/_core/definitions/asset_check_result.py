@@ -2,7 +2,10 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationTargetMaterializationData,
+)
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -117,9 +120,20 @@ class AssetCheckResult(
 
             resolved_check_name = next(iter(check_names_with_specs))
 
+        input_asset_info = step_context.get_input_asset_version_info(resolved_asset_key)
+        if input_asset_info is not None:
+            target_materialization_data = AssetCheckEvaluationTargetMaterializationData(
+                run_id=input_asset_info.run_id,
+                storage_id=input_asset_info.storage_id,
+                timestamp=input_asset_info.timestamp,
+            )
+        else:
+            target_materialization_data = None
+
         return AssetCheckEvaluation(
             check_name=resolved_check_name,
             asset_key=resolved_asset_key,
             success=self.success,
             metadata=self.metadata,
+            target_materialization_data=target_materialization_data,
         )
