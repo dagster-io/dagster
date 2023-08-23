@@ -223,11 +223,11 @@ def build_assets_job(
     )
 
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph,
-        assets_defs_by_node_handle,
-        asset_checks_defs_by_node_handle,
-        resolved_source_assets,
-        resolved_asset_deps,
+        graph_def=graph,
+        asset_checks_defs_by_node_handle=asset_checks_defs_by_node_handle,
+        source_assets=resolved_source_assets,
+        resolved_asset_deps=resolved_asset_deps,
+        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, wrapped_resource_defs)
@@ -331,11 +331,11 @@ def build_source_asset_observation_job(
     )
 
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph,
-        assets_defs_by_node_handle,
-        checks_defs_by_node_handle,
-        source_assets,
-        resolved_asset_deps,
+        graph_def=graph,
+        asset_checks_defs_by_node_handle=checks_defs_by_node_handle,
+        source_assets=source_assets,
+        resolved_asset_deps=resolved_asset_deps,
+        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
     )
 
     all_resource_defs = get_all_resource_defs(assets, source_assets, resource_defs)
