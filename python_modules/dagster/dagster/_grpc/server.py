@@ -96,7 +96,12 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
+from .utils import (
+    default_grpc_server_shutdown_grace_period,
+    get_loadable_targets,
+    max_rx_bytes,
+    max_send_bytes,
+)
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
@@ -924,10 +929,17 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
 
-def server_termination_target(termination_event, server):
+def server_termination_target(termination_event, server, logger):
     termination_event.wait()
-    # We could make this grace period configurable if we set it in the ShutdownServer handler
-    server.stop(grace=5)
+
+    shutdown_grace_period = default_grpc_server_shutdown_grace_period()
+
+    logger.info(
+        f"Stopping server once all current RPC calls terminate or {shutdown_grace_period} seconds"
+        " pass"
+    )
+    finished_shutting_down_rpcs_event = server.stop(grace=shutdown_grace_period)
+    finished_shutting_down_rpcs_event.wait()
 
 
 class DagsterGrpcServer:
@@ -935,6 +947,7 @@ class DagsterGrpcServer:
         self,
         server_termination_event: threading.Event,
         dagster_api_servicer: DagsterApiServicer,
+        logger: logging.Logger,
         host="localhost",
         port: Optional[int] = None,
         socket: Optional[str] = None,
@@ -952,6 +965,8 @@ class DagsterGrpcServer:
             host is not None if port else True,
             "Must provide a host when serving on a port",
         )
+
+        self._logger = logger
 
         self.server = grpc.server(
             ThreadPoolExecutor(
@@ -1019,7 +1034,7 @@ class DagsterGrpcServer:
 
         server_termination_thread = threading.Thread(
             target=server_termination_target,
-            args=[self._server_termination_event, self.server],
+            args=[self._server_termination_event, self.server, self._logger],
             name="grpc-server-termination",
         )
 

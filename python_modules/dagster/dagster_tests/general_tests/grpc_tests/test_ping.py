@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import threading
@@ -22,6 +23,7 @@ def test_server_socket_on_windows():
             DagsterGrpcServer(
                 server_termination_event=threading.Event(),
                 dagster_api_servicer=mock.MagicMock(),
+                logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
             )
 
@@ -35,6 +37,7 @@ def test_server_port_and_socket():
             DagsterGrpcServer(
                 server_termination_event=threading.Event(),
                 dagster_api_servicer=mock.MagicMock(),
+                logger=logging.getLogger("dagster.code_server"),
                 socket=skt,
                 port=find_free_port(),
             )
