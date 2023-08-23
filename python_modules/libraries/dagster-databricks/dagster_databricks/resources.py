@@ -23,7 +23,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         description=(
             "DEPRECATED: The Databricks workspace ID, as described in"
             " https://docs.databricks.com/workspace/workspace-details.html#workspace-instance-names-urls-and-ids."
-            " This is no longer used and will be removed in a 0.20."
+            " This is no longer used and will be removed in a 0.21."
         ),
     )
 

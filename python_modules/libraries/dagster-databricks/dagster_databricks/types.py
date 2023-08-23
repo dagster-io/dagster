@@ -43,16 +43,16 @@ class DatabricksRunLifeCycleState(str, Enum):
 class DatabricksRunState(NamedTuple):
     """Represents the state of a Databricks job run."""
 
-    life_cycle_state: "DatabricksRunLifeCycleState"
+    life_cycle_state: Optional["DatabricksRunLifeCycleState"]
     result_state: Optional["DatabricksRunResultState"]
     state_message: str
 
     def has_terminated(self) -> bool:
         """Has the job terminated?"""
-        return self.life_cycle_state.has_terminated()
+        return self.life_cycle_state.has_terminated()  # type: ignore  # (possible none)
 
     def is_skipped(self) -> bool:
-        return self.life_cycle_state.is_skipped()
+        return self.life_cycle_state.is_skipped()  # type: ignore  # (possible none)
 
     def is_successful(self) -> bool:
         """Was the job successful?"""
@@ -61,11 +61,15 @@ class DatabricksRunState(NamedTuple):
     @classmethod
     def from_databricks(cls, run_state: jobs.RunState) -> "DatabricksRunState":
         return cls(
-            life_cycle_state=DatabricksRunLifeCycleState(run_state.life_cycle_state.value)
-            if run_state.life_cycle_state
-            else None,
-            result_state=DatabricksRunResultState(run_state.result_state.value)
-            if run_state.result_state
-            else None,
+            life_cycle_state=(
+                DatabricksRunLifeCycleState(run_state.life_cycle_state.value)
+                if run_state.life_cycle_state
+                else None
+            ),
+            result_state=(
+                DatabricksRunResultState(run_state.result_state.value)
+                if run_state.result_state
+                else None
+            ),
             state_message=run_state.state_message,
         )

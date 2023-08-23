@@ -25,16 +25,16 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
 
     runner = DatabricksJobRunner(HOST, TOKEN)
     task = databricks_run_config.pop("task")
-    expected_task = jobs.RunSubmitTaskSettings.from_dict(task)
+    expected_task = jobs.SubmitTask.from_dict(task)
     expected_task.existing_cluster_id = databricks_run_config["cluster"]["existing"]
     expected_task.libraries = [
-        jobs.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),
-        jobs.Library(
+        compute.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),
+        compute.Library(
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-databricks=={dagster_databricks.__version__}"
             )
         ),
-        jobs.Library(
+        compute.Library(
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-pyspark=={dagster_pyspark.__version__}"
             )
@@ -48,7 +48,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     )
 
     databricks_run_config["install_default_libraries"] = False
-    expected_task.libraries = []
+    expected_task.libraries = None
 
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_with(
@@ -73,21 +73,21 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
     databricks_run_config["cluster"] = {"new": NEW_CLUSTER}
 
     task = databricks_run_config.pop("task")
-    expected_task = jobs.RunSubmitTaskSettings.from_dict(task)
-    expected_task.new_cluster = compute.BaseClusterInfo(
+    expected_task = jobs.SubmitTask.from_dict(task)
+    expected_task.new_cluster = compute.ClusterSpec(
         node_type_id=NEW_CLUSTER["nodes"]["node_types"]["node_type_id"],
         spark_version=NEW_CLUSTER["spark_version"],
         num_workers=NEW_CLUSTER["size"]["num_workers"],
         custom_tags={"__dagster_version": dagster.__version__},
     )
     expected_task.libraries = [
-        jobs.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),
-        jobs.Library(
+        compute.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),
+        compute.Library(
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-databricks=={dagster_databricks.__version__}"
             )
         ),
-        jobs.Library(
+        compute.Library(
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-pyspark=={dagster_pyspark.__version__}"
             )

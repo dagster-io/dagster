@@ -431,7 +431,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         for permission, accessors in input_permissions.items():
             access_control_list.extend(
                 [
-                    jobs.AccessControlRequest.from_dict(
+                    jobs.JobAccessControlRequest.from_dict(
                         {"permission_level": permission, **accessor}
                     )
                     for accessor in accessors

@@ -1,7 +1,7 @@
 import base64
 import logging
 import time
-from typing import IO, Any, Mapping, Optional, Tuple, cast
+from typing import IO, Any, Mapping, Optional, Tuple, Union, cast
 
 import dagster
 import dagster._check as check
@@ -10,9 +10,9 @@ import databricks_api
 import databricks_cli.sdk
 import requests.exceptions
 from dagster._annotations import deprecated, public
-from dagster._utils.backcompat import deprecation_warning
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
+from typing_extensions import Final
 
 import dagster_databricks
 
@@ -55,26 +55,29 @@ class DatabricksClient:
         self._api_client = databricks_cli.sdk.ApiClient(host=host, token=token)
         self.__setup_user_agent(self._api_client)
 
-    def __setup_user_agent(self, client: databricks_cli.sdk.ApiClient) -> None:
+    def __setup_user_agent(
+        self,
+        client: Union[WorkspaceClient, databricks_api.DatabricksAPI, databricks_cli.sdk.ApiClient],
+    ) -> None:
         """Overrides the user agent for the Databricks API client."""
         client.default_headers["user-agent"] = f"dagster-databricks/{__version__}"
 
-    @deprecated
+    @deprecated(
+        breaking_version="0.21.0", additional_warn_text="Use `workspace_client` property instead."
+    )
     @public
     @property
     def client(self) -> databricks_api.DatabricksAPI:
-        deprecation_warning(
-            "`client` property on DatabricksClient",
-            "0.20",
-            "Use `workspace_client` property instead.",
-        )
+        """Retrieve the legacy Databricks API client."""
         return self._client
 
     @client.setter
     def client(self, value: databricks_api.DatabricksAPI) -> None:
         self._client = value
 
-    @deprecated
+    @deprecated(
+        breaking_version="0.21.0", additional_warn_text="Use `workspace_client` property instead."
+    )
     @public
     @property
     def api_client(self) -> databricks_cli.sdk.ApiClient:
@@ -116,11 +119,6 @@ class DatabricksClient:
         Returns:
             ApiClient: The authenticated Databricks API client.
         """
-        deprecation_warning(
-            "`api_client` property on DatabricksClient",
-            "0.20",
-            "Use `workspace_client` property instead.",
-        )
         return self._api_client
 
     @public
@@ -373,11 +371,12 @@ class DatabricksJobRunner:
         return self.client.workspace_client.jobs.submit(
             run_name=run_config.get("run_name"),
             tasks=[
-                jobs.RunSubmitTaskSettings.from_dict(
+                jobs.SubmitTask.from_dict(
                     {
                         "new_cluster": new_cluster,
                         "existing_cluster_id": existing_cluster_id,
-                        "libraries": [jobs.Library.from_dict(lib) for lib in libraries],
+                        # "libraries": [compute.Library.from_dict(lib) for lib in libraries],
+                        "libraries": libraries,
                         **task,
                     },
                 )

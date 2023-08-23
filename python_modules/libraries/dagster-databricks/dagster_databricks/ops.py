@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 from dagster import (
     In,
@@ -225,7 +225,7 @@ def create_databricks_submit_run_op(
         jobs_service = databricks.workspace_client.jobs
 
         run = jobs_service.submit(
-            tasks=[jobs.RunSubmitTaskSettings.from_dict(databricks_job_configuration)],
+            tasks=[jobs.SubmitTask.from_dict(databricks_job_configuration)],
         )
         run_id: int = run.bind()["run_id"]
 

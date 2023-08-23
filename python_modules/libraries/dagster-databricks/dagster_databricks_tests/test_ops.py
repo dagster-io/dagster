@@ -12,7 +12,7 @@ from databricks.sdk.service import jobs
 from pytest_mock import MockerFixture
 
 
-def _mock_get_run_response() -> Sequence[dict]:
+def _mock_get_run_response() -> Sequence[jobs.Run]:
     return [
         jobs.Run(
             run_name="my_databricks_run",
@@ -185,7 +185,7 @@ def test_databricks_submit_run_op(
 
     assert result.success
     mock_submit_run.assert_called_once_with(
-        tasks=[jobs.RunSubmitTaskSettings.from_dict(databricks_job_configuration)],
+        tasks=[jobs.SubmitTask.from_dict(databricks_job_configuration)],
     )
     assert mock_get_run.call_count == 4
 
