@@ -18,9 +18,9 @@ from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRe
 
 from dagster_graphql.schema.errors import GrapheneError
 
+from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializeRule
 from .util import non_null_list
-from .asset_key import GrapheneAssetKey
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
 
