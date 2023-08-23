@@ -65,7 +65,7 @@ import {
   LaunchAssetsChoosePartitionsTarget,
 } from './LaunchAssetExecutionButton';
 import {
-  explodePartitionKeysInSelection,
+  explodePartitionKeysInSelectionMatching,
   mergedAssetHealth,
   partitionDefinitionsEqual,
 } from './MultipartitioningSupport';
@@ -77,7 +77,13 @@ import {
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+import {
+  keyCountInSelections,
+  PartitionDimensionSelection,
+  usePartitionHealthData,
+} from './usePartitionHealthData';
+
+const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
 interface Props {
   open: boolean;
@@ -153,7 +159,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const assetHealth = usePartitionHealthData(
     partitionedAssets.map((a) => a.assetKey),
     lastRefresh.toString(),
-    'immediate',
+    'background',
   );
 
   const assetHealthLoading = assetHealth.length === 0;
@@ -189,33 +195,22 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     shouldReadPartitionQueryStringParam: true,
   });
 
-  const keysInSelection = React.useMemo(
-    () =>
-      explodePartitionKeysInSelection(selections, (dimensionKeys: string[]) => {
-        let states = displayedHealth.stateForKey(dimensionKeys);
-        if (!(states instanceof Array)) {
-          states = [states];
-        }
-        return states;
-      }),
-    [selections, displayedHealth],
-  );
-
   const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = React.useState(false);
   const canLaunchWithRangesAsTags =
     selections.every((s) => s.selectedRanges.length === 1) &&
     selections.some((s) => s.selectedKeys.length > 1);
-  const keysFiltered = React.useMemo(
-    () =>
-      missingFailedOnly
-        ? keysInSelection.filter((key) =>
-            [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED].some((state) =>
-              key.state.includes(state),
-            ),
-          )
-        : keysInSelection,
-    [keysInSelection, missingFailedOnly],
-  );
+
+  const keysFiltered = React.useMemo(() => {
+    return explodePartitionKeysInSelectionMatching(selections, (dIdxs) => {
+      if (missingFailedOnly) {
+        const state = displayedHealth.stateForKeyIdx(dIdxs);
+        return state instanceof Array
+          ? state.some((s) => MISSING_FAILED_STATUSES.includes(s))
+          : MISSING_FAILED_STATUSES.includes(state);
+      }
+      return true;
+    });
+  }, [missingFailedOnly, selections, displayedHealth]);
 
   const client = useApolloClient();
   const history = useHistory();
@@ -281,7 +276,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           repositoryName: repoAddress.name,
         },
         partitionSetName: target.partitionSetName,
-        partitionName: keysFiltered[0]!.partitionKey,
+        partitionName: keysFiltered[0]!,
       },
     });
 
@@ -318,11 +313,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
       allTags.push({
         key: DagsterTag.AssetPartitionRangeStart,
-        value: keysInSelection[0]!.partitionKey,
+        value: keysFiltered[0]!,
       });
       allTags.push({
         key: DagsterTag.AssetPartitionRangeEnd,
-        value: keysInSelection[keysInSelection.length - 1]!.partitionKey,
+        value: keysFiltered[keysFiltered.length - 1]!,
       });
     }
 
@@ -348,7 +343,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         ? {
             tags,
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
-            partitionNames: keysFiltered.map((k) => k.partitionKey),
+            partitionNames: keysFiltered,
             fromFailure: false,
             selector: {
               partitionSetName: target.partitionSetName,
@@ -367,7 +362,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         : {
             tags,
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
-            partitionNames: keysFiltered.map((k) => k.partitionKey),
+            partitionNames: keysFiltered,
             fromFailure: false,
           };
 
@@ -471,7 +466,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 {target.type === 'pureWithAnchorAsset' ? (
                   <span /> // we won't know until runtime
                 ) : (
-                  <span>{partitionCountString(keysInSelection.length)}</span>
+                  <span>{partitionCountString(keyCountInSelections(selections))}</span>
                 )}
               </Box>
             }

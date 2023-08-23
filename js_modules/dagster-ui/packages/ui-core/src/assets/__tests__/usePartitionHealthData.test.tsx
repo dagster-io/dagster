@@ -160,6 +160,86 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
   },
 };
 
+const TWO_DIMENSIONAL_ASSET_REVERSED_DIMENSIONS: PartitionHealthQuery = {
+  __typename: 'Query',
+  assetNodeOrError: {
+    __typename: 'AssetNode',
+    id: '1234',
+    partitionKeysByDimension: [
+      {
+        __typename: 'DimensionPartitionKeys',
+        name: 'state',
+        partitionKeys: DIMENSION_TWO_KEYS,
+        type: PartitionDefinitionType.STATIC,
+      },
+      {
+        __typename: 'DimensionPartitionKeys',
+        name: 'time',
+        partitionKeys: DIMENSION_ONE_KEYS,
+        type: PartitionDefinitionType.TIME_WINDOW,
+      },
+    ],
+    assetPartitionStatuses: {
+      __typename: 'MultiPartitionStatuses',
+      primaryDimensionName: 'time',
+      ranges: [
+        {
+          __typename: 'MaterializedPartitionRangeStatuses2D',
+          primaryDimStartKey: '2022-01-01',
+          primaryDimStartTime: new Date('2022-01-01').getTime(),
+          primaryDimEndKey: '2022-01-01',
+          primaryDimEndTime: new Date('2022-01-01').getTime(),
+          secondaryDim: {
+            __typename: 'DefaultPartitionStatuses',
+            materializedPartitions: ['NY', 'MN'],
+            materializingPartitions: [],
+            failedPartitions: [],
+          },
+        },
+        {
+          __typename: 'MaterializedPartitionRangeStatuses2D',
+          primaryDimStartKey: '2022-01-02',
+          primaryDimStartTime: new Date('2022-01-02').getTime(),
+          primaryDimEndKey: '2022-01-03',
+          primaryDimEndTime: new Date('2022-01-03').getTime(),
+          secondaryDim: {
+            __typename: 'DefaultPartitionStatuses',
+            materializedPartitions: ['MN'],
+            materializingPartitions: [],
+            failedPartitions: [],
+          },
+        },
+        {
+          __typename: 'MaterializedPartitionRangeStatuses2D',
+          primaryDimStartKey: '2022-01-04',
+          primaryDimStartTime: new Date('2022-01-04').getTime(),
+          primaryDimEndKey: '2022-01-04',
+          primaryDimEndTime: new Date('2022-01-04').getTime(),
+          secondaryDim: {
+            __typename: 'DefaultPartitionStatuses',
+            materializedPartitions: ['TN', 'CA', 'VA', 'NY', 'MN'],
+            materializingPartitions: [],
+            failedPartitions: [],
+          },
+        },
+        {
+          __typename: 'MaterializedPartitionRangeStatuses2D',
+          primaryDimStartKey: '2022-01-05',
+          primaryDimStartTime: new Date('2022-01-05').getTime(),
+          primaryDimEndKey: '2022-01-06',
+          primaryDimEndTime: new Date('2022-01-06').getTime(),
+          secondaryDim: {
+            __typename: 'DefaultPartitionStatuses',
+            materializedPartitions: ['MN'],
+            materializingPartitions: [],
+            failedPartitions: ['NY', 'VA'],
+          },
+        },
+      ],
+    },
+  },
+};
+
 const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
   __typename: 'Query',
   assetNodeOrError: {
@@ -422,6 +502,146 @@ describe('usePartitionHealthData', () => {
 
       // Ask for ranges of a column, clipped to an empty row selection
       expect(assetHealth.rangesForSingleDimension(1, [])).toEqual([]);
+
+      // should not crash if asked for an invalid dimension -- just return []
+      expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
+    });
+
+    it('should return an object with accessors for 2D partition data where the range dimension is #2 [inverted data structure]', async () => {
+      const assetHealth = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET_REVERSED_DIMENSIONS, {
+        path: ['asset'],
+      });
+      expect(assetHealth.assetKey).toEqual({path: ['asset']});
+      expect(assetHealth.dimensions).toEqual([
+        {
+          name: 'state',
+          partitionKeys: DIMENSION_TWO_KEYS,
+          type: 'STATIC',
+        },
+        {
+          name: 'time',
+          partitionKeys: DIMENSION_ONE_KEYS,
+          type: 'TIME_WINDOW',
+        },
+      ]);
+
+      // Ask for the state of a full key (cell)
+      expect(assetHealth.stateForKey(['TN', '2022-01-01'])).toEqual(MISSING);
+      expect(assetHealth.stateForKey(['NY', '2022-01-04'])).toEqual(MATERIALIZED);
+      expect(assetHealth.stateForKey(['NY', '2022-01-05'])).toEqual(FAILED);
+      expect(assetHealth.stateForKey(['MN', '2022-01-05'])).toEqual(MATERIALIZED);
+
+      // NOTE: All of the tests below are identical to the non-reversed scenario in the previous test,
+      // but with the requested dimension inverted.
+
+      // Ask for the ranges of a row
+      expect(assetHealth.rangesForSingleDimension(1)).toEqual([
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 2, key: '2022-01-03'},
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
+        },
+        {
+          start: {idx: 3, key: '2022-01-04'},
+          end: {idx: 3, key: '2022-01-04'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
+        {
+          start: {idx: 4, key: '2022-01-05'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: [
+            AssetPartitionStatus.MATERIALIZED,
+            AssetPartitionStatus.FAILED,
+            AssetPartitionStatus.MISSING,
+          ],
+        },
+      ]);
+
+      // Ask for ranges of a row, clipped to a column selection
+      expect(
+        assetHealth.rangesForSingleDimension(1, [
+          {start: {key: 'MN', idx: 4}, end: {key: 'MN', idx: 4}},
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
+      ]);
+
+      // Ask for ranges of a row, clipped to a column selection
+      expect(
+        assetHealth.rangesForSingleDimension(1, [
+          {start: {key: 'NY', idx: 3}, end: {key: 'MN', idx: 4}},
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 0, key: '2022-01-01'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
+        {
+          start: {idx: 1, key: '2022-01-02'},
+          end: {idx: 2, key: '2022-01-03'},
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
+        },
+        {
+          start: {idx: 3, key: '2022-01-04'},
+          end: {idx: 3, key: '2022-01-04'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
+        {
+          start: {idx: 4, key: '2022-01-05'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.FAILED],
+        },
+      ]);
+
+      // Ask for ranges of a row, clipped to an empty column selection
+      expect(assetHealth.rangesForSingleDimension(1, [])).toEqual([]);
+
+      // Ask for ranges of a column
+      expect(assetHealth.rangesForSingleDimension(0)).toEqual([
+        {
+          start: {idx: 0, key: 'TN'},
+          end: {idx: 1, key: 'CA'},
+          value: [AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.MISSING],
+        },
+        {
+          start: {idx: 2, key: 'VA'},
+          end: {idx: 3, key: 'NY'},
+          value: [
+            AssetPartitionStatus.FAILED,
+            AssetPartitionStatus.MATERIALIZED,
+            AssetPartitionStatus.MISSING,
+          ],
+        },
+        {
+          start: {idx: 4, key: 'MN'},
+          end: {idx: 4, key: 'MN'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
+      ]);
+
+      // Ask for ranges of a column, clipped to a row selection
+      expect(
+        assetHealth.rangesForSingleDimension(0, [
+          {
+            start: {key: '2022-01-01', idx: 0},
+            end: {key: '2022-01-01', idx: 0},
+          },
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 3, key: 'NY'},
+          end: {idx: 4, key: 'MN'},
+          value: [AssetPartitionStatus.MATERIALIZED],
+        },
+      ]);
+
+      // Ask for ranges of a column, clipped to an empty row selection
+      expect(assetHealth.rangesForSingleDimension(0, [])).toEqual([]);
 
       // should not crash if asked for an invalid dimension -- just return []
       expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
