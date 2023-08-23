@@ -101,7 +101,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   const ranges = addKeyIndexesToMaterializedRanges(dimensions, assetPartitionStatuses);
 
   const stateForKey = (dimensionKeys: string[]): AssetPartitionStatus => {
-    if (dimensionKeys.length !== dimensions.length) {
+    if (dimensionKeys.length !== __dims.length) {
       warnUnlessTest('[stateForKey] called with incorrect number of dimensions');
       return AssetPartitionStatus.MISSING;
     }
@@ -109,9 +109,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       warnUnlessTest('[stateForKey] called with zero dimension keys');
       return AssetPartitionStatus.MISSING;
     }
-    return stateForKeyIdx(
-      dimensionKeys.map((key, idx) => dimensions[idx]!.partitionKeys.indexOf(key)),
-    );
+    return stateForKeyIdx(dimensionKeys.map((key, idx) => __dims[idx]!.partitionKeys.indexOf(key)));
   };
 
   const stateForKeyIdx = (dIndexes: number[]): AssetPartitionStatus => {
