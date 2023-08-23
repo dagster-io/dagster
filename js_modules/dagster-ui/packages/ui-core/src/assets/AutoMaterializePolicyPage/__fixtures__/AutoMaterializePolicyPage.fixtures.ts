@@ -4,13 +4,17 @@ import {DocumentNode} from 'graphql';
 import {
   AutoMaterializeDecisionType,
   AutoMaterializePolicyType,
+  buildAssetKey,
   buildAssetNode,
   buildAutoMaterializeAssetEvaluationNeedsMigrationError,
   buildAutoMaterializeAssetEvaluationRecord,
   buildAutoMaterializeAssetEvaluationRecords,
   buildAutoMaterializePolicy,
+  buildAutoMaterializeRule,
+  buildAutoMaterializeRuleEvaluation,
+  buildAutoMaterializeRuleWithRuleEvaluations,
   buildFreshnessPolicy,
-  buildMissingAutoMaterializeCondition,
+  buildParentMaterializedRuleEvaluationData,
   buildPartitionKeys,
 } from '../../../graphql/types';
 import {GET_POLICY_INFO_QUERY} from '../AutomaterializeRightPanel';
@@ -81,12 +85,14 @@ export const buildGetPolicyInfoQuery = ({
 
 const ONE_MINUTE = 1000 * 60;
 
+export const TEST_EVALUATION_ID = 27;
+
 export const buildEvaluationRecordsWithPartitions = () => {
   const now = Date.now();
   return [
     buildAutoMaterializeAssetEvaluationRecord({
       id: 'g',
-      evaluationId: 27,
+      evaluationId: TEST_EVALUATION_ID,
       timestamp: (now - ONE_MINUTE * 6) / 1000,
       numRequested: 2,
       numSkipped: 2,
@@ -148,7 +154,7 @@ export const buildEvaluationRecordsWithoutPartitions = () => {
   return [
     buildAutoMaterializeAssetEvaluationRecord({
       id: 'g',
-      evaluationId: 27,
+      evaluationId: TEST_EVALUATION_ID,
       timestamp: (now - ONE_MINUTE * 6) / 1000,
       numRequested: 1,
       numSkipped: 0,
@@ -174,39 +180,110 @@ export const buildEvaluationRecordsWithoutPartitions = () => {
 };
 
 export const SINGLE_MATERIALIZE_RECORD_WITH_PARTITIONS = buildAutoMaterializeAssetEvaluationRecord({
-  evaluationId: 0,
+  evaluationId: TEST_EVALUATION_ID,
   runIds: ['abcdef12'],
-  conditions: [
-    buildMissingAutoMaterializeCondition({
-      decisionType: AutoMaterializeDecisionType.MATERIALIZE,
-      partitionKeysOrError: buildPartitionKeys({
-        partitionKeys: ['foo'],
+  rulesWithRuleEvaluations: [
+    buildAutoMaterializeRuleWithRuleEvaluations({
+      rule: buildAutoMaterializeRule({
+        decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+        description: `Upstream data has changed since latest materialization`,
       }),
+      ruleEvaluations: [
+        buildAutoMaterializeRuleEvaluation({
+          evaluationData: buildParentMaterializedRuleEvaluationData({
+            updatedAssetKeys: [buildAssetKey({path: ['upstream_1']})],
+          }),
+          partitionKeysOrError: buildPartitionKeys({
+            partitionKeys: ['bar'],
+          }),
+        }),
+        buildAutoMaterializeRuleEvaluation({
+          evaluationData: buildParentMaterializedRuleEvaluationData({
+            updatedAssetKeys: [
+              buildAssetKey({path: ['upstream_1']}),
+              buildAssetKey({path: ['upstream_2']}),
+            ],
+          }),
+          partitionKeysOrError: buildPartitionKeys({
+            partitionKeys: ['foo'],
+          }),
+        }),
+      ],
+    }),
+    buildAutoMaterializeRuleWithRuleEvaluations({
+      rule: buildAutoMaterializeRule({
+        decisionType: AutoMaterializeDecisionType.SKIP,
+        description: `Waiting on upstream data`,
+      }),
+      ruleEvaluations: [
+        buildAutoMaterializeRuleEvaluation({
+          evaluationData: null,
+          partitionKeysOrError: buildPartitionKeys({
+            partitionKeys: ['gomez'],
+          }),
+        }),
+      ],
     }),
   ],
 });
 
 export const SINGLE_MATERIALIZE_RECORD_NO_PARTITIONS = buildAutoMaterializeAssetEvaluationRecord({
-  evaluationId: 0,
+  evaluationId: TEST_EVALUATION_ID,
   runIds: ['abcdef12'],
-  conditions: [
-    buildMissingAutoMaterializeCondition({
-      decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+  rulesWithRuleEvaluations: [
+    buildAutoMaterializeRuleWithRuleEvaluations({
+      rule: buildAutoMaterializeRule({
+        decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+        description: `Materialization is missing`,
+      }),
+      ruleEvaluations: [
+        buildAutoMaterializeRuleEvaluation({
+          evaluationData: null,
+          partitionKeysOrError: null,
+        }),
+      ],
     }),
   ],
 });
 
+export const BASE_AUTOMATERIALIZE_RULES = [
+  buildAutoMaterializeRule({
+    decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+    description: `Materialization is missing`,
+  }),
+  buildAutoMaterializeRule({
+    decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+    description: `Upstream data has changed since latest materialization`,
+  }),
+  buildAutoMaterializeRule({
+    decisionType: AutoMaterializeDecisionType.MATERIALIZE,
+    description: `Required to meet this or downstream asset's freshness policy`,
+  }),
+  buildAutoMaterializeRule({
+    decisionType: AutoMaterializeDecisionType.SKIP,
+    description: `Waiting on upstream data`,
+  }),
+];
+
+export const DISCARD_RULE = buildAutoMaterializeRule({
+  decisionType: AutoMaterializeDecisionType.DISCARD,
+  description: `Exceeds 5 materializations per minute`,
+});
+
 export const Evaluations = {
-  None: (assetKeyPath: string[]) => {
+  None: (assetKeyPath: string[], single?: boolean) => {
     return buildGetEvaluationsQuery({
       variables: {
-        assetKey: {
-          path: assetKeyPath,
-        },
-        cursor: undefined,
-        limit: PAGE_SIZE + 1,
+        assetKey: {path: assetKeyPath},
+        cursor: single ? '2' : undefined,
+        limit: (single ? 1 : PAGE_SIZE) + 1,
       },
       data: {
+        assetNodeOrError: buildAssetNode({
+          autoMaterializePolicy: buildAutoMaterializePolicy({
+            rules: BASE_AUTOMATERIALIZE_RULES,
+          }),
+        }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
           currentEvaluationId: 1000,
           records: [],
@@ -218,10 +295,15 @@ export const Evaluations = {
     return buildGetEvaluationsQuery({
       variables: {
         assetKey: {path: assetKeyPath},
-        cursor: undefined,
+        cursor: single ? '2' : undefined,
         limit: (single ? 1 : PAGE_SIZE) + 1,
       },
       data: {
+        assetNodeOrError: buildAssetNode({
+          autoMaterializePolicy: buildAutoMaterializePolicy({
+            rules: BASE_AUTOMATERIALIZE_RULES,
+          }),
+        }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationNeedsMigrationError(
           {
             message: 'Test message',
@@ -230,16 +312,39 @@ export const Evaluations = {
       },
     });
   },
-  Single: (assetKeyPath?: string[]) => {
+  Single: (assetKeyPath?: string[], cursor?: string) => {
     return buildGetEvaluationsQuery({
       variables: {
         assetKey: {path: assetKeyPath || ['test']},
-        cursor: undefined,
+        cursor,
         limit: 2,
       },
       data: {
+        assetNodeOrError: buildAssetNode({
+          autoMaterializePolicy: buildAutoMaterializePolicy({
+            rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
+          }),
+        }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
-          currentEvaluationId: 1000,
+          records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_NO_PARTITIONS] : [],
+        }),
+      },
+    });
+  },
+  SinglePartitioned: (assetKeyPath: string[], cursor?: string) => {
+    return buildGetEvaluationsQuery({
+      variables: {
+        assetKey: {path: assetKeyPath},
+        cursor,
+        limit: 2,
+      },
+      data: {
+        assetNodeOrError: buildAssetNode({
+          autoMaterializePolicy: buildAutoMaterializePolicy({
+            rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
+          }),
+        }),
+        autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
           records: assetKeyPath ? [SINGLE_MATERIALIZE_RECORD_WITH_PARTITIONS] : [],
         }),
       },
@@ -253,6 +358,11 @@ export const Evaluations = {
         limit: PAGE_SIZE + 1,
       },
       data: {
+        assetNodeOrError: buildAssetNode({
+          autoMaterializePolicy: buildAutoMaterializePolicy({
+            rules: [...BASE_AUTOMATERIALIZE_RULES, DISCARD_RULE],
+          }),
+        }),
         autoMaterializeAssetEvaluationsOrError: buildAutoMaterializeAssetEvaluationRecords({
           records: buildEvaluationRecordsWithPartitions(),
         }),

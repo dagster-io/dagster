@@ -1,6 +1,6 @@
-from typing import Optional, Tuple
+from collections import defaultdict
+from typing import Optional, Sequence, Tuple
 
-import dagster._check as check
 import graphene
 from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_condition import (
@@ -8,17 +8,18 @@ from dagster._core.definitions.auto_materialize_condition import (
     AutoMaterializeDecisionType,
     DownstreamFreshnessAutoMaterializeCondition,
     FreshnessAutoMaterializeCondition,
-    MaxMaterializationsExceededAutoMaterializeCondition,
     MissingAutoMaterializeCondition,
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.schema.errors import GrapheneError
 
 from .asset_key import GrapheneAssetKey
+from .auto_materialize_policy import GrapheneAutoMaterializeRule
 from .util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
@@ -45,73 +46,73 @@ class GraphenePartitionKeysOrError(graphene.Union):
         name = "PartitionKeysOrError"
 
 
-class GrapheneAutoMaterializeConditionWithDecisionType(graphene.Interface):
-    decisionType = graphene.NonNull(GrapheneAutoMaterializeDecisionType)
-    partitionKeysOrError = graphene.Field(GraphenePartitionKeysOrError)
+class GrapheneTextRuleEvaluationData(graphene.ObjectType):
+    text = graphene.String()
 
     class Meta:
-        name = "AutoMaterializeConditionWithDecisionType"
+        name = "TextRuleEvaluationData"
 
 
-class GrapheneFreshnessAutoMaterializeCondition(graphene.ObjectType):
-    class Meta:
-        name = "FreshnessAutoMaterializeCondition"
-        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
-
-
-class GrapheneDownstreamFreshnessAutoMaterializeCondition(graphene.ObjectType):
-    class Meta:
-        name = "DownstreamFreshnessAutoMaterializeCondition"
-        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
-
-
-class GrapheneParentMaterializedAutoMaterializeCondition(graphene.ObjectType):
+class GrapheneParentMaterializedRuleEvaluationData(graphene.ObjectType):
     updatedAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
     willUpdateAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
 
     class Meta:
-        name = "ParentMaterializedAutoMaterializeCondition"
-        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
+        name = "ParentMaterializedRuleEvaluationData"
 
 
-class GrapheneMissingAutoMaterializeCondition(graphene.ObjectType):
-    class Meta:
-        name = "MissingAutoMaterializeCondition"
-        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
-
-
-class GrapheneParentOutdatedAutoMaterializeCondition(graphene.ObjectType):
+class GrapheneWaitingOnKeysRuleEvaluationData(graphene.ObjectType):
     waitingOnAssetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
 
     class Meta:
-        name = "ParentOutdatedAutoMaterializeCondition"
-        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
+        name = "WaitingOnKeysRuleEvaluationData"
 
 
-class GrapheneMaxMaterializationsExceededAutoMaterializeCondition(graphene.ObjectType):
+class GrapheneAutoMaterializeRuleEvaluationData(graphene.Union):
     class Meta:
-        name = "MaxMaterializationsExceededAutoMaterializeCondition"
-        interfaces = (GrapheneAutoMaterializeConditionWithDecisionType,)
-
-
-class GrapheneAutoMaterializeCondition(graphene.Union):
-    class Meta:
-        name = "AutoMaterializeCondition"
         types = (
-            GrapheneFreshnessAutoMaterializeCondition,
-            GrapheneDownstreamFreshnessAutoMaterializeCondition,
-            GrapheneParentMaterializedAutoMaterializeCondition,
-            GrapheneMissingAutoMaterializeCondition,
-            GrapheneParentOutdatedAutoMaterializeCondition,
-            GrapheneMaxMaterializationsExceededAutoMaterializeCondition,
+            GrapheneTextRuleEvaluationData,
+            GrapheneParentMaterializedRuleEvaluationData,
+            GrapheneWaitingOnKeysRuleEvaluationData,
+        )
+        name = "AutoMaterializeRuleEvaluationData"
+
+
+class GrapheneAutoMaterializeRuleEvaluation(graphene.ObjectType):
+    partitionKeysOrError = graphene.Field(GraphenePartitionKeysOrError)
+    evaluationData = graphene.Field(GrapheneAutoMaterializeRuleEvaluationData)
+
+    class Meta:
+        name = "AutoMaterializeRuleEvaluation"
+
+
+class GrapheneAutoMaterializeRuleWithRuleEvaluations(graphene.ObjectType):
+    rule = graphene.NonNull(GrapheneAutoMaterializeRule)
+    ruleEvaluations = non_null_list(GrapheneAutoMaterializeRuleEvaluation)
+
+    class Meta:
+        name = "AutoMaterializeRuleWithRuleEvaluations"
+
+    def __init__(
+        self,
+        rule: GrapheneAutoMaterializeRule,
+        ruleEvaluations,
+    ):
+        super().__init__(
+            rule=rule,
+            ruleEvaluations=ruleEvaluations,
         )
 
 
-def create_graphene_auto_materialize_condition(
-    condition_tuple: Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]],
+def create_graphene_auto_materialize_rule_evaluation(
+    condition_tuple: Tuple[
+        AutoMaterializeCondition,
+        Optional[SerializedPartitionsSubset],
+        GrapheneAutoMaterializeRuleEvaluationData,
+    ],
     partitions_def: Optional[PartitionsDefinition],
 ):
-    condition, serialized_partition_subset = condition_tuple
+    _, serialized_partition_subset, rule_evaluation_data = condition_tuple
 
     if not serialized_partition_subset:
         partition_keys_or_error = None
@@ -130,37 +131,79 @@ def create_graphene_auto_materialize_condition(
         subset = serialized_partition_subset.deserialize(partitions_def)
         partition_keys_or_error = GraphenePartitionKeys(partitionKeys=subset.get_partition_keys())
 
-    if isinstance(condition, FreshnessAutoMaterializeCondition):
-        return GrapheneFreshnessAutoMaterializeCondition(
-            decisionType=condition.decision_type, partitionKeysOrError=partition_keys_or_error
+    return GrapheneAutoMaterializeRuleEvaluation(
+        partitionKeysOrError=partition_keys_or_error, evaluationData=rule_evaluation_data
+    )
+
+
+def create_graphene_auto_materialize_rules_with_rule_evaluations(
+    partition_subsets_by_condition: Sequence[
+        Tuple[AutoMaterializeCondition, Optional[SerializedPartitionsSubset]]
+    ],
+    partitions_def: Optional[PartitionsDefinition],
+) -> Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]:
+    rule_mapping = defaultdict(list)
+    # handle converting from old condition format to new rule format
+    for condition_tuple in partition_subsets_by_condition:
+        condition, subset = condition_tuple
+        if isinstance(condition, FreshnessAutoMaterializeCondition):
+            rule_mapping[AutoMaterializeRule.materialize_on_required_for_freshness()].append(
+                (
+                    condition,
+                    subset,
+                    GrapheneTextRuleEvaluationData(
+                        text="Required to satisfy this asset's freshness policy"
+                    ),
+                )
+            )
+        elif isinstance(condition, DownstreamFreshnessAutoMaterializeCondition):
+            rule_mapping[AutoMaterializeRule.materialize_on_required_for_freshness()].append(
+                (
+                    condition,
+                    subset,
+                    GrapheneTextRuleEvaluationData(
+                        text="Required to satisfy downstream asset's freshness policy"
+                    ),
+                )
+            )
+        elif isinstance(condition, ParentMaterializedAutoMaterializeCondition):
+            rule_mapping[AutoMaterializeRule.materialize_on_parent_updated()].append(
+                (
+                    condition,
+                    subset,
+                    GrapheneParentMaterializedRuleEvaluationData(
+                        updatedAssetKeys=condition.updated_asset_keys,
+                        willUpdateAssetKeys=condition.will_update_asset_keys,
+                    ),
+                )
+            )
+        elif isinstance(condition, MissingAutoMaterializeCondition):
+            rule_mapping[AutoMaterializeRule.materialize_on_missing()].append(
+                (condition, subset, None)
+            )
+        elif isinstance(condition, ParentOutdatedAutoMaterializeCondition):
+            rule_mapping[AutoMaterializeRule.skip_on_parent_outdated()].append(
+                (
+                    condition,
+                    subset,
+                    GrapheneWaitingOnKeysRuleEvaluationData(
+                        waitingOnAssetKeys=condition.waiting_on_asset_keys
+                    ),
+                )
+            )
+
+    return [
+        GrapheneAutoMaterializeRuleWithRuleEvaluations(
+            rule=GrapheneAutoMaterializeRule(
+                description=rule.description, decisionType=rule.decision_type
+            ),
+            ruleEvaluations=[
+                create_graphene_auto_materialize_rule_evaluation(tup, partitions_def)
+                for tup in tups
+            ],
         )
-    elif isinstance(condition, DownstreamFreshnessAutoMaterializeCondition):
-        return GrapheneDownstreamFreshnessAutoMaterializeCondition(
-            decisionType=condition.decision_type, partitionKeysOrError=partition_keys_or_error
-        )
-    elif isinstance(condition, ParentMaterializedAutoMaterializeCondition):
-        return GrapheneParentMaterializedAutoMaterializeCondition(
-            decisionType=condition.decision_type,
-            partitionKeysOrError=partition_keys_or_error,
-            updatedAssetKeys=condition.updated_asset_keys,
-            willUpdateAssetKeys=condition.will_update_asset_keys,
-        )
-    elif isinstance(condition, MissingAutoMaterializeCondition):
-        return GrapheneMissingAutoMaterializeCondition(
-            decisionType=condition.decision_type, partitionKeysOrError=partition_keys_or_error
-        )
-    elif isinstance(condition, ParentOutdatedAutoMaterializeCondition):
-        return GrapheneParentOutdatedAutoMaterializeCondition(
-            decisionType=condition.decision_type,
-            partitionKeysOrError=partition_keys_or_error,
-            waitingOnAssetKeys=condition.waiting_on_asset_keys,
-        )
-    elif isinstance(condition, MaxMaterializationsExceededAutoMaterializeCondition):
-        return GrapheneMaxMaterializationsExceededAutoMaterializeCondition(
-            decisionType=condition.decision_type, partitionKeysOrError=partition_keys_or_error
-        )
-    else:
-        check.failed(f"Unexpected condition type {type(condition)}")
+        for rule, tups in rule_mapping.items()
+    ]
 
 
 class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
@@ -169,7 +212,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     numRequested = graphene.NonNull(graphene.Int)
     numSkipped = graphene.NonNull(graphene.Int)
     numDiscarded = graphene.NonNull(graphene.Int)
-    conditions = non_null_list(GrapheneAutoMaterializeCondition)
+    rulesWithRuleEvaluations = non_null_list(GrapheneAutoMaterializeRuleWithRuleEvaluations)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
 
@@ -187,10 +230,9 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             numRequested=record.evaluation.num_requested,
             numSkipped=record.evaluation.num_skipped,
             numDiscarded=record.evaluation.num_discarded,
-            conditions=[
-                create_graphene_auto_materialize_condition(c, partitions_def)
-                for c in record.evaluation.partition_subsets_by_condition
-            ],
+            rulesWithRuleEvaluations=create_graphene_auto_materialize_rules_with_rule_evaluations(
+                record.evaluation.partition_subsets_by_condition, partitions_def
+            ),
             timestamp=record.timestamp,
             runIds=record.evaluation.run_ids,
         )

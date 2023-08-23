@@ -14,11 +14,7 @@ const path = ['test'];
 export const EmptyState = () => {
   return (
     <MockedProvider
-      mocks={[
-        Policies.NoAutomaterializeNoFreshnessPolicy(path),
-        Evaluations.None(path),
-        Evaluations.Single(),
-      ]}
+      mocks={[Policies.NoAutomaterializeNoFreshnessPolicy(path), Evaluations.None(path, true)]}
     >
       <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
     </MockedProvider>
@@ -29,9 +25,9 @@ export const Errors = () => {
   return (
     <MockedProvider
       mocks={[
-        Policies.NoAutomaterializeNoFreshnessPolicy(path),
         Evaluations.Errors(path),
         Evaluations.Errors(path, true),
+        Policies.NoAutomaterializeNoFreshnessPolicy(path),
       ]}
     >
       <AssetAutomaterializePolicyPage assetKey={{path}} assetHasDefinedPartitions />
@@ -57,7 +53,14 @@ export const Controlled = () => {
 
   return (
     <div key={policyType + freshnessPolicy.toString()}>
-      <MockedProvider mocks={[policyMock, Evaluations.Some(path), Evaluations.Single(path)]}>
+      <MockedProvider
+        mocks={[
+          policyMock,
+          Evaluations.Some(path),
+          Evaluations.SinglePartitioned(path, '9798'),
+          Evaluations.SinglePartitioned(path, '28'),
+        ]}
+      >
         <div>
           <Box padding={24}>
             <Checkbox

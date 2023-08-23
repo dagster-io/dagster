@@ -12,7 +12,7 @@ interface Props {
   assetKeysByPartition: Record<string, AssetKey[]>;
 }
 
-export const WaitingOnPartitionAssetKeysLink = ({assetKeysByPartition}: Props) => {
+export const WaitingOnAssetKeysPartitionLink = ({assetKeysByPartition}: Props) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [queryString, setQueryString] = React.useState('');
   const partitionNames = Object.keys(assetKeysByPartition);

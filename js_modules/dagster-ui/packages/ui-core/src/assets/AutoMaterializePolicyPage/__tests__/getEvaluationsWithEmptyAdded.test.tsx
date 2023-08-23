@@ -12,7 +12,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
         numSkipped: 0,
         numDiscarded: 0,
         timestamp: Date.now() / 1000 - 60 * 5,
-        conditions: [],
+        rulesWithRuleEvaluations: [],
       }),
       buildAutoMaterializeAssetEvaluationRecord({
         id: '2',
@@ -21,7 +21,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
         numSkipped: 0,
         numDiscarded: 0,
         timestamp: Date.now() / 1000 - 60 * 4,
-        conditions: [],
+        rulesWithRuleEvaluations: [],
       }),
     ];
 
@@ -92,7 +92,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
           numSkipped: 0,
           numDiscarded: 0,
           timestamp: Date.now() / 1000 - 60 * 4,
-          conditions: [],
+          rulesWithRuleEvaluations: [],
         }),
         buildAutoMaterializeAssetEvaluationRecord({
           id: '2',
@@ -101,7 +101,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
           numSkipped: 0,
           numDiscarded: 0,
           timestamp: Date.now() / 1000 - 60 * 5,
-          conditions: [],
+          rulesWithRuleEvaluations: [],
         }),
       ];
 
@@ -142,7 +142,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
         numSkipped: 0,
         numDiscarded: 0,
         timestamp: Date.now() / 1000 - 60 * 4,
-        conditions: [],
+        rulesWithRuleEvaluations: [],
       }),
       buildAutoMaterializeAssetEvaluationRecord({
         id: '1',
@@ -151,7 +151,7 @@ describe('getEvaluationsWithEmptyAdded', () => {
         numSkipped: 0,
         numDiscarded: 0,
         timestamp: Date.now() / 1000 - 60 * 5,
-        conditions: [],
+        rulesWithRuleEvaluations: [],
       }),
     ];
 
