@@ -647,10 +647,8 @@ class SkipOnNotAllParentsUpdatedRule(
         self,
         context: RuleEvaluationContext,
     ) -> RuleEvaluationResults:
-        conditions = defaultdict(set)
+        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
-            non_updated_parents = set()
-
             # find the root cause of why this asset partition's parents are outdated (if any)
             required_upstream_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = (
                 defaultdict(set)
@@ -714,13 +712,16 @@ class SkipOnNotAllParentsUpdatedRule(
             }
 
             if non_updated_parent_keys:
-                conditions[
-                    ParentOutdatedAutoMaterializeCondition(
-                        waiting_on_asset_keys=frozenset(non_updated_parents)
-                    )
-                ].update({candidate})
+                asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
+                    candidate
+                )
 
-        return conditions
+        if asset_partitions_by_waiting_on_asset_keys:
+            return [
+                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
+                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
+            ]
+        return []
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)
