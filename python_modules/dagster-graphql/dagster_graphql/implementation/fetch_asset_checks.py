@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from dagster import AssetKey
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
 
 from ..schema.asset_checks import (
     GrapheneAssetCheck,
@@ -24,7 +25,11 @@ def fetch_asset_checks(
 
     return GrapheneAssetChecks(
         checks=[
-            GrapheneAssetCheck(name=check.name, description=check.description)
+            GrapheneAssetCheck(
+                name=check.name,
+                description=check.description,
+                assetKey=GrapheneAssetKey(path=asset_key.path),
+            )
             for check in external_asset_checks
         ]
     )
