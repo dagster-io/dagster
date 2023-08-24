@@ -25,19 +25,22 @@ jobs:
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
 
+      - name: Checkout master branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/checkout@v3
+        
       - name: Get PR fetch depth
-        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+        if: ${{ github.event.pull_request }}
         run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
-        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-        with:
+        if: ${{ github.event.pull_request }} 
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
-      - name: Get changed docs files
-        if: ${{ github.event.pull_request }} || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+      - name: Get changed docs files for PR comment
+        if: ${{ github.event.pull_request }}
         run: |
           echo "Base ref is $GITHUB_BASE_SHA"
           echo "Head ref is $GITHUB_HEAD_SHA"
