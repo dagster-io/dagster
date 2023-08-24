@@ -255,7 +255,7 @@ class AutoMaterializeRule(ABC):
 
     @staticmethod
     def skip_on_not_all_parents_updated(
-        require_update_on_all_parent_partitions: Optional[bool] = False,
+        require_update_on_all_parent_partitions: bool = False,
     ) -> "SkipOnNotAllParentsUpdatedRule":
         return SkipOnNotAllParentsUpdatedRule(require_update_on_all_parent_partitions)
 
