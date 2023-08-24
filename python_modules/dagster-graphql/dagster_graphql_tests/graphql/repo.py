@@ -12,6 +12,7 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
+    AssetCheckResult,
     AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
@@ -57,6 +58,7 @@ from dagster import (
     WeeklyPartitionsDefinition,
     _check as check,
     asset,
+    asset_check,
     asset_sensor,
     dagster_type_loader,
     daily_partitioned_config,
@@ -1903,9 +1905,32 @@ def define_asset_jobs():
     ]
 
 
+@asset_check(asset=asset_1, description="asset_1 check")
+def my_check():
+    return AssetCheckResult(
+        success=True,
+        metadata={
+            "foo": "bar",
+            "baz": "quux",
+        },
+    )
+
+
+def define_asset_checks():
+    return [
+        my_check,
+    ]
+
+
 @repository(default_executor_def=in_process_executor)
 def test_repo():
-    return [*define_jobs(), *define_schedules(), *define_sensors(), *define_asset_jobs()]
+    return [
+        *define_jobs(),
+        *define_schedules(),
+        *define_sensors(),
+        *define_asset_jobs(),
+        *define_asset_checks(),
+    ]
 
 
 defs = Definitions()

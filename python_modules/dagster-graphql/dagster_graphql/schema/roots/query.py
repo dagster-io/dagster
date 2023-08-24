@@ -33,6 +33,7 @@ from ...implementation.external import (
     fetch_repository,
     fetch_workspace,
 )
+from ...implementation.fetch_asset_checks import fetch_asset_checks
 from ...implementation.fetch_assets import (
     get_asset,
     get_asset_node,
@@ -82,6 +83,7 @@ from ...implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
+from ..asset_checks import GrapheneAssetChecksOrError
 from ..asset_graph import (
     GrapheneAssetLatestInfo,
     GrapheneAssetNode,
@@ -465,6 +467,12 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the auto materialization evaluation records for all assets.",
+    )
+
+    assetChecksOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetChecksOrError),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        description="Retrieve the asset checks for a given asset key.",
     )
 
     @capture_error
@@ -974,3 +982,8 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_auto_materialize_asset_evaluations(
             graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
         )
+
+    def resolve_assetChecksOrError(
+        self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput
+    ):
+        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey))
