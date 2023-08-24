@@ -13,6 +13,7 @@ from dagster import (
 )
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import Config, ConfigurableResource
+from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
@@ -653,3 +654,32 @@ def test_asset_check_in_asset_op():
     assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
     assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
     assert external_repo_data.external_asset_checks[2].name == "my_other_asset_check_2"
+
+
+def test_asset_check_multiple_jobs():
+    @asset(
+        check_specs=[
+            AssetCheckSpec(name="my_other_asset_check", asset_key="my_asset"),
+        ]
+    )
+    def my_asset():
+        pass
+
+    @asset_check(asset=my_asset)
+    def my_asset_check():
+        ...
+
+    my_job = build_assets_job("my_job", [my_asset])
+
+    defs = Definitions(
+        assets=[my_asset],
+        asset_checks=[my_asset_check],
+        jobs=[my_job],
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+
+    assert len(external_repo_data.external_asset_checks) == 2
+    assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
+    assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"

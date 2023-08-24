@@ -19,7 +19,6 @@ from dagster import (
 )
 from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata

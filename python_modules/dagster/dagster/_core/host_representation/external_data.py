@@ -45,6 +45,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -1102,6 +1103,14 @@ class ExternalAssetCheck(
             description=check.opt_str_param(description, "description"),
         )
 
+    @classmethod
+    def from_spec(cls, spec: AssetCheckSpec):
+        return cls(
+            name=spec.name,
+            asset_key=spec.asset_key,
+            description=spec.description,
+        )
+
 
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
@@ -1383,24 +1392,24 @@ def external_repository_data_from_def(
 def external_asset_checks_from_defs(
     job_defs: Sequence[JobDefinition],
 ) -> Sequence[ExternalAssetCheck]:
-    check_specs = []
+    # put specs in a dict to dedupe, since the same check can exist in multiple jobs
+    check_specs_dict = {}
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
 
         # checks defined with @asset_check
         for asset_check_def in asset_layer.asset_checks_defs:
-            check_specs.extend(asset_check_def.specs)
+            for spec in asset_check_def.specs:
+                check_specs_dict[(spec.asset_key, spec.name)] = spec
 
         # checks defined on @asset
         for asset_def in asset_layer.assets_defs_by_key.values():
-            check_specs.extend(asset_def.check_specs)
+            for spec in asset_def.check_specs:
+                check_specs_dict[(spec.asset_key, spec.name)] = spec
 
-    check_specs = sorted(check_specs, key=lambda spec: (spec.asset_key, spec.name))
+    check_specs = sorted(check_specs_dict.values(), key=lambda spec: (spec.asset_key, spec.name))
 
-    return [
-        ExternalAssetCheck(asset_key=spec.asset_key, name=spec.name, description=spec.description)
-        for spec in check_specs
-    ]
+    return [ExternalAssetCheck.from_spec(spec) for spec in check_specs]
 
 
 def external_asset_graph_from_defs(
