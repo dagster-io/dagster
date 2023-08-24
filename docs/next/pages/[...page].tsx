@@ -25,6 +25,7 @@ const components: MdxRemote.Components = MDXComponents;
 type HTMLData = {
   body: string;
   toc: string;
+  path: string;
 };
 
 enum PageType {
@@ -40,13 +41,13 @@ type Props =
   | {type: PageType.HTML; data: HTMLData};
 
 function HTMLRenderer({data}: {data: HTMLData}) {
-  const {body, toc} = data;
+  const {body, toc, path} = data;
   const markup = {__html: body};
   const tocMarkup = {__html: toc};
 
   return (
     <>
-      <VersionedContentLayout>
+      <VersionedContentLayout asPath={path}>
         <div
           className="DocSearch-content prose dark:prose-dark max-w-none"
           dangerouslySetInnerHTML={markup}
@@ -107,7 +108,8 @@ async function getContent(asPath: string) {
   return contentString;
 }
 
-async function getSphinxData(sphinxPrefix: SphinxPrefix, page: string[]) {
+async function getSphinxData(sphinxPrefix: SphinxPrefix, path: string) {
+  const page = path.split('/').splice(1);
   if (sphinxPrefix === SphinxPrefix.API_DOCS) {
     const content = await getContent('/api/sections.json');
     const {
@@ -122,7 +124,7 @@ async function getSphinxData(sphinxPrefix: SphinxPrefix, page: string[]) {
     const {body, toc} = curr;
 
     return {
-      props: {type: PageType.HTML, data: {body, toc}},
+      props: {type: PageType.HTML, data: {body, toc, path: `/${SphinxPrefix.API_DOCS}${path}`}},
     };
   } else {
     const content = await getContent('/api/modules.json');
@@ -135,7 +137,7 @@ async function getSphinxData(sphinxPrefix: SphinxPrefix, page: string[]) {
     const {body} = curr;
 
     return {
-      props: {type: PageType.HTML, data: {body}},
+      props: {type: PageType.HTML, data: {body, path: `/${SphinxPrefix.MODULES}${path}`}},
     };
   }
 }
@@ -148,7 +150,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
   // If the subPath == "/", then we continue onto the MDX render to render the _apidocs.mdx page
   if (sphinxPrefix && subPath !== '/') {
     try {
-      return getSphinxData(sphinxPrefix, subPath.split('/').splice(1));
+      return getSphinxData(sphinxPrefix, subPath);
     } catch (err) {
       console.log(err);
       return {notFound: true};
