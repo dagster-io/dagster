@@ -59,7 +59,7 @@ class DualStateContextResourcesContainer:
 
     @property
     def has_been_accessed(self) -> bool:
-        return bool(self._resources)
+        return isinstance(self._resources, Resources)
 
     def get_already_accessed_resources(self) -> Resources:
         check.invariant(self.has_been_accessed)
