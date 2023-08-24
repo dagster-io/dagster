@@ -1,3 +1,5 @@
+import uuid
+
 import kubernetes
 import pytest
 from dagster import RetryRequested, job, op
@@ -61,6 +63,33 @@ def test_k8s_job_op(namespace, cluster_provider):
 
     job_name = get_k8s_job_name(run_id, second_op.name)
     assert "GOODBYE" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_custom_k8s_op_override_job_name(namespace, cluster_provider):
+    custom_k8s_job_name = str(uuid.uuid4())
+
+    @op
+    def my_custom_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["echo HI"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            k8s_job_name=custom_k8s_job_name,
+        )
+
+    @job
+    def my_job_with_custom_ops():
+        my_custom_op()
+
+    execute_result = my_job_with_custom_ops.execute_in_process()
+    assert execute_result.success
+
+    assert "HI" in _get_pod_logs(cluster_provider, custom_k8s_job_name, namespace)
 
 
 @pytest.mark.default
