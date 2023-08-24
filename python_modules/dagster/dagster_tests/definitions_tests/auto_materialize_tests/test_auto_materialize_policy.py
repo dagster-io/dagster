@@ -27,6 +27,7 @@ def test_without_rules():
             AutoMaterializeRule.materialize_on_parent_updated(),
             AutoMaterializeRule.materialize_on_required_for_freshness(),
             AutoMaterializeRule.skip_on_parent_outdated(),
+            AutoMaterializeRule.skip_on_parent_missing(),
         }
     )
 
@@ -36,7 +37,10 @@ def test_without_rules():
     )
 
     assert even_less_eager == AutoMaterializePolicy(
-        rules={AutoMaterializeRule.skip_on_parent_outdated()}
+        rules={
+            AutoMaterializeRule.skip_on_parent_outdated(),
+            AutoMaterializeRule.skip_on_parent_missing(),
+        }
     )
 
 
@@ -68,6 +72,7 @@ def test_with_rules():
         simple_policy.with_rules(
             AutoMaterializeRule.materialize_on_missing(),
             AutoMaterializeRule.skip_on_parent_outdated(),
+            AutoMaterializeRule.skip_on_parent_missing(),
             AutoMaterializeRule.materialize_on_required_for_freshness(),
         )
         == AutoMaterializePolicy.eager()
