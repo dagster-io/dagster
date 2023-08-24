@@ -39,8 +39,9 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v3
         if: ${{ github.event.pull_request }}
-        ref: ${{ github.event.pull_request.head.ref }}
-        fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files for PR comment
         if: ${{ github.event.pull_request }}
