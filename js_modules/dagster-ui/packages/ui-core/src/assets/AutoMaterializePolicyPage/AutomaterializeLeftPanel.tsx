@@ -128,7 +128,7 @@ export const AutomaterializeLeftList = (props: ListProps) => {
         padding={{vertical: 20, horizontal: 12}}
         margin={{top: 12}}
       >
-        <Caption>Evaluations are retained for 1 week</Caption>
+        <Caption>Evaluations are retained for 30 days</Caption>
       </Box>
     </Box>
   );
