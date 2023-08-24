@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - 'release-*' # older verions of the docs
+      - "release-*" # older verions of the docs
       - docs-prod # prod
     paths:
       - docs/**
@@ -31,16 +31,16 @@ jobs:
       - name: Checkout master/release branch
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-'))
         uses: actions/checkout@v3
-        
+
       - name: Get PR fetch depth
         if: ${{ github.event.pull_request }}
         run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
-        if: ${{ github.event.pull_request }} 
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+        if: ${{ github.event.pull_request }}
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: ${{ env.PR_FETCH_DEPTH }}
 
       - name: Get changed docs files for PR comment
         if: ${{ github.event.pull_request }}
