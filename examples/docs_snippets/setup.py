@@ -49,6 +49,7 @@ setup(
             "numpy",
             "pandas",
             "pandera",
+            "plotly",
             "pytest",
             "requests",
             "seaborn",

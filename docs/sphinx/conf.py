@@ -134,6 +134,7 @@ autodoc_mock_imports = [
     "coloredlogs",
     "croniter",
     "dask",
+    "databricks",
     "databricks_api",
     "databricks_cli",
     "datadog",

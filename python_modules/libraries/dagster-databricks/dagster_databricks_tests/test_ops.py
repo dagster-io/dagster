@@ -8,38 +8,35 @@ from dagster_databricks.ops import (
     create_databricks_run_now_op,
     create_databricks_submit_run_op,
 )
-from dagster_databricks.types import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
-)
+from databricks.sdk.service import jobs
 from pytest_mock import MockerFixture
 
 
-def _mock_get_run_response() -> Sequence[dict]:
+def _mock_get_run_response() -> Sequence[jobs.Run]:
     return [
-        {
-            "run_name": "my_databricks_run",
-            "run_page_url": "https://abc123.cloud.databricks.com/?o=12345#job/1/run/1",
-        },
-        {
-            "state": {
-                "life_cycle_state": DatabricksRunLifeCycleState.PENDING,
-                "state_message": "",
-            }
-        },
-        {
-            "state": {
-                "life_cycle_state": DatabricksRunLifeCycleState.RUNNING,
-                "state_message": "",
-            }
-        },
-        {
-            "state": {
-                "result_state": DatabricksRunResultState.SUCCESS,
-                "life_cycle_state": DatabricksRunLifeCycleState.TERMINATED,
-                "state_message": "Finished",
-            }
-        },
+        jobs.Run(
+            run_name="my_databricks_run",
+            run_page_url="https://abc123.cloud.databricks.com/?o=12345#job/1/run/1",
+        ),
+        jobs.Run(
+            state=jobs.RunState(
+                life_cycle_state=jobs.RunLifeCycleState.PENDING,
+                state_message="",
+            ),
+        ),
+        jobs.Run(
+            state=jobs.RunState(
+                life_cycle_state=jobs.RunLifeCycleState.RUNNING,
+                state_message="",
+            ),
+        ),
+        jobs.Run(
+            state=jobs.RunState(
+                result_state=jobs.RunResultState.SUCCESS,
+                life_cycle_state=jobs.RunLifeCycleState.TERMINATED,
+                state_message="Finished",
+            ),
+        ),
     ]
 
 
@@ -80,11 +77,13 @@ def test_databricks_run_now_op(
     databricks_job_configuration: Optional[dict],
     databricks_resource_key: Optional[str],
 ) -> None:
-    mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
-    mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
+    mock_run_now = mocker.patch("databricks.sdk.JobsAPI.run_now")
+    mock_get_run = mocker.patch("databricks.sdk.JobsAPI.get_run")
     databricks_job_id = 10
 
-    mock_run_now.return_value = {"run_id": 1}
+    mock_run_now_response = mocker.Mock()
+    mock_run_now_response.bind.return_value = {"run_id": 1}
+    mock_run_now.return_value = mock_run_now_response
     mock_get_run.side_effect = _mock_get_run_response()
 
     if databricks_resource_key is not None:
@@ -139,8 +138,8 @@ def test_databricks_submit_run_op(
     mocker: MockerFixture,
     databricks_resource_key: Optional[str],
 ) -> None:
-    mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
-    mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
+    mock_submit_run = mocker.patch("databricks.sdk.JobsAPI.submit")
+    mock_get_run = mocker.patch("databricks.sdk.JobsAPI.get_run")
     databricks_job_configuration = {
         "new_cluster": {
             "spark_version": "2.1.0-db3-scala2.11",
@@ -151,7 +150,9 @@ def test_databricks_submit_run_op(
         },
     }
 
-    mock_submit_run.return_value = {"run_id": 1}
+    mock_submit_run_response = mocker.Mock()
+    mock_submit_run_response.bind.return_value = {"run_id": 1}
+    mock_submit_run.return_value = mock_submit_run_response
     mock_get_run.side_effect = _mock_get_run_response()
 
     if databricks_resource_key is not None:
@@ -183,7 +184,9 @@ def test_databricks_submit_run_op(
     result = test_databricks_job.execute_in_process()
 
     assert result.success
-    mock_submit_run.assert_called_once_with(**databricks_job_configuration)
+    mock_submit_run.assert_called_once_with(
+        tasks=[jobs.SubmitTask.from_dict(databricks_job_configuration)],
+    )
     assert mock_get_run.call_count == 4
 
 
