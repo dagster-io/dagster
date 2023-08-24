@@ -1,5 +1,5 @@
 import hashlib
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -665,51 +665,10 @@ class FromDefaultValue(
         return join_and_hash(repr(self._load_value(job_def)))
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromMultipleSources(
-    NamedTuple(
-        "_FromMultipleSources",
-        [
-            ("sources", Sequence[StepInputSource]),
-            ("source_to_load_from", Optional[StepInputSource]),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
-    """This step input fans-in multiple sources in to a single input. The input will receive a list,
-    unless the source_to_load_from property is specified, in which case it will receive the value
-    from loading that source.
-    """
-
-    def __new__(
-        cls,
-        sources: Sequence[StepInputSource],
-        source_to_load_from: Optional[StepInputSource],
-        # deprecated, preserved for back-compat
-        node_handle: Optional[NodeHandle] = None,
-        input_name: Optional[str] = None,
-    ):
-        check.sequence_param(sources, "sources", StepInputSource)
-        for source in sources:
-            check.invariant(
-                not isinstance(source, FromMultipleSources),
-                "Can not have multiple levels of FromMultipleSources StepInputSource",
-            )
-        return super().__new__(
-            cls,
-            sources=sources,
-            source_to_load_from=check.opt_inst_param(
-                source_to_load_from, "source_to_load_from", StepInputSource
-            ),
-            # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
-        )
+class MultiStepInputSource(StepInputSource):
+    @abstractproperty
+    def sources(self) -> Sequence[StepInputSource]:
+        raise NotImplementedError
 
     @property
     def step_key_dependencies(self) -> AbstractSet[str]:
@@ -726,41 +685,6 @@ class FromMultipleSources(
             handles.extend(source.step_output_handle_dependencies)
 
         return handles
-
-    def load_input_object(
-        self,
-        step_context: "StepExecutionContext",
-        input_def: InputDefinition,
-    ) -> Iterator[object]:
-        from dagster._core.events import DagsterEvent
-
-        # some upstream steps may have skipped and we allow fan-in to continue in their absence
-        source_handles_to_skip = list(
-            filter(
-                lambda x: not step_context.can_load(x),
-                self.step_output_handle_dependencies,
-            )
-        )
-
-        if self.source_to_load_from is not None:
-            yield from self.source_to_load_from.load_input_object(step_context, input_def)
-        else:
-            values = []
-
-            for inner_source in self.sources:
-                if (
-                    isinstance(inner_source, FromStepOutput)
-                    and inner_source.step_output_handle in source_handles_to_skip
-                ):
-                    continue
-
-                for event_or_input_value in inner_source.load_input_object(step_context, input_def):
-                    if isinstance(event_or_input_value, DagsterEvent):
-                        yield event_or_input_value
-                    else:
-                        values.append(event_or_input_value)
-
-            yield values
 
     def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
         resource_keys: Set[str] = set()
@@ -780,6 +704,115 @@ class FromMultipleSources(
                 for inner_source in self.sources
             ]
         )
+
+
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
+class FromMultipleSources(
+    NamedTuple(
+        "_FromMultipleSources",
+        [
+            ("sources", Sequence[StepInputSource]),
+            # deprecated, preserved for back-compat
+            ("node_handle", NodeHandle),
+            ("input_name", str),
+        ],
+    ),
+    MultiStepInputSource,
+):
+    """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
+
+    def __new__(
+        cls,
+        sources: Sequence[StepInputSource],
+        # deprecated, preserved for back-compat
+        node_handle: Optional[NodeHandle] = None,
+        input_name: Optional[str] = None,
+    ):
+        check.sequence_param(sources, "sources", StepInputSource)
+        for source in sources:
+            check.invariant(
+                not isinstance(source, MultiStepInputSource),
+                "Can not have multiple levels of MultiStepInputSource StepInputSource",
+            )
+        return super().__new__(
+            cls,
+            sources=sources,
+            # add placeholder values for back-compat
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
+            ),
+            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+        )
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator[object]:
+        from dagster._core.events import DagsterEvent
+
+        # some upstream steps may have skipped and we allow fan-in to continue in their absence
+        source_handles_to_skip = list(
+            filter(
+                lambda x: not step_context.can_load(x),
+                self.step_output_handle_dependencies,
+            )
+        )
+
+        values = []
+
+        for inner_source in self.sources:
+            if (
+                isinstance(inner_source, FromStepOutput)
+                and inner_source.step_output_handle in source_handles_to_skip
+            ):
+                continue
+
+            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
+                if isinstance(event_or_input_value, DagsterEvent):
+                    yield event_or_input_value
+                else:
+                    values.append(event_or_input_value)
+
+        yield values
+
+
+@whitelist_for_serdes
+class FromMultipleSourcesLoadSingleSource(
+    NamedTuple(
+        "_FromMultipleSourcesLoadSingleSource",
+        [
+            ("sources", Sequence[StepInputSource]),
+            ("source_to_load_from", StepInputSource),
+        ],
+    ),
+    MultiStepInputSource,
+):
+    """This step input fans-in multiple sources in to a single input. The input will receive just
+    the value from loading source_to_load_from.
+    """
+
+    def __new__(cls, sources: Sequence[StepInputSource], source_to_load_from: StepInputSource):
+        check.sequence_param(sources, "sources", StepInputSource)
+        for source in sources:
+            check.invariant(
+                not isinstance(source, MultiStepInputSource),
+                "Can not have multiple levels of MultiStepInputSource StepInputSource",
+            )
+        return super().__new__(
+            cls,
+            sources=sources,
+            source_to_load_from=check.inst_param(
+                source_to_load_from, "source_to_load_from", StepInputSource
+            ),
+        )
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator[object]:
+        yield from self.source_to_load_from.load_input_object(step_context, input_def)
 
 
 def _load_input_with_input_manager(

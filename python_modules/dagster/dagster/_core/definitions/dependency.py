@@ -771,7 +771,7 @@ class MultiDependencyDefinition(
 class BlockingAssetChecksDependencyDefinition(
     IDependencyDefinition,
     NamedTuple(
-        "_MultiDependencyDefinition",
+        "_BlockingAssetChecksDependencyDefinition",
         [
             (
                 "asset_check_dependencies",

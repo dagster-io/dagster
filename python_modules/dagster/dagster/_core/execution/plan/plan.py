@@ -63,6 +63,7 @@ from .inputs import (
     FromDynamicCollect,
     FromInputManager,
     FromMultipleSources,
+    FromMultipleSourcesLoadSingleSource,
     FromPendingDynamicStepOutput,
     FromSourceAsset,
     FromStepOutput,
@@ -593,7 +594,7 @@ def _step_input_source_from_multi_dep_def(
                 check.failed(f"Unexpected parent mapped input source type {source}")
             sources.append(source)
 
-    return FromMultipleSources(sources=sources, source_to_load_from=None)
+    return FromMultipleSources(sources=sources)
 
 
 def _step_input_source_from_blocking_asset_checks_dep_def(
@@ -605,7 +606,7 @@ def _step_input_source_from_blocking_asset_checks_dep_def(
     node_handle: NodeHandle,
     input_name: str,
     asset_layer: AssetLayer,
-) -> FromMultipleSources:
+) -> FromMultipleSourcesLoadSingleSource:
     sources: List[StepInputSource] = []
     source_to_load_from: Optional[StepInputSource] = None
     deps = dependency_structure.get_fan_in_deps(input_handle)
@@ -641,7 +642,9 @@ def _step_input_source_from_blocking_asset_checks_dep_def(
         else:
             check.failed("Unexpected: no sources to load from and no asset key to load from")
 
-    return FromMultipleSources(sources=sources, source_to_load_from=source_to_load_from)
+    return FromMultipleSourcesLoadSingleSource(
+        sources=sources, source_to_load_from=source_to_load_from
+    )
 
 
 class ExecutionPlan(
