@@ -63,14 +63,19 @@ class AssetGraphSubset:
         for asset_key in self._non_partitioned_asset_keys:
             yield AssetKeyPartitionKey(asset_key, None)
 
-    def __contains__(self, asset_partition: AssetKeyPartitionKey) -> bool:
-        if asset_partition.partition_key is None:
-            return asset_partition.asset_key in self._non_partitioned_asset_keys
+    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
+        if isinstance(asset, AssetKey):
+            # check if any keys are in the subset
+            if self.asset_graph.is_partitioned(asset):
+                partitions_subset = self.partitions_subsets_by_asset_key.get(asset)
+                return partitions_subset is not None and len(partitions_subset) > 0
+            else:
+                return asset in self._non_partitioned_asset_keys
+        elif asset.partition_key is None:
+            return asset.asset_key in self._non_partitioned_asset_keys
         else:
-            partitions_subset = self.partitions_subsets_by_asset_key.get(asset_partition.asset_key)
-            return (
-                partitions_subset is not None and asset_partition.partition_key in partitions_subset
-            )
+            partitions_subset = self.partitions_subsets_by_asset_key.get(asset.asset_key)
+            return partitions_subset is not None and asset.partition_key in partitions_subset
 
     def to_storage_dict(
         self, dynamic_partitions_store: DynamicPartitionsStore

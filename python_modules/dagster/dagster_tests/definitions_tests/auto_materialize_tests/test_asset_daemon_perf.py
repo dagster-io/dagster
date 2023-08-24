@@ -234,7 +234,7 @@ class PerfScenario(NamedTuple):
                 AssetDaemonContext(
                     instance=instance,
                     asset_graph=repo.asset_graph,
-                    cursor=AssetDaemonCursor.empty(),
+                    cursor=AssetDaemonCursor.empty(asset_graph),
                     target_asset_keys=AssetSelection.all().resolve(repo.asset_graph),
                     materialize_run_tags=None,
                     auto_observe=False,

@@ -109,7 +109,7 @@ def test_reconcile():
         asset_graph=asset_graph,
         target_asset_keys=set(),
         instance=instance,
-        cursor=AssetDaemonCursor.empty(),
+        cursor=AssetDaemonCursor.empty(asset_graph),
         materialize_run_tags=None,
         observe_run_tags={"tag1": "tag_value"},
         respect_materialization_data_versions=False,

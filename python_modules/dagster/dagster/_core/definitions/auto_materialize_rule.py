@@ -127,6 +127,7 @@ class RuleEvaluationContext(NamedTuple):
     will_materialize_mapping: Mapping[AssetKey, AbstractSet[AssetKeyPartitionKey]]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
     candidates: AbstractSet[AssetKeyPartitionKey]
+    new_candidates: AbstractSet[AssetKeyPartitionKey]
     daemon_context: "AssetDaemonContext"
 
     @property
@@ -188,7 +189,9 @@ class RuleEvaluationContext(NamedTuple):
         return asset_partitions_by_asset_key
 
 
-RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
+RuleEvaluationResults = Sequence[
+    Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet[AssetKeyPartitionKey]]
+]
 
 
 class AutoMaterializeRule(ABC):
@@ -224,6 +227,11 @@ class AutoMaterializeRule(ABC):
         ...
 
     @public
+    def evaluate_for_asset_full(
+        self, context: RuleEvaluationContext
+    ) -> Tuple[RuleEvaluationResults, RuleEvaluationResults]:
+        return self.evaluate_for_asset(context), self.get_previous_evaluation_results(context)
+
     @staticmethod
     def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
         """Materialize an asset partition if it is required to satisfy a freshness policy."""
@@ -276,6 +284,47 @@ class AutoMaterializeRule(ABC):
                 asset's last materialization in order to update it. Defaults to false.
         """
         return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
+
+    def get_previous_evaluation_results(
+        self, context: RuleEvaluationContext
+    ) -> RuleEvaluationResults:
+        """Return the previous evaluation results for this rule, if any."""
+        if context.asset_key not in context.cursor.unhandled_asset_graph_subset:
+            return []
+        previous_evaluation_record = context.instance_queryer.get_previous_asset_evaluation_record(
+            asset_key=context.asset_key
+        )
+        if previous_evaluation_record is None:
+            return []
+
+        results = []
+        partitions_def = context.asset_graph.get_partitions_def(context.asset_key)
+        for (
+            rule_evaluation,
+            serialized_subset,
+        ) in previous_evaluation_record.evaluation.partition_subsets_by_condition:
+            # filter for rules of the same type
+            if rule_evaluation.rule_snapshot.class_name != self.__class__.__name__:
+                continue
+            if serialized_subset is None:
+                if partitions_def is None:
+                    results.append(
+                        (rule_evaluation.evaluation_data, {AssetKeyPartitionKey(context.asset_key)})
+                    )
+            elif serialized_subset.can_deserialize(partitions_def) and partitions_def is not None:
+                results.append(
+                    (
+                        rule_evaluation.evaluation_data,
+                        {
+                            AssetKeyPartitionKey(context.asset_key, partition_key)
+                            for partition_key in serialized_subset.deserialize(
+                                partitions_def=partitions_def
+                            ).get_partition_keys()
+                        },
+                    )
+                )
+
+        return results
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -432,6 +481,15 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return "waiting on upstream data to be up to date"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        # if no new candidates, and no parents have been updated, then we should have the same state
+        # as last tick
+        if (
+            not context.new_candidates
+            and not context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+                context.asset_key
+            )
+        ):
+            return self.get_previous_evaluation_results(context)
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
             unreconciled_ancestors = set()
@@ -470,6 +528,15 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         self,
         context: RuleEvaluationContext,
     ) -> RuleEvaluationResults:
+        # if no new candidates, and no parents have been updated, then we should have the same state
+        # as last tick
+        if (
+            not context.new_candidates
+            and not context.daemon_context.get_asset_partitions_with_newly_updated_parents_for_key(
+                context.asset_key
+            )
+        ):
+            return self.get_previous_evaluation_results(context)
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
             missing_parent_asset_keys = set()

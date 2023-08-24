@@ -53,7 +53,7 @@ def get_current_evaluation_id(instance: DagsterInstance) -> Optional[int]:
 
 class AssetDaemon(IntervalDaemon):
     def __init__(self, interval_seconds: int):
-        super().__init__(interval_seconds=interval_seconds)
+        super().__init__(interval_seconds=5)  # interval_seconds)
 
     @classmethod
     def daemon_type(cls) -> str:
@@ -113,7 +113,7 @@ class AssetDaemon(IntervalDaemon):
         cursor = (
             AssetDaemonCursor.from_serialized(raw_cursor, asset_graph)
             if raw_cursor
-            else AssetDaemonCursor.empty()
+            else AssetDaemonCursor.empty(asset_graph)
         )
 
         run_requests, new_cursor, evaluations = AssetDaemonContext(
