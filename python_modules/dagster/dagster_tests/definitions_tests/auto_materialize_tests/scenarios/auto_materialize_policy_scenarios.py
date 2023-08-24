@@ -102,6 +102,20 @@ non_auto_to_lazy = [
     ),
 ]
 
+partitioned_to_unpartitioned_allow_missing_parent = [
+    asset_def("partitioned", partitions_def=two_partitions_partitions_def),
+    asset_def(
+        "unpartitioned1",
+        ["partitioned"],
+        auto_materialize_policy=AutoMaterializePolicy.eager().without_rules(
+            AutoMaterializeRule.skip_on_parent_missing(),
+        ),
+    ),
+    asset_def(
+        "unpartitioned2", ["unpartitioned1"], auto_materialize_policy=AutoMaterializePolicy.eager()
+    ),
+]
+
 
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
@@ -620,5 +634,20 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["non_auto", "auto"]), run(["non_auto"])],
         between_runs_delta=datetime.timedelta(minutes=55),
         expected_run_requests=[run_request(["auto"])],
+    ),
+    "test_allow_missing_parent": AssetReconciliationScenario(
+        assets=partitioned_to_unpartitioned_allow_missing_parent,
+        asset_selection=AssetSelection.keys("unpartitioned1", "unpartitioned2"),
+        unevaluated_runs=[run(["partitioned"], partition_key="a")],
+        expected_run_requests=[run_request(["unpartitioned1", "unpartitioned2"])],
+    ),
+    "test_allow_missing_parent2": AssetReconciliationScenario(
+        assets=partitioned_to_unpartitioned_allow_missing_parent,
+        asset_selection=AssetSelection.keys("unpartitioned1", "unpartitioned2"),
+        unevaluated_runs=[
+            run(["partitioned"], partition_key="a"),
+            run(["unpartitioned1"]),
+        ],
+        expected_run_requests=[run_request(["unpartitioned2"])],
     ),
 }
