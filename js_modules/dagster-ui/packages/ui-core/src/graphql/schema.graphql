@@ -2944,7 +2944,7 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
-  assetChecksOrError(assetKey: AssetKeyInput!): GrapheneAssetChecksOrError!
+  assetChecksOrError(assetKey: AssetKeyInput!): AssetChecksOrError!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3136,7 +3136,7 @@ type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
 
-union GrapheneAssetChecksOrError = AssetChecks | AssetCheckNeedsMigrationError
+union AssetChecksOrError = AssetChecks | AssetCheckNeedsMigrationError
 
 type AssetChecks {
   checks: [AssetCheck!]!

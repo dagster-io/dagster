@@ -130,6 +130,8 @@ export type AssetChecks = {
   checks: Array<AssetCheck>;
 };
 
+export type AssetChecksOrError = AssetCheckNeedsMigrationError | AssetChecks;
+
 export type AssetConnection = {
   __typename: 'AssetConnection';
   nodes: Array<Asset>;
@@ -1195,8 +1197,6 @@ export type GraphSelector = {
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
 };
-
-export type GrapheneAssetChecksOrError = AssetCheckNeedsMigrationError | AssetChecks;
 
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
@@ -2705,7 +2705,7 @@ export type PythonError = Error & {
 export type Query = {
   __typename: 'Query';
   allTopLevelResourceDetailsOrError: ResourcesOrError;
-  assetChecksOrError: GrapheneAssetChecksOrError;
+  assetChecksOrError: AssetChecksOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
