@@ -42,9 +42,11 @@ T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorksp
 
 class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     _process_context: T_IWorkspaceProcessContext
+    _uses_app_path_prefix: bool
 
-    def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
+    def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = "", uses_app_path_prefix: bool = True):
         self._process_context = process_context
+        self._uses_app_path_prefix= uses_app_path_prefix
         super().__init__(app_path_prefix)
 
     def build_graphql_schema(self) -> Schema:
@@ -248,7 +250,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 full_path = path.join(subdir, file)
                 relative_path = "/" + full_path[len(base_dir) :].lstrip(path.sep)
                 # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
-                if self._app_path_prefix and (file.endswith(".js") or file.endswith(".js.map")):
+                if self._uses_app_path_prefix and (file.endswith(".js") or file.endswith(".js.map")):
                     routes.append(_next_static_file(relative_path, full_path))
                 else:
                     routes.append(_static_file(relative_path, full_path))
