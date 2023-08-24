@@ -227,7 +227,7 @@ class SensorEvaluationContext:
     @property
     def resources(self) -> Resources:
         """Resources: A mapping from resource key to instantiated resources for this sensor."""
-        return self._resources_container.get_resources("build_sensor_context")
+        return self._resources_container.make_resources("build_sensor_context")
 
     @public
     @property
