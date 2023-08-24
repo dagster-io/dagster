@@ -144,6 +144,34 @@ def get_or_create_schedule_context(
     return context
 
 
+class DualStateInstanceRefContainer:
+    def __init__(self, instance_ref: Optional[InstanceRef]):
+        self.instance_ref = instance_ref
+        self._exit_stack = ExitStack()
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        """DagsterInstance: The current DagsterInstance."""
+        # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
+        # constructed under test.
+        if not self.instance_ref:
+            raise DagsterInvariantViolationError(
+                "Attempted to initialize dagster instance, but no instance reference was provided."
+            )
+        if not self._instance:
+            self._instance = self._exit_stack.enter_context(
+                DagsterInstance.from_ref(self.instance_ref)
+            )
+        return cast(DagsterInstance, self._instance)
+
+    @property
+    def optional_instance(self) -> Optional["DagsterInstance"]:
+        return self.instance if self.instance_ref else None
+
+    def cleanup(self) -> None:
+        self._exit_stack.close()
+
+
 class ScheduleEvaluationContext:
     """The context object available as the first argument various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
@@ -164,10 +192,9 @@ class ScheduleEvaluationContext:
     """
 
     __slots__ = [
-        "_instance_ref",
-        "_scheduled_execution_time",
         "_exit_stack",
-        "_instance",
+        "_instance_ref_container",
+        "_scheduled_execution_time",
         "_log_key",
         "_logger",
         "_repository_name",
@@ -188,9 +215,9 @@ class ScheduleEvaluationContext:
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         self._exit_stack = ExitStack()
-        self._instance = None
-
-        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._instance_ref_container = DualStateInstanceRefContainer(
+            check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        )
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
@@ -218,10 +245,12 @@ class ScheduleEvaluationContext:
         return self
 
     def __exit__(self, *exc) -> None:
+        self._instance_ref_container.cleanup()
         self._resources_container.call_on_exit()
         self._logger = None
 
     def __del__(self) -> None:
+        self._instance_ref_container.cleanup()
         self._resources_container.call_on_del()
 
     @property
@@ -237,8 +266,9 @@ class ScheduleEvaluationContext:
         if self._resources_container.has_been_accessed:
             return self._resources_container.get_already_accessed_resources()
 
-        instance = self.instance if self._instance or self._instance_ref else None
-        return self._resources_container.make_resources("build_schedule_context", instance=instance)
+        return self._resources_container.make_resources(
+            "build_schedule_context", instance=self._instance_ref_container.optional_instance
+        )
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "ScheduleEvaluationContext":
         """Merge the specified resources into this context.
@@ -254,7 +284,7 @@ class ScheduleEvaluationContext:
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         return ScheduleEvaluationContext(
-            instance_ref=self._instance_ref,
+            instance_ref=self._instance_ref_container.instance_ref,
             scheduled_execution_time=self._scheduled_execution_time,
             repository_name=self._repository_name,
             schedule_name=self._schedule_name,
@@ -271,20 +301,12 @@ class ScheduleEvaluationContext:
         """DagsterInstance: The current DagsterInstance."""
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
         # constructed under test.
-        if not self._instance_ref:
-            raise DagsterInvariantViolationError(
-                "Attempted to initialize dagster instance, but no instance reference was provided."
-            )
-        if not self._instance:
-            self._instance = self._exit_stack.enter_context(
-                DagsterInstance.from_ref(self._instance_ref)
-            )
-        return cast(DagsterInstance, self._instance)
+        return self._instance_ref_container.instance
 
     @property
     def instance_ref(self) -> Optional[InstanceRef]:
         """The serialized instance configured to run the schedule."""
-        return self._instance_ref
+        return self._instance_ref_container.instance_ref
 
     @public
     @property
@@ -305,19 +327,10 @@ class ScheduleEvaluationContext:
         if self._logger:
             return self._logger
 
-        if not self._instance_ref:
-            self._logger = self._exit_stack.enter_context(
-                InstigationLogger(
-                    self._log_key,
-                    repository_name=self._repository_name,
-                    name=self._schedule_name,
-                )
-            )
-
         self._logger = self._exit_stack.enter_context(
             InstigationLogger(
                 self._log_key,
-                self.instance,
+                self._instance_ref_container.optional_instance,
                 repository_name=self._repository_name,
                 name=self._schedule_name,
             )
