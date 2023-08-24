@@ -163,7 +163,7 @@ const ChevronButton = ({
         stroke="currentColor"
         aria-hidden="true"
       >
-        {expanded ? Icons.ChevronDown : Icons.ChevronRight}
+        {expanded || match ? Icons.ChevronDown : Icons.ChevronRight}
       </svg>
     </button>
   );
@@ -226,7 +226,7 @@ const RecursiveNavigation = ({
         onClick={() => onClick(navKey)}
         expanded={expanded}
       />
-      {expanded &&
+      {(expanded || match) &&
         itemOrSection.children.map((item, idx) => {
           return (
             <div className="border-l ml-6" key={idx}>
