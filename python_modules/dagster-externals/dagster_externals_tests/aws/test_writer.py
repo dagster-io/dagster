@@ -1,9 +1,11 @@
-import boto3
 import uuid
-from dagster_externals.aws import S3NotificationWriter
-import json
 
-def test_integration_test_that_will_only_work_locally():
+import boto3
+from dagster_externals._protocol import Notification
+from dagster_externals.aws import S3NotificationReader, S3NotificationWriter
+
+
+def not_in_bk_test_integration_test_that_will_only_work_locally():
     bucket = "dagster-externals-test-lksdjflksjdlfkjs"
 
     region = "us-east-2"
@@ -17,34 +19,44 @@ def test_integration_test_that_will_only_work_locally():
     key_for_step = f"dagster/{deployment_name}/runs/{run_id}/{step_key}/structured_event_logs"
     s3_client = boto3.client("s3", region_name=region)
 
-    prev_key = None
+    writer = S3NotificationWriter(bucket, key_for_step, s3_client)
+
+    for i in range(0, 2):
+        writer.write_notification(
+            Notification(
+                method="report_asset_metadata",
+                params={"asset_key": "kajsldkfjasd", "label": "label1", "value": "value1"},
+            )
+        )
+        writer.write_notification(
+            Notification(
+                method="report_asset_metadata",
+                params={"asset_key": "kajsldkfjasd", "label": "label2", "value": "value2"},
+            )
+        )
+        writer.write_notification(
+            Notification(
+                method="report_asset_metadata",
+                params={"asset_key": "kajsldkfjasd", "label": "label3", "value": "value3"},
+            )
+        )
+
+    writer.write_notification(
+        Notification(
+            method="complete",
+            params={"asset_key": "kajsldkfjasd"},
+        )
+    )
+
+    writer.flush()
 
     def read_loop(s3_client) -> None:
         page_size = 2
-        prev_key = None
+        reader = S3NotificationReader(s3_client, bucket, key_for_step, page_size)
         while True:
-
-            list_obj_params = dict(Bucket=bucket, Prefix=key_for_step, MaxKeys=page_size)
-            if prev_key:
-                list_obj_params['StartAfter'] = prev_key
-            results = s3_client.list_objects_v2(**list_obj_params)
-
-            contents = results['Contents']
-            for entry in contents:
-                key = entry['Key']
-                get_obj_response = s3_client.get_object(Bucket=bucket, Key=key)
-                muh_bytes = get_obj_response['Body'].read()
-                muh_string = muh_bytes.decode()
-                jsonlines = muh_string.split("\n")
-                for jsonline in jsonlines:
-                    if jsonline:
-                        muh_object = json.loads(jsonline)
-                        if muh_object['method'] == 'complete':
-                            return
-
-                prev_key = key
+            page = reader.get_next_page()
+            for notif in page.notifications:
+                if notif['method'] == 'complete':
+                    return
 
     read_loop(s3_client)
-
-def test_s3_notification_writer():
-    pass
