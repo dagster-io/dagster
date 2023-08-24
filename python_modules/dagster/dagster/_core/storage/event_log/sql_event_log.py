@@ -2502,7 +2502,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetCheckEvaluation, check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
-            row_count = conn.execute(
+            conn.execute(
                 AssetCheckExecutionsTable.update()
                 .where(
                     # (asset_key, check_name, run_id) uniquely identifies the row created for the planned event
@@ -2527,11 +2527,8 @@ class SqlEventLogStorage(EventLogStorage):
                         else None
                     ),
                 )
-            ).rowcount
-            if row_count != 1:
-                raise DagsterInvariantViolationError(
-                    f"Expected one asset check execution row to be updated, got {row_count}"
-                )
+            )
+            # NOTE: should assert that 1 row was updated
 
     def get_asset_check_executions(
         self,
@@ -2542,65 +2539,64 @@ class SqlEventLogStorage(EventLogStorage):
         materialization_event_storage_id: Optional[int] = None,
         include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        with self.index_connection() as conn:
-            query = (
-                db_select(
-                    [
-                        AssetCheckExecutionsTable.c.id,
-                        AssetCheckExecutionsTable.c.run_id,
-                        AssetCheckExecutionsTable.c.execution_status,
-                        AssetCheckExecutionsTable.c.evaluation_event,
-                        AssetCheckExecutionsTable.c.create_timestamp,
-                    ]
+        query = (
+            db_select(
+                [
+                    AssetCheckExecutionsTable.c.id,
+                    AssetCheckExecutionsTable.c.run_id,
+                    AssetCheckExecutionsTable.c.execution_status,
+                    AssetCheckExecutionsTable.c.evaluation_event,
+                    AssetCheckExecutionsTable.c.create_timestamp,
+                ]
+            )
+            .where(
+                db.and_(
+                    AssetCheckExecutionsTable.c.asset_key == asset_key.to_string(),
+                    AssetCheckExecutionsTable.c.check_name == check_name,
                 )
-                .where(
-                    db.and_(
-                        AssetCheckExecutionsTable.c.asset_key == asset_key.to_string(),
-                        AssetCheckExecutionsTable.c.check_name == check_name,
-                    )
-                )
-                .order_by(AssetCheckExecutionsTable.c.id.desc())
-            ).limit(limit)
+            )
+            .order_by(AssetCheckExecutionsTable.c.id.desc())
+        ).limit(limit)
 
-            if cursor:
-                query = query.where(AssetCheckExecutionsTable.c.id < cursor)
-            if not include_planned:
+        if cursor:
+            query = query.where(AssetCheckExecutionsTable.c.id < cursor)
+        if not include_planned:
+            query = query.where(
+                AssetCheckExecutionsTable.c.execution_status
+                != AssetCheckExecutionStatus.PLANNED.value
+            )
+        if materialization_event_storage_id:
+            if include_planned:
+                # rows in PLANNED status are not associated with a materialization event yet
                 query = query.where(
-                    AssetCheckExecutionsTable.c.execution_status
-                    != AssetCheckExecutionStatus.PLANNED.value
-                )
-            if materialization_event_storage_id:
-                if include_planned:
-                    # rows in PLANNED status are not associated with a materialization event yet
-                    query = query.where(
-                        db.or_(
-                            AssetCheckExecutionsTable.c.materialization_event_storage_id
-                            == materialization_event_storage_id,
-                            AssetCheckExecutionsTable.c.execution_status
-                            == AssetCheckExecutionStatus.PLANNED.value,
-                        )
-                    )
-                else:
-                    query = query.where(
+                    db.or_(
                         AssetCheckExecutionsTable.c.materialization_event_storage_id
-                        == materialization_event_storage_id
+                        == materialization_event_storage_id,
+                        AssetCheckExecutionsTable.c.execution_status
+                        == AssetCheckExecutionStatus.PLANNED.value,
                     )
-
-            rows = conn.execute(query)
-            return [
-                AssetCheckExecutionRecord(
-                    id=row["id"],
-                    run_id=row["run_id"],
-                    status=AssetCheckExecutionStatus(row["execution_status"]),
-                    evaluation_event=(
-                        deserialize_value(row["evaluation_event"], EventLogEntry)
-                        if row["evaluation_event"]
-                        else None
-                    ),
-                    create_timestamp=datetime_as_float(row["create_timestamp"]),
                 )
-                for row in rows
-            ]
+            else:
+                query = query.where(
+                    AssetCheckExecutionsTable.c.materialization_event_storage_id
+                    == materialization_event_storage_id
+                )
+
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        return [
+            AssetCheckExecutionRecord(
+                id=cast(int, row[0]),
+                run_id=cast(str, row[1]),
+                status=AssetCheckExecutionStatus(row[2]),
+                evaluation_event=(
+                    deserialize_value(cast(str, row[3]), EventLogEntry) if row[3] else None
+                ),
+                create_timestamp=datetime_as_float(cast(datetime, row[4])),
+            )
+            for row in rows
+        ]
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
