@@ -31,7 +31,7 @@ class DualStateContextResourcesContainer:
         resources_dict_or_resources_obj: Optional[Union[Mapping[str, Any], Resources]],
         resources_config: Optional[Mapping[str, Any]] = None,
     ):
-        self._cm_scope_entered = False
+        self.cm_scope_entered = False
         self._exit_stack = ExitStack()
         self._resources_config = resources_config
 
@@ -49,7 +49,7 @@ class DualStateContextResourcesContainer:
                 self._resources = ScopedResourcesBuilder.build_empty()
 
     def call_on_enter(self) -> None:
-        self._cm_scope_entered = True
+        self.cm_scope_entered = True
 
     def call_on_exit(self) -> None:
         self._exit_stack.close()

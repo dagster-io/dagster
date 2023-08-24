@@ -248,7 +248,7 @@ class ScheduleEvaluationContext:
             resources_dict (Mapping[str, Any]): The resources to replace in the context.
         """
         check.invariant(
-            not self._resources_container.has_been_accessed,
+            not self._resources_container.cm_scope_entered,
             "Cannot merge resources in context that has been initialized.",
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
