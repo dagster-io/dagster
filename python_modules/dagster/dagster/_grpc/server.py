@@ -939,7 +939,9 @@ def server_termination_target(termination_event, server, logger):
         " pass"
     )
     finished_shutting_down_rpcs_event = server.stop(grace=shutdown_grace_period)
-    finished_shutting_down_rpcs_event.wait()
+    finished_shutting_down_rpcs_event.wait(shutdown_grace_period + 5)
+    if not finished_shutting_down_rpcs_event.is_set():
+        logger.warning("Server did not shut down cleanly")
 
 
 class DagsterGrpcServer:
