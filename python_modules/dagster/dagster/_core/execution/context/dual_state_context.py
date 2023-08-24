@@ -45,9 +45,8 @@ class DualStateContextResourcesContainer:
 
             self._resources = None
             self.resource_defs = wrap_resources_for_execution(resources_dict_or_resources_obj)
-
-        if not self.resource_defs:
-            self._resources = ScopedResourcesBuilder.build_empty()
+            if not self.resource_defs:
+                self._resources = ScopedResourcesBuilder.build_empty()
 
     def call_on_enter(self) -> None:
         self._cm_scope_entered = True
