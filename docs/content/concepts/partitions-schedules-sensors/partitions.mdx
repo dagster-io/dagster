@@ -116,10 +116,6 @@ def multi_partitions_asset(context):
     context.log.info(context.partition_key.keys_by_dimension)
 ```
 
-<Note>
-  Currently, Dagster only allows two-dimensional multipartitions definitions.
-</Note>
-
 Notice the code snippet above fetches the partition key from the asset context. Multi-dimensional partition keys are returned as <PyObject object="MultiPartitionKey"/> objects, which contain a <PyObject object="MultiPartitionKey" method="keys_by_dimension"/> method that returns the key per dimension. This object can also be passed into partition key execution parameters:
 
 ```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_key_marker endbefore=end_multi_partitions_key_marker
