@@ -14,6 +14,7 @@ from dagster import (
     EventRecordsFilter,
     FreshnessPolicy,
     GraphOut,
+    IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
@@ -1653,3 +1654,17 @@ def test_multi_asset_return_none():
         match="has multiple outputs, but only one output was returned",
     ):
         untyped()
+
+
+def test_direct_instantiation_invalid_partition_mapping():
+    @op
+    def my_op():
+        return 1
+
+    with pytest.raises(CheckError, match="received a partition mapping"):
+        AssetsDefinition(
+            keys_by_input_name={},
+            keys_by_output_name={"my_output": AssetKey("foo")},
+            node_def=my_op,
+            partition_mappings={AssetKey("nonexistent_asset"): IdentityPartitionMapping()},
+        )
