@@ -116,9 +116,44 @@ export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAss
 
 export type AssetCheck = {
   __typename: 'AssetCheck';
+  assetKey: AssetKey;
   description: Maybe<Scalars['String']>;
+  executions: Array<AssetCheckExecution>;
   name: Scalars['String'];
 };
+
+export type AssetCheckExecutionsArgs = {
+  cursor: Scalars['String'];
+  limit: Scalars['Int'];
+};
+
+export type AssetCheckEvaluation = {
+  __typename: 'AssetCheckEvaluation';
+  metadataEntries: Array<MetadataEntry>;
+  targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
+  timestamp: Scalars['Float'];
+};
+
+export type AssetCheckEvaluationTargetMaterializationData = {
+  __typename: 'AssetCheckEvaluationTargetMaterializationData';
+  runId: Scalars['String'];
+  storageId: Scalars['Int'];
+  timestamp: Scalars['Float'];
+};
+
+export type AssetCheckExecution = {
+  __typename: 'AssetCheckExecution';
+  evaluation: Maybe<AssetCheckEvaluation>;
+  id: Scalars['Int'];
+  runId: Scalars['String'];
+  status: AssetCheckExecutionStatus;
+};
+
+export enum AssetCheckExecutionStatus {
+  FAILURE = 'FAILURE',
+  PLANNED = 'PLANNED',
+  SUCCESS = 'SUCCESS',
+}
 
 export type AssetCheckNeedsMigrationError = Error & {
   __typename: 'AssetCheckNeedsMigrationError';
@@ -4331,9 +4366,75 @@ export const buildAssetCheck = (
   relationshipsToOmit.add('AssetCheck');
   return {
     __typename: 'AssetCheck',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
+    executions: overrides && overrides.hasOwnProperty('executions') ? overrides.executions! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
+  };
+};
+
+export const buildAssetCheckEvaluation = (
+  overrides?: Partial<AssetCheckEvaluation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckEvaluation'} & AssetCheckEvaluation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckEvaluation');
+  return {
+    __typename: 'AssetCheckEvaluation',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    targetMaterialization:
+      overrides && overrides.hasOwnProperty('targetMaterialization')
+        ? overrides.targetMaterialization!
+        : relationshipsToOmit.has('AssetCheckEvaluationTargetMaterializationData')
+        ? ({} as AssetCheckEvaluationTargetMaterializationData)
+        : buildAssetCheckEvaluationTargetMaterializationData({}, relationshipsToOmit),
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.02,
+  };
+};
+
+export const buildAssetCheckEvaluationTargetMaterializationData = (
+  overrides?: Partial<AssetCheckEvaluationTargetMaterializationData>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetCheckEvaluationTargetMaterializationData';
+} & AssetCheckEvaluationTargetMaterializationData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckEvaluationTargetMaterializationData');
+  return {
+    __typename: 'AssetCheckEvaluationTargetMaterializationData',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'exercitationem',
+    storageId: overrides && overrides.hasOwnProperty('storageId') ? overrides.storageId! : 3254,
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.87,
+  };
+};
+
+export const buildAssetCheckExecution = (
+  overrides?: Partial<AssetCheckExecution>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckExecution'} & AssetCheckExecution => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckExecution');
+  return {
+    __typename: 'AssetCheckExecution',
+    evaluation:
+      overrides && overrides.hasOwnProperty('evaluation')
+        ? overrides.evaluation!
+        : relationshipsToOmit.has('AssetCheckEvaluation')
+        ? ({} as AssetCheckEvaluation)
+        : buildAssetCheckEvaluation({}, relationshipsToOmit),
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 2672,
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetCheckExecutionStatus.FAILURE,
   };
 };
 

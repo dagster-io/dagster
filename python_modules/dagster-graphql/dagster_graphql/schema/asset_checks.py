@@ -4,8 +4,9 @@ from dagster._core.storage.asset_check_execution_record import AssetCheckExecuti
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.util import non_null_list
-from .util import ResolveInfo
+
 from .asset_key import GrapheneAssetKey
+from .util import ResolveInfo
 
 GrapheneAssetCheckExecutionStatus = graphene.Enum.from_enum(AssetCheckExecutionStatus)
 

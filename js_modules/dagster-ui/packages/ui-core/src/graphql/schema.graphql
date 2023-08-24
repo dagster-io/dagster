@@ -3144,7 +3144,34 @@ type AssetChecks {
 
 type AssetCheck {
   name: String!
+  assetKey: AssetKey!
   description: String
+  executions(limit: Int!, cursor: String!): [AssetCheckExecution!]!
+}
+
+type AssetCheckExecution {
+  id: Int!
+  runId: String!
+  status: AssetCheckExecutionStatus!
+  evaluation: AssetCheckEvaluation
+}
+
+enum AssetCheckExecutionStatus {
+  PLANNED
+  SUCCESS
+  FAILURE
+}
+
+type AssetCheckEvaluation {
+  timestamp: Float!
+  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
+  metadataEntries: [MetadataEntry!]!
+}
+
+type AssetCheckEvaluationTargetMaterializationData {
+  storageId: Int!
+  runId: String!
+  timestamp: Float!
 }
 
 type AssetCheckNeedsMigrationError implements Error {

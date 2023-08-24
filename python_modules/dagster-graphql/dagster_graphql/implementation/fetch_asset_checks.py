@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from dagster import AssetKey
+
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 
 from ..schema.asset_checks import (
