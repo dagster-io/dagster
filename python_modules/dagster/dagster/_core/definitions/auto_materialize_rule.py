@@ -231,12 +231,16 @@ class AutoMaterializeRule(ABC):
 
     @staticmethod
     def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
-        """Skip materializing an asset partition if one of its parents is outdated."""
+        """Skip materializing an asset partition if any of its parents has not incorporated the
+        latest data from its ancestors.
+        """
         return SkipOnParentOutdatedRule()
 
     @staticmethod
     def skip_on_parent_missing() -> "SkipOnParentMissingRule":
-        """Skip materializing an asset partition if one of its parents is outdated."""
+        """Skip materializing an asset partition if one of its parent asset partitions has never
+        been materialized (for regular assets) or observed (for observable source assets).
+        """
         return SkipOnParentMissingRule()
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
