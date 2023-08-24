@@ -718,7 +718,7 @@ auto_materialize_policy_scenarios = {
         unevaluated_runs=[run(["A"]), run(["B"]), run(["A"])],
         expected_run_requests=[run_request(["C"])],
     ),
-    "test_wait_for_all_parents_updated_unpartitioned_with_one_parent_partitioned": AssetReconciliationScenario(
+    "test_wait_for_all_parents_updated_any_upstream_partition": AssetReconciliationScenario(
         assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
         cursor_from=AssetReconciliationScenario(
             assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
@@ -733,13 +733,38 @@ auto_materialize_policy_scenarios = {
                 current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
                 expected_run_requests=[],
             ),
-            unevaluated_runs=[run(["asset1"], "2020-01-02")],
+            unevaluated_runs=[run(["asset1"], "2020-01-01")],
             current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
             expected_run_requests=[run_request(["asset3"])],
         ),
         unevaluated_runs=[
             run(["asset1"], "2020-01-02"),
             run(["asset2"]),
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+        expected_run_requests=[run_request(["asset3"])],
+    ),
+    "test_wait_for_all_parents_updated_all_upstream_partitions": AssetReconciliationScenario(
+        assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+        cursor_from=AssetReconciliationScenario(
+            assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+            cursor_from=AssetReconciliationScenario(
+                assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+                unevaluated_runs=[
+                    run(["asset1"], "2020-01-01"),
+                    run(["asset1"], "2020-01-02"),
+                    run(["asset2", "asset3"]),
+                    run(["asset2"]),
+                ],
+                current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+                expected_run_requests=[],
+            ),
+            unevaluated_runs=[run(["asset1"], "2020-01-01")],
+            current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+            expected_run_requests=[],
+        ),
+        unevaluated_runs=[
+            run(["asset1"], "2020-01-02"),
         ],
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
         expected_run_requests=[run_request(["asset3"])],

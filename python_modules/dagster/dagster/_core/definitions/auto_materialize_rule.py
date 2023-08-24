@@ -22,10 +22,8 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -635,10 +633,41 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
         check.failed(f"Unexpected class {self.klass}")
 
 
+def _get_asset_partitions_by_asset_key(
+    asset_partitions: AbstractSet[AssetKeyPartitionKey],
+) -> Mapping[AssetKey, Set[AssetKeyPartitionKey]]:
+    asset_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
+    for parent in asset_partitions:
+        asset_partitions_by_asset_key[parent.asset_key].add(parent)
+
+    return asset_partitions_by_asset_key
+
+
 @whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
-    AutoMaterializeRule, NamedTuple("_SkipOnNotAllParentsUpdatedRule", [])
+    AutoMaterializeRule,
+    NamedTuple(
+        "_SkipOnNotAllParentsUpdatedRule", [("require_update_on_all_parent_partitions", bool)]
+    ),
 ):
+    """An auto-materialize rule that enforces that an asset can only be requested for execution
+    if all parents have been materialized since its last materialization.
+
+    Properties:
+        require_update_on_all_parent_partitions (Optional[bool]): If true, requires all upstream
+            partitions to be materialized in order for a given asset to update. If false, requires
+            at least one upstream partition in each parent asset to be materialized in order for
+            a given asset to update. Defaults to false.
+    """
+
+    def __new__(cls, require_update_on_all_parent_partitions: Optional[bool] = False):
+        return super(SkipOnNotAllParentsUpdatedRule, cls).__new__(
+            cls,
+            check.bool_param(
+                require_update_on_all_parent_partitions, "require_update_on_all_parent_partitions"
+            ),
+        )
+
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
@@ -650,9 +679,6 @@ class SkipOnNotAllParentsUpdatedRule(
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
             # find the root cause of why this asset partition's parents are outdated (if any)
-            required_upstream_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = (
-                defaultdict(set)
-            )
 
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
@@ -660,37 +686,6 @@ class SkipOnNotAllParentsUpdatedRule(
                 context.asset_key,
                 candidate.partition_key,
             ).parent_partitions
-
-            for parent in parent_partitions:
-                required_upstream_partitions_by_asset_key[parent.asset_key].add(parent)
-
-            # when mapping from time or dynamic upstream to unpartitioned downstream, only check
-            # for updates to the latest upstream partition
-            for parent_asset_key in required_upstream_partitions_by_asset_key.keys():
-                parent_partitions_def = context.asset_graph.get_partitions_def(parent_asset_key)
-                if isinstance(
-                    parent_partitions_def,
-                    (TimeWindowPartitionsDefinition, DynamicPartitionsDefinition),
-                ) and not context.asset_graph.is_partitioned(candidate.asset_key):
-                    parent_partitions_def_last_partition = (
-                        parent_partitions_def.get_last_partition_key(
-                            current_time=context.instance_queryer.evaluation_time,
-                            dynamic_partitions_store=context.instance_queryer,
-                        )
-                    )
-                    required_upstream_partitions_by_asset_key[parent_asset_key] = (
-                        {
-                            AssetKeyPartitionKey(
-                                parent_asset_key, parent_partitions_def_last_partition
-                            )
-                        }
-                        if parent_partitions_def_last_partition
-                        else set()
-                    )
-
-            required_upstream_partitions = set().union(
-                *list(required_upstream_partitions_by_asset_key.values())
-            )
 
             updated_parent_partitions = (
                 context.instance_queryer.get_updated_parent_asset_partitions(
@@ -706,10 +701,25 @@ class SkipOnNotAllParentsUpdatedRule(
                 )
             )
 
-            non_updated_parent_keys = {
-                parent.asset_key
-                for parent in required_upstream_partitions - updated_parent_partitions
-            }
+            if self.require_update_on_all_parent_partitions:
+                # All upstream partitions must be updated in order for the candidate to be updated
+                non_updated_parent_keys = {
+                    parent.asset_key for parent in parent_partitions - updated_parent_partitions
+                }
+            else:
+                # At least one upstream partition in each upstream asset must be updated in order
+                # for the candidate to be updated
+                upstream_parent_partitions_by_asset_key = _get_asset_partitions_by_asset_key(
+                    parent_partitions
+                )
+                updated_parent_partitions_by_asset_key = _get_asset_partitions_by_asset_key(
+                    updated_parent_partitions
+                )
+                non_updated_parent_keys = {
+                    parent
+                    for parent in upstream_parent_partitions_by_asset_key
+                    if not updated_parent_partitions_by_asset_key.get(parent)
+                }
 
             if non_updated_parent_keys:
                 asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
