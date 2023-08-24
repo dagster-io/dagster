@@ -724,7 +724,12 @@ auto_materialize_policy_scenarios = {
             assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
             cursor_from=AssetReconciliationScenario(
                 assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
-                unevaluated_runs=[run(["asset2"]), run(["asset1"], partition_key="2020-01-01")],
+                unevaluated_runs=[
+                    run(["asset1"], "2020-01-01"),
+                    run(["asset1"], "2020-01-02"),
+                    run(["asset2", "asset3"]),
+                    run(["asset2"]),
+                ],
                 current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
                 expected_run_requests=[],
             ),
@@ -733,7 +738,6 @@ auto_materialize_policy_scenarios = {
             expected_run_requests=[run_request(["asset3"])],
         ),
         unevaluated_runs=[
-            run(["asset1"], "2020-01-01"),
             run(["asset1"], "2020-01-02"),
             run(["asset2"]),
         ],
