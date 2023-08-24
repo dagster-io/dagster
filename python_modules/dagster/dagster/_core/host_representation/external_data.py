@@ -45,6 +45,7 @@ from dagster._core.definitions import (
     ScheduleDefinition,
     SourceAsset,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -109,6 +110,7 @@ class ExternalRepositoryData(
             ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
+            ("external_asset_checks", Optional[Sequence["ExternalAssetCheck"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
@@ -124,6 +126,7 @@ class ExternalRepositoryData(
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
+        external_asset_checks: Optional[Sequence["ExternalAssetCheck"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
@@ -156,6 +159,11 @@ class ExternalRepositoryData(
             ),
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
+            ),
+            external_asset_checks=check.opt_nullable_sequence_param(
+                external_asset_checks,
+                "external_asset_checks",
+                of_type=ExternalAssetCheck,
             ),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             utilized_env_vars=check.opt_nullable_mapping_param(
@@ -1069,6 +1077,41 @@ class ExternalResourceData(
         )
 
 
+@whitelist_for_serdes
+class ExternalAssetCheck(
+    NamedTuple(
+        "_ExternalAssetCheck",
+        [
+            ("name", str),
+            ("asset_key", AssetKey),
+            ("description", Optional[str]),
+        ],
+    )
+):
+    """Serializable data associated with an asset check."""
+
+    def __new__(
+        cls,
+        name: str,
+        asset_key: AssetKey,
+        description: Optional[str] = None,
+    ):
+        return super(ExternalAssetCheck, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            description=check.opt_str_param(description, "description"),
+        )
+
+    @classmethod
+    def from_spec(cls, spec: AssetCheckSpec):
+        return cls(
+            name=spec.name,
+            asset_key=spec.asset_key,
+            description=spec.description,
+        )
+
+
 @whitelist_for_serdes(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
@@ -1334,6 +1377,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
+        external_asset_checks=external_asset_checks_from_defs(jobs),
         metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
@@ -1343,6 +1387,29 @@ def external_repository_data_from_def(
             for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
         },
     )
+
+
+def external_asset_checks_from_defs(
+    job_defs: Sequence[JobDefinition],
+) -> Sequence[ExternalAssetCheck]:
+    # put specs in a dict to dedupe, since the same check can exist in multiple jobs
+    check_specs_dict = {}
+    for job_def in job_defs:
+        asset_layer = job_def.asset_layer
+
+        # checks defined with @asset_check
+        for asset_check_def in asset_layer.asset_checks_defs:
+            for spec in asset_check_def.specs:
+                check_specs_dict[(spec.asset_key, spec.name)] = spec
+
+        # checks defined on @asset
+        for asset_def in asset_layer.assets_defs_by_key.values():
+            for spec in asset_def.check_specs:
+                check_specs_dict[(spec.asset_key, spec.name)] = spec
+
+    check_specs = sorted(check_specs_dict.values(), key=lambda spec: (spec.asset_key, spec.name))
+
+    return [ExternalAssetCheck.from_spec(spec) for spec in check_specs]
 
 
 def external_asset_graph_from_defs(
