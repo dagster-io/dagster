@@ -1,5 +1,6 @@
 import pytest
 from dagster import AssetKey
+from dagster._core.definitions.materialize import EPHEMERAL_JOB_NAME
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -98,6 +99,21 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
 
     def sort_run_key_fn(run):
         return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+
+    # The submitted runs are the N most recent runs that were not the "unevaluated_runs"
+    # executed via materialize_in_memory
+    submitted_runs_in_scenario = []
+    for run in runs:
+        if run.job_name == EPHEMERAL_JOB_NAME:
+            break
+        submitted_runs_in_scenario.append(run)
+
+    assert len(submitted_runs_in_scenario) == len(scenario.expected_run_requests), (
+        "Expected the following run requests to be submitted:"
+        f" {scenario.expected_run_requests} \n"
+        " but instead submitted runs with asset and partition selection:"
+        f" {[(list(run.asset_selection), run.tags.get(PARTITION_NAME_TAG)) for run in submitted_runs_in_scenario]}"
+    )
 
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
     sorted_expected_run_requests = sorted(

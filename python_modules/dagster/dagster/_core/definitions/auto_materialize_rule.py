@@ -176,6 +176,16 @@ class RuleEvaluationContext(NamedTuple):
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
+    def get_asset_partitions_by_asset_key(
+        self,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    ) -> Mapping[AssetKey, Set[AssetKeyPartitionKey]]:
+        asset_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        for parent in asset_partitions:
+            asset_partitions_by_asset_key[parent.asset_key].add(parent)
+
+        return asset_partitions_by_asset_key
+
 
 RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
 
@@ -244,8 +254,10 @@ class AutoMaterializeRule(ABC):
         return SkipOnParentMissingRule()
 
     @staticmethod
-    def skip_on_not_all_parents_updated() -> "SkipOnNotAllParentsUpdatedRule":
-        return SkipOnNotAllParentsUpdatedRule()
+    def skip_on_not_all_parents_updated(
+        require_update_on_all_parent_partitions: Optional[bool] = False,
+    ) -> "SkipOnNotAllParentsUpdatedRule":
+        return SkipOnNotAllParentsUpdatedRule(require_update_on_all_parent_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -633,16 +645,6 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
         check.failed(f"Unexpected class {self.klass}")
 
 
-def _get_asset_partitions_by_asset_key(
-    asset_partitions: AbstractSet[AssetKeyPartitionKey],
-) -> Mapping[AssetKey, Set[AssetKeyPartitionKey]]:
-    asset_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
-    for parent in asset_partitions:
-        asset_partitions_by_asset_key[parent.asset_key].add(parent)
-
-    return asset_partitions_by_asset_key
-
-
 @whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
     AutoMaterializeRule,
@@ -660,14 +662,6 @@ class SkipOnNotAllParentsUpdatedRule(
             a given asset to update. Defaults to false.
     """
 
-    def __new__(cls, require_update_on_all_parent_partitions: Optional[bool] = False):
-        return super(SkipOnNotAllParentsUpdatedRule, cls).__new__(
-            cls,
-            check.bool_param(
-                require_update_on_all_parent_partitions, "require_update_on_all_parent_partitions"
-            ),
-        )
-
     @property
     def decision_type(self) -> AutoMaterializeDecisionType:
         return AutoMaterializeDecisionType.SKIP
@@ -678,8 +672,6 @@ class SkipOnNotAllParentsUpdatedRule(
     ) -> RuleEvaluationResults:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
         for candidate in context.candidates:
-            # find the root cause of why this asset partition's parents are outdated (if any)
-
             parent_partitions = context.asset_graph.get_parents_partitions(
                 context.instance_queryer,
                 context.instance_queryer.evaluation_time,
@@ -709,15 +701,13 @@ class SkipOnNotAllParentsUpdatedRule(
             else:
                 # At least one upstream partition in each upstream asset must be updated in order
                 # for the candidate to be updated
-                upstream_parent_partitions_by_asset_key = _get_asset_partitions_by_asset_key(
-                    parent_partitions
-                )
-                updated_parent_partitions_by_asset_key = _get_asset_partitions_by_asset_key(
+                parent_asset_keys = context.asset_graph.get_parents(context.asset_key)
+                updated_parent_partitions_by_asset_key = context.get_asset_partitions_by_asset_key(
                     updated_parent_partitions
                 )
                 non_updated_parent_keys = {
                     parent
-                    for parent in upstream_parent_partitions_by_asset_key
+                    for parent in parent_asset_keys
                     if not updated_parent_partitions_by_asset_key.get(parent)
                 }
 

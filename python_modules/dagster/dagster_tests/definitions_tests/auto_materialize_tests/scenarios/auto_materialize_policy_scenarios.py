@@ -138,11 +138,13 @@ partitioned_to_unpartitioned_allow_missing_parent = [
     ),
 ]
 
-unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated = (
-    with_auto_materialize_policy(
+get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated = (
+    lambda require_update_on_all_parent_partitions: with_auto_materialize_policy(
         unpartitioned_with_one_parent_partitioned,
         AutoMaterializePolicy.eager().with_rules(
-            AutoMaterializeRule.skip_on_not_all_parents_updated(),
+            AutoMaterializeRule.skip_on_not_all_parents_updated(
+                require_update_on_all_parent_partitions
+            ),
         ),
     )
 )
@@ -719,11 +721,11 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[run_request(["C"])],
     ),
     "test_wait_for_all_parents_updated_any_upstream_partition": AssetReconciliationScenario(
-        assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+        assets=get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated(False),
         cursor_from=AssetReconciliationScenario(
-            assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+            assets=get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated(False),
             cursor_from=AssetReconciliationScenario(
-                assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+                assets=get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated(False),
                 unevaluated_runs=[
                     run(["asset1"], "2020-01-01"),
                     run(["asset1"], "2020-01-02"),
@@ -745,11 +747,11 @@ auto_materialize_policy_scenarios = {
         expected_run_requests=[run_request(["asset3"])],
     ),
     "test_wait_for_all_parents_updated_all_upstream_partitions": AssetReconciliationScenario(
-        assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+        assets=get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated(True),
         cursor_from=AssetReconciliationScenario(
-            assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+            assets=get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated(True),
             cursor_from=AssetReconciliationScenario(
-                assets=unpartitioned_with_one_parent_partitioned_skip_on_not_all_parents_updated,
+                assets=get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated(True),
                 unevaluated_runs=[
                     run(["asset1"], "2020-01-01"),
                     run(["asset1"], "2020-01-02"),
@@ -769,22 +771,27 @@ auto_materialize_policy_scenarios = {
         current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
         expected_run_requests=[run_request(["asset3"])],
     ),
-    "test_wait_for_all_parents_updated_one_upstream_starts_later_than_downstream": AssetReconciliationScenario(
-        assets=one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated,
-        cursor_from=AssetReconciliationScenario(
+    "test_wait_for_all_parents_updated_one_upstream_starts_later_than_downstream": (
+        AssetReconciliationScenario(
             assets=one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated,
             cursor_from=AssetReconciliationScenario(
                 assets=one_upstream_starts_later_than_downstream_skip_on_not_all_parents_updated,
-                unevaluated_runs=[run(["asset2"], partition_key="2023-01-01-00:00")],
+                unevaluated_runs=[
+                    run(["asset1"], partition_key="2023-01-01-03:00"),
+                    run(["asset2"], partition_key="2023-01-01-00:00"),
+                ],
                 current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
-                expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-00:00")],
+                expected_run_requests=[
+                    run_request(["asset3"], partition_key="2023-01-01-00:00"),
+                ],
             ),
-            unevaluated_runs=[run(["asset1"], "2023-01-01-03:00")],
+            unevaluated_runs=[
+                run(["asset3"], partition_key="2023-01-01-00:00"),
+                run(["asset1"], partition_key="2023-01-01-03:00"),
+                run(["asset2"], partition_key="2023-01-01-03:00"),
+            ],
             current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
-            expected_run_requests=[],
-        ),
-        unevaluated_runs=[run(["asset2"], "2023-01-01-03:00")],
-        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
-        expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-03:00")],
+            expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-03:00")],
+        )
     ),
 }
