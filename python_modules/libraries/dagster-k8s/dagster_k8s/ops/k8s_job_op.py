@@ -130,6 +130,7 @@ def execute_k8s_job(
     pod_spec_config: Optional[Dict[str, Any]] = None,
     job_metadata: Optional[Dict[str, Any]] = None,
     job_spec_config: Optional[Dict[str, Any]] = None,
+    k8s_job_name: Optional[str] = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
 
@@ -195,6 +196,10 @@ def execute_k8s_job(
         job_spec_config (Optional[Dict[str, Any]]): Raw k8s config for the k8s job's job spec
             (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
             Keys can either snake_case or camelCase.Default: None.
+        k8s_job_name (Optional[str]): Overrides the name of the the k8s job. If not set, will be set
+            to a unique name based on the current run ID and the name of the calling op. If set,
+            make sure that the passed in name is a valid Kubernetes job name that does not
+            already exist in the cluster.
     """
     run_container_context = K8sContainerContext.create_for_run(
         context.dagster_run,
@@ -255,7 +260,9 @@ def execute_k8s_job(
         resources=container_context.resources,
     )
 
-    job_name = get_k8s_job_name(context.run_id, context.get_step_execution_context().step.key)
+    job_name = k8s_job_name or get_k8s_job_name(
+        context.run_id, context.get_step_execution_context().step.key
+    )
 
     retry_number = context.retry_number
     if retry_number > 0:
