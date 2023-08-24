@@ -5,6 +5,7 @@ import {MemoryRouter} from 'react-router-dom';
 import {PipelineNav} from '../../nav/PipelineNav';
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {JobFeatureProvider} from '../JobFeatureContext';
 
 jest.mock('../../workspace/WorkspaceContext', () => ({
   ...jest.requireActual('../../workspace/WorkspaceContext'),
@@ -19,6 +20,11 @@ jest.mock('../../nav/RepositoryLink', () => ({
   RepositoryLink: () => <div />,
 }));
 
+// We don't actually want to import the PipelineOverviewRoot via context fallthrough.
+jest.mock('../PipelineOverviewRoot', () => ({
+  PipelineOverviewRoot: () => <div />,
+}));
+
 describe('PipelineNav', () => {
   const repoAddress = buildRepoAddress('bar', 'baz');
 
@@ -30,11 +36,13 @@ describe('PipelineNav', () => {
     };
 
     render(
-      <TestPermissionsProvider locationOverrides={locationOverrides}>
-        <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
-          <PipelineNav repoAddress={repoAddress} />
-        </MemoryRouter>
-      </TestPermissionsProvider>,
+      <JobFeatureProvider>
+        <TestPermissionsProvider locationOverrides={locationOverrides}>
+          <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
+            <PipelineNav repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
+      </JobFeatureProvider>,
     );
 
     const launchpadTab = await screen.findByRole('tab', {name: /launchpad/i});
@@ -49,11 +57,13 @@ describe('PipelineNav', () => {
     };
 
     render(
-      <TestPermissionsProvider locationOverrides={locationOverrides}>
-        <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
-          <PipelineNav repoAddress={repoAddress} />
-        </MemoryRouter>
-      </TestPermissionsProvider>,
+      <JobFeatureProvider>
+        <TestPermissionsProvider locationOverrides={locationOverrides}>
+          <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
+            <PipelineNav repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
+      </JobFeatureProvider>,
     );
 
     const launchpadTab = await screen.findByRole('tab', {name: /launchpad/i});
