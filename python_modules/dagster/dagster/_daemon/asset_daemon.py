@@ -22,7 +22,7 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 
-EVALUATIONS_TTL_DAYS = 7
+EVALUATIONS_TTL_DAYS = 30
 
 
 def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
