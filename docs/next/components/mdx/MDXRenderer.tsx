@@ -60,12 +60,12 @@ export const VersionNotice = () => {
           )}
         </div>
         <div className="mt-3 text-sm">
-          <Link href={asPath} version={defaultVersion}>
-            <a className="font-medium text-indigo-600 hover:text-indigo-500">
-              {' '}
-              View Latest Documentation <span aria-hidden="true">→</span>
-            </a>
-          </Link>
+          <a
+            href="https://docs.dagster.io"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            View Latest Documentation <span aria-hidden="true">→</span>
+          </a>
         </div>
       </div>
     </div>
