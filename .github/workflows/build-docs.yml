@@ -3,7 +3,8 @@ on:
   push:
     branches:
       - master
-      - docs-prod
+      - 'release-*' # older verions of the docs
+      - docs-prod # prod
     paths:
       - docs/**
   pull_request:
@@ -17,16 +18,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Deploy to Vercel Previews on pull request or push to master branch
+      # Deploy to Vercel Previews on pull request, push to master branch, or push to release-* branch
       - name: Get branch preview subdomain
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+        if: |
+          github.event_name == 'pull_request' || 
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
         run: |
           BRANCH_PREVIEW_SUBDOMAIN=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
 
-      - name: Checkout master branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      - name: Checkout master/release branch
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-'))
         uses: actions/checkout@v3
         
       - name: Get PR fetch depth
@@ -60,7 +63,9 @@ jobs:
 
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+        if: |
+          github.event_name == 'pull_request' || 
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
