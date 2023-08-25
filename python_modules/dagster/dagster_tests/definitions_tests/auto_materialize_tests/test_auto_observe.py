@@ -1,3 +1,5 @@
+import logging
+
 from dagster import AssetKey, DagsterInstance, observable_source_asset
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
@@ -111,6 +113,7 @@ def test_reconcile():
         materialize_run_tags=None,
         observe_run_tags={"tag1": "tag_value"},
         respect_materialization_data_versions=False,
+        logger=logging.getLogger("dagster.amp"),
     ).evaluate()
     assert len(run_requests) == 1
     assert run_requests[0].tags.get("tag1") == "tag_value"

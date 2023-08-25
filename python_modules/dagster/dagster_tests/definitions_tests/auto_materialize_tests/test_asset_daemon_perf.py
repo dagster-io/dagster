@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import tarfile
@@ -238,6 +239,7 @@ class PerfScenario(NamedTuple):
                     auto_observe=False,
                     observe_run_tags=None,
                     respect_materialization_data_versions=True,
+                    logger=logging.getLogger("dagster.amp"),
                 ).evaluate()
 
                 end = time.time()

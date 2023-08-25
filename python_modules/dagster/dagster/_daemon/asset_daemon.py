@@ -85,15 +85,27 @@ class AssetDaemon(IntervalDaemon):
             for target_key in asset_graph.materializable_asset_keys
             if asset_graph.get_auto_materialize_policy(target_key) is not None
         }
+        num_target_assets = len(target_asset_keys)
 
-        has_auto_observe_assets = any(
-            asset_graph.get_auto_observe_interval_minutes(key) is not None
+        auto_observe_assets = [
+            key
             for key in asset_graph.source_asset_keys
-        )
+            if asset_graph.get_auto_observe_interval_minutes(key) is not None
+        ]
+
+        num_auto_observe_assets = len(auto_observe_assets)
+        has_auto_observe_assets = any(auto_observe_assets)
 
         if not target_asset_keys and not has_auto_observe_assets:
+            self._logger.debug("No assets that require auto-materialize checks")
             yield
             return
+
+        self._logger.info(
+            f"Checking {num_target_assets} asset{'' if num_target_assets == 1 else 's'} and"
+            f" {num_auto_observe_assets} observable source"
+            f" asset{'' if num_auto_observe_assets == 1 else 's'} for auto-materialization"
+        )
 
         raw_cursor = _get_raw_cursor(instance)
         cursor = (
@@ -114,7 +126,14 @@ class AssetDaemon(IntervalDaemon):
             observe_run_tags={AUTO_OBSERVE_TAG: "true"},
             auto_observe=True,
             respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+            logger=self._logger,
         ).evaluate()
+
+        self._logger.info(
+            f"Tick produced {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
+            f" {len(evaluations)} asset evaluation{'s' if len(evaluations) != 1 else ''} for"
+            f" evaluation ID {new_cursor.evaluation_id}"
+        )
 
         evaluations_by_asset_key = {evaluation.asset_key: evaluation for evaluation in evaluations}
 
@@ -133,6 +152,12 @@ class AssetDaemon(IntervalDaemon):
                 instance,
                 workspace,
                 asset_graph,
+            )
+
+            asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
+
+            self._logger.info(
+                f"Launched run {run.run_id} for assets {asset_key_str} with tags {run_request.tags}"
             )
 
             # add run id to evaluations
@@ -155,6 +180,8 @@ class AssetDaemon(IntervalDaemon):
             schedule_storage.purge_asset_evaluations(
                 before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
             )
+
+        self._logger.info("Finished auto-materialization tick")
 
 
 def submit_asset_run(

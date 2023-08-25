@@ -1,5 +1,6 @@
 import datetime
 import itertools
+import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -63,6 +64,7 @@ class AssetDaemonContext:
         auto_observe: bool,
         target_asset_keys: Optional[AbstractSet[AssetKey]],
         respect_materialization_data_versions: bool,
+        logger: logging.Logger,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -78,6 +80,7 @@ class AssetDaemonContext:
         self._observe_run_tags = observe_run_tags
         self._auto_observe = auto_observe
         self._respect_materialization_data_versions = respect_materialization_data_versions
+        self._logger = logger
 
         # fetch some data in advance to batch some queries
         self.instance_queryer.prefetch_asset_records(
@@ -445,6 +448,26 @@ class AssetDaemonContext:
             (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
                 asset_key, will_materialize_mapping, expected_data_time_mapping
             )
+
+            log_fn = (
+                self._logger.info
+                if (evaluation.num_requested or evaluation.num_skipped or evaluation.num_discarded)
+                else self._logger.debug
+            )
+
+            to_materialize_str = ",".join(
+                [
+                    (to_materialize.partition_key or "No partition")
+                    for to_materialize in to_materialize_for_asset
+                ]
+            )
+
+            log_fn(
+                f"Asset {asset_key.to_user_string()} evaluation result: {evaluation.num_requested}"
+                f" requested ({to_materialize_str}), {evaluation.num_skipped}"
+                f" skipped, {evaluation.num_discarded} discarded"
+            )
+
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
             to_discard.update(to_discard_for_asset)
