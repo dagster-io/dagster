@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Any, Dict, List
 
 import yaml
@@ -42,8 +43,10 @@ def from_asset_entries(asset_entries: Dict[str, Any]) -> List[AssetsDefinition]:
         ) -> None:
             # instead of querying a dummy client, do your real data processing here
 
+            python_executable = shutil.which("python")
+            assert python_executable is not None
             subprocess_resource.run(
-                command=["python", file_relative_path(__file__, "sql_script.py"), sql],
+                command=[python_executable, file_relative_path(__file__, "sql_script.py"), sql],
                 context=context,
             )
 
