@@ -253,7 +253,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         for subdir, _, files in walk(base_dir):
             for file in files:
                 full_path = path.join(subdir, file)
-                relative_path = full_path[len(base_dir) :].replace(os.path.sep, "/")
+                relative_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
                 # We only need to replace BUILDTIME_ASSETPREFIX_REPLACE_ME in javascript files
                 if self._uses_app_path_prefix and (
                     file.endswith(".js") or file.endswith(".js.map")
