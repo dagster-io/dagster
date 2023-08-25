@@ -1,5 +1,17 @@
 # Changelog
 
+# 1.4.10 / 0.20.10 (libraries)
+
+### Bugfixes
+- [dagster-webserver] Fixed an issue that broke loading static files on Windows.
+
+
+# 1.4.9 / 0.20.9 (libraries)
+
+### Bugfixes
+
+- Fixed an issue that caused some missing icons in the UI.
+
 # 1.4.8 / 0.20.8 (libraries)
 
 ### New
