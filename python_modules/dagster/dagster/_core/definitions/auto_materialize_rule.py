@@ -255,9 +255,20 @@ class AutoMaterializeRule(ABC):
 
     @staticmethod
     def skip_on_not_all_parents_updated(
-        require_update_on_all_parent_partitions: bool = False,
+        require_update_for_all_parent_partitions: bool = False,
     ) -> "SkipOnNotAllParentsUpdatedRule":
-        return SkipOnNotAllParentsUpdatedRule(require_update_on_all_parent_partitions)
+        """An auto-materialize rule that enforces that an asset can only be materialized if all parents
+        have been materialized since the asset's last materialization.
+
+        Attributes:
+            require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
+                asset or an asset partition that depends on more than one partition in any upstream asset.
+                If true, requires all upstream partitions in each upstream asset to be materialized since
+                the downstream asset's last materialization in order to update it. If false, requires at
+                least one upstream partition in each upstream asset to be materialized since the downstream
+                asset's last materialization in order to update it. Defaults to false.
+        """
+        return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -481,6 +492,94 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
 
 @whitelist_for_serdes
+class SkipOnNotAllParentsUpdatedRule(
+    AutoMaterializeRule,
+    NamedTuple(
+        "_SkipOnNotAllParentsUpdatedRule", [("require_update_for_all_parent_partitions", bool)]
+    ),
+):
+    """An auto-materialize rule that enforces that an asset can only be materialized if all parents
+    have been materialized since the asset's last materialization.
+
+    Attributes:
+        require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
+            asset or an asset partition that depends on more than one partition in any upstream asset.
+            If true, requires all upstream partitions in each upstream asset to be materialized since
+            the downstream asset's last materialization in order to update it. If false, requires at
+            least one upstream partition in each upstream asset to be materialized since the downstream
+            asset's last materialization in order to update it. Defaults to false.
+    """
+
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        if self.require_update_for_all_parent_partitions is False:
+            return "waiting on upstream data to be updated"
+        else:
+            return "waiting until all upstream partitions are updated"
+
+    def evaluate_for_asset(
+        self,
+        context: RuleEvaluationContext,
+    ) -> RuleEvaluationResults:
+        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
+        for candidate in context.candidates:
+            parent_partitions = context.asset_graph.get_parents_partitions(
+                context.instance_queryer,
+                context.instance_queryer.evaluation_time,
+                context.asset_key,
+                candidate.partition_key,
+            ).parent_partitions
+
+            updated_parent_partitions = (
+                context.instance_queryer.get_updated_parent_asset_partitions(
+                    candidate,
+                    parent_partitions,
+                    context.daemon_context.respect_materialization_data_versions,
+                )
+                | set().union(
+                    *[
+                        context.will_materialize_mapping.get(parent, set())
+                        for parent in context.asset_graph.get_parents(context.asset_key)
+                    ]
+                )
+            )
+
+            if self.require_update_for_all_parent_partitions:
+                # All upstream partitions must be updated in order for the candidate to be updated
+                non_updated_parent_keys = {
+                    parent.asset_key for parent in parent_partitions - updated_parent_partitions
+                }
+            else:
+                # At least one upstream partition in each upstream asset must be updated in order
+                # for the candidate to be updated
+                parent_asset_keys = context.asset_graph.get_parents(context.asset_key)
+                updated_parent_partitions_by_asset_key = context.get_asset_partitions_by_asset_key(
+                    updated_parent_partitions
+                )
+                non_updated_parent_keys = {
+                    parent
+                    for parent in parent_asset_keys
+                    if not updated_parent_partitions_by_asset_key.get(parent)
+                }
+
+            if non_updated_parent_keys:
+                asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
+                    candidate
+                )
+
+        if asset_partitions_by_waiting_on_asset_keys:
+            return [
+                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
+                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
+            ]
+        return []
+
+
+@whitelist_for_serdes
 class DiscardOnMaxMaterializationsExceededRule(
     AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
 ):
@@ -643,85 +742,6 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
                 evaluation_data=None,
             )
         check.failed(f"Unexpected class {self.klass}")
-
-
-@whitelist_for_serdes
-class SkipOnNotAllParentsUpdatedRule(
-    AutoMaterializeRule,
-    NamedTuple(
-        "_SkipOnNotAllParentsUpdatedRule", [("require_update_on_all_parent_partitions", bool)]
-    ),
-):
-    """An auto-materialize rule that enforces that an asset can only be requested for execution
-    if all parents have been materialized since its last materialization.
-
-    Properties:
-        require_update_on_all_parent_partitions (Optional[bool]): If true, requires all upstream
-            partitions to be materialized in order for a given asset to update. If false, requires
-            at least one upstream partition in each parent asset to be materialized in order for
-            a given asset to update. Defaults to false.
-    """
-
-    @property
-    def decision_type(self) -> AutoMaterializeDecisionType:
-        return AutoMaterializeDecisionType.SKIP
-
-    def evaluate_for_asset(
-        self,
-        context: RuleEvaluationContext,
-    ) -> RuleEvaluationResults:
-        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
-        for candidate in context.candidates:
-            parent_partitions = context.asset_graph.get_parents_partitions(
-                context.instance_queryer,
-                context.instance_queryer.evaluation_time,
-                context.asset_key,
-                candidate.partition_key,
-            ).parent_partitions
-
-            updated_parent_partitions = (
-                context.instance_queryer.get_updated_parent_asset_partitions(
-                    candidate,
-                    parent_partitions,
-                    context.daemon_context.respect_materialization_data_versions,
-                )
-                | set().union(
-                    *[
-                        context.will_materialize_mapping.get(parent, set())
-                        for parent in context.asset_graph.get_parents(context.asset_key)
-                    ]
-                )
-            )
-
-            if self.require_update_on_all_parent_partitions:
-                # All upstream partitions must be updated in order for the candidate to be updated
-                non_updated_parent_keys = {
-                    parent.asset_key for parent in parent_partitions - updated_parent_partitions
-                }
-            else:
-                # At least one upstream partition in each upstream asset must be updated in order
-                # for the candidate to be updated
-                parent_asset_keys = context.asset_graph.get_parents(context.asset_key)
-                updated_parent_partitions_by_asset_key = context.get_asset_partitions_by_asset_key(
-                    updated_parent_partitions
-                )
-                non_updated_parent_keys = {
-                    parent
-                    for parent in parent_asset_keys
-                    if not updated_parent_partitions_by_asset_key.get(parent)
-                }
-
-            if non_updated_parent_keys:
-                asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
-                    candidate
-                )
-
-        if asset_partitions_by_waiting_on_asset_keys:
-            return [
-                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
-                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
-            ]
-        return []
 
 
 @whitelist_for_serdes(serializer=BackcompatAutoMaterializeConditionSerializer)

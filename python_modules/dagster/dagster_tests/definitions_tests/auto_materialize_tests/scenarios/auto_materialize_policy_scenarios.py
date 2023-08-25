@@ -139,11 +139,11 @@ partitioned_to_unpartitioned_allow_missing_parent = [
 ]
 
 get_unpartitioned_with_one_parent_partitioned_skip_on_parents_updated = (
-    lambda require_update_on_all_parent_partitions: with_auto_materialize_policy(
+    lambda require_update_for_all_parent_partitions: with_auto_materialize_policy(
         unpartitioned_with_one_parent_partitioned,
         AutoMaterializePolicy.eager().with_rules(
             AutoMaterializeRule.skip_on_not_all_parents_updated(
-                require_update_on_all_parent_partitions
+                require_update_for_all_parent_partitions
             ),
         ),
     )
