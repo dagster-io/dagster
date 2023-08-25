@@ -90,7 +90,7 @@ def test_index_view(instance):
         res = client.get("/")
 
         assert res.status_code == 200, res.content
-        assert b"<title>Dagster Cloud</title>" in res.content
+        assert b"<title>Dagster</title>" in res.content
 
 
 def test_index_view_at_path_prefix(instance):
