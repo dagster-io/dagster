@@ -68,6 +68,11 @@ export type GetEvaluationsQuery = {
                 | null;
             }>;
           }>;
+          ruleSnapshots: Array<{
+            __typename: 'AutoMaterializeRule';
+            description: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+          }>;
         }>;
       }
     | null;
@@ -108,6 +113,11 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
         | {__typename: 'PartitionSubsetDeserializationError'; message: string}
         | null;
     }>;
+  }>;
+  ruleSnapshots: Array<{
+    __typename: 'AutoMaterializeRule';
+    description: string;
+    decisionType: Types.AutoMaterializeDecisionType;
   }>;
 };
 

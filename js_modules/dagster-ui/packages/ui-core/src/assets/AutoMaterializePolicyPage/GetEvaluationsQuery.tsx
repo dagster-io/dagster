@@ -40,6 +40,10 @@ export const GET_EVALUATIONS_QUERY = gql`
     rulesWithRuleEvaluations {
       ...RuleWithEvaluationsFragment
     }
+    ruleSnapshots {
+      description
+      decisionType
+    }
   }
 
   fragment RuleWithEvaluationsFragment on AutoMaterializeRuleWithRuleEvaluations {
