@@ -515,7 +515,9 @@ class AssetBackfillIterationResult(NamedTuple):
 
 
 def _get_requested_asset_partitions_from_run_requests(
-    run_requests: Sequence[RunRequest], asset_graph: ExternalAssetGraph, instance: DagsterInstance
+    run_requests: Sequence[RunRequest],
+    asset_graph: ExternalAssetGraph,
+    instance_queryer: CachingInstanceQueryer,
 ) -> Set[AssetKeyPartitionKey]:
     requested_partitions = set()
     for run_request in run_requests:
@@ -538,7 +540,7 @@ def _get_requested_asset_partitions_from_run_requests(
 
             partitions_def = cast(PartitionsDefinition, next(iter(partitions_defs)))
             partitions_in_range = partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(range_start, range_end), instance
+                PartitionKeyRange(range_start, range_end), instance_queryer
             )
             requested_partitions = requested_partitions | set(
                 [
@@ -563,6 +565,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     previous_asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
+    instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[Optional[AssetBackfillData]]:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
@@ -608,7 +611,7 @@ def _submit_runs_and_update_backfill_in_chunks(
         unsubmitted_run_request_idx = chunk_end_idx
 
         requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
-            run_requests_chunk, asset_graph, instance
+            run_requests_chunk, asset_graph, instance_queryer
         )
         submitted_partitions = submitted_partitions | requested_partitions_in_chunk
 
@@ -713,6 +716,7 @@ def execute_asset_backfill_iteration(
                 result,
                 previous_asset_backfill_data,
                 asset_graph,
+                instance_queryer,
             ):
                 yield None
 
