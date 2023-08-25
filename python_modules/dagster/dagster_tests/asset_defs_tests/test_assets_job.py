@@ -29,6 +29,7 @@ from dagster import (
     io_manager,
     materialize_to_memory,
     multi_asset,
+    observable_source_asset,
     op,
     resource,
     with_resources,
@@ -1992,6 +1993,46 @@ def test_get_base_asset_jobs_multiple_partitions_defs():
         frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
     }
 
+@ignore_warning("Function `observable_source_asset` is experimental")
+def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
+    class B:
+        ...
+
+    class X:
+        ...
+
+    partitions_a = StaticPartitionsDefinition(["a1"])
+
+    @observable_source_asset(partitions_def=partitions_a)
+    def asset_a():
+        ...
+    partitions_b = StaticPartitionsDefinition(["b1"])
+
+    @observable_source_asset(partitions_def=partitions_b)
+    def asset_b():
+        ...
+
+    @asset(partitions_def=partitions_b)
+    def asset_x(asset_b: B):
+        ...
+
+    jobs = get_base_asset_jobs(
+        assets=[
+            asset_x,
+        ],
+        source_assets=[
+            asset_a,
+            asset_b,
+        ],
+        executor_def=None,
+        resource_defs={},
+        asset_checks=[],
+    )
+    assert len(jobs) == 2
+    assert {job_def.name for job_def in jobs} == {
+        "__ASSET_JOB_0",
+        "__ASSET_JOB_1",
+    }
 
 def test_coerce_resource_build_asset_job() -> None:
     executed = {}
