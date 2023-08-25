@@ -26,7 +26,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   query: DocumentNode;
   nextCursorForResult: (result: T) => string | undefined;
   skip?: boolean;
-  variables: Omit<Omit<TVars, 'cusor'>, 'limit'>;
+  variables: Omit<TVars, 'cursor' | 'limit'>;
   pageSize: number;
   getResultArray: (result: T | undefined) => any[];
 }) {

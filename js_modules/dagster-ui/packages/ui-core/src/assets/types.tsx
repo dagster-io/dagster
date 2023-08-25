@@ -1,6 +1,13 @@
+import {AssetViewDefinitionQuery} from './types/AssetView.types';
+
 export interface AssetKey {
   path: string[];
 }
+
+export type AssetDefinition = Extract<
+  AssetViewDefinitionQuery['assetOrError'],
+  {__typename: 'Asset'}
+>['definition'];
 
 export type AssetLineageScope = 'neighbors' | 'upstream' | 'downstream';
 
