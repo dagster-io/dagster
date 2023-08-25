@@ -1,13 +1,15 @@
-from typing import Optional
+from typing import Any, Optional
 
 from dagster_externals import (
     ExternalExecutionContextData,
     ExternalExecutionDataProvenance,
     ExternalExecutionExtras,
+    ExternalExecutionMessage,
     ExternalExecutionTimeWindow,
 )
 
-from dagster._core.definitions.data_version import DataProvenance
+import dagster._check as check
+from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -15,7 +17,48 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.invocation import BoundOpExecutionContext
 
 
-def build_external_execution_context(
+class ExternalExecutionOrchestrationContext:
+    def __init__(
+        self, *, context: OpExecutionContext, extras: Optional[ExternalExecutionExtras]
+    ) -> None:
+        self._context = context
+        self._extras = extras
+
+    def get_data(self) -> ExternalExecutionContextData:
+        return build_external_execution_context_data(self._context, self._extras)
+
+    # ########################
+    # ##### HANDLE NOTIFICATIONS
+    # ########################
+
+    # Type ignores because we currently validate in individual handlers
+    def handle_message(self, message: ExternalExecutionMessage) -> None:
+        if message["method"] == "report_asset_metadata":
+            self._handle_report_asset_metadata(**message["params"])  # type: ignore
+        elif message["method"] == "report_asset_data_version":
+            self._handle_report_asset_data_version(**message["params"])  # type: ignore
+        elif message["method"] == "log":
+            self._handle_log(**message["params"])  # type: ignore
+
+    def _handle_report_asset_metadata(self, asset_key: str, label: str, value: Any) -> None:
+        check.str_param(asset_key, "asset_key")
+        check.str_param(label, "label")
+        key = AssetKey.from_user_string(asset_key)
+        output_name = self._context.output_for_asset_key(key)
+        self._context.add_output_metadata({label: value}, output_name)
+
+    def _handle_report_asset_data_version(self, asset_key: str, data_version: str) -> None:
+        check.str_param(asset_key, "asset_key")
+        check.str_param(data_version, "data_version")
+        key = AssetKey.from_user_string(asset_key)
+        self._context.set_data_version(key, DataVersion(data_version))
+
+    def _handle_log(self, message: str, level: str = "info") -> None:
+        check.str_param(message, "message")
+        self._context.log.log(level, message)
+
+
+def build_external_execution_context_data(
     context: OpExecutionContext,
     extras: Optional[ExternalExecutionExtras],
 ) -> "ExternalExecutionContextData":
