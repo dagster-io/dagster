@@ -111,7 +111,10 @@ from dagster._config.source import (
     StringSource as StringSource,
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec as AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import (
+    AssetCheckSeverity as AssetCheckSeverity,
+    AssetCheckSpec as AssetCheckSpec,
+)
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection

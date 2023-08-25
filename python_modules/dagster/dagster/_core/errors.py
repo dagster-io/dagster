@@ -580,6 +580,10 @@ class DagsterTypeCheckDidNotPass(DagsterError):
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
 
+class DagsterAssetCheckFailedError(DagsterError):
+    """Indicates than an asset check failed."""
+
+
 class DagsterEventLogInvalidForRun(DagsterError):
     """Raised when the event logs for a historical run are malformed or invalid."""
 

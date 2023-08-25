@@ -25,6 +25,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -47,6 +48,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     get_tags_from_multi_partition_key,
 )
 from dagster._core.errors import (
+    DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
@@ -87,6 +89,13 @@ def _asset_check_results_to_outputs_and_evaluations(
     for user_event in user_event_sequence:
         if isinstance(user_event, AssetCheckResult):
             asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+            spec = check.not_none(
+                step_context.job_def.asset_layer.get_spec_for_asset_check(
+                    step_context.node_handle, asset_check_evaluation.asset_check_handle
+                ),
+                "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
+                " there should be a spec for the check",
+            )
 
             output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
                 asset_check_evaluation.asset_check_handle
@@ -94,6 +103,12 @@ def _asset_check_results_to_outputs_and_evaluations(
             output = Output(value=None, output_name=output_name)
 
             yield asset_check_evaluation
+
+            if not asset_check_evaluation.success and spec.severity == AssetCheckSeverity.ERROR:
+                raise DagsterAssetCheckFailedError(
+                    f"Check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
+                    " ERROR severity."
+                )
             yield output
         else:
             yield user_event
