@@ -212,7 +212,7 @@ export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntry
   const [showMetadata, setShowMetadata] = React.useState(false);
 
   if (!metadataEntries || !metadataEntries.length) {
-    return ' - ';
+    return <span>{' - '}</span>;
   }
   if (canShowMetadataInline(metadataEntries)) {
     return <MetadataEntries entries={metadataEntries} />;
