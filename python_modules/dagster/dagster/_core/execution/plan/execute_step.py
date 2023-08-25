@@ -16,7 +16,6 @@ from typing_extensions import TypedDict
 import dagster._check as check
 from dagster._core.definitions import (
     AssetCheckEvaluation,
-    AssetCheckResult,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -25,6 +24,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
@@ -47,6 +47,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
@@ -78,16 +79,47 @@ from .compute_generator import create_op_compute_wrapper
 from .utils import op_execution_error_boundary
 
 
-def _asset_check_results_to_outputs_and_evaluations(
-    step_context: StepExecutionContext, user_event_sequence: Iterator[OpOutputUnion]
+def _process_asset_results_to_events(
+    step_context: StepExecutionContext,
+    user_event_sequence: Iterator[OpOutputUnion],
 ) -> Iterator[OpOutputUnion]:
-    """We convert each AssetCheckResult to two events:
-    - An Output, which allows downstream steps to depend on it
-    - An AssetCheckEvaluation, which combines the check result with information from the context
-        to create a full picture of the asset check's evaluation.
+    """Handle converting MaterializeResult (& AssetCheckResult soon) to their appropriate events.
+
+    MaterializeResults get converted to an Output event, which is later use to derive an AssetMaterialization.
+
+    AssetCheckResult get converted to two events:
+     - An Output, which allows downstream steps to depend on it
+     - An AssetCheckEvaluation, which combines the check result with information from the context
+         to create a full picture of the asset check's evaluation.
     """
     for user_event in user_event_sequence:
-        if isinstance(user_event, AssetCheckResult):
+        if isinstance(user_event, MaterializeResult):
+            assets_def = step_context.job_def.asset_layer.assets_def_for_node(
+                step_context.node_handle
+            )
+            if not assets_def:
+                raise DagsterInvariantViolationError(
+                    "MaterializeResult is only valid within asset computations, no backing"
+                    " AssetsDefinition found."
+                )
+            if user_event.asset_key:
+                asset_key = user_event.asset_key
+            else:
+                if len(assets_def.keys) != 1:
+                    raise DagsterInvariantViolationError(
+                        "MaterializeResult did not include asset_key and it can not be inferred."
+                        f" Specify which asset_key, options are: {assets_def.keys}."
+                    )
+                asset_key = assets_def.key
+
+            output_name = assets_def.get_output_name_for_asset_key(asset_key)
+            output = Output(
+                value=None,
+                output_name=output_name,
+                metadata=user_event.metadata,
+            )
+            yield output
+        elif isinstance(user_event, AssetCheckResult):
             asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
             spec = check.not_none(
                 step_context.job_def.asset_layer.get_spec_for_asset_check(
@@ -446,11 +478,9 @@ def core_dagster_event_sequence_for_step(
 
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
-        for user_event in check.generator(
-            _step_output_error_checked_user_event_sequence(
-                step_context,
-                _asset_check_results_to_outputs_and_evaluations(step_context, user_event_sequence),
-            )
+        for user_event in _step_output_error_checked_user_event_sequence(
+            step_context,
+            _process_asset_results_to_events(step_context, user_event_sequence),
         ):
             if isinstance(user_event, DagsterEvent):
                 yield user_event

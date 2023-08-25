@@ -38,11 +38,14 @@ from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
 )
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
@@ -1574,13 +1577,8 @@ def test_asset_key_with_prefix():
 
 
 def _exec_asset(asset_def):
-    asset_job = define_asset_job("testing", [asset_def]).resolve(
-        asset_graph=AssetGraph.from_assets([asset_def])
-    )
-
-    result = asset_job.execute_in_process()
+    result = materialize([asset_def])
     assert result.success
-
     return result.asset_materializations_for_node(asset_def.node_def.name)
 
 
@@ -1668,3 +1666,184 @@ def test_direct_instantiation_invalid_partition_mapping():
             node_def=my_op,
             partition_mappings={AssetKey("nonexistent_asset"): IdentityPartitionMapping()},
         )
+
+
+def test_return_materialization():
+    #
+    # status quo - use add add_output_metadata
+    #
+    @asset
+    def add(context: AssetExecutionContext):
+        context.add_output_metadata(
+            metadata={"one": 1},
+        )
+
+    mats = _exec_asset(add)
+    assert len(mats) == 1
+    # working with core metadata repr values sucks, ie IntMetadataValue
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+
+    #
+    # may want to update this pattern to work better...
+    #
+    @asset
+    def logged(context: AssetExecutionContext):
+        context.log_event(
+            AssetMaterialization(
+                asset_key=context.asset_key_for_output(),
+                metadata={"one": 1},
+            )
+        )
+
+    mats = _exec_asset(logged)
+    # ... currently get implicit materialization for output + logged event
+    assert len(mats) == 2
+    assert "one" in mats[0].metadata
+    # assert mats[0].tags # fails
+    # assert "one" in mats[1].metadata  # fails
+    assert mats[1].tags
+
+    #
+    # main exploration
+    #
+    @asset
+    def ret_untyped(context: AssetExecutionContext):
+        return MaterializeResult(
+            metadata={"one": 1},
+        )
+
+    mats = _exec_asset(ret_untyped)
+    assert len(mats) == 1, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+
+    #
+    # key mismatch
+    #
+    @asset
+    def ret_mismatch(context: AssetExecutionContext):
+        return MaterializeResult(
+            asset_key="random",
+            metadata={"one": 1},
+        )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Asset key random not found in AssetsDefinition",
+    ):
+        mats = _exec_asset(ret_mismatch)
+
+
+def test_return_materialization_multi_asset():
+    #
+    # yield successful
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def multi():
+        yield MaterializeResult(
+            asset_key="one",
+            metadata={"one": 1},
+        )
+        yield MaterializeResult(
+            asset_key="two",
+            metadata={"two": 2},
+        )
+
+    mats = _exec_asset(multi)
+
+    assert len(mats) == 2, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+    assert "two" in mats[1].metadata
+    assert mats[1].tags
+
+    #
+    # missing a non optional out
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def missing():
+        yield MaterializeResult(
+            asset_key="one",
+            metadata={"one": 1},
+        )
+
+    # currently a less than ideal error
+    with pytest.raises(
+        DagsterStepOutputNotFoundError,
+        match=(
+            'Core compute for op "missing" did not return an output for non-optional output "two"'
+        ),
+    ):
+        _exec_asset(missing)
+
+    #
+    # missing asset_key
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def no_key():
+        yield MaterializeResult(
+            metadata={"one": 1},
+        )
+        yield MaterializeResult(
+            metadata={"two": 2},
+        )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
+            " asset_key, options are:"
+        ),
+    ):
+        _exec_asset(no_key)
+
+    #
+    # return tuple success
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def ret_multi():
+        return (
+            MaterializeResult(
+                asset_key="one",
+                metadata={"one": 1},
+            ),
+            MaterializeResult(
+                asset_key="two",
+                metadata={"two": 2},
+            ),
+        )
+
+    mats = _exec_asset(ret_multi)
+
+    assert len(mats) == 2, mats
+    assert "one" in mats[0].metadata
+    assert mats[0].tags
+    assert "two" in mats[1].metadata
+    assert mats[1].tags
+
+    #
+    # return list error
+    #
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
+    def ret_list():
+        return [
+            MaterializeResult(
+                asset_key="one",
+                metadata={"one": 1},
+            ),
+            MaterializeResult(
+                asset_key="two",
+                metadata={"two": 2},
+            ),
+        ]
+
+    # not the best
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "When using multiple outputs, either yield each output, or return a tuple containing a"
+            " value for each output."
+        ),
+    ):
+        _exec_asset(ret_list)

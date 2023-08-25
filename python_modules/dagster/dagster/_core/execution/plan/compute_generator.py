@@ -28,6 +28,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils.warnings import disable_dagster_warnings
@@ -256,6 +257,8 @@ def validate_and_coerce_op_result_to_iterator(
                             mapping_key=dynamic_output.mapping_key,
                             metadata=dynamic_output.metadata,
                         )
+            elif isinstance(element, MaterializeResult):
+                yield element  # coerced in to Output in outer iterator
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
                     annotation
