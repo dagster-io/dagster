@@ -83,6 +83,31 @@ def test_execute_asset_and_check():
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_CHECK_EVALUATION)
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            instance.event_log_storage.get_asset_check_executions(
+                AssetKey("asset1"), "check1", limit=10
+            )
+        )
+        == 1
+    )
+
 
 def test_execute_check_without_asset():
     @asset_check(asset="asset1", description="desc")

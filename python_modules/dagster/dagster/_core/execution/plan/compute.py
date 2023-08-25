@@ -70,6 +70,7 @@ def create_step_outputs(
     step_outputs: List[StepOutput] = []
     for name, output_def in node.definition.output_dict.items():
         asset_info = asset_layer.asset_info_for_output(handle, name)
+
         step_outputs.append(
             StepOutput(
                 node_handle=handle,
@@ -82,6 +83,7 @@ def create_step_outputs(
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
                     is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
+                    asset_check_handle=asset_layer.asset_check_handle_for_output(handle, name),
                 ),
             )
         )

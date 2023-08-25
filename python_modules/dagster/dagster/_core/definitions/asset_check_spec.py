@@ -4,6 +4,7 @@ from typing import NamedTuple, Optional
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @experimental
@@ -21,6 +22,7 @@ class AssetCheckSeverity(Enum):
 
 
 @experimental
+@whitelist_for_serdes
 class AssetCheckHandle(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
     check name uniquely identifies an asset check within a deployment.
