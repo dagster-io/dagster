@@ -86,6 +86,24 @@ export type RunDagsterRunEventFragment_AlertSuccessEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
+export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
+  __typename: 'AssetCheckEvaluationEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
+export type RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent_ = {
+  __typename: 'AssetCheckEvaluationPlannedEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
 export type RunDagsterRunEventFragment_AssetMaterializationPlannedEvent_ = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -2205,6 +2223,8 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_AlertFailureEvent_
   | RunDagsterRunEventFragment_AlertStartEvent_
   | RunDagsterRunEventFragment_AlertSuccessEvent_
+  | RunDagsterRunEventFragment_AssetCheckEvaluationEvent_
+  | RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent_
   | RunDagsterRunEventFragment_AssetMaterializationPlannedEvent_
   | RunDagsterRunEventFragment_EngineEvent_
   | RunDagsterRunEventFragment_ExecutionStepFailureEvent_

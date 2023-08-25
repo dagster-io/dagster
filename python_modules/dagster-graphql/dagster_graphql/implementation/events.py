@@ -171,6 +171,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneAlertFailureEvent,
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
+        GrapheneAssetCheckEvaluationEvent,
+        GrapheneAssetCheckEvaluationPlannedEvent,
         GrapheneAssetMaterializationPlannedEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
@@ -415,6 +417,14 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             error=GraphenePythonError(data.error),
             **basic_params,
         )
+    elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
+        data = dagster_event.event_specific_data
+        return GrapheneAssetCheckEvaluationPlannedEvent(
+            assetKey=data.asset_key, checkName=data.check_name, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+        return GrapheneAssetCheckEvaluationEvent(evaluation=event_record, **basic_params)
+
     else:
         raise Exception(f"Unknown DAGSTER_EVENT type {dagster_event.event_type} found in logs")
 

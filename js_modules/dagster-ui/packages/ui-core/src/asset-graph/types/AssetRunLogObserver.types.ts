@@ -16,6 +16,8 @@ export type AssetLiveRunLogsSubscription = {
           | {__typename: 'AlertFailureEvent'}
           | {__typename: 'AlertStartEvent'}
           | {__typename: 'AlertSuccessEvent'}
+          | {__typename: 'AssetCheckEvaluationEvent'}
+          | {__typename: 'AssetCheckEvaluationPlannedEvent'}
           | {
               __typename: 'AssetMaterializationPlannedEvent';
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;

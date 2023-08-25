@@ -29,6 +29,24 @@ export type LogsRowStructuredFragment_AlertSuccessEvent_ = {
   stepKey: string | null;
 };
 
+export type LogsRowStructuredFragment_AssetCheckEvaluationEvent_ = {
+  __typename: 'AssetCheckEvaluationEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowStructuredFragment_AssetCheckEvaluationPlannedEvent_ = {
+  __typename: 'AssetCheckEvaluationPlannedEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowStructuredFragment_AssetMaterializationPlannedEvent_ = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -2147,6 +2165,8 @@ export type LogsRowStructuredFragment =
   | LogsRowStructuredFragment_AlertFailureEvent_
   | LogsRowStructuredFragment_AlertStartEvent_
   | LogsRowStructuredFragment_AlertSuccessEvent_
+  | LogsRowStructuredFragment_AssetCheckEvaluationEvent_
+  | LogsRowStructuredFragment_AssetCheckEvaluationPlannedEvent_
   | LogsRowStructuredFragment_AssetMaterializationPlannedEvent_
   | LogsRowStructuredFragment_EngineEvent_
   | LogsRowStructuredFragment_ExecutionStepFailureEvent_
@@ -2200,6 +2220,22 @@ export type LogsRowUnstructuredFragment_AlertStartEvent_ = {
 
 export type LogsRowUnstructuredFragment_AlertSuccessEvent_ = {
   __typename: 'AlertSuccessEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowUnstructuredFragment_AssetCheckEvaluationEvent_ = {
+  __typename: 'AssetCheckEvaluationEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowUnstructuredFragment_AssetCheckEvaluationPlannedEvent_ = {
+  __typename: 'AssetCheckEvaluationPlannedEvent';
   message: string;
   timestamp: string;
   level: Types.LogLevel;
@@ -2482,6 +2518,8 @@ export type LogsRowUnstructuredFragment =
   | LogsRowUnstructuredFragment_AlertFailureEvent_
   | LogsRowUnstructuredFragment_AlertStartEvent_
   | LogsRowUnstructuredFragment_AlertSuccessEvent_
+  | LogsRowUnstructuredFragment_AssetCheckEvaluationEvent_
+  | LogsRowUnstructuredFragment_AssetCheckEvaluationPlannedEvent_
   | LogsRowUnstructuredFragment_AssetMaterializationPlannedEvent_
   | LogsRowUnstructuredFragment_EngineEvent_
   | LogsRowUnstructuredFragment_ExecutionStepFailureEvent_
