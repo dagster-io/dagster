@@ -19,7 +19,9 @@ export function useLaunchWithTelemetry() {
   const [launchPipelineExecution] = useMutation<
     LaunchPipelineExecutionMutation,
     LaunchPipelineExecutionMutationVariables
-  >(LAUNCH_PIPELINE_EXECUTION_MUTATION);
+  >(LAUNCH_PIPELINE_EXECUTION_MUTATION, {
+    refetchQueries: ['AssetChecksQuery', 'AssetCheckDetailsQuery'],
+  });
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
 

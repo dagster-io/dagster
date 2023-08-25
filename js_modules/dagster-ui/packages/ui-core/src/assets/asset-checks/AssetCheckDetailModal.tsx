@@ -86,7 +86,6 @@ const AssetCheckDetailModalImpl = ({
       checkName,
     },
     nextCursorForResult: (data) => {
-      console.log({data});
       if (!data || data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
         return undefined;
       }
@@ -104,7 +103,6 @@ const AssetCheckDetailModalImpl = ({
     },
     pageSize: PAGE_SIZE,
   });
-  console.log({queryResult});
   // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
