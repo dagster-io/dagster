@@ -11,7 +11,7 @@ export default function MyApp({Component, pageProps}: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="theme-color" content="#000000" />
         <meta name="slack-app-id" content="A036YAU6RT7" />
-        <title>Dagster Cloud</title>
+        <title>Dagster</title>
       </Head>
       <Component {...pageProps} />
     </>
