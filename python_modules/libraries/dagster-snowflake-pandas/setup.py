@@ -34,8 +34,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_snowflake_pandas_tests*"]),
     install_requires=[
-        "dagster==1.4.8",
-        "dagster-snowflake==0.20.8",
+        "dagster==1.4.9",
+        "dagster-snowflake==0.20.9",
         "pandas",
         "requests",
         "snowflake-connector-python[pandas]",
