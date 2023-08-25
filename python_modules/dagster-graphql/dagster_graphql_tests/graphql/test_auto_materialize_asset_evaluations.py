@@ -64,6 +64,10 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                         }
                     }
                 }
+                rules {
+                    decisionType
+                    description
+                }
             }
             currentEvaluationId
         }
@@ -94,6 +98,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
                     num_requested=0,
                     num_skipped=0,
                     num_discarded=0,
+                    rule_snapshots=[AutoMaterializeRule.materialize_on_missing().to_snapshot()],
                 ),
                 AutoMaterializeAssetEvaluation(
                     asset_key=AssetKey("asset_two"),
@@ -154,16 +159,22 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
-            "autoMaterializeAssetEvaluationsOrError": {
-                "records": [
+            'autoMaterializeAssetEvaluationsOrError': {
+                'records': [
                     {
-                        "numRequested": 0,
-                        "numSkipped": 0,
-                        "numDiscarded": 0,
-                        "rulesWithRuleEvaluations": [],
+                        'numRequested': 0,
+                        'numSkipped': 0,
+                        'numDiscarded': 0,
+                        'rulesWithRuleEvaluations': [],
+                        'rules': [
+                            {
+                                'decisionType': 'MATERIALIZE',
+                                'description': 'materialization is missing',
+                            }
+                        ],
                     }
                 ],
-                "currentEvaluationId": None,
+                'currentEvaluationId': None,
             }
         }
 

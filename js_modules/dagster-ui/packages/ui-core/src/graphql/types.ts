@@ -434,7 +434,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
   numDiscarded: Scalars['Int'];
   numRequested: Scalars['Int'];
   numSkipped: Scalars['Int'];
-  ruleSnapshots: Array<AutoMaterializeRule>;
+  rules: Array<AutoMaterializeRule>;
   rulesWithRuleEvaluations: Array<AutoMaterializeRuleWithRuleEvaluations>;
   runIds: Array<Scalars['String']>;
   timestamp: Scalars['Float'];
@@ -5053,8 +5053,7 @@ export const buildAutoMaterializeAssetEvaluationRecord = (
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2522,
     numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 6444,
-    ruleSnapshots:
-      overrides && overrides.hasOwnProperty('ruleSnapshots') ? overrides.ruleSnapshots! : [],
+    rules: overrides && overrides.hasOwnProperty('rules') ? overrides.rules! : [],
     rulesWithRuleEvaluations:
       overrides && overrides.hasOwnProperty('rulesWithRuleEvaluations')
         ? overrides.rulesWithRuleEvaluations!

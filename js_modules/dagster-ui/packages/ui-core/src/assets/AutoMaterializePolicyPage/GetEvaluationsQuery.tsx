@@ -40,7 +40,7 @@ export const GET_EVALUATIONS_QUERY = gql`
     rulesWithRuleEvaluations {
       ...RuleWithEvaluationsFragment
     }
-    ruleSnapshots {
+    rules {
       description
       decisionType
     }
