@@ -15,6 +15,7 @@ from typing import (
     Tuple,
     cast,
 )
+from dagster._annotations import public
 
 import dagster._check as check
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -222,11 +223,13 @@ class AutoMaterializeRule(ABC):
         """
         ...
 
+    @public
     @staticmethod
     def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
         """Materialize an asset partition if it is required to satisfy a freshness policy."""
         return MaterializeOnRequiredForFreshnessRule()
 
+    @public
     @staticmethod
     def materialize_on_parent_updated() -> "MaterializeOnParentUpdatedRule":
         """Materialize an asset partition if one of its parents has been updated more recently
@@ -234,11 +237,13 @@ class AutoMaterializeRule(ABC):
         """
         return MaterializeOnParentUpdatedRule()
 
+    @public
     @staticmethod
     def materialize_on_missing() -> "MaterializeOnMissingRule":
         """Materialize an asset partition if it has never been materialized before."""
         return MaterializeOnMissingRule()
 
+    @public
     @staticmethod
     def skip_on_parent_outdated() -> "SkipOnParentOutdatedRule":
         """Skip materializing an asset partition if any of its parents has not incorporated the
