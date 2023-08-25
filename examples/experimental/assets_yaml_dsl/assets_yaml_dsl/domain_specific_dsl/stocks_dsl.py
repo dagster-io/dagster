@@ -4,14 +4,13 @@ from typing import Any, Dict, List, NamedTuple
 
 import yaml
 from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.types.dagster_type import Nothing
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader
 
-from dagster import AssetKey, AssetOut, AssetsDefinition, asset, file_relative_path, multi_asset
+from dagster import AssetKey, AssetsDefinition, asset, file_relative_path, multi_asset
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.external_execution.subprocess import SubprocessExecutionResource
 
@@ -75,32 +74,18 @@ def get_stocks_dsl_example_defs() -> List[AssetsDefinition]:
 def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefinition]:
     group_name = "stocks"
 
-    outs = {}
-    tickers = []
-    ticker_asset_keys = []
-    specs = []
-    for stock_info in stock_assets.stock_infos:
+    def spec_for_stock_info(stock_info: StockInfo) -> AssetSpec:
         ticker = stock_info.ticker
-        ticker_asset_key = AssetKey(ticker)
-        # TODO: convert to AssetDeclaration/AssetNode once it lands
-        outs[ticker] = AssetOut(
-            key=ticker_asset_key,
-            description=f"Fetch {ticker} from internal service",
+        return AssetSpec(
+            asset_key=AssetKey(ticker),
             group_name=group_name,
-            dagster_type=Nothing,
-        )
-        tickers.append(ticker)
-        ticker_asset_keys.append(ticker_asset_key)
-        specs.append(
-            AssetSpec(
-                asset_key=ticker_asset_key,
-                group_name=group_name,
-                description=f"Fetch {ticker} from internal service",
-            )
+            description=f"Fetch {ticker} from internal service",
         )
 
-    @multi_asset(specs=specs)
-    # @multi_asset(outs=outs)
+    tickers = [stock_info.ticker for stock_info in stock_assets.stock_infos]
+    ticker_specs = [spec_for_stock_info(stock_info) for stock_info in stock_assets.stock_infos]
+
+    @multi_asset(specs=ticker_specs)
     def fetch_the_tickers(
         context: AssetExecutionContext, subprocess_resource: SubprocessExecutionResource
     ):
@@ -111,7 +96,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
             command=[python_executable, script_path], context=context, extras={"tickers": tickers}
         )
 
-    @asset(deps=ticker_asset_keys, group_name=group_name)
+    @asset(deps=fetch_the_tickers.keys, group_name=group_name)
     def index_strategy() -> None:
         stored_ticker_data = {}
         for ticker in tickers:
@@ -119,7 +104,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
 
         # do someting with stored_ticker_data
 
-    @asset(deps=ticker_asset_keys, group_name=group_name)
+    @asset(deps=fetch_the_tickers.keys, group_name=group_name)
     def forecast() -> None:
         # do some forecast thing
         pass
