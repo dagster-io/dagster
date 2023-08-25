@@ -24,6 +24,9 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
 )
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import (
+    get_time_partitions_def,
+)
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -32,6 +35,9 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.schedules import (
+    cron_string_iterator,
+)
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
 from .partition import SerializedPartitionsSubset
@@ -131,6 +137,10 @@ class RuleEvaluationContext(NamedTuple):
     @property
     def asset_graph(self) -> AssetGraph:
         return self.instance_queryer.asset_graph
+
+    @property
+    def evaluation_time(self) -> datetime.datetime:
+        return self.instance_queryer.evaluation_time
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
@@ -385,6 +395,61 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         if missing_asset_partitions:
             return [(None, missing_asset_partitions)]
         return []
+
+
+@whitelist_for_serdes
+class SkipUntilCronAfterPartition(
+    AutoMaterializeRule, NamedTuple("SkipUntilCronAfterPartition", [("cron_string", str)])
+):
+    # Validate cron string
+
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        return "waiting until {self.cron_string} matches"  # More human readable?
+
+    def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
+        evaluation_time = context.evaluation_time
+        asset_key = context.asset_key
+
+        time_partitions_def = get_time_partitions_def(
+            context.asset_graph.get_partitions_def(asset_key)
+        )
+
+        if not time_partitions_def:
+            # rule does nothing for non-time-partitioned assets - raise an exception or fail open?
+            return []
+
+        candidates_to_skip = []
+
+        for candidate in context.candidates:
+            # Safe to assert here?
+            partition_key = check.not_none(candidate.partition_key)
+            time_window = time_partitions_def.time_window_for_partition_key(partition_key)
+
+            # Is this the correct "start time?"
+            end_time = time_window.end
+
+            wait_until_time = next(
+                cron_string_iterator(
+                    start_timestamp=end_time.timestamp(),
+                    cron_string=self.cron_string,
+                    execution_timezone=time_partitions_def.timezone,
+                )
+            )
+
+            if evaluation_time.timestamp() < wait_until_time.timestamp():
+                # New evaluation data type that includes the time we are waiting until
+                # in a more structured way? frontend is good at turning cron strings
+                # into human-readable text
+                candidates_to_skip.append(
+                    (TextRuleEvaluationData(f"Waiting until {wait_until_time}"), {candidate})
+                )
+
+        return candidates_to_skip
 
 
 @whitelist_for_serdes
