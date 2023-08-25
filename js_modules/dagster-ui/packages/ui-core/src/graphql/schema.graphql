@@ -3196,14 +3196,16 @@ enum AssetCheckSeverity {
 type AssetCheckExecution {
   id: Int!
   runId: String!
-  status: AssetCheckExecutionStatus!
+  status: AssetCheckExecutionResolvedStatus!
   evaluation: AssetCheckEvaluation
 }
 
-enum AssetCheckExecutionStatus {
-  PLANNED
+enum AssetCheckExecutionResolvedStatus {
+  IN_PROGRESS
   SUCCESS
   FAILURE
+  EXECUTION_FAILURE
+  SKIPPED
 }
 
 type AssetCheckNeedsMigrationError implements Error {
