@@ -97,6 +97,16 @@ class AutoMaterializePolicy(
     )
     ```
 
+    If you'd like an asset to wait for all of its parents to be updated before materializing:
+
+    ```python
+    from dagster import AutoMaterializePolicy, AutoMaterializeRule
+
+    my_policy = AutoMaterializePolicy.eager().with_rules(
+        AutoMaterializeRule.skip_on_all_parents_not_updated(),
+    )
+    ```
+
     Lastly, the `max_materializations_per_minute` parameter, which is set to 1 by default,
     rate-limits the number of auto-materializations that can occur for a particular asset within
     a short time interval. This mainly matters for partitioned assets. Its purpose is to provide a
