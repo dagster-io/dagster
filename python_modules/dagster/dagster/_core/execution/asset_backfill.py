@@ -33,7 +33,7 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector, PartitionsByAssetSelector
 from dagster._core.errors import (
@@ -514,6 +514,48 @@ class AssetBackfillIterationResult(NamedTuple):
     backfill_data: AssetBackfillData
 
 
+def _get_requested_asset_partitions_from_run_requests(
+    run_requests: Sequence[RunRequest], asset_graph: ExternalAssetGraph, instance: DagsterInstance
+) -> Set[AssetKeyPartitionKey]:
+    requested_partitions = set()
+    for run_request in run_requests:
+        # Run request targets a range of partitions
+        range_start = run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG)
+        range_end = run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+        if range_start and range_end:
+            # When a run request targets a range of partitions, each asset is expected to
+            # have the same partitions def
+            selected_assets = cast(Sequence[AssetKey], run_request.asset_selection)
+            check.invariant(len(selected_assets) > 0)
+            partitions_defs = set(
+                asset_graph.get_partitions_def(asset_key) for asset_key in selected_assets
+            )
+            check.invariant(
+                len(partitions_defs) == 1,
+                "Expected all assets selected in partition range run request to have the same"
+                " partitions def",
+            )
+
+            partitions_def = cast(PartitionsDefinition, next(iter(partitions_defs)))
+            partitions_in_range = partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(range_start, range_end), instance
+            )
+            requested_partitions = requested_partitions | set(
+                [
+                    AssetKeyPartitionKey(asset_key, partition_key)
+                    for asset_key in selected_assets
+                    for partition_key in partitions_in_range
+                ]
+            )
+        else:
+            requested_partitions = requested_partitions | set(
+                AssetKeyPartitionKey(asset_key, run_request.partition_key)
+                for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+            )
+
+    return requested_partitions
+
+
 def _submit_runs_and_update_backfill_in_chunks(
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
@@ -565,10 +607,8 @@ def _submit_runs_and_update_backfill_in_chunks(
 
         unsubmitted_run_request_idx = chunk_end_idx
 
-        requested_partitions_in_chunk = set(
-            AssetKeyPartitionKey(asset_key, run_request.partition_key)
-            for run_request in run_requests_chunk
-            for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+        requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
+            run_requests_chunk, asset_graph, instance
         )
         submitted_partitions = submitted_partitions | requested_partitions_in_chunk
 
