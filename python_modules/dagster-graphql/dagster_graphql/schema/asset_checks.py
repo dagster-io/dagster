@@ -1,9 +1,17 @@
-from typing import cast
+from typing import Optional, cast
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionStatus
+from dagster import EventLogEntry
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationTargetMaterializationData,
+)
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionStatus,
+)
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.errors import GrapheneError
@@ -24,6 +32,11 @@ class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType)
     class Meta:
         name = "AssetCheckEvaluationTargetMaterializationData"
 
+    def __init__(self, target_materialization_data: AssetCheckEvaluationTargetMaterializationData):
+        self.storageId = target_materialization_data.storage_id
+        self.runId = target_materialization_data.run_id
+        self.timestamp = target_materialization_data.timestamp
+
 
 class GrapheneAssetCheckEvaluation(graphene.ObjectType):
     timestamp = graphene.NonNull(graphene.Float)
@@ -32,6 +45,23 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
     class Meta:
         name = "AssetCheckEvaluation"
+
+    def __init__(self, evaluation_event: EventLogEntry):
+        self.timestamp = evaluation_event.timestamp
+
+        evaluation_data = cast(
+            AssetCheckEvaluation,
+            check.not_none(evaluation_event.dagster_event).event_specific_data,
+        )
+
+        target_materialization_data = evaluation_data.target_materialization_data
+        self.targetMaterialization = (
+            GrapheneAssetCheckEvaluationTargetMaterializationData(target_materialization_data)
+            if target_materialization_data
+            else None
+        )
+
+        self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):
@@ -42,6 +72,16 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
 
     class Meta:
         name = "AssetCheckExecution"
+
+    def __init__(self, execution: AssetCheckExecutionRecord):
+        self.id = execution.id
+        self.runId = execution.run_id
+        self.status = execution.status
+        self.evaluation = (
+            GrapheneAssetCheckEvaluation(execution.evaluation_event)
+            if execution.evaluation_event
+            else None
+        )
 
 
 class GrapheneAssetCheck(graphene.ObjectType):
@@ -57,7 +97,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     class Meta:
         name = "AssetCheck"
 
-    def __init__(self, name, asset_key, description=None):
+    def __init__(self, name: str, asset_key: AssetKey, description: Optional[str] = None):
         self._name = name
         self._asset_key = asset_key
         self._description = description
@@ -66,7 +106,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
         return self._name
 
     def resolve_assetKey(self, _):
-        return GrapheneAssetKey(path=self._asset_key.path)
+        return self._asset_key
 
     def resolve_description(self, _):
         return self._description
@@ -79,41 +119,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
             cursor=kwargs.get("cursor"),
         )
 
-        res = []
-        for execution in executions:
-            graphene_evaluation = None
-            if execution.evaluation_event:
-                evaluation_data = cast(
-                    AssetCheckEvaluation,
-                    check.not_none(execution.evaluation_event.dagster_event).event_specific_data,
-                )
-                graphene_target_materialization = None
-                target_materialization_data = evaluation_data.target_materialization_data
-                if target_materialization_data:
-                    graphene_target_materialization = (
-                        GrapheneAssetCheckEvaluationTargetMaterializationData(
-                            storageId=target_materialization_data.storage_id,
-                            runId=target_materialization_data.run_id,
-                            timestamp=target_materialization_data.timestamp,
-                        )
-                    )
-
-                graphene_evaluation = GrapheneAssetCheckEvaluation(
-                    timestamp=execution.evaluation_event.timestamp,
-                    targetMaterialization=graphene_target_materialization,
-                    metadataEntries=list(iterate_metadata_entries(evaluation_data.metadata)),
-                )
-
-            res.append(
-                GrapheneAssetCheckExecution(
-                    id=execution.id,
-                    runId=execution.run_id,
-                    status=execution.status,
-                    evaluation=graphene_evaluation,
-                )
-            )
-
-        return res
+        return [GrapheneAssetCheckExecution(e) for e in executions]
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

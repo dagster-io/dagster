@@ -23,6 +23,9 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
         ... on AssetChecks {
             checks {
                 name
+                assetKey {
+                    path
+                }
                 description
             }
         }
@@ -68,20 +71,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "checks": [
                     {
                         "name": "my_check",
-                        "description": "asset_1 check",
-                    }
-                ]
-            }
-        }
-
-        res = execute_dagster_graphql(
-            graphql_context, GET_ASSET_CHECKS, variables={"assetKey": {"path": ["asset_1"]}}
-        )
-        assert res.data == {
-            "assetChecksOrError": {
-                "checks": [
-                    {
-                        "name": "my_check",
+                        "assetKey": {
+                            "path": ["asset_1"],
+                        },
                         "description": "asset_1 check",
                     }
                 ]
