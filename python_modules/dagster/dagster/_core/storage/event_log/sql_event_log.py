@@ -662,6 +662,9 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("pending_steps"):
                 conn.execute(PendingStepsTable.delete())
 
+            if self.has_table("asset_check_executions"):
+                conn.execute(AssetCheckExecutionsTable.delete())
+
         self._wipe_index()
 
     def _wipe_index(self):
@@ -680,6 +683,9 @@ class SqlEventLogStorage(EventLogStorage):
 
             if self.has_table("pending_steps"):
                 conn.execute(PendingStepsTable.delete())
+
+            if self.has_table("asset_check_executions"):
+                conn.execute(AssetCheckExecutionsTable.delete())
 
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
