@@ -1,7 +1,6 @@
-import ALL_VERSIONS from '../.versioned_content/_versions.json';
 import MAP_VERSION_TO_LINK from '../.versioned_content/_versions_with_static_links.json';
 
-export const LATEST_VERSION = ALL_VERSIONS[ALL_VERSIONS.length - 1];
+export const LATEST_VERSION = MAP_VERSION_TO_LINK[MAP_VERSION_TO_LINK.length - 1].version;
 
 export function getOlderVersions() {
   // exclude latest version which will be the current site. sort by version desc
