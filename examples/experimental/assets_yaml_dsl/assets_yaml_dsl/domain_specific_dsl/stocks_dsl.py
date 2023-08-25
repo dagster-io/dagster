@@ -1,7 +1,9 @@
 import os
+import shutil
 from typing import Any, Dict, List, NamedTuple
 
 import yaml
+from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import Nothing
 
 try:
@@ -9,7 +11,8 @@ try:
 except ImportError:
     from yaml import Loader
 
-from dagster import AssetKey, AssetOut, AssetsDefinition, asset, multi_asset
+from dagster import AssetKey, AssetOut, AssetsDefinition, asset, file_relative_path, multi_asset
+from dagster._core.external_execution.subprocess import SubprocessExecutionResource
 
 
 def load_yaml(relative_path: str) -> Dict[str, Any]:
@@ -88,9 +91,15 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
         ticker_asset_keys.append(ticker_asset_key)
 
     @multi_asset(outs=outs)
-    def fetch_the_tickers():
-        for ticker in tickers:
-            enrich_and_insert_data(get_ticker_data(ticker))
+    def fetch_the_tickers(
+        context: AssetExecutionContext, subprocess_resource: SubprocessExecutionResource
+    ):
+        python_executable = shutil.which("python")
+        assert python_executable is not None
+        script_path = file_relative_path(__file__, "user_scripts/fetch_the_tickers.py")
+        subprocess_resource.run(
+            command=[python_executable, script_path], context=context, extras={"tickers": tickers}
+        )
 
     @asset(deps=ticker_asset_keys, group_name=group_name)
     def index_strategy() -> None:
