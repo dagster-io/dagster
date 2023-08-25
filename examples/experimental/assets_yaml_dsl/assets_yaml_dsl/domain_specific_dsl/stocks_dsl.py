@@ -12,6 +12,7 @@ except ImportError:
     from yaml import Loader
 
 from dagster import AssetKey, AssetOut, AssetsDefinition, asset, file_relative_path, multi_asset
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.external_execution.subprocess import SubprocessExecutionResource
 
 
@@ -77,6 +78,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     outs = {}
     tickers = []
     ticker_asset_keys = []
+    specs = []
     for stock_info in stock_assets.stock_infos:
         ticker = stock_info.ticker
         ticker_asset_key = AssetKey(ticker)
@@ -89,8 +91,16 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
         )
         tickers.append(ticker)
         ticker_asset_keys.append(ticker_asset_key)
+        specs.append(
+            AssetSpec(
+                asset_key=ticker_asset_key,
+                group_name=group_name,
+                description=f"Fetch {ticker} from internal service",
+            )
+        )
 
-    @multi_asset(outs=outs)
+    @multi_asset(specs=specs)
+    # @multi_asset(outs=outs)
     def fetch_the_tickers(
         context: AssetExecutionContext, subprocess_resource: SubprocessExecutionResource
     ):
