@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
     from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
     from dagster._core.instance import DynamicPartitionsStore
+    from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 
 @whitelist_for_serdes
@@ -751,6 +752,20 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_discarded=num_discarded,
                 rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
+
+    def equivalent_to_stored_record(
+        self, stored_record: Optional["AutoMaterializeAssetEvaluationRecord"]
+    ) -> bool:
+        if stored_record is None:
+            return False
+        stored_evaluation = stored_record.evaluation
+        return (
+            stored_evaluation.num_requested == 0
+            and stored_evaluation.num_skipped == self.num_skipped
+            and stored_evaluation.num_discarded == self.num_discarded
+            and sorted(tuple(l) for l in stored_evaluation.partition_subsets_by_condition)
+            == sorted(self.partition_subsets_by_condition)
+        )
 
 
 # BACKCOMPAT GRAVEYARD

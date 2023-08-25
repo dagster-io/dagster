@@ -126,6 +126,33 @@ class AssetGraphSubset:
             result_non_partitioned_asset_keys,
         )
 
+    def __sub__(
+        self, other: Union["AssetGraphSubset", AbstractSet[AssetKeyPartitionKey]]
+    ) -> "AssetGraphSubset":
+        "NOTE: should probably be a legit function, just copy pasted the above"
+        result_partition_subsets_by_asset_key = {**self.partitions_subsets_by_asset_key}
+        result_non_partitioned_asset_keys = set(self._non_partitioned_asset_keys)
+
+        if not isinstance(other, AssetGraphSubset):
+            other = AssetGraphSubset.from_asset_partition_set(other, self.asset_graph)
+
+        for asset_key in other.asset_keys:
+            if asset_key in other.non_partitioned_asset_keys:
+                check.invariant(asset_key not in self.partitions_subsets_by_asset_key)
+                result_non_partitioned_asset_keys -= {asset_key}
+            else:
+                subset = self.get_partitions_subset(asset_key)
+                check.invariant(asset_key not in self.non_partitioned_asset_keys)
+                result_partition_subsets_by_asset_key[asset_key] = (
+                    subset - other.get_partitions_subset(asset_key)
+                )
+
+        return AssetGraphSubset(
+            self.asset_graph,
+            result_partition_subsets_by_asset_key,
+            result_non_partitioned_asset_keys,
+        )
+
     def filter_asset_keys(self, asset_keys: AbstractSet[AssetKey]) -> "AssetGraphSubset":
         return AssetGraphSubset(
             self.asset_graph,

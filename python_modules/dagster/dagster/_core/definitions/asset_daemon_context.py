@@ -508,6 +508,7 @@ class AssetDaemonContext:
                 f" skipped, {evaluation.num_discarded} discarded"
             )
 
+            unhandled_graph_subset -= to_discard_for_asset | to_materialize_for_asset
             evaluations_by_key[asset_key] = evaluation
             will_materialize_mapping[asset_key] = to_materialize_for_asset
             to_discard.update(to_discard_for_asset)
@@ -612,6 +613,11 @@ class AssetDaemonContext:
                 for evaluation in evaluations.values()
                 if sum([evaluation.num_requested, evaluation.num_skipped, evaluation.num_discarded])
                 > 0
+                and not evaluation.equivalent_to_stored_record(
+                    self.instance_queryer.get_previous_asset_evaluation_record(
+                        asset_key=evaluation.asset_key
+                    )
+                )
             ],
         )
 
