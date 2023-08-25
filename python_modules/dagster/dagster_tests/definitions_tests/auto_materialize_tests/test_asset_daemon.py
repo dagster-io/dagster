@@ -3,7 +3,7 @@ from dagster import AssetKey
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._daemon.asset_daemon import set_auto_materialize_paused
+from dagster._daemon.asset_daemon import get_current_evaluation_id, set_auto_materialize_paused
 
 from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .scenarios.auto_observe_scenarios import auto_observe_scenarios
@@ -98,6 +98,25 @@ def test_daemon(scenario_item, daemon_not_paused_instance):
 
     def sort_run_key_fn(run):
         return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+
+    # Get all of the runs that were submitted in the most recent asset evaluation
+    asset_evaluation_id = get_current_evaluation_id(daemon_not_paused_instance)
+    submitted_runs_in_scenario = (
+        [
+            run
+            for run in runs
+            if run.tags.get("dagster/asset_evaluation_id") == str(asset_evaluation_id)
+        ]
+        if asset_evaluation_id
+        else []
+    )
+
+    assert len(submitted_runs_in_scenario) == len(scenario.expected_run_requests), (
+        "Expected the following run requests to be submitted:"
+        f" {scenario.expected_run_requests} \n"
+        " but instead submitted runs with asset and partition selection:"
+        f" {[(list(run.asset_selection), run.tags.get(PARTITION_NAME_TAG)) for run in submitted_runs_in_scenario]}"
+    )
 
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
     sorted_expected_run_requests = sorted(

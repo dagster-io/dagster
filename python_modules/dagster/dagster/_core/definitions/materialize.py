@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
     from ..execution.execute_in_process_result import ExecuteInProcessResult
 
+EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
+
 
 def materialize(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
@@ -93,15 +95,13 @@ def materialize(
         if isinstance(asset, AssetsDefinition):
             all_executable_keys = all_executable_keys.union(set(asset.keys))
 
-    JOB_NAME = "__ephemeral_asset_job__"
-
     defs = Definitions(
-        jobs=[define_asset_job(name=JOB_NAME, selection=selection)],
+        jobs=[define_asset_job(name=EPHEMERAL_JOB_NAME, selection=selection)],
         assets=assets,
         resources=resources,
     )
     return check.not_none(
-        defs.get_job_def(JOB_NAME),
+        defs.get_job_def(EPHEMERAL_JOB_NAME),
         "This should always return a job",
     ).execute_in_process(
         run_config=run_config,

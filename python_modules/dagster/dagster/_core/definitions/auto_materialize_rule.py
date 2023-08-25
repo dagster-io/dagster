@@ -176,6 +176,16 @@ class RuleEvaluationContext(NamedTuple):
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
+    def get_asset_partitions_by_asset_key(
+        self,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    ) -> Mapping[AssetKey, Set[AssetKeyPartitionKey]]:
+        asset_partitions_by_asset_key: Dict[AssetKey, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        for parent in asset_partitions:
+            asset_partitions_by_asset_key[parent.asset_key].add(parent)
+
+        return asset_partitions_by_asset_key
+
 
 RuleEvaluationResults = Sequence[Tuple[Optional[AutoMaterializeRuleEvaluationData], AbstractSet]]
 
@@ -242,6 +252,23 @@ class AutoMaterializeRule(ABC):
         been materialized (for regular assets) or observed (for observable source assets).
         """
         return SkipOnParentMissingRule()
+
+    @staticmethod
+    def skip_on_not_all_parents_updated(
+        require_update_for_all_parent_partitions: bool = False,
+    ) -> "SkipOnNotAllParentsUpdatedRule":
+        """An auto-materialize rule that enforces that an asset can only be materialized if all parents
+        have been materialized since the asset's last materialization.
+
+        Attributes:
+            require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
+                asset or an asset partition that depends on more than one partition in any upstream asset.
+                If true, requires all upstream partitions in each upstream asset to be materialized since
+                the downstream asset's last materialization in order to update it. If false, requires at
+                least one upstream partition in each upstream asset to be materialized since the downstream
+                asset's last materialization in order to update it. Defaults to false.
+        """
+        return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -456,6 +483,94 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 asset_partitions_by_waiting_on_asset_keys[frozenset(missing_parent_asset_keys)].add(
                     candidate
                 )
+        if asset_partitions_by_waiting_on_asset_keys:
+            return [
+                (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
+                for k, v in asset_partitions_by_waiting_on_asset_keys.items()
+            ]
+        return []
+
+
+@whitelist_for_serdes
+class SkipOnNotAllParentsUpdatedRule(
+    AutoMaterializeRule,
+    NamedTuple(
+        "_SkipOnNotAllParentsUpdatedRule", [("require_update_for_all_parent_partitions", bool)]
+    ),
+):
+    """An auto-materialize rule that enforces that an asset can only be materialized if all parents
+    have been materialized since the asset's last materialization.
+
+    Attributes:
+        require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
+            asset or an asset partition that depends on more than one partition in any upstream asset.
+            If true, requires all upstream partitions in each upstream asset to be materialized since
+            the downstream asset's last materialization in order to update it. If false, requires at
+            least one upstream partition in each upstream asset to be materialized since the downstream
+            asset's last materialization in order to update it. Defaults to false.
+    """
+
+    @property
+    def decision_type(self) -> AutoMaterializeDecisionType:
+        return AutoMaterializeDecisionType.SKIP
+
+    @property
+    def description(self) -> str:
+        if self.require_update_for_all_parent_partitions is False:
+            return "waiting on upstream data to be updated"
+        else:
+            return "waiting until all upstream partitions are updated"
+
+    def evaluate_for_asset(
+        self,
+        context: RuleEvaluationContext,
+    ) -> RuleEvaluationResults:
+        asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
+        for candidate in context.candidates:
+            parent_partitions = context.asset_graph.get_parents_partitions(
+                context.instance_queryer,
+                context.instance_queryer.evaluation_time,
+                context.asset_key,
+                candidate.partition_key,
+            ).parent_partitions
+
+            updated_parent_partitions = (
+                context.instance_queryer.get_updated_parent_asset_partitions(
+                    candidate,
+                    parent_partitions,
+                    context.daemon_context.respect_materialization_data_versions,
+                )
+                | set().union(
+                    *[
+                        context.will_materialize_mapping.get(parent, set())
+                        for parent in context.asset_graph.get_parents(context.asset_key)
+                    ]
+                )
+            )
+
+            if self.require_update_for_all_parent_partitions:
+                # All upstream partitions must be updated in order for the candidate to be updated
+                non_updated_parent_keys = {
+                    parent.asset_key for parent in parent_partitions - updated_parent_partitions
+                }
+            else:
+                # At least one upstream partition in each upstream asset must be updated in order
+                # for the candidate to be updated
+                parent_asset_keys = context.asset_graph.get_parents(context.asset_key)
+                updated_parent_partitions_by_asset_key = context.get_asset_partitions_by_asset_key(
+                    updated_parent_partitions
+                )
+                non_updated_parent_keys = {
+                    parent
+                    for parent in parent_asset_keys
+                    if not updated_parent_partitions_by_asset_key.get(parent)
+                }
+
+            if non_updated_parent_keys:
+                asset_partitions_by_waiting_on_asset_keys[frozenset(non_updated_parent_keys)].add(
+                    candidate
+                )
+
         if asset_partitions_by_waiting_on_asset_keys:
             return [
                 (WaitingOnAssetsRuleEvaluationData(waiting_on_asset_keys=k), v)
