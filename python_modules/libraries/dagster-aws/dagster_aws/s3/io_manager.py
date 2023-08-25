@@ -37,7 +37,11 @@ class PickledObjectS3IOManager(UPathIOManager):
         super().__init__(base_path=base_path)
 
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read())
+        try:
+            s3_obj = self.s3.get_object(Bucket=self.bucket, Key=str(path))["Body"].read()
+            return pickle.loads(s3_obj)
+        except self.s3.exceptions.NoSuchKey:
+            raise FileNotFoundError(f"Could not find file {path} in S3 bucket {self.bucket}")
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         if self.path_exists(path):
