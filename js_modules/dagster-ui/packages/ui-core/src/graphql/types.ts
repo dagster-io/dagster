@@ -174,12 +174,14 @@ export type AssetCheckExecution = {
   evaluation: Maybe<AssetCheckEvaluation>;
   id: Scalars['String'];
   runId: Scalars['String'];
-  status: AssetCheckExecutionStatus;
+  status: AssetCheckExecutionResolvedStatus;
 };
 
-export enum AssetCheckExecutionStatus {
+export enum AssetCheckExecutionResolvedStatus {
+  EXECUTION_FAILURE = 'EXECUTION_FAILURE',
   FAILURE = 'FAILURE',
-  PLANNED = 'PLANNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  SKIPPED = 'SKIPPED',
   SUCCESS = 'SUCCESS',
 }
 
@@ -4533,7 +4535,7 @@ export const buildAssetCheckExecution = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : AssetCheckExecutionStatus.FAILURE,
+        : AssetCheckExecutionResolvedStatus.EXECUTION_FAILURE,
   };
 };
 

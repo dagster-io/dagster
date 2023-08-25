@@ -11,7 +11,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
-    AssetCheckExecutionStatus,
+    AssetCheckExecutionResolvedStatus,
 )
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -22,7 +22,9 @@ from dagster_graphql.schema.util import non_null_list
 from .asset_key import GrapheneAssetKey
 from .util import ResolveInfo
 
-GrapheneAssetCheckExecutionStatus = graphene.Enum.from_enum(AssetCheckExecutionStatus)
+GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
+    AssetCheckExecutionResolvedStatus
+)
 
 
 class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType):
@@ -68,17 +70,21 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 class GrapheneAssetCheckExecution(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)
-    status = graphene.NonNull(GrapheneAssetCheckExecutionStatus)
+    status = graphene.NonNull(GrapheneAssetCheckExecutionResolvedStatus)
     evaluation = graphene.Field(GrapheneAssetCheckEvaluation)
 
     class Meta:
         name = "AssetCheckExecution"
 
-    def __init__(self, execution: AssetCheckExecutionRecord):
+    def __init__(self, graphene_info: ResolveInfo, execution: AssetCheckExecutionRecord):
+        from dagster_graphql.implementation.fetch_asset_checks import (
+            get_asset_check_execution_status,
+        )
+
         super().__init__()
         self.id = str(execution.id)
         self.runId = execution.run_id
-        self.status = execution.status
+        self.status = get_asset_check_execution_status(graphene_info.context.instance, execution)
         self.evaluation = (
             GrapheneAssetCheckEvaluation(execution.evaluation_event)
             if execution.evaluation_event
@@ -126,7 +132,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
             cursor=kwargs.get("cursor"),
         )
 
-        return [GrapheneAssetCheckExecution(e) for e in executions]
+        return [GrapheneAssetCheckExecution(graphene_info, e) for e in executions]
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

@@ -168,6 +168,8 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()
 
+        create_run_for_test(graphql_context.instance, run_id="foo")
+
         graphql_context.instance.event_log_storage.store_event(
             _planned_event(
                 "foo",
@@ -188,7 +190,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         "executions": [
                             {
                                 "runId": "foo",
-                                "status": "PLANNED",
+                                "status": "IN_PROGRESS",
                                 "evaluation": None,
                             }
                         ],
@@ -284,6 +286,60 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     {
                         "__typename": "AssetCheckEvaluationEvent",
                     },
+                ],
+            }
+        }
+
+    def test_asset_check_failure(self, graphql_context: WorkspaceRequestContext, snapshot):
+        graphql_context.instance.wipe()
+
+        run = create_run_for_test(graphql_context.instance)
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run.run_id,
+                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+            )
+        )
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY,
+            variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executions": [
+                            {
+                                "runId": run.run_id,
+                                "status": "IN_PROGRESS",
+                                "evaluation": None,
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+
+        graphql_context.instance.report_run_failed(run)
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY,
+            variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
+        )
+        assert res.data == {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "my_check",
+                        "executions": [
+                            {"runId": run.run_id, "status": "EXECUTION_FAILURE", "evaluation": None}
+                        ],
+                    }
                 ],
             }
         }
