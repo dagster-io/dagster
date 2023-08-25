@@ -244,6 +244,10 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           <LogRowStructuredContentTable rows={rows} />
         </DefaultContent>
       );
+    case 'AssetCheckEvaluationPlannedEvent':
+      return <DefaultContent message={node.message} eventType={eventType} />;
+    case 'AssetCheckEvaluationEvent':
+      return <DefaultContent message={node.message} eventType={eventType} />;
     default:
       // This allows us to check that the switch is exhaustive because the union type should
       // have been narrowed following each successive case to `never` at this point.
