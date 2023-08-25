@@ -472,6 +472,7 @@ class GrapheneQuery(graphene.ObjectType):
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        checkName=graphene.Argument(graphene.String()),
         description="Retrieve the asset checks for a given asset key.",
     )
 
@@ -984,6 +985,9 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_assetChecksOrError(
-        self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        checkName: Optional[str] = None,
     ):
-        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey))
+        return fetch_asset_checks(graphene_info, AssetKey.from_graphql_input(assetKey), checkName)

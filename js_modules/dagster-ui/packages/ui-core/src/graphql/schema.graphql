@@ -2944,7 +2944,7 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
-  assetChecksOrError(assetKey: AssetKeyInput!): AssetChecksOrError!
+  assetChecksOrError(assetKey: AssetKeyInput!, checkName: String): AssetChecksOrError!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3146,7 +3146,7 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
-  executions(limit: Int!, cursor: String!): [AssetCheckExecution!]!
+  executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
 }
 
 type AssetCheckExecution {

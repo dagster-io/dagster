@@ -123,7 +123,7 @@ export type AssetCheck = {
 };
 
 export type AssetCheckExecutionsArgs = {
-  cursor: Scalars['String'];
+  cursor?: InputMaybe<Scalars['String']>;
   limit: Scalars['Int'];
 };
 
@@ -2794,6 +2794,7 @@ export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
 
 export type QueryAssetChecksOrErrorArgs = {
   assetKey: AssetKeyInput;
+  checkName?: InputMaybe<Scalars['String']>;
 };
 
 export type QueryAssetNodeDefinitionCollisionsArgs = {
