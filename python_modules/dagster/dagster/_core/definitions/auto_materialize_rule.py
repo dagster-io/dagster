@@ -251,6 +251,7 @@ class AutoMaterializeRule(ABC):
         """
         return SkipOnParentOutdatedRule()
 
+    @public
     @staticmethod
     def skip_on_parent_missing() -> "SkipOnParentMissingRule":
         """Skip materializing an asset partition if one of its parent asset partitions has never
@@ -258,6 +259,7 @@ class AutoMaterializeRule(ABC):
         """
         return SkipOnParentMissingRule()
 
+    @public
     @staticmethod
     def skip_on_not_all_parents_updated(
         require_update_for_all_parent_partitions: bool = False,
