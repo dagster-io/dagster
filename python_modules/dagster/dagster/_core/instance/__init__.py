@@ -33,6 +33,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import (
@@ -1268,7 +1269,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return execution_plan_snapshot_id
 
-    def _log_asset_materialization_planned_events(
+    def _log_asset_planned_events(
         self, dagster_run: DagsterRun, execution_plan_snapshot: "ExecutionPlanSnapshot"
     ) -> None:
         from dagster._core.events import (
@@ -1320,6 +1321,27 @@ class DagsterInstance(DynamicPartitionsStore):
                             ),
                             event_specific_data=AssetMaterializationPlannedData(
                                 asset_key, partition=partition
+                            ),
+                        )
+                        self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
+
+                    if check.not_none(output.properties).asset_check_handle:
+                        asset_check_handle = check.not_none(
+                            check.not_none(output.properties).asset_check_handle
+                        )
+                        target_asset_key = asset_check_handle.asset_key
+                        check_name = asset_check_handle.name
+
+                        event = DagsterEvent(
+                            event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                            job_name=job_name,
+                            message=(
+                                f"{job_name} intends to execute asset check {check_name} on"
+                                f" asset {target_asset_key.to_string()}"
+                            ),
+                            event_specific_data=AssetCheckEvaluationPlanned(
+                                target_asset_key,
+                                check_name=check_name,
                             ),
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
@@ -1460,7 +1482,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_run = self._run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot:
-            self._log_asset_materialization_planned_events(dagster_run, execution_plan_snapshot)
+            self._log_asset_planned_events(dagster_run, execution_plan_snapshot)
 
         return dagster_run
 

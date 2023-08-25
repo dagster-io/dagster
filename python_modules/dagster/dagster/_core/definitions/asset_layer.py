@@ -687,6 +687,23 @@ class AssetLayer(NamedTuple):
     ) -> Optional[AssetOutputInfo]:
         return self.asset_info_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
 
+    def asset_check_handle_for_output(
+        self, node_handle: NodeHandle, output_name: str
+    ) -> Optional[AssetCheckHandle]:
+        check_names_by_asset_key = self.check_names_by_asset_key_by_node_handle.get(node_handle, {})
+        for asset_key, check_names in check_names_by_asset_key.items():
+            for check_name in check_names:
+                check_handle = AssetCheckHandle(asset_key, check_name)
+                node_output_handle = self.node_output_handles_by_asset_check_handle.get(
+                    check_handle
+                )
+                if (
+                    node_output_handle
+                    and node_output_handle.node_handle == node_handle
+                    and node_output_handle.output_name == output_name
+                ):
+                    return check_handle
+
     def group_names_by_assets(self) -> Mapping[AssetKey, str]:
         group_names: Dict[AssetKey, str] = {
             key: assets_def.group_names_by_key[key]
