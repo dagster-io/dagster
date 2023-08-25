@@ -8,6 +8,7 @@ description: Store your Dagster assets in DuckDB
 This tutorial focuses on creating and interacting with DuckDB tables using Dagster's [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets).
 
 The `dagster-duckdb` library provides two ways to interact with DuckDB tables:
+
 - [Resource](/concepts/resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject module="dagster_duckdb" object="DuckDBResource" />.
 - [I/O manager](/concepts/io-management/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as DuckdB tables to Dagster. Available I/O managers: <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />, <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />.
 
@@ -18,7 +19,6 @@ In [Option 1](#option-1-using-the-duckdb-resource) you will:
 - Set up and configure the DuckDB resource.
 - Use the DuckDB resource to execute a SQL query to create a table.
 - Use the DuckDB resource to execute a SQL query to interact with the table.
-
 
 In [Option 2](#option-2-using-the-duckdb-io-manager) you will:
 
@@ -202,6 +202,7 @@ defs = Definitions(
 ## Option 2: Using the DuckDB I/O manager
 
 You may want to use an I/O manager to handle storing DataFrames as tables in DuckDB and loading DuckDB tables as DataFrames in downstream assets. You may want to use an I/O manager if:
+
 - You want your data to be loaded in memory so that you can interact with it using Python.
 - You'd like to have Dagster manage how you store the data and load it as an input in downstream assets.
 
