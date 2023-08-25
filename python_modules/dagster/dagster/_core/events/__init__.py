@@ -80,6 +80,7 @@ EventSpecificData = Union[
     "AssetObservationData",
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
+    "AssetCheckEvaluationPlanned",
 ]
 
 
@@ -240,6 +241,11 @@ ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+}
+
+ASSET_CHECK_EVENTS = {
+    DagsterEventType.ASSET_CHECK_EVALUATION,
+    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
 }
 
 

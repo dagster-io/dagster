@@ -35,6 +35,11 @@ from dagster import (
 )
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+    AssetCheckEvaluationTargetMaterializationData,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
@@ -60,6 +65,9 @@ from dagster._core.host_representation.origin import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
+)
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionStatus,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
@@ -3898,3 +3906,88 @@ class TestEventLogStorage:
             assert foo_info.assigned_step_count == 0
 
             assert all(f.done() for f in futures)
+
+    def test_asset_checks(self, storage):
+        if self.can_wipe():
+            storage.wipe()
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="foo",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluationPlanned(
+                        asset_key=AssetKey(["my_asset"]), check_name="my_check"
+                    ),
+                ),
+            )
+        )
+
+        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        assert len(checks) == 1
+        assert checks[0].status == AssetCheckExecutionStatus.PLANNED
+        assert checks[0].run_id == "foo"
+
+        checks = storage.get_asset_check_executions(
+            AssetKey(["my_asset"]), "my_check", limit=10, include_planned=False
+        )
+        assert len(checks) == 0
+
+        checks = storage.get_asset_check_executions(
+            AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=123
+        )
+        assert len(checks) == 1
+
+        # update the planned check
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id="foo",
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                    "nonce",
+                    event_specific_data=AssetCheckEvaluation(
+                        asset_key=AssetKey(["my_asset"]),
+                        check_name="my_check",
+                        success=True,
+                        metadata={},
+                        target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                            storage_id=42, run_id="bizbuz", timestamp=3.3
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
+        assert len(checks) == 1
+        assert checks[0].status == AssetCheckExecutionStatus.SUCCESS
+        assert (
+            checks[
+                0
+            ].evaluation_event.dagster_event.event_specific_data.target_materialization_data.storage_id
+            == 42
+        )
+
+        checks = storage.get_asset_check_executions(
+            AssetKey(["my_asset"]), "my_check", limit=10, include_planned=False
+        )
+        assert len(checks) == 1
+
+        checks = storage.get_asset_check_executions(
+            AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=123
+        )
+        assert len(checks) == 0
+
+        checks = storage.get_asset_check_executions(
+            AssetKey(["my_asset"]), "my_check", limit=10, materialization_event_storage_id=42
+        )
+        assert len(checks) == 1

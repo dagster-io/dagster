@@ -14,7 +14,11 @@ from dagster import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -31,7 +35,6 @@ from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.events import AssetKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
@@ -593,6 +596,24 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
         return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
+
+    def get_asset_check_executions(
+        self,
+        asset_key: AssetKey,
+        check_name: str,
+        limit: int,
+        cursor: Optional[int] = None,
+        materialization_event_storage_id: Optional[int] = None,
+        include_planned: bool = True,
+    ) -> Sequence[AssetCheckExecutionRecord]:
+        return self._storage.event_log_storage.get_asset_check_executions(
+            asset_key=asset_key,
+            check_name=check_name,
+            limit=limit,
+            cursor=cursor,
+            materialization_event_storage_id=materialization_event_storage_id,
+            include_planned=include_planned,
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
