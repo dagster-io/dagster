@@ -290,3 +290,15 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                     )
                 ].update({candidate})
         return conditions
+
+
+# FORWARD COMAT GRAVEYARD
+
+
+@whitelist_for_serdes
+class AutoMaterializeRuleEvaluation(NamedTuple):
+    """This serves to allow this version of Dagster to deserialize NamedTuples written by the
+    new version of Dagster.
+    """
+
+    ...

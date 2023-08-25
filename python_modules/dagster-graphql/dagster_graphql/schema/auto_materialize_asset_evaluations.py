@@ -13,6 +13,7 @@ from dagster._core.definitions.auto_materialize_condition import (
     ParentMaterializedAutoMaterializeCondition,
     ParentOutdatedAutoMaterializeCondition,
 )
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRuleEvaluation
 from dagster._core.definitions.partition import SerializedPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
@@ -190,6 +191,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             conditions=[
                 create_graphene_auto_materialize_condition(c, partitions_def)
                 for c in record.evaluation.partition_subsets_by_condition
+                if not isinstance(c[0], AutoMaterializeRuleEvaluation)
             ],
             timestamp=record.timestamp,
             runIds=record.evaluation.run_ids,
