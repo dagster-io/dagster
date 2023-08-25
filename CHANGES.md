@@ -2,7 +2,8 @@
 
 # 1.4.10 / 0.20.10 (libraries)
 
-## Bugfixes
+### Bugfixes
+
 - [dagster-webserver] Fixed an issue that broke loading static files on Windows.
 
 # 1.4.9 / 0.20.9 (libraries)
