@@ -611,9 +611,9 @@ class AssetLayer(NamedTuple):
     def get_spec_for_asset_check(
         self, node_handle: NodeHandle, asset_check_handle: AssetCheckHandle
     ) -> Optional[AssetCheckSpec]:
-        asset_checks_def_or_assets_def = self._asset_checks_defs_by_node_handle.get(
+        asset_checks_def_or_assets_def = self.asset_checks_defs_by_node_handle.get(
             node_handle
-        ) or self._assets_defs_by_node_handle.get(node_handle)
+        ) or self.assets_defs_by_node_handle.get(node_handle)
         return (
             asset_checks_def_or_assets_def.get_spec_for_check_handle(asset_check_handle)
             if asset_checks_def_or_assets_def
