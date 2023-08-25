@@ -487,7 +487,14 @@ class AssetDaemonContext:
             (evaluation, to_materialize_for_asset, to_skip_for_asset, to_discard_for_asset) = (
                 self.evaluate_asset(asset_key, will_materialize_mapping, expected_data_time_mapping)
             )
+            # if an asset partition is skipped, then we want to keep track of it in our "unhandled"
+            # set, which will cause us to pull this tick's evaluation into the next tick to re-evaluate
+            # all of those unhandled materialization reasons and see if we can now proceed
             unhandled_graph_subset |= to_skip_for_asset
+            # similarly, if an asset partition is requested to be materialized this tick, or discarded
+            # this means that we should no longer consider it to be unhandled -- we kicked off a run
+            # to solve the materialize rule issues that we brought up (or decided we shouldn't), so
+            # next tick we should no longer care about it
 
             log_fn = (
                 self._logger.info
@@ -542,6 +549,10 @@ class AssetDaemonContext:
                     }
                     unhandled_graph_subset |= {
                         ap._replace(asset_key=neighbor_key) for ap in to_skip_for_asset
+                    }
+                    unhandled_graph_subset -= {
+                        ap._replace(asset_key=neighbor_key)
+                        for ap in to_materialize_for_asset | to_discard_for_asset
                     }
                     to_discard.update(
                         {ap._replace(asset_key=neighbor_key) for ap in to_discard_for_asset}

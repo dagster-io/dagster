@@ -231,6 +231,21 @@ class AutoMaterializeRule(ABC):
     def evaluate_for_asset_full(
         self, context: RuleEvaluationContext
     ) -> Tuple[RuleEvaluationResults, RuleEvaluationResults]:
+        """This is a dumb name for the function, but the purpose is allow a hook for the framework
+        to simultaneously get:
+        - the net-new evaluation results for this rule
+        - the previous evaluation results for this rule which are still valid
+
+        I think the best structure here would probably be to have separate hooks for materialize
+        and skip rules. Materialize rules would only implement a function to get the net-new
+        materialization evaluations (and let the framework handle resurrecting the old ones).
+
+        Skip rules would be able to decide how to handle old evaluations. For example, the
+        materialize_on_parent_missing rule should probably always re-evaluate its logic if there
+        are net new candidates, but nothing new is happening in "materialize rule" realm, and none
+        of the parents have been updated since last tick, you can just return your previous rule
+        evaluations (all the same parents will still be missing)
+        """
         return self.evaluate_for_asset(context), self.get_previous_evaluation_results(context)
 
     @staticmethod
@@ -290,8 +305,14 @@ class AutoMaterializeRule(ABC):
         self, context: RuleEvaluationContext
     ) -> RuleEvaluationResults:
         """Return the previous evaluation results for this rule, if any."""
+
+        # this line ensures that if a materialize rule is "handled" (i.e. a materialization was
+        # kicked off after it was discovered, or the asset was discarded), then we don't resurrect
+        # the previous evaluation results
         if context.asset_key not in context.cursor.unhandled_asset_graph_subset:
             return []
+
+        # here, we query the instance for the last recorded evaluation record
         previous_evaluation_record = context.instance_queryer.get_previous_asset_evaluation_record(
             asset_key=context.asset_key
         )
@@ -756,13 +777,27 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     def equivalent_to_stored_record(
         self, stored_record: Optional["AutoMaterializeAssetEvaluationRecord"]
     ) -> bool:
+        """This function returns if a stored record is "functionally equivalent" to this one. To
+        do so, we can't just use regular namedtuple equality, as the serialized partition subsets
+        will be potentially different between the two.
+        """
         if stored_record is None:
             return False
         stored_evaluation = stored_record.evaluation
         return (
+            # if num_requested > 0, then there's no way this record can be equivalent to the stored
+            # record, as we did work on the previous tick to mutate the global state, so even if
+            # we somehow had the same exact set of reasons on this tick, we'd want to write a new
+            # entry to the database (with different run ids and all that)
             stored_evaluation.num_requested == 0
             and stored_evaluation.num_skipped == self.num_skipped
             and stored_evaluation.num_discarded == self.num_discarded
+            # note that two serialized partition subsets can be equivalent without being equal
+            # for example, static partition subsets sometimes get serialized with their component
+            # keys in different orders. If this check fails, we should have a backup check that
+            # actually deserializes these partition subsets and asserts their equality, it's just
+            # a slightly expensive operation, so we should avoid it if possible with this quick
+            # check.
             and sorted(tuple(l) for l in stored_evaluation.partition_subsets_by_condition)
             == sorted(self.partition_subsets_by_condition)
         )
