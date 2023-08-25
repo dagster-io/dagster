@@ -1,10 +1,10 @@
 from typing import Optional
 
 from dagster_externals import (
-    ExternalDataProvenance,
     ExternalExecutionContextData,
+    ExternalExecutionDataProvenance,
     ExternalExecutionExtras,
-    ExternalTimeWindow,
+    ExternalExecutionTimeWindow,
 )
 
 from dagster._core.definitions.data_version import DataProvenance
@@ -67,11 +67,11 @@ def _convert_asset_key(asset_key: AssetKey) -> str:
 
 def _convert_data_provenance(
     provenance: Optional[DataProvenance],
-) -> Optional["ExternalDataProvenance"]:
+) -> Optional["ExternalExecutionDataProvenance"]:
     return (
         None
         if provenance is None
-        else ExternalDataProvenance(
+        else ExternalExecutionDataProvenance(
             code_version=provenance.code_version,
             input_data_versions={
                 _convert_asset_key(k): v.value for k, v in provenance.input_data_versions.items()
@@ -83,8 +83,8 @@ def _convert_data_provenance(
 
 def _convert_time_window(
     time_window: TimeWindow,
-) -> "ExternalTimeWindow":
-    return ExternalTimeWindow(
+) -> "ExternalExecutionTimeWindow":
+    return ExternalExecutionTimeWindow(
         start=time_window.start.isoformat(),
         end=time_window.end.isoformat(),
     )
@@ -92,8 +92,8 @@ def _convert_time_window(
 
 def _convert_partition_key_range(
     partition_key_range: PartitionKeyRange,
-) -> "ExternalTimeWindow":
-    return ExternalTimeWindow(
+) -> "ExternalExecutionTimeWindow":
+    return ExternalExecutionTimeWindow(
         start=partition_key_range.start,
         end=partition_key_range.end,
     )

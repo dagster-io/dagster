@@ -1,18 +1,31 @@
 import json
-from typing import Any, Optional, Sequence, TypeVar
+import os
+import warnings
+from typing import TYPE_CHECKING, Any, Optional, Sequence, TypeVar
 
-from ._protocol import ExternalExecutionContextData, ExternalExecutionExtras
+from ._protocol import (
+    ENV_KEY_PREFIX,
+    ExternalExecutionContextData,
+    ExternalExecutionExtras,
+)
+
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
 
 T = TypeVar("T")
 
 
-class DagsterExternalError(Exception):
+class DagsterExternalsError(Exception):
+    pass
+
+
+class DagsterExternalsWarning(Warning):
     pass
 
 
 def assert_not_none(value: Optional[T], desc: Optional[str] = None) -> T:
     if value is None:
-        raise DagsterExternalError(f"Missing required property: {desc}")
+        raise DagsterExternalsError(f"Missing required property: {desc}")
     return value
 
 
@@ -25,7 +38,7 @@ def assert_single_asset(data: ExternalExecutionContextData, key: str) -> None:
     asset_keys = data["asset_keys"]
     assert asset_keys is not None
     if len(asset_keys) != 1:
-        raise DagsterExternalError(f"`{key}` is undefined. Current step targets multiple assets.")
+        raise DagsterExternalsError(f"`{key}` is undefined. Current step targets multiple assets.")
 
 
 def assert_defined_partition_property(value: Optional[T], key: str) -> T:
@@ -39,20 +52,20 @@ def assert_single_partition(data: ExternalExecutionContextData, key: str) -> Non
     partition_key_range = data["partition_key_range"]
     assert partition_key_range is not None
     if partition_key_range["start"] != partition_key_range["end"]:
-        raise DagsterExternalError(
+        raise DagsterExternalsError(
             f"`{key}` is undefined. Current step targets multiple partitions."
         )
 
 
 def assert_defined_extra(extras: ExternalExecutionExtras, key: str) -> Any:
     if key not in extras:
-        raise DagsterExternalError(f"Extra `{key}` is undefined. Extras must be provided by user.")
+        raise DagsterExternalsError(f"Extra `{key}` is undefined. Extras must be provided by user.")
     return extras[key]
 
 
 def assert_param_type(value: T, expected_type: Any, method: str, param: str) -> T:
     if not isinstance(value, expected_type):
-        raise DagsterExternalError(
+        raise DagsterExternalsError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected `{expected_type}`, got"
             f" `{type(value)}`."
         )
@@ -61,7 +74,7 @@ def assert_param_type(value: T, expected_type: Any, method: str, param: str) -> 
 
 def assert_param_value(value: T, expected_values: Sequence[T], method: str, param: str) -> T:
     if value not in expected_values:
-        raise DagsterExternalError(
+        raise DagsterExternalsError(
             f"Invalid value for parameter `{param}` of `{method}`. Expected one of"
             f" `{expected_values}`, got `{value}`."
         )
@@ -72,8 +85,40 @@ def assert_param_json_serializable(value: T, method: str, param: str) -> T:
     try:
         json.dumps(value)
     except (TypeError, OverflowError):
-        raise DagsterExternalError(
+        raise DagsterExternalsError(
             f"Invalid type for parameter `{param}` of `{method}`. Expected a JSON-serializable"
             f" type, got `{type(value)}`."
         )
     return value
+
+
+def param_from_env(key: str) -> Any:
+    raw_value = os.environ.get(param_name_to_env_var(key))
+    return None if raw_value is None else json.loads(raw_value)
+
+
+def param_name_to_env_var(param_name: str) -> str:
+    return f"{ENV_KEY_PREFIX}{param_name.upper()}"
+
+
+def env_var_to_param_name(env_var: str) -> str:
+    return env_var[len(ENV_KEY_PREFIX) :].lower()
+
+
+def is_dagster_orchestration_active() -> bool:
+    return param_from_env("is_orchestration_active")
+
+
+def emit_orchestration_inactive_warning() -> None:
+    warnings.warn(
+        "This process was not launched by a Dagster orchestration process. All calls to the"
+        " `dagster-externals` context or attempts to initialize `dagster-externals` abstractions"
+        " are no-ops.",
+        category=DagsterExternalsWarning,
+    )
+
+
+def get_mock() -> "MagicMock":
+    from unittest.mock import MagicMock
+
+    return MagicMock()

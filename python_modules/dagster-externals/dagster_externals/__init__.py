@@ -1,19 +1,26 @@
 from dagster_externals._context import (
     ExternalExecutionContext as ExternalExecutionContext,
     init_dagster_externals as init_dagster_externals,
-    is_dagster_orchestration_active as is_dagster_orchestration_active,
+)
+from dagster_externals._io.base import (
+    ExternalExecutionContextSource as ExternalExecutionContextSource,
+    ExternalExecutionMessageSink as ExternalExecutionMessageSink,
+)
+from dagster_externals._io.default import (
+    ExternalExecutionFileContextSource as ExternalExecutionFileContextSource,
+    ExternalExecutionFileMessageSink as ExternalExecutionFileMessageSink,
 )
 from dagster_externals._protocol import (
-    DAGSTER_EXTERNALS_DEFAULT_INPUT_FILENAME as DAGSTER_EXTERNALS_DEFAULT_INPUT_FILENAME,
-    DAGSTER_EXTERNALS_DEFAULT_OUTPUT_FILENAME as DAGSTER_EXTERNALS_DEFAULT_OUTPUT_FILENAME,
     DAGSTER_EXTERNALS_ENV_KEYS as DAGSTER_EXTERNALS_ENV_KEYS,
-    ExternalDataProvenance as ExternalDataProvenance,
     ExternalExecutionContextData as ExternalExecutionContextData,
+    ExternalExecutionDataProvenance as ExternalExecutionDataProvenance,
     ExternalExecutionExtras as ExternalExecutionExtras,
-    ExternalPartitionKeyRange as ExternalPartitionKeyRange,
-    ExternalTimeWindow as ExternalTimeWindow,
-    Notification as Notification,
+    ExternalExecutionMessage as ExternalExecutionMessage,
+    ExternalExecutionPartitionKeyRange as ExternalExecutionPartitionKeyRange,
+    ExternalExecutionTimeWindow as ExternalExecutionTimeWindow,
 )
 from dagster_externals._util import (
-    DagsterExternalError as DagsterExternalError,
+    DagsterExternalsError as DagsterExternalsError,
+    DagsterExternalsWarning as DagsterExternalsWarning,
+    is_dagster_orchestration_active as is_dagster_orchestration_active,
 )

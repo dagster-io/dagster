@@ -1,13 +1,13 @@
 import inspect
 import re
+import shutil
 import subprocess
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator
 
 import pytest
-from dagster._check import CheckError
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
@@ -22,6 +22,8 @@ from dagster._core.external_execution.subprocess import (
 )
 from dagster._core.instance_for_test import instance_for_test
 
+_PYTHON_EXECUTABLE = shutil.which("python")
+
 
 @contextmanager
 def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
@@ -33,19 +35,7 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         yield file.name
 
 
-@pytest.mark.parametrize(
-    ["input_file_spec", "output_file_spec"],
-    [
-        ("auto", "auto"),
-        ("auto", "user"),
-        ("user", "auto"),
-        ("user", "user"),
-    ],
-)
-def test_external_subprocess_asset(input_file_spec: str, output_file_spec: str, tmpdir, capsys):
-    input_path = None if input_file_spec == "auto" else str(tmpdir.join("input"))
-    output_path = None if output_file_spec == "auto" else str(tmpdir.join("output"))
-
+def test_external_subprocess_asset(capsys):
     def script_fn():
         from dagster_externals import ExternalExecutionContext, init_dagster_externals
 
@@ -59,13 +49,10 @@ def test_external_subprocess_asset(input_file_spec: str, output_file_spec: str, 
     def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         extras = {"bar": "baz"}
         with temp_script(script_fn) as script_path:
-            cmd = ["python", script_path]
+            cmd = [_PYTHON_EXECUTABLE, script_path]
             ext.run(cmd, context=context, extras=extras)
 
-    resource = SubprocessExecutionResource(
-        input_path=input_path,
-        output_path=output_path,
-    )
+    resource = SubprocessExecutionResource()
     with instance_for_test() as instance:
         materialize(
             [foo],
@@ -90,7 +77,7 @@ def test_external_execution_asset_failed():
     @asset
     def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         with temp_script(script_fn) as script_path:
-            cmd = ["python", script_path]
+            cmd = [_PYTHON_EXECUTABLE, script_path]
             ext.run(cmd, context=context)
 
     with pytest.raises(DagsterExternalExecutionError):
@@ -107,41 +94,13 @@ def test_external_execution_asset_invocation():
     @asset
     def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         with temp_script(script_fn) as script_path:
-            cmd = ["python", script_path]
+            cmd = [_PYTHON_EXECUTABLE, script_path]
             ext.run(cmd, context=context)
 
     foo(context=build_asset_context(), ext=SubprocessExecutionResource())
 
 
 PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
-
-
-@pytest.mark.parametrize(
-    ["input_path", "output_path"],
-    [
-        (PATH_WITH_NONEXISTENT_DIR, None),
-        (None, PATH_WITH_NONEXISTENT_DIR),
-    ],
-)
-def test_external_execution_invalid_path(
-    input_path: Optional[str],
-    output_path: Optional[str],
-):
-    def script_fn():
-        pass
-
-    @asset
-    def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
-        with temp_script(script_fn) as script_path:
-            cmd = ["python", script_path]
-            ext.run(cmd, context=context)
-
-    resource = SubprocessExecutionResource(
-        input_path=input_path,
-        output_path=output_path,
-    )
-    with pytest.raises(CheckError, match=r"directory \S+ does not currently exist"):
-        materialize([foo], resources={"ext": resource})
 
 
 def test_external_execution_no_orchestration():
@@ -166,7 +125,6 @@ def test_external_execution_no_orchestration():
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ).communicate()
         assert re.search(
-            r"This process was not launched by a Dagster orchestration process. All calls to the"
-            r" `dagster-externals` context are no-ops.",
+            r"This process was not launched by a Dagster orchestration process.",
             stderr.decode(),
         )

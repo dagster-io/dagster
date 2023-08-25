@@ -1,19 +1,15 @@
-import atexit
-import json
-import os
-import warnings
-from typing import Any, ClassVar, Mapping, Optional, Sequence, TextIO
+from typing import Any, ClassVar, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 
-from ._params import get_external_execution_params
+from ._io.base import ExternalExecutionContextSource, ExternalExecutionMessageSink
+from ._io.default import ExternalExecutionFileContextSource, ExternalExecutionFileMessageSink
 from ._protocol import (
-    DAGSTER_EXTERNALS_ENV_KEYS,
-    ExternalDataProvenance,
     ExternalExecutionContextData,
-    ExternalPartitionKeyRange,
-    ExternalTimeWindow,
-    Notification,
+    ExternalExecutionDataProvenance,
+    ExternalExecutionMessage,
+    ExternalExecutionPartitionKeyRange,
+    ExternalExecutionTimeWindow,
 )
 from ._util import (
     assert_defined_asset_property,
@@ -23,46 +19,30 @@ from ._util import (
     assert_param_type,
     assert_param_value,
     assert_single_asset,
+    emit_orchestration_inactive_warning,
+    get_mock,
+    is_dagster_orchestration_active,
 )
 
 
-def is_dagster_orchestration_active() -> bool:
-    return bool(os.getenv(DAGSTER_EXTERNALS_ENV_KEYS["is_orchestration_active"]))
-
-
-def init_dagster_externals() -> "ExternalExecutionContext":
+def init_dagster_externals(
+    *,
+    context_source: Optional[ExternalExecutionContextSource] = None,
+    message_sink: Optional[ExternalExecutionMessageSink] = None,
+) -> "ExternalExecutionContext":
     if ExternalExecutionContext.is_initialized():
         return ExternalExecutionContext.get()
 
     if is_dagster_orchestration_active():
-        params = get_external_execution_params()
-        data = _read_input(params.input_path)
-        output_stream = _get_output_stream(params.output_path)
-        atexit.register(_close_stream, output_stream)
-        context = ExternalExecutionContext(data, output_stream)
+        context_source = context_source or ExternalExecutionFileContextSource()
+        message_sink = message_sink or ExternalExecutionFileMessageSink()
+        data = context_source.load_context()
+        context = ExternalExecutionContext(data, message_sink)
     else:
-        from unittest.mock import MagicMock
-
-        warnings.warn(
-            "This process was not launched by a Dagster orchestration process. All calls to the"
-            " `dagster-externals` context are no-ops."
-        )
-        context = MagicMock()
+        emit_orchestration_inactive_warning()
+        context = get_mock()
     ExternalExecutionContext.set(context)
     return context
-
-
-def _read_input(path: str) -> ExternalExecutionContextData:
-    with open(path, "r") as f:
-        return json.load(f)
-
-
-def _get_output_stream(path: str) -> TextIO:
-    return open(path, "a")
-
-
-def _close_stream(stream) -> None:
-    stream.close()
 
 
 class ExternalExecutionContext:
@@ -85,14 +65,15 @@ class ExternalExecutionContext:
             )
         return cls._instance
 
-    def __init__(self, data: ExternalExecutionContextData, output_stream: TextIO) -> None:
+    def __init__(
+        self, data: ExternalExecutionContextData, message_sink: ExternalExecutionMessageSink
+    ) -> None:
         self._data = data
-        self._output_stream = output_stream
+        self.message_sink = message_sink
 
-    def _send_notification(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
-        notification = Notification(method=method, params=params)
-        self._output_stream.write(json.dumps(notification) + "\n")
-        self._output_stream.flush()
+    def _send_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
+        message = ExternalExecutionMessage(method=method, params=params)
+        self.message_sink.send_message(message)
 
     # ########################
     # ##### PUBLIC API
@@ -114,7 +95,7 @@ class ExternalExecutionContext:
         return asset_keys
 
     @property
-    def provenance(self) -> Optional[ExternalDataProvenance]:
+    def provenance(self) -> Optional[ExternalExecutionDataProvenance]:
         provenance_by_asset_key = assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance"
         )
@@ -122,7 +103,7 @@ class ExternalExecutionContext:
         return list(provenance_by_asset_key.values())[0]
 
     @property
-    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExternalDataProvenance]]:
+    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExternalExecutionDataProvenance]]:
         provenance_by_asset_key = assert_defined_asset_property(
             self._data["provenance_by_asset_key"], "provenance_by_asset_key"
         )
@@ -155,14 +136,14 @@ class ExternalExecutionContext:
         return partition_key
 
     @property
-    def partition_key_range(self) -> Optional["ExternalPartitionKeyRange"]:
+    def partition_key_range(self) -> Optional["ExternalExecutionPartitionKeyRange"]:
         partition_key_range = assert_defined_partition_property(
             self._data["partition_key_range"], "partition_key_range"
         )
         return partition_key_range
 
     @property
-    def partition_time_window(self) -> Optional["ExternalTimeWindow"]:
+    def partition_time_window(self) -> Optional["ExternalExecutionTimeWindow"]:
         # None is a valid value for partition_time_window, but we check that a partition key range
         # is defined.
         assert_defined_partition_property(
@@ -191,7 +172,7 @@ class ExternalExecutionContext:
         asset_key = assert_param_type(asset_key, str, "report_asset_metadata", "asset_key")
         label = assert_param_type(label, str, "report_asset_metadata", "label")
         value = assert_param_json_serializable(value, "report_asset_metadata", "value")
-        self._send_notification(
+        self._send_message(
             "report_asset_metadata", {"asset_key": asset_key, "label": label, "value": value}
         )
 
@@ -200,11 +181,11 @@ class ExternalExecutionContext:
         data_version = assert_param_type(
             data_version, str, "report_asset_data_version", "data_version"
         )
-        self._send_notification(
+        self._send_message(
             "report_asset_data_version", {"asset_key": asset_key, "data_version": data_version}
         )
 
     def log(self, message: str, level: str = "info") -> None:
         message = assert_param_type(message, str, "log", "asset_key")
         level = assert_param_value(level, ["info", "warning", "error"], "log", "level")
-        self._send_notification("log", {"message": message, "level": level})
+        self._send_message("log", {"message": message, "level": level})
