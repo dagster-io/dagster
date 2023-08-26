@@ -311,6 +311,21 @@ def add_step_to_table(memoized_plan):
 @python_job_target_argument
 @python_job_config_argument("execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
+@click.option(
+    "-o",
+    "--ops-selection",
+    type=click.STRING,
+    help=(
+        "Specify the op subselection to execute. It can be multiple clauses separated by commas."
+        "Examples:"
+        '\n- "some_op" will execute "some_op" itself'
+        '\n- "*some_op" will execute "some_op" and all its ancestors (upstream dependencies)'
+        '\n- "*some_op+++" will execute "some_op", all its ancestors, and its descendants'
+        "   (downstream dependencies) within 3 levels down"
+        '\n- "*some_op,other_op_a,other_op_b+" will execute "some_op" and all its'
+        '   ancestors, "other_op_a" itself, and "other_op_b" and its direct child ops'
+    ),
+)
 def job_execute_command(**kwargs: ClickArgValue):
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli("``dagster job execute``") as instance:
