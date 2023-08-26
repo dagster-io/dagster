@@ -313,7 +313,7 @@ def add_step_to_table(memoized_plan):
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option(
     "-o",
-    "--ops-selection",
+    "--op-selection",
     type=click.STRING,
     help=(
         "Specify the op subselection to execute. It can be multiple clauses separated by commas."
@@ -399,7 +399,7 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
 
 
 def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
-    op_selection_str = kwargs.get("solid_selection")
+    op_selection_str = kwargs.get("op_selection")
     if not isinstance(op_selection_str, str):
         return None
 
