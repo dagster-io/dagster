@@ -518,7 +518,7 @@ def _get_requested_asset_partitions_from_run_requests(
     run_requests: Sequence[RunRequest],
     asset_graph: ExternalAssetGraph,
     instance_queryer: CachingInstanceQueryer,
-) -> Set[AssetKeyPartitionKey]:
+) -> AbstractSet[AssetKeyPartitionKey]:
     requested_partitions = set()
     for run_request in run_requests:
         # Run request targets a range of partitions
@@ -542,18 +542,16 @@ def _get_requested_asset_partitions_from_run_requests(
             partitions_in_range = partitions_def.get_partition_keys_in_range(
                 PartitionKeyRange(range_start, range_end), instance_queryer
             )
-            requested_partitions = requested_partitions | set(
-                [
-                    AssetKeyPartitionKey(asset_key, partition_key)
-                    for asset_key in selected_assets
-                    for partition_key in partitions_in_range
-                ]
-            )
+            requested_partitions = requested_partitions | {
+                AssetKeyPartitionKey(asset_key, partition_key)
+                for asset_key in selected_assets
+                for partition_key in partitions_in_range
+            }
         else:
-            requested_partitions = requested_partitions | set(
+            requested_partitions = requested_partitions | {
                 AssetKeyPartitionKey(asset_key, run_request.partition_key)
                 for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
-            )
+            }
 
     return requested_partitions
 
