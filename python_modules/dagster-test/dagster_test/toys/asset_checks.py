@@ -64,7 +64,37 @@ def asset_with_check_in_same_op():
     yield AssetCheckResult(check_name="random_fail_check", success=random.choice([False, True]))
 
 
-@asset(group_name="asset_checks", deps=[checked_asset, asset_with_check_in_same_op])
+@asset(group_name="asset_checks")
+def check_exception_asset():
+    return 1
+
+
+@asset_check(
+    asset=check_exception_asset, description="A check that hits an exception half the time."
+)
+def exception_check():
+    random.seed(time.time())
+    if random.choice([False, True]):
+        raise Exception("This check failed!")
+    return AssetCheckResult(success=True)
+
+
+@asset_check(
+    asset=check_exception_asset,
+    severity=AssetCheckSeverity.ERROR,
+    description="A severe check that hits an exception half the time.",
+)
+def severe_exception_check():
+    random.seed(time.time())
+    if random.choice([False, True]):
+        raise Exception("This check failed!")
+    return AssetCheckResult(success=True)
+
+
+@asset(
+    group_name="asset_checks",
+    deps=[checked_asset, asset_with_check_in_same_op, check_exception_asset],
+)
 def downstream_asset():
     return 1
 
@@ -77,4 +107,7 @@ def get_checks_and_assets():
         slow_check,
         asset_with_check_in_same_op,
         downstream_asset,
+        check_exception_asset,
+        exception_check,
+        severe_exception_check,
     ]
