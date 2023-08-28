@@ -60,7 +60,7 @@ export const NoChecks = () => {
           data: {
             assetChecksOrError: buildAssetChecks({
               checks: [],
-            }),
+            }) as any,
           },
         }),
       ]}
@@ -85,7 +85,7 @@ export const Default = () => {
                 TestAssetCheck,
                 TestAssetCheck,
               ],
-            }),
+            }) as any,
           },
         }),
       ]}
