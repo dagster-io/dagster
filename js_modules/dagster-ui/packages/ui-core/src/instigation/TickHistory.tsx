@@ -307,7 +307,11 @@ export const TickHistoryTimeline = ({
   );
 
   useQueryRefreshAtInterval(queryResult, pollingPaused ? ONE_MONTH : 1000);
-  const {data} = queryResult;
+  const {data, error} = queryResult;
+
+  if (error) {
+    debugger;
+  }
 
   if (!data) {
     return (
@@ -332,7 +336,9 @@ export const TickHistoryTimeline = ({
     return null;
   }
 
-  const {ticks, nextTick} = data.instigationStateOrError;
+  // Set it equal to an empty array in case of a weird error
+  // https://elementl-workspace.slack.com/archives/C03CCE471E0/p1693237968395179?thread_ts=1693233109.602669&cid=C03CCE471E0
+  const {ticks = [], nextTick} = data.instigationStateOrError;
 
   const onTickClick = (tick?: InstigationTick) => {
     setSelectedTime(tick ? tick.timestamp : undefined);
