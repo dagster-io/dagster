@@ -283,7 +283,7 @@ export function MigrationRequired() {
             </Body2>
             <Box
               as="a"
-              href="#TODO"
+              href="https://docs.dagster.io/concepts/assets/asset-checks"
               target="_blank"
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
@@ -311,7 +311,7 @@ export function NoChecks() {
             </Body2>
             <Box
               as="a"
-              href="#TODO"
+              href="https://docs.dagster.io/concepts/assets/asset-checks"
               target="_blank"
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >
@@ -338,7 +338,7 @@ function NoExecutions() {
             </Body2>
             <Box
               as="a"
-              href="#TODO"
+              href="https://docs.dagster.io/concepts/assets/asset-checks"
               target="_blank"
               flex={{direction: 'row', alignItems: 'end', gap: 4}}
             >

@@ -5,7 +5,7 @@ import {useHistory, useLocation} from 'react-router';
 
 import {LoadingSpinner} from '../../ui/Loading';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
-import {AssetKey, AssetDefinition} from '../types';
+import {AssetKey} from '../types';
 
 import {
   ASSET_CHECK_EXECUTION_FRAGMENT,
