@@ -17,7 +17,7 @@ description: A software-defined asset is a description of how to compute the con
   videos to get a quick look at Software-defined assets.
 </Note>
 
-An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a description, in code, of an asset that should exist and how to produce and update that asset.
 
 Software-defined assets enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 
