@@ -345,6 +345,17 @@ GET_ASSET_OBSERVATIONS = """
     }
 """
 
+HAS_ASSET_CHECKS = """
+    query AssetNodeQuery {
+        assetNodes {
+            assetKey {
+                path
+            }
+            hasAssetChecks
+        }
+    }
+"""
+
 
 GET_1D_ASSET_PARTITIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
@@ -2166,6 +2177,18 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["maxMaterializationsPerMinute"] == 1
+
+    def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        for a in result.data["assetNodes"]:
+            if a["assetKey"]["path"] == ["asset_1"]:
+                assert a["hasAssetChecks"] is True
+            else:
+                assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

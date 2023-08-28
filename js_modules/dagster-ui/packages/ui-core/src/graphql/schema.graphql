@@ -686,6 +686,7 @@ type AssetNode {
   staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
+  hasAssetChecks: Boolean!
 }
 
 type MaterializationUpstreamDataVersion {
