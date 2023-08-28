@@ -1,5 +1,5 @@
 import {
-  AssetCheckExecutionStatus,
+  AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
   buildAssetCheck,
   buildAssetCheckEvaluation,
@@ -32,7 +32,7 @@ export const TestAssetCheck = buildAssetCheck({
         metadataEntries: [buildIntMetadataEntry({})],
       }),
       runId: testLatestMaterializationRunId,
-      status: AssetCheckExecutionStatus.FAILURE,
+      status: AssetCheckExecutionResolvedStatus.FAILURE,
     }),
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({
@@ -75,7 +75,7 @@ export const TestAssetCheckWarning = buildAssetCheck({
         metadataEntries: [buildIntMetadataEntry({})],
       }),
       runId: testLatestMaterializationRunId,
-      status: AssetCheckExecutionStatus.FAILURE,
+      status: AssetCheckExecutionResolvedStatus.FAILURE,
     }),
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({

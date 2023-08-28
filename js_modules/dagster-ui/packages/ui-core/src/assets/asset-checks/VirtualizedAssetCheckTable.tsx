@@ -4,7 +4,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetCheckExecutionStatus, AssetCheckSeverity, AssetKeyInput} from '../../graphql/types';
+import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+  AssetKeyInput,
+} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
@@ -93,7 +97,7 @@ export const VirtualizedAssetCheckRow = ({
       // for the asset, then that means this check was not checked on that materialization.
       (!lastExecution ||
         lastExecution.evaluation?.targetMaterialization?.runId !== lastMaterializationRunId) &&
-      lastExecution?.status !== AssetCheckExecutionStatus.PLANNED
+      lastExecution?.status !== AssetCheckExecutionResolvedStatus.IN_PROGRESS
     ) {
       return <AssetCheckStatusTag notChecked={true} />;
     }
