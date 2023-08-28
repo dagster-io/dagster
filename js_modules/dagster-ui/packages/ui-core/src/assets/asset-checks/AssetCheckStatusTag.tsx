@@ -1,13 +1,15 @@
 import {Box, Spinner, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {AssetCheckExecutionStatus} from '../../graphql/types';
+import {AssetCheckExecutionStatus, AssetCheckSeverity} from '../../graphql/types';
 
 export const AssetCheckStatusTag = ({
   status,
+  severity,
   notChecked,
 }: {
   status?: AssetCheckExecutionStatus;
+  severity?: AssetCheckSeverity;
   notChecked?: boolean;
 }) => {
   if (notChecked) {
@@ -24,8 +26,9 @@ export const AssetCheckStatusTag = ({
         </Tag>
       );
     case AssetCheckExecutionStatus.FAILURE:
+      const isWarn = severity === AssetCheckSeverity.WARN;
       return (
-        <Tag icon="cancel" intent="danger">
+        <Tag icon={isWarn ? 'warning_outline' : 'cancel'} intent={isWarn ? 'warning' : 'danger'}>
           Failed
         </Tag>
       );

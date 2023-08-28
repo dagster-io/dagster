@@ -16,6 +16,7 @@ export type AssetChecksQuery = {
           __typename: 'AssetCheck';
           name: string;
           description: string | null;
+          severity: Types.AssetCheckSeverity;
           executions: Array<{
             __typename: 'AssetCheckExecution';
             id: number;
