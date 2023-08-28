@@ -42,7 +42,7 @@ We’ve added the other outputs that are created along the way to the DAG - **co
 
 ## Asset-centric workflow orchestration
 
-Workflows that make things (whether they might be chocolate chip cookies or data) have different needs than task-centric workflows when building, troubleshooting, or scaling them. *Assets* are what we call the outputs made by workflows. Asset-centric workflows make it easy to, at a glance, focus on the **********whats********** and less on the **********hows.**********
+Workflows that make things (whether they might be chocolate chip cookies or data) have different needs than task-centric workflows when building, troubleshooting, or scaling them. *Assets* are what we call the outputs made by workflows. Asset-centric workflows make it easy to, at a glance, focus on the **whats** and less on the **hows.**
 
 ### Example of asset-centric workflow
 
