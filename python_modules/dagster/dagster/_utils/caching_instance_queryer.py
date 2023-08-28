@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
@@ -854,30 +854,35 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         of ancestors of this asset partition whose parents have been updated more recently than
         they have.
         """
-        if self.asset_graph.is_source(asset_partition.asset_key):
-            return set()
+        root_unreconciled_ancestors = set()
 
-        parent_asset_partitions = self.asset_graph.get_parents_partitions(
-            dynamic_partitions_store=self,
-            current_time=self._evaluation_time,
-            asset_key=asset_partition.asset_key,
-            partition_key=asset_partition.partition_key,
-        ).parent_partitions
+        queue: deque[AssetKeyPartitionKey] = deque()
+        queue.append(asset_partition)
 
-        updated_parents = self.get_updated_parent_asset_partitions(
-            asset_partition,
-            parent_asset_partitions,
-            respect_materialization_data_versions=respect_materialization_data_versions,
-        )
+        while queue:
+            current_partition = queue.popleft()
 
-        root_unreconciled_ancestors = {asset_partition.asset_key} if updated_parents else set()
+            if self.asset_graph.is_source(current_partition.asset_key):
+                continue
 
-        # recurse over parents
-        for parent in set(parent_asset_partitions) - updated_parents:
-            root_unreconciled_ancestors.update(
-                self.get_root_unreconciled_ancestors(
-                    asset_partition=parent,
-                    respect_materialization_data_versions=respect_materialization_data_versions,
-                )
+            parent_asset_partitions = self.asset_graph.get_parents_partitions(
+                dynamic_partitions_store=self,
+                current_time=self._evaluation_time,
+                asset_key=current_partition.asset_key,
+                partition_key=current_partition.partition_key,
+            ).parent_partitions
+
+            updated_parents = self.get_updated_parent_asset_partitions(
+                current_partition,
+                parent_asset_partitions,
+                respect_materialization_data_versions=respect_materialization_data_versions,
             )
+
+            if updated_parents:
+                root_unreconciled_ancestors.add(current_partition.asset_key)
+
+            parents_to_explore = set(parent_asset_partitions) - updated_parents
+
+            queue.extend(parents_to_explore)
+
         return root_unreconciled_ancestors
