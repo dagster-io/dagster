@@ -8,6 +8,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @experimental
+@whitelist_for_serdes
 class AssetCheckSeverity(Enum):
     """Severity level for an asset check.
 

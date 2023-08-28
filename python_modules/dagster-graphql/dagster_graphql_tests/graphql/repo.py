@@ -13,6 +13,7 @@ from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 from dagster import (
     Any,
     AssetCheckResult,
+    AssetCheckSeverity,
     AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
@@ -1905,7 +1906,7 @@ def define_asset_jobs():
     ]
 
 
-@asset_check(asset=asset_1, description="asset_1 check")
+@asset_check(asset=asset_1, description="asset_1 check", severity=AssetCheckSeverity.ERROR)
 def my_check():
     return AssetCheckResult(
         success=True,
