@@ -6,7 +6,6 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
-    AutoMaterializeRuleSnapshot,
 )
 
 # re-export
