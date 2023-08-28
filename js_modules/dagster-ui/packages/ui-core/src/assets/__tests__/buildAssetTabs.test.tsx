@@ -307,6 +307,7 @@ describe('buildAssetTabs', () => {
     expect(tabKeys).toEqual([
       'partitions',
       'events',
+      'checks',
       'plots',
       'definition',
       'lineage',
@@ -331,6 +332,7 @@ describe('buildAssetTabs', () => {
     const tabKeys = tabList.map(({id}) => id);
     expect(tabKeys).toEqual([
       'events',
+      'checks',
       'plots',
       'definition',
       'lineage',
