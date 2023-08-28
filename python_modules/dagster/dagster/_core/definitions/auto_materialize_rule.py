@@ -17,8 +17,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
@@ -599,7 +598,6 @@ class SkipOnNotAllParentsUpdatedRule(
         return []
 
 
-@experimental
 @whitelist_for_serdes
 class DiscardOnMaxMaterializationsExceededRule(
     AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
