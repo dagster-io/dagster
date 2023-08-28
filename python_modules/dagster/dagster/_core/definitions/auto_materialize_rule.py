@@ -422,7 +422,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
 
     @property
     def description(self) -> str:
-        return "waiting on upstream data to be updated"
+        return "waiting on upstream data to be up to date"
 
     def evaluate_for_asset(self, context: RuleEvaluationContext) -> RuleEvaluationResults:
         asset_partitions_by_waiting_on_asset_keys = defaultdict(set)
@@ -458,7 +458,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
 
     @property
     def description(self) -> str:
-        return "waiting on upstream data to be materialized"
+        return "waiting on upstream data to be present"
 
     def evaluate_for_asset(
         self,
