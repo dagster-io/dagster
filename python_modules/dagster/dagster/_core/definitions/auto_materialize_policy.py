@@ -85,7 +85,7 @@ class AutoMaterializePolicy(
     - `AutoMaterializeRule.skip_on_parent_missing()` - Skip materializing an asset or a partition if
     any parent has never been materialized or observed.
 
-    Policies can be customized, by adding or removing rules. For example, if you'd like to allow
+    Policies can be customized by adding or removing rules. For example, if you'd like to allow
     an asset to be materialized even if some of its parent partitions are missing:
 
     ```python
