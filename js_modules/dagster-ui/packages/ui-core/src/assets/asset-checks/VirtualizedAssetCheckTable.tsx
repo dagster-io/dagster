@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {AssetCheckExecutionStatus} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
@@ -84,8 +85,9 @@ export const VirtualizedAssetCheckRow = ({
     if (
       // If the latest execution's target materialization's run ID doesn't match the latest materialization's run id
       // for the asset, then that means this check was not checked on that materialization.
-      !lastExecution ||
-      lastExecution.evaluation?.targetMaterialization?.runId !== lastMaterializationRunId
+      (!lastExecution ||
+        lastExecution.evaluation?.targetMaterialization?.runId !== lastMaterializationRunId) &&
+      lastExecution?.status !== AssetCheckExecutionStatus.PLANNED
     ) {
       return <AssetCheckStatusTag notChecked={true} />;
     }

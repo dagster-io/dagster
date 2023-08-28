@@ -3,6 +3,7 @@ import {Body2, Box, Colors, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 import {useHistory, useLocation} from 'react-router';
 
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {LoadingSpinner} from '../../ui/Loading';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 import {AssetKey} from '../types';
@@ -35,11 +36,13 @@ export const AssetChecks = ({
     [lastMaterializationDate],
   );
 
-  const {data} = useQuery<AssetChecksQuery, AssetChecksQueryVariables>(ASSET_CHECKS_QUERY, {
+  const queryResult = useQuery<AssetChecksQuery, AssetChecksQueryVariables>(ASSET_CHECKS_QUERY, {
     variables: {
       assetKey,
     },
   });
+  const {data} = queryResult;
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const {search} = useLocation();
   const check_detail = React.useMemo(() => new URLSearchParams(search).get('check_detail'), [
