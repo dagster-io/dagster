@@ -69,22 +69,21 @@ class AutoMaterializePolicy(
 ):
     """An AutoMaterializePolicy specifies how Dagster should attempt to keep an asset up-to-date.
 
-    Each policy consists of a set of `AutoMaterializeRule`s, which are used to determine if there is
-    some reason that an asset / partition of an asset should be auto-materialized, and if so, if
-    there is some reason that an asset / partition of an asset should not be auto-materialized.
+    Each policy consists of a set of AutoMaterializeRules, which are used to determine whether an
+    asset or a partition of an asset should or should not be auto-materialized.
 
     The most common policy is `AutoMaterializePolicy.eager()`, which consists of the following rules:
 
-    - `AutoMaterializeRule.materialize_on_missing()`
-    - `AutoMaterializeRule.materialize_on_parent_updated()`
-    - `AutoMaterializeRule.materialize_on_required_for_freshness()`
-    - `AutoMaterializeRule.skip_on_parent_outdated()`
-    - `AutoMaterializeRule.skip_on_parent_missing()`
-
-    In essence, the eager policy will cause an asset to be materialized whenever it is missing,
-    whenever any of its parent assets are updated, or whenever its freshness policy or that of one
-    of its downstream assets requires it to be updated in order to meet those policies, unless any
-    of its parent asset / partitions are missing, or are out of date with respect to their parents.
+    - `AutoMaterializeRule.materialize_on_missing()` - Materialize an asset or a partition if it has
+    never been materialized.
+    - `AutoMaterializeRule.materialize_on_parent_updated()` - Materialize an asset or a partition if
+    one of its parents has been updated more recently than it has.
+    - `AutoMaterializeRule.materialize_on_required_for_freshness()` - Materialize an asset or a
+    partition if it is required to satisfy a freshness policy.
+    - `AutoMaterializeRule.skip_on_parent_outdated()` - Skip materializing an asset or a partition
+    if any of its parents has not incorporated the latest data from its ancestors.
+    - `AutoMaterializeRule.skip_on_parent_missing()` - Skip materializing an asset or a partition if
+    any parent has never been materialized or observed.
 
     Policies can be customized, by adding or removing rules. For example, if you'd like to allow
     an asset to be materialized even if some of its parent partitions are missing:
