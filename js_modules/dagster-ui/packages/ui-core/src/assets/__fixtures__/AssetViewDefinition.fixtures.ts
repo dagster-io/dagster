@@ -2,7 +2,7 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {AssetGraphQuery} from '../../asset-graph/types/useAssetGraphData.types';
 import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
-import {buildAsset, buildMaterializationEvent} from '../../graphql/types';
+import {buildMaterializationEvent} from '../../graphql/types';
 import {ASSET_VIEW_DEFINITION_QUERY} from '../AssetView';
 import {buildQueryMock} from '../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {AssetViewDefinitionQuery} from '../types/AssetView.types';
