@@ -114,6 +114,7 @@ def test_python_environment_args():
                 process.wait()
 
 
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows requires ports")
 def test_env_var_port_collision():
     port = find_free_port()
     socket = safe_tempfile_path_unmanaged()
