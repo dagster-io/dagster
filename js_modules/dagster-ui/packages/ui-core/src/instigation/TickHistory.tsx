@@ -309,11 +309,7 @@ export const TickHistoryTimeline = ({
   useQueryRefreshAtInterval(queryResult, pollingPaused ? ONE_MONTH : 1000);
   const {data, error} = queryResult;
 
-  if (error) {
-    debugger;
-  }
-
-  if (!data) {
+  if (!data || error) {
     return (
       <>
         <Box
