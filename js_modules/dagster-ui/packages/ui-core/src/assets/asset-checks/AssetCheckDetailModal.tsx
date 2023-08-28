@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   Headline,
-  Icon,
   Mono,
   NonIdealState,
   Spinner,
