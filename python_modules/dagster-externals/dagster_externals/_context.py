@@ -166,6 +166,10 @@ class ExternalExecutionContext:
     def get_extra(self, key: str) -> Any:
         return assert_defined_extra(self._data["extras"], key)
 
+    @property
+    def extras(self) -> Mapping[str, Any]:
+        return self._data["extras"]
+
     # ##### WRITE
 
     def report_asset_metadata(self, asset_key: str, label: str, value: Any) -> None:
