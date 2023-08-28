@@ -297,6 +297,7 @@ export type AssetNode = {
   freshnessPolicy: Maybe<FreshnessPolicy>;
   graphName: Maybe<Scalars['String']>;
   groupName: Maybe<Scalars['String']>;
+  hasAssetChecks: Scalars['Boolean'];
   hasMaterializePermission: Scalars['Boolean'];
   id: Scalars['ID'];
   isObservable: Scalars['Boolean'];
@@ -4851,6 +4852,8 @@ export const buildAssetNode = (
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'et',
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'asperiores',
+    hasAssetChecks:
+      overrides && overrides.hasOwnProperty('hasAssetChecks') ? overrides.hasAssetChecks! : true,
     hasMaterializePermission:
       overrides && overrides.hasOwnProperty('hasMaterializePermission')
         ? overrides.hasMaterializePermission!
