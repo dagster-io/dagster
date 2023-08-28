@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster_docker.external_resource import DockerExecutionResource
 from dagster_test.test_project import (
@@ -10,6 +11,7 @@ from dagster_test.test_project import (
 )
 
 
+@pytest.mark.integration
 def test_basic():
     docker_image = get_test_project_docker_image()
 
