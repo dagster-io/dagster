@@ -7,7 +7,8 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionStatus,
@@ -84,10 +85,14 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         )
 
 
+GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)
+
+
 class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
+    severity = graphene.NonNull(GrapheneAssetCheckSeverity)
     executions = graphene.Field(
         non_null_list(GrapheneAssetCheckExecution),
         limit=graphene.NonNull(graphene.Int),
@@ -97,24 +102,25 @@ class GrapheneAssetCheck(graphene.ObjectType):
     class Meta:
         name = "AssetCheck"
 
-    def __init__(self, name: str, asset_key: AssetKey, description: Optional[str] = None):
-        self._name = name
-        self._asset_key = asset_key
-        self._description = description
-
-    def resolve_name(self, _):
-        return self._name
+    def __init__(self, asset_check: ExternalAssetCheck):
+        self._asset_check = asset_check
 
     def resolve_assetKey(self, _):
-        return self._asset_key
+        return self._asset_check.asset_key
 
-    def resolve_description(self, _):
-        return self._description
+    def resolve_name(self, _) -> str:
+        return self._asset_check.name
+
+    def resolve_description(self, _) -> Optional[str]:
+        return self._asset_check.description
+
+    def resolve_severity(self, _) -> GrapheneAssetCheckSeverity:
+        return self._asset_check.severity
 
     def resolve_executions(self, graphene_info: ResolveInfo, **kwargs):
         executions = graphene_info.context.instance.event_log_storage.get_asset_check_executions(
-            asset_key=self._asset_key,
-            check_name=self._name,
+            asset_key=self._asset_check.asset_key,
+            check_name=self._asset_check.name,
             limit=kwargs["limit"],
             cursor=kwargs.get("cursor"),
         )

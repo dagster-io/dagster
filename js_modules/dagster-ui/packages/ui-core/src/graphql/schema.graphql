@@ -3183,7 +3183,13 @@ type AssetCheck {
   name: String!
   assetKey: AssetKey!
   description: String
+  severity: AssetCheckSeverity!
   executions(limit: Int!, cursor: String): [AssetCheckExecution!]!
+}
+
+enum AssetCheckSeverity {
+  WARN
+  ERROR
 }
 
 type AssetCheckExecution {

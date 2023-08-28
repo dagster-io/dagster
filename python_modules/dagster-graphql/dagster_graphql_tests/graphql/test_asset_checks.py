@@ -28,6 +28,7 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
                     path
                 }
                 description
+                severity
             }
         }
     }
@@ -108,9 +109,7 @@ def _evaluation_event(
 
 
 class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
-    def test_asset_checks(self, graphql_context: WorkspaceRequestContext):
-        graphql_context.instance.wipe()
-
+    def test_asset_check_definitions(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(
             graphql_context, GET_ASSET_CHECKS, variables={"assetKey": {"path": ["asset_1"]}}
         )
@@ -123,10 +122,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                             "path": ["asset_1"],
                         },
                         "description": "asset_1 check",
+                        "severity": "ERROR",
                     }
                 ]
             }
         }
+
+    def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
+        graphql_context.instance.wipe()
 
         graphql_context.instance.event_log_storage.store_event(
             _planned_event(

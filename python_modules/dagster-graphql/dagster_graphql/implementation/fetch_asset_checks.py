@@ -25,12 +25,5 @@ def fetch_asset_checks(
                         external_asset_checks.append(external_check)
 
     return GrapheneAssetChecks(
-        checks=[
-            GrapheneAssetCheck(
-                name=check.name,
-                description=check.description,
-                asset_key=asset_key,
-            )
-            for check in external_asset_checks
-        ]
+        checks=[GrapheneAssetCheck(check) for check in external_asset_checks]
     )

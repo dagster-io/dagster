@@ -120,6 +120,7 @@ export type AssetCheck = {
   description: Maybe<Scalars['String']>;
   executions: Array<AssetCheckExecution>;
   name: Scalars['String'];
+  severity: AssetCheckSeverity;
 };
 
 export type AssetCheckExecutionsArgs = {
@@ -186,6 +187,11 @@ export type AssetCheckNeedsMigrationError = Error & {
   __typename: 'AssetCheckNeedsMigrationError';
   message: Scalars['String'];
 };
+
+export enum AssetCheckSeverity {
+  ERROR = 'ERROR',
+  WARN = 'WARN',
+}
 
 export type AssetChecks = {
   __typename: 'AssetChecks';
@@ -4406,6 +4412,10 @@ export const buildAssetCheck = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
     executions: overrides && overrides.hasOwnProperty('executions') ? overrides.executions! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
+    severity:
+      overrides && overrides.hasOwnProperty('severity')
+        ? overrides.severity!
+        : AssetCheckSeverity.ERROR,
   };
 };
 
