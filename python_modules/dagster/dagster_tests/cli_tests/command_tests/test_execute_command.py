@@ -474,3 +474,26 @@ def test_execute_command_help():
     result = runner.invoke(job_execute_command, ["--help"])
 
     assert "multiple times" not in result.stdout
+
+
+def test_op_selection():
+    runner = CliRunner()
+    with instance_for_test() as instance:
+        runner_job_execute(
+            runner,
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-j",
+                "foo",
+                "--op-selection",
+                "*do_something",
+            ],
+        )
+
+        runs = instance.get_run_records()
+        assert len(runs) == 1
+        conn = instance.get_records_for_run(run_id=runs[0].dagster_run.run_id)
+        observed_steps = {record.event_log_entry.step_key for record in conn.records}
+        assert "do_something" in observed_steps
+        assert "do_input" not in observed_steps
