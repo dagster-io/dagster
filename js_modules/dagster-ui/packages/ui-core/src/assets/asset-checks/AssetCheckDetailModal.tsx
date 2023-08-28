@@ -46,7 +46,13 @@ export const AssetCheckDetailModal = ({
   onClose: () => void;
 }) => {
   return (
-    <Dialog isOpen={!!checkName} canOutsideClickClose canEscapeKeyClose onClose={onClose}>
+    <Dialog
+      isOpen={!!checkName}
+      canOutsideClickClose
+      canEscapeKeyClose
+      onClose={onClose}
+      style={{width: '80%', minWidth: '800px'}}
+    >
       {checkName ? (
         <AssetCheckDetailModalImpl checkName={checkName} assetKey={assetKey} onClose={onClose} />
       ) : null}
@@ -90,6 +96,7 @@ const AssetCheckDetailModalImpl = ({
     },
     pageSize: PAGE_SIZE,
   });
+
   // TODO - in a follow up PR we should have some kind of queryRefresh context that can merge all of the uses of queryRefresh.
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -98,7 +105,7 @@ const AssetCheckDetailModalImpl = ({
   const content = () => {
     if (!executionHistoryData) {
       return (
-        <Box flex={{direction: 'column'}}>
+        <Box flex={{direction: 'column'}} padding={24}>
           <Spinner purpose="page" />
         </Box>
       );
@@ -108,7 +115,7 @@ const AssetCheckDetailModalImpl = ({
         flex={{direction: 'column'}}
         border={{side: 'top', color: Colors.KeylineGray, width: 1}}
         // CollapsibleSection uses a white background which covers the border, so add 1px of padding on top for the border
-        padding={{top: 1}}
+        padding={{top: 1, horizontal: 12}}
       >
         <Subtitle2 style={{padding: '8px 16px'}}>Run history</Subtitle2>
         {runHistory()}
@@ -211,6 +218,7 @@ export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntry
         onClose={() => setShowMetadata(false)}
         canOutsideClickClose
         canEscapeKeyClose
+        style={{width: '80%', minWidth: '800px'}}
       >
         <DialogBody>
           <MetadataEntries entries={metadataEntries} />
@@ -281,7 +289,7 @@ export function MigrationRequired() {
               A data migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
-            <Box
+            {/* <Box
               as="a"
               href="https://docs.dagster.io/concepts/assets/asset-checks"
               target="_blank"
@@ -289,7 +297,7 @@ export function MigrationRequired() {
             >
               Learn more about Asset Checks
               <Icon name="open_in_new" color={Colors.Link} />
-            </Box>
+            </Box> */}
           </Box>
         }
       />
@@ -309,7 +317,7 @@ export function NoChecks() {
               Asset Checks run after a materialization and can verify a particular property of a
               data asset. Checks can help ensure that the contents of each data asset is correct.
             </Body2>
-            <Box
+            {/* <Box
               as="a"
               href="https://docs.dagster.io/concepts/assets/asset-checks"
               target="_blank"
@@ -317,7 +325,7 @@ export function NoChecks() {
             >
               Learn more about Asset Checks
               <Icon name="open_in_new" color={Colors.Link} />
-            </Box>
+            </Box> */}
           </Box>
         }
       />
@@ -330,13 +338,13 @@ function NoExecutions() {
     <Box padding={24}>
       <NonIdealState
         icon="asset_check"
-        title="No checks found for this asset"
+        title="No executions found for this check"
         description={
           <Box flex={{direction: 'column'}}>
             <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
               No executions found. Materialize this asset and the check will run automatically.
             </Body2>
-            <Box
+            {/* <Box
               as="a"
               href="https://docs.dagster.io/concepts/assets/asset-checks"
               target="_blank"
@@ -344,7 +352,7 @@ function NoExecutions() {
             >
               Learn more about Asset Checks
               <Icon name="open_in_new" color={Colors.Link} />
-            </Box>
+            </Box> */}
           </Box>
         }
       />

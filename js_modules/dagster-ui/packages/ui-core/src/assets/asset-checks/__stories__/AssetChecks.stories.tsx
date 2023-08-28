@@ -5,6 +5,7 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {buildAssetCheckNeedsMigrationError, buildAssetChecks} from '../../../graphql/types';
 import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
+import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailModal';
 import {ASSET_CHECKS_QUERY, AssetChecks} from '../AssetChecks';
 import {
   TestAssetCheck,
@@ -12,7 +13,12 @@ import {
   testLatestMaterializationTimeStamp,
   testLatestMaterializationRunId,
   TestAssetCheckWarning,
+  TestAssetCheckNoExecutions,
 } from '../__fixtures__/AssetChecks.fixtures';
+import {
+  AssetCheckDetailsQuery,
+  AssetCheckDetailsQueryVariables,
+} from '../types/AssetCheckDetailModal.types';
 import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecks.types';
 
 // eslint-disable-next-line import/no-default-export
@@ -86,6 +92,19 @@ export const Default = () => {
                 TestAssetCheck,
                 TestAssetCheck,
               ],
+            }) as any,
+          },
+        }),
+        buildQueryMock<AssetCheckDetailsQuery, AssetCheckDetailsQueryVariables>({
+          query: ASSET_CHECK_DETAILS_QUERY,
+          variables: {
+            assetKey: testAssetKey,
+            checkName: 'Test check',
+            limit: 6,
+          },
+          data: {
+            assetChecksOrError: buildAssetChecks({
+              checks: [TestAssetCheckNoExecutions],
             }) as any,
           },
         }),
