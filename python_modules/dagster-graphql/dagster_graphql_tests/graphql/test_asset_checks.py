@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events.log import EventLogEntry
+from dagster._core.test_utils import create_run_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -60,9 +61,56 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
 }
 """
 
+GET_LOGS_FOR_RUN = """
+query GetLogsForRun($runId: ID!) {
+  logsForRun(runId: $runId) {
+    __typename
+    ... on EventConnection {
+      events {
+        __typename
+      }
+    }
+  }
+}
+"""
+
+
+def _planned_event(run_id: str, planned: AssetCheckEvaluationPlanned) -> EventLogEntry:
+    return EventLogEntry(
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
+        dagster_event=DagsterEvent(
+            DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+            "nonce",
+            event_specific_data=planned,
+        ),
+    )
+
+
+def _evaluation_event(
+    run_id: str, evaluation: AssetCheckEvaluation, timestamp=None
+) -> EventLogEntry:
+    return EventLogEntry(
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=timestamp or time.time(),
+        dagster_event=DagsterEvent(
+            DagsterEventType.ASSET_CHECK_EVALUATION.value,
+            "nonce",
+            event_specific_data=evaluation,
+        ),
+    )
+
 
 class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
-    def test_asset_checks(self, graphql_context: WorkspaceRequestContext, snapshot):
+    def test_asset_checks(self, graphql_context: WorkspaceRequestContext):
+        graphql_context.instance.wipe()
+
         res = execute_dagster_graphql(
             graphql_context, GET_ASSET_CHECKS, variables={"assetKey": {"path": ["asset_1"]}}
         )
@@ -81,19 +129,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         }
 
         graphql_context.instance.event_log_storage.store_event(
-            EventLogEntry(
-                error_info=None,
-                user_message="",
-                level="debug",
-                run_id="foo",
-                timestamp=time.time(),
-                dagster_event=DagsterEvent(
-                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
-                    "nonce",
-                    event_specific_data=AssetCheckEvaluationPlanned(
-                        asset_key=AssetKey(["asset_1"]), check_name="my_check"
-                    ),
-                ),
+            _planned_event(
+                "foo",
+                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
             )
         )
 
@@ -122,25 +160,18 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         evaluation_timestamp = time.time()
 
         graphql_context.instance.event_log_storage.store_event(
-            EventLogEntry(
-                error_info=None,
-                user_message="",
-                level="debug",
-                run_id="foo",
-                timestamp=evaluation_timestamp,
-                dagster_event=DagsterEvent(
-                    DagsterEventType.ASSET_CHECK_EVALUATION.value,
-                    "nonce",
-                    event_specific_data=AssetCheckEvaluation(
-                        asset_key=AssetKey(["asset_1"]),
-                        check_name="my_check",
-                        success=True,
-                        metadata={"foo": MetadataValue.text("bar")},
-                        target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
-                            storage_id=42, run_id="bizbuz", timestamp=3.3
-                        ),
+            _evaluation_event(
+                "foo",
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["asset_1"]),
+                    check_name="my_check",
+                    success=True,
+                    metadata={"foo": MetadataValue.text("bar")},
+                    target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                        storage_id=42, run_id="bizbuz", timestamp=3.3
                     ),
                 ),
+                timestamp=evaluation_timestamp,
             )
         )
 
@@ -172,6 +203,47 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                             }
                         ],
                     }
+                ],
+            }
+        }
+
+    def test_asset_check_events(self, graphql_context: WorkspaceRequestContext):
+        graphql_context.instance.wipe()
+
+        create_run_for_test(graphql_context.instance, run_id="foo")
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                "foo",
+                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+            )
+        )
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                "foo",
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["asset_1"]),
+                    check_name="my_check",
+                    success=True,
+                    metadata={"foo": MetadataValue.text("bar")},
+                    target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                        storage_id=42, run_id="bizbuz", timestamp=3.3
+                    ),
+                ),
+            )
+        )
+
+        res = execute_dagster_graphql(graphql_context, GET_LOGS_FOR_RUN, variables={"runId": "foo"})
+        assert res.data == {
+            "logsForRun": {
+                "__typename": "EventConnection",
+                "events": [
+                    {
+                        "__typename": "AssetCheckEvaluationPlannedEvent",
+                    },
+                    {
+                        "__typename": "AssetCheckEvaluationEvent",
+                    },
                 ],
             }
         }

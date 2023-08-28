@@ -1080,6 +1080,8 @@ union DagsterRunEvent =
   | AlertSuccessEvent
   | AlertFailureEvent
   | AssetMaterializationPlannedEvent
+  | AssetCheckEvaluationPlannedEvent
+  | AssetCheckEvaluationEvent
 
 type LogsCapturedEvent implements MessageEvent {
   runId: String!
@@ -1129,6 +1131,41 @@ type AlertFailureEvent implements MessageEvent & RunEvent {
   solidHandleID: String
   eventType: DagsterEventType
   pipelineName: String!
+}
+
+type AssetCheckEvaluationPlannedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  assetKey: AssetKey!
+  checkName: String!
+}
+
+type AssetCheckEvaluationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  evaluation: AssetCheckEvaluation!
+}
+
+type AssetCheckEvaluation {
+  timestamp: Float!
+  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
+  metadataEntries: [MetadataEntry!]!
+}
+
+type AssetCheckEvaluationTargetMaterializationData {
+  storageId: Int!
+  runId: String!
+  timestamp: Float!
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -3160,18 +3197,6 @@ enum AssetCheckExecutionStatus {
   PLANNED
   SUCCESS
   FAILURE
-}
-
-type AssetCheckEvaluation {
-  timestamp: Float!
-  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
-  metadataEntries: [MetadataEntry!]!
-}
-
-type AssetCheckEvaluationTargetMaterializationData {
-  storageId: Int!
-  runId: String!
-  timestamp: Float!
 }
 
 type AssetCheckNeedsMigrationError implements Error {

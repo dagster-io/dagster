@@ -134,6 +134,33 @@ export type AssetCheckEvaluation = {
   timestamp: Scalars['Float'];
 };
 
+export type AssetCheckEvaluationEvent = MessageEvent &
+  StepEvent & {
+    __typename: 'AssetCheckEvaluationEvent';
+    evaluation: AssetCheckEvaluation;
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String'];
+    runId: Scalars['String'];
+    solidHandleID: Maybe<Scalars['String']>;
+    stepKey: Maybe<Scalars['String']>;
+    timestamp: Scalars['String'];
+  };
+
+export type AssetCheckEvaluationPlannedEvent = MessageEvent &
+  StepEvent & {
+    __typename: 'AssetCheckEvaluationPlannedEvent';
+    assetKey: AssetKey;
+    checkName: Scalars['String'];
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String'];
+    runId: Scalars['String'];
+    solidHandleID: Maybe<Scalars['String']>;
+    stepKey: Maybe<Scalars['String']>;
+    timestamp: Scalars['String'];
+  };
+
 export type AssetCheckEvaluationTargetMaterializationData = {
   __typename: 'AssetCheckEvaluationTargetMaterializationData';
   runId: Scalars['String'];
@@ -699,6 +726,8 @@ export type DagsterRunEvent =
   | AlertFailureEvent
   | AlertStartEvent
   | AlertSuccessEvent
+  | AssetCheckEvaluationEvent
+  | AssetCheckEvaluationPlannedEvent
   | AssetMaterializationPlannedEvent
   | EngineEvent
   | ExecutionStepFailureEvent
@@ -4397,6 +4426,64 @@ export const buildAssetCheckEvaluation = (
         ? ({} as AssetCheckEvaluationTargetMaterializationData)
         : buildAssetCheckEvaluationTargetMaterializationData({}, relationshipsToOmit),
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.02,
+  };
+};
+
+export const buildAssetCheckEvaluationEvent = (
+  overrides?: Partial<AssetCheckEvaluationEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckEvaluationEvent'} & AssetCheckEvaluationEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckEvaluationEvent');
+  return {
+    __typename: 'AssetCheckEvaluationEvent',
+    evaluation:
+      overrides && overrides.hasOwnProperty('evaluation')
+        ? overrides.evaluation!
+        : relationshipsToOmit.has('AssetCheckEvaluation')
+        ? ({} as AssetCheckEvaluation)
+        : buildAssetCheckEvaluation({}, relationshipsToOmit),
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ut',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aperiam',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'culpa',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'quod',
+    timestamp:
+      overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'voluptatem',
+  };
+};
+
+export const buildAssetCheckEvaluationPlannedEvent = (
+  overrides?: Partial<AssetCheckEvaluationPlannedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckEvaluationPlannedEvent'} & AssetCheckEvaluationPlannedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckEvaluationPlannedEvent');
+  return {
+    __typename: 'AssetCheckEvaluationPlannedEvent',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    checkName: overrides && overrides.hasOwnProperty('checkName') ? overrides.checkName! : 'vitae',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'occaecati',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'illum',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'provident',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'et',
   };
 };
 
