@@ -5,6 +5,7 @@ import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 describe('buildAssetTabs', () => {
   const definitionWithPartition: AssetViewDefinitionNodeFragment = {
     id: 'dagster_test.toys.repo.auto_materialize_repo_2.["eager_downstream_3_partitioned"]',
+    hasAssetChecks: false,
     groupName: 'default',
     partitionDefinition: {
       description: 'Daily, starting 2023-02-01 UTC.',
@@ -159,6 +160,7 @@ describe('buildAssetTabs', () => {
   const definitionWithoutPartition: AssetViewDefinitionNodeFragment = {
     id: 'dagster_test.toys.repo.auto_materialize_repo_1.["lazy_downstream_1"]',
     groupName: 'default',
+    hasAssetChecks: false,
     partitionDefinition: null,
     partitionKeysByDimension: [],
     repository: {
@@ -307,7 +309,6 @@ describe('buildAssetTabs', () => {
     expect(tabKeys).toEqual([
       'partitions',
       'events',
-      'checks',
       'plots',
       'definition',
       'lineage',
@@ -321,7 +322,7 @@ describe('buildAssetTabs', () => {
       params,
     });
     const tabKeys = tabList.map(({id}) => id);
-    expect(tabKeys).toEqual(['partitions', 'events', 'checks', 'plots', 'definition', 'lineage']);
+    expect(tabKeys).toEqual(['partitions', 'events', 'plots', 'definition', 'lineage']);
   });
 
   it('hides partitions tab if no partitions', () => {
@@ -332,7 +333,6 @@ describe('buildAssetTabs', () => {
     const tabKeys = tabList.map(({id}) => id);
     expect(tabKeys).toEqual([
       'events',
-      'checks',
       'plots',
       'definition',
       'lineage',
@@ -346,6 +346,6 @@ describe('buildAssetTabs', () => {
       params,
     });
     const tabKeys = tabList.map(({id}) => id);
-    expect(tabKeys).toEqual(['events', 'checks', 'plots', 'definition', 'lineage']);
+    expect(tabKeys).toEqual(['events', 'plots', 'definition', 'lineage']);
   });
 });

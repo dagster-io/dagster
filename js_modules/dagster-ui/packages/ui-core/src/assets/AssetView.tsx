@@ -423,6 +423,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         name
       }
     }
+    hasAssetChecks
 
     ...AssetNodeInstigatorsFragment
     ...AssetNodeDefinitionFragment

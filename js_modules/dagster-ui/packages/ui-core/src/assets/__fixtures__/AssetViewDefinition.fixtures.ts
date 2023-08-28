@@ -63,6 +63,7 @@ export const AssetViewDefinitionSourceAsset: MockedResponse<AssetViewDefinitionQ
         },
         assetMaterializations: [],
         definition: {
+          hasAssetChecks: false,
           id: 'test.py.repo.["observable_source_asset"]',
           groupName: 'GROUP3',
           partitionDefinition: null,
@@ -129,6 +130,7 @@ export const AssetViewDefinitionSDA: MockedResponse<AssetViewDefinitionQuery> = 
         },
         assetMaterializations: [],
         definition: {
+          hasAssetChecks: false,
           id: 'test.py.repo.["sda_asset"]',
           groupName: 'GROUP3',
           partitionDefinition: null,
