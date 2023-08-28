@@ -72,7 +72,7 @@ export type GetEvaluationsQuery = {
             __typename: 'AutoMaterializeRule';
             description: string;
             decisionType: Types.AutoMaterializeDecisionType;
-          }>;
+          }> | null;
         }>;
       }
     | null;
@@ -118,7 +118,7 @@ export type AutoMaterializeEvaluationRecordItemFragment = {
     __typename: 'AutoMaterializeRule';
     description: string;
     decisionType: Types.AutoMaterializeDecisionType;
-  }>;
+  }> | null;
 };
 
 export type RuleWithEvaluationsFragment = {

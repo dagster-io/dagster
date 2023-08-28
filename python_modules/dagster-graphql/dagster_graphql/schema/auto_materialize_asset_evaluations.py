@@ -181,7 +181,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     rulesWithRuleEvaluations = non_null_list(GrapheneAutoMaterializeRuleWithRuleEvaluations)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
-    rules = non_null_list(GrapheneAutoMaterializeRule)
+    rules = graphene.Field(graphene.List(graphene.NonNull(GrapheneAutoMaterializeRule)))
 
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
@@ -202,10 +202,14 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             ),
             timestamp=record.timestamp,
             runIds=record.evaluation.run_ids,
-            rules=[
-                GrapheneAutoMaterializeRule(snapshot)
-                for snapshot in record.evaluation.rule_snapshots
-            ],
+            rules=(
+                [
+                    GrapheneAutoMaterializeRule(snapshot)
+                    for snapshot in record.evaluation.rule_snapshots
+                ]
+                if record.evaluation.rule_snapshots is not None
+                else None  # Return None if no rules serialized in evaluation
+            ),
         )
 
 

@@ -434,7 +434,7 @@ export type AutoMaterializeAssetEvaluationRecord = {
   numDiscarded: Scalars['Int'];
   numRequested: Scalars['Int'];
   numSkipped: Scalars['Int'];
-  rules: Array<AutoMaterializeRule>;
+  rules: Maybe<Array<AutoMaterializeRule>>;
   rulesWithRuleEvaluations: Array<AutoMaterializeRuleWithRuleEvaluations>;
   runIds: Array<Scalars['String']>;
   timestamp: Scalars['Float'];

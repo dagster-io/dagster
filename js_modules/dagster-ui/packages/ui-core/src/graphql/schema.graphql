@@ -3130,7 +3130,7 @@ type AutoMaterializeAssetEvaluationRecord {
   rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
   timestamp: Float!
   runIds: [String!]!
-  rules: [AutoMaterializeRule!]!
+  rules: [AutoMaterializeRule!]
 }
 
 type AutoMaterializeRuleWithRuleEvaluations {

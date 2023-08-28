@@ -632,7 +632,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
     num_skipped: int
     num_discarded: int
     run_ids: Set[str] = set()
-    rule_snapshots: Optional[Sequence[AutoMaterializeRuleSnapshot]] = list()
+    rule_snapshots: Optional[Sequence[AutoMaterializeRuleSnapshot]] = None
 
     @staticmethod
     def from_rule_evaluation_results(
