@@ -21,6 +21,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
 )
+from dagster._core.storage.io_manager import IOManager
 
 
 def test_asset_check_same_op():
@@ -330,3 +331,46 @@ def test_result_missing_asset_key():
         ),
     ):
         materialize(assets=[asset_1_and_2])
+
+
+def test_asset_check_doesnt_store_output():
+    handle_output_called = 0
+
+    class DummyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert context
+            assert obj == "the-only-allowed-output"
+
+            nonlocal handle_output_called
+            handle_output_called += 1
+
+        def load_input(self, context):
+            assert context
+            return {}
+
+    @asset(check_specs=[AssetCheckSpec("check1", asset_key="asset1", description="desc")])
+    def asset1():
+        yield Output("the-only-allowed-output")
+        yield AssetCheckResult(check_name="check1", success=True, metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = materialize(
+        assets=[asset1], instance=instance, resources={"io_manager": DummyIOManager()}
+    )
+    assert result.success
+    assert handle_output_called == 1
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == asset1.key
+    assert check_eval.check_name == "check1"
+    assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
+
+    assert check_eval.target_materialization_data is not None
+    assert check_eval.target_materialization_data.run_id == result.run_id
+    materialization_record = instance.get_event_records(
+        EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION)
+    )[0]
+    assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
+    assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
