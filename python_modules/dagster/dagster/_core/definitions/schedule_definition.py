@@ -535,7 +535,7 @@ class ScheduleDefinition(IHasInternalInit):
             job=new_job,
             default_status=self.default_status,
             environment_vars=self._environment_vars,
-            required_resource_keys=self.required_resource_keys,
+            required_resource_keys=self._raw_required_resource_keys,
             run_config=None,  # run_config, tags, should_execute encapsulated in execution_fn
             run_config_fn=None,
             tags=None,
@@ -707,14 +707,14 @@ class ScheduleDefinition(IHasInternalInit):
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
-            "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+            "Cannot specify resource requirements in both @schedule decorator and as arguments to"
             " the decorated function",
         )
 
-        self._required_resource_keys = (
-            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            or resource_arg_names
+        self._raw_required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
         )
+        self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
 
     @staticmethod
     def dagster_internal_init(
