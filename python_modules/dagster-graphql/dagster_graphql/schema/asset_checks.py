@@ -114,7 +114,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_description(self, _) -> Optional[str]:
         return self._asset_check.description
 
-    def resolve_severity(self, _) -> GrapheneAssetCheckSeverity:
+    def resolve_severity(self, _) -> AssetCheckSeverity:
         return self._asset_check.severity
 
     def resolve_executions(self, graphene_info: ResolveInfo, **kwargs):
