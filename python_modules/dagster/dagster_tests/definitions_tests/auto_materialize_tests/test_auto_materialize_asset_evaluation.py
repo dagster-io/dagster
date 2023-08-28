@@ -100,6 +100,11 @@ def test_backcompat():
         num_discarded=0,
         dynamic_partitions_store=None,
     )
+
+    # This field is populated via the auto materialize policies on the asset graph,
+    # replace to be None
+    expected_asset_evaluation.rule_snapshots._replace(rule_snapshots=None)
+
     # json doesn't handle tuples, so they get turned into lists
     assert (
         deserialize_value(serialized_asset_evaluation)._replace(
