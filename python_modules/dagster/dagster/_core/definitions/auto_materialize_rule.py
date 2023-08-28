@@ -18,6 +18,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._annotations import experimental
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
@@ -33,6 +34,7 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .asset_graph import AssetGraph, sort_key_for_asset_partition
 from .partition import SerializedPartitionsSubset
@@ -227,7 +229,8 @@ class AutoMaterializeRule(ABC):
     @staticmethod
     def materialize_on_required_for_freshness() -> "MaterializeOnRequiredForFreshnessRule":
         """Materialize an asset partition if it is required to satisfy a freshness policy."""
-        return MaterializeOnRequiredForFreshnessRule()
+        with disable_dagster_warnings():
+            return MaterializeOnRequiredForFreshnessRule()
 
     @public
     @staticmethod
@@ -235,13 +238,15 @@ class AutoMaterializeRule(ABC):
         """Materialize an asset partition if one of its parents has been updated more recently
         than it has.
         """
-        return MaterializeOnParentUpdatedRule()
+        with disable_dagster_warnings():
+            return MaterializeOnParentUpdatedRule()
 
     @public
     @staticmethod
     def materialize_on_missing() -> "MaterializeOnMissingRule":
         """Materialize an asset partition if it has never been materialized before."""
-        return MaterializeOnMissingRule()
+        with disable_dagster_warnings():
+            return MaterializeOnMissingRule()
 
     @public
     @staticmethod
@@ -249,7 +254,8 @@ class AutoMaterializeRule(ABC):
         """Skip materializing an asset partition if any of its parents has not incorporated the
         latest data from its ancestors.
         """
-        return SkipOnParentOutdatedRule()
+        with disable_dagster_warnings():
+            return SkipOnParentOutdatedRule()
 
     @public
     @staticmethod
@@ -257,7 +263,8 @@ class AutoMaterializeRule(ABC):
         """Skip materializing an asset partition if one of its parent asset partitions has never
         been materialized (for regular assets) or observed (for observable source assets).
         """
-        return SkipOnParentMissingRule()
+        with disable_dagster_warnings():
+            return SkipOnParentMissingRule()
 
     @public
     @staticmethod
@@ -275,7 +282,8 @@ class AutoMaterializeRule(ABC):
                 least one upstream partition in each upstream asset to be materialized since the downstream
                 asset's last materialization in order to update it. Defaults to false.
         """
-        return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
+        with disable_dagster_warnings():
+            return SkipOnNotAllParentsUpdatedRule(require_update_for_all_parent_partitions)
 
     def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
         """Returns a serializable snapshot of this rule for historical evaluations."""
@@ -290,6 +298,7 @@ class AutoMaterializeRule(ABC):
         return hash(hash(type(self)) + super().__hash__())
 
 
+@experimental
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
@@ -314,6 +323,7 @@ class MaterializeOnRequiredForFreshnessRule(
         return freshness_conditions
 
 
+@experimental
 @whitelist_for_serdes
 class MaterializeOnParentUpdatedRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnParentUpdatedRule", [])
@@ -385,6 +395,7 @@ class MaterializeOnParentUpdatedRule(
         return []
 
 
+@experimental
 @whitelist_for_serdes
 class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMissingRule", [])):
     @property
@@ -421,6 +432,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         return []
 
 
+@experimental
 @whitelist_for_serdes
 class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOutdatedRule", [])):
     @property
@@ -456,6 +468,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return []
 
 
+@experimental
 @whitelist_for_serdes
 class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMissingRule", [])):
     @property
@@ -497,6 +510,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         return []
 
 
+@experimental
 @whitelist_for_serdes
 class SkipOnNotAllParentsUpdatedRule(
     AutoMaterializeRule,
@@ -585,6 +599,7 @@ class SkipOnNotAllParentsUpdatedRule(
         return []
 
 
+@experimental
 @whitelist_for_serdes
 class DiscardOnMaxMaterializationsExceededRule(
     AutoMaterializeRule, NamedTuple("_DiscardOnMaxMaterializationsExceededRule", [("limit", int)])
