@@ -3,17 +3,14 @@ import {Meta} from '@storybook/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {
-  buildAssetCheckNeedsMigrationError,
-  buildAssetChecks,
-  buildAssetNode,
-} from '../../../graphql/types';
+import {buildAssetCheckNeedsMigrationError, buildAssetChecks} from '../../../graphql/types';
 import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {ASSET_CHECKS_QUERY, AssetChecks} from '../AssetChecks';
 import {
   TestAssetCheck,
   testAssetKey,
   testLatestMaterializationTimeStamp,
+  testLatestMaterializationRunId,
 } from '../__fixtures__/AssetChecks.fixtures';
 import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecks.types';
 
@@ -28,9 +25,9 @@ const Component = ({mocks}: {mocks: MockedResponse[]}) => {
     <MemoryRouter>
       <MockedProvider mocks={mocks}>
         <AssetChecks
-          definition={buildAssetNode({}) as any}
           assetKey={testAssetKey}
           lastMaterializationTimestamp={testLatestMaterializationTimeStamp.toString()}
+          lastMaterializationRunId={testLatestMaterializationRunId.toString()}
         />
       </MockedProvider>
     </MemoryRouter>

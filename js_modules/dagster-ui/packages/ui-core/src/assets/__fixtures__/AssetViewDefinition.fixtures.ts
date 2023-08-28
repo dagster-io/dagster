@@ -2,7 +2,9 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {AssetGraphQuery} from '../../asset-graph/types/useAssetGraphData.types';
 import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
+import {buildAsset, buildMaterializationEvent} from '../../graphql/types';
 import {ASSET_VIEW_DEFINITION_QUERY} from '../AssetView';
+import {buildQueryMock} from '../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {AssetViewDefinitionQuery} from '../types/AssetView.types';
 
 export const LatestMaterializationTimestamp = '1671568270073';
@@ -20,34 +22,28 @@ export const AssetGraphEmpty: MockedResponse<AssetGraphQuery> = {
   },
 };
 
-export const AssetViewDefinitionNonSDA: MockedResponse<AssetViewDefinitionQuery> = {
-  request: {
-    query: ASSET_VIEW_DEFINITION_QUERY,
-    variables: {
-      assetKey: {path: ['non_sda_asset']},
-    },
+export const AssetViewDefinitionNonSDA: MockedResponse<AssetViewDefinitionQuery> = buildQueryMock({
+  query: ASSET_VIEW_DEFINITION_QUERY,
+  variables: {
+    assetKey: {path: ['non_sda_asset']},
   },
-  result: {
-    data: {
-      __typename: 'Query',
-      assetOrError: {
-        id: '["non_sda_asset"]',
-        key: {
-          path: ['non_sda_asset'],
-          __typename: 'AssetKey',
-        },
-        assetMaterializations: [
-          {
-            timestamp: LatestMaterializationTimestamp,
-            __typename: 'MaterializationEvent',
-          },
-        ],
-        definition: null,
-        __typename: 'Asset',
+  data: {
+    assetOrError: {
+      id: '["non_sda_asset"]',
+      key: {
+        path: ['non_sda_asset'],
+        __typename: 'AssetKey',
       },
+      assetMaterializations: [
+        buildMaterializationEvent({
+          timestamp: LatestMaterializationTimestamp,
+        }),
+      ],
+      definition: null,
+      __typename: 'Asset',
     },
   },
-};
+});
 
 export const AssetViewDefinitionSourceAsset: MockedResponse<AssetViewDefinitionQuery> = {
   request: {

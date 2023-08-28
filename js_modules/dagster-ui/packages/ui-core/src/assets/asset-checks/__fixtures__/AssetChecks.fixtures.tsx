@@ -13,6 +13,7 @@ import {
 
 export const testAssetKey = {path: ['test']};
 export const testLatestMaterializationTimeStamp = Date.now();
+export const testLatestMaterializationRunId = 'abc123d6';
 
 export const TestAssetCheck = buildAssetCheck({
   assetKey: buildAssetKey(testAssetKey),
@@ -23,6 +24,7 @@ export const TestAssetCheck = buildAssetCheck({
       evaluation: buildAssetCheckEvaluation({
         metadataEntries: [buildBoolMetadataEntry({})],
       }),
+      runId: testLatestMaterializationRunId,
     }),
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({

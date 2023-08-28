@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -29,14 +29,11 @@ import {METADATA_ENTRY_FRAGMENT, MetadataEntries} from '../../metadata/MetadataE
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntry.types';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {Collapsible} from '../AutoMaterializePolicyPage/CollapsibleSection';
 
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
-  AssetCheckLatestExecutionDetailsQuery,
-  AssetCheckLatestExecutionDetailsQueryVariables,
 } from './types/AssetCheckDetailModal.types';
 
 export const AssetCheckDetailModal = ({
@@ -70,12 +67,6 @@ const AssetCheckDetailModalImpl = ({
   useTrackPageView();
   useDocumentTitle(`Asset Check | ${checkName}`);
 
-  const {data} = useQuery<
-    AssetCheckLatestExecutionDetailsQuery,
-    AssetCheckLatestExecutionDetailsQueryVariables
-  >(ASSET_CHECK_LATEST_EXECUTION_QUERY, {
-    variables: {assetKey, checkName},
-  });
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     AssetCheckDetailsQuery,
     AssetCheckDetailsQueryVariables
@@ -89,10 +80,6 @@ const AssetCheckDetailModalImpl = ({
       if (!data || data.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
         return undefined;
       }
-      console.log(
-        {data},
-        data.assetChecksOrError.checks[0]?.executions[PAGE_SIZE - 1]?.id.toString(),
-      );
       return data.assetChecksOrError.checks[0]?.executions[PAGE_SIZE - 1]?.id.toString();
     },
     getResultArray: (data) => {
@@ -109,7 +96,7 @@ const AssetCheckDetailModalImpl = ({
   const {data: executionHistoryData} = queryResult;
 
   const content = () => {
-    if (!data) {
+    if (!executionHistoryData) {
       return (
         <Box flex={{direction: 'column'}}>
           <Spinner purpose="page" />
@@ -270,26 +257,6 @@ export const ASSET_CHECK_DETAILS_QUERY = gql`
           name
           description
           executions(limit: $limit, cursor: $cursor) {
-            ...AssetCheckExecutionFragment
-          }
-        }
-      }
-      ... on AssetCheckNeedsMigrationError {
-        message
-      }
-    }
-  }
-  ${ASSET_CHECK_EXECUTION_FRAGMENT}
-`;
-
-export const ASSET_CHECK_LATEST_EXECUTION_QUERY = gql`
-  query AssetCheckLatestExecutionDetailsQuery($assetKey: AssetKeyInput!, $checkName: String!) {
-    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
-      ... on AssetChecks {
-        checks {
-          name
-          description
-          executions(limit: 1) {
             ...AssetCheckExecutionFragment
           }
         }

@@ -21,7 +21,6 @@ export const AssetChecks = ({
   lastMaterializationRunId,
   assetKey,
 }: {
-  definition: AssetDefinition;
   assetKey: AssetKey;
   lastMaterializationTimestamp: string | undefined;
   lastMaterializationRunId: string | undefined;

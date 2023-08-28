@@ -221,7 +221,6 @@ export const AssetView = ({assetKey}: Props) => {
     return (
       <AssetChecks
         assetKey={assetKey}
-        definition={definition}
         lastMaterializationTimestamp={lastMaterialization?.timestamp}
         lastMaterializationRunId={lastMaterialization?.runId}
       />
