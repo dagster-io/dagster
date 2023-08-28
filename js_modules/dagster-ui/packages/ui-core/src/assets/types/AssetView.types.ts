@@ -13,7 +13,11 @@ export type AssetViewDefinitionQuery = {
         __typename: 'Asset';
         id: string;
         key: {__typename: 'AssetKey'; path: Array<string>};
-        assetMaterializations: Array<{__typename: 'MaterializationEvent'; timestamp: string}>;
+        assetMaterializations: Array<{
+          __typename: 'MaterializationEvent';
+          timestamp: string;
+          runId: string;
+        }>;
         definition: {
           __typename: 'AssetNode';
           id: string;

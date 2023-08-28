@@ -49,6 +49,7 @@ import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {OverdueTag} from './OverdueTag';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
+import {AssetChecks} from './asset-checks/AssetChecks';
 import {AssetKey, AssetViewParams} from './types';
 import {
   AssetViewDefinitionQuery,
@@ -213,6 +214,19 @@ export const AssetView = ({assetKey}: Props) => {
     );
   };
 
+  const renderChecksTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
+    return (
+      <AssetChecks
+        assetKey={assetKey}
+        lastMaterializationTimestamp={lastMaterialization?.timestamp}
+        lastMaterializationRunId={lastMaterialization?.runId}
+      />
+    );
+  };
+
   const renderContent = () => {
     switch (selectedTab) {
       case 'definition':
@@ -227,6 +241,8 @@ export const AssetView = ({assetKey}: Props) => {
         return renderPlotsTab();
       case 'auto-materialize-history':
         return renderAutomaterializeHistoryTab();
+      case 'checks':
+        return renderChecksTab();
       default:
         return renderFeatureView({
           selectedTab,
@@ -380,6 +396,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         }
         assetMaterializations(limit: 1) {
           timestamp
+          runId
         }
         definition {
           id

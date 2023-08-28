@@ -32,6 +32,7 @@ export const AssetTabs = (props: Props) => {
 export const DEFAULT_ASSET_TAB_ORDER = [
   'partitions',
   'events',
+  'checks',
   'plots',
   'definition',
   'lineage',
@@ -61,6 +62,11 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       title: 'Partitions',
       to: buildAssetViewParams({...params, view: 'partitions'}),
       hidden: !definition?.partitionDefinition,
+    },
+    checks: {
+      id: 'checks',
+      title: 'Checks',
+      to: buildAssetViewParams({...params, view: 'checks'}),
     },
     events: {
       id: 'events',

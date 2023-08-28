@@ -10,36 +10,58 @@ interface Props {
 }
 
 export const CollapsibleSection = ({header, details, headerRightSide, children}: Props) => {
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
   return (
-    <Box
-      flex={{direction: 'column'}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-    >
-      <SectionHeader onClick={() => setIsCollapsed(!isCollapsed)}>
+    <Collapsible
+      header={
         <Box
           flex={{
             justifyContent: 'space-between',
             gap: 12,
             grow: 1,
           }}
-          padding={{vertical: 8, horizontal: 16}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
           <Box flex={{direction: 'row', alignItems: 'center', gap: 4, grow: 1}}>
-            <Icon
-              name="arrow_drop_down"
-              style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
-            />
             <Subheading>{header}</Subheading>
-            <Tooltip content={details} placement="top">
-              <Icon color={Colors.Gray500} name="info" />
-            </Tooltip>
+            {details ? (
+              <Tooltip content={details} placement="top">
+                <Icon color={Colors.Gray500} name="info" />
+              </Tooltip>
+            ) : null}
           </Box>
           {headerRightSide}
         </Box>
-      </SectionHeader>
-      {isCollapsed ? null : <Box padding={{vertical: 12, left: 32, right: 16}}>{children}</Box>}
+      }
+    >
+      <Box padding={{vertical: 12, left: 32, right: 16}}>{children}</Box>
+    </Collapsible>
+  );
+};
+
+export const Collapsible = ({
+  header,
+  children,
+}: {
+  header: React.ReactNode;
+  children: React.ReactNode;
+}) => {
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  return (
+    <Box
+      flex={{direction: 'column'}}
+      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+    >
+      <Box
+        flex={{direction: 'row', alignItems: 'center'}}
+        padding={{vertical: 8, horizontal: 16}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      >
+        <Icon
+          name="arrow_drop_down"
+          style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
+        />
+        <SectionHeader onClick={() => setIsCollapsed(!isCollapsed)}>{header}</SectionHeader>
+      </Box>
+      {isCollapsed ? null : children}
     </Box>
   );
 };
