@@ -10,7 +10,7 @@
 
 ### Bugfixes
 
-- Fixed an issue that caused some missing icons in the UI.
+- [dagster-webserver] Fixed an issue that caused some missing icons in the UI.
 
 # 1.4.8 / 0.20.8 (libraries)
 
