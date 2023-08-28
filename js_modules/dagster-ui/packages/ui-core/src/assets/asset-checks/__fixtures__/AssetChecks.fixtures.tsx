@@ -1,10 +1,12 @@
 import {
+  AssetCheckExecutionStatus,
+  AssetCheckSeverity,
   buildAssetCheck,
   buildAssetCheckEvaluation,
   buildAssetCheckEvaluationTargetMaterializationData,
   buildAssetCheckExecution,
   buildAssetKey,
-  buildBoolMetadataEntry,
+  buildIntMetadataEntry,
   buildTable,
   buildTableColumn,
   buildTableMetadataEntry,
@@ -19,17 +21,67 @@ export const TestAssetCheck = buildAssetCheck({
   assetKey: buildAssetKey(testAssetKey),
   name: 'Test check',
   description: 'Test description',
+  severity: AssetCheckSeverity.ERROR,
   executions: [
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({
-        metadataEntries: [buildBoolMetadataEntry({})],
+        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
+          timestamp: testLatestMaterializationTimeStamp,
+          runId: testLatestMaterializationRunId,
+        }),
+        metadataEntries: [buildIntMetadataEntry({})],
       }),
       runId: testLatestMaterializationRunId,
+      status: AssetCheckExecutionStatus.FAILURE,
     }),
     buildAssetCheckExecution({
       evaluation: buildAssetCheckEvaluation({
         targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
           timestamp: testLatestMaterializationTimeStamp,
+          runId: testLatestMaterializationRunId,
+        }),
+        metadataEntries: [
+          buildTableMetadataEntry({
+            table: buildTable({
+              records: [JSON.stringify({test: 'hi'})],
+              schema: buildTableSchema({
+                columns: [
+                  buildTableColumn({
+                    name: 'test',
+                    description: 'A test column description',
+                  }),
+                ],
+              }),
+            }),
+          }),
+        ],
+      }),
+    }),
+  ],
+});
+
+export const TestAssetCheckWarning = buildAssetCheck({
+  assetKey: buildAssetKey(testAssetKey),
+  name: 'Test check warning',
+  description: 'Test description',
+  severity: AssetCheckSeverity.WARN,
+  executions: [
+    buildAssetCheckExecution({
+      evaluation: buildAssetCheckEvaluation({
+        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
+          timestamp: testLatestMaterializationTimeStamp,
+          runId: testLatestMaterializationRunId,
+        }),
+        metadataEntries: [buildIntMetadataEntry({})],
+      }),
+      runId: testLatestMaterializationRunId,
+      status: AssetCheckExecutionStatus.FAILURE,
+    }),
+    buildAssetCheckExecution({
+      evaluation: buildAssetCheckEvaluation({
+        targetMaterialization: buildAssetCheckEvaluationTargetMaterializationData({
+          timestamp: testLatestMaterializationTimeStamp,
+          runId: testLatestMaterializationRunId,
         }),
         metadataEntries: [
           buildTableMetadataEntry({

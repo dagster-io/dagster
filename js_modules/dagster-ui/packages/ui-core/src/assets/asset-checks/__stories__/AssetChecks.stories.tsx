@@ -11,6 +11,7 @@ import {
   testAssetKey,
   testLatestMaterializationTimeStamp,
   testLatestMaterializationRunId,
+  TestAssetCheckWarning,
 } from '../__fixtures__/AssetChecks.fixtures';
 import {AssetChecksQuery, AssetChecksQueryVariables} from '../types/AssetChecks.types';
 
@@ -79,7 +80,7 @@ export const Default = () => {
             assetChecksOrError: buildAssetChecks({
               checks: [
                 TestAssetCheck,
-                TestAssetCheck,
+                TestAssetCheckWarning,
                 TestAssetCheck,
                 TestAssetCheck,
                 TestAssetCheck,

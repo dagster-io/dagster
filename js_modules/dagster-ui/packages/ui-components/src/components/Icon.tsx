@@ -140,6 +140,7 @@ import view_list from '../icon-svgs/view_list.svg';
 import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
 import warning from '../icon-svgs/warning.svg';
+import warning_outline from '../icon-svgs/warning_outline.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
 import workspaces from '../icon-svgs/workspaces.svg';
 import wysiwyg from '../icon-svgs/wysiwyg.svg';
@@ -304,6 +305,7 @@ export const Icons = {
   visibility,
   visibility_off,
   warning,
+  warning_outline,
   workspaces,
   waterfall_chart,
   vertical_align_bottom,
@@ -378,6 +380,7 @@ export const IconWrapper = styled.div<WrapperProps>`
       : `
         background: ${p.$color};
         mask-size: contain;
+        mask-repeat: no-repeat;
         mask-image: url(${p.$img});
       `}
   object-fit: contain;

@@ -130,6 +130,7 @@ export const ASSET_CHECKS_QUERY = gql`
         checks {
           name
           description
+          severity
           executions(limit: 1, cursor: "") {
             ...AssetCheckExecutionFragment
           }
