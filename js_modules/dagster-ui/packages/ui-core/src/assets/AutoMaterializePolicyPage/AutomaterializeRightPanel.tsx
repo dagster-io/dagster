@@ -76,7 +76,8 @@ export const AutomaterializeRightPanel = ({assetKey}: Props) => {
                 }
               >
                 <Body style={{flex: 1}}>
-                  {automaterializePolicyDescription(data.assetNodeOrError.autoMaterializePolicy)}
+                  This asset is automatically re-materialized when at least one of the conditions to
+                  the left is met and no skip conditions are met.
                 </Body>
               </RightPanelSection>
             ) : (
@@ -205,6 +206,10 @@ export const GET_POLICY_INFO_QUERY = gql`
         autoMaterializePolicy {
           policyType
           maxMaterializationsPerMinute
+          rules {
+            description
+            decisionType
+          }
         }
       }
     }

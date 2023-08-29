@@ -22,6 +22,11 @@ export type GetPolicyInfoQuery = {
           __typename: 'AutoMaterializePolicy';
           policyType: Types.AutoMaterializePolicyType;
           maxMaterializationsPerMinute: number | null;
+          rules: Array<{
+            __typename: 'AutoMaterializeRule';
+            description: string;
+            decisionType: Types.AutoMaterializeDecisionType;
+          }>;
         } | null;
       }
     | {__typename: 'AssetNotFoundError'};

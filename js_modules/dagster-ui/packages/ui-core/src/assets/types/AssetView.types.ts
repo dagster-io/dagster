@@ -74,6 +74,11 @@ export type AssetViewDefinitionQuery = {
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
             policyType: Types.AutoMaterializePolicyType;
+            rules: Array<{
+              __typename: 'AutoMaterializeRule';
+              description: string;
+              decisionType: Types.AutoMaterializeDecisionType;
+            }>;
           } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
@@ -15786,6 +15791,11 @@ export type AssetViewDefinitionNodeFragment = {
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
     policyType: Types.AutoMaterializePolicyType;
+    rules: Array<{
+      __typename: 'AutoMaterializeRule';
+      description: string;
+      decisionType: Types.AutoMaterializeDecisionType;
+    }>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';

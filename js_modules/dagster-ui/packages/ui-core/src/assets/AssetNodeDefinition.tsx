@@ -346,6 +346,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     jobNames
     autoMaterializePolicy {
       policyType
+      rules {
+        description
+        decisionType
+      }
     }
     freshnessPolicy {
       maximumLagMinutes
