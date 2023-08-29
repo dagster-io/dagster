@@ -36,9 +36,10 @@ setup(
         "typing_extensions>=4.4.0",
     ],
     extras_require={
+        "s3": ["boto3", "botocore"],
         "test": [
             f"dagster{pin}",
-        ]
+        ],
     },
     zip_safe=False,
     entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},

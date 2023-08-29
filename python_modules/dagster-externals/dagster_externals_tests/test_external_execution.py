@@ -27,6 +27,7 @@ from dagster._core.external_execution.utils import (
     ExternalExecutionFileMessageReader,
 )
 from dagster._core.instance_for_test import instance_for_test
+from dagster_aws.externals import ExternalExecutionS3MessageReader
 
 _PYTHON_EXECUTABLE = shutil.which("python")
 
@@ -46,6 +47,7 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
     [
         ("default", "default"),
         ("default", "user/file"),
+        ("default", "user/s3"),
         ("user/file", "default"),
         ("user/file", "user/file"),
         ("user/env", "default"),
@@ -66,6 +68,8 @@ def test_external_subprocess_asset(capsys, tmpdir, context_injector_spec, messag
         message_reader = None
     elif message_reader_spec == "user/file":
         message_reader = ExternalExecutionFileMessageReader(os.path.join(tmpdir, "output"))
+    elif message_reader_spec == "user/s3":
+        message_reader = ExternalExecutionS3MessageReader(bucket="externals-testing")
     else:
         assert False, "Unreachable"
 
@@ -77,14 +81,19 @@ def test_external_subprocess_asset(capsys, tmpdir, context_injector_spec, messag
             ExternalExecutionEnvContextLoader,
             init_dagster_externals,
         )
+        from dagster_externals._io.s3 import ExternalExecutionS3MessageWriter
 
-        context_loader = (
-            ExternalExecutionEnvContextLoader()
-            if os.getenv("CONTEXT_INJECTOR_SPEC") == "user/env"
-            else None
-        )
+        if os.getenv("CONTEXT_INJECTOR_SPEC") == "user/env":
+            context_loader = ExternalExecutionEnvContextLoader()
+        else:
+            context_loader = None  # use default
 
-        init_dagster_externals(context_loader=context_loader)
+        if os.getenv("MESSAGE_READER_SPEC") == "user/s3":
+            message_writer = ExternalExecutionS3MessageWriter()
+        else:
+            message_writer = None  # use default
+
+        init_dagster_externals(context_loader=context_loader, message_writer=message_writer)
         context = ExternalExecutionContext.get()
         context.log("hello world")
         context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
@@ -93,6 +102,7 @@ def test_external_subprocess_asset(capsys, tmpdir, context_injector_spec, messag
     @asset
     def foo(context: AssetExecutionContext, ext: SubprocessExecutionResource):
         extras = {"bar": "baz"}
+        aws_env_vars = {k: v for k, v in os.environ.items() if k.startswith("AWS_")}
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
             ext.run(
@@ -101,7 +111,11 @@ def test_external_subprocess_asset(capsys, tmpdir, context_injector_spec, messag
                 extras=extras,
                 context_injector=context_injector,
                 message_reader=message_reader,
-                env={"CONTEXT_INJECTOR_SPEC": context_injector_spec},
+                env={
+                    "CONTEXT_INJECTOR_SPEC": context_injector_spec,
+                    "MESSAGE_READER_SPEC": message_reader_spec,
+                    **aws_env_vars,
+                },
             )
 
     resource = SubprocessExecutionResource()
