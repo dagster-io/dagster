@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import dagster._check as check
 from dagster import AssetKey
+from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -12,6 +13,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from ..schema.asset_checks import (
     GrapheneAssetCheck,
+    GrapheneAssetCheckExecution,
     GrapheneAssetChecks,
 )
 
@@ -37,7 +39,7 @@ def fetch_asset_checks(
     )
 
 
-def get_asset_check_execution_status(
+def _get_asset_check_execution_status(
     instance: DagsterInstance, execution: AssetCheckExecutionRecord
 ) -> AssetCheckExecutionResolvedStatus:
     """Asset checks stay in PLANNED status until the evaluation event arives. Check if the run is
@@ -62,3 +64,21 @@ def get_asset_check_execution_status(
 
     else:
         check.failed(f"Unexpected status {stored_status}")
+
+
+def fetch_executions(
+    instance: DagsterInstance, asset_check: ExternalAssetCheck, limit: int, cursor: Optional[str]
+) -> List[GrapheneAssetCheckExecution]:
+    executions = instance.event_log_storage.get_asset_check_executions(
+        asset_key=asset_check.asset_key,
+        check_name=asset_check.name,
+        limit=limit,
+        cursor=int(cursor) if cursor else None,
+    )
+
+    res = []
+    for execution in executions:
+        resolved_status = _get_asset_check_execution_status(instance, execution)
+        res.append(GrapheneAssetCheckExecution(execution, resolved_status))
+
+    return res
