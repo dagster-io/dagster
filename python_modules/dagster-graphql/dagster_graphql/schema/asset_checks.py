@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 import dagster._check as check
 import graphene
@@ -76,15 +76,15 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     class Meta:
         name = "AssetCheckExecution"
 
-    def __init__(self, graphene_info: ResolveInfo, execution: AssetCheckExecutionRecord):
-        from dagster_graphql.implementation.fetch_asset_checks import (
-            get_asset_check_execution_status,
-        )
-
+    def __init__(
+        self,
+        execution: AssetCheckExecutionRecord,
+        status: AssetCheckExecutionResolvedStatus,
+    ):
         super().__init__()
         self.id = str(execution.id)
         self.runId = execution.run_id
-        self.status = get_asset_check_execution_status(graphene_info.context.instance, execution)
+        self.status = status
         self.evaluation = (
             GrapheneAssetCheckEvaluation(execution.evaluation_event)
             if execution.evaluation_event
@@ -124,15 +124,16 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_severity(self, _) -> AssetCheckSeverity:
         return self._asset_check.severity
 
-    def resolve_executions(self, graphene_info: ResolveInfo, **kwargs):
-        executions = graphene_info.context.instance.event_log_storage.get_asset_check_executions(
-            asset_key=self._asset_check.asset_key,
-            check_name=self._asset_check.name,
-            limit=kwargs["limit"],
-            cursor=kwargs.get("cursor"),
+    def resolve_executions(
+        self, graphene_info: ResolveInfo, **kwargs
+    ) -> List[GrapheneAssetCheckExecution]:
+        from dagster_graphql.implementation.fetch_asset_checks import (
+            fetch_executions,
         )
 
-        return [GrapheneAssetCheckExecution(graphene_info, e) for e in executions]
+        return fetch_executions(
+            graphene_info.context.instance, self._asset_check, kwargs["limit"], kwargs.get("cursor")
+        )
 
 
 class GrapheneAssetChecks(graphene.ObjectType):
