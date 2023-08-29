@@ -948,6 +948,10 @@
             "path": "/_apidocs/dynamic"
           },
           {
+            "title": "Asset checks (Experimental)",
+            "path": "/_apidocs/asset-checks"
+          },
+          {
             "title": "Job versioning & memoization (Deprecated)",
             "path": "/_apidocs/memoization"
           },
