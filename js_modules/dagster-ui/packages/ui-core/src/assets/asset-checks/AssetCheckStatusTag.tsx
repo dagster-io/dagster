@@ -32,9 +32,9 @@ export const AssetCheckStatusTag = ({
           Failed
         </Tag>
       );
-    case AssetCheckExecutionResolvedStatus.EXECUTION_FAILURE:
+    case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
       return <Tag intent={isWarn ? 'warning' : 'danger'}>Execution failed</Tag>;
-    case AssetCheckExecutionResolvedStatus.SUCCESS:
+    case AssetCheckExecutionResolvedStatus.SUCCEEDED:
       return (
         <Tag icon="check_circle" intent="success">
           Passed

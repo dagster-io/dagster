@@ -178,11 +178,11 @@ export type AssetCheckExecution = {
 };
 
 export enum AssetCheckExecutionResolvedStatus {
-  EXECUTION_FAILURE = 'EXECUTION_FAILURE',
+  EXECUTION_FAILED = 'EXECUTION_FAILED',
   FAILED = 'FAILED',
   IN_PROGRESS = 'IN_PROGRESS',
   SKIPPED = 'SKIPPED',
-  SUCCESS = 'SUCCESS',
+  SUCCEEDED = 'SUCCEEDED',
 }
 
 export type AssetCheckNeedsMigrationError = Error & {
@@ -4535,7 +4535,7 @@ export const buildAssetCheckExecution = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : AssetCheckExecutionResolvedStatus.EXECUTION_FAILURE,
+        : AssetCheckExecutionResolvedStatus.EXECUTION_FAILED,
   };
 };
 

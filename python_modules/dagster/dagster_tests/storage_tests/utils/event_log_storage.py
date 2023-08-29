@@ -3969,7 +3969,7 @@ class TestEventLogStorage:
 
         checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
         assert len(checks) == 1
-        assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCESS
+        assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
         assert (
             checks[
                 0

@@ -47,8 +47,8 @@ def _get_asset_check_execution_status(
     """
     record_status = execution.status
 
-    if record_status == AssetCheckExecutionRecordStatus.SUCCESS:
-        return AssetCheckExecutionResolvedStatus.SUCCESS
+    if record_status == AssetCheckExecutionRecordStatus.SUCCEEDED:
+        return AssetCheckExecutionResolvedStatus.SUCCEEDED
     elif record_status == AssetCheckExecutionRecordStatus.FAILED:
         return AssetCheckExecutionResolvedStatus.FAILED
     elif record_status == AssetCheckExecutionRecordStatus.PLANNED:
@@ -56,7 +56,7 @@ def _get_asset_check_execution_status(
 
         if run.is_finished:
             if run.status == DagsterRunStatus.FAILURE:
-                return AssetCheckExecutionResolvedStatus.EXECUTION_FAILURE
+                return AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
             else:
                 return AssetCheckExecutionResolvedStatus.SKIPPED
         else:

@@ -10,15 +10,15 @@ from dagster import EventLogEntry
 # runs, the row stays in PLANNED status.
 class AssetCheckExecutionRecordStatus(enum.Enum):
     PLANNED = "PLANNED"
-    SUCCESS = "SUCCESS"
+    SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"  # explicit fail result
 
 
 class AssetCheckExecutionResolvedStatus(enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
-    SUCCESS = "SUCCESS"
+    SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"  # explicit fail result
-    EXECUTION_FAILURE = "EXECUTION_FAILURE"  # hit some exception
+    EXECUTION_FAILED = "EXECUTION_FAILED"  # hit some exception
     SKIPPED = "SKIPPED"  # the run finished, didn't fail, but the check didn't execute
 
 

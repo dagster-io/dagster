@@ -232,7 +232,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         "executions": [
                             {
                                 "runId": "foo",
-                                "status": "SUCCESS",
+                                "status": "SUCCEEDED",
                                 "evaluation": {
                                     "timestamp": evaluation_timestamp,
                                     "targetMaterialization": {
@@ -339,7 +339,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     {
                         "name": "my_check",
                         "executions": [
-                            {"runId": run.run_id, "status": "EXECUTION_FAILURE", "evaluation": None}
+                            {"runId": run.run_id, "status": "EXECUTION_FAILED", "evaluation": None}
                         ],
                     }
                 ],

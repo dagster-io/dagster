@@ -2520,7 +2520,7 @@ class SqlEventLogStorage(EventLogStorage):
                 )
                 .values(
                     execution_status=(
-                        AssetCheckExecutionRecordStatus.SUCCESS.value
+                        AssetCheckExecutionRecordStatus.SUCCEEDED.value
                         if evaluation.success
                         else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
