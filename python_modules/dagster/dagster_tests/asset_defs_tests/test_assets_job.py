@@ -1998,9 +1998,6 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
     class B:
         ...
 
-    class X:
-        ...
-
     partitions_a = StaticPartitionsDefinition(["a1"])
 
     @observable_source_asset(partitions_def=partitions_a)
