@@ -77,6 +77,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
+        self._root_unreconciled_ancestors_cache = {}
+
     @property
     def instance(self) -> DagsterInstance:
         return self._instance
@@ -854,15 +856,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         of ancestors of this asset partition whose parents have been updated more recently than
         they have.
         """
-        root_unreconciled_ancestors = set()
+        if asset_partition in self._root_unreconciled_ancestors_cache:
+            return self._root_unreconciled_ancestors_cache[asset_partition]
 
-        queue: deque[AssetKeyPartitionKey] = deque()
-        queue.append(asset_partition)
+        queue: deque[Tuple[AssetKeyPartitionKey, Set[AssetKey]]] = deque([(asset_partition, set())])
 
         while queue:
-            current_partition = queue.popleft()
+            current_partition, current_ancestors = queue.popleft()
+
+            if current_partition in self._root_unreconciled_ancestors_cache:
+                current_ancestors.update(self._root_unreconciled_ancestors_cache[current_partition])
+                continue
 
             if self.asset_graph.is_source(current_partition.asset_key):
+                self._root_unreconciled_ancestors_cache[current_partition] = current_ancestors
                 continue
 
             parent_asset_partitions = self.asset_graph.get_parents_partitions(
@@ -879,10 +886,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
 
             if updated_parents:
-                root_unreconciled_ancestors.add(current_partition.asset_key)
+                current_ancestors.add(current_partition.asset_key)
 
             parents_to_explore = set(parent_asset_partitions) - updated_parents
 
-            queue.extend(parents_to_explore)
+            for parent in parents_to_explore:
+                parent_ancestors = current_ancestors.copy()
+                queue.append((parent, parent_ancestors))
 
-        return root_unreconciled_ancestors
+            self._root_unreconciled_ancestors_cache[current_partition] = current_ancestors
+
+        return self._root_unreconciled_ancestors_cache[asset_partition]
