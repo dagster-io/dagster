@@ -77,9 +77,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
-        self._cache = {}
-        self._updated_parents_cache = {}
-        self._parent_asset_partitions_cache = {}
+        self._root_unreconciled_ancestors_cache: Dict[AssetKeyPartitionKey, Set[AssetKey]] = {}
+        self._respect_materialization_data_versions = (
+            self._instance.auto_materialize_respect_materialization_data_versions
+        )
 
     @property
     def instance(self) -> DagsterInstance:
@@ -851,37 +852,26 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return updated_parents
 
     def get_root_unreconciled_ancestors(
-        self, *, asset_partition: AssetKeyPartitionKey, respect_materialization_data_versions: bool
+        self, *, asset_partition: AssetKeyPartitionKey
     ) -> AbstractSet[AssetKey]:
         """Return the set of root unreconciled ancestors of the given asset partition, i.e. the set
         of ancestors of this asset partition whose parents have been updated more recently than
         they have.
         """
-        # NEED TO FIGURE OUT respect_materialization_data_versions
+        if asset_partition in self._root_unreconciled_ancestors_cache:
+            return self._root_unreconciled_ancestors_cache[asset_partition]
 
-        if asset_partition in self._cache:
-            print(f"{asset_partition} was in cache")
-            return self._cache[asset_partition]
-
-        import time
-
-        start_time = time.time()
-        print("Calculating for {asset_partition} " + str(start_time))
-
-        # First gather all the candidates via breadth-first traversal
-        # For each candidate, maintain whether or not they have updated parents
+        # First gather all the candidates that weren't previously computed as well as their parents
+        visited: set[AssetKeyPartitionKey] = set()
 
         queue: deque[AssetKeyPartitionKey] = deque()
         queue.append(asset_partition)
-
-        visited: set[AssetKeyPartitionKey] = set()
 
         while queue:
             current_partition = queue.popleft()
             visited.add(current_partition)
 
             if self.asset_graph.is_source(current_partition.asset_key):
-                self._updated_parents_cache[current_partition] = set()
                 continue
 
             parent_asset_partitions = self.asset_graph.get_parents_partitions(
@@ -891,49 +881,47 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 partition_key=current_partition.partition_key,
             ).parent_partitions
 
-            self._parent_asset_partitions_cache[current_partition] = parent_asset_partitions
-
-            updated_parents = self.get_updated_parent_asset_partitions(
-                asset_partition=current_partition,
-                parent_asset_partitions=parent_asset_partitions,
-                respect_materialization_data_versions=respect_materialization_data_versions,
-            )
-
-            self._updated_parents_cache[current_partition] = updated_parents
-
-            parents_to_explore = set(parent_asset_partitions) - updated_parents
-
-            for parent in parents_to_explore:
-                if parent not in self._updated_parents_cache and parent not in self._cache:
+            for parent in parent_asset_partitions:
+                if parent not in visited and parent not in self._root_unreconciled_ancestors_cache:
                     queue.append(parent)
 
+        # Toposort them so that at each iteration we can count on the cache being full for
+        # all of your parents, then update the cache for each node based on the parent's results
         toposort_queue = ToposortedPriorityQueue(self.asset_graph, visited)
 
         while len(toposort_queue) > 0:
             candidates_unit = toposort_queue.dequeue()
             for current_partition in candidates_unit:
                 if self.asset_graph.is_source(current_partition.asset_key):
-                    self._cache[current_partition] = set()
+                    self._root_unreconciled_ancestors_cache[current_partition] = set()
                     continue
 
-                updated_parents = self._updated_parents_cache[current_partition]
-                # Keep parent asset partitions cache??
+                parent_asset_partitions = self.asset_graph.get_parents_partitions(
+                    dynamic_partitions_store=self,
+                    current_time=self._evaluation_time,
+                    asset_key=current_partition.asset_key,
+                    partition_key=current_partition.partition_key,
+                ).parent_partitions
+
+                updated_parents: AbstractSet[AssetKeyPartitionKey] = (
+                    self.get_updated_parent_asset_partitions(
+                        asset_partition=current_partition,
+                        parent_asset_partitions=parent_asset_partitions,
+                        respect_materialization_data_versions=self._respect_materialization_data_versions,
+                    )
+                )
 
                 root_unreconciled_ancestors = (
                     {current_partition.asset_key} if updated_parents else set()
                 )
 
-                parent_asset_partitions = self._parent_asset_partitions_cache[current_partition]
-
                 for parent in set(parent_asset_partitions) - updated_parents:
-                    root_unreconciled_ancestors.update(self._cache[parent])
+                    root_unreconciled_ancestors.update(
+                        self._root_unreconciled_ancestors_cache[parent]
+                    )
 
-                self._cache[current_partition] = root_unreconciled_ancestors
+                self._root_unreconciled_ancestors_cache[current_partition] = (
+                    root_unreconciled_ancestors
+                )
 
-        # Toposort them
-
-        print(
-            f"Finished calculating for {asset_partition}: It took " + str(time.time() - start_time)
-        )
-
-        return self._cache[asset_partition]
+        return self._root_unreconciled_ancestors_cache[asset_partition]
