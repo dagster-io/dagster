@@ -2,8 +2,8 @@ from typing import Any, ClassVar, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 
-from ._io.base import ExternalExecutionContextSource, ExternalExecutionMessageSink
-from ._io.default import ExternalExecutionFileContextSource, ExternalExecutionFileMessageSink
+from ._io.base import ExternalExecutionContextLoader, ExternalExecutionMessageWriter
+from ._io.default import ExternalExecutionFileContextLoader, ExternalExecutionFileMessageWriter
 from ._protocol import (
     ExternalExecutionContextData,
     ExternalExecutionDataProvenance,
@@ -27,17 +27,17 @@ from ._util import (
 
 def init_dagster_externals(
     *,
-    context_source: Optional[ExternalExecutionContextSource] = None,
-    message_sink: Optional[ExternalExecutionMessageSink] = None,
+    context_loader: Optional[ExternalExecutionContextLoader] = None,
+    message_writer: Optional[ExternalExecutionMessageWriter] = None,
 ) -> "ExternalExecutionContext":
     if ExternalExecutionContext.is_initialized():
         return ExternalExecutionContext.get()
 
     if is_dagster_orchestration_active():
-        context_source = context_source or ExternalExecutionFileContextSource()
-        message_sink = message_sink or ExternalExecutionFileMessageSink()
-        data = context_source.load_context()
-        context = ExternalExecutionContext(data, message_sink)
+        context_loader = context_loader or ExternalExecutionFileContextLoader()
+        message_writer = message_writer or ExternalExecutionFileMessageWriter()
+        data = context_loader.load_context()
+        context = ExternalExecutionContext(data, message_writer)
     else:
         emit_orchestration_inactive_warning()
         context = get_mock()
@@ -66,14 +66,14 @@ class ExternalExecutionContext:
         return cls._instance
 
     def __init__(
-        self, data: ExternalExecutionContextData, message_sink: ExternalExecutionMessageSink
+        self, data: ExternalExecutionContextData, message_writer: ExternalExecutionMessageWriter
     ) -> None:
         self._data = data
-        self.message_sink = message_sink
+        self.message_writer = message_writer
 
     def _send_message(self, method: str, params: Optional[Mapping[str, Any]] = None) -> None:
         message = ExternalExecutionMessage(method=method, params=params)
-        self.message_sink.send_message(message)
+        self.message_writer.write_message(message)
 
     # ########################
     # ##### PUBLIC API

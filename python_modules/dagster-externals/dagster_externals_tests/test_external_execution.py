@@ -1,4 +1,5 @@
 import inspect
+import os
 import re
 import shutil
 import subprocess
@@ -20,6 +21,11 @@ from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.external_execution.subprocess import (
     SubprocessExecutionResource,
 )
+from dagster._core.external_execution.utils import (
+    get_env_context_injector,
+    get_file_context_injector,
+    get_file_message_reader,
+)
 from dagster._core.instance_for_test import instance_for_test
 
 _PYTHON_EXECUTABLE = shutil.which("python")
@@ -35,11 +41,50 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
         yield file.name
 
 
-def test_external_subprocess_asset(capsys):
-    def script_fn():
-        from dagster_externals import ExternalExecutionContext, init_dagster_externals
+@pytest.mark.parametrize(
+    ("context_injector_spec", "message_reader_spec"),
+    [
+        ("default", "default"),
+        ("default", "user/file"),
+        ("user/file", "default"),
+        ("user/file", "user/file"),
+        ("user/env", "default"),
+        ("user/env", "user/file"),
+    ],
+)
+def test_external_subprocess_asset(capsys, tmpdir, context_injector_spec, message_reader_spec):
+    if context_injector_spec == "default":
+        context_injector = None
+    elif context_injector_spec == "user/file":
+        context_injector = get_file_context_injector(os.path.join(tmpdir, "input"))
+    elif context_injector_spec == "user/env":
+        context_injector = get_env_context_injector()
+    else:
+        assert False, "Unreachable"
 
-        init_dagster_externals()
+    if message_reader_spec == "default":
+        message_reader = None
+    elif message_reader_spec == "user/file":
+        message_reader = get_file_message_reader(os.path.join(tmpdir, "output"))
+    else:
+        assert False, "Unreachable"
+
+    def script_fn():
+        import os
+
+        from dagster_externals import (
+            ExternalExecutionContext,
+            ExternalExecutionEnvContextLoader,
+            init_dagster_externals,
+        )
+
+        context_loader = (
+            ExternalExecutionEnvContextLoader()
+            if os.getenv("CONTEXT_INJECTOR_SPEC") == "user/env"
+            else None
+        )
+
+        init_dagster_externals(context_loader=context_loader)
         context = ExternalExecutionContext.get()
         context.log("hello world")
         context.report_asset_metadata("foo", "bar", context.get_extra("bar"))
@@ -50,7 +95,14 @@ def test_external_subprocess_asset(capsys):
         extras = {"bar": "baz"}
         with temp_script(script_fn) as script_path:
             cmd = [_PYTHON_EXECUTABLE, script_path]
-            ext.run(cmd, context=context, extras=extras)
+            ext.run(
+                cmd,
+                context=context,
+                extras=extras,
+                context_injector=context_injector,
+                message_reader=message_reader,
+                env={"CONTEXT_INJECTOR_SPEC": context_injector_spec},
+            )
 
     resource = SubprocessExecutionResource()
     with instance_for_test() as instance:

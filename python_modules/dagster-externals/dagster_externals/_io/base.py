@@ -6,13 +6,13 @@ from .._protocol import (
 )
 
 
-class ExternalExecutionContextSource(ABC):
+class ExternalExecutionContextLoader(ABC):
     @abstractmethod
     def load_context(self) -> ExternalExecutionContextData:
         raise NotImplementedError()
 
 
-class ExternalExecutionMessageSink(ABC):
+class ExternalExecutionMessageWriter(ABC):
     @abstractmethod
-    def send_message(self, message: ExternalExecutionMessage) -> None:
+    def write_message(self, message: ExternalExecutionMessage) -> None:
         ...

@@ -5,11 +5,11 @@ from .._protocol import (
     ExternalExecutionContextData,
     ExternalExecutionMessage,
 )
-from .._util import DagsterExternalsError, param_from_env
-from .base import ExternalExecutionContextSource, ExternalExecutionMessageSink
+from .._util import DagsterExternalsError, param_from_env_var
+from .base import ExternalExecutionContextLoader, ExternalExecutionMessageWriter
 
 
-class ExternalExecutionFileContextSource(ExternalExecutionContextSource):
+class ExternalExecutionFileContextLoader(ExternalExecutionContextLoader):
     def load_context(self) -> ExternalExecutionContextData:
         path = self._get_path_from_env()
         with open(path, "r") as f:
@@ -17,23 +17,23 @@ class ExternalExecutionFileContextSource(ExternalExecutionContextSource):
 
     def _get_path_from_env(self) -> str:
         try:
-            context_source_params = param_from_env("context_source")
-            assert isinstance(context_source_params, dict)
-            assert isinstance(context_source_params.get("path"), str)
-            return context_source_params["path"]
+            context_injector_params = param_from_env_var("context")
+            assert isinstance(context_injector_params, dict)
+            assert isinstance(context_injector_params.get("path"), str)
+            return context_injector_params["path"]
         except AssertionError:
             raise DagsterExternalsError(
-                "`ExternalExecutionFileContextSource` requires a `path` key in the"
-                f" {DAGSTER_EXTERNALS_ENV_KEYS['context_source']} environment variable be a JSON"
+                f"`{self.__class__.__name__}` requires a `path` key in the"
+                f" {DAGSTER_EXTERNALS_ENV_KEYS['context_injector']} environment variable be a JSON"
                 " object with a string `path` property."
             )
 
 
-class ExternalExecutionFileMessageSink(ExternalExecutionMessageSink):
+class ExternalExecutionFileMessageWriter(ExternalExecutionMessageWriter):
     def __init__(self):
         self._path = None
 
-    def send_message(self, message: ExternalExecutionMessage) -> None:
+    def write_message(self, message: ExternalExecutionMessage) -> None:
         with open(self.path, "a") as f:
             f.write(json.dumps(message) + "\n")
 
@@ -45,13 +45,13 @@ class ExternalExecutionFileMessageSink(ExternalExecutionMessageSink):
 
     def _get_path_from_env(self) -> str:
         try:
-            context_source_params = param_from_env("message_sink")
-            assert isinstance(context_source_params, dict)
-            assert isinstance(context_source_params.get("path"), str)
-            return context_source_params["path"]
+            context_injector_params = param_from_env_var("messages")
+            assert isinstance(context_injector_params, dict)
+            assert isinstance(context_injector_params.get("path"), str)
+            return context_injector_params["path"]
         except AssertionError:
             raise DagsterExternalsError(
-                "`ExternalExecutionFileMessageSink` requires a `path` key in the"
-                f" {DAGSTER_EXTERNALS_ENV_KEYS['message_sink']} environment variable be a JSON"
+                f"`{self.__class__.__name__}` requires a `path` key in the"
+                f" {DAGSTER_EXTERNALS_ENV_KEYS['message_reader']} environment variable be a JSON"
                 " object with a string `path` property."
             )

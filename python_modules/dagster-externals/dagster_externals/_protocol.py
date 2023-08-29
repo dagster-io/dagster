@@ -14,8 +14,7 @@ def _param_name_to_env_key(key: str) -> str:
 # ##### PARAMETERS
 
 DAGSTER_EXTERNALS_ENV_KEYS: Final = {
-    k: _param_name_to_env_key(k)
-    for k in ("is_orchestration_active", "context_source", "message_sink")
+    k: _param_name_to_env_key(k) for k in ("is_orchestration_active", "context", "messages")
 }
 
 
