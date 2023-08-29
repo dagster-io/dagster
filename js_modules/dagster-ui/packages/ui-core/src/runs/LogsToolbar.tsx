@@ -6,11 +6,11 @@ import {
   IconName,
   Icon,
   MenuItem,
-  Select,
   Spinner,
   IconWrapper,
   Colors,
   Tooltip,
+  Suggest,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -173,20 +173,27 @@ export const ComputeLogToolbar = ({
   const logCaptureSteps =
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
 
-  const logCaptureInfo = computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey];
+  const logCaptureInfo = computeLogFileKey ? logCaptureSteps[computeLogFileKey] : undefined;
   const isValidStepSelection = !!logCaptureInfo;
 
   const fileKeyText = (fileKey?: string) => {
-    if (!fileKey || !(logCaptureSteps as any)[fileKey]) {
-      return null;
+    if (!fileKey) {
+      return '';
     }
-    const captureInfo = (logCaptureSteps as any)[fileKey];
-    if (captureInfo.stepKeys.length === 1 && fileKey === captureInfo.stepKeys[0]) {
-      return fileKey;
+    const captureInfo = logCaptureSteps[fileKey];
+    if (!captureInfo) {
+      return '';
     }
-    if (captureInfo.pid && captureInfo.stepKeys.length === 1) {
-      return captureInfo.stepKeys[0];
+
+    if (
+      captureInfo.stepKeys.length === 1 &&
+      (captureInfo.pid || captureInfo.stepKeys[0] === fileKey)
+    ) {
+      return captureInfo.stepAttemptNumber
+        ? `${captureInfo.stepKeys[0]} (Attempt #${captureInfo.stepAttemptNumber})`
+        : `${captureInfo.stepKeys[0]}`;
     }
+
     if (captureInfo.pid) {
       return `pid: ${captureInfo.pid} (${captureInfo.stepKeys.length} steps)`;
     }
@@ -200,29 +207,30 @@ export const ComputeLogToolbar = ({
     >
       <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
         {steps ? (
-          <Select
+          <Suggest
+            resetOnClose
+            inputProps={{placeholder: 'Select a step…'}}
+            activeItem={computeLogFileKey}
+            selectedItem={computeLogFileKey}
             disabled={!steps.length}
             items={Object.keys(logCaptureSteps)}
+            noResults="No matching steps"
+            inputValueRenderer={(item) => fileKeyText(item)}
             itemPredicate={(query, item) =>
-              item.toLocaleLowerCase().includes(query.toLocaleLowerCase())
+              fileKeyText(item).toLocaleLowerCase().includes(query.toLocaleLowerCase())
             }
-            itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
+            itemRenderer={(item, itemProps) => (
               <MenuItem
-                key={item}
-                onClick={options.handleClick}
+                active={itemProps.modifiers.active}
+                onClick={(e) => itemProps.handleClick(e)}
                 text={fileKeyText(item)}
-                active={options.modifiers.active}
+                key={item}
               />
             )}
-            activeItem={computeLogFileKey}
             onItemSelect={(fileKey) => {
               onSetComputeLogKey(fileKey);
             }}
-          >
-            <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
-              {fileKeyText(computeLogFileKey) || 'Select a step...'}
-            </Button>
-          </Select>
+          />
         ) : undefined}
 
         {isValidStepSelection ? (
