@@ -160,18 +160,12 @@ const AssetCheckDetailModalImpl = ({
           </thead>
           <tbody>
             {executions.map((execution) => {
-              const timestamp = execution.evaluation?.targetMaterialization?.timestamp;
               return (
                 <tr key={execution.id}>
                   <td>
-                    {timestamp ? (
-                      // @ts-expect-error - targetMaterialization is not null since timestamp is truthy in this branch
-                      <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
-                        <TimestampDisplay timestamp={timestamp} />
-                      </Link>
-                    ) : (
-                      ' - '
-                    )}
+                    <Link to={`/runs/${execution.runId}`}>
+                      <TimestampDisplay timestamp={execution.timestamp} />
+                    </Link>
                   </td>
                   <td>
                     <AssetCheckStatusTag status={execution.status} />
@@ -247,6 +241,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
         ...MetadataEntryFragment
       }
     }
+    timestamp
   }
   ${METADATA_ENTRY_FRAGMENT}
 `;

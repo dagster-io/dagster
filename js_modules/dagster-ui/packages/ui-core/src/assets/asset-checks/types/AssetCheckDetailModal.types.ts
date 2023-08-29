@@ -7,6 +7,7 @@ export type AssetCheckExecutionFragment = {
   id: number;
   runId: string;
   status: Types.AssetCheckExecutionResolvedStatus;
+  timestamp: number;
   evaluation: {
     __typename: 'AssetCheckEvaluation';
     timestamp: number;
@@ -148,6 +149,7 @@ export type AssetCheckDetailsQuery = {
             id: number;
             runId: string;
             status: Types.AssetCheckExecutionResolvedStatus;
+            timestamp: number;
             evaluation: {
               __typename: 'AssetCheckEvaluation';
               timestamp: number;

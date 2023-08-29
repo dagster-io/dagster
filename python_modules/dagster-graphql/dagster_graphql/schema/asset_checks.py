@@ -72,6 +72,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneAssetCheckExecutionResolvedStatus)
     evaluation = graphene.Field(GrapheneAssetCheckEvaluation)
+    timestamp = graphene.NonNull(graphene.Float)
 
     class Meta:
         name = "AssetCheckExecution"
@@ -89,6 +90,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
             if execution.evaluation_event
             else None
         )
+        self.timestamp = execution.create_timestamp
 
 
 GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)

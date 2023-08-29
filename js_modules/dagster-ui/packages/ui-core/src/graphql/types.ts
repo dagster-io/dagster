@@ -175,6 +175,7 @@ export type AssetCheckExecution = {
   id: Scalars['Int'];
   runId: Scalars['String'];
   status: AssetCheckExecutionResolvedStatus;
+  timestamp: Scalars['Float'];
 };
 
 export enum AssetCheckExecutionResolvedStatus {
@@ -4536,6 +4537,7 @@ export const buildAssetCheckExecution = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : AssetCheckExecutionResolvedStatus.EXECUTION_FAILURE,
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 2.57,
   };
 };
 

@@ -89,7 +89,7 @@ export const VirtualizedAssetCheckRow = ({
   lastMaterializationRunId,
 }: AssetCheckRowProps) => {
   const lastExecution = row.executions[0];
-  const timestamp = lastExecution?.evaluation?.timestamp;
+  const timestamp = lastExecution?.timestamp;
 
   const status = React.useMemo(() => {
     if (

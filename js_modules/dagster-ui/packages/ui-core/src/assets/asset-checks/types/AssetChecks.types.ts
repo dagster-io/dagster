@@ -22,6 +22,7 @@ export type AssetChecksQuery = {
             id: number;
             runId: string;
             status: Types.AssetCheckExecutionResolvedStatus;
+            timestamp: number;
             evaluation: {
               __typename: 'AssetCheckEvaluation';
               timestamp: number;
