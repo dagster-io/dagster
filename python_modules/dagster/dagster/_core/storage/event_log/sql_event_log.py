@@ -2608,6 +2608,10 @@ class SqlEventLogStorage(EventLogStorage):
             for row in rows
         ]
 
+    @property
+    def supports_asset_checks(self):
+        return self.has_table(AssetCheckExecutionsTable.name)
+
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
     """Utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
