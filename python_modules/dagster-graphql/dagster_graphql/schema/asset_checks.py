@@ -66,7 +66,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):
-    id = graphene.NonNull(graphene.Int)
+    id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneAssetCheckExecutionStatus)
     evaluation = graphene.Field(GrapheneAssetCheckEvaluation)
@@ -75,7 +75,8 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         name = "AssetCheckExecution"
 
     def __init__(self, execution: AssetCheckExecutionRecord):
-        self.id = execution.id
+        super().__init__()
+        self.id = str(execution.id)
         self.runId = execution.run_id
         self.status = execution.status
         self.evaluation = (

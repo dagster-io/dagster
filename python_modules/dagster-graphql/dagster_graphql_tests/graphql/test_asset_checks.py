@@ -62,6 +62,22 @@ query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
 }
 """
 
+GET_ASSET_CHECK_HISTORY_WITH_ID = """
+query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String) {
+    assetChecksOrError(assetKey: $assetKey, checkName: $checkName) {
+        ... on AssetChecks {
+            checks {
+                name
+                executions(limit: 10) {
+                    id
+                    status
+                }
+            }
+        }
+    }
+}
+"""
+
 GET_LOGS_FOR_RUN = """
 query GetLogsForRun($runId: ID!) {
   logsForRun(runId: $runId) {
@@ -127,6 +143,27 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 ]
             }
         }
+
+    def test_asset_check_executions_with_id(self, graphql_context: WorkspaceRequestContext):
+        graphql_context.instance.wipe()
+
+        run = create_run_for_test(graphql_context.instance)
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run.run_id,
+                AssetCheckEvaluationPlanned(asset_key=AssetKey(["asset_1"]), check_name="my_check"),
+            )
+        )
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_ID,
+            variables={"assetKey": {"path": ["asset_1"]}, "checkName": "my_check"},
+        )
+        assert res.data
+        assert res.data["assetChecksOrError"]["checks"][0]["executions"][0]["id"]
+        assert res.data["assetChecksOrError"]["checks"][0]["executions"][0]["status"] == "PLANNED"
 
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()

@@ -3194,7 +3194,7 @@ enum AssetCheckSeverity {
 }
 
 type AssetCheckExecution {
-  id: Int!
+  id: String!
   runId: String!
   status: AssetCheckExecutionStatus!
   evaluation: AssetCheckEvaluation
