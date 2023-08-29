@@ -16,7 +16,8 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckHandle, AssetCheckSpec
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
@@ -471,6 +472,42 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         if not self.has_assets_def:
             return set()
         return self.assets_def.keys
+
+    @public
+    @property
+    def has_asset_checks_def(self) -> bool:
+        """If there is a backing AssetChecksDefinition for what is currently executing.
+
+        Returns:
+            bool
+        """
+        return self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle) is not None
+
+    @public
+    @property
+    def asset_checks_def(self) -> AssetChecksDefinition:
+        """The backing AssetChecksDefinition for what is currently executing, errors if not
+        available.
+
+        Returns:
+            AssetChecksDefinition
+        """
+        asset_checks_def = self.job_def.asset_layer.asset_checks_def_for_node(self.node_handle)
+        if asset_checks_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an asset checks definition."
+            )
+        return asset_checks_def
+
+    @public
+    @property
+    def selected_asset_check_handles(self) -> AbstractSet[AssetCheckHandle]:
+        if self.has_assets_def:
+            return self.assets_def.selected_asset_check_handles
+        elif self.has_asset_checks_def:
+            check.failed("Subset selection is not yet supported within an AssetChecksDefinition")
+        else:
+            return set()
 
     @public
     @property

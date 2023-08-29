@@ -89,6 +89,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _backfill_policy: Optional[BackfillPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
+    _selected_asset_check_handles: AbstractSet[AssetCheckHandle]
 
     def __init__(
         self,
@@ -109,6 +110,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
+        selected_asset_check_handles: Optional[AbstractSet[AssetCheckHandle]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph, and
         # get_attributes_dict methods
     ):
@@ -258,6 +260,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             spec.handle: spec for spec in self._check_specs_by_output_name.values()
         }
 
+        if selected_asset_check_handles is not None:
+            self._selected_asset_check_handles = selected_asset_check_handles
+        else:
+            self._selected_asset_check_handles = self._check_specs_by_handle.keys()
+
         if self._partitions_def is None:
             # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
             check.param_invariant(
@@ -296,6 +303,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy],
         descriptions_by_key: Optional[Mapping[AssetKey, str]],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
+        selected_asset_check_handles: Optional[AbstractSet[AssetCheckHandle]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -314,6 +322,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy,
             descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_handles=selected_asset_check_handles,
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -652,6 +661,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name={},
+            selected_asset_check_handles=None,
         )
 
     @public
@@ -834,6 +844,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             Iterable[AssetsCheckSpec]:
         """
         return self._check_specs_by_output_name.values()
+
+    @property
+    def check_handles(self) -> AbstractSet[AssetCheckHandle]:
+        return self._selected_asset_check_handles
+
+    @property
+    def selected_asset_check_handles(self) -> AbstractSet[AssetCheckHandle]:
+        return self._selected_asset_check_handles
 
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
@@ -1049,7 +1067,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         return get_graph_subset(self.node_def, op_selection)
 
-    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+    def subset_for(
+        self,
+        selected_asset_keys: AbstractSet[AssetKey],
+        selected_asset_check_handles: AbstractSet[AssetCheckHandle],
+    ) -> "AssetsDefinition":
         """Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
 
@@ -1065,13 +1087,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
         asset_subselection = selected_asset_keys & self.keys
+        asset_check_subselection = selected_asset_check_handles & self.check_handles
         # Early escape if all assets in AssetsDefinition are selected
-        if asset_subselection == self.keys:
+        if asset_subselection == self.keys and asset_check_subselection == self.check_handles:
             return self
         elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
-            subsetted_node = self._subset_graph_backed_asset(
-                asset_subselection,
+            check.invariant(
+                selected_asset_check_handles is None,
+                "Subsetting graph-backed assets with checks is not yet supported",
             )
+
+            subsetted_node = self._subset_graph_backed_asset(asset_subselection)
 
             # The subsetted node should only include asset inputs that are dependencies of the
             # selected set of assets.
@@ -1114,7 +1140,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
         else:
             # multi_asset subsetting
-            replaced_attributes = dict(selected_asset_keys=asset_subselection)
+            replaced_attributes = dict(
+                selected_asset_keys=asset_subselection,
+                selected_asset_check_handles=asset_check_subselection,
+            )
             return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
 
     @public
@@ -1239,6 +1268,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=self._backfill_policy,
             descriptions_by_key=self._descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
+            selected_asset_check_handles=self._selected_asset_check_handles,
         )
 
 

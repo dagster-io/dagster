@@ -2,6 +2,7 @@ import re
 
 import pytest
 from dagster import (
+    AssetCheckHandle,
     AssetCheckResult,
     AssetCheckSeverity,
     AssetCheckSpec,
@@ -16,6 +17,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -374,3 +376,57 @@ def test_asset_check_doesnt_store_output():
     )[0]
     assert check_eval.target_materialization_data.storage_id == materialization_record.storage_id
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
+
+
+def test_subsettable():
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset_key="asset1"),
+            AssetCheckSpec("check2", asset_key="asset2"),
+        ],
+    )
+    def foo(context):
+        assert context.selected_asset_keys == {AssetKey("asset1")}
+        assert context.selected_asset_check_handles == {
+            AssetCheckHandle(AssetKey("asset1"), "check1")
+        }
+        yield Output(value=None, output_name="asset1")
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+
+    result = materialize([foo], selection=["asset1"])
+
+    assert len(result.get_asset_materialization_events()) == 1
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 1
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
+
+
+def test_subsettable_result_for_unselected_check():
+    @multi_asset(
+        can_subset=True,
+        specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+        check_specs=[
+            AssetCheckSpec("check1", asset_key="asset1"),
+            AssetCheckSpec("check2", asset_key="asset2"),
+        ],
+    )
+    def foo(context):
+        assert context.selected_asset_keys == {AssetKey("asset1")}
+        assert context.selected_asset_check_handles == {
+            AssetCheckHandle(AssetKey("asset1"), "check1")
+        }
+        yield Output(value=None, output_name="asset1")
+        yield AssetCheckResult(asset_key="asset1", check_name="check1", success=True)
+        yield AssetCheckResult(asset_key="asset2", check_name="check2", success=True)
+
+    with pytest.raises(AssertionError):
+        materialize([foo], selection=["asset1"])
+
+
+def test_subsettable_select_only_check():
+    ...
