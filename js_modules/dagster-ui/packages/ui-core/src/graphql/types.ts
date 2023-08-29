@@ -179,7 +179,7 @@ export type AssetCheckExecution = {
 
 export enum AssetCheckExecutionResolvedStatus {
   EXECUTION_FAILURE = 'EXECUTION_FAILURE',
-  FAILURE = 'FAILURE',
+  FAILED = 'FAILED',
   IN_PROGRESS = 'IN_PROGRESS',
   SKIPPED = 'SKIPPED',
   SUCCESS = 'SUCCESS',

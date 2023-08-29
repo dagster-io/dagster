@@ -26,7 +26,7 @@ export const AssetCheckStatusTag = ({
           </Box>
         </Tag>
       );
-    case AssetCheckExecutionResolvedStatus.FAILURE:
+    case AssetCheckExecutionResolvedStatus.FAILED:
       return (
         <Tag icon={isWarn ? 'warning_outline' : 'cancel'} intent={isWarn ? 'warning' : 'danger'}>
           Failed

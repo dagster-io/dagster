@@ -6,8 +6,8 @@ from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
+    AssetCheckExecutionRecordStatus,
     AssetCheckExecutionResolvedStatus,
-    AssetCheckExecutionStoredStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
@@ -45,13 +45,13 @@ def _get_asset_check_execution_status(
     """Asset checks stay in PLANNED status until the evaluation event arives. Check if the run is
     still active, and if not, return the actual status.
     """
-    stored_status = execution.stored_status
+    record_status = execution.status
 
-    if stored_status == AssetCheckExecutionStoredStatus.SUCCESS:
+    if record_status == AssetCheckExecutionRecordStatus.SUCCESS:
         return AssetCheckExecutionResolvedStatus.SUCCESS
-    elif stored_status == AssetCheckExecutionStoredStatus.FAILURE:
-        return AssetCheckExecutionResolvedStatus.FAILURE
-    elif stored_status == AssetCheckExecutionStoredStatus.PLANNED:
+    elif record_status == AssetCheckExecutionRecordStatus.FAILED:
+        return AssetCheckExecutionResolvedStatus.FAILED
+    elif record_status == AssetCheckExecutionRecordStatus.PLANNED:
         run = check.not_none(instance.get_run_by_id(execution.run_id))
 
         if run.is_finished:
@@ -63,7 +63,7 @@ def _get_asset_check_execution_status(
             return AssetCheckExecutionResolvedStatus.IN_PROGRESS
 
     else:
-        check.failed(f"Unexpected status {stored_status}")
+        check.failed(f"Unexpected status {record_status}")
 
 
 def fetch_executions(

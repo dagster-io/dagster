@@ -3203,7 +3203,7 @@ type AssetCheckExecution {
 enum AssetCheckExecutionResolvedStatus {
   IN_PROGRESS
   SUCCESS
-  FAILURE
+  FAILED
   EXECUTION_FAILURE
   SKIPPED
 }

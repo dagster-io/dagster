@@ -163,7 +163,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         )
         assert res.data
         assert res.data["assetChecksOrError"]["checks"][0]["executions"][0]["id"]
-        assert res.data["assetChecksOrError"]["checks"][0]["executions"][0]["status"] == "PLANNED"
+        assert (
+            res.data["assetChecksOrError"]["checks"][0]["executions"][0]["status"] == "IN_PROGRESS"
+        )
 
     def test_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         graphql_context.instance.wipe()

@@ -67,7 +67,7 @@ from dagster._core.host_representation.origin import (
     InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionStoredStatus,
+    AssetCheckExecutionRecordStatus,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
@@ -3930,7 +3930,7 @@ class TestEventLogStorage:
 
         checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
         assert len(checks) == 1
-        assert checks[0].stored_status == AssetCheckExecutionStoredStatus.PLANNED
+        assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
         assert checks[0].run_id == "foo"
 
         checks = storage.get_asset_check_executions(
@@ -3969,7 +3969,7 @@ class TestEventLogStorage:
 
         checks = storage.get_asset_check_executions(AssetKey(["my_asset"]), "my_check", limit=10)
         assert len(checks) == 1
-        assert checks[0].stored_status == AssetCheckExecutionStoredStatus.SUCCESS
+        assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCESS
         assert (
             checks[
                 0
