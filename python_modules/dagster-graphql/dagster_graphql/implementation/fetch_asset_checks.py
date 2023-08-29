@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 import dagster._check as check
 from dagster import AssetKey
@@ -14,6 +14,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from ..schema.asset_checks import (
     GrapheneAssetCheck,
     GrapheneAssetCheckExecution,
+    GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetChecks,
 )
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
 
 
-def fetch_asset_checks(
+def _fetch_asset_checks(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     check_name: Optional[str] = None,
@@ -37,6 +38,25 @@ def fetch_asset_checks(
     return GrapheneAssetChecks(
         checks=[GrapheneAssetCheck(check) for check in external_asset_checks]
     )
+
+
+def has_asset_checks(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+) -> bool:
+    return bool(_fetch_asset_checks(graphene_info, asset_key).checks)
+
+
+def fetch_asset_checks(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    check_name: Optional[str] = None,
+) -> Union[GrapheneAssetCheckNeedsMigrationError, GrapheneAssetChecks]:
+    if not graphene_info.context.instance.event_log_storage.supports_asset_checks:
+        return GrapheneAssetCheckNeedsMigrationError(
+            message="Asset checks require an instance migration. Run `dagster instance migrate`."
+        )
+    return _fetch_asset_checks(graphene_info, asset_key, check_name)
 
 
 def _get_asset_check_execution_status(

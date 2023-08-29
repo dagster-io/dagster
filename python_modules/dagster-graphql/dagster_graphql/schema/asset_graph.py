@@ -31,7 +31,7 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_checks
+from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
     get_asset_observations,
@@ -1089,7 +1089,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed("Asset node has no partitions definition")
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
-        return bool(fetch_asset_checks(graphene_info, self._external_asset_node.asset_key).checks)
+        return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
 
 
 class GrapheneAssetGroup(graphene.ObjectType):
