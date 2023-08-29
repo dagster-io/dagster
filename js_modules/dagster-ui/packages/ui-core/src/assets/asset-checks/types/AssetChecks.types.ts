@@ -19,7 +19,7 @@ export type AssetChecksQuery = {
           severity: Types.AssetCheckSeverity;
           executions: Array<{
             __typename: 'AssetCheckExecution';
-            id: number;
+            id: string;
             runId: string;
             status: Types.AssetCheckExecutionStatus;
             evaluation: {

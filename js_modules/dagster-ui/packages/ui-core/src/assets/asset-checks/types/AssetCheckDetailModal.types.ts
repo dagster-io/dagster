@@ -4,7 +4,7 @@ import * as Types from '../../../graphql/types';
 
 export type AssetCheckExecutionFragment = {
   __typename: 'AssetCheckExecution';
-  id: number;
+  id: string;
   runId: string;
   status: Types.AssetCheckExecutionStatus;
   evaluation: {
@@ -145,7 +145,7 @@ export type AssetCheckDetailsQuery = {
           description: string | null;
           executions: Array<{
             __typename: 'AssetCheckExecution';
-            id: number;
+            id: string;
             runId: string;
             status: Types.AssetCheckExecutionStatus;
             evaluation: {

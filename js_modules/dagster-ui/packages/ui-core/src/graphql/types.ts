@@ -172,7 +172,7 @@ export type AssetCheckEvaluationTargetMaterializationData = {
 export type AssetCheckExecution = {
   __typename: 'AssetCheckExecution';
   evaluation: Maybe<AssetCheckEvaluation>;
-  id: Scalars['Int'];
+  id: Scalars['String'];
   runId: Scalars['String'];
   status: AssetCheckExecutionStatus;
 };
@@ -4528,7 +4528,7 @@ export const buildAssetCheckExecution = (
         : relationshipsToOmit.has('AssetCheckEvaluation')
         ? ({} as AssetCheckEvaluation)
         : buildAssetCheckEvaluation({}, relationshipsToOmit),
-    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 2672,
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'veritatis',
     status:
       overrides && overrides.hasOwnProperty('status')
