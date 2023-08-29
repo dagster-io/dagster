@@ -727,6 +727,7 @@ enum AutoMaterializePolicyType {
 type AutoMaterializeRule {
   description: String!
   decisionType: AutoMaterializeDecisionType!
+  className: String!
 }
 
 enum AutoMaterializeDecisionType {

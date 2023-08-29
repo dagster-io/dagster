@@ -470,6 +470,7 @@ export enum AutoMaterializePolicyType {
 
 export type AutoMaterializeRule = {
   __typename: 'AutoMaterializeRule';
+  className: Scalars['String'];
   decisionType: AutoMaterializeDecisionType;
   description: Scalars['String'];
 };
@@ -5109,6 +5110,8 @@ export const buildAutoMaterializeRule = (
   relationshipsToOmit.add('AutoMaterializeRule');
   return {
     __typename: 'AutoMaterializeRule',
+    className:
+      overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'voluptatibus',
     decisionType:
       overrides && overrides.hasOwnProperty('decisionType')
         ? overrides.decisionType!

@@ -67,6 +67,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 rules {
                     decisionType
                     description
+                    className
                 }
             }
             currentEvaluationId
@@ -123,6 +124,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         assert rule["decisionType"] == "MATERIALIZE"
         assert rule["description"] == "materialization is missing"
+        assert rule["className"] == "MaterializeOnMissingRule"
 
     def _test_get_evaluations(self, graphql_context: WorkspaceRequestContext):
         results = execute_dagster_graphql(

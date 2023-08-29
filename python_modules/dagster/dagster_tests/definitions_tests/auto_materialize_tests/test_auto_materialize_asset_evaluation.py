@@ -1,4 +1,4 @@
-from dagster import AssetKey, StaticPartitionsDefinition, asset
+from dagster import AssetKey, AutoMaterializePolicy, StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_rule import (
     AutoMaterializeAssetEvaluation,
@@ -13,7 +13,7 @@ from dagster._serdes.serdes import deserialize_value, serialize_value
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
 
-@asset(partitions_def=partitions)
+@asset(partitions_def=partitions, auto_materialize_policy=AutoMaterializePolicy.eager())
 def my_asset(_):
     pass
 
@@ -101,9 +101,9 @@ def test_backcompat():
         dynamic_partitions_store=None,
     )
 
-    # This field is populated via the auto materialize policies on the asset graph,
-    # replace to be None
-    expected_asset_evaluation.rule_snapshots._replace(rule_snapshots=None)
+    # Previously serialized asset evaluations do not contain rule snapshots, so
+    # we override to be None
+    expected_asset_evaluation = expected_asset_evaluation._replace(rule_snapshots=None)
 
     # json doesn't handle tuples, so they get turned into lists
     assert (

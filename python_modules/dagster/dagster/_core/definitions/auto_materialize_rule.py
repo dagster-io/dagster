@@ -646,10 +646,10 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         num_discarded: int,
         dynamic_partitions_store: "DynamicPartitionsStore",
     ) -> "AutoMaterializeAssetEvaluation":
-        rule_snapshots = []
-        auto_materialize_policies = asset_graph.auto_materialize_policies_by_key.get(asset_key)
-        if auto_materialize_policies:
-            rule_snapshots = [rule.to_snapshot() for rule in auto_materialize_policies.rules]
+        auto_materialize_policy = asset_graph.auto_materialize_policies_by_key.get(asset_key)
+        if not auto_materialize_policy:
+            check.failed(f"Expected auto-materialize policy on asset {asset_key}")
+        rule_snapshots = [rule.to_snapshot() for rule in auto_materialize_policy.rules]
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
