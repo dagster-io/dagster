@@ -52,11 +52,11 @@ class AssetCheckSpec(
     execute multiple checks - e.g. `@asset`, and `@multi_asset`. It defines one of the checks that
     will be executed inside that function.
 
-    Attributes:
+    Args:
         name (str): Name of the check.
         asset_key (AssetKey): The key of the asset that the check applies to.
         description (Optional[str]): Description for the check.
-        severity (AssetCheckSeverity): Severity of the check. Defaults to WARN
+        severity (AssetCheckSeverity): Severity of the check. Defaults to `WARN`
     """
 
     def __new__(
