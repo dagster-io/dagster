@@ -1,44 +1,17 @@
 ---
-title: Get started with Markdoc
-description: How to get started with Markdoc
+title: Dagster University Course Content
 ---
 
-# Full Next.js example
+# Dagster University Course Content
 
-{% callout %}
-This is a full-featured boilerplate for a creating a documentation website using Markdoc and Next.js.
-{% /callout %}
-
-## Setup
-
-First, clone this repo and install the dependencies required:
-
-```bash
-npm install
-# or
-yarn install
-```
-
-Then, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `index.md`. The page auto-updates as you edit the file.
-
-## Deploy
-
-The quickest way to deploy your own version of this boilerplate is by deploying it with [Vercel](https://vercel.com) or [Netlify](https://www.netlify.com/) by clicking one of the buttons below.
-
-### Deploy with Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/markdoc/next.js-starter)
-
-### Deploy to Netlify
-
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/markdoc/next.js-starter)
+- [Dagster Essentials](/dagster-essentials)
+  - Lesson 1
+    - [What's data engineering?](/dagster-essentials/lesson-1/whats-data-engineering)
+    - [What's an orchestrator?](/dagster-essentials/lesson-1/whats-an-orchestrator)
+    - [Orchestration approaches](/dagster-essentials/lesson-1/orchestration-approaches)
+    - [Why is asset-centric orchestration good for data engineering?](/dagster-essentials/lesson-1/why-is-asset-centric-orchestration-good-for-data-engineering)
+    - [Project preview](/dagster-essentials/lesson-1/project-preview)
+  - Lesson 2
+    - [Requirements and installation](/dagster-essentials/lesson-2/requirements-and-installation)
+    - [Create the Dagster project](/dagster-essentials/lesson-2/create-dagster-project)
+    - [Project files](/dagster-essentials/lesson-2/project-files)
