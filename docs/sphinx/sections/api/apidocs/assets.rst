@@ -19,6 +19,8 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 .. autoclass:: AutoMaterializePolicy
 
+.. autoclass:: AutoMaterializeRule
+
 .. autofunction:: load_assets_from_modules
 
 .. autofunction:: load_assets_from_current_module
