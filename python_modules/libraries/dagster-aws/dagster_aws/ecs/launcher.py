@@ -354,13 +354,16 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
         return run_args.get_command_args()
 
+    def _get_image_for_run(self, context: LaunchRunContext) -> Optional[str]:
+        job_origin = check.not_none(context.job_code_origin)
+        return job_origin.repository_origin.container_image
+
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
         job_origin = check.not_none(context.job_code_origin)
-        image = job_origin.repository_origin.container_image
 
         # ECS limits overrides to 8192 characters including json formatting
         # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
@@ -379,6 +382,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             instance_ref=self._instance.get_ref(),
         )
         command = self._get_command_args(args, context)
+        image = self._get_image_for_run(context)
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
