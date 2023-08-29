@@ -77,11 +77,11 @@ class AutoMaterializePolicy(
     - `AutoMaterializeRule.materialize_on_missing()` - Materialize an asset or a partition if it has
     never been materialized.
     - `AutoMaterializeRule.materialize_on_parent_updated()` - Materialize an asset or a partition if
-    one of its parents has been updated more recently than it has.
+    one of its parents have been updated more recently than it has.
     - `AutoMaterializeRule.materialize_on_required_for_freshness()` - Materialize an asset or a
     partition if it is required to satisfy a freshness policy.
-    - `AutoMaterializeRule.skip_on_parent_outdated()` - Skip materializing an asset or a partition
-    if any of its parents has not incorporated the latest data from its ancestors.
+    - `AutoMaterializeRule.skip_on_parent_outdated()` - Skip materializing an asset or partition if
+    any of its parents have ancestors that have been materialized more recently.
     - `AutoMaterializeRule.skip_on_parent_missing()` - Skip materializing an asset or a partition if
     any parent has never been materialized or observed.
 
