@@ -133,7 +133,8 @@ const AssetCheckDetailModalImpl = ({
     if (executionHistoryData.assetChecksOrError.__typename === 'AssetCheckNeedsMigrationError') {
       return <MigrationRequired />;
     }
-    if (!executionHistoryData.assetChecksOrError.checks[0]) {
+    const check = executionHistoryData.assetChecksOrError.checks[0];
+    if (!check) {
       showCustomAlert({
         title: 'Error',
         body: `Asset Check ${checkName} not found`,
@@ -144,7 +145,7 @@ const AssetCheckDetailModalImpl = ({
       });
       return <NoChecks />;
     }
-    const executions = executionHistoryData.assetChecksOrError.checks[0].executions;
+    const executions = check.executions;
     if (!executions.length) {
       return <NoExecutions />;
     }
@@ -174,15 +175,7 @@ const AssetCheckDetailModalImpl = ({
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag
-                      status={execution.status}
-                      severity={
-                        (executionHistoryData.assetChecksOrError as Extract<
-                          AssetCheckDetailsQuery['assetChecksOrError'],
-                          {__typename: 'AssetChecks'}
-                        >['checks'][0]).severity
-                      }
-                    />
+                    <AssetCheckStatusTag status={execution.status} severity={check.severity} />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
