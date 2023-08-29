@@ -216,7 +216,7 @@ def build_assets_job(
         node_defs = [
             asset.node_def
             for asset in source_assets
-            if isinstance(asset, SourceAsset) and asset.is_observable
+            if isinstance(asset, SourceAsset) and asset.is_observable and asset.node_def is not None
         ]
 
     graph = GraphDefinition(
