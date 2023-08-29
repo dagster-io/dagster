@@ -287,7 +287,7 @@ export function MigrationRequired() {
         description={
           <Box flex={{direction: 'column'}}>
             <Body2 color={Colors.Gray700} style={{padding: '6px 0'}}>
-              A data migration is required to use asset checks. Run{' '}
+              A database schema migration is required to use asset checks. Run{' '}
               <Mono>dagster instance migrate</Mono>.
             </Body2>
             {/* <Box
