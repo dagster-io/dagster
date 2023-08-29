@@ -16,37 +16,34 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 
     steps: List[BuildkiteStep] = []
 
-    # Trigger a build on the internal pipeline for dagster PRs. Feature branches use the
-    # `oss-internal-compatibility` pipeline, master/release branches use the full `internal`
-    # pipeline. Feature branches use internal' `master` branch by default, but this can be
-    # overridden by setting the `INTERNAL_BRANCH` environment variable or passing
-    # `[INTERNAL_BRANCH=<branch>]` in the commit message. Master/release branches
-    # always run on the matching internal branch.
+    # Trigger a build on the internal pipeline for dagster PRs.
+    # master/release branches always trigger
+    # Feature branches only trigger if [INTERNAL_BRANCH=<branch>] is in the commit message
     if not oss_contribution and not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         if branch_name == "master" or is_release_branch(branch_name):
             pipeline_name = "internal"
             trigger_branch = branch_name  # build on matching internal release branch
             async_step = True
-        else:  # feature branch
+        elif _get_setting("INTERNAL_BRANCH"):  # feature branch
             pipeline_name = "oss-internal-compatibility"
             trigger_branch = _get_setting("INTERNAL_BRANCH") or "master"
             async_step = False
 
-        steps.append(
-            build_trigger_step(
-                pipeline=pipeline_name,
-                trigger_branch=trigger_branch,
-                async_step=async_step,
-                env={
-                    "DAGSTER_BRANCH": branch_name,
-                    "DAGSTER_COMMIT_HASH": commit_hash,
-                    "DAGSTER_UI_ONLY_OSS_CHANGE": (
-                        "1" if not skip_if_no_dagster_ui_changes() else ""
-                    ),
-                    "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
-                },
-            ),
-        )
+            steps.append(
+                build_trigger_step(
+                    pipeline=pipeline_name,
+                    trigger_branch=trigger_branch,
+                    async_step=async_step,
+                    env={
+                        "DAGSTER_BRANCH": branch_name,
+                        "DAGSTER_COMMIT_HASH": commit_hash,
+                        "DAGSTER_UI_ONLY_OSS_CHANGE": (
+                            "1" if not skip_if_no_dagster_ui_changes() else ""
+                        ),
+                        "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
+                    },
+                ),
+            )
 
     # Full pipeline.
     steps += build_repo_wide_steps()
