@@ -74,37 +74,40 @@ class AutoMaterializePolicy(
 
     The most common policy is `AutoMaterializePolicy.eager()`, which consists of the following rules:
 
-    - `AutoMaterializeRule.materialize_on_missing()` - Materialize an asset or a partition if it has
-    never been materialized.
-    - `AutoMaterializeRule.materialize_on_parent_updated()` - Materialize an asset or a partition if
-    one of its parents have been updated more recently than it has.
-    - `AutoMaterializeRule.materialize_on_required_for_freshness()` - Materialize an asset or a
-    partition if it is required to satisfy a freshness policy.
-    - `AutoMaterializeRule.skip_on_parent_outdated()` - Skip materializing an asset or partition if
-    any of its parents have ancestors that have been materialized more recently.
-    - `AutoMaterializeRule.skip_on_parent_missing()` - Skip materializing an asset or a partition if
-    any parent has never been materialized or observed.
+    - `AutoMaterializeRule.materialize_on_missing()`
+        Materialize an asset or a partition if it has never been materialized.
+    - `AutoMaterializeRule.materialize_on_parent_updated()`
+        Materialize an asset or a partition if one of its parents have been updated more recently
+        than it has.
+    - `AutoMaterializeRule.materialize_on_required_for_freshness()`
+        Materialize an asset or a partition if it is required to satisfy a freshness policy.
+    - `AutoMaterializeRule.skip_on_parent_outdated()`
+        Skip materializing an asset or partition if any of its parents have ancestors that have
+        been materialized more recently.
+    - `AutoMaterializeRule.skip_on_parent_missing()`
+        Skip materializing an asset or a partition if any parent has never been materialized or
+        observed.
 
     Policies can be customized by adding or removing rules. For example, if you'd like to allow
     an asset to be materialized even if some of its parent partitions are missing:
 
-    ```python
-    from dagster import AutoMaterializePolicy, AutoMaterializeRule
+    .. code-block:: python
 
-    my_policy = AutoMaterializePolicy.eager().without_rules(
-        AutoMaterializeRule.skip_on_parent_missing(),
-    )
-    ```
+        from dagster import AutoMaterializePolicy, AutoMaterializeRule
+
+        my_policy = AutoMaterializePolicy.eager().without_rules(
+            AutoMaterializeRule.skip_on_parent_missing(),
+        )
 
     If you'd like an asset to wait for all of its parents to be updated before materializing:
 
-    ```python
-    from dagster import AutoMaterializePolicy, AutoMaterializeRule
+    .. code-block:: python
 
-    my_policy = AutoMaterializePolicy.eager().with_rules(
-        AutoMaterializeRule.skip_on_all_parents_not_updated(),
-    )
-    ```
+        from dagster import AutoMaterializePolicy, AutoMaterializeRule
+
+        my_policy = AutoMaterializePolicy.eager().with_rules(
+            AutoMaterializeRule.skip_on_all_parents_not_updated(),
+        )
 
     Lastly, the `max_materializations_per_minute` parameter, which is set to 1 by default,
     rate-limits the number of auto-materializations that can occur for a particular asset within
