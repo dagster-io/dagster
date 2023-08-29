@@ -79,6 +79,10 @@
             "path": "/concepts/assets/software-defined-assets"
           },
           {
+            "title": "Asset Jobs",
+            "path": "/concepts/assets/asset-jobs"
+          },
+          {
             "title": "Asset observations",
             "path": "/concepts/assets/asset-observations"
           },
@@ -206,7 +210,7 @@
             ]
           },
           {
-            "title": "Jobs",
+            "title": "Op jobs",
             "children": [
               {
                 "title": "Jobs",
