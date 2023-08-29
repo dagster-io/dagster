@@ -155,20 +155,30 @@ const AssetCheckDetailModalImpl = ({
           <thead>
             <tr>
               <th>Timestamp</th>
+              <th>Target materialization</th>
               <th>Result</th>
               <th>Evaluation metadata</th>
             </tr>
           </thead>
           <tbody>
             {executions.map((execution) => {
-              const timestamp = execution.evaluation?.targetMaterialization?.timestamp;
               return (
                 <tr key={execution.id}>
                   <td>
-                    {timestamp ? (
-                      // @ts-expect-error - targetMaterialization is not null since timestamp is truthy in this branch
+                    {execution.evaluation?.timestamp ? (
+                      <Link to={`/runs/${execution.runId}`}>
+                        <TimestampDisplay timestamp={execution.evaluation.timestamp} />
+                      </Link>
+                    ) : (
+                      ' - '
+                    )}
+                  </td>
+                  <td>
+                    {execution.evaluation?.targetMaterialization ? (
                       <Link to={`/runs/${execution.evaluation.targetMaterialization.runId}`}>
-                        <TimestampDisplay timestamp={timestamp} />
+                        <TimestampDisplay
+                          timestamp={execution.evaluation.targetMaterialization.timestamp}
+                        />
                       </Link>
                     ) : (
                       ' - '
