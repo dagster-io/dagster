@@ -2482,6 +2482,11 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, "event", EventLogEntry)
         check.opt_int_param(event_id, "event_id")
 
+        check.invariant(
+            self.supports_asset_checks,
+            "Asset checks require a database schema migration. Run `dagster instance migrate`.",
+        )
+
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
             self._store_asset_check_evaluation_planned(event, event_id)
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
