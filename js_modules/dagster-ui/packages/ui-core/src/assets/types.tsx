@@ -19,4 +19,5 @@ export interface AssetViewParams {
   time?: string;
   asOf?: string;
   evaluation?: string;
+  check_detail?: string;
 }
