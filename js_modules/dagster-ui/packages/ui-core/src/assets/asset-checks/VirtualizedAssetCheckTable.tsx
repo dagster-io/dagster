@@ -4,10 +4,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetCheckExecutionStatus, AssetCheckSeverity} from '../../graphql/types';
+import {AssetCheckExecutionStatus, AssetCheckSeverity, AssetKeyInput} from '../../graphql/types';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';
 import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
 import {MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
@@ -19,11 +20,13 @@ type Check = Extract<
 >['checks'][0];
 
 type Props = {
+  assetKey: AssetKeyInput;
   lastMaterializationRunId: string | undefined;
   rows: Check[];
 };
 
 export const VirtualizedAssetCheckTable: React.FC<Props> = ({
+  assetKey,
   rows,
   lastMaterializationRunId,
 }: Props) => {
@@ -49,6 +52,7 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({
             const row: Check = rows[index]!;
             return (
               <VirtualizedAssetCheckRow
+                assetKey={assetKey}
                 key={key}
                 height={size}
                 start={start}
@@ -66,6 +70,7 @@ export const VirtualizedAssetCheckTable: React.FC<Props> = ({
 const TEMPLATE_COLUMNS = '2fr 80px 120px 1fr 1fr';
 
 interface AssetCheckRowProps {
+  assetKey: AssetKeyInput;
   height: number;
   start: number;
   row: Check;
@@ -73,6 +78,7 @@ interface AssetCheckRowProps {
 }
 
 export const VirtualizedAssetCheckRow = ({
+  assetKey,
   height,
   start,
   row,
@@ -108,7 +114,7 @@ export const VirtualizedAssetCheckRow = ({
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
-            <Link to={`/assets/checked_asset?view=checks&check_detail=${row.name}`}>
+            <Link to={`${assetDetailsPathForKey(assetKey)}?view=checks&check_detail=${row.name}`}>
               <Body2>{row.name}</Body2>
             </Link>
             <CaptionEllipsed>{row.description}</CaptionEllipsed>

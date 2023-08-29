@@ -61,6 +61,7 @@ export const AssetChecks = ({
     }
     return (
       <VirtualizedAssetCheckTable
+        assetKey={assetKey}
         rows={checks}
         lastMaterializationRunId={lastMaterializationRunId}
       />
