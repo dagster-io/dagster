@@ -647,9 +647,14 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         dynamic_partitions_store: "DynamicPartitionsStore",
     ) -> "AutoMaterializeAssetEvaluation":
         auto_materialize_policy = asset_graph.auto_materialize_policies_by_key.get(asset_key)
-        if not auto_materialize_policy:
-            check.failed(f"Expected auto-materialize policy on asset {asset_key}")
-        rule_snapshots = [rule.to_snapshot() for rule in auto_materialize_policy.rules]
+
+        # TODO once all tests contain auto-materialize policies on the assets, can assume
+        # that rule_snapshots is always a list
+        rule_snapshots = (
+            [rule.to_snapshot() for rule in auto_materialize_policy.rules]
+            if auto_materialize_policy
+            else None
+        )
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
