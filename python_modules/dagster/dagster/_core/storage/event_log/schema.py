@@ -188,6 +188,14 @@ db.Index(
 )
 
 db.Index(
+    "idx_asset_check_executions_status",
+    AssetCheckExecutionsTable.c.asset_key,
+    AssetCheckExecutionsTable.c.check_name,
+    AssetCheckExecutionsTable.c.execution_status,
+    mysql_length={"asset_key": 64, "check_name": 64},
+)
+
+db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
     mysql_length=32,
