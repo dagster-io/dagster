@@ -174,7 +174,15 @@ const AssetCheckDetailModalImpl = ({
                     )}
                   </td>
                   <td>
-                    <AssetCheckStatusTag status={execution.status} />
+                    <AssetCheckStatusTag
+                      status={execution.status}
+                      severity={
+                        (executionHistoryData.assetChecksOrError as Extract<
+                          AssetCheckDetailsQuery['assetChecksOrError'],
+                          {__typename: 'AssetChecks'}
+                        >['checks'][0]).severity
+                      }
+                    />
                   </td>
                   <td>
                     <MetadataCell metadataEntries={execution.evaluation?.metadataEntries} />
@@ -263,6 +271,7 @@ export const ASSET_CHECK_DETAILS_QUERY = gql`
         checks {
           name
           description
+          severity
           executions(limit: $limit, cursor: $cursor) {
             ...AssetCheckExecutionFragment
           }
