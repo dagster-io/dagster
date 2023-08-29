@@ -102,3 +102,10 @@ export const TestAssetCheckWarning = buildAssetCheck({
     }),
   ],
 });
+
+export const TestAssetCheckNoExecutions = buildAssetCheck({
+  assetKey: buildAssetKey(testAssetKey),
+  name: 'Test check',
+  description: 'Test description',
+  executions: [],
+});
