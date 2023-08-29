@@ -323,6 +323,16 @@ all_hourly_partitioned_100_assets_100_partition_keys = InstanceSnapshot(
 # ==============================================
 perf_scenarios = [
     PerfScenario(
+        snapshot=unpartitioned_500_assets_2_random_runs,
+        n_freshness_policies=0,
+        max_execution_time_seconds=5,
+    ),
+    PerfScenario(
+        snapshot=unpartitioned_500_assets_2_random_runs,
+        n_freshness_policies=100,
+        max_execution_time_seconds=10,
+    ),
+    PerfScenario(
         snapshot=unpartitioned_2000_assets_1_run,
         n_freshness_policies=0,
         max_execution_time_seconds=10,
@@ -346,16 +356,6 @@ perf_scenarios = [
         snapshot=unpartitioned_2000_assets_2_random_runs,
         n_freshness_policies=10,
         max_execution_time_seconds=25,
-    ),
-    PerfScenario(
-        snapshot=unpartitioned_500_assets_2_random_runs,
-        n_freshness_policies=0,
-        max_execution_time_seconds=10,
-    ),
-    PerfScenario(
-        snapshot=unpartitioned_500_assets_2_random_runs,
-        n_freshness_policies=100,
-        max_execution_time_seconds=10,
     ),
     PerfScenario(
         snapshot=all_daily_partitioned_500_assets_2_partition_keys,
