@@ -72,6 +72,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneAssetCheckExecutionResolvedStatus)
     evaluation = graphene.Field(GrapheneAssetCheckEvaluation)
+    targetsLatestMaterialization = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "AssetCheckExecution"
@@ -80,6 +81,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         self,
         execution: AssetCheckExecutionRecord,
         status: AssetCheckExecutionResolvedStatus,
+        targetsLatestMaterialization: bool,
     ):
         self.id = execution.id
         self.runId = execution.run_id
@@ -89,6 +91,7 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
             if execution.evaluation_event
             else None
         )
+        self.targetsLatestMaterialization = targetsLatestMaterialization
 
 
 GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)

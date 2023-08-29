@@ -28,3 +28,4 @@ class AssetCheckExecutionRecord(NamedTuple):
     stored_status: AssetCheckExecutionStoredStatus
     evaluation_event: Optional[EventLogEntry]
     create_timestamp: float
+    event_storage_id: int

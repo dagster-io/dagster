@@ -66,12 +66,49 @@ def _get_asset_check_execution_status(
         check.failed(f"Unexpected status {stored_status}")
 
 
+def _get_targets_latest_materialization(
+    instance: DagsterInstance,
+    external_asset_check: ExternalAssetCheck,
+    execution: AssetCheckExecutionRecord,
+    resolved_status: AssetCheckExecutionResolvedStatus,
+) -> bool:
+    if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+        # always assume that an in progress check will target the latest materialization
+        return True
+    else:
+        records = instance.get_asset_records([external_asset_check.asset_key])
+        latest_materialization = (
+            records[0].asset_entry.last_materialization_record if records else None
+        )
+
+        if not latest_materialization:
+            # asset hasn't been materialized yet, so no need to hide the check
+            return True
+
+        latest_materialization_run_id = latest_materialization.event_log_entry.run_id
+        if latest_materialization_run_id == execution.run_id:
+            return True
+
+        latest_materialization_run_record = instance.get_run_record_by_id(
+            latest_materialization_run_id
+        )
+        execution_run_record = instance.get_run_record_by_id(execution.run_id)
+
+        if execution_run_record.start_time > latest_materialization_run_record.start_time:
+            return True
+
+        return False
+
+
 def fetch_executions(
-    instance: DagsterInstance, asset_check: ExternalAssetCheck, limit: int, cursor: Optional[str]
+    instance: DagsterInstance,
+    external_asset_check: ExternalAssetCheck,
+    limit: int,
+    cursor: Optional[str],
 ) -> List[GrapheneAssetCheckExecution]:
     executions = instance.event_log_storage.get_asset_check_executions(
-        asset_key=asset_check.asset_key,
-        check_name=asset_check.name,
+        asset_key=external_asset_check.asset_key,
+        check_name=external_asset_check.name,
         limit=limit,
         cursor=int(cursor) if cursor else None,
     )
@@ -79,6 +116,7 @@ def fetch_executions(
     res = []
     for execution in executions:
         resolved_status = _get_asset_check_execution_status(instance, execution)
+
         res.append(GrapheneAssetCheckExecution(execution, resolved_status))
 
     return res
