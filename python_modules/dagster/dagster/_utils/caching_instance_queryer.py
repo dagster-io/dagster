@@ -78,6 +78,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
 
         self._cache = {}
+        self._updated_parents_cache = {}
+        self._parent_asset_partitions_cache = {}
 
     @property
     def instance(self) -> DagsterInstance:
@@ -848,7 +850,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return updated_parents
 
-    @cached_method
     def get_root_unreconciled_ancestors(
         self, *, asset_partition: AssetKeyPartitionKey, respect_materialization_data_versions: bool
     ) -> AbstractSet[AssetKey]:
@@ -859,23 +860,28 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # NEED TO FIGURE OUT respect_materialization_data_versions
 
         if asset_partition in self._cache:
+            print(f"{asset_partition} was in cache")
             return self._cache[asset_partition]
+
+        import time
+
+        start_time = time.time()
+        print("Calculating for {asset_partition} " + str(start_time))
 
         # First gather all the candidates via breadth-first traversal
         # For each candidate, maintain whether or not they have updated parents
-        updated_parents_cache: Dict[AssetKeyPartitionKey, AbstractSet[AssetKeyPartitionKey]] = {}
-        parent_asset_partitions_cache: Dict[
-            AssetKeyPartitionKey, AbstractSet[AssetKeyPartitionKey]
-        ] = {}
 
         queue: deque[AssetKeyPartitionKey] = deque()
         queue.append(asset_partition)
 
+        visited: set[AssetKeyPartitionKey] = set()
+
         while queue:
             current_partition = queue.popleft()
+            visited.add(current_partition)
 
             if self.asset_graph.is_source(current_partition.asset_key):
-                updated_parents_cache[current_partition] = set()
+                self._updated_parents_cache[current_partition] = set()
                 continue
 
             parent_asset_partitions = self.asset_graph.get_parents_partitions(
@@ -885,7 +891,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 partition_key=current_partition.partition_key,
             ).parent_partitions
 
-            parent_asset_partitions_cache[current_partition] = parent_asset_partitions
+            self._parent_asset_partitions_cache[current_partition] = parent_asset_partitions
 
             updated_parents = self.get_updated_parent_asset_partitions(
                 asset_partition=current_partition,
@@ -893,17 +899,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 respect_materialization_data_versions=respect_materialization_data_versions,
             )
 
-            updated_parents_cache[current_partition] = updated_parents
+            self._updated_parents_cache[current_partition] = updated_parents
 
             parents_to_explore = set(parent_asset_partitions) - updated_parents
 
             for parent in parents_to_explore:
-                if parent not in updated_parents_cache:
+                if parent not in self._updated_parents_cache and parent not in self._cache:
                     queue.append(parent)
 
-        self._cache = {}
-
-        toposort_queue = ToposortedPriorityQueue(self.asset_graph, updated_parents_cache.keys())
+        toposort_queue = ToposortedPriorityQueue(self.asset_graph, visited)
 
         while len(toposort_queue) > 0:
             candidates_unit = toposort_queue.dequeue()
@@ -912,14 +916,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     self._cache[current_partition] = set()
                     continue
 
-                updated_parents = updated_parents_cache[current_partition]
+                updated_parents = self._updated_parents_cache[current_partition]
                 # Keep parent asset partitions cache??
 
                 root_unreconciled_ancestors = (
                     {current_partition.asset_key} if updated_parents else set()
                 )
 
-                parent_asset_partitions = parent_asset_partitions_cache[current_partition]
+                parent_asset_partitions = self._parent_asset_partitions_cache[current_partition]
 
                 for parent in set(parent_asset_partitions) - updated_parents:
                     root_unreconciled_ancestors.update(self._cache[parent])
@@ -927,5 +931,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 self._cache[current_partition] = root_unreconciled_ancestors
 
         # Toposort them
+
+        print(
+            f"Finished calculating for {asset_partition}: It took " + str(time.time() - start_time)
+        )
 
         return self._cache[asset_partition]
