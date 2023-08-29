@@ -114,7 +114,12 @@ export const VirtualizedAssetCheckRow = ({
       <RowGrid border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>
-            <Link to={`${assetDetailsPathForKey(assetKey)}?view=checks&check_detail=${row.name}`}>
+            <Link
+              to={assetDetailsPathForKey(assetKey, {
+                view: 'checks',
+                check_detail: row.name,
+              })}
+            >
               <Body2>{row.name}</Body2>
             </Link>
             <CaptionEllipsed>{row.description}</CaptionEllipsed>
