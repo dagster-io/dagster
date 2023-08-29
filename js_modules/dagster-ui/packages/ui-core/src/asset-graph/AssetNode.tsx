@@ -81,7 +81,7 @@ export const AssetNode: React.FC<{
             ) : (
               <Description $color={Colors.Gray400}>No description</Description>
             )}
-            {definition.isPartitioned && !definition.isObservable && (
+            {definition.isPartitioned && !definition.isSource && (
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
             <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
