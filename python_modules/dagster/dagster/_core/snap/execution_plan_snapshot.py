@@ -1,7 +1,8 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.execution.plan.inputs import (
     StepInput,
@@ -108,6 +109,23 @@ class ExecutionPlanSnapshot(
     @property
     def can_reconstruct_plan(self):
         return self.snapshot_version and self.snapshot_version > 0
+
+    @property
+    def step_keys_to_asset_keys(self) -> Mapping[str, AbstractSet[AssetKey]]:
+        step_keys_to_asset_keys = {}
+        for step in self.steps:
+            for output in step.outputs:
+                if output.properties and output.properties.asset_key:
+                    step_keys_to_asset_keys.setdefault(step.key, set()).add(
+                        output.properties.asset_key.to_string()
+                    )
+        return step_keys_to_asset_keys
+
+    def get_step_key_for_asset_key(self, asset_key: AssetKey) -> Optional[str]:
+        for step_key, asset_keys in self.step_keys_to_asset_keys.items():
+            if asset_key.to_string() in asset_keys:
+                return step_key
+        return None
 
 
 @whitelist_for_serdes

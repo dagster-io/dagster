@@ -1322,6 +1322,7 @@ class DagsterInstance(DynamicPartitionsStore):
                             event_specific_data=AssetMaterializationPlannedData(
                                 asset_key, partition=partition
                             ),
+                            step_key=execution_plan_snapshot.get_step_key_for_asset_key(asset_key),
                         )
                         self.report_dagster_event(event, dagster_run.run_id, logging.DEBUG)
 
