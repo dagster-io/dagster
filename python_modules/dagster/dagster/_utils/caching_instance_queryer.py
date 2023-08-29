@@ -856,6 +856,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """
         root_unreconciled_ancestors = set()
 
+        visited: Set[AssetKeyPartitionKey] = set()
+
         queue: deque[AssetKeyPartitionKey] = deque()
         queue.append(asset_partition)
 
@@ -863,6 +865,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             current_partition = queue.popleft()
 
             if self.asset_graph.is_source(current_partition.asset_key):
+                visited.add(current_partition)
                 continue
 
             parent_asset_partitions = self.asset_graph.get_parents_partitions(
@@ -881,8 +884,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if updated_parents:
                 root_unreconciled_ancestors.add(current_partition.asset_key)
 
-            parents_to_explore = set(parent_asset_partitions) - updated_parents
+            parents_to_explore = set(parent_asset_partitions) - updated_parents - visited
 
-            queue.extend(parents_to_explore)
+            for parent in parents_to_explore:
+                queue.append(parent)
+                visited.add(parent)
 
         return root_unreconciled_ancestors
