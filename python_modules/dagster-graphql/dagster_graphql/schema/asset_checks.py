@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 import dagster._check as check
 import graphene
@@ -11,7 +11,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.host_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
-    AssetCheckExecutionStatus,
+    AssetCheckExecutionResolvedStatus,
 )
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -22,7 +22,9 @@ from dagster_graphql.schema.util import non_null_list
 from .asset_key import GrapheneAssetKey
 from .util import ResolveInfo
 
-GrapheneAssetCheckExecutionStatus = graphene.Enum.from_enum(AssetCheckExecutionStatus)
+GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
+    AssetCheckExecutionResolvedStatus
+)
 
 
 class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType):
@@ -68,17 +70,21 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 class GrapheneAssetCheckExecution(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)
-    status = graphene.NonNull(GrapheneAssetCheckExecutionStatus)
+    status = graphene.NonNull(GrapheneAssetCheckExecutionResolvedStatus)
     evaluation = graphene.Field(GrapheneAssetCheckEvaluation)
 
     class Meta:
         name = "AssetCheckExecution"
 
-    def __init__(self, execution: AssetCheckExecutionRecord):
+    def __init__(
+        self,
+        execution: AssetCheckExecutionRecord,
+        status: AssetCheckExecutionResolvedStatus,
+    ):
         super().__init__()
         self.id = str(execution.id)
         self.runId = execution.run_id
-        self.status = execution.status
+        self.status = status
         self.evaluation = (
             GrapheneAssetCheckEvaluation(execution.evaluation_event)
             if execution.evaluation_event
@@ -118,15 +124,16 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_severity(self, _) -> AssetCheckSeverity:
         return self._asset_check.severity
 
-    def resolve_executions(self, graphene_info: ResolveInfo, **kwargs):
-        executions = graphene_info.context.instance.event_log_storage.get_asset_check_executions(
-            asset_key=self._asset_check.asset_key,
-            check_name=self._asset_check.name,
-            limit=kwargs["limit"],
-            cursor=kwargs.get("cursor"),
+    def resolve_executions(
+        self, graphene_info: ResolveInfo, **kwargs
+    ) -> List[GrapheneAssetCheckExecution]:
+        from dagster_graphql.implementation.fetch_asset_checks import (
+            fetch_executions,
         )
 
-        return [GrapheneAssetCheckExecution(e) for e in executions]
+        return fetch_executions(
+            graphene_info.context.instance, self._asset_check, kwargs["limit"], kwargs.get("cursor")
+        )
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

@@ -44,7 +44,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
-    AssetCheckExecutionStatus,
+    AssetCheckExecutionRecordStatus,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
@@ -2499,7 +2499,7 @@ class SqlEventLogStorage(EventLogStorage):
                     asset_key=planned.asset_key.to_string(),
                     check_name=planned.check_name,
                     run_id=event.run_id,
-                    execution_status=AssetCheckExecutionStatus.PLANNED.value,
+                    execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
                 )
             )
 
@@ -2520,9 +2520,9 @@ class SqlEventLogStorage(EventLogStorage):
                 )
                 .values(
                     execution_status=(
-                        AssetCheckExecutionStatus.SUCCESS.value
+                        AssetCheckExecutionRecordStatus.SUCCEEDED.value
                         if evaluation.success
-                        else AssetCheckExecutionStatus.FAILURE.value
+                        else AssetCheckExecutionRecordStatus.FAILED.value
                     ),
                     evaluation_event=serialize_value(event),
                     evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
@@ -2573,7 +2573,7 @@ class SqlEventLogStorage(EventLogStorage):
         if not include_planned:
             query = query.where(
                 AssetCheckExecutionsTable.c.execution_status
-                != AssetCheckExecutionStatus.PLANNED.value
+                != AssetCheckExecutionRecordStatus.PLANNED.value
             )
         if materialization_event_storage_id:
             if include_planned:
@@ -2583,7 +2583,7 @@ class SqlEventLogStorage(EventLogStorage):
                         AssetCheckExecutionsTable.c.materialization_event_storage_id
                         == materialization_event_storage_id,
                         AssetCheckExecutionsTable.c.execution_status
-                        == AssetCheckExecutionStatus.PLANNED.value,
+                        == AssetCheckExecutionRecordStatus.PLANNED.value,
                     )
                 )
             else:
@@ -2599,7 +2599,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetCheckExecutionRecord(
                 id=cast(int, row[0]),
                 run_id=cast(str, row[1]),
-                status=AssetCheckExecutionStatus(row[2]),
+                status=AssetCheckExecutionRecordStatus(row[2]),
                 evaluation_event=(
                     deserialize_value(cast(str, row[3]), EventLogEntry) if row[3] else None
                 ),
