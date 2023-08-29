@@ -61,7 +61,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput): Record<string, Ass
       id: 'partitions',
       title: 'Partitions',
       to: buildAssetViewParams({...params, view: 'partitions'}),
-      hidden: !definition?.partitionDefinition,
+      hidden: !definition?.partitionDefinition || definition?.isObservable,
     },
     checks: {
       id: 'checks',
