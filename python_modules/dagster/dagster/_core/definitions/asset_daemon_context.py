@@ -338,6 +338,8 @@ class AssetDaemonContext:
 
         for materialize_rule in auto_materialize_policy.materialize_rules:
             rule_snapshot = materialize_rule.to_snapshot()
+
+            self._logger.debug(f"Evaluating materialize rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in materialize_rule.evaluate_for_asset(
                 materialize_context
             ):
@@ -349,7 +351,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
                 to_materialize.update(asset_partitions)
+            self._logger.debug("Done evaluating materialize rule")
 
         # These should be conditions, but aren't currently, so we just manually strip out things
         # from our materialization set
@@ -377,6 +381,7 @@ class AssetDaemonContext:
 
         for skip_rule in auto_materialize_policy.skip_rules:
             rule_snapshot = skip_rule.to_snapshot()
+            self._logger.debug(f"Evaluating skip rule: {rule_snapshot}")
             for evaluation_data, asset_partitions in skip_rule.evaluate_for_asset(skip_context):
                 all_results.append(
                     (
@@ -386,7 +391,9 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Rule returned {len(asset_partitions)} partitions")
                 to_skip.update(asset_partitions)
+            self._logger.debug("Done evaluating skip rule")
         to_materialize.difference_update(to_skip)
 
         # this is treated separately from other rules, for now
@@ -395,6 +402,9 @@ class AssetDaemonContext:
                 limit=auto_materialize_policy.max_materializations_per_minute
             )
             rule_snapshot = rule.to_snapshot()
+
+            self._logger.debug(f"Evaluating discard rule: {rule_snapshot}")
+
             for evaluation_data, asset_partitions in rule.evaluate_for_asset(
                 skip_context._replace(candidates=to_materialize)
             ):
@@ -406,7 +416,10 @@ class AssetDaemonContext:
                         asset_partitions,
                     )
                 )
+                self._logger.debug(f"Discard rule returned {len(asset_partitions)} partitions")
                 to_discard.update(asset_partitions)
+            self._logger.debug("Done evaluating discard rule")
+
         to_materialize.difference_update(to_discard)
         to_skip.difference_update(to_discard)
 
