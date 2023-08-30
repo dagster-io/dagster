@@ -61,12 +61,14 @@ def asset_check(
         compute_kind (Optional[str]): A string to represent the kind of computation that executes
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
-        severity (AssetCheckSeverity): Severity of the check.
+        severity (AssetCheckSeverity): Severity of the check. Defaults to `WARN`.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
-    Examples:
+
+    Example:
         .. code-block:: python
+
             from dagster import asset, asset_check, AssetCheckResult
 
             @asset
@@ -79,7 +81,9 @@ def asset_check(
                 return AssetCheckResult(success=num_rows > 5, metadata={"num_rows": num_rows})
 
 
+    Example with a DataFrame Output:
         .. code-block:: python
+
             from dagster import asset, asset_check, AssetCheckResult
             from pandas import DataFrame
 
