@@ -1,10 +1,9 @@
 from dagster import (
     AssetCheckHandle,
     AssetCheckResult,
-    AssetCheckSelection,
-    AssetSelection,
     Definitions,
     ExecuteInProcessResult,
+    Selection,
     UnresolvedAssetJobDefinition,
     asset,
     asset_check,
@@ -46,7 +45,7 @@ def execute_asset_job_in_process(asset_job: UnresolvedAssetJobDefinition) -> Exe
 
 
 def test_job_with_all_checks_no_materializations():
-    job_def = define_asset_job("job1", selection=AssetCheckSelection.all())
+    job_def = define_asset_job("job1", selection=Selection.all_asset_checks())
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -60,7 +59,7 @@ def test_job_with_all_checks_no_materializations():
 
 
 def test_job_with_all_checks_for_asset():
-    job_def = define_asset_job("job1", selection=AssetCheckSelection.checks_for_asset(asset1))
+    job_def = define_asset_job("job1", selection=Selection.checks_for_asset(asset1))
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -73,7 +72,7 @@ def test_job_with_all_checks_for_asset():
 
 
 def test_job_with_asset_and_all_its_checks():
-    job_def = define_asset_job("job1", selection=AssetSelection.assets(asset1).with_checks())
+    job_def = define_asset_job("job1", selection=Selection.assets(asset1).with_checks())
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -86,7 +85,7 @@ def test_job_with_asset_and_all_its_checks():
 
 
 def test_job_with_single_check():
-    job_def = define_asset_job("job1", selection=AssetCheckSelection.asset_checks(asset1_check1))
+    job_def = define_asset_job("job1", selection=Selection.asset_checks(asset1_check1))
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -98,7 +97,7 @@ def test_job_with_single_check():
 
 
 def test_job_with_all_assets_but_no_checks():
-    job_def = define_asset_job("job1", selection=AssetSelection.all())
+    job_def = define_asset_job("job1", selection=Selection.all_assets())
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -108,7 +107,7 @@ def test_job_with_all_assets_but_no_checks():
 
 
 def test_job_with_asset_without_its_checks():
-    job_def = define_asset_job("job1", selection=AssetSelection.assets(asset1))
+    job_def = define_asset_job("job1", selection=Selection.assets(asset1))
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -118,7 +117,7 @@ def test_job_with_asset_without_its_checks():
 
 
 def test_job_with_all_assets_and_all_their_checks():
-    job_def = define_asset_job("job1", selection=AssetSelection.all().with_checks())
+    job_def = define_asset_job("job1", selection=Selection.all_assets().with_checks())
     result = execute_asset_job_in_process(job_def)
     assert result.success
 
@@ -130,8 +129,7 @@ def test_job_with_all_assets_and_all_their_checks():
 def test_job_with_all_assets_and_all_but_one_check():
     job_def = define_asset_job(
         "job1",
-        selection=AssetSelection.all_assets().with_checks()
-        - AssetCheckSelection.asset_checks(asset1_check1),
+        selection=Selection.all_assets().with_checks() - Selection.asset_checks(asset1_check1),
     )
     result = execute_asset_job_in_process(job_def)
     assert result.success
