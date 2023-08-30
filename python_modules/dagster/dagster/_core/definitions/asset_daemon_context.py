@@ -53,6 +53,34 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
+def get_implicit_auto_materialize_policy(
+    asset_key: AssetKey, asset_graph: AssetGraph
+) -> Optional[AutoMaterializePolicy]:
+    """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
+    auto_materialize_policy = asset_graph.get_auto_materialize_policy(asset_key)
+    if auto_materialize_policy is None:
+        time_partitions_def = get_time_partitions_def(asset_graph.get_partitions_def(asset_key))
+        if time_partitions_def is None:
+            max_materializations_per_minute = None
+        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+            max_materializations_per_minute = 24
+        else:
+            max_materializations_per_minute = 1
+        rules = {
+            AutoMaterializeRule.materialize_on_missing(),
+            AutoMaterializeRule.materialize_on_required_for_freshness(),
+            AutoMaterializeRule.skip_on_parent_outdated(),
+            AutoMaterializeRule.skip_on_parent_missing(),
+        }
+        if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
+            rules.add(AutoMaterializeRule.materialize_on_parent_updated())
+        return AutoMaterializePolicy(
+            rules=rules,
+            max_materializations_per_minute=max_materializations_per_minute,
+        )
+    return auto_materialize_policy
+
+
 class AssetDaemonContext:
     def __init__(
         self,
@@ -134,35 +162,6 @@ class AssetDaemonContext:
     @property
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
-
-    def get_implicit_auto_materialize_policy(
-        self, asset_key: AssetKey
-    ) -> Optional[AutoMaterializePolicy]:
-        """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
-        auto_materialize_policy = self.asset_graph.get_auto_materialize_policy(asset_key)
-        if auto_materialize_policy is None:
-            time_partitions_def = get_time_partitions_def(
-                self.asset_graph.get_partitions_def(asset_key)
-            )
-            if time_partitions_def is None:
-                max_materializations_per_minute = None
-            elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
-                max_materializations_per_minute = 24
-            else:
-                max_materializations_per_minute = 1
-            rules = {
-                AutoMaterializeRule.materialize_on_missing(),
-                AutoMaterializeRule.materialize_on_required_for_freshness(),
-                AutoMaterializeRule.skip_on_parent_outdated(),
-                AutoMaterializeRule.skip_on_parent_missing(),
-            }
-            if not bool(self.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
-                rules.add(AutoMaterializeRule.materialize_on_parent_updated())
-            return AutoMaterializePolicy(
-                rules=rules,
-                max_materializations_per_minute=max_materializations_per_minute,
-            )
-        return auto_materialize_policy
 
     @cached_method
     def _get_never_handled_and_newly_handled_root_asset_partitions(
@@ -313,7 +312,7 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
         auto_materialize_policy = check.not_none(
-            self.get_implicit_auto_materialize_policy(asset_key)
+            get_implicit_auto_materialize_policy(asset_key, self.asset_graph)
         )
 
         # the results of evaluating individual rules

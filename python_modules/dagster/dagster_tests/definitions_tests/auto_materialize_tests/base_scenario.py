@@ -41,7 +41,10 @@ from dagster import (
     observable_source_asset,
     repository,
 )
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+from dagster._core.definitions.asset_daemon_context import (
+    AssetDaemonContext,
+    get_implicit_auto_materialize_policy,
+)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -138,21 +141,75 @@ class AssetEvaluationSpec(NamedTuple):
         )
 
 
-class AssetReconciliationScenario(NamedTuple):
-    unevaluated_runs: Sequence[RunSpec]
-    assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]
-    between_runs_delta: Optional[datetime.timedelta] = None
-    evaluation_delta: Optional[datetime.timedelta] = None
-    cursor_from: Optional["AssetReconciliationScenario"] = None
-    current_time: Optional[datetime.datetime] = None
-    asset_selection: Optional[AssetSelection] = None
-    active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
-    dagster_runs: Optional[Sequence[DagsterRun]] = None
-    event_log_entries: Optional[Sequence[EventLogEntry]] = None
-    expected_run_requests: Optional[Sequence[RunRequest]] = None
-    code_locations: Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]] = None
-    expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None
-    requires_respect_materialization_data_versions: bool = False
+class AssetReconciliationScenario(
+    NamedTuple(
+        "_AssetReconciliationScenario",
+        [
+            ("unevaluated_runs", Sequence[RunSpec]),
+            ("assets", Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]),
+            ("between_runs_delta", Optional[datetime.timedelta]),
+            ("evaluation_delta", Optional[datetime.timedelta]),
+            ("cursor_from", Optional["AssetReconciliationScenario"]),
+            ("current_time", Optional[datetime.datetime]),
+            ("asset_selection", Optional[AssetSelection]),
+            ("active_backfill_targets", Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]]),
+            ("dagster_runs", Optional[Sequence[DagsterRun]]),
+            ("event_log_entries", Optional[Sequence[EventLogEntry]]),
+            ("expected_run_requests", Optional[Sequence[RunRequest]]),
+            (
+                "code_locations",
+                Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]],
+            ),
+            ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
+            ("requires_respect_materialization_data_versions", bool),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        unevaluated_runs: Sequence[RunSpec],
+        assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]],
+        between_runs_delta: Optional[datetime.timedelta] = None,
+        evaluation_delta: Optional[datetime.timedelta] = None,
+        cursor_from: Optional["AssetReconciliationScenario"] = None,
+        current_time: Optional[datetime.datetime] = None,
+        asset_selection: Optional[AssetSelection] = None,
+        active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None,
+        dagster_runs: Optional[Sequence[DagsterRun]] = None,
+        event_log_entries: Optional[Sequence[EventLogEntry]] = None,
+        expected_run_requests: Optional[Sequence[RunRequest]] = None,
+        code_locations: Optional[
+            Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]
+        ] = None,
+        expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
+        requires_respect_materialization_data_versions: bool = False,
+    ) -> "AssetReconciliationScenario":
+        # If any asset already has existent auto materialize policies, do not override to contain
+        # implicit auto materialize policies. If none have auto materialize policies (old reconciliation
+        # scenario format) then add implicit auto materialize policies to all assets.
+        if assets and not any(
+            a.auto_materialize_policies_by_key
+            for a in [asset for asset in assets if isinstance(asset, AssetsDefinition)]
+        ):
+            assets = with_implicit_auto_materialize_policy(assets, AssetGraph.from_assets(assets))
+
+        return super(AssetReconciliationScenario, cls).__new__(
+            cls,
+            unevaluated_runs=unevaluated_runs,
+            assets=assets,
+            between_runs_delta=between_runs_delta,
+            evaluation_delta=evaluation_delta,
+            cursor_from=cursor_from,
+            current_time=current_time,
+            asset_selection=asset_selection,
+            active_backfill_targets=active_backfill_targets,
+            dagster_runs=dagster_runs,
+            event_log_entries=event_log_entries,
+            expected_run_requests=expected_run_requests,
+            code_locations=code_locations,
+            expected_evaluations=expected_evaluations,
+            requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
+        )
 
     def _get_code_location_origin(
         self, scenario_name, location_name=None
@@ -584,3 +641,29 @@ def observable_source_asset_def(
             )
 
     return _observable
+
+
+def with_implicit_auto_materialize_policy(
+    assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]], asset_graph: AssetGraph
+) -> Sequence[AssetsDefinition]:
+    """Note: this should be implemented in core dagster at some point, and this implementation is
+    a lazy hack.
+    """
+    ret = []
+    for assets_def in assets_defs:
+        if (
+            isinstance(assets_def, AssetsDefinition)
+            and not assets_def.auto_materialize_policies_by_key.keys()
+        ):
+            auto_materialize_policies_by_key = {}
+            for key in assets_def.keys:
+                policy = get_implicit_auto_materialize_policy(key, asset_graph)
+                if policy:
+                    auto_materialize_policies_by_key[key] = policy
+
+            ret.append(
+                assets_def.with_attributes(auto_materialize_policy=auto_materialize_policies_by_key)
+            )
+        else:
+            ret.append(assets_def)
+    return ret
