@@ -1,3 +1,4 @@
+import atexit
 from typing import Any, ClassVar, Mapping, Optional, Sequence
 
 from typing_extensions import Self
@@ -36,7 +37,9 @@ def init_dagster_externals(
     if is_dagster_orchestration_active():
         context_loader = context_loader or ExternalExecutionFileContextLoader()
         message_writer = message_writer or ExternalExecutionFileMessageWriter()
-        data = context_loader.load_context()
+        scoped_context = context_loader.scoped_context()
+        data = scoped_context.__enter__()
+        atexit.register(scoped_context.__exit__, None, None, None)
         context = ExternalExecutionContext(data, message_writer)
     else:
         emit_orchestration_inactive_warning()

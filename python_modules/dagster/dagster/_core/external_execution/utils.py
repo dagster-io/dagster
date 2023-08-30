@@ -17,54 +17,56 @@ if TYPE_CHECKING:
     from dagster._core.external_execution.context import ExternalExecutionOrchestrationContext
 
 
-def get_file_context_injector(path: str) -> ExternalExecutionContextInjector:
+class ExternalExecutionFileContextInjector(ExternalExecutionContextInjector):
+    def __init__(self, path: str):
+        self._path = path
+
     @contextmanager
-    def context_injector(
-        context: "ExternalExecutionOrchestrationContext",
+    def inject_context(
+        self, context: "ExternalExecutionOrchestrationContext"
     ) -> Iterator[ExternalExecutionParams]:
-        with open(path, "w") as input_stream:
+        with open(self._path, "w") as input_stream:
             json.dump(context.get_data(), input_stream)
         try:
-            yield {"path": path}
+            yield {"path": self._path}
         finally:
-            if os.path.exists(path):
-                os.remove(path)
-
-    return context_injector
+            if os.path.exists(self._path):
+                os.remove(self._path)
 
 
-def get_env_context_injector() -> ExternalExecutionContextInjector:
+class ExternalExecutionEnvContextInjector(ExternalExecutionContextInjector):
     @contextmanager
-    def context_injector(
+    def inject_context(
+        self,
         context: "ExternalExecutionOrchestrationContext",
     ) -> Iterator[ExternalExecutionParams]:
         yield {"context_data": context.get_data()}
 
-    return context_injector
 
+class ExternalExecutionFileMessageReader(ExternalExecutionMessageReader):
+    def __init__(self, path: str):
+        self._path = path
 
-def get_file_message_reader(path: str) -> ExternalExecutionMessageReader:
     @contextmanager
-    def message_reader(
+    def read_messages(
+        self,
         context: "ExternalExecutionOrchestrationContext",
     ) -> Iterator[ExternalExecutionParams]:
         is_task_complete = Event()
         thread = None
         try:
-            open(path, "w").close()  # create file
+            open(self._path, "w").close()  # create file
             thread = Thread(
-                target=_read_messages, args=(context, path, is_task_complete), daemon=True
+                target=_read_messages, args=(context, self._path, is_task_complete), daemon=True
             )
             thread.start()
-            yield {"path": path}
+            yield {"path": self._path}
         finally:
             is_task_complete.set()
-            if os.path.exists(path):
-                os.remove(path)
+            if os.path.exists(self._path):
+                os.remove(self._path)
             if thread:
                 thread.join()
-
-    return message_reader
 
 
 def _read_messages(

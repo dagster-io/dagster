@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, ContextManager, Mapping, Optional
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional
 
 from dagster_externals import (
     DAGSTER_EXTERNALS_ENV_KEYS,
@@ -10,15 +11,11 @@ from typing_extensions import TypeAlias
 
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.external_execution.context import ExternalExecutionOrchestrationContext
+
+if TYPE_CHECKING:
+    from dagster._core.external_execution.context import ExternalExecutionOrchestrationContext
 
 ExternalExecutionParams: TypeAlias = Mapping[str, Any]
-ExternalExecutionContextInjector: TypeAlias = Callable[
-    [ExternalExecutionOrchestrationContext], ContextManager[ExternalExecutionParams]
-]
-ExternalExecutionMessageReader: TypeAlias = Callable[
-    [ExternalExecutionOrchestrationContext], ContextManager[ExternalExecutionParams]
-]
 
 
 class ExternalExecutionResource(ConfigurableResource, ABC):
@@ -31,7 +28,25 @@ class ExternalExecutionResource(ConfigurableResource, ABC):
         *,
         context: OpExecutionContext,
         extras: Optional[ExternalExecutionExtras] = None,
-        context_injector: Optional[ExternalExecutionContextInjector] = None,
-        message_reader: Optional[ExternalExecutionMessageReader] = None,
+        context_injector: Optional["ExternalExecutionContextInjector"] = None,
+        message_reader: Optional["ExternalExecutionMessageReader"] = None,
     ) -> None:
+        ...
+
+
+class ExternalExecutionContextInjector(ABC):
+    @abstractmethod
+    @contextmanager
+    def inject_context(
+        self, context: "ExternalExecutionOrchestrationContext"
+    ) -> Iterator[ExternalExecutionParams]:
+        ...
+
+
+class ExternalExecutionMessageReader(ABC):
+    @abstractmethod
+    @contextmanager
+    def read_messages(
+        self, context: "ExternalExecutionOrchestrationContext"
+    ) -> Iterator[ExternalExecutionParams]:
         ...

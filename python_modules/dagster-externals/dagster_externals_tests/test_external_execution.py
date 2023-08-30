@@ -22,9 +22,9 @@ from dagster._core.external_execution.subprocess import (
     SubprocessExecutionResource,
 )
 from dagster._core.external_execution.utils import (
-    get_env_context_injector,
-    get_file_context_injector,
-    get_file_message_reader,
+    ExternalExecutionEnvContextInjector,
+    ExternalExecutionFileContextInjector,
+    ExternalExecutionFileMessageReader,
 )
 from dagster._core.instance_for_test import instance_for_test
 
@@ -56,16 +56,16 @@ def test_external_subprocess_asset(capsys, tmpdir, context_injector_spec, messag
     if context_injector_spec == "default":
         context_injector = None
     elif context_injector_spec == "user/file":
-        context_injector = get_file_context_injector(os.path.join(tmpdir, "input"))
+        context_injector = ExternalExecutionFileContextInjector(os.path.join(tmpdir, "input"))
     elif context_injector_spec == "user/env":
-        context_injector = get_env_context_injector()
+        context_injector = ExternalExecutionEnvContextInjector()
     else:
         assert False, "Unreachable"
 
     if message_reader_spec == "default":
         message_reader = None
     elif message_reader_spec == "user/file":
-        message_reader = get_file_message_reader(os.path.join(tmpdir, "output"))
+        message_reader = ExternalExecutionFileMessageReader(os.path.join(tmpdir, "output"))
     else:
         assert False, "Unreachable"
 

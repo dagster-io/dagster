@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from typing import Iterator
 
 from .._protocol import (
     ExternalExecutionContextData,
@@ -7,6 +9,10 @@ from .._protocol import (
 
 
 class ExternalExecutionContextLoader(ABC):
+    @contextmanager
+    def scoped_context(self) -> Iterator["ExternalExecutionContextData"]:
+        yield self.load_context()
+
     @abstractmethod
     def load_context(self) -> ExternalExecutionContextData:
         raise NotImplementedError()

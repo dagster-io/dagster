@@ -20,8 +20,8 @@ from dagster._core.external_execution.resource import (
     ExternalExecutionResource,
 )
 from dagster._core.external_execution.utils import (
-    get_file_context_injector,
-    get_file_message_reader,
+    ExternalExecutionFileContextInjector,
+    ExternalExecutionFileMessageReader,
     io_params_as_env_vars,
 )
 
@@ -77,12 +77,16 @@ class SubprocessExecutionResource(ExternalExecutionResource):
         with ExitStack() as stack:
             if context_injector is None or message_reader is None:
                 tempdir = stack.enter_context(tempfile.TemporaryDirectory())
-                context_injector = context_injector or get_file_context_injector(
+                context_injector = context_injector or ExternalExecutionFileContextInjector(
                     os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
                 )
-                message_reader = message_reader or get_file_message_reader(
+                message_reader = message_reader or ExternalExecutionFileMessageReader(
                     os.path.join(tempdir, _MESSAGE_READER_FILENAME)
                 )
-            context_injector_params = stack.enter_context(context_injector(external_context))
-            message_reader_params = stack.enter_context(message_reader(external_context))
+            context_injector_params = stack.enter_context(
+                context_injector.inject_context(external_context)
+            )
+            message_reader_params = stack.enter_context(
+                message_reader.read_messages(external_context)
+            )
             yield io_params_as_env_vars(context_injector_params, message_reader_params)
