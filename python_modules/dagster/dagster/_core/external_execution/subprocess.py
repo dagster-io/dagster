@@ -1,6 +1,6 @@
 import os
 import tempfile
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from subprocess import Popen
 from typing import Iterator, Mapping, Optional, Sequence, Union
 
@@ -15,15 +15,18 @@ from dagster._core.external_execution.context import (
     ExternalExecutionOrchestrationContext,
 )
 from dagster._core.external_execution.resource import (
+    ExternalExecutionContextInjector,
+    ExternalExecutionMessageReader,
     ExternalExecutionResource,
 )
 from dagster._core.external_execution.utils import (
-    file_context_source,
-    file_message_sink,
+    ExternalExecutionFileContextInjector,
+    ExternalExecutionFileMessageReader,
+    io_params_as_env_vars,
 )
 
-_CONTEXT_SOURCE_FILENAME = "context"
-_MESSAGE_SINK_FILENAME = "messages"
+_CONTEXT_INJECTOR_FILENAME = "context"
+_MESSAGE_READER_FILENAME = "messages"
 
 
 class SubprocessExecutionResource(ExternalExecutionResource):
@@ -41,11 +44,13 @@ class SubprocessExecutionResource(ExternalExecutionResource):
         *,
         context: OpExecutionContext,
         extras: Optional[ExternalExecutionExtras] = None,
+        context_injector: Optional[ExternalExecutionContextInjector] = None,
+        message_reader: Optional[ExternalExecutionMessageReader] = None,
         env: Optional[Mapping[str, str]] = None,
         cwd: Optional[str] = None,
     ) -> None:
         external_context = ExternalExecutionOrchestrationContext(context=context, extras=extras)
-        with self._setup_io(external_context) as io_env:
+        with self._setup_io(external_context, context_injector, message_reader) as io_env:
             process = Popen(
                 command,
                 cwd=cwd or self.cwd,
@@ -64,11 +69,24 @@ class SubprocessExecutionResource(ExternalExecutionResource):
 
     @contextmanager
     def _setup_io(
-        self, external_context: ExternalExecutionOrchestrationContext
+        self,
+        external_context: ExternalExecutionOrchestrationContext,
+        context_injector: Optional[ExternalExecutionContextInjector],
+        message_reader: Optional[ExternalExecutionMessageReader],
     ) -> Iterator[Mapping[str, str]]:
-        with tempfile.TemporaryDirectory() as tempdir, file_context_source(
-            external_context, os.path.join(tempdir, _CONTEXT_SOURCE_FILENAME)
-        ) as context_env, file_message_sink(
-            external_context, os.path.join(tempdir, _MESSAGE_SINK_FILENAME)
-        ) as message_env:
-            yield {**context_env, **message_env}
+        with ExitStack() as stack:
+            if context_injector is None or message_reader is None:
+                tempdir = stack.enter_context(tempfile.TemporaryDirectory())
+                context_injector = context_injector or ExternalExecutionFileContextInjector(
+                    os.path.join(tempdir, _CONTEXT_INJECTOR_FILENAME)
+                )
+                message_reader = message_reader or ExternalExecutionFileMessageReader(
+                    os.path.join(tempdir, _MESSAGE_READER_FILENAME)
+                )
+            context_injector_params = stack.enter_context(
+                context_injector.inject_context(external_context)
+            )
+            message_reader_params = stack.enter_context(
+                message_reader.read_messages(external_context)
+            )
+            yield io_params_as_env_vars(context_injector_params, message_reader_params)

@@ -63,6 +63,7 @@ export interface IStepMetadata {
 export interface ILogCaptureInfo {
   fileKey: string;
   stepKeys: string[];
+  stepAttemptNumber?: number;
   pid?: string;
   externalStdoutUrl?: string;
   externalStderrUrl?: string;
@@ -93,14 +94,15 @@ export const EMPTY_RUN_METADATA: IRunMetadataDict = {
 };
 
 export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
-  const logCaptureSteps = {};
-  stepKeys.forEach(
-    (stepKey) => ((logCaptureSteps as any)[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]}),
-  );
+  const logCaptureSteps: {[stepKey: string]: ILogCaptureInfo} = {};
+  stepKeys.forEach((stepKey) => {
+    logCaptureSteps[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]};
+  });
   return logCaptureSteps;
 };
 
 const fromTimestamp = (ts: number | null) => (ts ? Math.floor(ts * 1000) : undefined);
+
 function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
@@ -247,12 +249,21 @@ export function extractMetadataFromLogs(
     }
 
     if (log.__typename === 'LogsCapturedEvent') {
+      const singleStepKey = log.stepKeys?.length === 1 ? log.stepKeys[0] : null;
+      const singleStepRetries =
+        (singleStepKey &&
+          metadata.steps[singleStepKey]?.transitions.filter(
+            (s) => s.state === IStepState.RETRY_REQUESTED,
+          ).length) ||
+        null;
+
       if (!metadata.logCaptureSteps) {
         metadata.logCaptureSteps = {};
       }
       metadata.logCaptureSteps[log.fileKey] = {
         fileKey: log.fileKey,
         stepKeys: log.stepKeys || [],
+        stepAttemptNumber: singleStepRetries ? singleStepRetries + 1 : undefined,
         pid: String(log.pid),
         externalStdoutUrl: log.externalStdoutUrl || undefined,
         externalStderrUrl: log.externalStderrUrl || undefined,
