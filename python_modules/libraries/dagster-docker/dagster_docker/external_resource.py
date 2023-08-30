@@ -1,6 +1,6 @@
 import os
 import tempfile
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from typing import Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 import docker
@@ -9,11 +9,14 @@ from dagster._core.external_execution.context import (
     ExternalExecutionOrchestrationContext,
 )
 from dagster._core.external_execution.resource import (
+    ExternalExecutionContextInjector,
+    ExternalExecutionMessageReader,
     ExternalExecutionResource,
 )
 from dagster._core.external_execution.utils import (
-    file_context_source,
-    file_message_sink,
+    ExternalExecutionFileContextInjector,
+    ExternalExecutionFileMessageReader,
+    io_params_as_env_vars,
 )
 from dagster_externals import (
     DagsterExternalsError,
@@ -50,12 +53,14 @@ class DockerExecutionResource(ExternalExecutionResource):
         *,
         context: OpExecutionContext,
         extras: Optional[ExternalExecutionExtras] = None,
+        context_source: Optional[ExternalExecutionContextInjector] = None,
+        message_sink: Optional[ExternalExecutionMessageReader] = None,
         env: Optional[Mapping[str, str]] = None,
         volumes: Optional[Mapping[str, Mapping[str, str]]] = None,
         registry: Optional[Mapping[str, str]] = None,
     ) -> None:
         external_context = ExternalExecutionOrchestrationContext(context=context, extras=extras)
-        with self._setup_io(external_context) as (io_env, io_volumes):
+        with self._setup_io(external_context, context_source, message_sink) as (io_env, io_volumes):
             client = docker.client.from_env()
             if registry:
                 client.login(
@@ -93,12 +98,28 @@ class DockerExecutionResource(ExternalExecutionResource):
 
     @contextmanager
     def _setup_io(
-        self, context: ExternalExecutionOrchestrationContext
+        self,
+        external_context: ExternalExecutionOrchestrationContext,
+        context_injector: Optional[ExternalExecutionContextInjector],
+        message_reader: Optional[ExternalExecutionMessageReader],
     ) -> Iterator[Tuple[Mapping[str, str], VolumeMapping]]:
-        with tempfile.TemporaryDirectory() as tempdir, file_context_source(
-            context, os.path.join(tempdir, _CONTEXT_SOURCE_FILENAME)
-        ) as context_env, file_message_sink(
-            context, os.path.join(tempdir, _MESSAGE_SINK_FILENAME)
-        ) as message_env:
-            volumes = {tempdir: {"bind": tempdir, "mode": "rw"}}
-            yield {**context_env, **message_env}, volumes
+        with ExitStack() as stack:
+            if context_injector is None or message_reader is None:
+                tempdir = stack.enter_context(tempfile.TemporaryDirectory())
+                context_injector = context_injector or ExternalExecutionFileContextInjector(
+                    os.path.join(tempdir, _CONTEXT_SOURCE_FILENAME)
+                )
+                message_reader = message_reader or ExternalExecutionFileMessageReader(
+                    os.path.join(tempdir, _MESSAGE_SINK_FILENAME)
+                )
+                volumes = {tempdir: {"bind": tempdir, "mode": "rw"}}
+            else:
+                volumes = {}
+            context_injector_params = stack.enter_context(
+                context_injector.inject_context(external_context)
+            )
+            message_reader_params = stack.enter_context(
+                message_reader.read_messages(external_context)
+            )
+            io_env = io_params_as_env_vars(context_injector_params, message_reader_params)
+            yield io_env, volumes

@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from typing import Iterator
 
 from .._protocol import (
     ExternalExecutionContextData,
@@ -6,13 +8,17 @@ from .._protocol import (
 )
 
 
-class ExternalExecutionContextSource(ABC):
+class ExternalExecutionContextLoader(ABC):
+    @contextmanager
+    def scoped_context(self) -> Iterator["ExternalExecutionContextData"]:
+        yield self.load_context()
+
     @abstractmethod
     def load_context(self) -> ExternalExecutionContextData:
         raise NotImplementedError()
 
 
-class ExternalExecutionMessageSink(ABC):
+class ExternalExecutionMessageWriter(ABC):
     @abstractmethod
-    def send_message(self, message: ExternalExecutionMessage) -> None:
+    def write_message(self, message: ExternalExecutionMessage) -> None:
         ...
