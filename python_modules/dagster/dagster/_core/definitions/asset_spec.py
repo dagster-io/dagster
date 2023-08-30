@@ -19,7 +19,7 @@ class AssetSpec(
     NamedTuple(
         "_AssetSpec",
         [
-            ("asset_key", PublicAttr[AssetKey]),
+            ("key", PublicAttr[AssetKey]),
             ("deps", PublicAttr[AbstractSet[AssetKey]]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
@@ -35,7 +35,7 @@ class AssetSpec(
     function that defines how it materialized.
 
     Attributes:
-        asset_key (AssetKey): The unique identifier for this asset.
+        key (AssetKey): The unique identifier for this asset.
         deps (Optional[AbstractSet[AssetKey]]): The asset keys for the upstream assets that
             materializing this asset depends on.
         description (Optional[str]): Human-readable description of this asset.
@@ -57,7 +57,8 @@ class AssetSpec(
 
     def __new__(
         cls,
-        asset_key: CoercibleToAssetKey,
+        key: CoercibleToAssetKey,
+        *,
         deps: Optional[
             Iterable[
                 Union[
@@ -90,7 +91,7 @@ class AssetSpec(
 
         return super().__new__(
             cls,
-            asset_key=AssetKey.from_coercible(asset_key),
+            key=AssetKey.from_coercible(key),
             deps=dep_set,
             description=check.opt_str_param(description, "description"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -108,3 +109,7 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
         )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.key

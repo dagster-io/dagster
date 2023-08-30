@@ -77,7 +77,7 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
     def spec_for_stock_info(stock_info: StockInfo) -> AssetSpec:
         ticker = stock_info.ticker
         return AssetSpec(
-            asset_key=AssetKey(ticker),
+            AssetKey(ticker),
             group_name=group_name,
             description=f"Fetch {ticker} from internal service",
         )
@@ -93,7 +93,9 @@ def assets_defs_from_stock_assets(stock_assets: StockAssets) -> List[AssetsDefin
         assert python_executable is not None
         script_path = file_relative_path(__file__, "user_scripts/fetch_the_tickers.py")
         subprocess_resource.run(
-            command=[python_executable, script_path], context=context, extras={"tickers": tickers}
+            command=[python_executable, script_path],
+            context=context,
+            extras={"tickers": tickers},
         )
 
     @asset(deps=fetch_the_tickers.keys, group_name=group_name)
