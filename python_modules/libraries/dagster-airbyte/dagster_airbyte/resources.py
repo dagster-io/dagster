@@ -69,6 +69,10 @@ class BaseAirbyteResource(ConfigurableResource):
             " that do not impact your Airbyte deployment."
         ),
     )
+    poll_interval: float = Field(
+        default=DEFAULT_POLL_INTERVAL_SECONDS,
+        description="Time (in seconds) to wait between checking a sync's status.",
+    )
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -161,7 +165,7 @@ class BaseAirbyteResource(ConfigurableResource):
     def sync_and_poll(
         self,
         connection_id: str,
-        poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
+        poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
@@ -195,7 +199,7 @@ class BaseAirbyteResource(ConfigurableResource):
                         f"Timeout: Airbyte job {job_id} is not ready after the timeout"
                         f" {poll_timeout} seconds"
                     )
-                time.sleep(poll_interval)
+                time.sleep(poll_interval or self.poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
@@ -589,7 +593,7 @@ class AirbyteResource(BaseAirbyteResource):
     def sync_and_poll(
         self,
         connection_id: str,
-        poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
+        poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> AirbyteOutput:
         """Initializes a sync operation for the given connector, and polls until it completes.
@@ -623,7 +627,7 @@ class AirbyteResource(BaseAirbyteResource):
                         f"Timeout: Airbyte job {job_id} is not ready after the timeout"
                         f" {poll_timeout} seconds"
                     )
-                time.sleep(poll_interval)
+                time.sleep(poll_interval or self.poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
                 attempts = cast(List, job_details.get("attempts", []))
                 cur_attempt = len(attempts)
