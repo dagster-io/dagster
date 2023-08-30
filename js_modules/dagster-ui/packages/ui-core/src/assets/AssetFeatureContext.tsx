@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import {AssetTabConfig, AssetTabConfigInput, buildAssetTabs} from './AssetTabs';
+import {AssetChecksBanner} from './asset-checks/AssetChecksBanner';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
@@ -13,11 +14,13 @@ export type AssetViewFeatureInput = {
 type AssetFeatureContextType = {
   tabBuilder: (input: AssetTabConfigInput) => AssetTabConfig[];
   renderFeatureView: (input: AssetViewFeatureInput) => React.ReactNode;
+  AssetChecksBanner: React.FunctionComponent<Record<string, never>>;
 };
 
 export const AssetFeatureContext = React.createContext<AssetFeatureContextType>({
   tabBuilder: () => [],
   renderFeatureView: () => <span />,
+  AssetChecksBanner: () => <span />,
 });
 
 const renderFeatureView = () => <span />;
@@ -27,6 +30,7 @@ export const AssetFeatureProvider = ({children}: {children: React.ReactNode}) =>
     return {
       tabBuilder: buildAssetTabs,
       renderFeatureView,
+      AssetChecksBanner,
     };
   }, []);
 
