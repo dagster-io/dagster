@@ -16,6 +16,7 @@
     "build": "rm -rf lib && tsc -p ./tsconfig.build.json && yarn rollup -c rollup.config.js",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "jest": "jest",
+    "jest-all-silent": "yarn jest --silent --watchAll=false",
     "ts": "tsc -p .",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
@@ -62,7 +63,7 @@
     "@storybook/react": "^7.2.0",
     "@storybook/react-webpack5": "^7.2.0",
     "@testing-library/dom": "^9.3.0",
-    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/jest-dom": "^6.1.2",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/babel__core": "^7",
