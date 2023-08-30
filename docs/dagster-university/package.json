@@ -14,9 +14,11 @@
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.9",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "tailwindcss": "^3.3.3",
     "typescript": "latest"
   }
 }
