@@ -56,3 +56,22 @@ p {
   line-height: 1.3em;
   font-weight: 400;
 }
+
+h2 {
+  color: #524e48;
+  font-family: 'Helvetica';
+  font-size: 2rem;
+}
+
+h3 {
+  color: #524e48;
+  font-family: 'Helvetica';
+  font-size: 1.5rem;
+}
+
+ul {
+  color: #524e48;
+  font-family: 'Helvetica';
+  font-size: 1.2rem;
+  line-height: 1.3em;
+}
