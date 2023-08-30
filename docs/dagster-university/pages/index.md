@@ -22,4 +22,5 @@ title: Dagster University Course Content
     - [Asseet materialization](/dagster-essentials/lesson-3/asset-materialization)
     - [Viewing run details](/dagster-essentials/lesson-3/viewing-run-details)
     - [Troubleshooting failed runs](/dagster-essentials/lesson-3/troubleshooting-failed-runs)
+    - [Coding practice: Create a taxi_zones_file asset](/dagster-essentials/lesson-3/coding-practice-taxi-zones-file-asset)
     - [Recap](/dagster-essentials/lesson-3/recap)
