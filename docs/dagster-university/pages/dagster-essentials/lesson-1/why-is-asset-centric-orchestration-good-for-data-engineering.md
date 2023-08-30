@@ -1,5 +1,7 @@
 ---
 title: "Lesson 1: Why is asset-centric orchestration good for data engineering?"
+module: "dagster_essentials"
+lesson: "1"
 ---
 
 In a task-centric world, it can be difficult to tell how an asset is produced, whether it’s up-to-date, and how it relates to other assets. Decoupling tasks from assets is necessary not only to troubleshoot issues when they arise, but to come to a basic understanding of the workflow.

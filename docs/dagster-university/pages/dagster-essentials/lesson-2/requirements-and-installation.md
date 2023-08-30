@@ -1,5 +1,7 @@
 ---
 title: "Lesson 2: Requirements and installation"
+module: "dagster_essentials"
+lesson: "2"
 ---
 
 ## Requirements

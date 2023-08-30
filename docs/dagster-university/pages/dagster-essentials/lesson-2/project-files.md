@@ -1,5 +1,7 @@
 ---
-title: "Project files"
+title: "Lesson 2: Project files"
+module: "dagster_essentials"
+lesson: "3"
 ---
 
 Now that you’ve created the Dagster project, let’s talk a bit about the files it contains. The project you created in the previous section looks something like this:

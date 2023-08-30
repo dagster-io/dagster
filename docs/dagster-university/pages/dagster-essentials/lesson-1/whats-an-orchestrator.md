@@ -1,5 +1,7 @@
 ---
 title: "Lesson 1: What's an orchestrator?"
+module: "dagster_essentials"
+lesson: "1"
 ---
 
 An orchestrator is a tool that can manage and coordinate complex workflows and data pipelines. The field of orchestrators has continued to evolve with data engineering. For example, an orchestrator may be adopted when:
