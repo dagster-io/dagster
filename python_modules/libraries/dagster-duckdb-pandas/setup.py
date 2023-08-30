@@ -36,7 +36,9 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-duckdb{pin}",
-        "pandas",
+        # Pinned pending duckdb removal of broken pandas import. Pin can be
+        # removed as soon as it produces a working build.
+        "pandas<2.1",
     ],
     zip_safe=False,
 )
