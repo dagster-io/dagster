@@ -32,6 +32,7 @@ def test_trigger_connection(
         {
             "host": "some_host",
             "port": "8000",
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -74,6 +75,7 @@ def test_sync_and_poll(
             "host": "some_host",
             "port": "8000",
             "forward_logs": forward_logs,
+            "poll_interval": 0,
         }
     )
 
@@ -135,6 +137,7 @@ def test_start_sync_bad_out_fail(
         {
             "host": "some_host",
             "port": "8000",
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -155,6 +158,7 @@ def test_get_connection_details_bad_out_fail(
         {
             "host": "some_host",
             "port": "8000",
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -179,6 +183,7 @@ def test_get_job_status_bad_out_fail(
         {
             "host": "some_host",
             "port": "8000",
+            "poll_interval": 0,
         }
     )
     if forward_logs:
@@ -198,6 +203,7 @@ def test_get_job_status_bad_out_fail(
                     "host": "some_host",
                     "port": "8000",
                     "forward_logs": False,
+                    "poll_interval": 0,
                 }
             )
         )
@@ -231,6 +237,7 @@ def test_logging_multi_attempts(
         {
             "host": "some_host",
             "port": "8000",
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -310,6 +317,7 @@ def test_assets(
             "host": "some_host",
             "port": "8000",
             "forward_logs": forward_logs,
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -371,6 +379,7 @@ def test_sync_and_poll_termination(
             "port": "8000",
             "forward_logs": forward_logs,
             "cancel_sync_on_run_termination": cancel_sync_on_run_termination,
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -434,6 +443,7 @@ def test_sync_and_poll_timeout(
             "port": "8000",
             "forward_logs": forward_logs,
             "cancel_sync_on_run_termination": cancel_sync_on_run_termination,
+            "poll_interval": 0,
         }
     )
     responses.add(
@@ -516,6 +526,7 @@ def test_normalization_support(
         {
             "host": "some_host",
             "port": "8000",
+            "poll_interval": 0,
         }
     )
     # See https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/destination_definition_specifications/get

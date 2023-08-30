@@ -20,12 +20,13 @@ from .utils import get_sample_connection_json, get_sample_job_json
 
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
-def test_assets(schema_prefix):
+def test_assets(schema_prefix, monkeypatch):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
                 "host": "some_host",
                 "port": "8000",
+                "poll_interval": 0,
             }
         )
     )
@@ -68,6 +69,7 @@ def test_assets(schema_prefix):
                 {
                     "host": "some_host",
                     "port": "8000",
+                    "poll_interval": 0,
                 }
             )
         },
@@ -108,6 +110,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
             config={
                 "host": "some_host",
                 "port": "8000",
+                "poll_interval": 0,
             }
         )
     )
@@ -161,6 +164,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
                 {
                     "host": "some_host",
                     "port": "8000",
+                    "poll_interval": 0,
                 }
             )
         },
@@ -196,7 +200,7 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
 
 
 def test_assets_cloud() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
     ab_url = ab_resource.api_base_url
 
     ab_assets = build_airbyte_assets(
