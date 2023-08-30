@@ -1,10 +1,19 @@
 import atexit
+from contextlib import ExitStack
 from typing import Any, ClassVar, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 
-from ._io.base import ExternalExecutionContextLoader, ExternalExecutionMessageWriter
-from ._io.default import ExternalExecutionFileContextLoader, ExternalExecutionFileMessageWriter
+from ._io.base import (
+    ExternalExecutionContextLoader,
+    ExternalExecutionMessageWriter,
+    ExternalExecutionParamLoader,
+)
+from ._io.default import (
+    ExternalExecutionEnvVarParamLoader,
+    ExternalExecutionFileContextLoader,
+    ExternalExecutionFileMessageWriter,
+)
 from ._protocol import (
     ExternalExecutionContextData,
     ExternalExecutionDataProvenance,
@@ -30,16 +39,22 @@ def init_dagster_externals(
     *,
     context_loader: Optional[ExternalExecutionContextLoader] = None,
     message_writer: Optional[ExternalExecutionMessageWriter] = None,
+    param_loader: Optional[ExternalExecutionParamLoader] = None,
 ) -> "ExternalExecutionContext":
     if ExternalExecutionContext.is_initialized():
         return ExternalExecutionContext.get()
 
     if is_dagster_orchestration_active():
+        param_loader = param_loader or ExternalExecutionEnvVarParamLoader()
+        context_params = param_loader.load_context_params()
+        messages_params = param_loader.load_messages_params()
         context_loader = context_loader or ExternalExecutionFileContextLoader()
         message_writer = message_writer or ExternalExecutionFileMessageWriter()
-        scoped_context = context_loader.scoped_context()
-        data = scoped_context.__enter__()
-        atexit.register(scoped_context.__exit__, None, None, None)
+        stack = ExitStack()
+        stack.enter_context(context_loader.setup(context_params))
+        stack.enter_context(message_writer.setup(messages_params))
+        atexit.register(stack.__exit__, None, None, None)
+        data = context_loader.load_context()
         context = ExternalExecutionContext(data, message_writer)
     else:
         emit_orchestration_inactive_warning()

@@ -4,12 +4,11 @@ from contextlib import contextmanager
 from threading import Event, Thread
 from typing import TYPE_CHECKING, Iterator, Mapping
 
-from dagster_externals import DAGSTER_EXTERNALS_ENV_KEYS, encode_env_var
+from dagster_externals import DAGSTER_EXTERNALS_ENV_KEYS, ExternalExecutionParams, encode_env_var
 
 from dagster._core.external_execution.resource import (
     ExternalExecutionContextInjector,
     ExternalExecutionMessageReader,
-    ExternalExecutionParams,
 )
 from dagster._utils import tail_file
 
@@ -40,7 +39,7 @@ class ExternalExecutionEnvContextInjector(ExternalExecutionContextInjector):
         self,
         context: "ExternalExecutionOrchestrationContext",
     ) -> Iterator[ExternalExecutionParams]:
-        yield {"context_data": context.get_data()}
+        yield {"data": context.get_data()}
 
 
 class ExternalExecutionFileMessageReader(ExternalExecutionMessageReader):
