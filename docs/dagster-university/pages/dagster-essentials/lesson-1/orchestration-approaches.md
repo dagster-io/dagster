@@ -10,7 +10,7 @@ But first, what’s a workflow?
 
 A workflow can be visualized using a **directed acyclic graph,** or **DAG**, which depicts the steps required to complete the workflow. For example, sending a CSV of a report by email every Friday might have a DAG that looks like this:
 
-![An email task as a DAG](/images/dagster-essentials/lesson-1/email-as-dag.png)
+![An email task as a DAG](/images/dagster-essentials/demo/lesson-1-email-as-dag.png)
 
 As we mentioned, there are different approaches to orchestrating workflows, and we’ll focus on two: **task-centric** and **asset-centric**. We’ll use an example of each approach using a pipeline to bake a popular treat: **cookies.**
 
@@ -32,7 +32,7 @@ It’s time to bring in the cookies! If you were to set up a task-centric workfl
 4. Bake in the oven
 5. Enjoy freshly baked **chocolate chip cookies**
 
-![Baking chocolate cookies as a task-centric workflow](/images/dagster-essentials/lesson-1/cookie-etl.png)
+![Baking chocolate cookies as a task-centric workflow](/images/dagster-essentials/demo/lesson-1-cookie-etl.png)
 
 This workflow is sequential and focused on the **tasks** required to create the cookies. Notice how at the end, after all steps have been completed, there’s only one obvious output: the freshly baked cookies. 
 
@@ -54,7 +54,7 @@ With an asset-centric approach, upstream assets are used as inputs to create the
 - To create the **chocolate chip cookie dough**, mix the **chocolate chips** into the **cookie dough**
 - Lastly, bake the **chocolate chip cookie dough** and wind up with **freshly baked chocolate chip cookies!**
 
-![Baking chocolate cookies as an asset-centric workflow](/images/dagster-essentials/lesson-1/cookie-assets-one-cookie.png)
+![Baking chocolate cookies as an asset-centric workflow](/images/dagster-essentials/demo/lesson-1-cookie-assets-one-cookie.png)
 
 ### Expanding by adding more assets
 
@@ -66,7 +66,7 @@ An asset-centric approach also makes adding additional assets straightforward. F
 
 *Voila*! By adding only one additional asset - **peanuts** - we were able to use some of our existing assets to create something brand new - **peanut cookies** - with minimal alterations. Check out the new additions to the DAG (highlighted in light purple) to the right.
 
-![Adding peanut cookies to the asset-centric cookie workflow](/images/dagster-essentials/lesson-1/cookie-assets-two-cookies.png)
+![Adding peanut cookies to the asset-centric cookie workflow](/images/dagster-essentials/demo/lesson-1-cookie-assets-two-cookies.png)
 
 So, how might this be beneficial to a real data pipeline? **Reusability.**
 
