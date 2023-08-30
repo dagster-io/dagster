@@ -12,6 +12,7 @@ from dagster import (
     OpDefinition,
     Out,
     Output,
+    asset,
     graph,
     job,
     op,
@@ -964,3 +965,17 @@ def test_aliasing_invoked_dynamic_output_fails():
         @job
         def _alias_invoked_dynamic_output_job():
             dynamic_output_op().alias("dynamic_output")
+
+
+def test_compose_asset():
+    @asset
+    def foo():
+        pass
+
+    @graph
+    def compose():
+        foo()
+
+    result = compose.execute_in_process()
+    assert result.success
+    assert result.events_for_node("foo")

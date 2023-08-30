@@ -32,6 +32,6 @@ dagster dev
 
 Navigate to localhost:3000, where you should see the Dagster UI:
 
-![The Overview tab in the Dagster UI](/images/dagster-essentials/lesson-2/dagster-ui.png)
+![The Overview tab in the Dagster UI](/images/dagster-essentials/demo/lesson-2-dagster-ui.png)
 
 The `dagster dev` command will run Dagster until you're ready to stop it. To stop the long-running process, press `Control+C` from the terminal where the process is running.

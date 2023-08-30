@@ -608,6 +608,27 @@ class DbtCliResource(ConfigurableResource):
                         yield from dbt_run_invocation.stream()
                     else:
                         ...
+
+            Invoking a dbt CLI command in a custom asset or op:
+
+            .. code-block:: python
+
+                import json
+
+                from dagster import asset, op
+                from dagster_dbt import DbtCliResource
+
+
+                @asset
+                def my_dbt_asset(dbt: DbtCliResource):
+                    dbt_macro_args = {"key": "value"}
+                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)], manifest={}).wait()
+
+
+                @op
+                def my_dbt_op(dbt: DbtCliResource):
+                    dbt_macro_args = {"key": "value"}
+                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)], manifest={}).wait()
         """
         target_path = self._get_unique_target_path(context=context)
         env = {

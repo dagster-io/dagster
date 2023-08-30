@@ -1,6 +1,8 @@
+import base64
 import json
 import os
 import warnings
+import zlib
 from typing import TYPE_CHECKING, Any, Optional, Sequence, TypeVar
 
 from ._protocol import (
@@ -92,9 +94,22 @@ def assert_param_json_serializable(value: T, method: str, param: str) -> T:
     return value
 
 
-def param_from_env(key: str) -> Any:
+def param_from_env_var(key: str) -> Any:
     raw_value = os.environ.get(param_name_to_env_var(key))
-    return None if raw_value is None else json.loads(raw_value)
+    return decode_env_var(raw_value) if raw_value is not None else None
+
+
+def encode_env_var(value: Any) -> str:
+    serialized = json.dumps(value)
+    compressed = zlib.compress(serialized.encode("utf-8"))
+    encoded = base64.b64encode(compressed)
+    return encoded.decode("utf-8")  # as string
+
+
+def decode_env_var(value: Any) -> str:
+    decoded = base64.b64decode(value)
+    decompressed = zlib.decompress(decoded)
+    return json.loads(decompressed.decode("utf-8"))
 
 
 def param_name_to_env_var(param_name: str) -> str:
@@ -106,7 +121,7 @@ def env_var_to_param_name(env_var: str) -> str:
 
 
 def is_dagster_orchestration_active() -> bool:
-    return param_from_env("is_orchestration_active")
+    return param_from_env_var("is_orchestration_active")
 
 
 def emit_orchestration_inactive_warning() -> None:

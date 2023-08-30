@@ -213,7 +213,11 @@ def build_assets_job(
             *(asset_check.node_def for asset_check in asset_checks),
         ]
     else:
-        node_defs = list(filter(None, [asset.node_def for asset in [*source_assets]]))
+        node_defs = [
+            asset.node_def
+            for asset in source_assets
+            if isinstance(asset, SourceAsset) and asset.is_observable and asset.node_def is not None
+        ]
 
     graph = GraphDefinition(
         name=name,

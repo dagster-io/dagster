@@ -125,6 +125,9 @@ from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinitio
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
 )
+from dagster._core.definitions.auto_materialize_rule import (
+    AutoMaterializeRule as AutoMaterializeRule,
+)
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
 from dagster._core.definitions.config import ConfigMapping as ConfigMapping
 from dagster._core.definitions.configurable import configured as configured
