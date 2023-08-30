@@ -1,5 +1,7 @@
+import sys
 import typing
 
+import pytest
 from dagster._utils.typing_api import (
     get_optional_inner_type,
     is_closed_python_dict_type,
@@ -37,6 +39,13 @@ def test_is_typing_optional_py_3():
     assert not is_closed_python_optional_type(int)
     assert not is_closed_python_optional_type(list)
     assert not is_closed_python_optional_type("foobar")
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python >=3.10")
+def test_is_typing_optional_with_union_type():
+    assert is_closed_python_optional_type(int | None)  # pyright: ignore
+    assert not is_closed_python_optional_type(None)  # pyright: ignore
+    assert get_optional_inner_type(int | None) is int  # pyright: ignore
 
 
 def test_get_inner_optional_py_3():
