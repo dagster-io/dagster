@@ -96,8 +96,9 @@ class AbstractComputeExecutionContext(ABC):
     def op_config(self) -> Any:
         """The parsed config specific to this op."""
 
+from dagster_externals._context import AssetExecutionContextProps
 
-class OpExecutionContext(AbstractComputeExecutionContext):
+class OpExecutionContext(AbstractComputeExecutionContext, AssetExecutionContextProps):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 

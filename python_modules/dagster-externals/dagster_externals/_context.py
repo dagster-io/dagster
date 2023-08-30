@@ -1,3 +1,4 @@
+from abc import ABC, abstractproperty
 from typing import Any, ClassVar, Mapping, Optional, Sequence
 
 from typing_extensions import Self
@@ -45,7 +46,62 @@ def init_dagster_externals(
     return context
 
 
-class ExternalExecutionContext:
+class AssetExecutionContextProps(ABC):
+    @abstractproperty
+    def is_asset_step(self) -> bool:
+        ...
+
+    @abstractproperty
+    def asset_key(self) -> str:
+        ...
+
+    @abstractproperty
+    def asset_keys(self) -> Sequence[str]:
+        ...
+
+    @abstractproperty
+    def provenance(self) -> Optional[ExternalExecutionDataProvenance]:
+        ...
+
+    @abstractproperty
+    def provenance_by_asset_key(self) -> Mapping[str, Optional[ExternalExecutionDataProvenance]]:
+        ...
+
+    @abstractproperty
+    def code_version(self) -> Optional[str]:
+        ...
+
+    @abstractproperty
+    def code_version_by_asset_key(self) -> Mapping[str, Optional[str]]:
+        ...
+
+    @abstractproperty
+    def is_partition_step(self) -> bool:
+        ...
+
+    @abstractproperty
+    def partition_key(self) -> str:
+        ...
+
+    @abstractproperty
+    def partition_key_range(self) -> Optional["ExternalExecutionPartitionKeyRange"]:
+        ...
+
+    @abstractproperty
+    def partition_time_window(self) -> Optional["ExternalExecutionTimeWindow"]:
+        ...
+
+    @abstractproperty
+    def run_id(self) -> str:
+        ...
+
+    @abstractproperty
+    def job_name(self) -> Optional[str]:
+        ...
+
+
+
+class ExternalExecutionContext(AssetExecutionContextProps):
     _instance: ClassVar[Optional[Self]] = None
 
     @classmethod
