@@ -4,6 +4,8 @@ module: "dagster_essentials"
 lesson: "3"
 ---
 
+## Overview
+
 In Lesson 1, we touched on how an asset-centric approach to writing data pipelines can benefit you and your team. To recap, focusing on assets improves:
 
 - **Context and visibility.** Everyone in your organization can understand the data lineage and how data assets relate to each other

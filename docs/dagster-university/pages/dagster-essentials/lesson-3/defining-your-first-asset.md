@@ -4,6 +4,8 @@ module: "dagster_essentials"
 lesson: "3"
 ---
 
+## Defining your first asset
+
 In this course, you’ll use data from [NYC OpenData](https://opendata.cityofnewyork.us/) to analyze New York City taxi rides. The first asset you’ll define uses data from [TLC Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page), which contains trip records for several types of vehicles. However, we’ll focus on trip data for yellow cabs in this asset.
 
 Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yellow taxi trip data for March 2023 and save it to a location on your local machine.
