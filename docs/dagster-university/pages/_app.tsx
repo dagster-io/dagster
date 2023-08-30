@@ -2,8 +2,6 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 
-import { SideNav, TableOfContents, TopNav } from '../components';
-
 import 'prismjs';
 // Import other Prism themes here
 import 'prismjs/components/prism-bash.min';
@@ -71,15 +69,10 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <TopNav>
-        <Link href="/docs">Docs</Link>
-      </TopNav>
       <div className="page">
-        <SideNav />
         <main className="flex column">
           <Component {...pageProps} />
         </main>
-        <TableOfContents toc={toc} />
       </div>
       <style jsx>
         {`
