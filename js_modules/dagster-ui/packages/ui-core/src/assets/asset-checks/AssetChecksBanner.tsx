@@ -10,8 +10,7 @@ export const AssetChecksBanner = () => {
       description={
         <span>
           You can learn more about this new feature and provide feedback{' '}
-          <a href="https://github.com/dagster-io/dagster/discussions/15880">here</a>. Using checks
-          will not contribute to Dagster Cloud credit usage at this time.
+          <a href="https://github.com/dagster-io/dagster/discussions/15880">here</a>.
         </span>
       }
     />
