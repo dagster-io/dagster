@@ -14,3 +14,5 @@ In this lesson, you learned:
 - How to find run info and troubleshoot issues
 
 You also wrote your first assets - `taxi_trips_file` and `taxi_zones_file` - which you’ll use in the next lesson to create more assets and have them depend on each other.
+
+> ‼️ Make sure you update your code to match the answer before continuing to Lesson 4!
