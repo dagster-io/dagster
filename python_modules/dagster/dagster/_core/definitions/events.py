@@ -34,7 +34,10 @@ from .metadata import (
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.context.output import OutputContext
+
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"
@@ -171,6 +174,20 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
             return AssetKey(arg)
         else:
             check.failed(f"Unexpected type for AssetKey: {type(arg)}")
+
+    @staticmethod
+    def from_coercible_or_definition(
+        arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"]
+    ) -> "AssetKey":
+        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.source_asset import SourceAsset
+
+        if isinstance(arg, AssetsDefinition):
+            return arg.key
+        elif isinstance(arg, SourceAsset):
+            return arg.key
+        else:
+            return AssetKey.from_coercible(arg)
 
     def has_prefix(self, prefix: Sequence[str]) -> bool:
         return len(self.path) >= len(prefix) and self.path[: len(prefix)] == prefix

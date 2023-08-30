@@ -76,17 +76,13 @@ class AssetSpec(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
-        from .decorators.asset_decorator import (
-            asset_key_from_coercible_or_definition,
-        )
-
         dep_set = set()
         if deps:
             for dep in deps:
                 if isinstance(dep, AssetSpec):
                     dep_set.add(dep.asset_key)
                 else:
-                    dep_set.add(asset_key_from_coercible_or_definition(dep))
+                    dep_set.add(AssetKey.from_coercible_or_definition(dep))
 
         return super().__new__(
             cls,

@@ -1,10 +1,14 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
 
 
 @experimental
@@ -53,7 +57,8 @@ class AssetCheckSpec(
 
     Attributes:
         name (str): Name of the check.
-        asset_key (AssetKey): The key of the asset that the check applies to.
+        asset (Union[AssetKey, Sequence[str], str, AssetsDefinition, SourceAsset]): The asset that
+            the check applies to.
         description (Optional[str]): Description for the check.
         severity (AssetCheckSeverity): Severity of the check.
     """
@@ -62,14 +67,14 @@ class AssetCheckSpec(
         cls,
         name: str,
         *,
-        asset_key: CoercibleToAssetKey,
+        asset: Union[CoercibleToAssetKey, "AssetsDefinition", "SourceAsset"],
         description: Optional[str] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
     ):
         return super().__new__(
             cls,
             name=check.str_param(name, "name"),
-            asset_key=AssetKey.from_coercible(asset_key),
+            asset_key=AssetKey.from_coercible_or_definition(asset),
             description=check.opt_str_param(description, "description"),
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
         )
