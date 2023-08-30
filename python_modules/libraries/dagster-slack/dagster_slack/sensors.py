@@ -40,8 +40,8 @@ T = TypeVar("T", RunFailureSensorContext, FreshnessPolicySensorContext)
 def _build_slack_blocks_and_text(
     context: T,
     text_fn: Callable[[T], str],
-    blocks_fn: Optional[Callable[[T], List[Dict[Any, Any]]]],
-    webserver_base_url: Optional[str],
+    blocks_fn: Optional[Callable[[T], List[Dict[Any, Any]]]] = None,
+    webserver_base_url: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], str]:
     main_body_text = text_fn(context)
     blocks: List[Dict[Any, Any]] = []
