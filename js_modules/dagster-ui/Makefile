@@ -14,7 +14,9 @@ lint:
 	yarn workspace @dagster-io/app-oss lint && yarn workspace @dagster-io/ui-core lint && yarn workspace @dagster-io/ui-components lint
 
 test:
-	yarn workspace @dagster-io/ui-core jest && yarn workspace @dagster-io/ui-components jest
+	yarn workspace @dagster-io/ui-core jest-all-silent && yarn workspace @dagster-io/ui-components jest-all-silent
 
 jest:
-	yarn workspace @dagster-io/ui-core jest && yarn workspace @dagster-io/ui-components jest
+	yarn workspace @dagster-io/ui-core jest-all-silent && yarn workspace @dagster-io/ui-components jest-all-silent
+
+
