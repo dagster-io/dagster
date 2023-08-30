@@ -37,7 +37,11 @@ setup(
         f"dagster{pin}",
     ],
     extras_require={
-        "pandas": ["pandas"],
+        "pandas": [
+            # Pinned pending duckdb removal of broken pandas import. Pin can be
+            # removed as soon as it produces a working build.
+            "pandas<2.1",
+        ],
         # Pyspark 2.x is incompatible with Python 3.8+
         "pyspark": [
             'pyspark>=3.0.0; python_version >= "3.8"',
