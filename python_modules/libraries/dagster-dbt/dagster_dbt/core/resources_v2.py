@@ -15,7 +15,6 @@ from typing import (
     Mapping,
     Optional,
     Union,
-    cast,
 )
 
 import dateutil.parser
@@ -26,7 +25,6 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
-    _check as check,
     get_dagster_logger,
 )
 from dagster._annotations import public
@@ -100,6 +98,11 @@ class DbtCliEventMessage:
 
         manifest = validate_manifest(manifest)
 
+        if not manifest:
+            logger.info(
+                "No dbt manifest was provided. Dagster events for dbt tests will not be created."
+            )
+
         unique_id: str = event_node_info["unique_id"]
         node_resource_type: str = event_node_info["resource_type"]
         node_status: str = event_node_info["node_status"]
@@ -119,7 +122,7 @@ class DbtCliEventMessage:
                     "Execution Duration": duration_seconds,
                 },
             )
-        elif node_resource_type == NodeType.Test and is_node_finished:
+        elif manifest and node_resource_type == NodeType.Test and is_node_finished:
             upstream_unique_ids: List[str] = manifest["parent_map"][unique_id]
 
             for upstream_unique_id in upstream_unique_ids:
@@ -227,15 +230,11 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
-                import json
-                from pathlib import Path
-
                 from dagster_dbt import DbtCliResource
 
-                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["run"]).wait()
         """
         list(self.stream_raw_events())
 
@@ -251,15 +250,11 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
-                import json
-                from pathlib import Path
-
                 from dagster_dbt import DbtCliResource
 
-                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest, raise_on_error=False)
+                dbt_cli_invocation = dbt.cli(["run"], raise_on_error=False)
 
                 if dbt_cli_invocation.is_successful():
                     ...
@@ -338,15 +333,11 @@ class DbtCliInvocation:
         Examples:
             .. code-block:: python
 
-                import json
-                from pathlib import Path
-
                 from dagster_dbt import DbtCliResource
 
-                manifest = json.loads(Path("path/to/manifest.json").read_text())
                 dbt = DbtCliResource(project_dir="/path/to/dbt/project")
 
-                dbt_cli_invocation = dbt.cli(["run"], manifest=manifest).wait()
+                dbt_cli_invocation = dbt.cli(["run"]).wait()
 
                 # Retrieve the run_results.json artifact.
                 run_results = dbt_cli_invocation.get_artifact("run_results.json")
@@ -622,13 +613,13 @@ class DbtCliResource(ConfigurableResource):
                 @asset
                 def my_dbt_asset(dbt: DbtCliResource):
                     dbt_macro_args = {"key": "value"}
-                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)], manifest={}).wait()
+                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
 
 
                 @op
                 def my_dbt_op(dbt: DbtCliResource):
                     dbt_macro_args = {"key": "value"}
-                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)], manifest={}).wait()
+                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
         """
         target_path = self._get_unique_target_path(context=context)
         env = {
@@ -659,6 +650,8 @@ class DbtCliResource(ConfigurableResource):
         with suppress(DagsterInvalidPropertyError):
             assets_def = context.assets_def if context else None
 
+        selection_args: List[str] = []
+        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         if context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
@@ -669,19 +662,11 @@ class DbtCliResource(ConfigurableResource):
                 select=context.op.tags.get("dagster-dbt/select"),
                 exclude=context.op.tags.get("dagster-dbt/exclude"),
             )
-        elif manifest is None:
-            check.failed(
-                "Must provide a value for the manifest argument if not executing as part of"
-                " @dbt_assets"
-            )
         else:
-            selection_args: List[str] = []
-            manifest = validate_manifest(manifest)
-            dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+            manifest = validate_manifest(manifest) if manifest else {}
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
-
         profile_args: List[str] = []
         if self.profile:
             profile_args = ["--profile", self.profile]
@@ -695,7 +680,7 @@ class DbtCliResource(ConfigurableResource):
         return DbtCliInvocation.run(
             args=args,
             env=env,
-            manifest=cast(Mapping[str, Any], manifest),
+            manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
             target_path=project_dir.joinpath(target_path),
