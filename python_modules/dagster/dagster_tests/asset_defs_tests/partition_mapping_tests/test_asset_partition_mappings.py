@@ -4,6 +4,7 @@ from typing import Optional
 
 from dagster import (
     AllPartitionMapping,
+    AssetExecutionContext,
     AssetIn,
     AssetMaterialization,
     AssetsDefinition,
@@ -27,7 +28,11 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import asset, build_assets_job
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_out import AssetOut
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import DefaultPartitionsSubset, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -561,3 +566,90 @@ def test_identity_partition_mapping():
         zx.empty_subset().with_partition_keys(["z", "x"]), xy
     )
     assert result.get_partition_keys() == set(["x"])
+
+
+def test_partition_mapping_with_outputs():
+    class TestIOManager(IOManager):
+        def handle_output(self, context, obj) -> None:
+            return None
+
+        def load_input(self, context):
+            return 1
+
+    @multi_asset(
+        outs={"asset_1": AssetOut(), "asset_2": AssetOut()},
+        partitions_def=DailyPartitionsDefinition(start_date="2023-08-15"),
+    )
+    def multi_asset_1():
+        return
+
+    @multi_asset(
+        outs={"asset_1": AssetOut(), "asset_2": AssetOut()},
+        ins={
+            "asset_1": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            ),
+            "asset_2": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2)
+            ),
+        },
+        partitions_def=DailyPartitionsDefinition(start_date="2023-08-15"),
+    )
+    def multi_asset_2(context: AssetExecutionContext, asset_1, asset_2):
+        context.asset_partition_key_for_input("asset_1")
+        return
+
+    materialize(
+        [multi_asset_2], partition_key="2023-08-20", resources={"io_manager": TestIOManager()}
+    )
+
+
+def test_partition_mapping_with_asset_deps():
+    asset_1 = AssetSpec(asset_key="asset_1")
+    asset_2 = AssetSpec(asset_key="asset_2")
+    asset_3 = AssetSpec(
+        asset_key="asset_3",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+            ),
+        ],
+    )
+    asset_4 = AssetSpec(
+        asset_key="asset_4",
+        deps=[
+            AssetDep(
+                asset=asset_1,
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+            AssetDep(
+                asset=asset_2,
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+            ),
+        ],
+    )
+
+    @multi_asset(
+        specs=[asset_1, asset_2], partitions_def=DailyPartitionsDefinition(start_date="2023-08-15")
+    )
+    def multi_asset_1():
+        return
+
+    @multi_asset(
+        specs=[asset_3, asset_4], partitions_def=DailyPartitionsDefinition(start_date="2023-08-15")
+    )
+    def multi_asset_2(context: AssetExecutionContext):
+        context.asset_partition_key_for_input("asset_1")
+        # this call is failing unless multi_asset_1 is in the materialize call. Otherwise the asset
+        # asset_1 isn't in the AssetLayer
+
+        # but in the Outs case, we dont need multi_asset_1 in the materialize call for asset_1 to be in
+        # the AssetLayer
+        return
+
+    materialize([multi_asset_1, multi_asset_2], partition_key="2023-08-20")

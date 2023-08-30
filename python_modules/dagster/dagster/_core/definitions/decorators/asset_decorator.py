@@ -625,7 +625,10 @@ def multi_asset(
                 )
 
             upstream_keys = {
-                dep for spec in specs for dep in spec.deps if dep not in output_tuples_by_asset_key
+                dep.asset_key
+                for spec in specs
+                for dep in spec.deps
+                if dep not in output_tuples_by_asset_key
             }
 
             explicit_ins = ins or {}
@@ -722,10 +725,27 @@ def multi_asset(
         }
 
         if specs:
-            internal_deps = {spec.asset_key: spec.deps for spec in specs if spec.deps is not None}
+            internal_deps = {
+                spec.asset_key: {dep.asset_key for dep in spec.deps}
+                for spec in specs
+                if spec.deps is not None
+            }
             props_by_asset_key: Mapping[AssetKey, Union[AssetSpec, AssetOut]] = {
                 spec.asset_key: spec for spec in specs
             }
+            # Add PartitionMappings specified via AssetSpec.deps to partition_mappings dictionary. Error on duplicates
+            for spec in specs:
+                for dep in spec.deps:
+                    if dep.partition_mapping is not None:
+                        if partition_mappings.get(dep.asset_key, None):
+                            if partition_mappings[dep.asset_key] != dep.partition_mapping:
+                                raise Exception(
+                                    f"Two PartitionMappings for input {dep.asset_key} provided."
+                                )
+                            # else the correct PartitionMapping for the dep is already in the dictionary
+                        else:
+                            partition_mappings[dep.asset_key] = dep.partition_mapping
+
         else:
             internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
             props_by_asset_key = {

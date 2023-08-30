@@ -5,6 +5,7 @@ from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.source_asset import SourceAsset
 
 from .events import (
     AssetKey,
@@ -26,10 +27,10 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: Union[
-            CoercibleToAssetKey, AssetSpec, AssetsDefinition
-        ],  # TODO - confirm AssetsDefinition should be accepted? SourceAsset?
-        partition_mapping: Optional[PartitionMapping],
+        asset: Union[  # TODO - rename asset_key? seems incorrect, since it can alo be an asset def, source asset, or asset spec
+            CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset
+        ],
+        partition_mapping: Optional[PartitionMapping] = None,
     ):
         from .decorators.asset_decorator import (
             asset_key_from_coercible_or_definition,

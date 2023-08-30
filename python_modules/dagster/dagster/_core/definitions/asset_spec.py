@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Iterable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
@@ -13,6 +13,9 @@ from .events import (
 from .freshness_policy import FreshnessPolicy
 from .metadata import MetadataUserInput
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_dep import AssetDep
+
 
 @experimental
 class AssetSpec(
@@ -20,7 +23,7 @@ class AssetSpec(
         "_AssetSpec",
         [
             ("asset_key", PublicAttr[AssetKey]),
-            ("deps", PublicAttr[AbstractSet[AssetKey]]),
+            ("deps", PublicAttr[AbstractSet["AssetDep"]]),
             ("description", PublicAttr[Optional[str]]),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
             ("group_name", PublicAttr[Optional[str]]),
@@ -60,12 +63,7 @@ class AssetSpec(
         asset_key: CoercibleToAssetKey,
         deps: Optional[
             Iterable[
-                Union[
-                    CoercibleToAssetKey,
-                    "AssetSpec",
-                    AssetsDefinition,
-                    SourceAsset,
-                ]
+                Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
             ]
         ] = None,
         description: Optional[str] = None,
@@ -76,13 +74,11 @@ class AssetSpec(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
+        from dagster._core.definitions.asset_dep import AssetDep
+
         dep_set = set()
         if deps:
-            for dep in deps:
-                if isinstance(dep, AssetSpec):
-                    dep_set.add(dep.asset_key)
-                else:
-                    dep_set.add(AssetKey.from_coercible_or_definition(dep))
+            dep_set = {AssetDep(dep) if not isinstance(dep, AssetDep) else dep for dep in deps}
 
         return super().__new__(
             cls,
