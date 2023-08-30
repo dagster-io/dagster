@@ -1320,7 +1320,7 @@ class DagsterInstance(DynamicPartitionsStore):
                                 f"{job_name} intends to materialize asset {asset_key.to_string()}"
                             ),
                             event_specific_data=AssetMaterializationPlannedData(
-                                asset_key, partition=partition
+                                asset_key, partition=partition, tags=step.tags
                             ),
                             step_key=execution_plan_snapshot.get_step_key_for_asset_key(asset_key),
                         )

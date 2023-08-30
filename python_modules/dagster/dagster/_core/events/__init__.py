@@ -1488,14 +1488,15 @@ class StepMaterializationData(
 class AssetMaterializationPlannedData(
     NamedTuple(
         "_AssetMaterializationPlannedData",
-        [("asset_key", AssetKey), ("partition", Optional[str])],
+        [("asset_key", AssetKey), ("partition", Optional[str]), ("tags", Mapping[str, str])],
     )
 ):
-    def __new__(cls, asset_key: AssetKey, partition: Optional[str] = None):
+    def __new__(cls, asset_key: AssetKey, partition: Optional[str] = None, tags=None):
         return super(AssetMaterializationPlannedData, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             partition=check.opt_str_param(partition, "partition"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
