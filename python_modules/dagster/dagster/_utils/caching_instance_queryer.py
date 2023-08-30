@@ -784,15 +784,27 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
         ):
             return set()
-        # quick check that just compares latest storage ids
-        updated_after_cursor = {
-            asset_partition
-            for asset_partition, latest_storage_id in self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
+
+        last_storage_id_by_asset_partition = (
+            self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
                 asset_key=asset_key
-            ).items()
-            if (latest_storage_id or 0) > (after_cursor or 0)
-            and (asset_partitions is None or asset_partition in asset_partitions)
-        }
+            )
+        )
+
+        if asset_partitions is None:
+            updated_after_cursor = {
+                asset_partition
+                for asset_partition, latest_storage_id in last_storage_id_by_asset_partition.items()
+                if (latest_storage_id or 0) > (after_cursor or 0)
+            }
+        else:
+            # Optimized for the case where there are many partitions and last_storage_id_by_asset_partition
+            # is large, but we're only looking for the result for a small number of partitions
+            updated_after_cursor = set()
+            for asset_partition in asset_partitions:
+                latest_storage_id = last_storage_id_by_asset_partition.get(asset_partition)
+                if latest_storage_id is not None and latest_storage_id > (after_cursor or 0):
+                    updated_after_cursor.add(asset_partition)
 
         if not updated_after_cursor:
             return set()
@@ -818,7 +830,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         partitions_def = self.asset_graph.get_partitions_def(asset_partition.asset_key)
         updated_parents = set()
-        for parent_key, asset_partitions in parent_asset_partitions_by_key.items():
+
+        for parent_key, parent_asset_partitions in parent_asset_partitions_by_key.items():
             # ignore non-observable source parents
             if self.asset_graph.is_source(parent_key) and not self.asset_graph.is_observable(
                 parent_key
@@ -842,7 +855,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             updated_parents.update(
                 self.get_asset_partitions_updated_after_cursor(
                     asset_key=parent_key,
-                    asset_partitions=asset_partitions,
+                    asset_partitions=parent_asset_partitions,
                     after_cursor=self.get_latest_materialization_or_observation_storage_id(
                         asset_partition
                     ),
