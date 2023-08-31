@@ -12,9 +12,9 @@ setup(
     },
     {%- endif %}
     install_requires=[
-        "dagster",
-        "dagster-cloud",
-        "dagster-dbt",
+        "dagster>=1.4.0",
+        "dagster-cloud>=1.4.0",
+        "dagster-dbt>=0.20.0",
         "dbt-core>=1.4.0",
         {% for dbt_adapter in dbt_adapter_packages -%}
         "{{ dbt_adapter }}",
@@ -23,6 +23,11 @@ setup(
     extras_require={
         "dev": [
             "dagster-webserver",
+        ]
+    },
+    entry_points = {
+        'console_scripts': [
+            "dagster = dagster.cli:main",
         ]
     },
 )
