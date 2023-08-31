@@ -312,7 +312,7 @@ class AssetDaemonContext:
             - The set of AssetKeyPartitionKeys that should be discarded.
         """
         auto_materialize_policy = check.not_none(
-            self.get_implicit_auto_materialize_policy(asset_key)
+            get_implicit_auto_materialize_policy(asset_key, self.asset_graph)
         )
 
         # the results of evaluating individual rules
@@ -500,7 +500,18 @@ class AssetDaemonContext:
             # over evaluation to any required neighbor key
             if to_materialize_for_asset:
                 for neighbor_key in self.asset_graph.get_required_multi_asset_keys(asset_key):
-                    evaluations_by_key[neighbor_key] = evaluation._replace(asset_key=neighbor_key)
+                    auto_materialize_policy = self.asset_graph.auto_materialize_policies_by_key.get(
+                        neighbor_key
+                    )
+
+                    if auto_materialize_policy is None:
+                        check.failed(f"Expected auto materialize policy on asset {asset_key}")
+
+                    evaluations_by_key[neighbor_key] = evaluation._replace(
+                        asset_key=neighbor_key
+                    )._replace(
+                        rule_snapshots=auto_materialize_policy.rule_snapshots
+                    )  # Neighbors can have different rule snapshots
                     will_materialize_mapping[neighbor_key] = {
                         ap._replace(asset_key=neighbor_key) for ap in to_materialize_for_asset
                     }
