@@ -225,7 +225,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 if isinstance(value, Config):
                     nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
                         discriminator_key,
-                        value._get_non_none_public_field_values(),
+                        value._get_non_none_public_field_values(),  # noqa: SLF001
                     )
 
                 nested_items = list(check.is_dict(nested_dict).items())
@@ -773,7 +773,6 @@ class ConfigurableResourceFactory(
     def __init__(self, **data: Any):
         resource_pointers, data_without_resources = separate_resource_params(self.__class__, data)
 
-        print(list(resource_pointers.keys()), list(data_without_resources.keys()))
         schema = infer_schema_from_config_class(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
@@ -1686,7 +1685,7 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: FieldInfo) -> Fi
 
     sub_fields_mapping = {}
     for sub_field in sub_fields:
-        sub_field_annotation = sub_field.__fields__[pydantic_field.discriminator].annotation
+        sub_field_annotation = sub_field.model_fields[pydantic_field.discriminator].annotation
 
         for sub_field_key in get_args(sub_field_annotation):
             sub_fields_mapping[sub_field_key] = sub_field
@@ -1785,18 +1784,10 @@ class SeparatedResourceParams(NamedTuple):
     non_resources: Dict[str, Any]
 
 
-def _is_annotated_as_resource_type(annotation: Type) -> bool:
+def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
-    print("THINKING ABOUT ", annotation)
-
-    if get_origin(annotation) == Union:
-        args = get_args(annotation)
-        if (
-            len(args) == 2
-            and safe_is_subclass(args[1], (ResourceDefinition, ConfigurableResourceFactory))
-            and get_origin(args[0]) == PartialResource
-        ):
-            return True
+    if metadata and metadata[0] == "resource_dependency":
+        return True
 
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None
@@ -1814,16 +1805,18 @@ def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> Sepa
     keys_by_alias = {
         field.alias if field.alias else key: field for key, field in cls.model_fields.items()
     }
-    data_with_annotation: List[Tuple[str, Any, Type]] = [
+    data_with_annotation: List[Tuple[str, Any, Type, List[str]]] = [
         # No longer exists in Pydantic 2.x, will need to be updated when we upgrade
-        (k, v, keys_by_alias[k].annotation)
+        (k, v, keys_by_alias[k].annotation, keys_by_alias[k].metadata)
         for k, v in data.items()
         if k in keys_by_alias
     ]
     out = SeparatedResourceParams(
-        resources={k: v for k, v, t in data_with_annotation if _is_annotated_as_resource_type(t)},
+        resources={
+            k: v for k, v, t, m in data_with_annotation if _is_annotated_as_resource_type(t, m)
+        },
         non_resources={
-            k: v for k, v, t in data_with_annotation if not _is_annotated_as_resource_type(t)
+            k: v for k, v, t, m in data_with_annotation if not _is_annotated_as_resource_type(t, m)
         },
     )
     return out
