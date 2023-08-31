@@ -121,7 +121,7 @@ class MakeConfigCacheable(BaseModel):
         # Necessary to allow for caching decorators
         arbitrary_types_allowed = True
         # Avoid pydantic reading a cached property class as part of the schema
-        keep_untouched = (cached_property,)
+        ignored_types = (cached_property,)
         # Ensure the class is serializable, for caching purposes
         frozen = True
 
@@ -176,6 +176,28 @@ class MakeConfigCacheable(BaseModel):
 
     def _is_field_internal(self, name: str) -> bool:
         return name.endswith(INTERNAL_MARKER)
+
+
+def ensure_env_vars_set(set_value: Any, input_value: Any) -> Optional[Any]:
+    """Ensures that Pydantic field values are set to the appropriate EnvVar or IntEnvVar
+    objects, if the input value is an EnvVar or IntEnvVar. Pydantic will cast
+    them to strings or ints otherwise, which is not what we want.
+    """
+    if isinstance(set_value, dict) and isinstance(input_value, dict):
+        for key, value in input_value.items():
+            if isinstance(value, (EnvVar, IntEnvVar)):
+                set_value[key] = value
+            elif isinstance(value, (dict, list)):
+                set_value[key] = ensure_env_vars_set(set_value[key], value)
+    if isinstance(set_value, list) and isinstance(input_value, list):
+        for i in range(len(set_value)):
+            value = input_value[i]
+            if isinstance(value, (EnvVar, IntEnvVar)):
+                set_value[i] = value
+            elif isinstance(value, (dict, list)):
+                set_value[i] = ensure_env_vars_set(set_value[i], value)
+
+    return set_value
 
 
 class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
@@ -245,10 +267,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             if field.is_required() and key not in modified_data:
                 modified_data[key] = None
         super().__init__(**modified_data)
-
-        for key, value in modified_data.items():
-            if isinstance(value, (EnvVar, IntEnvVar)):
-                self.__dict__[key] = value
+        self.__dict__ = ensure_env_vars_set(self.__dict__, modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
