@@ -32,3 +32,8 @@ title: Dagster University Course Content
     - [Practice: Create a taxi_zones asset](/dagster-essentials/lesson-4/coding-practice-taxi-zones-asset)
     - [Assets with in-memory computations](/dagster-essentials/lesson-4/assets-with-in-memory-computations)
     - [Practice: Create a trips_by_week asset](/dagster-essentials/lesson-4/coding-practice-trips-by-week-asset)
+  - Lesson 5
+    - [Overview](/dagster-essentials/lesson-5/overview)
+    - [What's the Definitions object?](/dagster-essentials/lesson-5/whats-the-definitions-object)
+    - [What's a code location?](/dagster-essentials/lesson-5/whats-a-code-location)
+    - [Code locations in the Dagster UI](/dagster-essentials/lesson-5/code-locations-dagster-ui)
