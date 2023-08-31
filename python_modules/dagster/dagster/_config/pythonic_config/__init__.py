@@ -37,7 +37,13 @@ from dagster._config.config_type import (
     ConfigType,
     Noneable,
 )
-from dagster._config.field_utils import EnvVar, IntEnvVar, Map, config_dictionary_from_values
+from dagster._config.field_utils import (
+    EnvVar,
+    IntEnvVar,
+    Map,
+    Selector,
+    config_dictionary_from_values,
+)
 from dagster._config.post_process import resolve_defaults
 from dagster._config.pythonic_config.typing_utils import (
     TypecheckAllowPartialResourceInitParams,
@@ -212,29 +218,29 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = self.model_fields.get(key)
             if field and not field.is_required() and value is None:
                 continue
-            # if field and field.field_info.discriminator:
-            #     nested_dict = value
+            if field and field.discriminator:
+                nested_dict = value
 
-            #     discriminator_key = check.not_none(field.discriminator_key)
-            #     if isinstance(value, Config):
-            #         nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
-            #             discriminator_key,
-            #             value._get_non_none_public_field_values(),
-            #         )
+                discriminator_key = check.not_none(field.discriminator)
+                if isinstance(value, Config):
+                    nested_dict = _discriminated_union_config_dict_to_selector_config_dict(
+                        discriminator_key,
+                        value._get_non_none_public_field_values(),
+                    )
 
-            #     nested_items = list(check.is_dict(nested_dict).items())
-            #     check.invariant(
-            #         len(nested_items) == 1,
-            #         "Discriminated union must have exactly one key",
-            #     )
-            #     discriminated_value, nested_values = nested_items[0]
+                nested_items = list(check.is_dict(nested_dict).items())
+                check.invariant(
+                    len(nested_items) == 1,
+                    "Discriminated union must have exactly one key",
+                )
+                discriminated_value, nested_values = nested_items[0]
 
-            #     modified_data[key] = {
-            #         **nested_values,
-            #         discriminator_key: discriminated_value,
-            #     }
-            # else:
-            modified_data[key] = value
+                modified_data[key] = {
+                    **nested_values,
+                    discriminator_key: discriminated_value,
+                }
+            else:
+                modified_data[key] = value
         for key, field in self.model_fields.items():
             if field.is_required() and key not in modified_data:
                 modified_data[key] = None
@@ -1467,14 +1473,8 @@ def _convert_pydantic_field(pydantic_field: FieldInfo, model_cls: Optional[Type]
         model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
             used for error messages.
     """
-    # key_type = (
-    #     _config_type_for_pydantic_field(pydantic_field.key_field)
-    #     if pydantic_field.key_field
-    #     else None
-    # )
     if pydantic_field.discriminator:
-        raise Exception("not yet supported")
-        # return _convert_pydantic_descriminated_union_field(pydantic_field)
+        return _convert_pydantic_descriminated_union_field(pydantic_field)
 
     field_type = pydantic_field.annotation
 
@@ -1649,57 +1649,65 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
         )
 
 
-# def _convert_pydantic_descriminated_union_field(pydantic_field: FieldInfo) -> Field:
-#     """Builds a Selector config field from a Pydantic field which is a descriminated union.
+def _convert_pydantic_descriminated_union_field(pydantic_field: FieldInfo) -> Field:
+    """Builds a Selector config field from a Pydantic field which is a descriminated union.
 
-#     For example:
+    For example:
 
-#     class Cat(Config):
-#         pet_type: Literal["cat"]
-#         meows: int
+    class Cat(Config):
+        pet_type: Literal["cat"]
+        meows: int
 
-#     class Dog(Config):
-#         pet_type: Literal["dog"]
-#         barks: float
+    class Dog(Config):
+        pet_type: Literal["dog"]
+        barks: float
 
-#     class OpConfigWithUnion(Config):
-#         pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
 
-#     Becomes:
+    Becomes:
 
-#     Shape({
-#       "pet": Selector({
-#           "cat": Shape({"meows": Int}),
-#           "dog": Shape({"barks": Float}),
-#       })
-#     })
-#     """
-#     sub_fields_mapping = pydantic_field.sub_fields_mapping
-#     if not sub_fields_mapping or not all(
-#         issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
-#     ):
-#         raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
+    Shape({
+      "pet": Selector({
+          "cat": Shape({"meows": Int}),
+          "dog": Shape({"barks": Float}),
+      })
+    })
+    """
+    field_type = pydantic_field.annotation
 
-#     # First, we generate a mapping between the various discriminator values and the
-#     # Dagster config fields that correspond to them. We strip the discriminator key
-#     # from the fields, since the user should not have to specify it.
+    if not get_origin(field_type) == Union:
+        raise DagsterInvalidDefinitionError("Descriminated union must be a Union type.")
 
-#     assert pydantic_field.sub_fields_mapping
-#     dagster_config_field_mapping = {
-#         discriminator_value: infer_schema_from_config_class(
-#             field.type_,
-#             fields_to_omit=(
-#                 {pydantic_field.field_info.discriminator}
-#                 if pydantic_field.field_info.discriminator
-#                 else None
-#             ),
-#         )
-#         for discriminator_value, field in sub_fields_mapping.items()
-#     }
+    sub_fields = get_args(field_type)
+    if not all(issubclass(sub_field, Config) for sub_field in sub_fields):
+        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
 
-#     # We then nest the union fields under a Selector. The keys for the selector
-#     # are the various discriminator values
-#     return Field(config=Selector(fields=dagster_config_field_mapping))
+    sub_fields_mapping = {}
+    for sub_field in sub_fields:
+        sub_field_annotation = sub_field.__fields__[pydantic_field.discriminator].annotation
+
+        for sub_field_key in get_args(sub_field_annotation):
+            sub_fields_mapping[sub_field_key] = sub_field
+
+    # First, we generate a mapping between the various discriminator values and the
+    # Dagster config fields that correspond to them. We strip the discriminator key
+    # from the fields, since the user should not have to specify it.
+
+    # assert pydantic_field.sub_fields_mapping
+    dagster_config_field_mapping = {
+        discriminator_value: infer_schema_from_config_class(
+            field,
+            fields_to_omit=(
+                {pydantic_field.discriminator} if pydantic_field.discriminator else None
+            ),
+        )
+        for discriminator_value, field in sub_fields_mapping.items()
+    }
+
+    # We then nest the union fields under a Selector. The keys for the selector
+    # are the various discriminator values
+    return Field(config=Selector(fields=dagster_config_field_mapping))
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
