@@ -297,7 +297,9 @@ auto_materialize_policy_scenarios = {
             assets=lazy_assets_nothing_dep,
             unevaluated_runs=[run(["asset1"])],
             expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
+            asset_selection=AssetSelection.keys("asset2", "asset3"),
         ),
+        asset_selection=AssetSelection.keys("asset2", "asset3"),
         unevaluated_runs=[run(["asset2", "asset3"], failed_asset_keys=["asset2", "asset3"])],
         # should not run again
         expected_run_requests=[],
