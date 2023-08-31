@@ -628,7 +628,7 @@ def multi_asset(
                 dep.asset_key
                 for spec in specs
                 for dep in spec.deps
-                if dep not in output_tuples_by_asset_key
+                if dep.asset_key not in output_tuples_by_asset_key
             }
 
             explicit_ins = ins or {}

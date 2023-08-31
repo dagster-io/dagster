@@ -1922,19 +1922,6 @@ def test_asset_spec_deps():
     def table_A():
         pass
 
-    # TODO - remove, here for debug
-    @multi_asset(
-        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
-        internal_asset_deps={
-            "a": {AssetKey("in1"), AssetKey("in2")},
-            "b": set(),
-            "c": {AssetKey("a"), AssetKey("b"), AssetKey("in2"), AssetKey("in3")},
-        },
-        can_subset=True,
-    )
-    def abc_(context, in1, in2, in3):
-        pass
-
     table_b = AssetSpec("table_B", deps=[table_A])
     table_c = AssetSpec("table_C", deps=[table_A, table_b])
     table_b_no_dep = AssetSpec("table_B")
