@@ -861,7 +861,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if asset_partition in self._root_unreconciled_ancestors_cache:
             return self._root_unreconciled_ancestors_cache[asset_partition]
 
-        # First gather all the candidates that weren't previously computed as well as their parents
+        if self.asset_graph.is_source(asset_partition.asset_key):
+            return set()
+
+        # First traverse upwards and gather any candidates that have not been previously added
+        # to the cache
         visited: set[AssetKeyPartitionKey] = set()
 
         queue: deque[AssetKeyPartitionKey] = deque()
@@ -892,10 +896,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         while len(toposort_queue) > 0:
             candidates_unit = toposort_queue.dequeue()
             for current_partition in candidates_unit:
-                if self.asset_graph.is_source(current_partition.asset_key):
-                    self._root_unreconciled_ancestors_cache[current_partition] = set()
-                    continue
-
                 parent_asset_partitions = self.asset_graph.get_parents_partitions(
                     dynamic_partitions_store=self,
                     current_time=self._evaluation_time,
