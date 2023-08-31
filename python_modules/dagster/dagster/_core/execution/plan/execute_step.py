@@ -534,12 +534,17 @@ def _type_check_and_store_output(
         yield evt
 
 
-def _asset_key_and_partitions_for_output(
+def _materializing_asset_key_and_partitions_for_output(
     output_context: OutputContext,
 ) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
     output_asset_info = output_context.asset_info
 
-    if output_asset_info:
+    if (
+        output_asset_info
+        and not output_context.step_context.job_def.asset_layer.is_observable_for_asset(
+            output_asset_info.key
+        )
+    ):
         if not output_asset_info.is_required:
             output_context.log.warning(
                 f"Materializing unexpected asset key: {output_asset_info.key}."
@@ -695,10 +700,12 @@ def _store_output(
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
 
-    # don't store asset check outputs
-    if step_context.step.step_output_named(
-        step_output_handle.output_name
-    ).properties.asset_check_key:
+    # don't store asset check outputs or asset observation outputs
+    step_output = step_context.step.step_output_named(step_output_handle.output_name)
+    asset_key = step_output.properties.asset_key
+    if step_output.properties.asset_check_key or (
+        step_context.output_observes_source_asset(step_output_handle.output_name)
+    ):
 
         def _no_op() -> Iterator[DagsterEvent]:
             yield from ()
@@ -777,7 +784,7 @@ def _store_output(
 
         yield DagsterEvent.asset_materialization(step_context, materialization)
 
-    asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
+    asset_key, partitions = _materializing_asset_key_and_partitions_for_output(output_context)
     if asset_key:
         for materialization in _get_output_asset_materializations(
             asset_key,
