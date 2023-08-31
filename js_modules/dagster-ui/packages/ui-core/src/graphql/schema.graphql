@@ -3198,6 +3198,7 @@ type AssetCheckExecution {
   runId: String!
   status: AssetCheckExecutionResolvedStatus!
   evaluation: AssetCheckEvaluation
+  timestamp: Float!
 }
 
 enum AssetCheckExecutionResolvedStatus {
