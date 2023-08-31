@@ -773,6 +773,7 @@ class ConfigurableResourceFactory(
     def __init__(self, **data: Any):
         resource_pointers, data_without_resources = separate_resource_params(self.__class__, data)
 
+        print(list(resource_pointers.keys()), list(data_without_resources.keys()))
         schema = infer_schema_from_config_class(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
@@ -1763,6 +1764,7 @@ def infer_schema_from_config_class(
             try:
                 fields[alias] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
+                raise
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
                     field_name=key,
@@ -1785,6 +1787,17 @@ class SeparatedResourceParams(NamedTuple):
 
 def _is_annotated_as_resource_type(annotation: Type) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
+    print("THINKING ABOUT ", annotation)
+
+    if get_origin(annotation) == Union:
+        args = get_args(annotation)
+        if (
+            len(args) == 2
+            and safe_is_subclass(args[1], (ResourceDefinition, ConfigurableResourceFactory))
+            and get_origin(args[0]) == PartialResource
+        ):
+            return True
+
     is_annotated_as_resource_dependency = get_origin(annotation) == ResourceDependency or getattr(
         annotation, "__metadata__", None
     ) == ("resource_dependency",)
