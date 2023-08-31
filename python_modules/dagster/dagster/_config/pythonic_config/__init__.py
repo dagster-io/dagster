@@ -349,16 +349,16 @@ def _config_value_to_dict_representation(field: Optional[FieldInfo], value: Any)
     elif isinstance(value, IntEnvVar):
         return {"env": value.name}
     if isinstance(value, Config):
-        # if field and field.discriminator_key:
-        #     return {
-        #         k: v
-        #         for k, v in _discriminated_union_config_dict_to_selector_config_dict(
-        #             field.discriminator_key,
-        #             value._convert_to_config_dictionary(),
-        #         ).items()
-        #     }
-        # else:
-        return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
+        if field and field.discriminator:
+            return {
+                k: v
+                for k, v in _discriminated_union_config_dict_to_selector_config_dict(
+                    field.discriminator,
+                    value._convert_to_config_dictionary(),  # noqa: SLF001
+                ).items()
+            }
+        else:
+            return {k: v for k, v in value._convert_to_config_dictionary().items()}  # noqa: SLF001
     elif isinstance(value, Enum):
         return value.name
 
@@ -821,8 +821,6 @@ class ConfigurableResourceFactory(
             nested_resources={k: v for k, v in resource_pointers.items()},
             resource_context=None,
         )
-
-    
 
     @property
     def _schema(self):
@@ -1773,9 +1771,11 @@ def infer_schema_from_config_class(
 
     fields: Dict[str, Field] = {}
     for key, pydantic_field_info in model_cls.model_fields.items():
-        if _is_annotated_as_resource_type(pydantic_field_info.annotation, pydantic_field_info.metadata):
+        if _is_annotated_as_resource_type(
+            pydantic_field_info.annotation, pydantic_field_info.metadata
+        ):
             continue
-        
+
         alias = pydantic_field_info.alias if pydantic_field_info.alias else key
         if key not in fields_to_omit:
             if isinstance(pydantic_field_info.default, Field):
