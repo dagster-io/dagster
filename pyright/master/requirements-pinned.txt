@@ -377,7 +377,7 @@ pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycparser==2.21
 pycryptodomex==3.18.0
-pydantic==1.10.12
+pydantic==2.3.0
 pydata-google-auth==1.8.2
 pyflakes==3.1.0
 Pygments==2.16.1
