@@ -24,7 +24,7 @@ title: Dagster University Course Content
     - [Troubleshooting failed runs](/dagster-essentials/lesson-3/troubleshooting-failed-runs)
     - [Coding practice: Create a taxi_zones_file asset](/dagster-essentials/lesson-3/coding-practice-taxi-zones-file-asset)
     - [Recap](/dagster-essentials/lesson-3/recap)
-  - Lesson 4
+  - Lesson 4: Asset dependencies
     - [Overview](/dagster-essentials/lesson-4/overview)
     - [What's a dependency?](/dagster-essentials/lesson-4/whats-a-dependency)
     - [Assets and database execution](/dagster-essentials/lesson-4/assets-and-database-execution)
@@ -32,8 +32,16 @@ title: Dagster University Course Content
     - [Practice: Create a taxi_zones asset](/dagster-essentials/lesson-4/coding-practice-taxi-zones-asset)
     - [Assets with in-memory computations](/dagster-essentials/lesson-4/assets-with-in-memory-computations)
     - [Practice: Create a trips_by_week asset](/dagster-essentials/lesson-4/coding-practice-trips-by-week-asset)
-  - Lesson 5
+  - Lesson 5: Definitions & code locations
     - [Overview](/dagster-essentials/lesson-5/overview)
     - [What's the Definitions object?](/dagster-essentials/lesson-5/whats-the-definitions-object)
     - [What's a code location?](/dagster-essentials/lesson-5/whats-a-code-location)
     - [Code locations in the Dagster UI](/dagster-essentials/lesson-5/code-locations-dagster-ui)
+  - Lesson 6: Resources
+    - [Overview](/dagster-essentials/lesson-6/overview)
+    - [What's a resource?](/dagster-essentials/lesson-6/whats-a-resource)
+    - [Setting up a database resource](/dagster-essentials/lesson-6/setting-up-a-database-resource)
+    - [Using resources in assets](/dagster-essentials/lesson-6/using-resources-in-assets)
+    - [Practice: Refactoring assets to use resources](/dagster-essentials/lesson-6/coding-practice-refactoring-assets)
+    - [Analyzing resource usage using the Dagster UI](/dagster-essentials/lesson-6/analyzing-resources-dagster-ui)
+    - [Lesson recap](/dagster-essentials/lesson-6/recap)
