@@ -15,10 +15,7 @@ import {Link, Redirect} from 'react-router-dom';
 
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from '../AutomaterializePolicyTag';
+import {AutomaterializePolicyTag} from '../AutomaterializePolicyTag';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AssetKey} from '../types';
 

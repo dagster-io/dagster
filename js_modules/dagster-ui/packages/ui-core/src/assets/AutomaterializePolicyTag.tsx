@@ -33,7 +33,7 @@ export const automaterializePolicyDescription = (policy: {
       </ul>
       {DISCARD && DISCARD.length > 0 && (
         <>
-          Partitions may be skipped and require a backfill to materialize if any of the following
+          Partitions may be discarded and require a backfill to materialize if any of the following
           are true:
           <ul style={{paddingLeft: 20, margin: 0}}>
             {DISCARD.map((rule) => (
