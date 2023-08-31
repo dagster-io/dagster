@@ -1102,6 +1102,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     if partitions_def
                     else None
                 )
+
+                # TODO - need to add logic here to figure out if the asset is an input or an output
+                # if it's an input then we need to do partition mapping
+                # if it's an output then we do not need to do partition mapping
+                # should be able to use the asset layer or assetedefinition?
                 partition_mapping = infer_partition_mapping(
                     asset_layer.partition_mapping_for_node_input(self.node_handle, asset_key),
                     partitions_def,
