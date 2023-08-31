@@ -458,6 +458,9 @@ class AssetDaemonContext:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.target_asset_keys or asset_key in visited_multi_asset_keys:
                 continue
+
+            self._logger.debug(f"Evaluating asset {asset_key.to_user_string()}")
+
             (evaluation, to_materialize_for_asset, to_discard_for_asset) = self.evaluate_asset(
                 asset_key, will_materialize_mapping, expected_data_time_mapping
             )
