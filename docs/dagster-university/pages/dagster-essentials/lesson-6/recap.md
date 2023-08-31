@@ -11,3 +11,5 @@ Dagster comes with many resources and integrations out of the box. However, an i
 You can pass any object or connection into your code location’s `Definitions` and add it as a resource. The only requirement is that you will need to add `ResourceParam[<ClassName>]` to your asset argument’s type hints for your asset function to understand that you’re referencing a resource.
 
 Check out the [Dagster Docs](https://docs.dagster.io/integrations) for more info about all of Dagster’s integrations.
+
+> ‼️ Make sure you update your code to match the practice problem answer before continuing!
