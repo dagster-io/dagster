@@ -36,6 +36,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -1847,8 +1848,8 @@ def test_multi_asset_no_out():
         pass
 
     _exec_asset(basic_deps)
-    assert table_A.asset_key in basic_deps.asset_deps[table_C.asset_key]
-    assert table_B.asset_key in basic_deps.asset_deps[table_C.asset_key]
+    assert table_A.asset_key in basic_deps.asset_deps[AssetDep(table_C.asset_key)]
+    assert table_B.asset_key in basic_deps.asset_deps[AssetDep(table_C.asset_key)]
 
     result = basic_deps()
     assert result is None
@@ -1919,6 +1920,19 @@ def test_multi_asset_nodes_out_names():
 def test_asset_spec_deps():
     @asset
     def table_A():
+        pass
+
+    # TODO - remove, here for debug
+    @multi_asset(
+        outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()},
+        internal_asset_deps={
+            "a": {AssetKey("in1"), AssetKey("in2")},
+            "b": set(),
+            "c": {AssetKey("a"), AssetKey("b"), AssetKey("in2"), AssetKey("in3")},
+        },
+        can_subset=True,
+    )
+    def abc_(context, in1, in2, in3):
         pass
 
     table_b = AssetSpec("table_B", deps=[table_A])
