@@ -8,7 +8,7 @@ lesson: "5"
 
 A `Definitions` object is a set of Dagster definitions available and loadable by Dagster tools. The `Definitions` object is used to assign definitions to a code location, and each code location can only have a single `Definitions` object. This object maps to one code location. With code locations, users isolate multiple Dagster projects from each other without requiring multiple deployments. You’ll learn more about code locations a bit later in this lesson.
 
-Let’s use our cookie example to demonstrate. In this case, our cookie assets - like our dry and wet ingredients, cookie dough, chocolate chip cookie dough, and eventually, chocolate chip cookies - can all be thought of as (cookie) ************definitions:************
+Let’s use our cookie example to demonstrate. In this case, our cookie assets - like our dry and wet ingredients, cookie dough, chocolate chip cookie dough, and eventually, chocolate chip cookies - can all be thought of as (cookie) **definitions:**
 
 ![In this example, our cookie assets, like our dry and wet ingredients, can be likened to Dagster definitions](/images/dagster-essentials/lesson-5/cookie-definitions.png)
 
