@@ -257,7 +257,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    ass_key(self) -> str:
+    def partition_key(self) -> str:
         """The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
