@@ -6,6 +6,7 @@ import os
 import random
 import sys
 from typing import (
+    AbstractSet,
     Iterable,
     List,
     Mapping,
@@ -15,7 +16,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    AbstractSet,
 )
 
 import mock
@@ -185,10 +185,28 @@ class AssetReconciliationScenario(
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
     ) -> "AssetReconciliationScenario":
+        # For scenarios with no auto-materialize policies, we infer auto-materialize policies
+        # and add them to the assets.
+        assets_with_implicit_policies = assets
+        if assets and all(
+            (isinstance(a, AssetsDefinition) and not a.auto_materialize_policies_by_key)
+            or isinstance(a, SourceAsset)
+            for a in assets
+        ):
+            asset_graph = AssetGraph.from_assets(assets)
+            target_asset_keys = (
+                asset_selection.resolve(asset_graph)
+                if asset_selection
+                else asset_graph.materializable_asset_keys
+            )
+            assets_with_implicit_policies = with_implicit_auto_materialize_policies(
+                assets, asset_graph, target_asset_keys
+            )
+
         return super(AssetReconciliationScenario, cls).__new__(
             cls,
             unevaluated_runs=unevaluated_runs,
-            assets=assets,
+            assets=assets_with_implicit_policies,
             between_runs_delta=between_runs_delta,
             evaluation_delta=evaluation_delta,
             cursor_from=cursor_from,
@@ -201,40 +219,6 @@ class AssetReconciliationScenario(
             code_locations=code_locations,
             expected_evaluations=expected_evaluations,
             requires_respect_materialization_data_versions=requires_respect_materialization_data_versions,
-        )
-
-    def with_implicit_auto_materialize_policies(self) -> "AssetReconciliationScenario":
-        assets_with_implicit_policies = self.assets
-        if self.assets:
-            asset_graph = AssetGraph.from_assets(self.assets)
-            target_asset_keys = (
-                self.asset_selection.resolve(asset_graph)
-                if self.asset_selection
-                else asset_graph.materializable_asset_keys
-            )
-            assets_with_implicit_policies = with_implicit_auto_materialize_policies(
-                self.assets, asset_graph, target_asset_keys
-            )
-
-        return AssetReconciliationScenario(
-            unevaluated_runs=self.unevaluated_runs,
-            assets=assets_with_implicit_policies,
-            between_runs_delta=self.between_runs_delta,
-            evaluation_delta=self.evaluation_delta,
-            cursor_from=(
-                self.cursor_from.with_implicit_auto_materialize_policies()
-                if self.cursor_from
-                else None
-            ),
-            current_time=self.current_time,
-            asset_selection=self.asset_selection,
-            active_backfill_targets=self.active_backfill_targets,
-            dagster_runs=self.dagster_runs,
-            event_log_entries=self.event_log_entries,
-            expected_run_requests=self.expected_run_requests,
-            code_locations=self.code_locations,
-            expected_evaluations=self.expected_evaluations,
-            requires_respect_materialization_data_versions=self.requires_respect_materialization_data_versions,
         )
 
     def _get_code_location_origin(
@@ -275,7 +259,6 @@ class AssetReconciliationScenario(
 
             @repository
             def repo():
-                print([asset1.auto_materialize_policies_by_key for asset1 in self.assets])
                 return self.assets
 
             # add any runs to the instance

@@ -651,8 +651,6 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
         if not auto_materialize_policy:
             check.failed(f"Expected auto materialize policy on asset {asset_key}")
 
-        rule_snapshots = [rule.to_snapshot() for rule in auto_materialize_policy.rules]
-
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if partitions_def is None:
             return AutoMaterializeAssetEvaluation(
@@ -664,7 +662,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_requested=num_requested,
                 num_skipped=num_skipped,
                 num_discarded=num_discarded,
-                rule_snapshots=rule_snapshots,
+                rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
         else:
             return AutoMaterializeAssetEvaluation(
@@ -685,7 +683,7 @@ class AutoMaterializeAssetEvaluation(NamedTuple):
                 num_requested=num_requested,
                 num_skipped=num_skipped,
                 num_discarded=num_discarded,
-                rule_snapshots=rule_snapshots,
+                rule_snapshots=auto_materialize_policy.rule_snapshots,
             )
 
 

@@ -35,10 +35,7 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
 )
 @pytest.mark.parametrize(
     "scenario",
-    [
-        scenario.with_implicit_auto_materialize_policies()
-        for scenario in list(ASSET_RECONCILIATION_SCENARIOS.values())
-    ],
+    list(ASSET_RECONCILIATION_SCENARIOS.values()),
     ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
 )
 def test_reconciliation(scenario, respect_materialization_data_versions):
@@ -56,6 +53,12 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
                 evaluation._replace(
                     partition_subsets_by_condition=sorted(
                         evaluation.partition_subsets_by_condition, key=repr
+                    )
+                )._replace(
+                    rule_snapshots=(
+                        sorted(evaluation.rule_snapshots, key=repr)
+                        if evaluation.rule_snapshots
+                        else None
                     )
                 )
                 for evaluation in evaluations
@@ -89,11 +92,7 @@ def test_reconciliation(scenario, respect_materialization_data_versions):
 
 @pytest.mark.parametrize(
     "scenario",
-    [
-        ASSET_RECONCILIATION_SCENARIOS[
-            "freshness_complex_subsettable"
-        ].with_implicit_auto_materialize_policies()
-    ],
+    [ASSET_RECONCILIATION_SCENARIOS["freshness_complex_subsettable"]],
 )
 def test_reconciliation_no_tags(scenario):
     # simulates an environment where asset_event_tags cannot be added
@@ -138,7 +137,5 @@ def test_bad_partition_key():
     scenario = AssetReconciliationScenario(
         assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.keys("hourly2")
     )
-    run_requests, _, _ = scenario.with_implicit_auto_materialize_policies().do_sensor_scenario(
-        instance
-    )
+    run_requests, _, _ = scenario.do_sensor_scenario(instance)
     assert len(run_requests) == 0
