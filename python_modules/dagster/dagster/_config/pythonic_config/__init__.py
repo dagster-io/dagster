@@ -822,6 +822,8 @@ class ConfigurableResourceFactory(
             resource_context=None,
         )
 
+    
+
     @property
     def _schema(self):
         return self._state__internal__.schema
@@ -1771,6 +1773,9 @@ def infer_schema_from_config_class(
 
     fields: Dict[str, Field] = {}
     for key, pydantic_field_info in model_cls.model_fields.items():
+        if _is_annotated_as_resource_type(pydantic_field_info.annotation, pydantic_field_info.metadata):
+            continue
+        
         alias = pydantic_field_info.alias if pydantic_field_info.alias else key
         if key not in fields_to_omit:
             if isinstance(pydantic_field_info.default, Field):
@@ -1782,7 +1787,6 @@ def infer_schema_from_config_class(
             try:
                 fields[alias] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
-                raise
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
                     field_name=key,
