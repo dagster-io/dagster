@@ -118,6 +118,7 @@ export type AssetCheck = {
   __typename: 'AssetCheck';
   assetKey: AssetKey;
   description: Maybe<Scalars['String']>;
+  executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   executions: Array<AssetCheckExecution>;
   name: Scalars['String'];
   severity: AssetCheckSeverity;
@@ -4413,6 +4414,12 @@ export const buildAssetCheck = (
         : buildAssetKey({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'omnis',
+    executionForLatestMaterialization:
+      overrides && overrides.hasOwnProperty('executionForLatestMaterialization')
+        ? overrides.executionForLatestMaterialization!
+        : relationshipsToOmit.has('AssetCheckExecution')
+        ? ({} as AssetCheckExecution)
+        : buildAssetCheckExecution({}, relationshipsToOmit),
     executions: overrides && overrides.hasOwnProperty('executions') ? overrides.executions! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
     severity:

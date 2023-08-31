@@ -105,6 +105,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
     )
+    executionForLatestMaterialization = graphene.Field(GrapheneAssetCheckExecution)
 
     class Meta:
         name = "AssetCheck"
@@ -133,6 +134,17 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
         return fetch_executions(
             graphene_info.context.instance, self._asset_check, kwargs["limit"], kwargs.get("cursor")
+        )
+
+    def resolve_executionForLatestMaterialization(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAssetCheckExecution]:
+        from dagster_graphql.implementation.fetch_asset_checks import (
+            fetch_execution_for_latest_materialization,
+        )
+
+        return fetch_execution_for_latest_materialization(
+            graphene_info.context.instance, self._asset_check
         )
 
 
