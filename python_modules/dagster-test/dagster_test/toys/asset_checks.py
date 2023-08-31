@@ -27,6 +27,19 @@ def random_fail_check():
 
 
 @asset_check(
+    asset=checked_asset,
+    severity=AssetCheckSeverity.ERROR,
+    description="A severe check that fails half the time.",
+)
+def severe_random_fail_check():
+    random.seed(time.time())
+    return AssetCheckResult(
+        success=random.choice([False, True]),
+        metadata={"timestamp": MetadataValue.float(time.time())},
+    )
+
+
+@asset_check(
     asset=checked_asset, description="A check that always fails, and has several types of metadata."
 )
 def always_fail():
@@ -103,6 +116,7 @@ def get_checks_and_assets():
     return [
         checked_asset,
         random_fail_check,
+        severe_random_fail_check,
         always_fail,
         slow_check,
         asset_with_check_in_same_op,
