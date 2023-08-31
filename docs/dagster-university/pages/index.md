@@ -24,3 +24,11 @@ title: Dagster University Course Content
     - [Troubleshooting failed runs](/dagster-essentials/lesson-3/troubleshooting-failed-runs)
     - [Coding practice: Create a taxi_zones_file asset](/dagster-essentials/lesson-3/coding-practice-taxi-zones-file-asset)
     - [Recap](/dagster-essentials/lesson-3/recap)
+  - Lesson 4
+    - [Overview](/dagster-essentials/lesson-4/overview)
+    - [What's a dependency?](/dagster-essentials/lesson-4/whats-a-dependency)
+    - [Assets and database execution](/dagster-essentials/lesson-4/assets-and-database-execution)
+    - [Loading data into a database](/dagster-essentials/lesson-4/loading-data-into-a-database)
+    - [Practice: Create a taxi_zones asset](/dagster-essentials/lesson-4/coding-practice-taxi-zones-asset)
+    - [Assets with in-memory computations](/dagster-essentials/lesson-4/assets-with-in-memory-computations)
+    - [Practice: Create a trips_by_week asset](/dagster-essentials/lesson-4/coding-practice-trips-by-week-asset)
